@@ -41,10 +41,9 @@ defmodule Indexer.CoinBalance.OnDemandFetcherTest do
 
       # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
       # back we'd need to go to get 24 hours in the past)
-      block_0 = insert(:block, number: 0, timestamp: Timex.shift(now, hours: -50))
-      AverageBlockTime.average_block_time(block_0)
-      block_1 = insert(:block, number: 1, timestamp: now)
-      AverageBlockTime.average_block_time(block_1)
+      insert(:block, number: 0, timestamp: Timex.shift(now, hours: -50))
+      insert(:block, number: 1, timestamp: now)
+      AverageBlockTime.refresh()
 
       stale_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 0)
       current_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 1)
@@ -89,10 +88,9 @@ defmodule Indexer.CoinBalance.OnDemandFetcherTest do
 
       # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
       # back we'd need to go to get 24 hours in the past)
-      block_0 = insert(:block, number: 0, timestamp: Timex.shift(now, hours: -50))
-      AverageBlockTime.average_block_time(block_0)
-      block_1 = insert(:block, number: 1, timestamp: now)
-      AverageBlockTime.average_block_time(block_1)
+      insert(:block, number: 0, timestamp: Timex.shift(now, hours: -50))
+      insert(:block, number: 1, timestamp: now)
+      AverageBlockTime.refresh()
 
       :ok
     end

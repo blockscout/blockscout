@@ -28,6 +28,7 @@
  - [#1697](https://github.com/poanetwork/blockscout/pull/1697) - fix failing in rpc if balance is empty
  - [#1711](https://github.com/poanetwork/blockscout/pull/1711) - rescue failing repo in block number cache update
  - [#1712](https://github.com/poanetwork/blockscout/pull/1712) - do not set contract code from transaction input
+ - [#1714](https://github.com/poanetwork/blockscout/pull/1714) - fix average block time calculation
 
 ### Chore
 
