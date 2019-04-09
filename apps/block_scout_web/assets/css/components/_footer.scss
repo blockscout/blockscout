@@ -1,7 +1,11 @@
 $footer-background-color: $secondary !default;
 $footer-title-color: #fff !default;
 $footer-text-color: rgba(#fff, 0.7) !default;
+$footer-link-color: $footer-text-color !default;
 $footer-item-disc-color: $primary !default;
+$footer-social-icon-color: $footer-text-color !default;
+$footer-logo-height: 2rem !default;
+$footer-logo-width: auto !default;
 
 .footer {
   background: $footer-background-color;
@@ -22,7 +26,8 @@ $footer-item-disc-color: $primary !default;
 }
 
 .footer-logo {
-  height: 2rem;
+  height: $footer-logo-height;
+  width: $footer-logo-width;
 }
 
 .footer-info-text {
@@ -37,10 +42,14 @@ $footer-item-disc-color: $primary !default;
 }
 
 .footer-social-icon {
-  color: $footer-text-color;
+  color: $footer-social-icon-color;
   font-size: 22px;
   margin-right: 15px;
   text-decoration: none;
+
+  &:hover {
+    color: $footer-social-icon-color;
+  }
 
   &:last-child {
     margin-right: 0;
@@ -52,10 +61,10 @@ $footer-item-disc-color: $primary !default;
 }
 
 .footer-link {
-  color: $footer-text-color;
+  color: $footer-link-color;
 
   &:hover {
-    color: $footer-text-color;
+    color: $footer-link-color;
     text-decoration: underline;
   }
 }

@@ -76,25 +76,23 @@
   background-color: $bg-color;
   border-radius: 2px;
   border: 1px solid $bg-color;
+  color: $text-color;
   cursor: pointer;
   display: flex;
+  font-size: 12px;
+  font-weight: 600;
   height: 36px;
   justify-content: center;
   outline: none;
   padding: 0 15px;
-  transition: all 0.25s;
+  text-decoration: none;
+  transition: all 0.15s;
   width: fit-content;
 
   &:hover {
     background-color: darken($bg-color, 10%);
     border-color: darken($bg-color, 10%);
-  }
-
-  &-text {
-    color: $text-color;
-    font-size: 12px;
-    font-weight: 600;
-    text-align: left;
+    text-decoration: none;
   }
 
   svg {
@@ -125,24 +123,27 @@
   background-color: $bg-color;
   border-radius: 2px;
   border: 1px solid $text-color;
+  color: $text-color;
   cursor: pointer;
   display: flex;
+  font-size: 12px;
+  font-weight: 600;
   height: 36px;
   justify-content: center;
   outline: none;
   padding: 0 15px;
-  transition: all 0.25s;
+  text-decoration: none;
+  transition: all 0.15s;
   width: fit-content;
 
   &:hover {
-    background-color: darken($bg-color, 10%);
-  }
+    background-color: $text-color;
+    color: $bg-color;
+    text-decoration: none;
 
-  &-text {
-    color: $text-color;
-    font-size: 12px;
-    font-weight: 600;
-    text-align: left;
+    path {
+      fill: $bg-color;
+    }
   }
 
   svg {
