@@ -49,7 +49,7 @@ defmodule Explorer.Counters.AverageBlockTime do
   def handle_info(:refresh_timestamps, _) do
     Process.send_after(self(), :refresh_timestamps, @refresh_period)
 
-    {:ok, refresh_timestamps()}
+    {:noreply, refresh_timestamps()}
   end
 
   defp refresh_timestamps do
