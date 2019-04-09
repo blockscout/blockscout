@@ -6,6 +6,7 @@
  - [#1654](https://github.com/poanetwork/blockscout/pull/1654) - add decompiled code tab
  - [#1661](https://github.com/poanetwork/blockscout/pull/1661) - try to compile smart contract with the latest evm version
  - [#1665](https://github.com/poanetwork/blockscout/pull/1665) - Add contract verification RPC endpoint.
+ - [#1706](https://github.com/poanetwork/blockscout/pull/1706) - allow setting update interval for addresses with b
 
 ### Fixes
 
@@ -19,6 +20,8 @@
  - [#1711](https://github.com/poanetwork/blockscout/pull/1711) - rescue failing repo in block number cache update
 
 ### Chore
+
+ - [#1693](https://github.com/poanetwork/blockscout/pull/1693) - Add a checklist to the PR template
 
 
 ## 1.3.8-beta
