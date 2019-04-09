@@ -6,6 +6,7 @@
  - [#1654](https://github.com/poanetwork/blockscout/pull/1654) - add decompiled code tab
  - [#1661](https://github.com/poanetwork/blockscout/pull/1661) - try to compile smart contract with the latest evm version
  - [#1665](https://github.com/poanetwork/blockscout/pull/1665) - Add contract verification RPC endpoint.
+ - [#1706](https://github.com/poanetwork/blockscout/pull/1706) - allow setting update interval for addresses with b
 
 ### Fixes
 
@@ -16,8 +17,12 @@
  - [#1684](https://github.com/poanetwork/blockscout/pull/1684) - Discard child block with parent_hash not matching hash of imported block
  - [#1699](https://github.com/poanetwork/blockscout/pull/1699) - use seconds as transaction cache period measure
  - [#1697](https://github.com/poanetwork/blockscout/pull/1697) - fix failing in rpc if balance is empty
- 
+ - [#1711](https://github.com/poanetwork/blockscout/pull/1711) - rescue failing repo in block number cache update
+ - [#1714](https://github.com/poanetwork/blockscout/pull/1714) - fix average block time calculation
+
 ### Chore
+
+ - [#1693](https://github.com/poanetwork/blockscout/pull/1693) - Add a checklist to the PR template
 
 
 ## 1.3.8-beta
