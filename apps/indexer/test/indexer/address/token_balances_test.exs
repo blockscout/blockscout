@@ -54,11 +54,6 @@ defmodule Indexer.Address.TokenBalancesTest do
       assert params_set ==
                MapSet.new([
                  %{
-                   address_hash: "0x0000000000000000000000000000000000000000",
-                   block_number: 1,
-                   token_contract_address_hash: "0xe18035bf8712672935fdb4e5e431b1a0183d2dfc"
-                 },
-                 %{
                    address_hash: "0x5b8410f67eb8040bb1cd1e8a4ff9d5f6ce678a15",
                    block_number: 1,
                    token_contract_address_hash: "0xe18035bf8712672935fdb4e5e431b1a0183d2dfc"

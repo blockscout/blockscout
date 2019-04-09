@@ -22,6 +22,8 @@ defmodule BlockScoutWeb.Router do
     pipe_through(:api)
 
     get("/supply", SupplyController, :supply)
+
+    resources("/decompiled_smart_contract", DecompiledSmartContractController, only: [:create])
   end
 
   scope "/api", BlockScoutWeb.API.RPC do
@@ -125,6 +127,13 @@ defmodule BlockScoutWeb.Router do
         AddressContractController,
         only: [:index],
         as: :contract
+      )
+
+      resources(
+        "/decompiled_contracts",
+        AddressDecompiledContractController,
+        only: [:index],
+        as: :decompiled_contract
       )
 
       resources(

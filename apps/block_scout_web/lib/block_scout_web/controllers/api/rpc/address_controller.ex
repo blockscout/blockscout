@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.AddressController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, Wei}
 
@@ -162,7 +163,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   def getminedblocks(conn, params) do
-    options = put_pagination_options(%{}, params)
+    options = Helpers.put_pagination_options(%{}, params)
 
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
@@ -188,7 +189,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   def optional_params(params) do
     %{}
     |> put_order_by_direction(params)
-    |> put_pagination_options(params)
+    |> Helpers.put_pagination_options(params)
     |> put_start_block(params)
     |> put_end_block(params)
     |> put_filter_by(params)
@@ -336,24 +337,6 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       _ ->
         options
     end
-  end
-
-  defp put_pagination_options(options, params) do
-    with %{"page" => page, "offset" => offset} <- params,
-         {page_number, ""} when page_number > 0 <- Integer.parse(page),
-         {page_size, ""} when page_size > 0 <- Integer.parse(offset),
-         :ok <- validate_max_page_size(page_size) do
-      options
-      |> Map.put(:page_number, page_number)
-      |> Map.put(:page_size, page_size)
-    else
-      _ ->
-        options
-    end
-  end
-
-  defp validate_max_page_size(page_size) do
-    if page_size <= Etherscan.page_size_max(), do: :ok, else: :error
   end
 
   defp put_start_block(options, params) do
