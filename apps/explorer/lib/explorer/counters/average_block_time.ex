@@ -34,6 +34,10 @@ defmodule Explorer.Counters.AverageBlockTime do
     end
   end
 
+  def refresh do
+    GenServer.call(__MODULE__, :refresh_timestamps)
+  end
+
   ## Server
   @impl true
   def init(_) do
@@ -46,6 +50,11 @@ defmodule Explorer.Counters.AverageBlockTime do
   def handle_call(:average_block_time, _from, %{average: average} = state), do: {:reply, average, state}
 
   @impl true
+  def handle_call(:refresh_timestamps, _, _) do
+    {:reply, :ok, refresh_timestamps()}
+  end
+
+  @impl true
   def handle_info(:refresh_timestamps, _) do
     Process.send_after(self(), :refresh_timestamps, @refresh_period)
 
@@ -56,7 +65,7 @@ defmodule Explorer.Counters.AverageBlockTime do
     timestamps_query =
       from(block in Block,
         limit: 100,
-        offset: 1,
+        offset: 0,
         order_by: [desc: block.number],
         select: {block.number, block.timestamp}
       )
