@@ -27,7 +27,7 @@ config :block_scout_web,
     "EtherChain" => "https://www.etherchain.org/",
     "BlockChair" => "https://blockchair.com/ethereum",
     "Bloxy" => "https://bloxy.info/",
-    "Blockchain.com" => "https://www.blockchain.com/explorer?currency=ETH",
+    "Blockchain.com" => "https://www.blockchain.com/explorer?currency=ETH"
   },
   other_networks: [
     %{
