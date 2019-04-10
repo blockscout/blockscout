@@ -192,3 +192,4 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         {:error, %{exception: postgrex_error, transaction_hashes: ordered_transaction_hashes}}
     end
   end
+end
