@@ -405,15 +405,10 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
                "action" => "gettxinfo",
                "index" => 49,
                "module" => "transaction",
-               "txhash" => "0x0000000000000000000000000000000000000000000000000000000000000000"
+               "txhash" => "#{transaction.hash}"
              }
 
-      params2 = %{
-        "module" => "transaction",
-        "action" => "gettxinfo",
-        "txhash" => "#{transaction.hash}",
-        "next_page_params" => response1["result"]["next_page_params"]
-      }
+      params2 = response1["result"]["next_page_params"]
 
       assert response2 =
                conn
@@ -423,8 +418,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
       assert response2["status"] == "1"
       assert response2["message"] == "OK"
       assert Enum.count(response2["result"]["logs"]) == 50
-      IO.inspect("here")
-      assert response2["result"]["next_page_params"] |> IO.inspect()
+      assert is_nil(response2["result"]["next_page_params"])
+      assert response1["result"]["logs"] != response2["result"]["logs"]
     end
 
     test "with a txhash with ok status", %{conn: conn} do
@@ -469,7 +464,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
             "data" => "#{log.data}",
             "topics" => ["first topic", "second topic", nil, nil]
           }
-        ]
+        ],
+        "next_page_params" => nil
       }
 
       assert response =
