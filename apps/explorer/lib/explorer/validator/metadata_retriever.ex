@@ -25,17 +25,16 @@ defmodule Explorer.Validator.MetadataRetriever do
   end
 
   defp fetch_validator_metadata(validator_address) do
-    metadata_contract_address = config(:metadata_contract_address)
+    response = Reader.query_contract(config(:metadata_contract_address), contract_abi("metadata.json"), %{
+      "validators" => [validator_address]
+    })
 
-    if metadata_contract_address do
-      %{"validators" => {:ok, fields}} =
-        Reader.query_contract(metadata_contract_address, contract_abi("metadata.json"), %{
-          "validators" => [validator_address]
-        })
+    case response do
+      %{"validators" => {:ok, fields}} ->
+        fields
 
-      fields
-    else
-      []
+      _ ->
+        []
     end
   end
 

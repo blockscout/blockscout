@@ -23,7 +23,9 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
             expiration_date: 253_370_764_800,
             license_id: "00000000",
             state: "XX",
-            zipcode: "00000"
+            zipcode: "00000",
+            active: true,
+            type: "validator",
           }
         }
       ]
@@ -39,7 +41,20 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
     test "raise error when a call to the metadatc contract fails" do
       validators_list_mox_ok()
       contract_request_with_error()
-      assert_raise(MatchError, fn -> MetadataRetriever.fetch_data() end)
+
+      expected = [
+        %{
+          address_hash: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1>>,
+          name: "anonymous",
+          primary: true,
+          metadata: %{
+            active: true,
+            type: "validator",
+          }
+        }
+      ]
+
+      assert MetadataRetriever.fetch_data() == expected
     end
   end
 
