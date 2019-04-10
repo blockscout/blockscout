@@ -4,9 +4,11 @@
 
 ### Fixes
 
-- [#1727](https://github.com/poanetwork/blockscout/pull/1727) - add logs pagination in rpc api
+ - [#1727](https://github.com/poanetwork/blockscout/pull/1727) - add logs pagination in rpc api
 
 ### Chore
+
+ - [#1718](https://github.com/poanetwork/blockscout/pull/1718) - Flatten indexer module hierarchy and supervisor tree
 
 
 ## 1.3.9-beta
