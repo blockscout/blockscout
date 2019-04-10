@@ -1,14 +1,24 @@
 defmodule BlockScoutWeb.API.RPC.TransactionController do
   use BlockScoutWeb, :controller
 
+  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+
   alias Explorer.Chain
 
   def gettxinfo(conn, params) do
     with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
-         {:transaction, {:ok, transaction}} <- transaction_from_hash(transaction_hash) do
-      logs = Chain.transaction_to_logs(transaction)
-      render(conn, :gettxinfo, %{transaction: transaction, block_height: Chain.block_height(), logs: logs})
+         {:transaction, {:ok, transaction}} <- transaction_from_hash(transaction_hash),
+         paging_options <- paging_options(params) do
+      logs = Chain.transaction_to_logs(transaction, paging_options: paging_options)
+      {logs, next_page} = split_list_by_page(logs)
+
+      render(conn, :gettxinfo, %{
+        transaction: transaction,
+        block_height: Chain.block_height(),
+        logs: logs,
+        next_page_params: next_page_params(next_page, logs, params)
+      })
     else
       {:transaction, :error} ->
         render(conn, :error, error: "Transaction not found")
