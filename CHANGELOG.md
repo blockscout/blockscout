@@ -4,6 +4,8 @@
 
 ### Fixes
 
+- [#1727](https://github.com/poanetwork/blockscout/pull/1727) - add logs pagination in rpc api
+
 ### Chore
 
 
