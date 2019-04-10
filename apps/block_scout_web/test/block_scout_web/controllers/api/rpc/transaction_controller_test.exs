@@ -367,6 +367,66 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
       refute response["result"]
     end
 
+    test "paginates logs", %{conn: conn} do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block, status: :ok)
+
+      address = insert(:address)
+
+      Enum.each(1..100, fn _ ->
+        insert(:log,
+          address: address,
+          transaction: transaction,
+          first_topic: "first topic",
+          second_topic: "second topic"
+        )
+      end)
+
+      params1 = %{
+        "module" => "transaction",
+        "action" => "gettxinfo",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      assert response1 =
+               conn
+               |> get("/api", params1)
+               |> json_response(200)
+
+      assert response1["status"] == "1"
+      assert response1["message"] == "OK"
+      assert Enum.count(response1["result"]["logs"]) == 50
+
+      assert response1["result"]["next_page_params"] == %{
+               "action" => "gettxinfo",
+               "index" => 49,
+               "module" => "transaction",
+               "txhash" => "0x0000000000000000000000000000000000000000000000000000000000000000"
+             }
+
+      params2 = %{
+        "module" => "transaction",
+        "action" => "gettxinfo",
+        "txhash" => "#{transaction.hash}",
+        "next_page_params" => response1["result"]["next_page_params"]
+      }
+
+      assert response2 =
+               conn
+               |> get("/api", params2)
+               |> json_response(200)
+
+      assert response2["status"] == "1"
+      assert response2["message"] == "OK"
+      assert Enum.count(response2["result"]["logs"]) == 50
+      IO.inspect("here")
+      assert response2["result"]["next_page_params"] |> IO.inspect()
+    end
+
     test "with a txhash with ok status", %{conn: conn} do
       block = insert(:block)
 
