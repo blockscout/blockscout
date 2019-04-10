@@ -54,9 +54,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo, _ ->
       update_transactions(repo, changes_list, update_transactions_options)
     end)
-    |> Multi.run(:internal_transactions_indexed_at_blocks, fn repo, _ ->
-      update_blocks(repo, changes_list, update_transactions_options)
-    end)
   end
 
   @impl Runner
