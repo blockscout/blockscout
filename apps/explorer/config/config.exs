@@ -41,7 +41,7 @@ config :explorer, Explorer.Tracer,
   adapter: SpandexDatadog.Adapter,
   trace_key: :blockscout
 
-if System.get_env("METADATA_CONTRACT") && System.get_env("VALIDATORS_CONTRACT") do
+if System.get_env("VALIDATORS_CONTRACT") do
   config :explorer, Explorer.Validator.MetadataRetriever,
     metadata_contract_address: System.get_env("METADATA_CONTRACT"),
     validators_contract_address: System.get_env("VALIDATORS_CONTRACT")

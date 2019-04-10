@@ -5,10 +5,30 @@ defmodule Explorer.Validator.MetadataImporter do
   alias Explorer.Chain.Address
   alias Explorer.Repo
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query
 
   def import_metadata(metadata_maps) do
-    Repo.transaction(fn -> Enum.each(metadata_maps, &upsert_validator_metadata(&1)) end)
+    Repo.transaction(fn ->
+      deactivate_old_validators(metadata_maps)
+      Enum.each(metadata_maps, &upsert_validator_metadata(&1))
+    end)
+  end
+
+  defp deactivate_old_validators(metadata_maps) do
+    new_validators = Enum.map(metadata_maps, &Map.get(&1, :address_hash))
+
+    Address.Name
+    |> where([an], is_nil(an.metadata) == false and an.address_hash not in ^new_validators)
+    |> select([:address_hash, :metadata])
+    |> Repo.all()
+    |> Enum.each(fn %{address_hash: address_hash, metadata: metadata} ->
+      new_metadata = Map.put(metadata, "active", false)
+
+      Address.Name
+      |> where([an], an.address_hash == ^address_hash)
+      |> update([an], set: [metadata: ^new_metadata])
+      |> Repo.update_all([])
+    end)
   end
 
   defp upsert_validator_metadata(validator_changeset) do

@@ -26,6 +26,6 @@ defmodule Explorer.Validator.MetadataProcessor do
   end
 
   defp reschedule do
-    Process.send_after(self(), :import_and_reschedule, :timer.hours(24))
+    Process.send_after(self(), :import_and_reschedule, :timer.seconds(5))
   end
 end
