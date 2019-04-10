@@ -2,6 +2,18 @@
 
 ### Features
 
+### Fixes
+
+- [#1727](https://github.com/poanetwork/blockscout/pull/1727) - add logs pagination in rpc api
+
+### Chore
+
+
+## 1.3.9-beta
+
+### Features
+
+ - [#1704](https://github.com/poanetwork/blockscout/pull/1704) - Add new styles and "Stakes" page for POSDAO network
  - [#1662](https://github.com/poanetwork/blockscout/pull/1662) - allow specifying number of optimization runs
  - [#1654](https://github.com/poanetwork/blockscout/pull/1654) - add decompiled code tab
  - [#1661](https://github.com/poanetwork/blockscout/pull/1661) - try to compile smart contract with the latest evm version
@@ -18,6 +30,7 @@
  - [#1699](https://github.com/poanetwork/blockscout/pull/1699) - use seconds as transaction cache period measure
  - [#1697](https://github.com/poanetwork/blockscout/pull/1697) - fix failing in rpc if balance is empty
  - [#1711](https://github.com/poanetwork/blockscout/pull/1711) - rescue failing repo in block number cache update
+ - [#1712](https://github.com/poanetwork/blockscout/pull/1712) - do not set contract code from transaction input
  - [#1714](https://github.com/poanetwork/blockscout/pull/1714) - fix average block time calculation
 
 ### Chore
