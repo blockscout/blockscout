@@ -17,6 +17,8 @@
  - [#1684](https://github.com/poanetwork/blockscout/pull/1684) - Discard child block with parent_hash not matching hash of imported block
  - [#1699](https://github.com/poanetwork/blockscout/pull/1699) - use seconds as transaction cache period measure
  - [#1697](https://github.com/poanetwork/blockscout/pull/1697) - fix failing in rpc if balance is empty
+ - [#1711](https://github.com/poanetwork/blockscout/pull/1711) - rescue failing repo in block number cache update
+ - [#1714](https://github.com/poanetwork/blockscout/pull/1714) - fix average block time calculation
 
 ### Chore
 
