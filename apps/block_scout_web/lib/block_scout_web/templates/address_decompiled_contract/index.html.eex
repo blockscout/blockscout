@@ -21,7 +21,7 @@
             </button>
           </div>
           <div class="tile tile-muted">
-            <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= contract.decompiled_source_code %></code></pre>
+            <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= highlight_decompiled_code(contract.decompiled_source_code) %></code></pre>
           </div>
         </section>
       </div>
