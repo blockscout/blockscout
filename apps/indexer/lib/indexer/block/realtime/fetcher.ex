@@ -26,8 +26,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Chain
   alias Explorer.Chain.TokenTransfer
   alias Explorer.Counters.AverageBlockTime
-  alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
+  alias Indexer.{Block, TokenBalances, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Transform.Addresses
   alias Timex.Duration
 
   @behaviour Block.Fetcher
@@ -394,9 +395,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
       {:ok, internal_transactions_params} ->
         merged_addresses_params =
           %{internal_transactions: internal_transactions_params}
-          |> AddressExtraction.extract_addresses()
+          |> Addresses.extract_addresses()
           |> Kernel.++(addresses_params)
-          |> AddressExtraction.merge_addresses()
+          |> Addresses.merge_addresses()
 
         {:ok,
          %{
@@ -505,9 +506,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
       {:ok, %FetchedBalances{params_list: params_list, errors: []}} ->
         merged_addresses_params =
           %{address_coin_balances: params_list}
-          |> AddressExtraction.extract_addresses()
+          |> Addresses.extract_addresses()
           |> Kernel.++(addresses_params)
-          |> AddressExtraction.merge_addresses()
+          |> Addresses.merge_addresses()
 
         value_fetched_at = DateTime.utc_now()
 

@@ -3,6 +3,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
   Temporary module to fix internal transactions and their created transactions if a parent transaction has failed.
   """
   use GenServer
+  use Indexer.Fetcher
 
   require Logger
 
@@ -10,6 +11,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
 
   alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
   alias Explorer.Repo
+  alias Indexer.Fetcher.ContractCode
   alias Indexer.Temporary.FailedCreatedAddresses.TaskSupervisor
 
   @task_options [max_concurrency: 3, timeout: :infinity]
@@ -97,7 +99,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
         :ok =
           internal_transaction
           |> code_entry()
-          |> Indexer.Code.Fetcher.run(json_rpc_named_arguments)
+          |> ContractCode.run(json_rpc_named_arguments)
       end)
 
       Logger.debug(
