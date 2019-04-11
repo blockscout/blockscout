@@ -34,6 +34,5 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     |> Enum.reduce("", fn line, acc ->
       acc <> "<code>#{line}</code>\n"
     end)
-    |> IO.inspect()
   end
 end
