@@ -7,7 +7,7 @@
           <h1 class="card-title">
             <%= address_title(@address) %> <%= gettext "Details" %>
             <!-- buttons -->
-            <div class="overview-title-buttons float-right">
+            <span class="overview-title-buttons float-right">
               <span class="overview-title-item" data-clipboard-text="<%= @address %>">
                 <span
                   aria-label='<%= gettext("Copy Address") %>'
@@ -17,7 +17,7 @@
                   title='<%= gettext("Copy Address") %>'
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
-                      <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+                    <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
                   </svg>
                 </span>
               </span>
@@ -44,7 +44,7 @@
                   </button>
                 </span>
               <% end %>
-            </div>
+            </span>
           </h1>
           <h3 class="address-detail-hash-title <%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
           <div class="d-flex flex-column flex-lg-row justify-content-start text-muted">
