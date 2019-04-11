@@ -10,9 +10,21 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Indexer.Block.Fetcher.Receipts
-  alias Indexer.Fetcher.{BlockReward, CoinBalance, ReplacedTransaction, Token, UncleBlock}
+
+  alias Indexer.Fetcher.{
+    BlockReward,
+    CoinBalance,
+    ContractCode,
+    InternalTransaction,
+    ReplacedTransaction,
+    Token,
+    TokenBalance,
+    UncleBlock
+  }
+
   alias Indexer.Tracer
 
   alias Indexer.Transform.{
@@ -55,6 +67,7 @@ defmodule Indexer.Block.Fetcher do
 
   @receipts_batch_size 250
   @receipts_concurrency 10
+  @geth_block_limit 128
 
   @doc false
   def default_receipts_batch_size, do: @receipts_batch_size
@@ -205,6 +218,54 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_coin_balances(_, _), do: :ok
 
+  def async_import_created_contract_codes(%{transactions: transactions}) do
+    transactions
+    |> Enum.flat_map(fn
+      %Transaction{
+        block_number: block_number,
+        hash: hash,
+        created_contract_address_hash: %Hash{} = created_contract_address_hash,
+        created_contract_code_indexed_at: nil,
+        internal_transactions_indexed_at: nil
+      } ->
+        [%{block_number: block_number, hash: hash, created_contract_address_hash: created_contract_address_hash}]
+
+      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
+        []
+
+      %Transaction{created_contract_address_hash: nil} ->
+        []
+    end)
+    |> ContractCode.async_fetch(10_000)
+  end
+
+  def async_import_created_contract_codes(_), do: :ok
+
+  def async_import_internal_transactions(%{blocks: blocks}, EthereumJSONRPC.Parity) do
+    blocks
+    |> Enum.map(fn %Block{number: block_number} -> %{number: block_number} end)
+    |> InternalTransaction.async_block_fetch(10_000)
+  end
+
+  def async_import_internal_transactions(%{transactions: transactions}, EthereumJSONRPC.Geth) do
+    {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
+
+    transactions
+    |> Enum.flat_map(fn
+      %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
+        [%{block_number: block_number, index: index, hash: hash}]
+
+      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
+        []
+    end)
+    |> Enum.filter(fn %{block_number: block_number} ->
+      max_block_number - block_number < @geth_block_limit
+    end)
+    |> InternalTransaction.async_fetch(10_000)
+  end
+
+  def async_import_internal_transactions(_, _), do: :ok
+
   def async_import_tokens(%{tokens: tokens}) do
     tokens
     |> Enum.map(& &1.contract_address_hash)
@@ -212,6 +273,12 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_tokens(_), do: :ok
+
+  def async_import_token_balances(%{address_token_balances: token_balances}) do
+    TokenBalance.async_fetch(token_balances)
+  end
+
+  def async_import_token_balances(_), do: :ok
 
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}) do
     block_second_degree_relations
