@@ -25,5 +25,15 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     |> String.replace("\e[1m", "<span style=\"font-weight:bold\">")
     |> String.replace("»", "&raquo;")
     |> String.replace("\e[0m", "</span>")
+    |> add_line_numbers()
+  end
+
+  defp add_line_numbers(code) do
+    code
+    |> String.split("\n")
+    |> Enum.reduce("", fn line, acc ->
+      acc <> "<code>#{line}</code>\n"
+    end)
+    |> IO.inspect()
   end
 end

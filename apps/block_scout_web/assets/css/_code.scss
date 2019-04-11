@@ -6,6 +6,22 @@ pre {
   white-space: pre-wrap;
 }
 
+.pre-decompiled code {
+  white-space: pre-wrap;
+  counter-increment: line;
+}
+
+.pre-decompiled code::before {
+  content: counter(line);
+  display: inline-block;
+  width: 2.5em; /* Fixed width */
+  border-right: 1px solid #ddd;
+  padding: 0 .5em;
+  margin-right: .5em;
+  color: #888;
+  -webkit-user-select: none;
+}
+
 .pre-scrollable-shorty {
   max-height: $pre-scrollable-max-height / 7;
 }
