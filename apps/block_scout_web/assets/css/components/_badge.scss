@@ -1,3 +1,28 @@
+$badge-success-color: #15bba6 !default;
+$badge-success-background-color: rgba($badge-success-color, 0.1) !default;
+$badge-danger-color: #ed9966 !default;
+$badge-danger-background-color: rgba($badge-danger-color, 0.1) !default;
+
 .badge {
   color: $white;
+
+  &.tile-badge {
+    font-size: 10px;
+    font-weight: bold;
+    height: 20px;
+    line-height: 20px;
+    margin: 0;
+    padding: 0 11px;
+    width: auto;
+  }
+
+  &.badge-success {
+    background-color: $badge-success-background-color;
+    color: $badge-success-color;
+  }
+
+  &.badge-danger {
+    background-color: $badge-danger-background-color;
+    color: $badge-danger-color;
+  }
 }
