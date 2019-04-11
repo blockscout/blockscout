@@ -2,6 +2,8 @@
 
 ### Features
 
+- [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
+
 ### Fixes
 
  - [#1724](https://github.com/poanetwork/blockscout/pull/1724) - Remove internal tx and token balance fetching from realtime fetcher
