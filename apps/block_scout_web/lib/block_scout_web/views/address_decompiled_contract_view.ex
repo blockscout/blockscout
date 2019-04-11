@@ -2,13 +2,19 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
   use BlockScoutWeb, :view
 
   @colors %{
-    "\e[95m" => "235, 97, 247",
+    "\e[95m" => "136, 0, 0",
+    # red
     "\e[91m" => "236, 89, 58",
+    # gray
     "\e[38;5;8m" => "111, 110, 111",
-    "\e[32m" => "107, 194, 76",
-    "\e[93m" => "239, 236, 84",
+    # green
+    "\e[32m" => "57, 115, 0",
+    # yellowgreen
+    "\e[93m" => "57, 115, 0",
+    # yellow
     "\e[92m" => "119, 232, 81",
-    "\e[94m" => "184, 90, 190"
+    # purple
+    "\e[94m" => "136, 0, 0"
   }
 
   def highlight_decompiled_code(code) do
