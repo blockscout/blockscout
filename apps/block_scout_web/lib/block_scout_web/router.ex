@@ -81,6 +81,8 @@ defmodule BlockScoutWeb.Router do
 
     get("/uncles", BlockController, :uncle, as: :uncle)
 
+    # get("/stats", StatsController, :index)
+
     resources("/pending_transactions", PendingTransactionController, only: [:index])
 
     resources("/recent_transactions", RecentTransactionsController, only: [:index])
@@ -181,6 +183,8 @@ defmodule BlockScoutWeb.Router do
       )
     end
 
+    
+
     resources "/tokens", Tokens.TokenController, only: [:show], as: :token do
       resources(
         "/token_transfers",
@@ -223,5 +227,8 @@ defmodule BlockScoutWeb.Router do
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
     get("/api_docs", APIDocsController, :index)
+
+    
+
   end
 end

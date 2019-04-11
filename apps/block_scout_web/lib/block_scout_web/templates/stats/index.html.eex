@@ -1,0 +1,14 @@
+<section class="container" data-page="stats">
+    <div class="card">
+        <div class="card-body" data-async-listing="<%= @current_path %>">
+            <h1><%= gettext "Stats"%></h1>
+            <h1><%= attestationCount()%></h1>
+            <h1><%= vanityCount()%></h1>
+            <h1><%= lastTransactionTimeStamp()%></h1>
+        </div>
+    </div>
+</section>
+
+
+
+

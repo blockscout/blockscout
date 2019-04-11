@@ -57,7 +57,7 @@
   "jason": {:hex, :jason, "1.1.2", "b03dedea67a99223a2eaf9f1264ce37154564de899fd3d8b9a21b1a6fd64afe7", [:mix], [{:decimal, "~> 1.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm"},
   "jsx": {:hex, :jsx, "2.8.3", "a05252d381885240744d955fbe3cf810504eb2567164824e19303ea59eef62cf", [:mix, :rebar3], []},
   "junit_formatter": {:hex, :junit_formatter, "3.0.0", "13950d944dbd295da7d8cc4798b8faee808a8bb9b637c88069954eac078ac9da", [:mix], [], "hexpm"},
-  "keccakf1600": {:hex, :keccakf1600_orig, "2.0.0", "0a7217ddb3ee8220d449bbf7575ec39d4e967099f220a91e3dfca4dbaef91963", [:rebar3], []},
+  "keccakf1600": {:hex, :keccakf1600_orig, "2.0.0", "0a7217ddb3ee8220d449bbf7575ec39d4e967099f220a91e3dfca4dbaef91963", [:rebar3], [], "hexpm"},
   "libsecp256k1": {:hex, :libsecp256k1, "0.1.10", "d27495e2b9851c7765129b76c53b60f5e275bd6ff68292c50536bf6b8d091a4d", [:make, :mix], [{:mix_erlang_tasks, "0.1.0", [hex: :mix_erlang_tasks, repo: "hexpm", optional: false]}], "hexpm"},
   "logger_file_backend": {:hex, :logger_file_backend, "0.0.10", "876f9f84ae110781207c54321ffbb62bebe02946fe3c13f0d7c5f5d8ad4fa910", [:mix], [], "hexpm"},
   "makeup": {:hex, :makeup, "0.8.0", "9cf32aea71c7fe0a4b2e9246c2c4978f9070257e5c9ce6d4a28ec450a839b55f", [:mix], [{:nimble_parsec, "~> 0.5.0", [hex: :nimble_parsec, repo: "hexpm", optional: false]}], "hexpm"},
