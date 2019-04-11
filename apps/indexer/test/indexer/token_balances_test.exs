@@ -5,7 +5,7 @@ defmodule Indexer.TokenBalancesTest do
   doctest Indexer.TokenBalances
 
   alias Indexer.TokenBalances
-  alias Indexer.TokenBalance
+  alias Indexer.Fetcher.TokenBalance
   alias Explorer.Chain.Hash
 
   import Mox

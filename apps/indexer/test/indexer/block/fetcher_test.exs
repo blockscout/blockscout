@@ -9,8 +9,18 @@ defmodule Indexer.Block.FetcherTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Log, Transaction, Wei}
-  alias Indexer.{CoinBalance, BufferedTask, Code, InternalTransaction, ReplacedTransaction, Token, TokenBalance}
-  alias Indexer.Block.{Fetcher, Uncle}
+  alias Indexer.Block.Fetcher
+  alias Indexer.BufferedTask
+
+  alias Indexer.Fetcher.{
+    CoinBalance,
+    ContractCode,
+    InternalTransaction,
+    ReplacedTransaction,
+    Token,
+    TokenBalance,
+    UncleBlock
+  }
 
   @moduletag capture_log: true
 
@@ -41,13 +51,13 @@ defmodule Indexer.Block.FetcherTest do
   describe "import_range/2" do
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      Code.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
-      Uncle.Supervisor.Case.start_supervised!(
+      UncleBlock.Supervisor.Case.start_supervised!(
         block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
       )
 
@@ -226,8 +236,8 @@ defmodule Indexer.Block.FetcherTest do
                     errors: []
                   }} = result
 
-          wait_for_tasks(InternalTransaction.Fetcher)
-          wait_for_tasks(CoinBalance.Fetcher)
+          wait_for_tasks(InternalTransaction)
+          wait_for_tasks(CoinBalance)
 
           assert Repo.aggregate(Chain.Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 1
@@ -492,8 +502,8 @@ defmodule Indexer.Block.FetcherTest do
                     ]
                   }} = Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
-          wait_for_tasks(InternalTransaction.Fetcher)
-          wait_for_tasks(CoinBalance.Fetcher)
+          wait_for_tasks(InternalTransaction)
+          wait_for_tasks(CoinBalance)
 
           assert Repo.aggregate(Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 5
@@ -587,8 +597,8 @@ defmodule Indexer.Block.FetcherTest do
                     errors: []
                   }} = Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
-          wait_for_tasks(InternalTransaction.Fetcher)
-          wait_for_tasks(CoinBalance.Fetcher)
+          wait_for_tasks(InternalTransaction)
+          wait_for_tasks(CoinBalance)
 
           assert Repo.aggregate(Chain.Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 2
