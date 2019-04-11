@@ -35,8 +35,7 @@
               <%= gettext("This transaction is pending confirmation.") %>
             </div>
           <% end %>
-
-          <h3 data-test="transaction_detail_hash"><%= @transaction %> </h3>
+          <h3 class="transaction-details-address" data-test="transaction_detail_hash"><%= @transaction %> </h3>
           <span class="d-block mb-2 text-muted">
             <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, nil) |> BlockScoutWeb.RenderHelpers.render_partial() %>
             <span class="text-muted">  &rarr; </span>
@@ -70,18 +69,18 @@
           <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "Block Confirmations" %> </dt>
             <dd class="col-sm-9">
-              <span data-selector="block-confirmations"><%= confirmations(@transaction, block_height: @block_height) %></span>
+              <span data-selector="block-confirmations" class="font-weight-bold"><%= confirmations(@transaction, block_height: @block_height) %></span>
           </dd>
           </dl>
           <!-- Nonce -->
           <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "Nonce" %> </dt>
-            <dd class="col-sm-9"> <%= @transaction.nonce %> </dd>
+            <dd class="col-sm-9 font-weight-bold"> <%= @transaction.nonce %> </dd>
           </dl>
           <!-- TX Fee -->
           <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "TX Fee" %> </dt>
-            <dd class="col-sm-9">
+            <dd class="col-sm-9 font-weight-bold">
               <%= formatted_fee(@transaction, denomination: :ether) %>
 
               <%= if !empty_exchange_rate?(@exchange_rate) do %>
