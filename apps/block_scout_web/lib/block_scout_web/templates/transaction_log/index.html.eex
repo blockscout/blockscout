@@ -2,9 +2,7 @@
   <%= render BlockScoutWeb.TransactionView, "overview.html", assigns %>
 
   <div class="card">
-    <div class="card-header">
-      <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
-    </div>
+    <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
 
     <div class="card-body">
       <h2 class="card-title"><%= gettext "Logs" %></h2>

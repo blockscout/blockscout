@@ -2,10 +2,7 @@
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
 
   <div class="card">
-    <div class="card-header">
-      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-    </div>
-
+    <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
     <%= for {contract, _i} <- Enum.with_index(@address.decompiled_smart_contracts) do %>
       <div class="card-body">
         <h3><%= gettext "Decompiler version" %></h3>

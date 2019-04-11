@@ -4,10 +4,7 @@
 
   <section data-page="address-transactions">
     <div class="card">
-      <div class="card-header">
-        <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-      </div>
-
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div class="card-body" data-async-listing="<%= @current_path %>">
         <div data-selector="channel-disconnected-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-danger">

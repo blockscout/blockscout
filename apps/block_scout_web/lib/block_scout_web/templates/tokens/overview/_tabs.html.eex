@@ -1,81 +1,30 @@
-<!-- DESKTOP TAB NAV -->
-<ul class="nav nav-tabs card-header-tabs d-none d-lg-inline-flex">
-  <li class="nav-item">
-    <%= link(
-          gettext("Token Transfers"),
-          class: "nav-link #{tab_status("token_transfers", @conn.request_path)}",
-          to: token_path(@conn, :show, @token.contract_address_hash)
-        ) %>
-  </li>
-
-  <li class="nav-item">
-    <%= link(
-          gettext("Token Holders"),
-          class: "nav-link #{tab_status("token_holders", @conn.request_path)}",
-          "data-test": "token_holders_tab",
-          to: token_holder_path(@conn, :index, @token.contract_address_hash)
-        ) %>
-  </li>
-
+<div class="card-tabs">
+  <%= link(
+        gettext("Token Transfers"),
+        class: "card-tab #{tab_status("token_transfers", @conn.request_path)}",
+        to: token_path(@conn, :show, @token.contract_address_hash)
+      )
+    %>
+  <%= link(
+        gettext("Token Holders"),
+        class: "card-tab #{tab_status("token_holders", @conn.request_path)}",
+        "data-test": "token_holders_tab",
+        to: token_holder_path(@conn, :index, @token.contract_address_hash)
+      )
+    %>
   <%= if display_inventory?(@token) do %>
-    <li class="nav-item">
-      <%= link(
-            gettext("Inventory"),
-            class: "nav-link #{tab_status("inventory", @conn.request_path)}",
-            to: token_inventory_path(@conn, :index, @token.contract_address_hash)
-          ) %>
-    </li>
+    <%= link(
+          gettext("Inventory"),
+          class: "card-tab #{tab_status("inventory", @conn.request_path)}",
+          to: token_inventory_path(@conn, :index, @token.contract_address_hash)
+        )
+    %>
   <% end %>
-
   <%= if smart_contract_with_read_only_functions?(@token) do %>
-    <li class="nav-item">
-      <%= link(
-          gettext("Read Contract"),
-          to: token_read_contract_path(@conn, :index, @token.contract_address_hash),
-          class: "nav-link #{tab_status("read_contract", @conn.request_path)}")%>
-    </li>
+    <%= link(
+        gettext("Read Contract"),
+        to: token_read_contract_path(@conn, :index, @token.contract_address_hash),
+        class: "card-tab #{tab_status("read_contract", @conn.request_path)}")
+      %>
   <% end %>
-</ul>
-
-<!-- MOBILE DROPDOWN NAV -->
-<ul class="nav nav-tabs card-header-tabs d-lg-none">
-  <li class="nav-item dropdown flex-fill text-center">
-    <a class="nav-link active dropdown-toggle"
-       data-toggle="dropdown"
-       href="#"
-       role="button"
-       aria-haspopup="true"
-       aria-expanded="false"
-       >
-        <%= current_tab_name(@conn.request_path) %>
-    </a>
-    <div class="dropdown-menu">
-      <%= link(
-            gettext("Token Transfers"),
-            class: "dropdown-item #{tab_status("token_transfers", @conn.request_path)}",
-            to: token_path(@conn, :show, @token.contract_address_hash)
-          ) %>
-
-      <%= link(
-          gettext("Token Holders"),
-          class: "dropdown-item #{tab_status("token_holders", @conn.request_path)}",
-          to: token_holder_path(@conn, :index, @token.contract_address_hash)
-        ) %>
-
-      <%= if display_inventory?(@token) do %>
-        <%= link(
-              gettext("Inventory"),
-              class: "dropdown-item #{tab_status("inventory", @conn.request_path)}",
-              to: token_inventory_path(@conn, :index, @token.contract_address_hash)
-            ) %>
-      <% end %>
-
-      <%= if smart_contract_with_read_only_functions?(@token) do %>
-          <%= link(
-              gettext("Read Contract"),
-              to: "#",
-              class: "dropdown-item #{tab_status("read_contract", @conn.request_path)}")%>
-      <% end %>
-    </div>
-  </li>
-</ul>
+</div>

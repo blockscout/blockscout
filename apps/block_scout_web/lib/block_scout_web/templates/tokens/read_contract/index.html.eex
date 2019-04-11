@@ -10,10 +10,7 @@
 
   <section>
     <div class="card">
-      <div class="card-header">
-        <%= render OverviewView, "_tabs.html", assigns %>
-      </div>
-
+      <%= render OverviewView, "_tabs.html", assigns %>
       <!-- loaded via AJAX -->
       <div class="card-body" data-smart-contract-functions data-hash="<%= to_string(@token.contract_address.hash) %>" data-url="<%= smart_contract_path(@conn, :index) %>">
         <div class="tile tile-muted text-center">

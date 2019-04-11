@@ -3,10 +3,7 @@
 
   <section data-page="address-internal-transactions">
     <div class="card">
-      <div class="card-header">
-        <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-      </div>
-
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
         <div data-selector="channel-batching-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-info">
