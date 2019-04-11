@@ -116,18 +116,18 @@
       <!-- Validator -->
       <div class="card card-background-1 flex-grow-1">
         <div class="card-body">
-          <h2 class="card-title text-white"> <%= gettext "Miner" %> </h2>
+          <h2 class="card-title balance-card-title"> <%= gettext "Miner" %> </h2>
           <div class="text-right">
             <!-- Validator's Name -->
-            <h3 class="text-white text-truncate">
+            <h3 class="text-truncate">
               <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: @block.miner,
                 contract: false,
-                class: "text-white" %>
+                class: "" %>
             </h3>
             <!-- Validator's address hash -->
-            <span class="text-light text-truncate"> </span>
+            <span class="text-truncate"> </span>
           </div>
         </div>
       </div>

@@ -89,6 +89,12 @@ $card-background-1-text-color: #fff !default;
   padding: $card-horizontal-padding;
 }
 
+.card-body-flex-column-space-between {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
 .card-server-response-body {
   max-height: 400px;
   overflow-y: auto;

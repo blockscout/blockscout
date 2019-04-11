@@ -71,23 +71,18 @@
       <div class="col-md-6 col-lg-4">
         <div class="card card-background-1">
           <div class="card-body">
-            <h2 class="card-title text-white"><%= gettext "Total Supply" %></h2>
-
-            <span></span>
-
+            <h2 class="card-title balance-card-title"><%= gettext "Total Supply" %></h2>
             <div class="text-right">
-              <h3 class="text-uppercase text-white">
+              <h3 class="text-uppercase">
                 <%= if decimals?(@token) do %>
                   <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
                 <% else %>
                   <%= format_integer_to_currency(@token.total_supply) %>
                 <% end %>
-
                 <%= @token.symbol %>
               </h3>
-
               <%= if @token.usd_value do %>
-                <div class="text-uppercase text-muted">
+                <div class="text-uppercase">
                   <span data-selector="token-supply-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
                   |
                   <span data-selector="token-price" data-token-usd-value="<%= @token.usd_value %>"></span>
