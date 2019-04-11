@@ -111,6 +111,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/modal_bottom_disclaimer";
 @import "components/modal_become_candidate";
 @import "components/modal_stake";
+@import "components/btn_copy";
+@import "components/btn_qr";
 
 :export {
   primary: $primary;

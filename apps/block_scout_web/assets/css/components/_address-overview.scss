@@ -1,3 +1,22 @@
+.address-detail-hash-title {
+  color: #333;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1.2;
+  margin: 0 0 12px;
+  text-align: left;
+}
+
+.overview-title-item {
+  display: inline-block;
+  height: fit-content;
+  margin-right: 9px;
+
+  &:last-child {
+    margin-right: 0;
+  }
+}
+
 .address-overview {
   .card-section {
     margin-bottom: 3rem;
@@ -14,7 +33,28 @@
 }
 
 .address-detail-item {
-  display: inline-block;
-  padding-bottom: 0.5em;
   margin-right: 1em;
+  padding-bottom: 0.5em;
+}
+
+.address-balance-text {
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+
+.address-current-balance {
+  font-size: 12px;
+  font-weight: 200;
+  line-height: 1.2;
+  margin: 0 0 12px;
+
+  small {
+    font-size: 11px;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 }

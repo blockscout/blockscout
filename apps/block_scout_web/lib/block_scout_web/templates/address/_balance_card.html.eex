@@ -1,33 +1,37 @@
-<div class="card card-primary" data-test="outside_of_dropdown">
+<div class="card card-background-1" data-test="outside_of_dropdown">
   <div class="card-body">
-    <span></span>
-    <h2 class="card-title text-white balance-card-title"><%= gettext "Balance" %></h2>
+    <h2 class="card-title balance-card-title"><%= gettext "Balance" %></h2>
     <div class="text-right">
-      <h3 class="text-white" data-test="address_balance"><%= balance(@address) %></h3>
+      <h3
+        class="address-balance-text"
+        data-test="address_balance"
+      ><%= balance(@address) %></h3>
       <%= if !match?({:pending, _}, @coin_balance_status) && !empty_exchange_rate?(@exchange_rate) do %>
-        <span class="text-white text-faded">
-          <span class="current-balance-in-wei"
+        <p class="address-current-balance">
+          <span
             data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
-              data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
-          </spanc>
+            data-usd-exchange-rate="<%= @exchange_rate.usd_value %>"
+          ></span>
           <small>(@ <span data-usd-unit-price="<%= @exchange_rate.usd_value %>"></span>/<%= gettext("Ether") %>)</small>
-          <br>
-        </span>
+        </p>
       <% end %>
 
-      <div class="mt-3" data-token-balance-dropdown data-api_path="<%= address_token_balance_path(BlockScoutWeb.Endpoint, :index, @address.hash) %>">
-          <div data-loading class="mb-0 text-white text-faded">
+      <p
+        class="address-current-balance"
+        data-token-balance-dropdown
+        data-api_path="<%= address_token_balance_path(BlockScoutWeb.Endpoint, :index, @address.hash) %>"
+      >
+          <span data-loading class="mb-0">
             <span class="loading-spinner-small mr-2">
               <span class="loading-spinner-block-1"></span>
               <span class="loading-spinner-block-2"></span>
             </span>
             <%= gettext("Fetching tokens...") %>
-          </div>
-
-          <div data-error-message class="mb-0 text-white text-faded" style="display: none;">
+          </span>
+          <span data-error-message class="mb-0" style="display: none;">
             <%= gettext("Error trying to fetch balances.") %>
-          </div>
-      </div>
+          </span>
+      </p>
     </div>
   </div>
 </div>

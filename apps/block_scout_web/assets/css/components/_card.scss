@@ -3,6 +3,8 @@ $card-tab-active: $primary !default;
 $card-default-border-radius: 10px !default;
 $card-horizontal-padding: 30px;
 $card-vertical-padding: 30px;
+$card-background-1: $primary !default;
+$card-background-1-text-color: #fff !default;
 
 .card {
   background-color: $card-background-color;
@@ -10,10 +12,11 @@ $card-vertical-padding: 30px;
   border: none;
   box-shadow: 0 0 30px 0 rgba(202, 199, 226, 0.5);
   margin-bottom: 3rem;
+}
 
-  &-primary {
-    background-color: $primary;
-  }
+.card-background-1 {
+  background-color: $card-background-1;
+  color: $card-background-1-text-color;
 }
 
 .card-header {
@@ -25,11 +28,14 @@ $card-vertical-padding: 30px;
 }
 
 .card-title {
-  color: #333;
   font-size: 18px;
   font-weight: normal;
   line-height: 2.2rem;
   margin-bottom: 2rem;
+
+  &.margin-bottom-md {
+    margin-bottom: 20px;
+  }
 
   .card-title-container & {
     line-height: 1.2;

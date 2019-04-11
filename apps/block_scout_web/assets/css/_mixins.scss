@@ -168,3 +168,31 @@
     }
   }
 }
+
+@mixin square-icon-button($color, $dimensions) {
+  border: 1px solid $color;
+  border-radius: 2px;
+  cursor: pointer;
+  display: inline-block;
+  height: $dimensions;
+  transition: all 0.15s;
+  width: $dimensions;
+
+  svg {
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+
+  path {
+    fill: $color;
+  }
+
+  &:hover {
+    background-color: $color;
+
+    path {
+      fill: #fff;
+    }
+  }
+}
