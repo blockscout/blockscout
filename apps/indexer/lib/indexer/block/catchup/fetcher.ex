@@ -20,7 +20,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, Transaction}
-  alias Indexer.{Block, Code, InternalTransaction, Sequence, TokenBalance, Tracer}
+  alias Indexer.{Block, Tracer}
+  alias Indexer.Block.Catchup.Sequence
+  alias Indexer.Fetcher.{ContractCode, InternalTransaction, TokenBalance}
   alias Indexer.Memory.Shrinkable
 
   @behaviour Block.Fetcher
@@ -175,7 +177,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       %Transaction{created_contract_address_hash: nil} ->
         []
     end)
-    |> Code.Fetcher.async_fetch(10_000)
+    |> ContractCode.async_fetch(10_000)
   end
 
   defp async_import_created_contract_codes(_), do: :ok
@@ -183,7 +185,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   defp async_import_internal_transactions(%{blocks: blocks}, EthereumJSONRPC.Parity) do
     blocks
     |> Enum.map(fn %Chain.Block{number: block_number} -> %{number: block_number} end)
-    |> InternalTransaction.Fetcher.async_block_fetch(10_000)
+    |> InternalTransaction.async_block_fetch(10_000)
   end
 
   defp async_import_internal_transactions(%{transactions: transactions}, EthereumJSONRPC.Geth) do
@@ -200,13 +202,13 @@ defmodule Indexer.Block.Catchup.Fetcher do
     |> Enum.filter(fn %{block_number: block_number} ->
       max_block_number - block_number < @geth_block_limit
     end)
-    |> InternalTransaction.Fetcher.async_fetch(10_000)
+    |> InternalTransaction.async_fetch(10_000)
   end
 
   defp async_import_internal_transactions(_, _), do: :ok
 
   defp async_import_token_balances(%{address_token_balances: token_balances}) do
-    TokenBalance.Fetcher.async_fetch(token_balances)
+    TokenBalance.async_fetch(token_balances)
   end
 
   defp async_import_token_balances(_), do: :ok
