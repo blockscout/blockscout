@@ -13,283 +13,31 @@ $tile-type-api-documentation-color: $primary !default;
 
 $tile-padding: 1rem;
 
-.tile {
-  border-radius: 4px;
-  border: 1px solid $border-color;
-  color: $text-muted;
-  font-size: 12px;
-  line-height: 1.4rem;
-  padding: $tile-padding;
+@mixin generate-tile-block($prefix, $color, $label-color: false) {
 
-  &.n-p {
-    padding: 0;
-  }
+  &.tile-type-#{ $prefix } {
+    border-left: 4px solid $color;
 
-  & + & {
-    margin-top: 1rem;
-  }
-
-  @include media-breakpoint-down(md) {
-    margin-bottom: 1rem;
-  }
-
-  .tile-transaction-type-block {
-    align-items: center;
-    bottom: -1rem;
-    justify-content: center;
-    margin-left: -1px;
-    margin-top: -2rem;
-    padding: 0;
-    position: relative;
-
-    @include media-breakpoint-down(sm) {
-      align-items: flex-start;
-      background: none !important;
-      border: none !important;
-      bottom: auto;
-      flex-direction: column !important;
-      margin: 0 0 10px;
-      padding-left: 1rem;
-      top: auto;
-
-      .tile-status-label {
-        margin-left: 0 !important;
+    .tile-label {
+      @if ($label-color) {
+        color: $label-color;
       }
-    }
-  }
-
-  .tile-label {
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1.2;
-    margin: 0 0 10px;
-  }
-
-  .tile-status-label {
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 1.2;
-  }
-
-  &-type {
-    &-block {
-      border-left: 4px solid $tile-type-block-color;
-
-      .tile-title {
-        color: #333;
-        font-size: 12px;
-        font-weight: 700;
-        line-height: 1.2;
-        margin-bottom: 12px;
-        padding: 1rem 1rem 0 1rem;
-      }
-
-      .tile-label {
-        color: $tile-type-block-color;
-      }
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-block-color, 0.1);
-        border-bottom: 1px solid $tile-type-block-color;
-        border-right: 1px solid $tile-type-block-color;
-        border-top: 1px solid $tile-type-block-color;
-        color: $tile-type-block-color;
+      @else {
+        color: $color;
       }
     }
 
-    &-uncle {
-      border-left: 4px solid $tile-type-uncle-color;
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-uncle-color, 0.1);
-        border-bottom: 1px solid $tile-type-uncle-color;
-        border-right: 1px solid $tile-type-uncle-color;
-        border-top: 1px solid $tile-type-uncle-color;
-        color: $tile-type-uncle-color;
-      }
-    }
-
-    &-reorg {
-      border-left: 4px solid $tile-type-reorg-color;
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-reorg-color, 0.1);
-        border-bottom: 1px solid $tile-type-reorg-color;
-        border-right: 1px solid $tile-type-reorg-color;
-        border-top: 1px solid $tile-type-reorg-color;
-        color: $tile-type-reorg-color;
-      }
-    }
-
-    &-emission-reward {
-      border-left: 4px solid $tile-type-emission-reward-color;
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-emission-reward-color, 0.1);
-        border-bottom: 1px solid $tile-type-emission-reward-color;
-        border-right: 1px solid $tile-type-emission-reward-color;
-        border-top: 1px solid $tile-type-emission-reward-color;
-        color: $tile-type-emission-reward-color;
-      }
-    }
-
-    &-transaction {
-      border-left: 4px solid $tile-type-transaction-color;
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-transaction-color, 0.1);
-        border-bottom: 1px solid $tile-type-transaction-color;
-        border-right: 1px solid $tile-type-transaction-color;
-        border-top: 1px solid $tile-type-transaction-color;
-        color: $tile-type-transaction-color;
-      }
-    }
-
-    &-contract-call {
-      border-left: 4px solid $tile-type-contract-call-color;
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-contract-call-color, 0.1);
-        border-bottom: 1px solid $tile-type-contract-call-color;
-        border-right: 1px solid $tile-type-contract-call-color;
-        border-top: 1px solid $tile-type-contract-call-color;
-        color: $tile-type-contract-call-color;
-      }
-    }
-
-    &-contract-creation {
-      border-left: 4px solid $tile-type-contract-creation-color;
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-contract-creation-color, 0.1);
-        border-bottom: 1px solid $tile-type-contract-creation-color;
-        border-right: 1px solid $tile-type-contract-creation-color;
-        border-top: 1px solid $tile-type-contract-creation-color;
-        color: $tile-type-contract-creation-color;
-      }
-
-      .tile-text-highlight {
-        text-decoration: underline;
-        text-decoration-style: dashed;
-      }
-    }
-
-    &-token {
-      border: 1px solid $border-color;
-    }
-
-    &-token-transfer {
-      border-left: 4px solid $tile-type-token-transfer-color;
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-token-transfer-color, 0.1);
-        border-bottom: 1px solid $tile-type-token-transfer-color;
-        border-right: 1px solid $tile-type-token-transfer-color;
-        border-top: 1px solid $tile-type-token-transfer-color;
-        color: $tile-type-token-transfer-color;
-      }
-
-      &-short-name {
-        max-width: 45%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: middle;
-      }
-    }
-
-    &-unique-token {
-      border-left: 4px solid $tile-type-unique-token-color;
-
-      .tile-label {
-        color: $tile-type-unique-token-color;
-      }
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-unique-token-color, 0.1);
-        border-bottom: 1px solid $tile-type-unique-token-color;
-        border-right: 1px solid $tile-type-unique-token-color;
-        border-top: 1px solid $tile-type-unique-token-color;
-        color: $tile-type-unique-token-color;
-      }
-    }
-
-    &-unique-token-image {
-      border-left: 4px solid $tile-type-unique-token-image-color;
-      padding: 0;
-
-      .tile-label {
-        color: $tile-type-unique-token-image-color;
-      }
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-unique-token-image-color, 0.1);
-        border-bottom: 1px solid $tile-type-unique-token-image-color;
-        border-right: 1px solid $tile-type-unique-token-image-color;
-        border-top: 1px solid $tile-type-unique-token-image-color;
-        color: $tile-type-unique-token-image-color;
-      }
-
-      & .tile-content {
-        padding: 45px 0;
-      }
-    }
-
-    &-internal-transaction {
-      border-left: 4px solid $tile-type-internal-transaction-color;
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-internal-transaction-color, 0.1);
-        border-bottom: 1px solid $tile-type-internal-transaction-color;
-        border-right: 1px solid $tile-type-internal-transaction-color;
-        border-top: 1px solid $tile-type-internal-transaction-color;
-        color: $tile-type-internal-transaction-color;
-      }
-    }
-
-    &-api-documentation {
-      background-color: transparent;
-      border-left: 4px solid $tile-type-api-documentation-color;
-      cursor: pointer;
-      padding: 15px;
-      text-align: left;
-      width: 100%;
-
-      .tile-label {
-        color: $tile-type-api-documentation-color;
-      }
-
-      .tile-transaction-type-block {
-        background-color: rgba($tile-type-api-documentation-color, 0.1);
-        border-bottom: 1px solid $tile-type-api-documentation-color;
-        border-right: 1px solid $tile-type-api-documentation-color;
-        border-top: 1px solid $tile-type-api-documentation-color;
-        color: $tile-type-api-documentation-color;
-      }
-    }
-  }
-
-  &-status {
-    &--error--reason {
-      border-bottom: 2px solid lighten($danger, 10%);
-      border-right: 2px solid lighten($danger, 10%);
-      border-top: 2px solid lighten($danger, 10%);
-
-      .tile-status-label {
-        color: $danger;
-      }
-    }
-
-    &--awaiting-internal-transactions {
-      border-bottom: 2px solid lighten($warning, 10%);
-      border-right: 2px solid lighten($warning, 10%);
-      border-top: 2px solid lighten($warning, 10%);
-
-      .tile-status-label {
-        color: $warning;
-      }
+    .tile-transaction-type-block {
+      background-color: rgba($color, 0.1);
+      border-bottom: 1px solid $color;
+      border-right: 1px solid $color;
+      border-top: 1px solid $color;
+      color: $color;
     }
   }
 }
+
+/*********************************************************************/
 
 .tile-title {
   color: #333;
@@ -303,6 +51,52 @@ $tile-padding: 1rem;
     color: $body-color;
     font-size: 16px;
   }
+}
+
+.tile-label {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 6px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &.font-weight-400 {
+    font-weight: 400;
+  }
+}
+
+.tile-transaction-type-block {
+  align-items: center;
+  bottom: -17px;
+  justify-content: center;
+  margin-left: -1px;
+  margin-top: -34px;
+  padding: 0;
+  position: relative;
+
+  @include media-breakpoint-down(sm) {
+    align-items: flex-start;
+    background: none !important;
+    border: none !important;
+    bottom: auto;
+    flex-direction: column !important;
+    margin: 0 0 10px;
+    padding-left: 1rem;
+    top: auto;
+
+    .tile-status-label {
+      margin-left: 0 !important;
+    }
+  }
+}
+
+.tile-status-label {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
 }
 
 .tile-bottom-contents {
@@ -336,6 +130,7 @@ $tile-padding: 1rem;
 }
 
 .tile-function-response {
+
   span.function-response-item {
     display: block;
     margin-left: 1rem;
@@ -344,12 +139,113 @@ $tile-padding: 1rem;
       content: ",";
     }
   }
+
   p {
     margin: 0;
   }
+
 }
 
 .tile-image {
   max-height: 140px;
   max-width: 140px;
+}
+
+.tile {
+  border-radius: 4px;
+  border: 1px solid $border-color;
+  color: $text-muted;
+  font-size: 12px;
+  line-height: 1.4rem;
+  padding: $tile-padding;
+
+  @include generate-tile-block('block', $tile-type-block-color, darken($tile-type-block-color, 20%));
+  @include generate-tile-block('uncle', $tile-type-uncle-color);
+  @include generate-tile-block('reorg', $tile-type-reorg-color);
+  @include generate-tile-block('emission-reward', $tile-type-emission-reward-color);
+  @include generate-tile-block('transaction', $tile-type-transaction-color);
+  @include generate-tile-block('contract-call', $tile-type-contract-call-color);
+  @include generate-tile-block('contract-creation', $tile-type-contract-creation-color);
+  @include generate-tile-block('token-transfer', $tile-type-token-transfer-color);
+  @include generate-tile-block('unique-token', $tile-type-unique-token-color);
+  @include generate-tile-block('unique-token-image', $tile-type-unique-token-image-color);
+  @include generate-tile-block('internal-transaction', $tile-type-internal-transaction-color);
+  @include generate-tile-block('api-documentation', $tile-type-api-documentation-color);
+
+  &.n-p {
+    padding: 0;
+  }
+
+  & + & {
+    margin-top: 1rem;
+  }
+
+  @include media-breakpoint-down(md) {
+    margin-bottom: 1rem;
+  }
+
+  .tile-type-block {
+    .tile-title {
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      padding: 1rem 1rem 0 1rem;
+    }
+  }
+
+  .tile-type-contract-creation {
+    .tile-text-highlight {
+      text-decoration: underline;
+      text-decoration-style: dashed;
+    }
+  }
+
+  .tile-type-token {
+    border: 1px solid $border-color;
+  }
+
+  .tile-type-token-transfer {
+    &-short-name {
+      max-width: 45%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: middle;
+    }
+  }
+
+  .tile-type-unique-token-image {
+    padding: 0;
+
+    & .tile-content {
+      padding: 45px 0;
+    }
+  }
+
+  .tile-type-api-documentation {
+    background-color: transparent;
+    cursor: pointer;
+    padding: 15px;
+    text-align: left;
+    width: 100%;
+  }
+
+  .tile-status--error--reason {
+    border-bottom: 2px solid lighten($danger, 10%);
+    border-right: 2px solid lighten($danger, 10%);
+    border-top: 2px solid lighten($danger, 10%);
+
+    .tile-status-label {
+      color: $danger;
+    }
+  }
+
+  .tile-status--awaiting-internal-transactions {
+    border-bottom: 2px solid lighten($warning, 10%);
+    border-right: 2px solid lighten($warning, 10%);
+    border-top: 2px solid lighten($warning, 10%);
+
+    .tile-status-label {
+      color: $warning;
+    }
+  }
 }
