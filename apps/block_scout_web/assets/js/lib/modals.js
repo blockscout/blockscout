@@ -51,6 +51,7 @@ $(function () {
     ]
     const progressBackground = total - progress
 
+    // eslint-disable-next-line no-unused-vars
     let myChart = new Chart(stakeProgress, {
       type: 'doughnut',
       data: {
