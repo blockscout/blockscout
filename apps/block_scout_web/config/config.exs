@@ -19,6 +19,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network_icon: System.get_env("NETWORK_ICON"),
   logo: System.get_env("LOGO"),
   logo_footer: System.get_env("LOGO_FOOTER"),
+  network_dashboard_graph: System.get_env("NETWORK_DASHBOARD_GRAPH"),
   stakes_active: System.get_env("STAKES_ACTIVE"),
   has_emission_funds: false
 

@@ -1,20 +1,23 @@
-<div class="dashboard-banner-container" data-page="chain-details">
+<div class='dashboard-banner-container <%= if network_dashboard_graph() === "disabled" do %>dashboard-banner-container-disabled-graph<% end %>' data-page="chain-details">
   <div class="container">
     <div class="dashboard-banner">
       <!-- -->
-      <div class="dashboard-banner-network-stats">
-        <%= case @average_block_time do %>
-          <% {:error, :disabled} -> %>
-            <%= nil %>
-          <% average_block_time -> %>
-            <div class="dashboard-banner-network-stats-item">
-              <span class="dashboard-banner-network-stats-label">
-                <%= gettext "Average block time" %>
-              </span>
-              <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
-                <%= Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %>
-              </span>
-            </div>
+      <div class='dashboard-banner-network-stats'>
+          <%= if network_dashboard_graph() === "disabled" do %>
+            <div class="dashboard-banner-network-stats-static-image"></div>
+          <% end %>
+          <%= case @average_block_time do %>
+            <% {:error, :disabled} -> %>
+              <%= nil %>
+            <% average_block_time -> %>
+              <div class="dashboard-banner-network-stats-item">
+                <span class="dashboard-banner-network-stats-label">
+                  <%= gettext "Average block time" %>
+                </span>
+                <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
+                  <%= Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %>
+                </span>
+              </div>
           <% end %>
           <div class="dashboard-banner-network-stats-item">
             <span class="dashboard-banner-network-stats-label">
@@ -34,6 +37,7 @@
           </div>
       </div>
       <!-- -->
+      <%= if network_dashboard_graph() !== "disabled" do %>
       <div class="dashboard-banner-network-graph">
         <div class="dashboard-banner-chart">
           <div data-chart-loading-message class="tile tile-muted text-center mt-5">
@@ -65,6 +69,7 @@
           </div>
         </div>
       </div>
+      <% end %>
     </div>
   </div>
 </div>

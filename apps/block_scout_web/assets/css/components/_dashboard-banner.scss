@@ -8,6 +8,8 @@ $dashboard-line-color-price: $primary !default;
 $dashboard-line-color-market: $secondary !default;
 $dashboard-stats-item-color: #fff !default;
 $dashboard-stats-item-border-color: #fff !default;
+$dashboard-banner-network-stats-static-image: false !default;
+$dashboard-banner-network-stats-static-image-height: 150px !default;
 
 .dashboard-banner-container {
   @include gradient-container();
@@ -15,7 +17,7 @@ $dashboard-stats-item-border-color: #fff !default;
   padding: 48px 0 0 0;
   position: relative;
 
-  &:after {
+  &::after {
     background-color: $dashboard-banner-network-graph-background-color;
     bottom: 0;
     content: "";
@@ -26,6 +28,14 @@ $dashboard-stats-item-border-color: #fff !default;
     top: 3rem;
 
     @include media-breakpoint-down(sm) {
+      display: none;
+    }
+  }
+
+  &.dashboard-banner-container-disabled-graph {
+    padding-top: 0;
+
+    &::after {
       display: none;
     }
   }
@@ -167,5 +177,49 @@ $dashboard-stats-item-border-color: #fff !default;
   padding-bottom: 30px;
   row-gap: 45px;
 
+  .dashboard-banner-container-disabled-graph & {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    min-height: $dashboard-banner-network-stats-static-image-height;
+    padding-bottom: 0;
+    width: 100%;
+
+    @include media-breakpoint-down(sm) {
+      align-items: flex-start;
+      flex-direction: column;
+      padding-bottom: 30px;
+      padding-top: 30px;
+    }
+  }
+
   @include stats-item($dashboard-stats-item-border-color, $dashboard-stats-item-color);
+
+  .dashboard-banner-network-stats-item {
+    @include media-breakpoint-down(sm) {
+      margin-bottom: 25px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.dashboard-banner-network-stats-static-image {
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+  background-size: cover;
+  flex-shrink: 0;
+  height: $dashboard-banner-network-stats-static-image-height;
+  order: 10;
+  width: 300px;
+
+  @if $dashboard-banner-network-stats-static-image {
+    background-image: url($dashboard-banner-network-stats-static-image);
+  }
+
+  @include media-breakpoint-down(md) {
+    display: none;
+  }
 }
