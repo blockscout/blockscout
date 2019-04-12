@@ -6,9 +6,7 @@
           <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer blocks" %></a>
         </div>
       </div>
-
-      <h1><%= gettext("%{block_type}s", block_type: @block_type) %></h1>
-
+      <h1 class="card-title"><%= gettext("%{block_type}s", block_type: @block_type) %></h1>
       <div data-loading-message class="tile tile-muted text-center mt-3">
         <span class="loading-spinner-small mr-2">
           <span class="loading-spinner-block-1"></span>

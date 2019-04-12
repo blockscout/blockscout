@@ -185,7 +185,7 @@ $tile-padding: 1rem;
     margin-bottom: 1rem;
   }
 
-  .tile-type-block {
+  &.tile-type-block {
     .tile-title {
       font-weight: 700;
       line-height: 1.2;
@@ -194,18 +194,18 @@ $tile-padding: 1rem;
     }
   }
 
-  .tile-type-contract-creation {
+  &.tile-type-contract-creation {
     .tile-text-highlight {
       text-decoration: underline;
       text-decoration-style: dashed;
     }
   }
 
-  .tile-type-token {
+  &.tile-type-token {
     border: 1px solid $border-color;
   }
 
-  .tile-type-token-transfer {
+  &.tile-type-token-transfer {
     &-short-name {
       max-width: 45%;
       overflow: hidden;
@@ -214,7 +214,7 @@ $tile-padding: 1rem;
     }
   }
 
-  .tile-type-unique-token-image {
+  &.tile-type-unique-token-image {
     padding: 0;
 
     & .tile-content {
@@ -222,7 +222,7 @@ $tile-padding: 1rem;
     }
   }
 
-  .tile-type-api-documentation {
+  &.tile-type-api-documentation {
     background-color: transparent;
     cursor: pointer;
     padding: 15px;
@@ -250,6 +250,7 @@ $tile-padding: 1rem;
     }
   }
 
+  /* Progress bar */
   .progress {
     background-color: #f5f6fa;
     border-radius: 2px;
