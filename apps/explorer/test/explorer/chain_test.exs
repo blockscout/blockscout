@@ -854,6 +854,23 @@ defmodule Explorer.ChainTest do
 
       assert {:ok, address} = Chain.hash_to_address(address.hash)
     end
+
+    test "has_decompiled_code? is true if there are decompiled contracts" do
+      address = insert(:address)
+      insert(:decompiled_smart_contract, address_hash: address.hash)
+
+      {:ok, found_address} = Chain.hash_to_address(address.hash)
+
+      assert found_address.has_decompiled_code?
+    end
+
+    test "has_decompiled_code? is false if there are no decompiled contracts" do
+      address = insert(:address)
+
+      {:ok, found_address} = Chain.hash_to_address(address.hash)
+
+      refute found_address.has_decompiled_code?
+    end
   end
 
   describe "token_contract_address_from_token_name/1" do
@@ -865,6 +882,15 @@ defmodule Explorer.ChainTest do
 
     test "return the correct token if it exists" do
       name = "AYR"
+      insert(:token, symbol: name)
+
+      assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
+    end
+
+    test "return only one result if multiple records are found" do
+      name = "TOKEN"
+
+      insert(:token, symbol: name)
       insert(:token, symbol: name)
 
       assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
@@ -2321,6 +2347,18 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "find_decompiled_contract_address/1" do
+    test "returns contract with decompiled contracts" do
+      address = insert(:address)
+      insert(:decompiled_smart_contract, address_hash: address.hash)
+      insert(:decompiled_smart_contract, address_hash: address.hash, decompiler_version: "2")
+
+      {:ok, address} = Chain.find_decompiled_contract_address(address.hash)
+
+      assert Enum.count(address.decompiled_smart_contracts) == 2
+    end
+  end
+
   describe "block_reward/1" do
     setup do
       %{block_range: range} = emission_reward = insert(:emission_reward)
@@ -3626,27 +3664,6 @@ defmodule Explorer.ChainTest do
                %{date: yesterday |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("2E-15")},
                %{date: today |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")}
              ]
-    end
-  end
-
-  describe "list_block_numbers_with_invalid_consensus/0" do
-    test "returns a list of block numbers with invalid consensus" do
-      block1 = insert(:block)
-      block2_with_invalid_consensus = insert(:block, parent_hash: block1.hash, consensus: false)
-      _block2 = insert(:block, parent_hash: block1.hash, number: block2_with_invalid_consensus.number)
-      block3 = insert(:block, parent_hash: block2_with_invalid_consensus.hash)
-      block4 = insert(:block, parent_hash: block3.hash)
-      block5 = insert(:block, parent_hash: block4.hash)
-      block6_without_consensus = insert(:block, parent_hash: block5.hash, consensus: false)
-      block6 = insert(:block, parent_hash: block5.hash, number: block6_without_consensus.number)
-      block7 = insert(:block, parent_hash: block6.hash)
-      block8_with_invalid_consensus = insert(:block, parent_hash: block7.hash, consensus: false)
-      _block8 = insert(:block, parent_hash: block7.hash, number: block8_with_invalid_consensus.number)
-      block9 = insert(:block, parent_hash: block8_with_invalid_consensus.hash)
-      _block10 = insert(:block, parent_hash: block9.hash)
-
-      assert Chain.list_block_numbers_with_invalid_consensus() ==
-               [block2_with_invalid_consensus.number, block8_with_invalid_consensus.number]
     end
   end
 
