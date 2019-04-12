@@ -5,7 +5,7 @@
             to: block_path(@conn, :show, @coin_balance.block_number),
             class: "tile-title-lg"
         ) do %>
-        <%= gettext "Block"  %> <%= @coin_balance.block_number %>
+        <%= gettext "Block" %> <%= @coin_balance.block_number %>
       <% end %>
       <span data-from-now="<%= @coin_balance.block_timestamp %>"></span>
     </div>

@@ -10,6 +10,7 @@ $tile-type-unique-token-color: $orange !default;
 $tile-type-unique-token-image-color: $orange !default;
 $tile-type-internal-transaction-color: $teal !default;
 $tile-type-api-documentation-color: $primary !default;
+$tile-type-progress-bar-color: $primary !default;
 
 $tile-padding: 1rem;
 
@@ -246,6 +247,19 @@ $tile-padding: 1rem;
 
     .tile-status-label {
       color: $warning;
+    }
+  }
+
+  .progress {
+    background-color: #f5f6fa;
+    border-radius: 2px;
+    height: 4px;
+    margin-top: 8px;
+    width: 120px;
+
+    .progress-bar {
+      background-color: $tile-type-progress-bar-color;
+      border-radius: 2px;
     }
   }
 }
