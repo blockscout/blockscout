@@ -4,7 +4,7 @@ defmodule Indexer.Block.Supervisor do
   """
 
   alias Indexer.Block
-  alias Indexer.Block.{Catchup, InvalidConsensus, Realtime, Reward, Uncle}
+  alias Indexer.Block.{Catchup, Realtime, Reward, Uncle}
   alias Indexer.Temporary.{AddressesWithoutCode, FailedCreatedAddresses}
 
   use Supervisor
@@ -50,7 +50,6 @@ defmodule Indexer.Block.Supervisor do
            %{block_fetcher: block_fetcher, block_interval: block_interval, memory_monitor: memory_monitor},
            [name: Catchup.Supervisor]
          ]},
-        {InvalidConsensus.Supervisor, [[], [name: InvalidConsensus.Supervisor]]},
         {Realtime.Supervisor,
          [
            %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
