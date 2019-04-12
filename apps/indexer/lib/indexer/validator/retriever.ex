@@ -53,17 +53,17 @@ defmodule Indexer.Validator.Retriever do
   end
 
   defp translate_metadata([
-         first_name,
-         last_name,
-         license_id,
-         full_address,
-         state,
-         zipcode,
-         expiration_date,
-         created_date,
-         _updated_date,
-         _min_treshold
-       ]) do
+    first_name,
+    last_name,
+    license_id,
+    full_address,
+    state,
+    zipcode,
+    expiration_date,
+    created_date,
+    _updated_date,
+    _min_treshold
+  ]) do
     %{
       name: trim_null_bytes(first_name) <> " " <> trim_null_bytes(last_name),
       metadata: %{

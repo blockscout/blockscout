@@ -1,6 +1,6 @@
 defmodule Indexer.Validator.Processor do
   @moduledoc """
-  module to periodically retrieve and update metadata belonging to validators
+  Module to periodically retrieve and update metadata belonging to validators
   """
   use GenServer
   alias Indexer.Validator.{Importer, Retriever}
@@ -10,7 +10,7 @@ defmodule Indexer.Validator.Processor do
     GenServer.start_link(__MODULE__, arguments, gen_server_options)
   end
 
-  @impl true
+  @impl GenServer
   def init(%{subscribe_named_arguments: subscribe_named_arguments})
       when is_list(subscribe_named_arguments) do
     send(self(), :import)
@@ -31,7 +31,7 @@ defmodule Indexer.Validator.Processor do
     end
   end
 
-  @impl true
+  @impl GenServer
   def handle_info(:import, %{subscription: subscribtion} = state) do
     fetch_validators()
 
@@ -42,12 +42,19 @@ defmodule Indexer.Validator.Processor do
 
   @impl GenServer
   def handle_info({_, {:ok, msg}}, %{topic: topic} = state) do
-    with {%ABI.FunctionSelector{}, fields} <- decode_event(msg, topic),
+    with {:ok, event} = validate_event(msg, topic),
+      {%ABI.FunctionSelector{}, fields} <- decode_event(event),
       {:ok, addresses} <- get_value(fields, "newSet")
     do
       addresses
       |> Retriever.fetch_validators_metadata()
       |> Importer.import_metadata()
+    else
+      {:error, :unwanted_event} ->
+        :ignore
+
+      {:error, _} ->
+        fetch_validators()
     end
 
     {:noreply, state}
@@ -62,19 +69,23 @@ defmodule Indexer.Validator.Processor do
     Process.send_after(self(), :import, :timer.seconds(5))
   end
 
-  defp decode_event(msg, topic) do
+  defp validate_event(msg, topic) do
     case msg do
-      %{topics: ["0x" <> topic1, "0x" <> topic2], data: data} when topic == topic1 ->
-        topic1_decoded = Base.decode16!(topic1, case: :lower)
-        topic2_decoded = Base.decode16!(topic2, case: :lower)
-
-        contract_abi("validators.json")
-        |> ABI.parse_specification(include_events?: true)
-        |> ABI.Event.find_and_decode(topic1_decoded, topic2_decoded, nil, nil, data)
+      %{topics: ["0x" <> topic1, _]} when topic == topic1 ->
+        {:ok, msg}
 
       _ ->
-        {:error, :invalid_event}
+        {:error, :unwanted_event}
     end
+  end
+
+  defp decode_event(%{topics: ["0x" <> topic1, "0x" <> topic2], data: data}) do
+    topic1_decoded = Base.decode16!(topic1, case: :lower)
+    topic2_decoded = Base.decode16!(topic2, case: :lower)
+
+    contract_abi("validators.json")
+    |> ABI.parse_specification(include_events?: true)
+    |> ABI.Event.find_and_decode(topic1_decoded, topic2_decoded, nil, nil, data)
   end
 
   defp get_value(fields, name) do
