@@ -1,7 +1,7 @@
-defmodule Explorer.Validator.MetadataRetrieverTest do
+defmodule Indexer.Validator.RetrieverTest do
   use EthereumJSONRPC.Case
 
-  alias Explorer.Validator.MetadataRetriever
+  alias Indexer.Validator.Retriever
   import Mox
 
   setup :verify_on_exit!
@@ -30,12 +30,12 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
         }
       ]
 
-      assert MetadataRetriever.fetch_data() == expected
+      assert Retriever.fetch_data() == expected
     end
 
     test "raise error when the first contract call fails" do
       contract_request_with_error()
-      assert_raise(MatchError, fn -> MetadataRetriever.fetch_data() end)
+      assert_raise(MatchError, fn -> Retriever.fetch_data() end)
     end
 
     test "raise error when a call to the metadatc contract fails" do
@@ -54,7 +54,7 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
         }
       ]
 
-      assert MetadataRetriever.fetch_data() == expected
+      assert Retriever.fetch_data() == expected
     end
   end
 
