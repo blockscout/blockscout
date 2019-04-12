@@ -66,6 +66,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   def call_controller(conn, controller, action) do
     {:ok, controller.call(conn, action)}
   rescue
-    Conn.WrapperError -> :error
+    Conn.WrapperError ->
+      :error
   end
 end
