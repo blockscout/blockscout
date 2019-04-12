@@ -2,9 +2,13 @@
 
 ### Features
 
+- [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
+
 ### Fixes
 
+ - [#1724](https://github.com/poanetwork/blockscout/pull/1724) - Remove internal tx and token balance fetching from realtime fetcher
  - [#1727](https://github.com/poanetwork/blockscout/pull/1727) - add logs pagination in rpc api
+ - [#1740](https://github.com/poanetwork/blockscout/pull/1740) - fix empty block time
 
 ### Chore
 
