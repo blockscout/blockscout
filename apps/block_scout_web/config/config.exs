@@ -70,9 +70,9 @@ config :block_scout_web,
       url: "https://blockscout.com/etc/mainnet"
     },
     %{
-      title: "Lukso's Network",
+      title: "LUKSO Network",
       url: "https://blockscout.com/lukso/l14",
-	  test_net?: true
+      test_net?: true
     },
     %{
       title: "Aerum Mainnet",
