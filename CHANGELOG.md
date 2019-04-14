@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#1749](https://github.com/poanetwork/blockscout/pull/1749) - Replace the link in the footer with the official POA announcements tg channel link
 - [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
 
 ### Fixes
