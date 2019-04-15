@@ -1,4 +1,4 @@
-defmodule Indexer.Validator.Retriever do
+defmodule Explorer.Validator.MetadataRetriever do
   @moduledoc """
   Consults the configured smart contracts to fetch the valivators' metadata
   """
@@ -84,12 +84,12 @@ defmodule Indexer.Validator.Retriever do
   end
 
   defp config(key) do
-    Application.get_env(:indexer, __MODULE__, [])[key]
+    Application.get_env(:explorer, __MODULE__, [])[key]
   end
 
   # sobelow_skip ["Traversal"]
   defp contract_abi(file_name) do
-    :indexer
+    :explorer
     |> Application.app_dir("priv/validator_contracts_abi/#{file_name}")
     |> File.read!()
     |> Jason.decode!()

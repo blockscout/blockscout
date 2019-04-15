@@ -1,4 +1,4 @@
-defmodule Indexer.Validator.ImporterTest do
+defmodule Explorer.Validator.MetadataImporterTest do
   use Explorer.DataCase
 
   require Ecto.Query
@@ -8,7 +8,7 @@ defmodule Indexer.Validator.ImporterTest do
 
   alias Explorer.Chain.Address
   alias Explorer.Repo
-  alias Indexer.Validator.Importer
+  alias Explorer.Validator.MetadataImporter
 
   describe "import_metadata/1" do
     test "inserts new address names when there's none for the validators" do
@@ -17,7 +17,7 @@ defmodule Indexer.Validator.ImporterTest do
       address_hash = address.hash
 
       [%{address_hash: address_hash, name: "Testinit Unitorius", primary: true, metadata: %{"test" => "toast"}}]
-      |> Importer.import_metadata()
+      |> MetadataImporter.import_metadata()
 
       address_names =
         from(an in Address.Name, where: an.address_hash == ^address_hash and an.primary == true)
@@ -37,7 +37,7 @@ defmodule Indexer.Validator.ImporterTest do
       address_hash = address.hash
 
       [%{address_hash: address_hash, name: "Testit Unitorus", primary: true, metadata: %{"test" => "toast"}}]
-      |> Importer.import_metadata()
+      |> MetadataImporter.import_metadata()
 
       address_names =
         from(an in Address.Name, where: an.address_hash == ^address.hash and an.primary == true)

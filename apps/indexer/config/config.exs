@@ -52,16 +52,6 @@ config :logger, :indexer,
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :indexer]
 
-# Validators fetcher config
-if System.get_env("VALIDATORS_CONTRACT") do
-  config :indexer, Indexer.Transform.Validators,
-    metadata_contract_address: System.get_env("METADATA_CONTRACT"),
-    validators_contract_address: System.get_env("VALIDATORS_CONTRACT")
-
-  config :indexer, Indexer.Transform.Validators, enabled: true
-else
-  config :indexer, Indexer.Transform.Validators, enabled: false
-end
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

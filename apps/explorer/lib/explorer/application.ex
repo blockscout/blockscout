@@ -48,7 +48,8 @@ defmodule Explorer.Application do
       configure(Explorer.KnownTokens),
       configure(Explorer.Market.History.Cataloger),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
-      configure(Explorer.Counters.AverageBlockTime)
+      configure(Explorer.Counters.AverageBlockTime),
+      configure(Explorer.Validator.MetadataProcessor)
     ]
     |> List.flatten()
   end
