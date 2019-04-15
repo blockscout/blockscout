@@ -14,13 +14,12 @@ jobs:
     working_directory: ~/app
 
     steps:
-      - run:
-          command: ./bin/install_chrome_headless.sh
-          no_output_timeout: 2400
-
       - run: sudo apt-get update; sudo apt-get -y install autoconf build-essential libgmp3-dev libtool
 
       - checkout
+      - run:
+          command: ./bin/install_chrome_headless.sh
+          no_output_timeout: 2400
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
