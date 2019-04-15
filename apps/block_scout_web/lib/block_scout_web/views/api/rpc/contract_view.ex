@@ -22,6 +22,10 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     RPCView.render("error.json", assigns)
   end
 
+  def render("verify.json", %{contract: contract, address_hash: address_hash}) do
+    RPCView.render("show.json", data: prepare_source_code_contract(contract, address_hash))
+  end
+
   defp prepare_source_code_contract(nil, address_hash) do
     %{
       "Address" => to_string(address_hash),
@@ -36,19 +40,27 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   end
 
   defp prepare_source_code_contract(contract, _) do
+    decompiled_smart_contract = latest_decompiled_smart_contract(contract.decompiled_smart_contracts)
+
     %{
       "Address" => to_string(contract.address_hash),
       "SourceCode" => contract.contract_source_code,
       "ABI" => Jason.encode!(contract.abi),
       "ContractName" => contract.name,
-      "DecompiledSourceCode" => decompiled_source_code(contract.decompiled_smart_contract),
-      "DecompilerVersion" => decompiler_version(contract.decompiled_smart_contract),
+      "DecompiledSourceCode" => decompiled_source_code(decompiled_smart_contract),
+      "DecompilerVersion" => decompiler_version(decompiled_smart_contract),
       "CompilerVersion" => contract.compiler_version,
       "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
     }
   end
 
-  defp prepare_contract(%Address{hash: hash, smart_contract: nil, decompiled_smart_contract: decompiled_smart_contract}) do
+  defp prepare_contract(%Address{
+         hash: hash,
+         smart_contract: nil,
+         decompiled_smart_contracts: decompiled_smart_contracts
+       }) do
+    decompiled_smart_contract = latest_decompiled_smart_contract(decompiled_smart_contracts)
+
     %{
       "Address" => to_string(hash),
       "SourceCode" => "",
@@ -64,8 +76,10 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   defp prepare_contract(%Address{
          hash: hash,
          smart_contract: %SmartContract{} = contract,
-         decompiled_smart_contract: decompiled_smart_contract
+         decompiled_smart_contracts: decompiled_smart_contracts
        }) do
+    decompiled_smart_contract = latest_decompiled_smart_contract(decompiled_smart_contracts)
+
     %{
       "Address" => to_string(hash),
       "SourceCode" => contract.contract_source_code,
@@ -76,6 +90,12 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       "CompilerVersion" => contract.compiler_version,
       "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
     }
+  end
+
+  defp latest_decompiled_smart_contract([]), do: nil
+
+  defp latest_decompiled_smart_contract(contracts) do
+    Enum.max_by(contracts, fn contract -> DateTime.to_unix(contract.inserted_at) end)
   end
 
   defp decompiled_source_code(nil), do: "Contract source code not decompiled."

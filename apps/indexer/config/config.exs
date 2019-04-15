@@ -31,7 +31,7 @@ block_transformer =
 config :indexer,
   block_transformer: block_transformer,
   ecto_repos: [Explorer.Repo],
-  metadata_updater_days_interval: 7,
+  metadata_updater_days_interval: 1,
   # bytes
   memory_limit: 5 <<< 30,
   first_block: System.get_env("FIRST_BLOCK") || 0
