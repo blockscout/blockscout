@@ -3,6 +3,7 @@
 ### Features
 
 - [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
+- [#1755](https://github.com/poanetwork/blockscout/pull/1755) - add styles for Lukso network
 
 ### Fixes
 
