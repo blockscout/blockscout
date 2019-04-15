@@ -45,6 +45,7 @@
         to: address_decompiled_contract_path(@conn, :index, @address.hash),
         class: "card-tab #{tab_status("decompiled_contracts", @conn.request_path)}") do %>
         <%= gettext("Decompiled code") %>
+        <i class="far fa-check-circle text-success"></i>
     <% end %>
   <% end %>
   <%= if smart_contract_with_read_only_functions?(@address) do %>
@@ -52,6 +53,6 @@
         gettext("Read Contract"),
         to: address_read_contract_path(@conn, :index, @address.hash),
         class: "card-tab #{tab_status("read_contract", @conn.request_path)}")
-      %>
+        %>
   <% end %>
 </div>

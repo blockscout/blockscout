@@ -6,7 +6,7 @@
       <div class="card-body">
         <h3><%= gettext "Decompiler version" %></h3>
         <div class="tile tile-muted">
-          <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= contract.decompiler_version %></code></pre>
+          <pre class="pre-wrap"><code class="nohighlight"><%= contract.decompiler_version %></code></pre>
         </div>
         <br>
         <section>
