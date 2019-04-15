@@ -137,14 +137,37 @@ $card-background-1-text-color: #fff !default;
     text-decoration: underline;
   }
 
+  @include media-breakpoint-down(sm) {
+    display: none;
+    width: 100%;
+  }
+
   &.active {
     background-color: $card-tab-active;
     color: #fff;
     cursor: default;
     text-decoration: none;
-  }
 
-  @include media-breakpoint-down(sm) {
-    width: 100%;
+    @include media-breakpoint-down(sm) {
+      cursor: pointer;
+      display: block;
+      order: -1;
+
+      &::after {
+        border-bottom: 0;
+        border-left: 0.3em solid transparent;
+        border-right: 0.3em solid transparent;
+        border-top: 0.3em solid;
+        content: "";
+        display: inline-block;
+        height: 0;
+        margin-left: 10px;
+        width: 0;
+      }
+
+      &.noCaret::after {
+        display: none;
+      }
+    }
   }
 }
