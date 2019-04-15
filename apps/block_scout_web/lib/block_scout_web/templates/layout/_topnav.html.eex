@@ -79,7 +79,8 @@
       </ul>
       <div class="search-form d-lg-flex d-inline-block">
         <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
-          <div class="input-group">
+
+        <div class="input-group">
               <%= awesomplete(f, :q,
                    [
                   class: "form-control me auto",
@@ -93,8 +94,8 @@
                   minChars: 3,
                   maxItems: 8,
                   value: "symbol",
-                  descr: "contract_address_hash"
-
+                  label: "contract_address_hash",
+                  descr: "symbol"
                   ]) %>
               <div class="input-group-append">
                 <button class="input-group-text" id="search-icon">
