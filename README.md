@@ -119,7 +119,7 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
   `cd apps/explorer && npm install; cd -`
 
   7. Update your JSON RPC Variant in `apps/explorer/config/dev.exs` and `apps/indexer/config/dev.exs`.
-  For `variant`, enter `ganache`, `geth`, or `parity`
+  For `variant`, enter `ganache`, `geth`, `parity`, or `rsk`
 
   8. Update your JSON RPC Endpoint in `apps/explorer/config/dev/` and `apps/indexer/config/dev/`
   For the `variant` chosen in step 7, enter the correct information for the corresponding JSON RPC Endpoint in `parity.exs`, `geth.exs`, or `ganache.exs`
