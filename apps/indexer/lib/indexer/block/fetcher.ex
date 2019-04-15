@@ -10,11 +10,32 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
-  alias Indexer.{AddressExtraction, CoinBalance, MintTransfer, ReplacedTransaction, Token, TokenTransfers, Tracer}
-  alias Indexer.Address.{CoinBalances, TokenBalances}
   alias Indexer.Block.Fetcher.Receipts
-  alias Indexer.Block.{Reward, Transform}
+
+  alias Indexer.Fetcher.{
+    BlockReward,
+    CoinBalance,
+    ContractCode,
+    InternalTransaction,
+    ReplacedTransaction,
+    Token,
+    TokenBalance,
+    UncleBlock
+  }
+
+  alias Indexer.Tracer
+
+  alias Indexer.Transform.{
+    AddressCoinBalances,
+    Addresses,
+    AddressTokenBalances,
+    MintTransfers,
+    TokenTransfers
+  }
+
+  alias Indexer.Transform.Blocks, as: TransformBlocks
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
@@ -46,6 +67,7 @@ defmodule Indexer.Block.Fetcher do
 
   @receipts_batch_size 250
   @receipts_concurrency 10
+  @geth_block_limit 128
 
   @doc false
   def default_receipts_batch_size, do: @receipts_batch_size
@@ -102,16 +124,16 @@ defmodule Indexer.Block.Fetcher do
              block_second_degree_relations_params: block_second_degree_relations_params,
              errors: blocks_errors
            }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
-         blocks = Transform.transform_blocks(blocks_params),
+         blocks = TransformBlocks.transform_blocks(blocks_params),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
-         %{mint_transfers: mint_transfers} = MintTransfer.parse(logs),
+         %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
          addresses =
-           AddressExtraction.extract_addresses(%{
+           Addresses.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
              blocks: blocks,
              logs: logs,
@@ -126,12 +148,12 @@ defmodule Indexer.Block.Fetcher do
              logs_params: logs,
              transactions_params: transactions_with_receipts
            }
-           |> CoinBalances.params_set(),
+           |> AddressCoinBalances.params_set(),
          beneficiaries_with_gas_payment <-
            beneficiary_params_set
            |> add_gas_payments(transactions_with_receipts)
-           |> Reward.Fetcher.reduce_uncle_rewards(),
-         address_token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
+           |> BlockReward.reduce_uncle_rewards(),
+         address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
              state,
@@ -180,7 +202,7 @@ defmodule Indexer.Block.Fetcher do
   def async_import_block_rewards(errors) when is_list(errors) do
     errors
     |> block_reward_errors_to_block_numbers()
-    |> Indexer.Block.Reward.Fetcher.async_fetch()
+    |> BlockReward.async_fetch()
   end
 
   def async_import_coin_balances(%{addresses: addresses}, %{
@@ -191,23 +213,77 @@ defmodule Indexer.Block.Fetcher do
       block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
       %{address_hash: address_hash, block_number: block_number}
     end)
-    |> CoinBalance.Fetcher.async_fetch_balances()
+    |> CoinBalance.async_fetch_balances()
   end
 
   def async_import_coin_balances(_, _), do: :ok
 
+  def async_import_created_contract_codes(%{transactions: transactions}) do
+    transactions
+    |> Enum.flat_map(fn
+      %Transaction{
+        block_number: block_number,
+        hash: hash,
+        created_contract_address_hash: %Hash{} = created_contract_address_hash,
+        created_contract_code_indexed_at: nil,
+        internal_transactions_indexed_at: nil
+      } ->
+        [%{block_number: block_number, hash: hash, created_contract_address_hash: created_contract_address_hash}]
+
+      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
+        []
+
+      %Transaction{created_contract_address_hash: nil} ->
+        []
+    end)
+    |> ContractCode.async_fetch(10_000)
+  end
+
+  def async_import_created_contract_codes(_), do: :ok
+
+  def async_import_internal_transactions(%{blocks: blocks}, EthereumJSONRPC.Parity) do
+    blocks
+    |> Enum.map(fn %Block{number: block_number} -> %{number: block_number} end)
+    |> InternalTransaction.async_block_fetch(10_000)
+  end
+
+  def async_import_internal_transactions(%{transactions: transactions}, EthereumJSONRPC.Geth) do
+    {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
+
+    transactions
+    |> Enum.flat_map(fn
+      %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
+        [%{block_number: block_number, index: index, hash: hash}]
+
+      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
+        []
+    end)
+    |> Enum.filter(fn %{block_number: block_number} ->
+      max_block_number - block_number < @geth_block_limit
+    end)
+    |> InternalTransaction.async_fetch(10_000)
+  end
+
+  def async_import_internal_transactions(_, _), do: :ok
+
   def async_import_tokens(%{tokens: tokens}) do
     tokens
     |> Enum.map(& &1.contract_address_hash)
-    |> Token.Fetcher.async_fetch()
+    |> Token.async_fetch()
   end
 
   def async_import_tokens(_), do: :ok
 
+  def async_import_token_balances(%{address_token_balances: token_balances}) do
+    TokenBalance.async_fetch(token_balances)
+  end
+
+  def async_import_token_balances(_), do: :ok
+
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}) do
     block_second_degree_relations
     |> Enum.map(& &1.uncle_hash)
-    |> Indexer.Block.Uncle.Fetcher.async_fetch_blocks()
+    |> UncleBlock.async_fetch_blocks()
   end
 
   def async_import_uncles(_), do: :ok
@@ -221,7 +297,7 @@ defmodule Indexer.Block.Fetcher do
       %Transaction{block_hash: nil} ->
         []
     end)
-    |> ReplacedTransaction.Fetcher.async_fetch(10_000)
+    |> ReplacedTransaction.async_fetch(10_000)
   end
 
   def async_import_replaced_transactions(_), do: :ok
