@@ -5,7 +5,6 @@ curl -L -O "http://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/c
 unzip chromedriver_linux64.zip
 sudo chmod +x chromedriver
 sudo mv chromedriver /usr/local/bin
-sudo add-apt-repository ppa:ubuntu-toolchain-r/test --yes
-sudo apt-get update
-sudo apt-get --only-upgrade install google-chrome-stable
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo apt install ./google-chrome-stable_current_amd64.deb
 sudo apt-get install libstdc++6-4.7-dev
