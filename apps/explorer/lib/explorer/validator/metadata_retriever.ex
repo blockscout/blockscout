@@ -15,7 +15,7 @@ defmodule Explorer.Validator.MetadataRetriever do
       validator
       |> fetch_validator_metadata
       |> translate_metadata
-      |> Map.merge(%{address_hash: validator, primary: true})
+      |> Map.merge(%{address_hash: validator})
     end)
   end
 

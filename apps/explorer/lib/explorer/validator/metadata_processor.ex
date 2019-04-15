@@ -3,7 +3,7 @@ defmodule Explorer.Validator.MetadataProcessor do
   module to periodically retrieve and update metadata belonging to validators
   """
   use GenServer
-  alias Explorer.Validator.{MetadataRetriever}
+  alias Explorer.Validator.MetadataRetriever
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
