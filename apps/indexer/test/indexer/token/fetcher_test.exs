@@ -20,12 +20,6 @@ defmodule Indexer.Token.FetcherTest do
   end
 
   describe "run/3" do
-    test "skips tokens that have already been cataloged", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      expect(EthereumJSONRPC.Mox, :json_rpc, 0, fn _, _ -> :ok end)
-      %Token{contract_address_hash: contract_address_hash} = insert(:token, cataloged: true)
-      assert Fetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
-    end
-
     test "catalogs tokens that haven't been cataloged", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
       contract_address_hash = token.contract_address_hash
