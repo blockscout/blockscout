@@ -431,7 +431,8 @@ defmodule EthereumJSONRPC.Block do
     Enum.into(block, %{}, &entry_to_elixir/1)
   end
 
-  defp entry_to_elixir({key, quantity}) when key in ~w(difficulty gasLimit gasUsed number size totalDifficulty) do
+  defp entry_to_elixir({key, quantity})
+       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice number size totalDifficulty) do
     {key, quantity_to_integer(quantity)}
   end
 
