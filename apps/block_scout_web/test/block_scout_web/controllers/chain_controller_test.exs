@@ -72,7 +72,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
 
       conn = get(conn(), "/token_autocomplete?q=magic")
 
-      Enum.count(json_response(conn, 200)) == 1
+      assert Enum.count(json_response(conn, 200)) == 1
     end
   end
 
