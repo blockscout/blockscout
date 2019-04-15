@@ -6,7 +6,7 @@
       <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
     </div>
 
-    <%= for {contract, _i} <- Enum.with_index(@address.decompiled_smart_contracts) do %>
+    <%= for contract <- sort_contracts_by_version(@address.decompiled_smart_contracts) do %>
       <div class="card-body">
         <h3><%= gettext "Decompiler version" %></h3>
         <div class="tile tile-muted">
