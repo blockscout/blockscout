@@ -3,6 +3,7 @@
 ### Features
 
 - [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
+- [#1742](https://github.com/poanetwork/blockscout/pull/1742) - Support RSK
 
 ### Fixes
 
