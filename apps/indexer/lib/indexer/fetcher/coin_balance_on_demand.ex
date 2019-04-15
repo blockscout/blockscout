@@ -43,7 +43,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     latest_block_number = latest_block_number()
 
     case stale_balance_window(latest_block_number) do
-      {:error, :no_average_block_time} ->
+      {:error, _} ->
         :current
 
       stale_balance_window ->
@@ -175,7 +175,11 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
           |> Duration.to_milliseconds()
           |> round()
 
-        block_number - div(@latest_balance_stale_threshold, average_block_time)
+        if average_block_time == 0 do
+          {:error, :empty_database}
+        else
+          block_number - div(@latest_balance_stale_threshold, average_block_time)
+        end
     end
   end
 end
