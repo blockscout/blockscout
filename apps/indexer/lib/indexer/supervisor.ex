@@ -92,30 +92,13 @@ defmodule Indexer.Supervisor do
 
     realtime_subscribe_named_arguments = realtime_overrides[:subscribe_named_arguments] || subscribe_named_arguments
 
-    transport_options =
-      struct!(EthereumJSONRPC.WebSocket, Keyword.fetch!(realtime_subscribe_named_arguments, :transport_options))
-
-    web_socket = Indexer.WebSocket
-    web_socket_options = %EthereumJSONRPC.WebSocket.WebSocketClient.Options{web_socket: web_socket}
-    transport_options = %EthereumJSONRPC.WebSocket{transport_options | web_socket_options: web_socket_options}
-    %EthereumJSONRPC.WebSocket{url: url, web_socket: web_socket_module} = transport_options
-
-    block_fetcher_subscribe_named_arguments =
-      put_in(subscribe_named_arguments[:transport_options], transport_options)
-
     Supervisor.init(
       [
-        {web_socket_module, [url, [name: web_socket]]},
-        {Indexer.Validator.Processor,
-          [
-            %{block_fetcher: block_fetcher, subscribe_named_arguments: block_fetcher_subscribe_named_arguments},
-            [name: Indexer.Validator.Processor]
-          ]},
         # Root fetchers
         {PendingTransaction.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {Realtime.Supervisor,
          [
-           %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: block_fetcher_subscribe_named_arguments},
+           %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
            [name: Realtime.Supervisor]
          ]},
         {Catchup.Supervisor,
