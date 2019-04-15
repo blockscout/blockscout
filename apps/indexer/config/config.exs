@@ -54,13 +54,13 @@ config :logger, :indexer,
 
 # Validators fetcher config
 if System.get_env("VALIDATORS_CONTRACT") do
-  config :indexer, Indexer.Validator.Retriever,
+  config :indexer, Indexer.Transform.Validators,
     metadata_contract_address: System.get_env("METADATA_CONTRACT"),
     validators_contract_address: System.get_env("VALIDATORS_CONTRACT")
 
-  config :indexer, Indexer.Validator.Processor, enabled: true
+  config :indexer, Indexer.Transform.Validators, enabled: true
 else
-  config :indexer, Indexer.Validator.Processor, enabled: false
+  config :indexer, Indexer.Transform.Validators, enabled: false
 end
 
 # Import environment specific config. This must remain at the bottom
