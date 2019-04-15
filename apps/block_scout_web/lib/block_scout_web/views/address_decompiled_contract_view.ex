@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     "\e[93m" => "57, 115, 0",
     # yellow
     "\e[92m" => "119, 232, 81",
-    # purple
+    # red
     "\e[94m" => "136, 0, 0"
   }
 
@@ -26,6 +26,12 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     |> String.replace("»", "&raquo;")
     |> String.replace("\e[0m", "</span>")
     |> add_line_numbers()
+  end
+
+  def sort_contracts_by_version(decompiled_contracts) do
+    decompiled_contracts
+    |> Enum.sort_by(& &1.decompiler_version)
+    |> Enum.reverse()
   end
 
   defp add_line_numbers(code) do
