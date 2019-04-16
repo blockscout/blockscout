@@ -16,7 +16,6 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
         %{
           address_hash: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1>>,
           name: "Testname Unitarion",
-          primary: true,
           metadata: %{
             address: "",
             created_date: 0,
@@ -46,7 +45,6 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
         %{
           address_hash: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1>>,
           name: "anonymous",
-          primary: true,
           metadata: %{
             active: true,
             type: "validator",
