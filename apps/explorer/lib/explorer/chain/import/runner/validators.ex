@@ -68,7 +68,7 @@ defmodule Explorer.Chain.Import.Runner.Validators do
         update: [
           set: [
             metadata:
-              fragment("jsonb_set(metadata, '{active}', 'true'::jsonb)")
+              fragment("jsonb_set(metadata, '{active}', 'false'::jsonb)")
           ]
         ]
       )
