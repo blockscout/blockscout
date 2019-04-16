@@ -227,6 +227,8 @@ defmodule BlockScoutWeb.Router do
 
     get("/search", ChainController, :search)
 
+    get("/token_autocomplete", ChainController, :token_autocomplete)
+
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
     get("/api_docs", APIDocsController, :index)
