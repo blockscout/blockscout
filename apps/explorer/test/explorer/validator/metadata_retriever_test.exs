@@ -38,7 +38,7 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
       assert_raise(MatchError, fn -> MetadataRetriever.fetch_data() end)
     end
 
-    test "raise error when a call to the metadatc contract fails" do
+    test "returns map with default metadata when metadata contract fails" do
       validators_list_mox_ok()
       contract_request_with_error()
 
