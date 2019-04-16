@@ -2626,11 +2626,20 @@ defmodule Explorer.Chain do
   end
 
   defp normalize_balances_by_day(balances_by_day) do
-    balances_by_day
-    |> Enum.map(fn day -> Map.take(day, [:date, :value]) end)
-    |> Enum.filter(fn day -> day.value end)
-    |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
-    |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
+    result =
+      balances_by_day
+      |> Enum.map(fn day -> Map.take(day, [:date, :value]) end)
+      |> Enum.filter(fn day -> day.value end)
+      |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
+      |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
+
+    today = Date.to_string(NaiveDateTime.utc_now())
+
+    if Enum.count(result) > 0 && !Enum.any?(result, fn map -> map[:date] == today end) do
+      [%{date: today, value: List.last(result)[:value]} | result]
+    else
+      result
+    end
   end
 
   @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
