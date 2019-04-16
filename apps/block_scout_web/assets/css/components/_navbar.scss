@@ -8,8 +8,9 @@ $header-toggler-icon: "data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30
 $header-textfield-text-color: $header-links-color !default;
 $header-textfield-background-color: #f5f6fa !default;
 $header-textfield-magnifier-color: $header-links-color !default;
-
 $header-link-horizontal-padding: 0.71rem;
+$navbar-logo-height: 1.5em !default;
+$navbar-logo-width: auto !default;
 
 .navbar.navbar-primary {
   background-color: $header-background-color;
@@ -181,7 +182,8 @@ $header-link-horizontal-padding: 0.71rem;
 }
 
 .navbar-logo {
-  height: 1.5em;
+  height: $navbar-logo-height;
+  width: $navbar-logo-width;
 }
 
 @include media-breakpoint-up(md) {
