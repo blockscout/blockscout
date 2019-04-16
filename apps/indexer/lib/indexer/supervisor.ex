@@ -76,7 +76,7 @@ defmodule Indexer.Supervisor do
 
     block_fetcher =
       named_arguments
-      |> Map.drop(~w(block_interval memory_monitor subscribe_named_arguments realtime_overrides)a)
+      |> Map.drop(~w(block_interval blocks_concurrency memory_monitor subscribe_named_arguments realtime_overrides)a)
       |> Block.Fetcher.new()
 
     fixing_realtime_fetcher = %Block.Fetcher{
@@ -87,7 +87,7 @@ defmodule Indexer.Supervisor do
 
     realtime_block_fetcher =
       named_arguments
-      |> Map.drop(~w(block_interval memory_monitor subscribe_named_arguments realtime_overrides)a)
+      |> Map.drop(~w(block_interval blocks_concurrency memory_monitor subscribe_named_arguments realtime_overrides)a)
       |> Map.merge(Enum.into(realtime_overrides, %{}))
       |> Block.Fetcher.new()
 

@@ -64,8 +64,9 @@
       <%= link(
           to: address_decompiled_contract_path(@conn, :index, @address.hash),
           class: "nav-link #{tab_status("decompiled_contracts", @conn.request_path)}") do %>
-         <%= gettext("Decompiled code") %>
-      <% end %>
+          <%= gettext("Decompiled code") %>
+          <i class="far fa-check-circle text-success"></i>
+       <% end %>
     </li>
   <% end %>
 
@@ -131,6 +132,7 @@
                 to: address_decompiled_contract_path(@conn, :index, @address.hash),
                 class: "dropdown-item #{tab_status("contracts", @conn.request_path)}") do %>
              <%= gettext("Decompiled code") %>
+             <i class="far fa-check-circle text-success"></i>
           <% end %>
         <% end %>
         <% end %>
