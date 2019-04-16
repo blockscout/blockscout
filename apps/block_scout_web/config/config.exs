@@ -93,7 +93,7 @@ config :block_scout_web, BlockScoutWeb.Gettext, locales: ~w(en), default_locale:
 
 config :block_scout_web, BlockScoutWeb.SocialMedia,
   twitter: "PoaNetwork",
-  telegram: "oraclesnetwork",
+  telegram: "poa_network",
   facebook: "PoaNetwork",
   instagram: "PoaNetwork"
 
