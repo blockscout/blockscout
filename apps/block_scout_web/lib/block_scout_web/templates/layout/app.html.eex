@@ -16,9 +16,9 @@
     <meta name="msapplication-config" content="<%= static_path(@conn, "/browserconfig.xml") %>">
     <meta name="theme-color" content="#ffffff">
 
-    <link rel="stylesheet" href="//nico-amsterdam.github.io/awesomplete-util/css/awesomplete.css">
-    <script src="//nico-amsterdam.github.io/awesomplete-util/js/awesomplete.min.js"></script>
-    <script src="//nico-amsterdam.github.io/awesomplete-util/js/awesomplete-util.min.js"></script>
+    <link rel="stylesheet" href="https://nico-amsterdam.github.io/awesomplete-util/css/awesomplete.css">
+    <script src="https://nico-amsterdam.github.io/awesomplete-util/js/awesomplete.min.js"></script>
+    <script src="https://nico-amsterdam.github.io/awesomplete-util/js/awesomplete-util.min.js"></script>
     <style>
       div.awesomplete {display: block}
 
