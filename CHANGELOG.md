@@ -3,6 +3,7 @@
 ### Features
 
 - [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
+- [#1696](https://github.com/poanetwork/blockscout/pull/1696) - full-text search by tokens
 - [#1742](https://github.com/poanetwork/blockscout/pull/1742) - Support RSK
 
 ### Fixes
@@ -11,12 +12,15 @@
  - [#1727](https://github.com/poanetwork/blockscout/pull/1727) - add logs pagination in rpc api
  - [#1740](https://github.com/poanetwork/blockscout/pull/1740) - fix empty block time
  - [#1743](https://github.com/poanetwork/blockscout/pull/1743) - sort decompiled smart contracts in lexicographical order
+ - [#1756](https://github.com/poanetwork/blockscout/pull/1756) - add today's token balance from the previous value
 
 ### Chore
 
  - [#1749](https://github.com/poanetwork/blockscout/pull/1749) - Replace the link in the footer with the official POA announcements tg channel link
  - [#1718](https://github.com/poanetwork/blockscout/pull/1718) - Flatten indexer module hierarchy and supervisor tree
  - [#1753](https://github.com/poanetwork/blockscout/pull/1753) - Add a check mark to decompiled contract tab
+ - [#1744](https://github.com/poanetwork/blockscout/pull/1744) - remove `0x0..0` from tests
+ - [#1763](https://github.com/poanetwork/blockscout/pull/1763) - Describe indexer structure and list existing fetchers
 
 
 ## 1.3.9-beta
