@@ -104,6 +104,10 @@ Memory usage is checked once per minute.  If the soft-limit is reached, the shri
 
 If all queues are at their minimum size, then no more memory can be reclaimed and an error will be logged.
 
+## Websocket Keepalive
+
+This defaults to 150 seconds, but it can be set via adding a configuration to `subscribe_named_arguments` in the appropriate config file (indexer/config/<env>/<variant>.exs) called `:keep_alive`. The value is an integer representing milliseconds.
+
 ## Testing
 
 ### Parity

@@ -19,7 +19,7 @@ defmodule EthereumJSONRPC.WebSocket.Case.Mox do
       Supervisor.child_spec(
         %{
           id: web_socket_module,
-          start: {web_socket_module, :start_link, arguments}
+          start: {web_socket_module, :start_link, [arguments]}
         },
         []
       )
@@ -29,7 +29,7 @@ defmodule EthereumJSONRPC.WebSocket.Case.Mox do
     end)
 
     url = "wss://example.com/ws"
-    web_socket = start_supervised!({web_socket_module, [url]})
+    web_socket = start_supervised!({web_socket_module, [url, [keepalive: :timer.minutes(10)]]})
 
     %{
       block_interval: @block_interval,
