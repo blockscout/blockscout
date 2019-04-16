@@ -46,5 +46,4 @@ defmodule Indexer.Transform.Validators do
     |> Base.decode16!(case: :mixed)
     |> TypeDecoder.decode_raw(types)
   end
-
 end

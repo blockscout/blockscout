@@ -8,8 +8,8 @@ defmodule Indexer.Fetcher.Validators do
 
   require Logger
 
-  alias Explorer.Validator.MetadataRetriever
   alias Explorer.Chain
+  alias Explorer.Validator.MetadataRetriever
   alias Indexer.BufferedTask
 
   @behaviour BufferedTask

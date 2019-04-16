@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.Validators do
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, Address}
+  alias Explorer.Chain.{Address, Import}
 
   import Ecto.Query, only: [from: 2]
 
@@ -52,9 +52,9 @@ defmodule Explorer.Chain.Import.Runner.Validators do
   end
 
   defp deactivate_old_validators(repo, changes_list, %{
-    timeout: timeout,
-    timestamps: _timestamps
-  }) do
+         timeout: timeout,
+         timestamps: _timestamps
+       }) do
     address_hashes =
       changes_list
       |> MapSet.new(& &1.address_hash)
@@ -67,8 +67,7 @@ defmodule Explorer.Chain.Import.Runner.Validators do
         where: fragment("metadata->>'type'::text = 'validator'"),
         update: [
           set: [
-            metadata:
-              fragment("jsonb_set(metadata, '{active}', 'false'::jsonb)")
+            metadata: fragment("jsonb_set(metadata, '{active}', 'false'::jsonb)")
           ]
         ]
       )

@@ -24,7 +24,7 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
             state: "XX",
             zipcode: "00000",
             active: true,
-            type: "validator",
+            type: "validator"
           }
         }
       ]
@@ -47,7 +47,7 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
           name: "anonymous",
           metadata: %{
             active: true,
-            type: "validator",
+            type: "validator"
           }
         }
       ]
