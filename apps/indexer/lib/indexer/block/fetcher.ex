@@ -110,12 +110,33 @@ defmodule Indexer.Block.Fetcher do
   def fetch_and_import_range(
         %__MODULE__{
           broadcast: _broadcast,
-          callback_module: callback_module,
-          json_rpc_named_arguments: json_rpc_named_arguments
+          callback_module: callback_module
         } = state,
         _.._ = range
       )
       when callback_module != nil do
+    with {:ok, {data, blocks_errors}} <- extract_data(state, range),
+         {:ok, inserted} <-
+           __MODULE__.import(
+             state,
+             data
+           ) do
+      {:ok, %{inserted: inserted, errors: blocks_errors}}
+    else
+      {step, {:error, reason}} -> {:error, {step, reason}}
+      {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
+    end
+  end
+
+  defp extract_data(
+         %__MODULE__{
+           broadcast: _broadcast,
+           callback_module: callback_module,
+           json_rpc_named_arguments: json_rpc_named_arguments
+         } = state,
+         _.._ = range
+       )
+       when callback_module != nil do
     with {:blocks,
           {:ok,
            %Blocks{
@@ -153,27 +174,21 @@ defmodule Indexer.Block.Fetcher do
            beneficiary_params_set
            |> add_gas_payments(transactions_with_receipts)
            |> BlockReward.reduce_uncle_rewards(),
-         address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
-         {:ok, inserted} <-
-           __MODULE__.import(
-             state,
-             %{
-               addresses: %{params: addresses},
-               address_coin_balances: %{params: coin_balances_params_set},
-               address_token_balances: %{params: address_token_balances},
-               blocks: %{params: blocks},
-               block_second_degree_relations: %{params: block_second_degree_relations_params},
-               block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
-               logs: %{params: logs},
-               token_transfers: %{params: token_transfers},
-               tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts}
-             }
-           ) do
-      {:ok, %{inserted: inserted, errors: blocks_errors}}
-    else
-      {step, {:error, reason}} -> {:error, {step, reason}}
-      {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
+         address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}) do
+      data = %{
+        addresses: %{params: addresses},
+        address_coin_balances: %{params: coin_balances_params_set},
+        address_token_balances: %{params: address_token_balances},
+        blocks: %{params: blocks},
+        block_second_degree_relations: %{params: block_second_degree_relations_params},
+        block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
+        logs: %{params: logs},
+        token_transfers: %{params: token_transfers},
+        tokens: %{on_conflict: :nothing, params: tokens},
+        transactions: %{params: transactions_with_receipts}
+      }
+
+      {:ok, {data, blocks_errors}}
     end
   end
 
