@@ -3,6 +3,7 @@
 ### Features
 
 - [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
+- [#1696](https://github.com/poanetwork/blockscout/pull/1696) - full-text search by tokens
 - [#1742](https://github.com/poanetwork/blockscout/pull/1742) - Support RSK
 
 ### Fixes
@@ -18,6 +19,7 @@
  - [#1749](https://github.com/poanetwork/blockscout/pull/1749) - Replace the link in the footer with the official POA announcements tg channel link
  - [#1718](https://github.com/poanetwork/blockscout/pull/1718) - Flatten indexer module hierarchy and supervisor tree
  - [#1753](https://github.com/poanetwork/blockscout/pull/1753) - Add a check mark to decompiled contract tab
+ - [#1744](https://github.com/poanetwork/blockscout/pull/1744) - remove `0x0..0` from tests
 
 
 ## 1.3.9-beta
