@@ -4,7 +4,7 @@
       <!-- Graph and legend -->
       <div class="dashboard-banner-network-graph">
         <!-- Graph -->
-        <div class="dashboard-banner-chart" style="display: none">
+        <div class="dashboard-banner-chart">
           <div data-chart-loading-message class="tile tile-muted text-center mt-5">
             <span class="loading-spinner-small mr-2">
               <span class="loading-spinner-block-1"></span>
