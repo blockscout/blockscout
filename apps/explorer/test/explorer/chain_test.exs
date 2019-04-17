@@ -3334,6 +3334,17 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "stream_cataloged_validator_address_hashes" do
+    test "returns a list of active validators adresses" do
+      %{address_hash: address_hash} =
+        insert(:address_name, primary: true, metadata: %{active: true, type: "validator"})
+
+      insert(:address_name, primary: true)
+
+      assert {:ok, [^address_hash]} = Chain.stream_cataloged_validator_address_hashes()
+    end
+  end
+
   describe "search_token/1" do
     test "finds by part of the name" do
       token = insert(:token, name: "magic token", symbol: "MAGIC")

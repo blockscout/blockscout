@@ -2418,18 +2418,14 @@ defmodule Explorer.Chain do
   @doc """
   Streams a list of validators that have been cataloged.
   """
-  @spec stream_cataloged_validator_address_hashes(
-          initial :: accumulator,
-          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_cataloged_validator_address_hashes(initial, reducer) when is_function(reducer, 2) do
+  @spec stream_cataloged_validator_address_hashes() :: {:ok, [Hash.Address.t()]}
+  def stream_cataloged_validator_address_hashes() do
     Address.Name
     |> where(fragment("(metadata->>'type')::text = 'validator'"))
     |> where(fragment("(metadata->>'active')::boolean = true"))
-    |> select([:address_hash])
     |> order_by(asc: :updated_at)
-    |> Repo.stream_reduce(initial, reducer)
+    |> select([:address_hash])
+    |> Repo.stream_reduce([], &[&1.address_hash | &2])
   end
 
   @doc """

@@ -22,7 +22,7 @@ defmodule Indexer.Fetcher.ValidatorsUpdater do
 
   @impl GenServer
   def handle_info(:update_validators, state) do
-    {:ok, addresses} = Chain.stream_cataloged_validator_address_hashes([], &[&1 | &2])
+    {:ok, addresses} = Chain.stream_cataloged_validator_address_hashes()
 
     addresses
     |> Enum.reverse()
