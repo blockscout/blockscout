@@ -137,9 +137,32 @@ defmodule Indexer.Block.Fetcher do
         {range, nil}
       end
 
-    _some_data_range_result = do_fetch_and_import_range(state, some_data_range, false)
+    some_data_range_result = do_fetch_and_import_range(state, some_data_range, false)
 
-    do_fetch_and_import_range(state, all_data_range, true)
+    all_data_range_result = do_fetch_and_import_range(state, all_data_range, true)
+
+    with {:ok, some_data_range_result} <- some_data_range_result,
+         {:ok, all_data_range_result} <- all_data_range_result do
+      merged_result = merge_results(some_data_range_result, all_data_range_result)
+
+      {:ok, merged_result}
+    else
+      error -> error
+    end
+  end
+
+  defp merge_results(result1, result2) do
+    inserted =
+      Map.merge(result1[:inserted], result2[:inserted], fn _k, v1, v2 ->
+        v1 ++ v2
+      end)
+
+    errors =
+      Map.merge(result1[:errors], result2[:errors], fn _k, v1, v2 ->
+        v1 ++ v2
+      end)
+
+    %{inserted: inserted, errors: errors}
   end
 
   defp do_fetch_and_import_range(_, nil, _), do: {:ok, %{}}
