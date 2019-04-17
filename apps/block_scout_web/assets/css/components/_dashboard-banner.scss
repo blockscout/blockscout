@@ -3,11 +3,12 @@ $dashboard-banner-gradient-end: lighten(
   $dashboard-banner-gradient-start,
   5%
 ) !default;
-$dashboard-banner-network-graph-background-color: #fff !default;
+$dashboard-banner-network-plain-container-background-color: lighten($dashboard-banner-gradient-end, 5%)!default;
 $dashboard-line-color-price: $primary !default;
 $dashboard-line-color-market: $secondary !default;
-$dashboard-stats-item-color: #fff !default;
-$dashboard-stats-item-border-color: #fff !default;
+$dashboard-stats-item-label-color: #fff !default;
+$dashboard-stats-item-value-color: rgba(#fff, 0.8) !default;
+$dashboard-stats-item-border-color: $primary !default;
 $dashboard-banner-network-stats-static-image: false !default;
 $dashboard-banner-network-stats-static-image-height: 150px !default;
 
@@ -18,7 +19,7 @@ $dashboard-banner-network-stats-static-image-height: 150px !default;
   position: relative;
 
   &::after {
-    background-color: $dashboard-banner-network-graph-background-color;
+    background-color: $dashboard-banner-network-plain-container-background-color;
     bottom: 0;
     content: "";
     display: block;
@@ -28,14 +29,6 @@ $dashboard-banner-network-stats-static-image-height: 150px !default;
     top: 3rem;
 
     @include media-breakpoint-down(sm) {
-      display: none;
-    }
-  }
-
-  &.dashboard-banner-container-disabled-graph {
-    padding-top: 0;
-
-    &::after {
       display: none;
     }
   }
@@ -55,13 +48,13 @@ $dashboard-banner-network-stats-static-image-height: 150px !default;
   }
 }
 
-.dashboard-banner-network-graph {
+.dashboard-banner-network-plain-container {
   align-items: center;
-  background-color: $dashboard-banner-network-graph-background-color;
+  background-color: $dashboard-banner-network-plain-container-background-color;
   border-top-left-radius: 10px;
   display: flex;
   height: 205px;
-  justify-content: space-between;
+  justify-content: center;
   margin: 0 0 0 60px;
   max-width: 100%;
   padding: 30px 0 30px 30px;
@@ -170,30 +163,12 @@ $dashboard-banner-network-stats-static-image-height: 150px !default;
 }
 
 .dashboard-banner-network-stats {
-  column-gap: 40px;
+  column-gap: 100px;
   display: grid;
   flex-shrink: 0;
-  grid-template-columns: 1fr 1fr;
-  padding-bottom: 30px;
-  row-gap: 45px;
+  grid-template-columns: 1fr 1fr 1fr;
 
-  .dashboard-banner-container-disabled-graph & {
-    align-items: center;
-    display: flex;
-    justify-content: space-between;
-    min-height: $dashboard-banner-network-stats-static-image-height;
-    padding-bottom: 0;
-    width: 100%;
-
-    @include media-breakpoint-down(sm) {
-      align-items: flex-start;
-      flex-direction: column;
-      padding-bottom: 30px;
-      padding-top: 30px;
-    }
-  }
-
-  @include stats-item($dashboard-stats-item-border-color, $dashboard-stats-item-color);
+  @include stats-item($dashboard-stats-item-border-color, $dashboard-stats-item-label-color, $dashboard-stats-item-value-color);
 
   .dashboard-banner-network-stats-item {
     @include media-breakpoint-down(sm) {
@@ -203,23 +178,5 @@ $dashboard-banner-network-stats-static-image-height: 150px !default;
         margin-bottom: 0;
       }
     }
-  }
-}
-
-.dashboard-banner-network-stats-static-image {
-  background-position: 50% 50%;
-  background-repeat: no-repeat;
-  background-size: cover;
-  flex-shrink: 0;
-  height: $dashboard-banner-network-stats-static-image-height;
-  order: 10;
-  width: 300px;
-
-  @if $dashboard-banner-network-stats-static-image {
-    background-image: url($dashboard-banner-network-stats-static-image);
-  }
-
-  @include media-breakpoint-down(md) {
-    display: none;
   }
 }

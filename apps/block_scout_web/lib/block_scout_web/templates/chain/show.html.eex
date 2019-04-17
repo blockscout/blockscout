@@ -1,8 +1,43 @@
 <div class='dashboard-banner-container' data-page="chain-details">
   <div class="container">
     <div class="dashboard-banner">
-      <!-- -->
-      <div class='dashboard-banner-network-stats'>
+      <!-- Graph and legend -->
+      <div class="dashboard-banner-network-graph">
+        <!-- Graph -->
+        <div class="dashboard-banner-chart" style="display: none">
+          <div data-chart-loading-message class="tile tile-muted text-center mt-5">
+            <span class="loading-spinner-small mr-2">
+              <span class="loading-spinner-block-1"></span>
+              <span class="loading-spinner-block-2"></span>
+            </span>
+            <%= gettext("Loading chart") %>...
+          </div>
+          <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
+            <span><%= gettext("There was a problem loading the chart.") %></span>
+          </button>
+          <canvas data-chart="marketHistoryChart" data-market_history_chart_path="<%= @chart_data_path %>" width="350" height="152" style="display: none;"></canvas>
+        </div>
+        <!-- Legend -->
+        <div class="dashboard-banner-chart-legend">
+          <div class="dashboard-banner-chart-legend-item">
+            <span class="dashboard-banner-chart-legend-label">
+              <%= gettext "Price" %>
+            </span>
+            <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+            </span>
+          </div>
+          <div class="dashboard-banner-chart-legend-item">
+            <span class="dashboard-banner-chart-legend-label">
+              <%= gettext "Market Cap" %>
+            </span>
+            <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= @exchange_rate.market_cap_usd %>">
+            </span>
+          </div>
+        </div>
+      </div>
+      <!-- Stats -->
+      <div class="dashboard-banner-network-plain-container">
+        <div class='dashboard-banner-network-stats'>
           <%= case @average_block_time do %>
             <% {:error, :disabled} -> %>
               <%= nil %>
@@ -30,37 +65,6 @@
             </span>
             <span class="dashboard-banner-network-stats-value" data-selector="address-count">
               <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
-            </span>
-          </div>
-      </div>
-      <!-- -->
-      <div class="dashboard-banner-network-graph">
-        <div class="dashboard-banner-chart">
-          <div data-chart-loading-message class="tile tile-muted text-center mt-5">
-            <span class="loading-spinner-small mr-2">
-              <span class="loading-spinner-block-1"></span>
-              <span class="loading-spinner-block-2"></span>
-            </span>
-            <%= gettext("Loading chart") %>...
-          </div>
-          <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
-            <span><%= gettext("There was a problem loading the chart.") %></span>
-          </button>
-          <canvas data-chart="marketHistoryChart" data-market_history_chart_path="<%= @chart_data_path %>" width="350" height="152" style="display: none;"></canvas>
-        </div>
-        <div class="dashboard-banner-chart-legend">
-          <div class="dashboard-banner-chart-legend-item">
-            <span class="dashboard-banner-chart-legend-label">
-              <%= gettext "Price" %>
-            </span>
-            <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
-            </span>
-          </div>
-          <div class="dashboard-banner-chart-legend-item">
-            <span class="dashboard-banner-chart-legend-label">
-              <%= gettext "Market Cap" %>
-            </span>
-            <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= @exchange_rate.market_cap_usd %>">
             </span>
           </div>
         </div>

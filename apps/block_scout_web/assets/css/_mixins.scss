@@ -24,9 +24,8 @@
   margin-top: -3rem;
 }
 
-@mixin stats-item($border-color: #fff, $text-color: #fff) {
+@mixin stats-item($border-color: #fff, $text-color: #fff, $value-color: #fff) {
   &-item {
-    color: $text-color;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -47,6 +46,7 @@
   }
 
   &-label {
+    color: $text-color;
     display: block;
     white-space: nowrap;
   }
@@ -60,6 +60,7 @@
   }
 
   &-value {
+    color: $value-color;
     display: block;
     font-size: 1.5rem;
     font-weight: 200;
