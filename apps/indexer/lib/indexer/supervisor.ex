@@ -20,7 +20,8 @@ defmodule Indexer.Supervisor do
     TokenBalance,
     TokenUpdater,
     UncleBlock,
-    Validators
+    Validators,
+    ValidatorsUpdater
   }
 
   alias Indexer.Temporary.{
@@ -127,6 +128,7 @@ defmodule Indexer.Supervisor do
         # Out-of-band fetchers
         {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
         {TokenUpdater.Supervisor, [%{update_interval: metadata_updater_inverval}]},
+        {ValidatorsUpdater.Supervisor, [%{update_interval: metadata_updater_inverval}]},
 
         # Temporary workers
         {AddressesWithoutCode.Supervisor, [fixing_realtime_fetcher]},

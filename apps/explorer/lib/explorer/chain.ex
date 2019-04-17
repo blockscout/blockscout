@@ -2416,6 +2416,23 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Streams a list of validators that have been cataloged.
+  """
+  @spec stream_cataloged_validator_address_hashes(
+          initial :: accumulator,
+          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_cataloged_validator_address_hashes(initial, reducer) when is_function(reducer, 2) do
+    Address.Name
+    |> where(fragment("(metadata->>'type')::text = 'validator'"))
+    |> where(fragment("(metadata->>'active')::boolean = true"))
+    |> select([:address_hash])
+    |> order_by(asc: :updated_at)
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
   Returns a list of block numbers token transfer `t:Log.t/0`s that don't have an
   associated `t:TokenTransfer.t/0` record.
   """
