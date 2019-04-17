@@ -123,7 +123,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
   @async_import_remaining_block_data_options ~w(address_hash_to_fetched_balance_block_number)a
 
   @impl Block.Fetcher
-  def import(%Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}, options) when is_map(options) do
+  def import(%Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}, options, fetch_all_data)
+      when is_map(options) do
     {async_import_remaining_block_data_options, options_with_block_rewards_errors} =
       Map.split(options, @async_import_remaining_block_data_options)
 
@@ -134,11 +135,13 @@ defmodule Indexer.Block.Catchup.Fetcher do
       put_in(options_without_block_rewards_errors, [:blocks, :params, Access.all(), :consensus], true)
 
     with {:import, {:ok, imported} = ok} <- {:import, Chain.import(full_chain_import_options)} do
-      async_import_remaining_block_data(
-        imported,
-        Map.put(async_import_remaining_block_data_options, :block_rewards, %{errors: block_reward_errors}),
-        json_rpc_named_arguments
-      )
+      if fetch_all_data do
+        async_import_remaining_block_data(
+          imported,
+          Map.put(async_import_remaining_block_data_options, :block_rewards, %{errors: block_reward_errors}),
+          json_rpc_named_arguments
+        )
+      end
 
       ok
     end

@@ -145,7 +145,7 @@ defmodule Indexer.Fetcher.UncleBlock do
   @ignored_options ~w(address_hash_to_fetched_balance_block_number)a
 
   @impl Block.Fetcher
-  def import(_, options) when is_map(options) do
+  def import(_, options, _) when is_map(options) do
     with {:ok, %{block_second_degree_relations: block_second_degree_relations}} = ok <-
            options
            |> Map.drop(@ignored_options)

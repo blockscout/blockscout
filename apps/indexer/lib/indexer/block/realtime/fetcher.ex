@@ -167,7 +167,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           addresses: %{params: addresses_params},
           block_rewards: block_rewards
-        } = options
+        } = options,
+        _
       ) do
     with {:balances, {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}}} <-
            {:balances,
