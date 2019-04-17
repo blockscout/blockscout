@@ -16,8 +16,10 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 
 // Bootstrap Core CSS
 @import "node_modules/bootstrap/scss/functions";
-@import "theme/variables";
 @import "node_modules/bootstrap/scss/mixins";
+
+@import "theme/variables";
+
 @import "node_modules/bootstrap/scss/root";
 @import "node_modules/bootstrap/scss/reboot";
 @import "node_modules/bootstrap/scss/grid";

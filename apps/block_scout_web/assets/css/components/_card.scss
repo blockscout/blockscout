@@ -37,6 +37,18 @@ $card-background-1-text-color: #fff !default;
     margin-bottom: 20px;
   }
 
+  &.margin-bottom-sm {
+    margin-bottom: 10px;
+  }
+
+  &.margin-bottom-xs {
+    margin-bottom: 5px;
+  }
+
+  &.margin-bottom-0 {
+    margin-bottom: 0;
+  }
+
   .card-title-container & {
     line-height: 1.2;
     margin: 0;
@@ -45,6 +57,14 @@ $card-background-1-text-color: #fff !default;
       margin-bottom: 25px;
     }
   }
+}
+
+.card-subtitle {
+  color: #999;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.2;
+  margin: 0 0 30px;
 }
 
 .card-title-container {
