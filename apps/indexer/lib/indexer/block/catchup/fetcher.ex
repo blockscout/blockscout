@@ -123,7 +123,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   @async_import_remaining_block_data_options ~w(address_hash_to_fetched_balance_block_number)a
 
   @impl Block.Fetcher
-  def import(%Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}, options, fetch_all_data)
+  def import(%Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}, options, fetch_all_data \\ true)
       when is_map(options) do
     {async_import_remaining_block_data_options, options_with_block_rewards_errors} =
       Map.split(options, @async_import_remaining_block_data_options)
