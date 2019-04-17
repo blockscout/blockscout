@@ -152,17 +152,26 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp merge_results(result1, result2) do
-    inserted =
-      Map.merge(result1[:inserted], result2[:inserted], fn _k, v1, v2 ->
-        v1 ++ v2
-      end)
+    cond do
+      result1 == %{} ->
+        result2
 
-    errors =
-      Map.merge(result1[:errors], result2[:errors], fn _k, v1, v2 ->
-        v1 ++ v2
-      end)
+      result2 == %{} ->
+        result1
 
-    %{inserted: inserted, errors: errors}
+      true ->
+        inserted =
+          Map.merge(result1[:inserted], result2[:inserted], fn _k, v1, v2 ->
+            v1 ++ v2
+          end)
+
+        errors =
+          Map.merge(result1[:errors], result2[:errors], fn _k, v1, v2 ->
+            v1 ++ v2
+          end)
+
+        %{inserted: inserted, errors: errors}
+    end
   end
 
   defp do_fetch_and_import_range(_, nil, _), do: {:ok, %{}}
