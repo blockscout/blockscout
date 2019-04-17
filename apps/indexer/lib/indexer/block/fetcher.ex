@@ -131,7 +131,7 @@ defmodule Indexer.Block.Fetcher do
             {nil, range}
 
           true ->
-            {first..(first + @geth_block_limit), (first + @geth_block_limit)..last}
+            {first..(first + @geth_block_limit), (first + @geth_block_limit + 1)..last}
         end
       else
         {range, nil}
@@ -165,10 +165,7 @@ defmodule Indexer.Block.Fetcher do
             v1 ++ v2
           end)
 
-        errors =
-          Map.merge(result1[:errors], result2[:errors], fn _k, v1, v2 ->
-            v1 ++ v2
-          end)
+        errors = Map.get(result1, :errors, []) ++ Map.get(result2, :errors, [])
 
         %{inserted: inserted, errors: errors}
     end
