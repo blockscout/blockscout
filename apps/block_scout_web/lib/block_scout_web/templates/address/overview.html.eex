@@ -22,6 +22,7 @@
                 </span>
               </span>
               <span
+                class="overview-title-item"
                 data-target="#qrModal"
                 data-toggle="modal"
               >
