@@ -20,6 +20,7 @@
  - [#1718](https://github.com/poanetwork/blockscout/pull/1718) - Flatten indexer module hierarchy and supervisor tree
  - [#1753](https://github.com/poanetwork/blockscout/pull/1753) - Add a check mark to decompiled contract tab
  - [#1744](https://github.com/poanetwork/blockscout/pull/1744) - remove `0x0..0` from tests
+ - [#1763](https://github.com/poanetwork/blockscout/pull/1763) - Describe indexer structure and list existing fetchers
 
 
 ## 1.3.9-beta
