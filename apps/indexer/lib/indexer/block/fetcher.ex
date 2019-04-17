@@ -120,7 +120,7 @@ defmodule Indexer.Block.Fetcher do
     variant = Keyword.get(json_rpc_named_arguments, :variant)
 
     {all_data_range, some_data_range} =
-      if variant == EthereumJSONRPC.Geth do
+      if variant == EthereumJSONRPC.Geth && Application.get_env(:indexer, :limit_geth) do
         {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
 
         cond do

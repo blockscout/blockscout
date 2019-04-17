@@ -34,7 +34,8 @@ config :indexer,
   metadata_updater_days_interval: 2,
   # bytes
   memory_limit: 1 <<< 30,
-  first_block: System.get_env("FIRST_BLOCK") || 0
+  first_block: System.get_env("FIRST_BLOCK") || 0,
+  limit_geth: false
 
 # config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
 # config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
