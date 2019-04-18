@@ -13,6 +13,7 @@
  - [#1740](https://github.com/poanetwork/blockscout/pull/1740) - fix empty block time
  - [#1743](https://github.com/poanetwork/blockscout/pull/1743) - sort decompiled smart contracts in lexicographical order
  - [#1756](https://github.com/poanetwork/blockscout/pull/1756) - add today's token balance from the previous value
+ - [#1778](https://github.com/poanetwork/blockscout/pull/1778) - Make websocket optional for realtime fetcher
 
 ### Chore
 
