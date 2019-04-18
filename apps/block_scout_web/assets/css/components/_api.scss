@@ -1,6 +1,8 @@
 $api-text-monospace-color: $primary !default;
 $api-text-monospace-background: rgba($api-text-monospace-color, 0.1) !default;
 $api-anchors-list-background-color: #f6f7f9 !default;
+$api-doc-list-item-title-color: $primary !default;
+$api-doc-list-item-view-more-color: $api-doc-list-item-title-color !default;
 
 .api-text-monospace {
   color: $api-text-monospace-color;
@@ -55,4 +57,76 @@ $api-anchors-list-background-color: #f6f7f9 !default;
   font-size: 12px;
   line-height: 1.2;
   margin-left: 20px;
+}
+.api-doc-list-item {
+  border-bottom: 1px solid $base-border-color;
+  padding: $card-vertical-padding $card-horizontal-padding;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.api-doc-list-item-contents {
+  display: flex;
+  justify-content: space-between;
+}
+
+.api-doc-list-item-title {
+  color: $api-doc-list-item-title-color;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 15px;
+}
+
+.api-doc-list-item-query {
+  display: inline-block;
+  font-size: 12px;
+  line-height: 1.2;
+  margin-bottom: 20px;
+
+  > strong {
+    font-weight: 700;
+  }
+}
+
+.api-doc-list-item-text {
+  color: #aaa;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.api-doc-list-item-controls {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  margin-left: 50px;
+}
+
+.api-doc-list-item-controls-badges {
+  display: flex;
+  justify-content: flex-end;
+
+  .api-badge {
+    margin-right: 8px;
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
+.api-doc-list-item-controls-view-more {
+  align-self: flex-end;
+  color: $api-doc-list-item-view-more-color;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: auto;
+
+  .fa {
+    margin-left: 5px;
+  }
 }

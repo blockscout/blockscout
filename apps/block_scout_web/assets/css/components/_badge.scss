@@ -2,6 +2,8 @@ $badge-success-color: #15bba6 !default;
 $badge-success-background-color: rgba($badge-success-color, 0.1) !default;
 $badge-danger-color: #ed9966 !default;
 $badge-danger-background-color: rgba($badge-danger-color, 0.1) !default;
+$badge-neutral-color: #333 !default;
+$badge-neutral-background-color: #e9e9e9 !default;
 
 .badge {
   color: $white;
@@ -16,6 +18,16 @@ $badge-danger-background-color: rgba($badge-danger-color, 0.1) !default;
     width: auto;
   }
 
+  &.api-badge {
+    font-size: 12px;
+    font-weight: 700;
+    height: 24px;
+    line-height: 26px;
+    margin: 0;
+    padding: 0 8px;
+    width: auto;
+  }
+
   &.badge-success {
     background-color: $badge-success-background-color;
     color: $badge-success-color;
@@ -24,5 +36,10 @@ $badge-danger-background-color: rgba($badge-danger-color, 0.1) !default;
   &.badge-danger {
     background-color: $badge-danger-background-color;
     color: $badge-danger-color;
+  }
+
+  &.badge-neutral {
+    background-color: $badge-neutral-background-color;
+    color: $badge-neutral-color;
   }
 }

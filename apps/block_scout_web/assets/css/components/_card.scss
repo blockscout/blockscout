@@ -21,7 +21,9 @@ $card-background-1-text-color: #fff !default;
 
 .card-header {
   background: transparent;
+  border-bottom: 1px solid $base-border-color;
   padding: $card-vertical-padding $card-horizontal-padding;
+
   &-tabs {
     margin: (-$card-spacer-y) (-$card-spacer-x);
   }
