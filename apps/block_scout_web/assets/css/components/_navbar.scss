@@ -171,6 +171,10 @@ $navbar-logo-width: auto !default;
   }
   .input-group {
     width: 100%;
+
+    .awesomplete {
+      width: 100%;
+    }
   }
   .navbar-nav {
     white-space: nowrap;
