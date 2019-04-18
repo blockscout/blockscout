@@ -5,6 +5,7 @@
 - [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
 - [#1696](https://github.com/poanetwork/blockscout/pull/1696) - full-text search by tokens
 - [#1742](https://github.com/poanetwork/blockscout/pull/1742) - Support RSK
+- [#1741](https://github.com/poanetwork/blockscout/pull/1741) - Fetching validators from POSDAO
 
 ### Fixes
 

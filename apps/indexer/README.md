@@ -23,6 +23,7 @@ Some data has to be extracted from already fetched data, and there're several tr
 - `mint_transfers`: parses logs to extract token mint transfers
 - `address_token_balances`: creates token balance entities for futher fetching, based on detected token transfers
 - `blocks`: extracts block signer hash from additional data for Clique chains
+- `validators`: parses logs to extract validators set from POA or POS network
 
 
 ### Root fetchers
@@ -57,6 +58,7 @@ The following async fetchers are launched for importing missing data:
 - `token_balance`
 - `token`
 - `contract_code`
+- `validators`
 
 ### Async fetchers
 
@@ -78,10 +80,12 @@ Most of them are based off `BufferedTask`, and the basic algorithm goes like thi
 - `token_balance`: for `address_token_balances` with null `value_fetched_at`. Also upserts `address_current_token_balances`
 - `token`: for `tokens` with `cataloged == false`
 - `contract_code`: for `transactions` with non-null `created_contract_address_hash` and null `created_contract_code_indexed_at`
+- `validators`: for fetching current validators from network on the startup
 
 Additionally:
 - `token_updater` is run every 2 days to update token metadata
-- `coin_balance_on_demand` is triggered from web UI to ensure address balance is as up-to-date as possible
+- `coin_balance_on_demand` is triggered from web UI to ensure address balance is as up-to-date as possible,
+- `validators_updater` is run periodically to update validators metadata
 
 ### Temporary workers
 
