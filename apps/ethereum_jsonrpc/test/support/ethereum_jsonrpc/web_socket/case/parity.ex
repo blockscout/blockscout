@@ -8,7 +8,7 @@ defmodule EthereumJSONRPC.WebSocket.Case.Parity do
   def setup do
     url = "ws://3.85.253.242:8546"
     web_socket_module = EthereumJSONRPC.WebSocket.WebSocketClient
-    web_socket = start_supervised!({web_socket_module, [url, []]})
+    web_socket = start_supervised!({web_socket_module, [url, [keepalive: :timer.minutes(10)], []]})
 
     %{
       block_interval: 5_000,
