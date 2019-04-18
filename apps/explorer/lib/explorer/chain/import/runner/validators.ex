@@ -73,8 +73,8 @@ defmodule Explorer.Chain.Import.Runner.Validators do
       )
 
     try do
-      {_count, results} = repo.update_all(query, [], timeout: timeout)
-      {:ok, results}
+      {count, _results} = repo.update_all(query, [], timeout: timeout)
+      {:ok, count}
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, address_hashes: address_hashes}}
