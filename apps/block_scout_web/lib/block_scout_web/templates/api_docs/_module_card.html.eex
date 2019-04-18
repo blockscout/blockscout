@@ -1,13 +1,14 @@
-<div class="card">
-  <h2 class="card-header">
-    <%= "#{String.capitalize(@module.name)}" %>
-    <small class="text-primary">?module=<%= @module.name %></small>
-  </h2>
-
+<div class="card" id="<%= @module.name %>">
+  <div class="card-header">
+    <h2 class="card-title margin-bottom-0">
+      <%= "#{String.capitalize(@module.name)}" %>
+      <span class="api-text-title api-text-monospace api-text-monospace-background">?module=<%= @module.name %></span>
+    </h2>
+  </div>
   <div class="card-body">
     <%= for action <- @module.actions do %>
       <%= render "_action_tile.html", module_name: @module.name, action: action %>
     <% end %>
-  </div> <!-- /card-body -->
-</div> <!-- /card -->
+  </div>
+</div>
 

@@ -20,8 +20,8 @@ $card-background-1-text-color: #fff !default;
 }
 
 .card-header {
-  background-color: #fff;
-
+  background: transparent;
+  padding: $card-vertical-padding $card-horizontal-padding;
   &-tabs {
     margin: (-$card-spacer-y) (-$card-spacer-x);
   }
@@ -30,19 +30,19 @@ $card-background-1-text-color: #fff !default;
 .card-title {
   font-size: 18px;
   font-weight: normal;
-  line-height: 2.2rem;
+  line-height: 1.2rem;
   margin-bottom: 2rem;
 
   &.margin-bottom-md {
-    margin-bottom: 20px;
+    margin-bottom: 25px;
   }
 
   &.margin-bottom-sm {
-    margin-bottom: 10px;
+    margin-bottom: 15px;
   }
 
   &.margin-bottom-xs {
-    margin-bottom: 5px;
+    margin-bottom: 10px;
   }
 
   &.margin-bottom-0 {
@@ -60,11 +60,15 @@ $card-background-1-text-color: #fff !default;
 }
 
 .card-subtitle {
-  color: #999;
+  color: #aaa;
   font-size: 12px;
   font-weight: normal;
   line-height: 1.2;
   margin: 0 0 30px;
+
+  &.margin-bottom-0 {
+    margin-bottom: 0;
+  }
 }
 
 .card-title-container {

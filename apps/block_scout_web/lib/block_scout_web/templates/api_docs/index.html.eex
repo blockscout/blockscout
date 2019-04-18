@@ -1,16 +1,17 @@
 <section class="container">
   <div class="card">
     <div class="card-body">
-
-      <h1 class="card-title mb-0">API Documentation</h2>
-      <small class="text-monospace text-primary" data-endpoint-url="<%= BlockScoutWeb.Endpoint.url() %>/api">[ <%= gettext "Base URL:" %> <%= @conn.host %>/api ]</small>
-      <p class="mt-4"><%= gettext "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests." %></p>
-
+      <h1 class="card-title margin-bottom-sm"><%= gettext("API Documentation") %></h2>
+      <p class="api-text-monospace" data-endpoint-url="<%= BlockScoutWeb.Endpoint.url() %>/api">[ <%= gettext "Base URL:" %> <%= @conn.host %>/api ]</p>
+      <p class="card-subtitle margin-bottom-0"><%= gettext "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests." %></p>
+    </div>
+    <div class="api-anchors-list">
+      <%= for module <- @documentation do %>
+        <%= render "_module_item.html", module: module %>
+      <% end %>
     </div>
   </div>
-
   <%= for module <- @documentation do %>
     <%= render "_module_card.html", module: module %>
   <% end %>
-
 </section>

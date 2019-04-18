@@ -1,0 +1,58 @@
+$api-text-monospace-color: $primary !default;
+$api-text-monospace-background: rgba($api-text-monospace-color, 0.1) !default;
+$api-anchors-list-background-color: #f6f7f9 !default;
+
+.api-text-monospace {
+  color: $api-text-monospace-color;
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+}
+
+.api-text-monospace-background {
+  background-color: $api-text-monospace-background;
+  border-radius: 2px;
+  font-weight: 300;
+  padding: 5px 6px;
+}
+
+.api-anchors-list {
+  background-color: $api-anchors-list-background-color;
+  column-gap: 40px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  padding: 30px;
+  row-gap: 25px;
+}
+
+.api-anchors-list-item {
+  display: grid;
+  grid-template-columns: 0.75fr minmax(0, 1.25fr);
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.api-anchors-list-item-title {
+  align-self: center;
+  color: #333;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.api-anchors-list-item-value {
+  align-self: center;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.api-text-title {
+  font-size: 12px;
+  line-height: 1.2;
+  margin-left: 20px;
+}
