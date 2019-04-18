@@ -98,7 +98,7 @@ defmodule Explorer.Chain.Import.Runner.Validators do
       Import.insert_changes_list(
         repo,
         changes_list,
-        conflict_target: [:address_hash, :name],
+        conflict_target: {:unsafe_fragment, "(address_hash) where \"primary\" = true"},
         on_conflict: on_conflict,
         for: Address.Name,
         returning: [:address_hash],
@@ -117,13 +117,7 @@ defmodule Explorer.Chain.Import.Runner.Validators do
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", name.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", name.updated_at)
         ]
-      ],
-      where:
-        fragment(
-          "(EXCLUDED.name, EXCLUDED.metadata) IS DISTINCT FROM (?, ?)",
-          name.name,
-          name.metadata
-        )
+      ]
     )
   end
 end

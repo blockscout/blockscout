@@ -7,6 +7,7 @@ defmodule Indexer.Fetcher.ValidatorsUpdater do
   use Indexer.Fetcher
 
   alias Explorer.Chain
+  alias Explorer.Chain.Hash.Address
   alias Explorer.Validator.MetadataRetriever
 
   def start_link([initial_state, gen_server_options]) do
@@ -25,7 +26,11 @@ defmodule Indexer.Fetcher.ValidatorsUpdater do
     {:ok, addresses} = Chain.stream_cataloged_validator_address_hashes()
 
     addresses
-    |> Enum.reverse()
+    |> Enum.map(fn address ->
+      case Address.dump(address) do
+        {:ok, hash} -> hash
+      end
+    end)
     |> MetadataRetriever.fetch_validators_metadata()
     |> update_metadata()
 
