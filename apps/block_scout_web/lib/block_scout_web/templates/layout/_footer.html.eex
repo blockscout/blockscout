@@ -11,7 +11,7 @@
 
       <div class="col-md-3">
         <div class="icon-links icon-links-primary footer-social-icons">
-          <a href="https://github.com/poanetwork" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Github") %>">
+          <a href="https://github.com/poanetwork/blockscout" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Github") %>">
             <i class="fab fa-github"></i>
           </a>
           <a href="https://www.twitter.com/_blockscout/" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Twitter") %>">
