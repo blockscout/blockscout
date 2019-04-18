@@ -42,5 +42,4 @@ defmodule Indexer.Fetcher.ValidatorsUpdater do
   defp update_metadata(validators) do
     Chain.import(%{validators: %{params: validators}})
   end
-
 end

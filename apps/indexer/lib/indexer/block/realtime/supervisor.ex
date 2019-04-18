@@ -29,10 +29,10 @@ defmodule Indexer.Block.Realtime.Supervisor do
             {Task.Supervisor, name: Indexer.Block.Realtime.TaskSupervisor},
             {web_socket_module, [url, [name: web_socket]]},
             {Indexer.Block.Realtime.Fetcher,
-              [
-                %{block_fetcher: block_fetcher, subscribe_named_arguments: block_fetcher_subscribe_named_arguments},
-                [name: Indexer.Block.Realtime.Fetcher]
-              ]}
+             [
+               %{block_fetcher: block_fetcher, subscribe_named_arguments: block_fetcher_subscribe_named_arguments},
+               [name: Indexer.Block.Realtime.Fetcher]
+             ]}
           ]
       end
 

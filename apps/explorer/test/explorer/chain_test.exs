@@ -3336,8 +3336,7 @@ defmodule Explorer.ChainTest do
 
   describe "stream_cataloged_validator_address_hashes" do
     test "returns a list of active validators adresses" do
-      %{address_hash: address_hash} =
-        insert(:address_name, primary: true, metadata: %{active: true, type: "validator"})
+      %{address_hash: address_hash} = insert(:address_name, primary: true, metadata: %{active: true, type: "validator"})
 
       insert(:address_name, primary: true)
 
