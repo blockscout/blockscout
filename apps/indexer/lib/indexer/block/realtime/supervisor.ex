@@ -34,6 +34,16 @@ defmodule Indexer.Block.Realtime.Supervisor do
                [name: Indexer.Block.Realtime.Fetcher]
              ]}
           ]
+
+        _ ->
+          [
+            {Task.Supervisor, name: Indexer.Block.Realtime.TaskSupervisor},
+            {Indexer.Block.Realtime.Fetcher,
+             [
+               %{block_fetcher: block_fetcher, subscribe_named_arguments: nil},
+               [name: Indexer.Block.Realtime.Fetcher]
+             ]}
+          ]
       end
 
     Supervisor.init(children, strategy: :rest_for_one)

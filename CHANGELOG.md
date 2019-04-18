@@ -14,9 +14,11 @@
  - [#1743](https://github.com/poanetwork/blockscout/pull/1743) - sort decompiled smart contracts in lexicographical order
  - [#1756](https://github.com/poanetwork/blockscout/pull/1756) - add today's token balance from the previous value
  - [#1768](https://github.com/poanetwork/blockscout/pull/1768) - fix first block parameter
+ - [#1778](https://github.com/poanetwork/blockscout/pull/1778) - Make websocket optional for realtime fetcher
 
 ### Chore
 
+ - [#1757](https://github.com/poanetwork/blockscout/pull/1757) - Change twitter acc link to official Blockscout acc twitter
  - [#1749](https://github.com/poanetwork/blockscout/pull/1749) - Replace the link in the footer with the official POA announcements tg channel link
  - [#1718](https://github.com/poanetwork/blockscout/pull/1718) - Flatten indexer module hierarchy and supervisor tree
  - [#1753](https://github.com/poanetwork/blockscout/pull/1753) - Add a check mark to decompiled contract tab
