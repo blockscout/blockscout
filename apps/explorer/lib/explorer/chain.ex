@@ -2419,7 +2419,7 @@ defmodule Explorer.Chain do
   Streams a list of validators that have been cataloged.
   """
   @spec stream_cataloged_validator_address_hashes() :: {:ok, [Hash.Address.t()]}
-  def stream_cataloged_validator_address_hashes() do
+  def stream_cataloged_validator_address_hashes do
     Address.Name
     |> where(fragment("(metadata->>'type')::text = 'validator'"))
     |> where(fragment("(metadata->>'active')::boolean = true"))
