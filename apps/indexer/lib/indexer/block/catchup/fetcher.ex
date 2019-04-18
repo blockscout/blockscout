@@ -82,7 +82,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       _ ->
         # realtime indexer gets the current latest block
         first = latest_block_number - 1
-        last = Application.get_env(:indexer, :first_block)
+        last = last_block()
 
         Logger.metadata(first_block_number: first, last_block_number: last)
 
@@ -326,6 +326,15 @@ defmodule Indexer.Block.Catchup.Fetcher do
       end)
     else
       {:error, :queue_unavailable}
+    end
+  end
+
+  defp last_block do
+    string_value = Application.get_env(:indexer, :first_block)
+
+    case Integer.parse(string_value) do
+      {integer, ""} -> integer
+      _ -> 0
     end
   end
 end
