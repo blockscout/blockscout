@@ -84,7 +84,7 @@ Most of them are based off `BufferedTask`, and the basic algorithm goes like thi
 
 Additionally:
 - `token_updater` is run every 2 days to update token metadata
-- `coin_balance_on_demand` is triggered from web UI to ensure address balance is as up-to-date as possible,
+- `coin_balance_on_demand` is triggered from web UI to ensure address balance is as up-to-date as possible
 - `validators_updater` is run periodically to update validators metadata
 
 ### Temporary workers
