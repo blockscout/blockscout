@@ -14,7 +14,7 @@
           <a href="https://github.com/poanetwork" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Github") %>">
             <i class="fab fa-github"></i>
           </a>
-          <a href="https://www.twitter.com/PoaNetwork/" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Twitter") %>">
+          <a href="https://www.twitter.com/_blockscout/" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Twitter") %>">
             <i class="fab fa-twitter"></i>
           </a>
           <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Telegram") %>">
