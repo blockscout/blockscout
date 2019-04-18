@@ -46,7 +46,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   z-index: 9;
 
   @include media-breakpoint-down(sm) {
-
+    flex-direction: column;
   }
 }
 
@@ -158,11 +158,9 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     width: 250px;
   }
 
-  // @include media-breakpoint-down(sm) {
-  //   border-top-right-radius: 10px;
-  //   margin: 0;
-  //   padding: 15px 0 15px 15px;
-  // }
+  @include media-breakpoint-down(sm) {
+    width: 100%;
+  }
 }
 
 .dashboard-banner-network-stats {
@@ -176,11 +174,10 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     row-gap: 20px;
   }
 
-  @include stats-item($dashboard-stats-item-border-color, $dashboard-stats-item-label-color, $dashboard-stats-item-value-color);
-
-  .dashboard-banner-network-stats-item {
-    @include media-breakpoint-down(sm) {
-
-    }
+  @include media-breakpoint-down(sm) {
+    column-gap: 10px;
+    grid-template-columns: 1fr 1fr;
   }
+
+  @include stats-item($dashboard-stats-item-border-color, $dashboard-stats-item-label-color, $dashboard-stats-item-value-color);
 }
