@@ -25,6 +25,9 @@ const config = {
         time: {
           unit: 'day',
           stepSize: 14
+        },
+        ticks: {
+          fontColor: sassVariables.dashboardBannerChartAxisFontColor
         }
       }],
       yAxes: [{
@@ -36,7 +39,8 @@ const config = {
         ticks: {
           beginAtZero: true,
           callback: (value, index, values) => `$${numeral(value).format('0,0.00')}`,
-          maxTicksLimit: 4
+          maxTicksLimit: 4,
+          fontColor: sassVariables.dashboardBannerChartAxisFontColor
         }
       }, {
         id: 'marketCap',
@@ -91,8 +95,8 @@ class MarketHistoryChart {
       data: getPriceData(marketHistoryData),
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.primary,
-      borderColor: sassVariables.primary,
+      backgroundColor: sassVariables.dashboardLineColorPrice,
+      borderColor: sassVariables.dashboardLineColorPrice,
       lineTension: 0
     }
     this.marketCap = {
@@ -101,8 +105,8 @@ class MarketHistoryChart {
       data: getMarketCapData(marketHistoryData, availableSupply),
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.secondary,
-      borderColor: sassVariables.secondary,
+      backgroundColor: sassVariables.dashboardLineColorMarket,
+      borderColor: sassVariables.dashboardLineColorMarket,
       lineTension: 0
     }
     this.availableSupply = availableSupply

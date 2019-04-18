@@ -4,7 +4,7 @@ $dashboard-banner-gradient-end: lighten(
   5%
 ) !default;
 $dashboard-banner-network-plain-container-background-color: lighten($dashboard-banner-gradient-end, 5%)!default;
-$dashboard-line-color-price: $primary !default;
+$dashboard-line-color-price: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-market: $secondary !default;
 $dashboard-stats-item-label-color: #fff !default;
 $dashboard-stats-item-value-color: rgba(#fff, 0.8) !default;
@@ -14,6 +14,7 @@ $dashboard-stats-item-border-color: $primary !default;
 $dashboard-banner-network-stats-static-image: false !default;
 $dashboard-banner-network-stats-static-image-height: 150px !default;
 $dashboard-banner-network-plain-container-height: 205px;
+$dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !default;
 
 .dashboard-banner-container {
   @include gradient-container();
@@ -58,7 +59,7 @@ $dashboard-banner-network-plain-container-height: 205px;
 
 .dashboard-banner-chart {
   flex-grow: 1;
-  margin: 0 0 40px 0;
+  margin: 0 0 35px 0;
   max-width: 350px;
   position: relative;
 
