@@ -94,8 +94,7 @@
       <!-- Search navbar -->
       <div class="search-form d-lg-flex d-inline-block">
         <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
-
-        <div class="input-group">
+        <div class="input-group" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
               <%= awesomplete(f, :q,
                    [
                   class: "form-control me auto",
