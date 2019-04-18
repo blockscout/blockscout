@@ -1,6 +1,8 @@
 use Mix.Config
 
 config :indexer, Indexer.Tracer, disabled?: false
+config :indexer, Indexer.Fetcher.Validators.Supervisor, disabled?: false
+config :indexer, Indexer.Fetcher.ValidatorsUpdater.Supervisor, disabled?: false
 
 config :logger, :indexer,
   level: :warn,
