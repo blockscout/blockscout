@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias Timex.Duration
 
   import BlockScoutWeb.Gettext
+  import BlockScoutWeb.Tokens.Helpers
 
   @tabs ["token_transfers", "internal_transactions", "logs"]
 
@@ -32,45 +33,43 @@ defmodule BlockScoutWeb.TransactionView do
 
   def value_transfer?(_), do: false
 
-  def erc20_token_transfer?(%Transaction{
-        status: :ok,
-        created_contract_address_hash: nil,
-        input: input
-      }) do
-    case to_string(input) do
-      unquote(TokenTransfer.transfer_function_signature()) <> params ->
+  def erc20_token_transfer(
+        %Transaction{
+          status: :ok,
+          created_contract_address_hash: nil,
+          input: input,
+          value: value
+        },
+        token_transfers
+      ) do
+    zero_wei = %Wei{value: Decimal.new(0)}
+
+    case {to_string(input), value} do
+      {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
         types = [:address, {:uint, 256}]
 
         try do
-          [_address, _value] =
+          [address, value] =
             params
             |> Base.decode16!(case: :mixed)
             |> TypeDecoder.decode_raw(types)
 
-          true
+          decimal_value = Decimal.new(value)
+
+          Enum.find(token_transfers, fn token_transfer ->
+            token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value
+          end)
         rescue
-          _ -> false
+          _ -> nil
         end
 
       _ ->
-        false
+        nil
     end
   end
 
-  def erc20_token_transfer?(_) do
-    false
-  end
-
-  def erc20_token_transfer_params(transaction, _token_transfers) do
-    types = [:address, {:uint, 256}]
-    unquote(TokenTransfer.transfer_function_signature()) <> params = to_string(transaction.input)
-
-    [_address, value] =
-      params
-      |> Base.decode16!(case: :mixed)
-      |> TypeDecoder.decode_raw(types)
-
-    Wei.to(%Wei{value: Decimal.new(value)}, :ether)
+  def erc20_token_transfer(_, _) do
+    nil
   end
 
   def processing_time_duration(%Transaction{block: nil}) do
