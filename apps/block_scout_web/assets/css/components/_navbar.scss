@@ -173,7 +173,9 @@ $navbar-logo-width: auto !default;
     width: 100%;
 
     .awesomplete {
-      width: 100%;
+      @include media-breakpoint-down(sm) {
+        width: 100%;
+      }
     }
   }
   .navbar-nav {
