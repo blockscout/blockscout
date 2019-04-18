@@ -31,6 +31,8 @@ defmodule Indexer.Fetcher.ValidatorsUpdaterTest do
 
     pid = start_supervised!({ValidatorsUpdater, [%{update_interval: 1}, []]})
 
+    Process.sleep(1_000)
+
     wait_for_results(fn ->
       updated = Repo.one!(from(n in Address.Name, where: n.address_hash == ^address_hash))
 
