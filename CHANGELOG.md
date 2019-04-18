@@ -5,7 +5,7 @@
 - [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
 - [#1696](https://github.com/poanetwork/blockscout/pull/1696) - full-text search by tokens
 - [#1742](https://github.com/poanetwork/blockscout/pull/1742) - Support RSK
-- [#1755](https://github.com/poanetwork/blockscout/pull/1755) - add styles for Lukso network
+- [#1777](https://github.com/poanetwork/blockscout/pull/1777) - show ERC-20 token transfer info on transaction page
 
 ### Fixes
 
@@ -14,9 +14,13 @@
  - [#1740](https://github.com/poanetwork/blockscout/pull/1740) - fix empty block time
  - [#1743](https://github.com/poanetwork/blockscout/pull/1743) - sort decompiled smart contracts in lexicographical order
  - [#1756](https://github.com/poanetwork/blockscout/pull/1756) - add today's token balance from the previous value
+ - [#1769](https://github.com/poanetwork/blockscout/pull/1769) - add timestamp to block overview
+ - [#1768](https://github.com/poanetwork/blockscout/pull/1768) - fix first block parameter
+ - [#1778](https://github.com/poanetwork/blockscout/pull/1778) - Make websocket optional for realtime fetcher
 
 ### Chore
 
+ - [#1757](https://github.com/poanetwork/blockscout/pull/1757) - Change twitter acc link to official Blockscout acc twitter
  - [#1749](https://github.com/poanetwork/blockscout/pull/1749) - Replace the link in the footer with the official POA announcements tg channel link
  - [#1718](https://github.com/poanetwork/blockscout/pull/1718) - Flatten indexer module hierarchy and supervisor tree
  - [#1753](https://github.com/poanetwork/blockscout/pull/1753) - Add a check mark to decompiled contract tab
@@ -28,7 +32,6 @@
 
 ### Features
 
- - [#1704](https://github.com/poanetwork/blockscout/pull/1704) - Add new styles and "Stakes" page for POSDAO network
  - [#1662](https://github.com/poanetwork/blockscout/pull/1662) - allow specifying number of optimization runs
  - [#1654](https://github.com/poanetwork/blockscout/pull/1654) - add decompiled code tab
  - [#1661](https://github.com/poanetwork/blockscout/pull/1661) - try to compile smart contract with the latest evm version

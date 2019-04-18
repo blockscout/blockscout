@@ -163,20 +163,36 @@
       </div>
     </div>
 
-    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
-      <!-- Value -->
-      <div class="card card-background-1 flex-grow-1">
-        <div class="card-body card-body-flex-column-space-between">
-          <h2 class="card-title balance-card-title"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
-          <div class="text-right">
-            <h3 class="address-balance-text">
-              <%= value(@transaction) %>
-            </h3>
-            <span class="address-current-balance" data-wei-value=<%= @transaction.value.value %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>
+    <% token_transfer = assigns[:token_transfers] && erc20_token_transfer(@transaction, @token_transfers) %>
+    <%= if token_transfer do %>
+      <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
+        <!-- Value -->
+        <div class="card card-background-1 flex-grow-1">
+          <div class="card-body card-body-flex-column-space-between">
+            <h2 class="card-title balance-card-title"><%= gettext "ERC-20" %> <%= gettext "Token Transfer" %></h2>
+            <div class="text-right">
+              <h3 class="address-balance-text">
+                  <%= token_transfer_amount(token_transfer) %>
+                  <%= link(token_symbol(token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, token_transfer.token.contract_address_hash)) %>
+              </h3>
+            </div>
           </div>
-        </div>
       </div>
-
+    <% else %>
+      <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
+        <!-- Value -->
+        <div class="card card-background-1 flex-grow-1">
+          <div class="card-body card-body-flex-column-space-between">
+            <h2 class="card-title balance-card-title"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
+            <div class="text-right">
+              <h3 class="address-balance-text">
+                <%= value(@transaction) %>
+              </h3>
+              <p class="address-current-balance" data-wei-value=<%= @transaction.value.value %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></p>
+            </div>
+          </div>
+      </div>
+    <% end %>
       <!-- Gas -->
       <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
         <div class="card-body card-body-flex-column-space-between">
@@ -184,11 +200,9 @@
           <div class="text-right">
             <!-- Gas Used -->
             <h3 class="address-balance-text">
-              <span>
-                <%= gettext "Used" %>
-                <%= gas_used(@transaction) %> @
-                <%= gas_price(@transaction, :gwei) %>
-              </span>
+              <%= gettext "Used" %>
+              <%= gas_used(@transaction) %> @
+              <%= gas_price(@transaction, :gwei) %>
             </h3>
             <!-- Gas Limit -->
             <p class="address-current-balance">
