@@ -1,11 +1,12 @@
 defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
+  alias ABI.TypeDecoder
   alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
   alias Cldr.Number
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, TokenTransfer, Transaction, Wei}
   alias Explorer.ExchangeRates.Token
   alias Timex.Duration
 
@@ -30,6 +31,47 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def value_transfer?(_), do: false
+
+  def erc20_token_transfer?(%Transaction{
+        status: :ok,
+        created_contract_address_hash: nil,
+        input: input
+      }) do
+    case to_string(input) do
+      unquote(TokenTransfer.transfer_function_signature()) <> params ->
+        types = [:address, {:uint, 256}]
+
+        try do
+          [_address, _value] =
+            params
+            |> Base.decode16!(case: :mixed)
+            |> TypeDecoder.decode_raw(types)
+
+          true
+        rescue
+          _ -> false
+        end
+
+      _ ->
+        false
+    end
+  end
+
+  def erc20_token_transfer?(_) do
+    false
+  end
+
+  def erc20_token_transfer_params(transaction, _token_transfers) do
+    types = [:address, {:uint, 256}]
+    unquote(TokenTransfer.transfer_function_signature()) <> params = to_string(transaction.input)
+
+    [_address, value] =
+      params
+      |> Base.decode16!(case: :mixed)
+      |> TypeDecoder.decode_raw(types)
+
+    Wei.to(%Wei{value: Decimal.new(value)}, :ether)
+  end
 
   def processing_time_duration(%Transaction{block: nil}) do
     :pending
