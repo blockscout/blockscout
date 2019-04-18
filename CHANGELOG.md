@@ -6,6 +6,7 @@
 - [#1696](https://github.com/poanetwork/blockscout/pull/1696) - full-text search by tokens
 - [#1742](https://github.com/poanetwork/blockscout/pull/1742) - Support RSK
 - [#1741](https://github.com/poanetwork/blockscout/pull/1741) - Fetching validators from POSDAO
+- [#1777](https://github.com/poanetwork/blockscout/pull/1777) - show ERC-20 token transfer info on transaction page
 
 ### Fixes
 
@@ -14,6 +15,9 @@
  - [#1740](https://github.com/poanetwork/blockscout/pull/1740) - fix empty block time
  - [#1743](https://github.com/poanetwork/blockscout/pull/1743) - sort decompiled smart contracts in lexicographical order
  - [#1756](https://github.com/poanetwork/blockscout/pull/1756) - add today's token balance from the previous value
+ - [#1769](https://github.com/poanetwork/blockscout/pull/1769) - add timestamp to block overview
+ - [#1768](https://github.com/poanetwork/blockscout/pull/1768) - fix first block parameter
+ - [#1778](https://github.com/poanetwork/blockscout/pull/1778) - Make websocket optional for realtime fetcher
 
 ### Chore
 
