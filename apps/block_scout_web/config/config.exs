@@ -70,6 +70,18 @@ config :block_scout_web,
     %{
       title: "Ethereum Classic",
       url: "https://blockscout.com/etc/mainnet"
+    },
+    %{
+      title: "Aerum Mainnet",
+      url: "https://blockscout.com/aerum/mainnet"
+    },
+    %{
+      title: "Callisto Mainnet",
+      url: "https://blockscout.com/callisto/mainnet"
+    },
+    %{
+      title: "RSK Mainnet",
+      url: "https://blockscout.com/rsk/mainnet"
     }
   ]
 
@@ -95,7 +107,7 @@ config :block_scout_web, BlockScoutWeb.Gettext, locales: ~w(en), default_locale:
 
 config :block_scout_web, BlockScoutWeb.SocialMedia,
   twitter: "PoaNetwork",
-  telegram: "oraclesnetwork",
+  telegram: "poa_network",
   facebook: "PoaNetwork",
   instagram: "PoaNetwork"
 

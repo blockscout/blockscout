@@ -326,9 +326,16 @@ defmodule EthereumJSONRPC do
   @doc """
   Converts `t:quantity/0` to `t:non_neg_integer/0`.
   """
-  @spec quantity_to_integer(quantity) :: non_neg_integer()
+  @spec quantity_to_integer(quantity) :: non_neg_integer() | :error
   def quantity_to_integer("0x" <> hexadecimal_digits) do
     String.to_integer(hexadecimal_digits, 16)
+  end
+
+  def quantity_to_integer(string) do
+    case Integer.parse(string) do
+      {integer, ""} -> integer
+      _ -> :error
+    end
   end
 
   @doc """
@@ -398,9 +405,13 @@ defmodule EthereumJSONRPC do
   Converts `t:timestamp/0` to `t:DateTime.t/0`
   """
   def timestamp_to_datetime(timestamp) do
-    timestamp
-    |> quantity_to_integer()
-    |> Timex.from_unix()
+    case quantity_to_integer(timestamp) do
+      :error ->
+        nil
+
+      quantity ->
+        Timex.from_unix(quantity)
+    end
   end
 
   defp fetch_blocks_by_params(params, request, json_rpc_named_arguments)

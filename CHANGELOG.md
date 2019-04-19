@@ -11,10 +11,44 @@
 
 ### Features
 
+- [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
+- [#1696](https://github.com/poanetwork/blockscout/pull/1696) - full-text search by tokens
+- [#1742](https://github.com/poanetwork/blockscout/pull/1742) - Support RSK
+- [#1777](https://github.com/poanetwork/blockscout/pull/1777) - show ERC-20 token transfer info on transaction page
+- [#1770](https://github.com/poanetwork/blockscout/pull/1770) - set a websocket keepalive from config
+
+### Fixes
+
+ - [#1724](https://github.com/poanetwork/blockscout/pull/1724) - Remove internal tx and token balance fetching from realtime fetcher
+ - [#1727](https://github.com/poanetwork/blockscout/pull/1727) - add logs pagination in rpc api
+ - [#1740](https://github.com/poanetwork/blockscout/pull/1740) - fix empty block time
+ - [#1743](https://github.com/poanetwork/blockscout/pull/1743) - sort decompiled smart contracts in lexicographical order
+ - [#1756](https://github.com/poanetwork/blockscout/pull/1756) - add today's token balance from the previous value
+ - [#1769](https://github.com/poanetwork/blockscout/pull/1769) - add timestamp to block overview
+ - [#1768](https://github.com/poanetwork/blockscout/pull/1768) - fix first block parameter
+ - [#1778](https://github.com/poanetwork/blockscout/pull/1778) - Make websocket optional for realtime fetcher
+
+### Chore
+
+ - [#1783](https://github.com/poanetwork/blockscout/pull/1783) - Update README with the chains that use Blockscout
+ - [#1780](https://github.com/poanetwork/blockscout/pull/1780) - Update link to the Github repo in the footer
+ - [#1757](https://github.com/poanetwork/blockscout/pull/1757) - Change twitter acc link to official Blockscout acc twitter
+ - [#1749](https://github.com/poanetwork/blockscout/pull/1749) - Replace the link in the footer with the official POA announcements tg channel link
+ - [#1718](https://github.com/poanetwork/blockscout/pull/1718) - Flatten indexer module hierarchy and supervisor tree
+ - [#1753](https://github.com/poanetwork/blockscout/pull/1753) - Add a check mark to decompiled contract tab
+ - [#1744](https://github.com/poanetwork/blockscout/pull/1744) - remove `0x0..0` from tests
+ - [#1763](https://github.com/poanetwork/blockscout/pull/1763) - Describe indexer structure and list existing fetchers
+
+
+## 1.3.9-beta
+
+### Features
+
  - [#1662](https://github.com/poanetwork/blockscout/pull/1662) - allow specifying number of optimization runs
  - [#1654](https://github.com/poanetwork/blockscout/pull/1654) - add decompiled code tab
  - [#1661](https://github.com/poanetwork/blockscout/pull/1661) - try to compile smart contract with the latest evm version
  - [#1665](https://github.com/poanetwork/blockscout/pull/1665) - Add contract verification RPC endpoint.
+ - [#1706](https://github.com/poanetwork/blockscout/pull/1706) - allow setting update interval for addresses with b
 
 ### Fixes
 
@@ -25,9 +59,13 @@
  - [#1684](https://github.com/poanetwork/blockscout/pull/1684) - Discard child block with parent_hash not matching hash of imported block
  - [#1699](https://github.com/poanetwork/blockscout/pull/1699) - use seconds as transaction cache period measure
  - [#1697](https://github.com/poanetwork/blockscout/pull/1697) - fix failing in rpc if balance is empty
+ - [#1711](https://github.com/poanetwork/blockscout/pull/1711) - rescue failing repo in block number cache update
  - [#1712](https://github.com/poanetwork/blockscout/pull/1712) - do not set contract code from transaction input
+ - [#1714](https://github.com/poanetwork/blockscout/pull/1714) - fix average block time calculation
 
 ### Chore
+
+ - [#1693](https://github.com/poanetwork/blockscout/pull/1693) - Add a checklist to the PR template
 
 
 ## 1.3.8-beta

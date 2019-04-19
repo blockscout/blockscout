@@ -11,16 +11,19 @@ defmodule Indexer.Block.Catchup.Fetcher do
     only: [
       async_import_block_rewards: 1,
       async_import_coin_balances: 2,
+      async_import_created_contract_codes: 1,
+      async_import_internal_transactions: 2,
+      async_import_replaced_transactions: 1,
       async_import_tokens: 1,
+      async_import_token_balances: 1,
       async_import_uncles: 1,
-      fetch_and_import_range: 2,
-      async_import_replaced_transactions: 1
+      fetch_and_import_range: 2
     ]
 
   alias Ecto.Changeset
   alias Explorer.Chain
-  alias Explorer.Chain.{Hash, Transaction}
-  alias Indexer.{Block, Code, InternalTransaction, Sequence, TokenBalance, Tracer}
+  alias Indexer.{Block, Tracer}
+  alias Indexer.Block.Catchup.Sequence
   alias Indexer.Memory.Shrinkable
 
   @behaviour Block.Fetcher
@@ -31,7 +34,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
   @blocks_batch_size 10
   @blocks_concurrency 10
   @sequence_name :block_catchup_sequencer
-  @geth_block_limit 128
 
   defstruct blocks_batch_size: @blocks_batch_size,
             blocks_concurrency: @blocks_concurrency,
@@ -80,7 +82,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       _ ->
         # realtime indexer gets the current latest block
         first = latest_block_number - 10
-        last = Application.get_env(:indexer, :first_block)
+        last = last_block()
 
         Logger.metadata(first_block_number: first, last_block_number: last)
 
@@ -156,60 +158,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
   end
-
-  defp async_import_created_contract_codes(%{transactions: transactions}) do
-    transactions
-    |> Enum.flat_map(fn
-      %Transaction{
-        block_number: block_number,
-        hash: hash,
-        created_contract_address_hash: %Hash{} = created_contract_address_hash,
-        created_contract_code_indexed_at: nil,
-        internal_transactions_indexed_at: nil
-      } ->
-        [%{block_number: block_number, hash: hash, created_contract_address_hash: created_contract_address_hash}]
-
-      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
-        []
-
-      %Transaction{created_contract_address_hash: nil} ->
-        []
-    end)
-    |> Code.Fetcher.async_fetch(10_000)
-  end
-
-  defp async_import_created_contract_codes(_), do: :ok
-
-  defp async_import_internal_transactions(%{blocks: blocks}, EthereumJSONRPC.Parity) do
-    blocks
-    |> Enum.map(fn %Chain.Block{number: block_number} -> %{number: block_number} end)
-    |> InternalTransaction.Fetcher.async_block_fetch(10_000)
-  end
-
-  defp async_import_internal_transactions(%{transactions: transactions}, EthereumJSONRPC.Geth) do
-    {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
-
-    transactions
-    |> Enum.flat_map(fn
-      %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
-        [%{block_number: block_number, index: index, hash: hash}]
-
-      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
-        []
-    end)
-    |> Enum.filter(fn %{block_number: block_number} ->
-      max_block_number - block_number < @geth_block_limit
-    end)
-    |> InternalTransaction.Fetcher.async_fetch(10_000)
-  end
-
-  defp async_import_internal_transactions(_, _), do: :ok
-
-  defp async_import_token_balances(%{address_token_balances: token_balances}) do
-    TokenBalance.Fetcher.async_fetch(token_balances)
-  end
-
-  defp async_import_token_balances(_), do: :ok
 
   defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)
        when is_pid(sequence) do
@@ -378,6 +326,15 @@ defmodule Indexer.Block.Catchup.Fetcher do
       end)
     else
       {:error, :queue_unavailable}
+    end
+  end
+
+  defp last_block do
+    string_value = Application.get_env(:indexer, :first_block)
+
+    case Integer.parse(string_value) do
+      {integer, ""} -> integer
+      _ -> 0
     end
   end
 end

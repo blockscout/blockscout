@@ -14,10 +14,12 @@ jobs:
     working_directory: ~/app
 
     steps:
-      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
       - run: sudo apt-get update; sudo apt-get -y install autoconf build-essential libgmp3-dev libtool
 
       - checkout
+      - run:
+          command: ./bin/install_chrome_headless.sh
+          no_output_timeout: 2400
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -189,7 +191,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - v7-mix-dailyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - v7-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
             - v7-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
             - v7-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
 
@@ -357,7 +359,10 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
+
+      - run:
+          command: ./bin/install_chrome_headless.sh
+          no_output_timeout: 2400
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -409,7 +414,10 @@ jobs:
       - attach_workspace:
           at: .
 
-      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
+      - run:
+          command: ./bin/install_chrome_headless.sh
+          no_output_timeout: 2400
+
       - run: mix local.hex --force
       - run: mix local.rebar --force
 
@@ -460,7 +468,10 @@ jobs:
       - attach_workspace:
           at: .
 
-      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
+      - run:
+          command: ./bin/install_chrome_headless.sh
+          no_output_timeout: 2400
+
       - run: mix local.hex --force
       - run: mix local.rebar --force
 
@@ -511,7 +522,10 @@ jobs:
       - attach_workspace:
           at: .
 
-      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
+      - run:
+          command: ./bin/install_chrome_headless.sh
+          no_output_timeout: 2400
+
       - run: mix local.hex --force
       - run: mix local.rebar --force
 

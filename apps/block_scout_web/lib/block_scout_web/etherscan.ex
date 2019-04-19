@@ -1995,7 +1995,13 @@ defmodule BlockScoutWeb.Etherscan do
         description: "Transaction hash. Hash of contents of the transaction."
       }
     ],
-    optional_params: [],
+    optional_params: [
+      %{
+        key: "index",
+        type: "integer",
+        description: "A nonnegative integer that represents the log index to be used for pagination."
+      }
+    ],
     responses: [
       %{
         code: "200",
