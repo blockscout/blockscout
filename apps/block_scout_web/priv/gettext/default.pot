@@ -62,7 +62,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:46
+#: lib/block_scout_web/templates/layout/app.html.eex:35
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -155,7 +155,7 @@ msgid "Block Height: %{height}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:61
+#: lib/block_scout_web/templates/layout/app.html.eex:50
 msgid "Block Mined, awaiting import..."
 msgstr ""
 
@@ -182,7 +182,7 @@ msgid "Blocks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:60
+#: lib/block_scout_web/templates/layout/app.html.eex:49
 msgid "Blocks Indexed"
 msgstr ""
 
@@ -389,7 +389,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:13
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:16
-#: lib/block_scout_web/templates/layout/app.html.eex:66
+#: lib/block_scout_web/templates/layout/app.html.eex:55
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:27
 #: lib/block_scout_web/templates/transaction/overview.html.eex:163
@@ -472,7 +472,7 @@ msgid "IN"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:62
+#: lib/block_scout_web/templates/layout/app.html.eex:51
 msgid "Indexing Tokens"
 msgstr ""
 
@@ -508,7 +508,7 @@ msgid "Inventory"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:63
+#: lib/block_scout_web/templates/layout/app.html.eex:52
 msgid "Less than"
 msgstr ""
 
@@ -527,7 +527,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:28
-#: lib/block_scout_web/templates/layout/app.html.eex:64
+#: lib/block_scout_web/templates/layout/app.html.eex:53
 #: lib/block_scout_web/views/address_view.ex:121
 msgid "Market Cap"
 msgstr ""
@@ -679,7 +679,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:21
-#: lib/block_scout_web/templates/layout/app.html.eex:65
+#: lib/block_scout_web/templates/layout/app.html.eex:54
 msgid "Price"
 msgstr ""
 
@@ -729,7 +729,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:89
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:106
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:107
 msgid "Search"
 msgstr ""
 
