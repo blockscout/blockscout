@@ -18,6 +18,7 @@
  - [#1769](https://github.com/poanetwork/blockscout/pull/1769) - add timestamp to block overview
  - [#1768](https://github.com/poanetwork/blockscout/pull/1768) - fix first block parameter
  - [#1778](https://github.com/poanetwork/blockscout/pull/1778) - Make websocket optional for realtime fetcher
+ - [#1790](https://github.com/poanetwork/blockscout/pull/1790) - fix constructor arguments verification
 
 ### Chore
 
