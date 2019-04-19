@@ -81,16 +81,19 @@ defmodule BlockScoutWeb.TransactionView do
     # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721.sol#L35
     {from_address, to_address} =
       case {to_string(input), value} do
+        # transferFrom(address,address,uint256)
         {"0x23b872dd" <> params, ^zero_wei} ->
           types = [:address, :address, {:uint, 256}]
           [from_address, to_address, _value] = decode_params(params, types)
           {from_address, to_address}
 
+        # safeTransferFrom(address,address,uint256)
         {"0x42842e0e" <> params, ^zero_wei} ->
           types = [:address, :address, {:uint, 256}]
           [from_address, to_address, _value] = decode_params(params, types)
           {from_address, to_address}
 
+        # safeTransferFrom(address,address,uint256,bytes)
         {"0xb88d4fde" <> params, ^zero_wei} ->
           types = [:address, :address, {:uint, 256}, :bytes]
           [from_address, to_address, _value, _data] = decode_params(params, types)
