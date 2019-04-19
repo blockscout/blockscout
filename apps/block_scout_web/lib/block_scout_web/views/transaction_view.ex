@@ -48,29 +48,66 @@ defmodule BlockScoutWeb.TransactionView do
       {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
         types = [:address, {:uint, 256}]
 
-        try do
-          [address, value] =
-            params
-            |> Base.decode16!(case: :mixed)
-            |> TypeDecoder.decode_raw(types)
+        [address, value] = decode_params(params, types)
 
-          decimal_value = Decimal.new(value)
+        decimal_value = Decimal.new(value)
 
-          Enum.find(token_transfers, fn token_transfer ->
-            token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value
-          end)
-        rescue
-          _ -> nil
-        end
+        Enum.find(token_transfers, fn token_transfer ->
+          token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value
+        end)
 
       _ ->
         nil
     end
+  rescue
+    _ -> nil
   end
 
   def erc20_token_transfer(_, _) do
     nil
   end
+
+  def erc721_token_transfer(
+        %Transaction{
+          status: :ok,
+          created_contract_address_hash: nil,
+          input: input,
+          value: value
+        },
+        token_transfers
+      ) do
+    zero_wei = %Wei{value: Decimal.new(0)}
+
+    # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721.sol#L35
+    {from_address, to_address} =
+      case {to_string(input), value} do
+        {"0x23b872dd" <> params, ^zero_wei} ->
+          types = [:address, :address, {:uint, 256}]
+          [from_address, to_address, _value] = decode_params(params, types)
+          {from_address, to_address}
+
+        {"0x42842e0e" <> params, ^zero_wei} ->
+          types = [:address, :address, {:uint, 256}]
+          [from_address, to_address, _value] = decode_params(params, types)
+          {from_address, to_address}
+
+        {"0xb88d4fde" <> params, ^zero_wei} ->
+          types = [:address, :address, {:uint, 256}, :bytes]
+          [from_address, to_address, _value, _data] = decode_params(params, types)
+          {from_address, to_address}
+
+        _ ->
+          nil
+      end
+
+    Enum.find(token_transfers, fn token_transfer ->
+      token_transfer.from_address_hash.bytes == from_address && token_transfer.to_address_hash.bytes == to_address
+    end)
+  rescue
+    _ -> nil
+  end
+
+  def erc721_token_transfer(_, _), do: nil
 
   def processing_time_duration(%Transaction{block: nil}) do
     :pending
@@ -298,4 +335,10 @@ defmodule BlockScoutWeb.TransactionView do
   defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["logs"]), do: gettext("Logs")
+
+  defp decode_params(params, types) do
+    params
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw(types)
+  end
 end
