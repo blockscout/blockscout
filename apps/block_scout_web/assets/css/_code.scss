@@ -14,7 +14,7 @@ pre {
 .pre-decompiled code::before {
   content: counter(line);
   display: inline-block;
-  width: 3.5em; /* Fixed width */
+  width: flex;
   border-right: 1px solid #ddd;
   padding: 0 .5em;
   margin-right: .5em;
