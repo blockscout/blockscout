@@ -93,8 +93,9 @@
                   prepop: true,
                   minChars: 3,
                   maxItems: 8,
-                  value: "symbol",
+                  value: "contract_address_hash",
                   label: "contract_address_hash",
+                  descrSearch: true,
                   descr: "symbol"
                   ]) %>
               <div class="input-group-append">
