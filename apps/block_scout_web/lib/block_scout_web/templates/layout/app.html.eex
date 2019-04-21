@@ -16,6 +16,21 @@
     <meta name="msapplication-config" content="<%= static_path(@conn, "/browserconfig.xml") %>">
     <meta name="theme-color" content="#ffffff">
 
+    <link rel="stylesheet" href="https://nico-amsterdam.github.io/awesomplete-util/css/awesomplete.css">
+    <script src="https://nico-amsterdam.github.io/awesomplete-util/js/awesomplete.min.js"></script>
+    <script src="https://nico-amsterdam.github.io/awesomplete-util/js/awesomplete-util.min.js"></script>
+    <style>
+      div.awesomplete {display: block}
+
+      div.awesomplete ul li p {display: block; font-size: small; margin-left: 1em}
+
+      div.awesomplete .awe-found {border: 2px solid green}
+
+      .hide-not-found div.awesomplete .awe-not-found {border-color: lightblue}
+
+      div.awesomplete .awe-not-found {border: 2px solid red}
+    </style>
+
     <%= render_existing(@view_module, "_metatags.html", assigns) || render("_default_title.html") %>
   </head>
 

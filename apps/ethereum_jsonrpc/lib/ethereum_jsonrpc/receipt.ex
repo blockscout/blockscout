@@ -274,10 +274,10 @@ defmodule EthereumJSONRPC.Receipt do
 
   defp entry_to_elixir({"status" = key, status}) do
     case status do
-      "0x0" ->
+      zero when zero in ["0x0", "0x00"] ->
         {:ok, {key, :error}}
 
-      "0x1" ->
+      one when one in ["0x1", "0x01"] ->
         {:ok, {key, :ok}}
 
       # pre-Byzantium / Ethereum Classic on Parity
