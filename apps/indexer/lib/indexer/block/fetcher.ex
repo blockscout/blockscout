@@ -286,9 +286,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}) do
-    block_second_degree_relations
-    |> Enum.map(& &1.uncle_hash)
-    |> UncleBlock.async_fetch_blocks()
+    UncleBlock.async_fetch_blocks(block_second_degree_relations)
   end
 
   def async_import_uncles(_), do: :ok

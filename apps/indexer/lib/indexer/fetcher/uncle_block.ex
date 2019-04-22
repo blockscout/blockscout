@@ -29,17 +29,13 @@ defmodule Indexer.Fetcher.UncleBlock do
   ]
 
   @doc """
-  Asynchronously fetches `t:Explorer.Chain.Block.t/0` for the given `hashes` and updates
-  `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` `block_fetched_at`.
+  Asynchronously fetches `t:Explorer.Chain.Block.t/0` for the given `nephew_hash` and `index`
+  and updates `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` `block_fetched_at`.
   """
-  @spec async_fetch_blocks([Hash.Full.t()]) :: :ok
-  def async_fetch_blocks(block_hashes) when is_list(block_hashes) do
-    BufferedTask.buffer(
-      __MODULE__,
-      block_hashes
-      |> Enum.map(&to_string/1)
-      |> Enum.uniq()
-    )
+  @spec async_fetch_blocks([%{required(:nephew_hash) => Hash.Full.t(), required(:index) => non_neg_integer()}]) :: :ok
+  def async_fetch_blocks(relations) when is_list(relations) do
+    entries = Enum.map(relations, &entry/1)
+    BufferedTask.buffer(__MODULE__, entries)
   end
 
   @doc false
@@ -63,9 +59,9 @@ defmodule Indexer.Fetcher.UncleBlock do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_uncle_hashes(initial, fn uncle_hash, acc ->
-        uncle_hash
-        |> to_string()
+      Chain.stream_unfetched_uncles(initial, fn uncle, acc ->
+        uncle
+        |> entry()
         |> reducer.(acc)
       end)
 
@@ -74,29 +70,38 @@ defmodule Indexer.Fetcher.UncleBlock do
 
   @impl BufferedTask
   @decorate trace(name: "fetch", resource: "Indexer.Fetcher.UncleBlock.run/2", service: :indexer, tracer: Tracer)
-  def run(hashes, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher) do
-    # the same block could be included as an uncle on multiple blocks, but we only want to fetch it once
-    unique_hashes = Enum.uniq(hashes)
-
-    unique_hash_count = Enum.count(unique_hashes)
-    Logger.metadata(count: unique_hash_count)
+  def run(entries, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher) do
+    entry_count = Enum.count(entries)
+    Logger.metadata(count: entry_count)
 
     Logger.debug("fetching")
 
-    case EthereumJSONRPC.fetch_blocks_by_hash(unique_hashes, json_rpc_named_arguments) do
+    entries
+    |> Enum.map(&entry_to_params/1)
+    |> EthereumJSONRPC.fetch_uncle_blocks(json_rpc_named_arguments)
+    |> case do
       {:ok, blocks} ->
-        run_blocks(blocks, block_fetcher, unique_hashes)
+        run_blocks(blocks, block_fetcher, entries)
 
       {:error, reason} ->
         Logger.error(
           fn ->
             ["failed to fetch: ", inspect(reason)]
           end,
-          error_count: unique_hash_count
+          error_count: entry_count
         )
 
-        {:retry, unique_hashes}
+        {:retry, entries}
     end
+  end
+
+  defp entry_to_params({nephew_hash_bytes, index}) when is_integer(index) do
+    {:ok, nephew_hash} = Hash.Full.cast(nephew_hash_bytes)
+    %{nephew_hash: to_string(nephew_hash), index: index}
+  end
+
+  defp entry(%{nephew_hash: %Hash{bytes: nephew_hash_bytes}, index: index}) do
+    {nephew_hash_bytes, index}
   end
 
   defp run_blocks(%Blocks{blocks_params: []}, _, original_entries), do: {:retry, original_entries}
@@ -158,9 +163,7 @@ defmodule Indexer.Fetcher.UncleBlock do
       # * Token.async_fetch is not called because the tokens only matter on consensus blocks
       # * TokenBalance.async_fetch is not called because it uses block numbers from consensus, not uncles
 
-      block_second_degree_relations
-      |> Enum.map(& &1.uncle_hash)
-      |> UncleBlock.async_fetch_blocks()
+      UncleBlock.async_fetch_blocks(block_second_degree_relations)
 
       ok
     end

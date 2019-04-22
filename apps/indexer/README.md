@@ -93,6 +93,7 @@ After all deployed instances get all needed data, these fetchers should be depre
 - `uncataloged_token_transfers`: extracts token transfers from logs, which previously weren't parsed due to unknown format
 - `addresses_without_codes`: forces complete refetch of blocks, which have created contract addresses without contract code
 - `failed_created_addresses`: forces refetch of contract code for failed transactions, which previously got incorrectly overwritten
+- `uncles_without_index`: adds previously unfetched `index` field for unfetched blocks in `block_second_degree_relations`
 
 ## Memory Usage
 
