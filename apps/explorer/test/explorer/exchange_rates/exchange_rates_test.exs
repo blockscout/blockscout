@@ -68,6 +68,7 @@ defmodule Explorer.ExchangeRatesTest do
     test "with successful fetch" do
       expected_token = %Token{
         available_supply: Decimal.new("1000000.0"),
+        total_supply: Decimal.new("1000000.0"),
         btc_value: Decimal.new("1.000"),
         id: "test_id",
         last_updated: DateTime.utc_now(),

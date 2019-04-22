@@ -64,6 +64,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
       expected = [
         %Token{
           available_supply: Decimal.new("252193195"),
+          total_supply: Decimal.new("252193195"),
           btc_value: Decimal.new("0.00001753101509231471092879666458"),
           id: "poa-network",
           last_updated: expected_date,
