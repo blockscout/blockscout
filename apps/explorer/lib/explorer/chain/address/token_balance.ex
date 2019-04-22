@@ -78,12 +78,23 @@ defmodule Explorer.Chain.Address.TokenBalance do
   balance for burn_address.
   """
   def unfetched_token_balances do
-    from(
-      tb in TokenBalance,
-      join: t in Token,
-      on: tb.token_contract_address_hash == t.contract_address_hash,
-      where: is_nil(tb.value_fetched_at),
-      where: (tb.address_hash != ^@burn_address_hash and t.type != "ERC-721") or t.type == "ERC-20"
-    )
+    base_query =
+      from(
+        tb in TokenBalance,
+        join: t in Token,
+        on: tb.token_contract_address_hash == t.contract_address_hash,
+        where: is_nil(tb.value_fetched_at),
+        where: (tb.address_hash != ^@burn_address_hash and t.type != "ERC-721") or t.type == "ERC-20"
+      )
+
+    if Chain.limit_geth?() do
+      max_block_number = Chain.max_block_number_available_for_geth()
+
+      from(tb in base_query,
+        where: tb.block_number >= ^max_block_number
+      )
+    else
+      base_query
+    end
   end
 end

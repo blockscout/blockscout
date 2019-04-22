@@ -28,6 +28,12 @@ block_transformer =
       transformer
   end
 
+limit_geth =
+  case System.get_env("LIMIT_GETH") do
+    "true" -> true
+    _ -> false
+  end
+
 config :indexer,
   block_transformer: block_transformer,
   ecto_repos: [Explorer.Repo],
@@ -35,7 +41,7 @@ config :indexer,
   # bytes
   memory_limit: 1 <<< 30,
   first_block: System.get_env("FIRST_BLOCK") || "0",
-  limit_geth: false
+  limit_geth: limit_geth
 
 # config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
 # config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true

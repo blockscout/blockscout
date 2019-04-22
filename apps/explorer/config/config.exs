@@ -5,11 +5,18 @@
 # is restricted to this project.
 use Mix.Config
 
+limit_geth =
+  case System.get_env("LIMIT_GETH") do
+    "true" -> true
+    _ -> false
+  end
+
 # General application configuration
 config :explorer,
   ecto_repos: [Explorer.Repo],
   coin: System.get_env("COIN") || "POA",
-  token_functions_reader_max_retries: 3
+  token_functions_reader_max_retries: 3,
+  limit_geth: limit_geth
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 

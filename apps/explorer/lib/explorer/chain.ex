@@ -1238,12 +1238,23 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_balances(initial, reducer) when is_function(reducer, 2) do
-    query =
+    base_query =
       from(
         balance in CoinBalance,
         where: is_nil(balance.value_fetched_at),
         select: %{address_hash: balance.address_hash, block_number: balance.block_number}
       )
+
+    query =
+      if limit_geth?() do
+        max_block_number = max_block_number_available_for_geth()
+
+        from(balance in base_query,
+          where: balance.block_number >= ^max_block_number
+        )
+      else
+        base_query
+      end
 
     Repo.stream_reduce(query, initial, reducer)
   end
@@ -1307,12 +1318,23 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_blocks_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
-    query =
+    base_query =
       from(
         b in Block,
         where: b.consensus and is_nil(b.internal_transactions_indexed_at),
         select: ^fields
       )
+
+    query =
+      if limit_geth?() do
+        max_block_number = max_block_number_available_for_geth()
+
+        from(b in base_query,
+          where: b.number >= ^max_block_number
+        )
+      else
+        base_query
+      end
 
     Repo.stream_reduce(query, initial, reducer)
   end
@@ -1369,13 +1391,24 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
-    query =
+    base_query =
       from(
         t in Transaction,
         # exclude pending transactions and replaced transactions
         where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
         select: ^fields
       )
+
+    query =
+      if limit_geth?() do
+        max_block_number = max_block_number_available_for_geth()
+
+        from(t in base_query,
+          where: t.block_number >= ^max_block_number
+        )
+      else
+        base_query
+      end
 
     Repo.stream_reduce(query, initial, reducer)
   end
@@ -1404,13 +1437,24 @@ defmodule Explorer.Chain do
         when accumulator: term()
   def stream_transactions_with_unfetched_created_contract_codes(fields, initial, reducer)
       when is_function(reducer, 2) do
-    query =
+    base_query =
       from(t in Transaction,
         where:
           not is_nil(t.block_hash) and not is_nil(t.created_contract_address_hash) and
             is_nil(t.created_contract_code_indexed_at),
         select: ^fields
       )
+
+    query =
+      if limit_geth?() do
+        max_block_number = max_block_number_available_for_geth()
+
+        from(t in base_query,
+          where: t.block_number >= ^max_block_number
+        )
+      else
+        base_query
+      end
 
     Repo.stream_reduce(query, initial, reducer)
   end
@@ -1438,11 +1482,22 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_mined_transactions(fields, initial, reducer) when is_function(reducer, 2) do
-    query =
+    base_query =
       from(t in Transaction,
         where: not is_nil(t.block_hash) and not is_nil(t.nonce) and not is_nil(t.from_address_hash),
         select: ^fields
       )
+
+    query =
+      if limit_geth?() do
+        max_block_number = max_block_number_available_for_geth()
+
+        from(t in base_query,
+          where: t.block_number >= ^max_block_number
+        )
+      else
+        base_query
+      end
 
     Repo.stream_reduce(query, initial, reducer)
   end
@@ -2774,6 +2829,20 @@ defmodule Explorer.Chain do
       )
 
     Repo.all(query)
+  end
+
+  @spec limit_geth?() :: boolean()
+  def limit_geth? do
+    Application.fetch_env!(:explorer, :limit_geth)
+  end
+
+  @spec max_block_number_available_for_geth() :: non_neg_integer()
+  def max_block_number_available_for_geth do
+    {_, max_block_number} = fetch_min_and_max_block_numbers()
+
+    number = max_block_number - 128
+
+    if number < 0, do: 0, else: number
   end
 
   @doc """

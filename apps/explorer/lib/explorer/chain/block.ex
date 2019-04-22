@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Gas, Hash, Transaction}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
@@ -115,12 +116,23 @@ defmodule Explorer.Chain.Block do
   end
 
   def blocks_without_reward_query do
-    from(
-      b in __MODULE__,
-      left_join: r in Reward,
-      on: [block_hash: b.hash],
-      where: is_nil(r.block_hash) and b.consensus == true
-    )
+    base_query =
+      from(
+        b in __MODULE__,
+        left_join: r in Reward,
+        on: [block_hash: b.hash],
+        where: is_nil(r.block_hash) and b.consensus == true
+      )
+
+    if Chain.limit_geth?() do
+      max_block_number = Chain.max_block_number_available_for_geth()
+
+      from(b in base_query,
+        where: b.number >= ^max_block_number
+      )
+    else
+      base_query
+    end
   end
 
   @doc """
