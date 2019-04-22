@@ -22,7 +22,9 @@
  - [#1790](https://github.com/poanetwork/blockscout/pull/1790) - fix constructor arguments verification
  - [#1793](https://github.com/poanetwork/blockscout/pull/1793) - fix top nav autocomplete
  - [#1795](https://github.com/poanetwork/blockscout/pull/1795) - fix line numbers for decompiled contracts
+ - [#1803](https://github.com/poanetwork/blockscout/pull/1803) - use coinmarketcap for total_supply by default
  - [#1802](https://github.com/poanetwork/blockscout/pull/1802) - make coinmarketcap's number of pages configurable
+ - [#1799](https://github.com/poanetwork/blockscout/pull/1799) - Use eth_getUncleByBlockHashAndIndex for uncle block fetching
 
 ### Chore
 
@@ -35,6 +37,7 @@
  - [#1753](https://github.com/poanetwork/blockscout/pull/1753) - Add a check mark to decompiled contract tab
  - [#1744](https://github.com/poanetwork/blockscout/pull/1744) - remove `0x0..0` from tests
  - [#1763](https://github.com/poanetwork/blockscout/pull/1763) - Describe indexer structure and list existing fetchers
+ - [#1800](https://github.com/poanetwork/blockscout/pull/1800) - Disable lazy logging check in Credo
 
 
 ## 1.3.9-beta
