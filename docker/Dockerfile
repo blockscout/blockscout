@@ -1,6 +1,6 @@
 FROM bitwalker/alpine-elixir-phoenix
 
-RUN apk --no-cache --update add automake libtool inotify-tools autoconf python
+RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python
 
 EXPOSE 4000
 
@@ -33,7 +33,7 @@ RUN cd apps/block_scout_web/assets/ && \
 
 RUN cd apps/explorer/ && \
     npm install && \
-    cd -
+    apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python
 
 # RUN mix do ecto.drop --force, ecto.create, ecto.migrate
 

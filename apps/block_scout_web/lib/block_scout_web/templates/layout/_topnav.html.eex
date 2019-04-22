@@ -80,13 +80,18 @@
           <a class="nav-link topnav-nav-link dropdown-toggle active-icon" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <!-- ICON FOR MAINNET -->
             <span class="nav-link-icon">
-              <%= render BlockScoutWeb.IconsView, "_posdao_icon.html" %>
+              <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
             </span>
             <%= subnetwork_title() %>
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <%= for %{url: url, title: title} <- other_networks() do %>
-              <a class="dropdown-item" href="<%= url%>"><%= title %></a>
+            <a class="dropdown-item header">Mainnet</a>
+            <%= for %{url: url, title: title} <- main_nets() do %>
+            <a class="dropdown-item" href="<%= url%>"><%= title %></a>
+            <% end %>
+            <a class="dropdown-item header division">Testnet</a>
+            <%= for %{url: url, title: title} <- test_nets() do %>
+            <a class="dropdown-item" href="<%= url%>"><%= title %></a>
             <% end %>
           </div>
         </li>
@@ -107,8 +112,9 @@
                   prepop: true,
                   minChars: 3,
                   maxItems: 8,
-                  value: "symbol",
+                  value: "contract_address_hash",
                   label: "contract_address_hash",
+                  descrSearch: true,
                   descr: "symbol"
                   ]) %>
               <div class="input-group-append">

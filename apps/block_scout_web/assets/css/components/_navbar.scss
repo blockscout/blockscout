@@ -168,6 +168,7 @@ $navbar-logo-width: auto !default;
     form {
       flex-grow: 1;
     }
+
   }
   .input-group {
     width: 100%;
@@ -197,4 +198,16 @@ $navbar-logo-width: auto !default;
     padding-left: $header-link-horizontal-padding;
     padding-right: $header-link-horizontal-padding;
   }
+
+  &.header {
+    font-weight: bold;
+
+    &.division {
+      border-top: 1px solid rgb(183, 185, 184);
+    }
+  }
+}
+
+.add-border {
+  border: 1px solid transparentize($white, 0.30);
 }

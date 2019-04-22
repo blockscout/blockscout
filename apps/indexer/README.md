@@ -91,6 +91,7 @@ After all deployed instances get all needed data, these fetchers should be depre
 - `uncataloged_token_transfers`: extracts token transfers from logs, which previously weren't parsed due to unknown format
 - `addresses_without_codes`: forces complete refetch of blocks, which have created contract addresses without contract code
 - `failed_created_addresses`: forces refetch of contract code for failed transactions, which previously got incorrectly overwritten
+- `uncles_without_index`: adds previously unfetched `index` field for unfetched blocks in `block_second_degree_relations`
 
 ## Memory Usage
 
@@ -103,6 +104,10 @@ config :indexer, memory_limit: 1 <<< 30
 Memory usage is checked once per minute.  If the soft-limit is reached, the shrinkable work queues will shed half their load.  The shed load will be restored from the database, the same as when a restart of the server occurs, so rebuilding the work queue will be slower, but use less memory.
 
 If all queues are at their minimum size, then no more memory can be reclaimed and an error will be logged.
+
+## Websocket Keepalive
+
+This defaults to 150 seconds, but it can be set via adding a configuration to `subscribe_named_arguments` in the appropriate config file (indexer/config/<env>/<variant>.exs) called `:keep_alive`. The value is an integer representing milliseconds.
 
 ## Testing
 
