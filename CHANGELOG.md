@@ -11,6 +11,15 @@
 
 ### Features
 
+### Fixes
+
+### Chore
+
+
+## 1.3.10-beta
+
+### Features
+
 - [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
 - [#1696](https://github.com/poanetwork/blockscout/pull/1696) - full-text search by tokens
 - [#1742](https://github.com/poanetwork/blockscout/pull/1742) - Support RSK
@@ -34,6 +43,7 @@
  - [#1803](https://github.com/poanetwork/blockscout/pull/1803) - use coinmarketcap for total_supply by default
  - [#1802](https://github.com/poanetwork/blockscout/pull/1802) - make coinmarketcap's number of pages configurable
  - [#1799](https://github.com/poanetwork/blockscout/pull/1799) - Use eth_getUncleByBlockHashAndIndex for uncle block fetching
+ - [#1531](https://github.com/poanetwork/blockscout/pull/1531) - docker: fix dockerFile for secp256k1 building
 
 ### Chore
 
