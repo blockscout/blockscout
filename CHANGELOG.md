@@ -22,6 +22,7 @@
  - [#1790](https://github.com/poanetwork/blockscout/pull/1790) - fix constructor arguments verification
  - [#1793](https://github.com/poanetwork/blockscout/pull/1793) - fix top nav autocomplete
  - [#1795](https://github.com/poanetwork/blockscout/pull/1795) - fix line numbers for decompiled contracts
+ - [#1802](https://github.com/poanetwork/blockscout/pull/1802) - make coinmarketcap's number of pages configurable
 
 ### Chore
 
