@@ -7,6 +7,7 @@
 - [#1742](https://github.com/poanetwork/blockscout/pull/1742) - Support RSK
 - [#1777](https://github.com/poanetwork/blockscout/pull/1777) - show ERC-20 token transfer info on transaction page
 - [#1770](https://github.com/poanetwork/blockscout/pull/1770) - set a websocket keepalive from config
+- [#1789](https://github.com/poanetwork/blockscout/pull/1789) - add ERC-721 info to transaction overview page
 
 ### Fixes
 
