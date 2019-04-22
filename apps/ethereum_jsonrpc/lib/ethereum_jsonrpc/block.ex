@@ -356,14 +356,17 @@ defmodule EthereumJSONRPC.Block do
       [
         %{
           "hash" => "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311",
-          "nephewHash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47"
+          "nephewHash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
+          "index" => 0
         }
       ]
 
   """
   @spec elixir_to_uncles(elixir) :: Uncles.elixir()
   def elixir_to_uncles(%{"hash" => nephew_hash, "uncles" => uncles}) do
-    Enum.map(uncles, &%{"hash" => &1, "nephewHash" => nephew_hash})
+    uncles
+    |> Enum.with_index()
+    |> Enum.map(fn {uncle_hash, index} -> %{"hash" => uncle_hash, "nephewHash" => nephew_hash, "index" => index} end)
   end
 
   @doc """
