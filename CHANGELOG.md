@@ -8,6 +8,7 @@
 - [#1777](https://github.com/poanetwork/blockscout/pull/1777) - show ERC-20 token transfer info on transaction page
 - [#1770](https://github.com/poanetwork/blockscout/pull/1770) - set a websocket keepalive from config
 - [#1789](https://github.com/poanetwork/blockscout/pull/1789) - add ERC-721 info to transaction overview page
+- [#1801](https://github.com/poanetwork/blockscout/pull/1801) - Staking pools fetching
 
 ### Fixes
 
