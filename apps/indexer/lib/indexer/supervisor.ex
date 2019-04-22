@@ -16,11 +16,11 @@ defmodule Indexer.Supervisor do
     InternalTransaction,
     PendingTransaction,
     ReplacedTransaction,
+    StakingPools,
     Token,
     TokenBalance,
     TokenUpdater,
-    UncleBlock,
-    StakingPools
+    UncleBlock
   }
 
   alias Indexer.Temporary.{

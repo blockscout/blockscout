@@ -9,8 +9,8 @@ defmodule Indexer.Fetcher.StakingPools do
   require Logger
 
   alias Explorer.Chain
-  alias Indexer.BufferedTask
   alias Explorer.Staking.PoolsReader
+  alias Indexer.BufferedTask
 
   @behaviour BufferedTask
 
@@ -24,7 +24,7 @@ defmodule Indexer.Fetcher.StakingPools do
   @max_retries 3
 
   @spec async_fetch() :: :ok
-  def async_fetch() do
+  def async_fetch do
     pid = GenServer.whereis(__MODULE__)
 
     if pid && Process.alive?(pid) do
