@@ -20,6 +20,7 @@
  - [#1768](https://github.com/poanetwork/blockscout/pull/1768) - fix first block parameter
  - [#1778](https://github.com/poanetwork/blockscout/pull/1778) - Make websocket optional for realtime fetcher
  - [#1790](https://github.com/poanetwork/blockscout/pull/1790) - fix constructor arguments verification
+ - [#1793](https://github.com/poanetwork/blockscout/pull/1793) - fix top nav autocomplete
  - [#1795](https://github.com/poanetwork/blockscout/pull/1795) - fix line numbers for decompiled contracts
 
 ### Chore
