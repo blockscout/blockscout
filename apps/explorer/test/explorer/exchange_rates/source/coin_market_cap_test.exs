@@ -33,6 +33,7 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCapTest do
       expected = [
         %Token{
           available_supply: Decimal.new("203981804.0"),
+          total_supply: Decimal.new("254473964.0"),
           btc_value: Decimal.new("0.00007032"),
           id: "poa-network",
           last_updated: expected_date,
