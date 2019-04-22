@@ -38,7 +38,7 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
     "#{base_url()}/v1/ticker/?start=#{page - 1}00"
   end
 
-  def max_page_number, do: 10
+  def max_page_number, do: config(:pages)
 
   defp base_url do
     config(:base_url) || "https://api.coinmarketcap.com"
