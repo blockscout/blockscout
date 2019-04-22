@@ -76,6 +76,7 @@ defmodule Explorer.Staking.PoolsReader do
     Application.get_env(:explorer, __MODULE__, [])[key]
   end
 
+  # sobelow_skip ["Traversal"]
   defp abi(file_name) do
     :explorer
     |> Application.app_dir("priv/contracts_abi/pos/#{file_name}")
