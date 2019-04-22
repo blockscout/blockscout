@@ -19,7 +19,8 @@ defmodule Indexer.Supervisor do
     Token,
     TokenBalance,
     TokenUpdater,
-    UncleBlock
+    UncleBlock,
+    StakingPools
   }
 
   alias Indexer.Temporary.{
@@ -121,6 +122,7 @@ defmodule Indexer.Supervisor do
         {TokenBalance.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
+        {StakingPools.Supervisor, [[memory_monitor: memory_monitor]]},
 
         # Out-of-band fetchers
         {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
