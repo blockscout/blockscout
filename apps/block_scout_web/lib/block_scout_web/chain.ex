@@ -11,7 +11,8 @@ defmodule BlockScoutWeb.Chain do
       number_to_block: 1,
       string_to_address_hash: 1,
       string_to_block_hash: 1,
-      string_to_transaction_hash: 1
+      string_to_transaction_hash: 1,
+      token_contract_address_from_token_name: 1
     ]
 
   alias Explorer.Chain.Block.Reward
@@ -67,10 +68,10 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def from_param(formatted_number) when is_binary(formatted_number) do
-    case param_to_block_number(formatted_number) do
+  def from_param(string) when is_binary(string) do
+    case param_to_block_number(string) do
       {:ok, number} -> number_to_block(number)
-      {:error, :invalid} -> {:error, :not_found}
+      _ -> token_address_from_name(string)
     end
   end
 
@@ -114,13 +115,17 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def paging_options(%{"index" => index_string}) do
+  def paging_options(%{"index" => index_string}) when is_binary(index_string) do
     with {index, ""} <- Integer.parse(index_string) do
       [paging_options: %{@default_paging_options | key: {index}}]
     else
       _ ->
         [paging_options: @default_paging_options]
     end
+  end
+
+  def paging_options(%{"index" => index}) when is_integer(index) do
+    [paging_options: %{@default_paging_options | key: {index}}]
   end
 
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}) do
@@ -156,6 +161,13 @@ defmodule BlockScoutWeb.Chain do
       find_or_insert_address_from_hash(hash)
     else
       :error -> {:error, :not_found}
+    end
+  end
+
+  defp token_address_from_name(name) do
+    case token_contract_address_from_token_name(name) do
+      {:ok, hash} -> find_or_insert_address_from_hash(hash)
+      _ -> {:error, :not_found}
     end
   end
 

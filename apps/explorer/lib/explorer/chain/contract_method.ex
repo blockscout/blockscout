@@ -7,7 +7,7 @@ defmodule Explorer.Chain.ContractMethod do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, MethodIdentifier}
+  alias Explorer.Chain.{Hash, MethodIdentifier, SmartContract}
   alias Explorer.Repo
 
   @type t :: %__MODULE__{
@@ -47,6 +47,23 @@ defmodule Explorer.Chain.ContractMethod do
     end
 
     Repo.insert_all(__MODULE__, successes, on_conflict: :nothing, conflict_target: [:identifier, :abi])
+  end
+
+  def import_all do
+    result =
+      Repo.transaction(fn ->
+        SmartContract
+        |> Repo.stream()
+        |> Task.async_stream(fn contract ->
+          upsert_from_abi(contract.abi, contract.address_hash)
+        end)
+        |> Stream.run()
+      end)
+
+    case result do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, error}
+    end
   end
 
   defp abi_element_to_contract_method(element) do

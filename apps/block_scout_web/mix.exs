@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Mixfile do
         plt_add_deps: :transitive,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.6",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -122,13 +122,14 @@ defmodule BlockScoutWeb.Mixfile do
       # Tracing
       {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
       # `:spandex` integration with Datadog
-      {:spandex_datadog, "~> 0.3.1"},
+      {:spandex_datadog, "~> 0.4.0"},
       # `:spandex` tracing of `:phoenix`
       {:spandex_phoenix, "~> 0.3.1"},
       {:timex, "~> 3.4"},
-      {:wallaby, "~> 0.20", only: [:test], runtime: false},
+      {:wallaby, "~> 0.22", only: [:test], runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
-      {:wobserver, "~> 0.2.0", github: "KronicDeth/wobserver", ref: "99683a936c75c0a94ebb884cef019f7ed0b97112"}
+      {:wobserver, "~> 0.2.0", github: "KronicDeth/wobserver", ref: "99683a936c75c0a94ebb884cef019f7ed0b97112"},
+      {:phoenix_form_awesomplete, "~> 0.1.4"}
     ]
   end
 

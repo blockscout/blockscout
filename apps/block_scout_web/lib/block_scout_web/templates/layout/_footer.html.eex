@@ -11,13 +11,13 @@
 
       <div class="col-md-3">
         <div class="icon-links icon-links-primary footer-social-icons">
-          <a href="https://github.com/poanetwork" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Github") %>">
+          <a href="https://github.com/poanetwork/blockscout" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Github") %>">
             <i class="fab fa-github"></i>
           </a>
-          <a href="https://www.twitter.com/PoaNetwork/" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Twitter") %>">
+          <a href="https://www.twitter.com/_blockscout/" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Twitter") %>">
             <i class="fab fa-twitter"></i>
           </a>
-          <a href="http://t.me/oraclesnetwork" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Telegram") %>">
+          <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Telegram") %>">
             <i class="fab fa-telegram-plane"></i>
           </a>
         </div>
@@ -90,8 +90,9 @@
     <% version = version() %>
 
     <%= unless ignore_version?(version) do %>
+      <% release_link = release_link(version) %>
       <div>
-        <%= gettext("Version") %>: <%= version %>
+        <%= gettext("Version") %>: <%= release_link %>
       </div>
     <% end %>
   </div>

@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2-node-browsers
+      - image: circleci/elixir:1.8.1-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -17,6 +17,9 @@ jobs:
       - run: sudo apt-get update; sudo apt-get -y install autoconf build-essential libgmp3-dev libtool
 
       - checkout
+      - run:
+          command: ./bin/install_chrome_headless.sh
+          no_output_timeout: 2400
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -30,17 +33,17 @@ jobs:
 
       - restore_cache:
           keys:
-             - v6-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-             - v6-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-             - v6-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+             - v7-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+             - v7-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+             - v7-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
 
       - run: mix deps.get
 
       - restore_cache:
           keys:
-            - v6-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            - v6-npm-install-{{ .Branch }}
-            - v6-npm-install
+            - v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            - v7-npm-install-{{ .Branch }}
+            - v7-npm-install
 
       - run:
           command: npm install
@@ -61,13 +64,13 @@ jobs:
           working_directory: "apps/block_scout_web/assets"
 
       - save_cache:
-          key: v6-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+          key: v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
           paths: "apps/block_scout_web/assets/node_modules"
       - save_cache:
-          key: v6-npm-install-{{ .Branch }}
+          key: v7-npm-install-{{ .Branch }}
           paths: "apps/block_scout_web/assets/node_modules"
       - save_cache:
-          key: v6-npm-install
+          key: v7-npm-install
           paths: "apps/block_scout_web/assets/node_modules"
 
       - run: mix compile
@@ -80,17 +83,17 @@ jobs:
       # `deps` needs to be cached with `_build` because `_build` will symlink into `deps`
 
       - save_cache:
-          key: v6-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          key: v7-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
           paths:
             - deps
             - _build
       - save_cache:
-          key: v6-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+          key: v7-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
           paths:
             - deps
             - _build
       - save_cache:
-          key: v6-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          key: v7-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
           paths:
             - deps
             - _build
@@ -126,7 +129,7 @@ jobs:
   check_formatted:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2
+      - image: circleci/elixir:1.8.1
         environment:
           MIX_ENV: test
 
@@ -140,7 +143,7 @@ jobs:
   credo:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2
+      - image: circleci/elixir:1.8.1
         environment:
           MIX_ENV: test
 
@@ -174,7 +177,7 @@ jobs:
   dialyzer:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2
+      - image: circleci/elixir:1.8.1
         environment:
           MIX_ENV: test
 
@@ -188,9 +191,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - v6-mix-dailyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            - v6-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            - v6-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+            - v7-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - v7-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            - v7-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
 
       - run:
           name: Unpack PLT cache
@@ -210,15 +213,15 @@ jobs:
             cp ~/.mix/dialyxir*.plt plts/
 
       - save_cache:
-          key: v6-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          key: v7-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
           paths:
             - plts
       - save_cache:
-          key: v6-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+          key: v7-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
           paths:
             - plts
       - save_cache:
-          key: v6-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          key: v7-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
           paths:
             - plts
 
@@ -244,7 +247,7 @@ jobs:
   gettext:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2
+      - image: circleci/elixir:1.8.1
         environment:
           MIX_ENV: test
 
@@ -283,7 +286,7 @@ jobs:
   release:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2
+      - image: circleci/elixir:1.8.1
         environment:
           MIX_ENV: prod
 
@@ -309,7 +312,7 @@ jobs:
   sobelow:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2
+      - image: circleci/elixir:1.8.1
         environment:
           MIX_ENV: test
 
@@ -333,7 +336,7 @@ jobs:
   test_geth_http_websocket:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2-node-browsers
+      - image: circleci/elixir:1.8.1-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -356,6 +359,10 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+
+      - run:
+          command: ./bin/install_chrome_headless.sh
+          no_output_timeout: 2400
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -383,7 +390,7 @@ jobs:
   test_geth_mox:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2-node-browsers
+      - image: circleci/elixir:1.8.1-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -406,6 +413,10 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+
+      - run:
+          command: ./bin/install_chrome_headless.sh
+          no_output_timeout: 2400
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -433,7 +444,7 @@ jobs:
   test_parity_http_websocket:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2-node-browsers
+      - image: circleci/elixir:1.8.1-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -456,6 +467,10 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+
+      - run:
+          command: ./bin/install_chrome_headless.sh
+          no_output_timeout: 2400
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -483,7 +498,7 @@ jobs:
   test_parity_mox:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2-node-browsers
+      - image: circleci/elixir:1.8.1-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -506,6 +521,10 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+
+      - run:
+          command: ./bin/install_chrome_headless.sh
+          no_output_timeout: 2400
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -533,7 +552,7 @@ jobs:
   coveralls_merge:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.7.2
+      - image: circleci/elixir:1.8.1
         environment:
           MIX_ENV: test
 
@@ -552,6 +571,9 @@ workflows:
       # This unfortunately will only fire if all the tests pass because of how `requires` works
       - coveralls_merge:
           requires:
+            - test_parity_http_websocket
+            - test_parity_mox
+            - test_geth_http_websocket
             - test_geth_mox
       - credo:
           requires:
@@ -569,7 +591,8 @@ workflows:
             - eslint
             - jest
             - sobelow
-            # This makes these synchronous, instead of asynchronous
+            - test_parity_http_websocket
+            - test_parity_mox
             - test_geth_http_websocket
             - test_geth_mox
       - dialyzer:
@@ -595,13 +618,10 @@ workflows:
             - build
       - test_parity_mox:
           requires:
-            # This makes these synchronous, instead of asynchronous
-            - test_parity_http_websocket
+            - build
       - test_geth_http_websocket:
           requires:
-            # This makes these synchronous, instead of asynchronous
-            - test_parity_mox
+            - build
       - test_geth_mox:
           requires:
-            # This makes these synchronous, instead of asynchronous
-            - test_geth_http_websocket
+            - build

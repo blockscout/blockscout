@@ -6,7 +6,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
   alias Explorer.Factory
   alias Explorer.SmartContract.Solidity.CodeCompiler
 
-  @compiler_tests "#{System.cwd!()}/test/support/fixture/smart_contract/compiler_tests.json"
+  @compiler_tests "#{File.cwd!()}/test/support/fixture/smart_contract/compiler_tests.json"
                   |> File.read!()
                   |> Jason.decode!()
 
@@ -18,10 +18,11 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
     test "compiles the latest solidity version", %{contract_code_info: contract_code_info} do
       response =
         CodeCompiler.run(
-          contract_code_info.name,
-          contract_code_info.version,
-          contract_code_info.source_code,
-          contract_code_info.optimized
+          name: contract_code_info.name,
+          compiler_version: contract_code_info.version,
+          code: contract_code_info.source_code,
+          optimize: contract_code_info.optimized,
+          evm_version: "byzantium"
         )
 
       assert {:ok,
@@ -37,10 +38,11 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
       response =
         CodeCompiler.run(
-          contract_code_info.name,
-          contract_code_info.version,
-          contract_code_info.source_code,
-          optimize
+          name: contract_code_info.name,
+          compiler_version: contract_code_info.version,
+          code: contract_code_info.source_code,
+          optimize: optimize,
+          evm_version: "byzantium"
         )
 
       assert {:ok,
@@ -61,11 +63,12 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
         {:ok, result} =
           CodeCompiler.run(
-            name,
-            compiler_version,
-            contract,
-            optimize,
-            external_libraries
+            name: name,
+            compiler_version: compiler_version,
+            code: contract,
+            optimize: optimize,
+            evm_version: "byzantium",
+            external_libs: external_libraries
           )
 
         clean_result = remove_init_data_and_whisper_data(result["bytecode"])
@@ -75,7 +78,57 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
       end)
     end
 
-    test "compile in an older solidity version" do
+    test "compiles with constantinople evm version" do
+      optimize = false
+      name = "MyTest"
+
+      code = """
+       pragma solidity 0.5.2;
+
+       contract MyTest {
+           constructor() public {
+           }
+
+           mapping(address => bytes32) public myMapping;
+
+           function contractHash(address _addr) public {
+               bytes32 hash;
+               assembly { hash := extcodehash(_addr) }
+               myMapping[_addr] = hash;
+           }
+
+           function justHash(bytes memory _bytes)
+               public
+               pure
+               returns (bytes32)
+           {
+               return keccak256(_bytes);
+           }
+       }
+      """
+
+      version = "v0.5.2+commit.1df8f40c"
+
+      evm_version = "constantinople"
+
+      response =
+        CodeCompiler.run(
+          name: name,
+          compiler_version: version,
+          code: code,
+          optimize: optimize,
+          evm_version: evm_version
+        )
+
+      assert {:ok,
+              %{
+                "abi" => _,
+                "bytecode" => _,
+                "name" => _
+              }} = response
+    end
+
+    test "compiles in an older solidity version" do
       optimize = false
       name = "SimpleStorage"
 
@@ -95,7 +148,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
       version = "v0.1.3-nightly.2015.9.25+commit.4457170"
 
-      response = CodeCompiler.run(name, version, code, optimize)
+      response = CodeCompiler.run(name: name, compiler_version: version, code: code, optimize: optimize)
 
       assert {:ok,
               %{
@@ -112,10 +165,10 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
       response =
         CodeCompiler.run(
-          contract_code_info.name,
-          contract_code_info.version,
-          wrong_code,
-          contract_code_info.optimized
+          name: contract_code_info.name,
+          compiler_version: contract_code_info.version,
+          code: wrong_code,
+          optimize: contract_code_info.optimized
         )
 
       assert {:error, :compilation} = response

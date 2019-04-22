@@ -28,6 +28,7 @@ defmodule EthereumJSONRPC do
   alias EthereumJSONRPC.{
     Block,
     Blocks,
+    Contract,
     FetchedBalances,
     FetchedBeneficiaries,
     FetchedCodes,
@@ -160,33 +161,9 @@ defmodule EthereumJSONRPC do
       }
     ]}
   """
-  @spec execute_contract_functions(
-          [%{contract_address: String.t(), data: String.t(), id: String.t()}],
-          json_rpc_named_arguments,
-          [{:block_number, non_neg_integer()}]
-        ) :: {:ok, list()} | {:error, term()}
-  def execute_contract_functions(functions, json_rpc_named_arguments, opts \\ []) do
-    block_number = Keyword.get(opts, :block_number)
-
-    functions
-    |> Enum.map(&build_eth_call_payload(&1, block_number))
-    |> json_rpc(json_rpc_named_arguments)
-  end
-
-  defp build_eth_call_payload(
-         %{contract_address: address, data: data, id: id},
-         nil = _block_number
-       ) do
-    params = [%{to: address, data: data}, "latest"]
-    request(%{id: id, method: "eth_call", params: params})
-  end
-
-  defp build_eth_call_payload(
-         %{contract_address: address, data: data, id: id},
-         block_number
-       ) do
-    params = [%{to: address, data: data}, integer_to_quantity(block_number)]
-    request(%{id: id, method: "eth_call", params: params})
+  @spec execute_contract_functions([Contract.call()], [map()], json_rpc_named_arguments) :: [Contract.call_result()]
+  def execute_contract_functions(functions, abi, json_rpc_named_arguments) do
+    Contract.execute_contract_functions(functions, abi, json_rpc_named_arguments)
   end
 
   @doc """
@@ -288,6 +265,16 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches internal transactions for entire blocks from variant API.
+  """
+  def fetch_block_internal_transactions(params_list, json_rpc_named_arguments) when is_list(params_list) do
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_block_internal_transactions(
+      params_list,
+      json_rpc_named_arguments
+    )
+  end
+
+  @doc """
   Fetches pending transactions from variant API.
   """
   def fetch_pending_transactions(json_rpc_named_arguments) do
@@ -339,9 +326,16 @@ defmodule EthereumJSONRPC do
   @doc """
   Converts `t:quantity/0` to `t:non_neg_integer/0`.
   """
-  @spec quantity_to_integer(quantity) :: non_neg_integer()
+  @spec quantity_to_integer(quantity) :: non_neg_integer() | :error
   def quantity_to_integer("0x" <> hexadecimal_digits) do
     String.to_integer(hexadecimal_digits, 16)
+  end
+
+  def quantity_to_integer(string) do
+    case Integer.parse(string) do
+      {integer, ""} -> integer
+      _ -> :error
+    end
   end
 
   @doc """
@@ -411,9 +405,13 @@ defmodule EthereumJSONRPC do
   Converts `t:timestamp/0` to `t:DateTime.t/0`
   """
   def timestamp_to_datetime(timestamp) do
-    timestamp
-    |> quantity_to_integer()
-    |> Timex.from_unix()
+    case quantity_to_integer(timestamp) do
+      :error ->
+        nil
+
+      quantity ->
+        Timex.from_unix(quantity)
+    end
   end
 
   defp fetch_blocks_by_params(params, request, json_rpc_named_arguments)

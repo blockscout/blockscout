@@ -31,6 +31,8 @@ import './pages/pending_transactions'
 import './pages/transaction'
 import './pages/transactions'
 
+import './pages/admin/tasks.js'
+
 import './lib/clipboard_buttons'
 import './lib/currency'
 import './lib/from_now'

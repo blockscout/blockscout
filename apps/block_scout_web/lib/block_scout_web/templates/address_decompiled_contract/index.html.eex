@@ -1,0 +1,30 @@
+<section class="container">
+  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+
+  <div class="card">
+    <div class="card-header">
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+    </div>
+
+    <%= for contract <- sort_contracts_by_version(@address.decompiled_smart_contracts) do %>
+      <div class="card-body">
+        <h3><%= gettext "Decompiler version" %></h3>
+        <div class="tile tile-muted">
+          <pre class="pre-wrap"><code class="nohighlight"><%= contract.decompiler_version %></code></pre>
+        </div>
+        <br>
+        <section>
+          <div class="d-flex justify-content-between align-items-baseline">
+            <h3><%= gettext "Decompiled contract code" %></h3>
+            <button type="button" class="button button-secondary button-sm" id="button" data-clipboard-text="<%= contract.decompiled_source_code %>" aria-label="copy decompiled contract code">
+              <%= gettext "Copy Decompiled Contract Code" %>
+            </button>
+          </div>
+          <div class="tile tile-muted">
+            <pre class="pre-decompiled pre-scrollable"><%= raw(highlight_decompiled_code(contract.decompiled_source_code)) %></pre>
+          </div>
+        </section>
+      </div>
+   <% end %>
+  </div>
+</section>

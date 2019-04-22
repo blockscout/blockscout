@@ -6,8 +6,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Transaction}
-  alias Indexer.{Sequence, Token, TokenBalance, ReplacedTransaction}
-  alias Indexer.Block.{Realtime, Uncle}
+  alias Indexer.Block.Catchup.Sequence
+  alias Indexer.Block.Realtime
+  alias Indexer.Fetcher.{ContractCode, InternalTransaction, ReplacedTransaction, Token, TokenBalance, UncleBlock}
 
   @moduletag capture_log: true
 
@@ -24,7 +25,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       |> put_in(
         [:transport_options, :method_to_url],
         eth_getBalance: "http://54.144.107.14:8545",
-        trace_replayTransaction: "http://54.144.107.14:8545",
+        trace_replayBlockTransactions: "http://54.144.107.14:8545",
         trace_block: "http://54.144.107.14:8545"
       )
 
@@ -50,7 +51,11 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      Uncle.Supervisor.Case.start_supervised!(
+      ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      UncleBlock.Supervisor.Case.start_supervised!(
         block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
       )
 
@@ -200,174 +205,188 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              }
            ]}
         end)
-        |> expect(:json_rpc, fn [%{method: "trace_block"}, %{method: "trace_block"}] = requests, _options ->
-          responses = Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)
-          {:ok, responses}
-        end)
-        |> expect(:json_rpc, fn [
-                                  %{
-                                    id: 0,
-                                    jsonrpc: "2.0",
-                                    method: "trace_replayTransaction",
-                                    params: [
-                                      "0xd3937e70fab3fb2bfe8feefac36815408bf07de3b9e09fe81114b9a6b17f55c8",
-                                      ["trace"]
-                                    ]
-                                  }
-                                ],
-                                _ ->
-          {:ok,
-           [
-             %{
-               id: 0,
-               jsonrpc: "2.0",
-               result: %{
-                 "output" => "0x",
-                 "stateDiff" => nil,
-                 "trace" => [
+        |> expect(:json_rpc, 2, fn
+          [
+            %{id: 0, jsonrpc: "2.0", method: "trace_block", params: ["0x3C365F"]},
+            %{id: 1, jsonrpc: "2.0", method: "trace_block", params: ["0x3C3660"]}
+          ],
+          _ ->
+            {:ok,
+             [
+               %{id: 0, jsonrpc: "2.0", result: []},
+               %{id: 1, jsonrpc: "2.0", result: []}
+             ]}
+
+          [
+            %{
+              id: 0,
+              jsonrpc: "2.0",
+              method: "trace_replayBlockTransactions",
+              params: [
+                "0x3C3660",
+                ["trace"]
+              ]
+            },
+            %{
+              id: 1,
+              jsonrpc: "2.0",
+              method: "trace_replayBlockTransactions",
+              params: [
+                "0x3C365F",
+                ["trace"]
+              ]
+            }
+          ],
+          _ ->
+            {:ok,
+             [
+               %{id: 0, jsonrpc: "2.0", result: []},
+               %{
+                 id: 1,
+                 jsonrpc: "2.0",
+                 result: [
                    %{
-                     "action" => %{
-                       "callType" => "call",
-                       "from" => "0x40b18103537c0f15d5e137dd8ddd019b84949d16",
-                       "gas" => "0x383ad",
-                       "input" =>
-                         "0x8841ac11000000000000000000000000000000000000000000000000000000000000006c000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000005",
-                       "to" => "0x698bf6943bab687b2756394624aa183f434f65da",
-                       "value" => "0x1158e4f216242a000"
-                     },
-                     "result" => %{"gasUsed" => "0x23256", "output" => "0x"},
-                     "subtraces" => 5,
-                     "traceAddress" => [],
-                     "type" => "call"
-                   },
-                   %{
-                     "action" => %{
-                       "callType" => "call",
-                       "from" => "0x698bf6943bab687b2756394624aa183f434f65da",
-                       "gas" => "0x36771",
-                       "input" => "0x6352211e000000000000000000000000000000000000000000000000000000000000006c",
-                       "to" => "0x11c4469d974f8af5ba9ec99f3c42c07c848c861c",
-                       "value" => "0x0"
-                     },
-                     "result" => %{
-                       "gasUsed" => "0x495",
-                       "output" => "0x00000000000000000000000040b18103537c0f15d5e137dd8ddd019b84949d16"
-                     },
-                     "subtraces" => 0,
-                     "traceAddress" => [0],
-                     "type" => "call"
-                   },
-                   %{
-                     "action" => %{
-                       "callType" => "call",
-                       "from" => "0x698bf6943bab687b2756394624aa183f434f65da",
-                       "gas" => "0x35acb",
-                       "input" => "0x33f30a43000000000000000000000000000000000000000000000000000000000000006c",
-                       "to" => "0x11c4469d974f8af5ba9ec99f3c42c07c848c861c",
-                       "value" => "0x0"
-                     },
-                     "result" => %{
-                       "gasUsed" => "0x52d2",
-                       "output" =>
-                         "0x00000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000058000000000000000000000000000000000000000000000000000000000000001c000000000000000000000000000000000000000000000000000000000000004e000000000000000000000000000000000000000000000000000000000000004f000000000000000000000000000000000000000000000000000000000000004d000000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000004f00000000000000000000000000000000000000000000000000000000000000b000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001c0000000000000000000000000000000000000000000000000000000000000005000000000000000000000000000000000000000000000000000000000000044000000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000078000000000000000000000000000000000000000000000000000000005b61df09000000000000000000000000000000000000000000000000000000005b61df5e000000000000000000000000000000000000000000000000000000005b61df8b000000000000000000000000000000000000000000000000000000005b61df2c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006c00000000000000000000000000000000000000000000000000000000000000fd000000000000000000000000000000000000000000000000000000000000004e000000000000000000000000000000000000000000000000000000000000007a000000000000000000000000000000000000000000000000000000000000004e0000000000000000000000000000000000000000000000000000000000000015000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000189000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000054c65696c61000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002566303430313037303331343330303332333036303933333235303131323036303730373131000000000000000000000000000000000000000000000000000000"
-                     },
-                     "subtraces" => 0,
-                     "traceAddress" => [1],
-                     "type" => "call"
-                   },
-                   %{
-                     "action" => %{
-                       "callType" => "call",
-                       "from" => "0x698bf6943bab687b2756394624aa183f434f65da",
-                       "gas" => "0x2fc79",
-                       "input" => "0x1b8ef0bb000000000000000000000000000000000000000000000000000000000000006c",
-                       "to" => "0x11c4469d974f8af5ba9ec99f3c42c07c848c861c",
-                       "value" => "0x0"
-                     },
-                     "result" => %{
-                       "gasUsed" => "0x10f2",
-                       "output" => "0x0000000000000000000000000000000000000000000000000000000000000013"
-                     },
-                     "subtraces" => 0,
-                     "traceAddress" => [2],
-                     "type" => "call"
-                   },
-                   %{
-                     "action" => %{
-                       "callType" => "call",
-                       "from" => "0x698bf6943bab687b2756394624aa183f434f65da",
-                       "gas" => "0x2e21f",
-                       "input" =>
-                         "0xcf5f87d0000000000000000000000000000000000000000000000000000000000000006c0000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000a",
-                       "to" => "0x11c4469d974f8af5ba9ec99f3c42c07c848c861c",
-                       "value" => "0x0"
-                     },
-                     "result" => %{"gasUsed" => "0x1ca1", "output" => "0x"},
-                     "subtraces" => 0,
-                     "traceAddress" => [3],
-                     "type" => "call"
-                   },
-                   %{
-                     "action" => %{
-                       "callType" => "call",
-                       "from" => "0x698bf6943bab687b2756394624aa183f434f65da",
-                       "gas" => "0x8fc",
-                       "input" => "0x",
-                       "to" => "0x40b18103537c0f15d5e137dd8ddd019b84949d16",
-                       "value" => "0x9184e72a000"
-                     },
-                     "result" => %{"gasUsed" => "0x0", "output" => "0x"},
-                     "subtraces" => 0,
-                     "traceAddress" => [4],
-                     "type" => "call"
+                     "output" => "0x",
+                     "stateDiff" => nil,
+                     "trace" => [
+                       %{
+                         "action" => %{
+                           "callType" => "call",
+                           "from" => "0x40b18103537c0f15d5e137dd8ddd019b84949d16",
+                           "gas" => "0x383ad",
+                           "input" =>
+                             "0x8841ac11000000000000000000000000000000000000000000000000000000000000006c000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000005",
+                           "to" => "0x698bf6943bab687b2756394624aa183f434f65da",
+                           "value" => "0x1158e4f216242a000"
+                         },
+                         "result" => %{"gasUsed" => "0x23256", "output" => "0x"},
+                         "subtraces" => 5,
+                         "traceAddress" => [],
+                         "type" => "call"
+                       },
+                       %{
+                         "action" => %{
+                           "callType" => "call",
+                           "from" => "0x698bf6943bab687b2756394624aa183f434f65da",
+                           "gas" => "0x36771",
+                           "input" => "0x6352211e000000000000000000000000000000000000000000000000000000000000006c",
+                           "to" => "0x11c4469d974f8af5ba9ec99f3c42c07c848c861c",
+                           "value" => "0x0"
+                         },
+                         "result" => %{
+                           "gasUsed" => "0x495",
+                           "output" => "0x00000000000000000000000040b18103537c0f15d5e137dd8ddd019b84949d16"
+                         },
+                         "subtraces" => 0,
+                         "traceAddress" => [0],
+                         "type" => "call"
+                       },
+                       %{
+                         "action" => %{
+                           "callType" => "call",
+                           "from" => "0x698bf6943bab687b2756394624aa183f434f65da",
+                           "gas" => "0x35acb",
+                           "input" => "0x33f30a43000000000000000000000000000000000000000000000000000000000000006c",
+                           "to" => "0x11c4469d974f8af5ba9ec99f3c42c07c848c861c",
+                           "value" => "0x0"
+                         },
+                         "result" => %{
+                           "gasUsed" => "0x52d2",
+                           "output" =>
+                             "0x00000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000058000000000000000000000000000000000000000000000000000000000000001c000000000000000000000000000000000000000000000000000000000000004e000000000000000000000000000000000000000000000000000000000000004f000000000000000000000000000000000000000000000000000000000000004d000000000000000000000000000000000000000000000000000000000000004b000000000000000000000000000000000000000000000000000000000000004f00000000000000000000000000000000000000000000000000000000000000b000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001c0000000000000000000000000000000000000000000000000000000000000005000000000000000000000000000000000000000000000000000000000000044000000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000078000000000000000000000000000000000000000000000000000000005b61df09000000000000000000000000000000000000000000000000000000005b61df5e000000000000000000000000000000000000000000000000000000005b61df8b000000000000000000000000000000000000000000000000000000005b61df2c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006c00000000000000000000000000000000000000000000000000000000000000fd000000000000000000000000000000000000000000000000000000000000004e000000000000000000000000000000000000000000000000000000000000007a000000000000000000000000000000000000000000000000000000000000004e0000000000000000000000000000000000000000000000000000000000000015000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000189000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000054c65696c61000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002566303430313037303331343330303332333036303933333235303131323036303730373131000000000000000000000000000000000000000000000000000000"
+                         },
+                         "subtraces" => 0,
+                         "traceAddress" => [1],
+                         "type" => "call"
+                       },
+                       %{
+                         "action" => %{
+                           "callType" => "call",
+                           "from" => "0x698bf6943bab687b2756394624aa183f434f65da",
+                           "gas" => "0x2fc79",
+                           "input" => "0x1b8ef0bb000000000000000000000000000000000000000000000000000000000000006c",
+                           "to" => "0x11c4469d974f8af5ba9ec99f3c42c07c848c861c",
+                           "value" => "0x0"
+                         },
+                         "result" => %{
+                           "gasUsed" => "0x10f2",
+                           "output" => "0x0000000000000000000000000000000000000000000000000000000000000013"
+                         },
+                         "subtraces" => 0,
+                         "traceAddress" => [2],
+                         "type" => "call"
+                       },
+                       %{
+                         "action" => %{
+                           "callType" => "call",
+                           "from" => "0x698bf6943bab687b2756394624aa183f434f65da",
+                           "gas" => "0x2e21f",
+                           "input" =>
+                             "0xcf5f87d0000000000000000000000000000000000000000000000000000000000000006c0000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000a",
+                           "to" => "0x11c4469d974f8af5ba9ec99f3c42c07c848c861c",
+                           "value" => "0x0"
+                         },
+                         "result" => %{"gasUsed" => "0x1ca1", "output" => "0x"},
+                         "subtraces" => 0,
+                         "traceAddress" => [3],
+                         "type" => "call"
+                       },
+                       %{
+                         "action" => %{
+                           "callType" => "call",
+                           "from" => "0x698bf6943bab687b2756394624aa183f434f65da",
+                           "gas" => "0x8fc",
+                           "input" => "0x",
+                           "to" => "0x40b18103537c0f15d5e137dd8ddd019b84949d16",
+                           "value" => "0x9184e72a000"
+                         },
+                         "result" => %{"gasUsed" => "0x0", "output" => "0x"},
+                         "subtraces" => 0,
+                         "traceAddress" => [4],
+                         "type" => "call"
+                       }
+                     ],
+                     "transactionHash" => "0xd3937e70fab3fb2bfe8feefac36815408bf07de3b9e09fe81114b9a6b17f55c8",
+                     "vmTrace" => nil
                    }
-                 ],
-                 "vmTrace" => nil
+                 ]
                }
-             }
-           ]}
-        end)
-        |> expect(:json_rpc, fn [
-                                  %{
-                                    id: 0,
-                                    jsonrpc: "2.0",
-                                    method: "eth_getBalance",
-                                    params: ["0x11c4469d974f8af5ba9ec99f3c42c07c848c861c", "0x3C365F"]
-                                  },
-                                  %{
-                                    id: 1,
-                                    jsonrpc: "2.0",
-                                    method: "eth_getBalance",
-                                    params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
-                                  },
-                                  %{
-                                    id: 2,
-                                    jsonrpc: "2.0",
-                                    method: "eth_getBalance",
-                                    params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
-                                  },
-                                  %{
-                                    id: 3,
-                                    jsonrpc: "2.0",
-                                    method: "eth_getBalance",
-                                    params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
-                                  },
-                                  %{
-                                    id: 4,
-                                    jsonrpc: "2.0",
-                                    method: "eth_getBalance",
-                                    params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
-                                  }
-                                ],
-                                _ ->
-          {:ok,
-           [
-             %{id: 0, jsonrpc: "2.0", result: "0x49e3de5187cf037d127"},
-             %{id: 1, jsonrpc: "2.0", result: "0x148adc763b603291685"},
-             %{id: 2, jsonrpc: "2.0", result: "0x53474fa377a46000"},
-             %{id: 3, jsonrpc: "2.0", result: "0x53507afe51f28000"},
-             %{id: 4, jsonrpc: "2.0", result: "0x3e1a95d7517dc197108"}
-           ]}
+             ]}
+
+          [
+            %{
+              id: 0,
+              jsonrpc: "2.0",
+              method: "eth_getBalance",
+              params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
+            },
+            %{
+              id: 1,
+              jsonrpc: "2.0",
+              method: "eth_getBalance",
+              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
+            },
+            %{
+              id: 2,
+              jsonrpc: "2.0",
+              method: "eth_getBalance",
+              params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
+            },
+            %{
+              id: 3,
+              jsonrpc: "2.0",
+              method: "eth_getBalance",
+              params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
+            }
+          ],
+          _ ->
+            {:ok,
+             [
+               %{id: 0, jsonrpc: "2.0", result: "0x148adc763b603291685"},
+               %{id: 1, jsonrpc: "2.0", result: "0x53474fa377a46000"},
+               %{id: 2, jsonrpc: "2.0", result: "0x53507afe51f28000"},
+               %{id: 3, jsonrpc: "2.0", result: "0x3e1a95d7517dc197108"}
+             ]}
         end)
       end
 
@@ -377,9 +396,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                   addresses: [
                     %Address{hash: first_address_hash, fetched_coin_balance_block_number: 3_946_079},
                     %Address{hash: second_address_hash, fetched_coin_balance_block_number: 3_946_079},
-                    %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_079},
-                    %Address{hash: fourth_address_hash, fetched_coin_balance_block_number: 3_946_080},
-                    %Address{hash: fifth_address_hash, fetched_coin_balance_block_number: 3_946_079}
+                    %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_080},
+                    %Address{hash: fourth_address_hash, fetched_coin_balance_block_number: 3_946_079}
                   ],
                   address_coin_balances: [
                     %{
@@ -392,26 +410,14 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                     },
                     %{
                       address_hash: third_address_hash,
-                      block_number: 3_946_079
-                    },
-                    %{
-                      address_hash: fourth_address_hash,
                       block_number: 3_946_080
                     },
                     %{
-                      address_hash: fifth_address_hash,
+                      address_hash: fourth_address_hash,
                       block_number: 3_946_079
                     }
                   ],
                   blocks: [%Chain.Block{number: 3_946_079}, %Chain.Block{number: 3_946_080}],
-                  internal_transactions: [
-                    %{index: 0, transaction_hash: transaction_hash},
-                    %{index: 1, transaction_hash: transaction_hash},
-                    %{index: 2, transaction_hash: transaction_hash},
-                    %{index: 3, transaction_hash: transaction_hash},
-                    %{index: 4, transaction_hash: transaction_hash},
-                    %{index: 5, transaction_hash: transaction_hash}
-                  ],
                   transactions: [%Transaction{hash: transaction_hash}]
                 },
                 errors: []
