@@ -9,9 +9,15 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     arguments_data = String.replace(arguments_data, "0x", "")
     creation_input_data = Chain.contract_creation_input_data(address_hash)
 
-    expected_arguments_data =
+    data_with_swarm =
       creation_input_data
       |> String.split("0029")
+      |> List.first()
+      |> Kernel.<>("0029")
+
+    expected_arguments_data =
+      creation_input_data
+      |> String.split(data_with_swarm)
       |> List.last()
       |> String.replace("0x", "")
 
