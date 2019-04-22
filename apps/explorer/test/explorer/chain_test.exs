@@ -3273,6 +3273,7 @@ defmodule Explorer.ChainTest do
   end
 
   test "total_supply/0" do
+    Application.put_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
     height = 2_000_000
     insert(:block, number: height)
     expected = ProofOfAuthority.initial_supply() + height
@@ -3281,6 +3282,7 @@ defmodule Explorer.ChainTest do
   end
 
   test "circulating_supply/0" do
+    Application.put_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
     assert Chain.circulating_supply() == ProofOfAuthority.circulating()
   end
 

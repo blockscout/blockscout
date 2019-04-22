@@ -2374,7 +2374,7 @@ defmodule Explorer.Chain do
   end
 
   defp supply_module do
-    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
+    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.CoinMarketCap)
   end
 
   @doc """

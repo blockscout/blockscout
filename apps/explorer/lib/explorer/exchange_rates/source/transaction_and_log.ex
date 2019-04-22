@@ -26,6 +26,7 @@ defmodule Explorer.ExchangeRates.Source.TransactionAndLog do
   defp build_struct(original_token) do
     %Token{
       available_supply: to_decimal(Chain.circulating_supply()),
+      total_supply: 0,
       btc_value: original_token.btc_value,
       id: original_token.id,
       last_updated: original_token.last_updated,
