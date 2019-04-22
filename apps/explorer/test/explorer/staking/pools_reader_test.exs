@@ -37,7 +37,7 @@ defmodule Explorer.Token.PoolsReaderTest do
         :ok,
         %{
           banned_unitil: 0,
-          delegator_addresses: [],
+          delegators_count: 0,
           is_active: true,
           is_banned: false,
           is_validator: true,
@@ -50,7 +50,7 @@ defmodule Explorer.Token.PoolsReaderTest do
         }
       }
 
-      assert response = PoolsReader.pool_data(address)
+      assert PoolsReader.pool_data(address) == response
     end
 
     test "get_pool_data error" do
