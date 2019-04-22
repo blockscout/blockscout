@@ -17,6 +17,7 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
 
       %Token{
         available_supply: to_decimal(item["available_supply"]),
+        total_supply: to_decimal(item["total_supply"]),
         btc_value: to_decimal(item["price_btc"]),
         id: item["id"],
         last_updated: last_updated,
