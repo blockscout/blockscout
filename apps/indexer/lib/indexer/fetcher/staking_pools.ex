@@ -64,11 +64,11 @@ defmodule Indexer.Fetcher.StakingPools do
     if failed_list == [] do
       :ok
     else
-      {:retry, [failed_list]}
+      {:retry, failed_list}
     end
   end
 
-  defp entry(pool_address) do
+  def entry(pool_address) do
     %{
       staking_address: pool_address,
       retries_count: 0
