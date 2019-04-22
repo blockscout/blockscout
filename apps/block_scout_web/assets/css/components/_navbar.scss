@@ -20,6 +20,7 @@
     form {
       flex-grow: 1;
     }
+
   }
 
   .input-group {
@@ -79,9 +80,8 @@
   background: transparent;
   width: auto;
   font-size: 12px;
-  border-right: none;
+  border: none;
   color: $white;
-  border-color: transparentize($white, 0.30);
   padding-right: 0px;
 
 
@@ -109,12 +109,11 @@
 
 .navbar .input-group-text {
   background: none;
-  border-left: none;
-  border-color: transparentize($white, 0.30);
+  border: none;
 }
 
 .input-group-append {
-  margin-left: 0px;
+  margin-left: -0.5px;
 
   path {
     fill: $secondary;
@@ -159,4 +158,8 @@
     background-color: $tertiary;
     color: $white;
   }
+}
+
+.add-border {
+  border: 1px solid transparentize($white, 0.30);
 }
