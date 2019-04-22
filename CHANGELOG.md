@@ -25,6 +25,7 @@
  - [#1803](https://github.com/poanetwork/blockscout/pull/1803) - use coinmarketcap for total_supply by default
  - [#1802](https://github.com/poanetwork/blockscout/pull/1802) - make coinmarketcap's number of pages configurable
  - [#1799](https://github.com/poanetwork/blockscout/pull/1799) - Use eth_getUncleByBlockHashAndIndex for uncle block fetching
+ - [#1531](https://github.com/poanetwork/blockscout/pull/1531) - docker: fix dockerFile for secp256k1 building
 
 ### Chore
 
