@@ -25,13 +25,13 @@ defmodule Indexer.Fetcher.StakingPools do
 
   @spec async_fetch() :: :ok
   def async_fetch() do
-    pools =
-      PoolsReader.get_pools()
-      |> Enum.map(&entry/1)
-
     pid = GenServer.whereis(__MODULE__)
 
     if pid && Process.alive?(pid) do
+      pools =
+        PoolsReader.get_pools()
+        |> Enum.map(&entry/1)
+
       BufferedTask.buffer(__MODULE__, pools, :infinity)
     end
   end
