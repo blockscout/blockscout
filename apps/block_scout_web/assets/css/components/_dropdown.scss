@@ -40,6 +40,21 @@
     border-bottom-left-radius: 8px;
     border-bottom-right-radius: 8px;
   }
+
+  &.header {
+    &,
+    &:hover,
+    &:active {
+      background-color: transparent;
+      cursor: default;
+      color: #333;
+      font-weight: 700;
+    }
+  }
+
+  &.division {
+    border-color: $base-border-color;
+  }
 }
 
 .dropdown-search-icon {
