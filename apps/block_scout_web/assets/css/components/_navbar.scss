@@ -158,6 +158,14 @@
     background-color: $tertiary;
     color: $white;
   }
+
+  &.header {
+    font-weight: bold;
+
+    &.division {
+      border-top: 1px solid rgb(183, 185, 184);
+    }
+  }
 }
 
 .add-border {

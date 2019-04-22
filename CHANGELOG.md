@@ -28,6 +28,7 @@
 
 ### Chore
 
+ - [#1804](https://github.com/poanetwork/blockscout/pull/1804) - (Chore) Divide chains by Mainnet/Testnet in menu
  - [#1783](https://github.com/poanetwork/blockscout/pull/1783) - Update README with the chains that use Blockscout
  - [#1780](https://github.com/poanetwork/blockscout/pull/1780) - Update link to the Github repo in the footer
  - [#1757](https://github.com/poanetwork/blockscout/pull/1757) - Change twitter acc link to official Blockscout acc twitter
