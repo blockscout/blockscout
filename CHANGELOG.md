@@ -34,6 +34,7 @@
  - [#1753](https://github.com/poanetwork/blockscout/pull/1753) - Add a check mark to decompiled contract tab
  - [#1744](https://github.com/poanetwork/blockscout/pull/1744) - remove `0x0..0` from tests
  - [#1763](https://github.com/poanetwork/blockscout/pull/1763) - Describe indexer structure and list existing fetchers
+ - [#1800](https://github.com/poanetwork/blockscout/pull/1800) - Disable lazy logging check in Credo
 
 
 ## 1.3.9-beta
