@@ -120,7 +120,12 @@
               <%= subnetwork_title() %>
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <%= for %{url: url, title: title} <- other_networks() do %>
+              <a class="dropdown-item header">Mainnet</a>
+              <%= for %{url: url, title: title} <- main_nets() do %>
+                <a class="dropdown-item" href="<%= url%>"><%= title %></a>
+              <% end %>
+              <a class="dropdown-item header">Testnet</a>
+              <%= for %{url: url, title: title} <- test_nets() do %>
                 <a class="dropdown-item" href="<%= url%>"><%= title %></a>
               <% end %>
             </div>

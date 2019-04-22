@@ -158,6 +158,10 @@
     background-color: $tertiary;
     color: $white;
   }
+
+  &.header {
+    font-weight: bold;
+  }
 }
 
 .add-border {
