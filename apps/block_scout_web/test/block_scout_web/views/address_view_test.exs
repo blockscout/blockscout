@@ -134,7 +134,9 @@ defmodule BlockScoutWeb.AddressViewTest do
   end
 
   test "balance_percentage/1" do
+    Application.put_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
     address = insert(:address, fetched_coin_balance: 2_524_608_000_000_000_000_000_000)
+
     assert "1.0000% Market Cap" = AddressView.balance_percentage(address)
   end
 
