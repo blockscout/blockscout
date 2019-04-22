@@ -7,6 +7,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Hash
   alias Indexer.Block
   alias Indexer.Block.Catchup.Fetcher
   alias Indexer.Fetcher.{BlockReward, CoinBalance, InternalTransaction, Token, TokenBalance, UncleBlock}
@@ -51,7 +52,10 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
       Process.register(pid, UncleBlock)
 
-      nephew_hash = block_hash() |> to_string()
+      nephew_hash_data = block_hash()
+      %Hash{bytes: nephew_hash_bytes} = nephew_hash_data
+      nephew_hash = nephew_hash_data |> to_string()
+      nephew_index = 0
       uncle_hash = block_hash() |> to_string()
       miner_hash = address_hash() |> to_string()
       block_number = 0
@@ -96,7 +100,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                    params: [
                      %{
                        nephew_hash: nephew_hash,
-                       uncle_hash: uncle_hash
+                       uncle_hash: uncle_hash,
+                       index: nephew_index
                      }
                    ]
                  },
@@ -113,7 +118,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                  }
                })
 
-      assert_receive {:uncles, [^uncle_hash]}
+      assert_receive {:uncles, [{^nephew_hash_bytes, ^nephew_index}]}
     end
   end
 
