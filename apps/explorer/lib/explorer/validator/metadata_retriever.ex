@@ -69,7 +69,7 @@ defmodule Explorer.Validator.MetadataRetriever do
   # sobelow_skip ["Traversal"]
   defp contract_abi(file_name) do
     :explorer
-    |> Application.app_dir("priv/validator_contracts_abi/#{file_name}")
+    |> Application.app_dir("priv/contracts_abi/poa/#{file_name}")
     |> File.read!()
     |> Jason.decode!()
   end
