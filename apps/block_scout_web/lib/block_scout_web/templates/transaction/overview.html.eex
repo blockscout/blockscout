@@ -67,7 +67,7 @@
             </dd>
           </dl>
           <dl class="row">
-            <dt class="col-sm-3 text-muted"> <%= gettext "Block Confirmations" %> </dt>
+            <dt class="col-sm-3 text-muted"><%= gettext "Block Confirmations" %></dt>
             <dd class="col-sm-9">
               <span data-selector="block-confirmations" class="font-weight-bold"><%= confirmations(@transaction, block_height: @block_height) %></span>
           </dd>
