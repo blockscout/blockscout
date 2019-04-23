@@ -35,34 +35,7 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
             true -> style
           end
 
-        new_part =
-          cond do
-            part == "" ->
-              ""
-
-            part == "</span>" ->
-              ""
-
-            part == new_style ->
-              ""
-
-            new_style == "" ->
-              part
-
-            true ->
-              result =
-                part
-                |> String.split("\n")
-                |> Enum.reduce("", fn p, a ->
-                  a <> new_style <> p <> "</span>\n"
-                end)
-
-              if String.ends_with?(part, "\n") do
-                result
-              else
-                String.slice(result, 0..-2)
-              end
-          end
+        new_part = new_part(part, new_style)
 
         {new_style, [new_part | acc]}
       end)
@@ -86,5 +59,35 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     |> Enum.reduce("", fn line, acc ->
       acc <> "<code>#{line}</code>\n"
     end)
+  end
+
+  defp new_part(part, new_style) do
+    cond do
+      part == "" ->
+        ""
+
+      part == "</span>" ->
+        ""
+
+      part == new_style ->
+        ""
+
+      new_style == "" ->
+        part
+
+      true ->
+        result =
+          part
+          |> String.split("\n")
+          |> Enum.reduce("", fn p, a ->
+            a <> new_style <> p <> "</span>\n"
+          end)
+
+        if String.ends_with?(part, "\n") do
+          result
+        else
+          String.slice(result, 0..-2)
+        end
+    end
   end
 end
