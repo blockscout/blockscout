@@ -2,6 +2,8 @@
 
 ### Features
 
+- [#1813](https://github.com/poanetwork/blockscout/pull/1813) - add total blocks counter to the main page
+
 ### Fixes
 
 ### Chore
