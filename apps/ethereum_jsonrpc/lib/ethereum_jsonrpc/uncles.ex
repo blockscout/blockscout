@@ -16,14 +16,16 @@ defmodule EthereumJSONRPC.Uncles do
       ...>   [
       ...>     %{
       ...>       "hash" => "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311",
-      ...>       "nephewHash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47"
+      ...>       "nephewHash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
+      ...>       "index" => 0
       ...>     }
       ...>    ]
       ...> )
       [
         %{
           uncle_hash: "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311",
-          nephew_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47"
+          nephew_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
+          index: 0
         }
       ]
 

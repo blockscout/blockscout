@@ -50,7 +50,9 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
 
   @impl WebSocket
   # only allow secure WSS
-  def start_link(["wss://" <> _ = url, gen_fsm_options]) when is_list(gen_fsm_options) do
+  def start_link(["wss://" <> _ = url, websocket_opts, gen_fsm_options]) when is_list(gen_fsm_options) do
+    keepalive = websocket_opts[:keepalive]
+
     fsm_name =
       case Keyword.fetch(gen_fsm_options, :name) do
         {:ok, name} when is_atom(name) -> {:local, name}
@@ -68,6 +70,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
       __MODULE__,
       url,
       ssl_verify: :verify_peer,
+      keepalive: keepalive,
       socket_opts: [
         cacerts: :certifi.cacerts(),
         depth: 99,
@@ -78,7 +81,9 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
     )
   end
 
-  def start_link(["ws://" <> _ = url, gen_fsm_options]) when is_list(gen_fsm_options) do
+  def start_link(["ws://" <> _ = url, websocket_opts, gen_fsm_options]) when is_list(gen_fsm_options) do
+    keepalive = websocket_opts[:keepalive]
+
     fsm_name =
       case Keyword.fetch(gen_fsm_options, :name) do
         {:ok, name} when is_atom(name) -> {:local, name}
@@ -90,7 +95,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
       url,
       __MODULE__,
       url,
-      []
+      keepalive: keepalive
     )
   end
 
