@@ -171,11 +171,13 @@
 }
 
 @mixin square-icon-button($color, $dimensions) {
+  align-items: center;
   border: 1px solid $color;
   border-radius: 2px;
   cursor: pointer;
-  display: block;
+  display: flex;
   height: $dimensions;
+  justify-content: center;
   transition: all 0.15s;
   width: $dimensions;
 
