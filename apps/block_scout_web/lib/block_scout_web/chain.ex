@@ -60,13 +60,17 @@ defmodule BlockScoutWeb.Chain do
   @spec from_param(String.t()) :: {:ok, Address.t() | Block.t() | Transaction.t()} | {:error, :not_found}
   def from_param(param)
 
-  def from_param("0x" <> number_string = param) do
-    case String.length(number_string) do
-      40 -> address_from_param(param)
-      64 -> block_or_transaction_from_param(param)
-      _ -> {:error, :not_found}
-    end
-  end
+  def from_param("0x" <> number_string = param) when byte_size(number_string) == 40,
+    do: address_from_param(param)
+
+  def from_param("0x" <> number_string = param) when byte_size(number_string) == 64,
+    do: block_or_transaction_from_param(param)
+
+  def from_param(param) when byte_size(param) == 40,
+    do: address_from_param("0x" <> param)
+
+  def from_param(param) when byte_size(param) == 64,
+    do: block_or_transaction_from_param("0x" <> param)
 
   def from_param(string) when is_binary(string) do
     case param_to_block_number(string) do
