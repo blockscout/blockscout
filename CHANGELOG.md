@@ -2,6 +2,8 @@
 
 ### Features
 
+- [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
+
 ### Fixes
 
 ### Chore
