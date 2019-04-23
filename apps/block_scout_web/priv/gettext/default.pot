@@ -592,6 +592,7 @@ msgid "Newer"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:22
 #: lib/block_scout_web/templates/address_token/index.html.eex:25
 msgid "Next"
 msgstr ""
@@ -753,11 +754,6 @@ msgstr ""
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:7
 #: lib/block_scout_web/templates/transaction/index.html.eex:7
 msgid "Showing"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/index.html.eex:6
-msgid "Showing 250 addresses of"
 msgstr ""
 
 #, elixir-format
@@ -1114,7 +1110,7 @@ msgid "string"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/index.html.eex:8
+#: lib/block_scout_web/templates/address/index.html.eex:10
 msgid "total addresses with a balance"
 msgstr ""
 
@@ -1743,4 +1739,14 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:165
 msgid "ERC-721"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:8
+msgid " addresses of"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:6
+msgid "Showing "
 msgstr ""
