@@ -3,22 +3,31 @@
     <!-- <%= link to: chain_path(@conn, :show), class: "footer-brand" do %>
       <img class="footer-logo" src="<%= logo() %>" />
     <% end %> -->
-    <br>
-    <div class="icon-links icon-links-primary">
-      <a href="https://github.com/SpringRole" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Github") %>">
-        <i class="fab fa-github"></i>
-      </a>
-      <a href="https://twitter.com/springroleinc" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Twitter") %>">
-        <i class="fab fa-twitter"></i>
-      </a>
-      <a href="https://t.me/springrole" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Telegram") %>">
-        <i class="fab fa-telegram-plane"></i>
-      </a>
+    <div class="CopyRightTxttop">
+        <%= gettext "Copyright %{year} Blockscout", year: 2018 %>
     </div>
-
-    <br>
-
-    <%= gettext "Copyright %{year} Blockscout", year: 2018 %>
-
+    <div class="icon-links icon-links-primary">
+      <div>
+        <a href="https://github.com/SpringRole" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Github") %>">
+          <i class="fab fa-github"></i>
+        </a>
+        <p>Github</p>
+      </div>
+      <div>
+        <a href="https://twitter.com/springroleinc" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Twitter") %>">
+          <i class="fab fa-twitter"></i>
+        </a>
+        <p>Twitter</p>
+      </div>
+      <div>
+        <a href="https://t.me/springrole" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Telegram") %>">
+          <i class="fab fa-telegram-plane"></i>
+        </a>
+        <p>Telegram</p>
+      </div>
+    </div>
+    <div class="CopyRightTxtbottom">
+        <%= gettext "Copyright %{year} Blockscout", year: 2018 %>
+    </div>
   </div>
 </footer>

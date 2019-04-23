@@ -2,6 +2,23 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  div{
+    a{
+      i{
+        font-size: 14px;
+      }
+    }
+    p{
+      font-size: 8px;
+      line-height: 1.25;
+      color: #ffffff;
+      margin: 5px 0 0 0;
+      text-align: center;
+    }
+  }
+  @media (max-width: 768px) {
+    justify-content: center;
+  }
 }
 
 .icon-link {
@@ -10,17 +27,18 @@
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  margin: 0 .25rem;
-  color: $text-muted;
-  background-color: $gray-200;
-  border: none;
+  margin: 0 .7rem;
+  color: #fff;
+  background-color: #527895;
+  border: 1px solid #fff;
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.1s ease;
 
+
   &:hover {
-    background-color: darken($primary, 20%);
-    color: $white;
+    background-color: #fff;
+    color: #527895;
     text-decoration: none;
   }
 
