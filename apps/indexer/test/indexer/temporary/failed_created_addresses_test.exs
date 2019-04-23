@@ -8,8 +8,8 @@ defmodule Indexer.Temporary.FailedCreatedAddressesTest do
 
   alias Explorer.Repo
   alias Explorer.Chain.Address
+  alias Indexer.Fetcher.CoinBalance
   alias Indexer.Temporary.FailedCreatedAddresses.Supervisor
-  alias Indexer.CoinBalance
 
   @moduletag capture_log: true
 
