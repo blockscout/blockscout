@@ -3,7 +3,9 @@
     <div class="card-body">
       <h1><%= gettext "Addresses" %></h1>
       <p>
-        <%= gettext "Showing 250 addresses of" %>
+        <%= gettext "Showing " %>
+        <%= Cldr.Number.to_string!(@page_address_count, format: "#,###") %>
+        <%= gettext " addresses of" %>
         <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
         <%= gettext "total addresses with a balance" %>
       </p>
@@ -14,6 +16,11 @@
             address: address, index: index, exchange_rate: @exchange_rate,
             total_supply: @total_supply, tx_count: tx_count,
             validation_count: validation_count(address) %>
+        <% end %>
+        <%= if @next_page_path do %>
+          <a href="<%= "#{@next_page_path}" %>" class="button button-secondary button-small float-right mt-4">
+            <%= gettext("Next") %>
+          </a>
         <% end %>
       </span>
     </div>
