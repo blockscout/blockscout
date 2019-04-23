@@ -7,6 +7,7 @@ defmodule Explorer.ExchangeRates.Token do
   Represents an exchange rate for a given token.
 
    * `:available_supply` - Available supply of a token
+   * `:total_supply` - Max Supply
    * `:btc_value` - The Bitcoin value of the currency
    * `:id` - ID of a currency
    * `:last_updated` - Timestamp of when the value was last updated
@@ -18,6 +19,7 @@ defmodule Explorer.ExchangeRates.Token do
   """
   @type t :: %__MODULE__{
           available_supply: Decimal.t(),
+          total_supply: Decimal.t(),
           btc_value: Decimal.t(),
           id: String.t(),
           last_updated: DateTime.t(),
@@ -28,8 +30,8 @@ defmodule Explorer.ExchangeRates.Token do
           volume_24h_usd: Decimal.t()
         }
 
-  @enforce_keys ~w(available_supply btc_value id last_updated market_cap_usd name symbol usd_value volume_24h_usd)a
-  defstruct ~w(available_supply btc_value id last_updated market_cap_usd name symbol usd_value volume_24h_usd)a
+  @enforce_keys ~w(available_supply total_supply btc_value id last_updated market_cap_usd name symbol usd_value volume_24h_usd)a
+  defstruct ~w(available_supply total_supply btc_value id last_updated market_cap_usd name symbol usd_value volume_24h_usd)a
 
   def null,
     do: %__MODULE__{
@@ -37,6 +39,7 @@ defmodule Explorer.ExchangeRates.Token do
       id: nil,
       name: nil,
       available_supply: nil,
+      total_supply: nil,
       usd_value: nil,
       volume_24h_usd: nil,
       market_cap_usd: nil,
@@ -51,6 +54,7 @@ defmodule Explorer.ExchangeRates.Token do
         id: id,
         name: name,
         available_supply: available_supply,
+        total_supply: total_supply,
         usd_value: usd_value,
         volume_24h_usd: volume_24h_usd,
         market_cap_usd: market_cap_usd,
@@ -58,17 +62,20 @@ defmodule Explorer.ExchangeRates.Token do
         last_updated: last_updated
       }) do
     # symbol is first because it is the key used for lookup in `Explorer.ExchangeRates`'s ETS table
-    {symbol, id, name, available_supply, usd_value, volume_24h_usd, market_cap_usd, btc_value, last_updated}
+    {symbol, id, name, available_supply, total_supply, usd_value, volume_24h_usd, market_cap_usd, btc_value,
+     last_updated}
   end
 
   def from_tuple(
-        {symbol, id, name, available_supply, usd_value, volume_24h_usd, market_cap_usd, btc_value, last_updated}
+        {symbol, id, name, available_supply, total_supply, usd_value, volume_24h_usd, market_cap_usd, btc_value,
+         last_updated}
       ) do
     %__MODULE__{
       symbol: symbol,
       id: id,
       name: name,
       available_supply: available_supply,
+      total_supply: total_supply,
       usd_value: usd_value,
       volume_24h_usd: volume_24h_usd,
       market_cap_usd: market_cap_usd,

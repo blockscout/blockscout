@@ -125,7 +125,11 @@ defmodule Explorer.Factory do
       |> sequence(& &1)
       |> Hash.Address.cast()
 
-    address_hash
+    if to_string(address_hash) == "0x0000000000000000000000000000000000000000" do
+      address_hash()
+    else
+      address_hash
+    end
   end
 
   def block_factory do
@@ -177,7 +181,8 @@ defmodule Explorer.Factory do
   def block_second_degree_relation_factory do
     %Block.SecondDegreeRelation{
       uncle_hash: block_hash(),
-      nephew: build(:block)
+      nephew: build(:block),
+      index: 0
     }
   end
 

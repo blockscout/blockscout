@@ -5,8 +5,8 @@ use Mix.Config
 import Bitwise
 
 block_transformers = %{
-  "clique" => Indexer.Block.Transform.Clique,
-  "base" => Indexer.Block.Transform.Base
+  "clique" => Indexer.Transform.Blocks.Clique,
+  "base" => Indexer.Transform.Blocks.Base
 }
 
 # Compile time environment variable access requires recompilation.
