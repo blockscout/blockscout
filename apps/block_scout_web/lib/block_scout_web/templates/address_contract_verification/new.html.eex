@@ -48,6 +48,11 @@
           <%= error_tag f, :optimization, id: "optimization-help-block", class: "text-danger" %>
         </div>
 
+        <div class="form-group">
+          <%= label f, :name, gettext("Optimization runs") %>
+          <%= text_input :optimization, :runs, value: 200, class: "form-control", "aria-describedby": "optimization-runs-help-block", "data-test": "optimization-runs" %>
+        </div>
+
         <div class="form-group mb-4">
           <%= label f, :contract_source_code, gettext("Enter the Solidity Contract Code below") %>
           <%= textarea f, :contract_source_code, class: "form-control monospace", rows: 3, "aria-describedby": "contract-source-code-help-block" %>

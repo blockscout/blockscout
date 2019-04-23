@@ -53,6 +53,11 @@ defmodule EthereumJSONRPC do
   @type block_number :: non_neg_integer()
 
   @typedoc """
+  Reference to an uncle block by nephew block's `hash` and `index` in it.
+  """
+  @type nephew_index :: %{required(:nephew_hash) => String.t(), required(:index) => non_neg_integer()}
+
+  @typedoc """
   Binary data encoded as a single hexadecimal number in a `String.t`
   """
   @type data :: String.t()
@@ -236,6 +241,15 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches uncle blocks by nephew hashes and indices.
+  """
+  @spec fetch_uncle_blocks([nephew_index()], json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
+  def fetch_uncle_blocks(blocks, json_rpc_named_arguments) do
+    blocks
+    |> fetch_blocks_by_params(&Block.ByNephew.request/1, json_rpc_named_arguments)
+  end
+
+  @doc """
   Fetches block number by `t:tag/0`.
 
   ## Returns
@@ -326,9 +340,16 @@ defmodule EthereumJSONRPC do
   @doc """
   Converts `t:quantity/0` to `t:non_neg_integer/0`.
   """
-  @spec quantity_to_integer(quantity) :: non_neg_integer()
+  @spec quantity_to_integer(quantity) :: non_neg_integer() | :error
   def quantity_to_integer("0x" <> hexadecimal_digits) do
     String.to_integer(hexadecimal_digits, 16)
+  end
+
+  def quantity_to_integer(string) do
+    case Integer.parse(string) do
+      {integer, ""} -> integer
+      _ -> :error
+    end
   end
 
   @doc """
@@ -398,9 +419,13 @@ defmodule EthereumJSONRPC do
   Converts `t:timestamp/0` to `t:DateTime.t/0`
   """
   def timestamp_to_datetime(timestamp) do
-    timestamp
-    |> quantity_to_integer()
-    |> Timex.from_unix()
+    case quantity_to_integer(timestamp) do
+      :error ->
+        nil
+
+      quantity ->
+        Timex.from_unix(quantity)
+    end
   end
 
   defp fetch_blocks_by_params(params, request, json_rpc_named_arguments)

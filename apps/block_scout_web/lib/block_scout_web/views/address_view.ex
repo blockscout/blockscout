@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.AddressView do
   @tabs [
     "coin_balances",
     "contracts",
+    "decompiled_contracts",
     "internal_transactions",
     "read_contract",
     "tokens",
@@ -205,6 +206,11 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
 
+  def has_decompiled_code?(address) do
+    address.has_decompiled_code? ||
+      (Ecto.assoc_loaded?(address.decompiled_smart_contracts) && Enum.count(address.decompiled_smart_contracts) > 0)
+  end
+
   def token_title(%Token{name: nil, contract_address_hash: contract_address_hash}) do
     contract_address_hash
     |> to_string
@@ -288,6 +294,7 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["transactions"]), do: gettext("Transactions")
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["contracts"]), do: gettext("Code")
+  defp tab_name(["decompiled_contracts"]), do: gettext("Decompiled Code")
   defp tab_name(["read_contract"]), do: gettext("Read Contract")
   defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
   defp tab_name(["validations"]), do: gettext("Blocks Validated")

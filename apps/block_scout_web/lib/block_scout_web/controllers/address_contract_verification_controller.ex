@@ -26,10 +26,14 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "address_id" => address_hash_string,
           "smart_contract" => smart_contract,
           "external_libraries" => external_libraries,
-          "evm_version" => evm_version
+          "evm_version" => evm_version,
+          "optimization" => optimization
         }
       ) do
-    smart_sontact_with_evm_version = Map.put(smart_contract, "evm_version", evm_version["evm_version"])
+    smart_sontact_with_evm_version =
+      smart_contract
+      |> Map.put("evm_version", evm_version["evm_version"])
+      |> Map.put("optimization_runs", parse_optimization_runs(optimization))
 
     case Publisher.publish(address_hash_string, smart_sontact_with_evm_version, external_libraries) do
       {:ok, _smart_contract} ->
@@ -43,6 +47,13 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           compiler_versions: compiler_versions,
           evm_versions: CodeCompiler.allowed_evm_versions()
         )
+    end
+  end
+
+  def parse_optimization_runs(%{"runs" => runs}) do
+    case Integer.parse(runs) do
+      {integer, ""} -> integer
+      _ -> 200
     end
   end
 end

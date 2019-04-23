@@ -8,7 +8,7 @@ defmodule Explorer.Chain.TransactionCountCacheTest do
 
     result = TransactionCountCache.value(TestCache)
 
-    assert result == 0
+    assert is_nil(result)
   end
 
   test "updates cache if initial value is zero" do

@@ -13,10 +13,10 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
   ## Examples
 
-      iex(1)> Explorer.SmartContract.Solidity.CodeCompiler.run(
-      ...>      "SimpleStorage",
-      ...>      "v0.4.24+commit.e67f0147",
-      ...>      \"""
+      iex(1)> Explorer.SmartContract.Solidity.CodeCompiler.run([
+      ...>      name: "SimpleStorage",
+      ...>      compiler_version: "v0.4.24+commit.e67f0147",
+      ...>      code: \"""
       ...>      pragma solidity ^0.4.24;
       ...>
       ...>      contract SimpleStorage {
@@ -31,8 +31,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
       ...>          }
       ...>      }
       ...>      \""",
-      ...>      false
-      ...>  )
+      ...>      optimize: false, evm_version: "byzantium"
+      ...>  ])
       {
         :ok,
         %{
@@ -61,10 +61,18 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         }
       }
   """
-  def run(name, compiler_version, code, optimize, evm_version \\ "byzantium", external_libs \\ %{}) do
+  def run(params) do
+    name = Keyword.fetch!(params, :name)
+    compiler_version = Keyword.fetch!(params, :compiler_version)
+    code = Keyword.fetch!(params, :code)
+    optimize = Keyword.fetch!(params, :optimize)
+    optimization_runs = params |> Keyword.get(:optimization_runs, 200) |> Integer.to_string()
+    evm_version = Keyword.get(params, :evm_version, List.last(@allowed_evm_versions))
+    external_libs = Keyword.get(params, :external_libs, %{})
+
     external_libs_string = Jason.encode!(external_libs)
 
-    evm_version =
+    checked_evm_version =
       if evm_version in @allowed_evm_versions do
         evm_version
       else
@@ -79,9 +87,10 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           code,
           compiler_version,
           optimize_value(optimize),
+          optimization_runs,
           @new_contract_name,
           external_libs_string,
-          evm_version
+          checked_evm_version
         ]
       )
 

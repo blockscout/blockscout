@@ -261,34 +261,36 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     end
 
     # Regression test for https://github.com/poanetwork/blockscout/issues/1644
-    test "discards parent block if it isn't related to the current one because of reorg",
+    test "discards neighbouring blocks if they aren't related to the current one because of reorg and/or import timeout",
          %{consensus_block: %Block{number: block_number, hash: block_hash, miner_hash: miner_hash}, options: options} do
-      old_block = insert(:block, parent_hash: block_hash, number: block_number + 1)
-      insert(:block, parent_hash: old_block.hash, number: old_block.number + 1)
+      old_block1 = params_for(:block, miner_hash: miner_hash, parent_hash: block_hash, number: block_number + 1)
 
-      new_block1 = params_for(:block, parent_hash: block_hash, number: block_number + 1, miner_hash: miner_hash)
+      new_block1 = params_for(:block, miner_hash: miner_hash, parent_hash: block_hash, number: block_number + 1)
+      new_block2 = params_for(:block, miner_hash: miner_hash, parent_hash: new_block1.hash, number: block_number + 2)
 
-      new_block2 =
-        params_for(:block, parent_hash: new_block1.hash, number: new_block1.number + 1, miner_hash: miner_hash)
+      range = block_number..(block_number + 2)
 
-      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block2)
-      changes_list = [block_changes]
+      insert_block(new_block1, options)
+      insert_block(new_block2, options)
+      assert Chain.missing_block_number_ranges(range) == []
 
-      Multi.new()
-      |> Blocks.run(changes_list, options)
-      |> Repo.transaction()
+      insert_block(old_block1, options)
+      assert Chain.missing_block_number_ranges(range) == [(block_number + 2)..(block_number + 2)]
 
-      assert Chain.missing_block_number_ranges(block_number..new_block2.number) == [old_block.number..old_block.number]
+      insert_block(new_block2, options)
+      assert Chain.missing_block_number_ranges(range) == [(block_number + 1)..(block_number + 1)]
 
-      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block1)
-      changes_list = [block_changes]
-
-      Multi.new()
-      |> Blocks.run(changes_list, options)
-      |> Repo.transaction()
-
-      assert Chain.missing_block_number_ranges(block_number..new_block2.number) == []
+      insert_block(new_block1, options)
+      assert Chain.missing_block_number_ranges(range) == []
     end
+  end
+
+  defp insert_block(block_params, options) do
+    %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+
+    Multi.new()
+    |> Blocks.run([block_changes], options)
+    |> Repo.transaction()
   end
 
   defp count(schema) do

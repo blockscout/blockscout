@@ -6,8 +6,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Transaction}
-  alias Indexer.{Sequence, Token, TokenBalance, ReplacedTransaction}
-  alias Indexer.Block.{Realtime, Uncle}
+  alias Indexer.Block.Catchup.Sequence
+  alias Indexer.Block.Realtime
+  alias Indexer.Fetcher.{ContractCode, InternalTransaction, ReplacedTransaction, Token, TokenBalance, UncleBlock}
 
   @moduletag capture_log: true
 
@@ -50,7 +51,11 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      Uncle.Supervisor.Case.start_supervised!(
+      ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      UncleBlock.Supervisor.Case.start_supervised!(
         block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
       )
 
@@ -200,11 +205,18 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              }
            ]}
         end)
-        |> expect(:json_rpc, fn [%{method: "trace_block"}, %{method: "trace_block"}] = requests, _options ->
-          responses = Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)
-          {:ok, responses}
-        end)
         |> expect(:json_rpc, 2, fn
+          [
+            %{id: 0, jsonrpc: "2.0", method: "trace_block", params: ["0x3C365F"]},
+            %{id: 1, jsonrpc: "2.0", method: "trace_block", params: ["0x3C3660"]}
+          ],
+          _ ->
+            {:ok,
+             [
+               %{id: 0, jsonrpc: "2.0", result: []},
+               %{id: 1, jsonrpc: "2.0", result: []}
+             ]}
+
           [
             %{
               id: 0,
@@ -346,28 +358,22 @@ defmodule Indexer.Block.Realtime.FetcherTest do
               id: 0,
               jsonrpc: "2.0",
               method: "eth_getBalance",
-              params: ["0x11c4469d974f8af5ba9ec99f3c42c07c848c861c", "0x3C365F"]
+              params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
             },
             %{
               id: 1,
               jsonrpc: "2.0",
               method: "eth_getBalance",
-              params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
+              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
             },
             %{
               id: 2,
               jsonrpc: "2.0",
               method: "eth_getBalance",
-              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
-            },
-            %{
-              id: 3,
-              jsonrpc: "2.0",
-              method: "eth_getBalance",
               params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
             },
             %{
-              id: 4,
+              id: 3,
               jsonrpc: "2.0",
               method: "eth_getBalance",
               params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
@@ -376,11 +382,10 @@ defmodule Indexer.Block.Realtime.FetcherTest do
           _ ->
             {:ok,
              [
-               %{id: 0, jsonrpc: "2.0", result: "0x49e3de5187cf037d127"},
-               %{id: 1, jsonrpc: "2.0", result: "0x148adc763b603291685"},
-               %{id: 2, jsonrpc: "2.0", result: "0x53474fa377a46000"},
-               %{id: 3, jsonrpc: "2.0", result: "0x53507afe51f28000"},
-               %{id: 4, jsonrpc: "2.0", result: "0x3e1a95d7517dc197108"}
+               %{id: 0, jsonrpc: "2.0", result: "0x148adc763b603291685"},
+               %{id: 1, jsonrpc: "2.0", result: "0x53474fa377a46000"},
+               %{id: 2, jsonrpc: "2.0", result: "0x53507afe51f28000"},
+               %{id: 3, jsonrpc: "2.0", result: "0x3e1a95d7517dc197108"}
              ]}
         end)
       end
@@ -391,9 +396,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                   addresses: [
                     %Address{hash: first_address_hash, fetched_coin_balance_block_number: 3_946_079},
                     %Address{hash: second_address_hash, fetched_coin_balance_block_number: 3_946_079},
-                    %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_079},
-                    %Address{hash: fourth_address_hash, fetched_coin_balance_block_number: 3_946_080},
-                    %Address{hash: fifth_address_hash, fetched_coin_balance_block_number: 3_946_079}
+                    %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_080},
+                    %Address{hash: fourth_address_hash, fetched_coin_balance_block_number: 3_946_079}
                   ],
                   address_coin_balances: [
                     %{
@@ -406,26 +410,14 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                     },
                     %{
                       address_hash: third_address_hash,
-                      block_number: 3_946_079
-                    },
-                    %{
-                      address_hash: fourth_address_hash,
                       block_number: 3_946_080
                     },
                     %{
-                      address_hash: fifth_address_hash,
+                      address_hash: fourth_address_hash,
                       block_number: 3_946_079
                     }
                   ],
                   blocks: [%Chain.Block{number: 3_946_079}, %Chain.Block{number: 3_946_080}],
-                  internal_transactions: [
-                    %{index: 0, transaction_hash: transaction_hash},
-                    %{index: 1, transaction_hash: transaction_hash},
-                    %{index: 2, transaction_hash: transaction_hash},
-                    %{index: 3, transaction_hash: transaction_hash},
-                    %{index: 4, transaction_hash: transaction_hash},
-                    %{index: 5, transaction_hash: transaction_hash}
-                  ],
                   transactions: [%Transaction{hash: transaction_hash}]
                 },
                 errors: []
