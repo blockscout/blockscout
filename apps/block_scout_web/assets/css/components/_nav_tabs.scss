@@ -2,24 +2,10 @@
 
   .nav-link {
     padding: 1.25rem 2.5rem;
-    color: $text-muted;
+    color: #4a4a4a;
     font-size: 14px;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
-
-    &:hover {
-      color: $primary;
-    }
-
-    &.active {
-      color: $white;
-      background-color: $primary;
-      border-color: $primary;
-    }
-
-    &:hover {
-      border-color: transparent;
-    }
   }
 }
 

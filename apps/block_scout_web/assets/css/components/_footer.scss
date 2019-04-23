@@ -3,15 +3,24 @@ $footer-text-color: rgba($white, 0.7);
 
 .footer {
   font-size: 12px;
-  background: $primary;
+  background: #527895;
   color: $footer-text-color;
-  margin-top: $footer-padding;
-  padding: $footer-padding;
   position: relative;
-
-
+  padding: 28px 0 25px;
   @media (max-width: 768px) {
     width: 100%;
+    padding: 31px 0 11px;
+  }
+  .footer-body{
+    display: flex;
+    align-content: center;
+    align-items: center;
+    justify-content: space-between;
+    @media (max-width: 768px) {
+      display: block;
+      text-align: center;
+      font-size: 8px;
+    }
   }
 }
 
