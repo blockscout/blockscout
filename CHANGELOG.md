@@ -2,6 +2,8 @@
 
 ### Features
 
+ - [#1812](https://github.com/poanetwork/blockscout/pull/1812) - add pagination to addresses page
+
 ### Fixes
 
 ### Chore
