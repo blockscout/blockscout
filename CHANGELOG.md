@@ -6,6 +6,7 @@
 
 ### Chore
 
+- [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
 
 ## 1.3.10-beta
 
