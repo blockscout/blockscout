@@ -414,3 +414,4 @@ defmodule Indexer.Block.Realtime.Fetcher do
       %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
     end)
   end
+end
