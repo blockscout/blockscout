@@ -15,7 +15,11 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
   @timeout 60_000
 
   @type imported :: [
-          %{required(:nephew_hash) => Hash.Full.t(), required(:uncle_hash) => Hash.Full.t()}
+          %{
+            required(:nephew_hash) => Hash.Full.t(),
+            required(:uncle_hash) => Hash.Full.t(),
+            required(:index) => non_neg_integer()
+          }
         ]
 
   @impl Import.Runner
@@ -27,8 +31,9 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
   @impl Import.Runner
   def imported_table_row do
     %{
-      value_type: "[%{uncle_hash: Explorer.Chain.Hash.t(), nephew_hash: Explorer.Chain.Hash.t()]",
-      value_description: "List of maps of the `t:#{ecto_schema_module()}.t/0` `uncle_hash` and `nephew_hash`"
+      value_type:
+        "[%{uncle_hash: Explorer.Chain.Hash.t(), nephew_hash: Explorer.Chain.Hash.t(), index: non_neg_integer()]",
+      value_description: "List of maps of the `t:#{ecto_schema_module()}.t/0` `uncle_hash`, `nephew_hash` and `index`"
     }
   end
 
@@ -51,7 +56,9 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
   @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout
-        }) :: {:ok, %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t()}} | {:error, [Changeset.t()]}
+        }) ::
+          {:ok, %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t(), index: non_neg_integer()}}
+          | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout} = options) when is_atom(repo) and is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
@@ -62,7 +69,7 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
       conflict_target: [:nephew_hash, :uncle_hash],
       on_conflict: on_conflict,
       for: Block.SecondDegreeRelation,
-      returning: [:nephew_hash, :uncle_hash],
+      returning: [:nephew_hash, :uncle_hash, :index],
       timeout: timeout,
       # block_second_degree_relations doesn't have timestamps
       timestamps: %{}
@@ -75,14 +82,16 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
       update: [
         set: [
           uncle_fetched_at:
-            fragment("LEAST(?, EXCLUDED.uncle_fetched_at)", block_second_degree_relation.uncle_fetched_at)
+            fragment("LEAST(?, EXCLUDED.uncle_fetched_at)", block_second_degree_relation.uncle_fetched_at),
+          index: fragment("EXCLUDED.index")
         ]
       ],
       where:
         fragment(
-          "LEAST(?, EXCLUDED.uncle_fetched_at) IS DISTINCT FROM ?",
+          "(LEAST(?, EXCLUDED.uncle_fetched_at), EXCLUDED.index) IS DISTINCT FROM (?, ?)",
           block_second_degree_relation.uncle_fetched_at,
-          block_second_degree_relation.uncle_fetched_at
+          block_second_degree_relation.uncle_fetched_at,
+          block_second_degree_relation.index
         )
     )
   end
