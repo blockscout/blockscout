@@ -54,6 +54,8 @@ defmodule BlockScoutWeb do
         Views.ScriptHelpers,
         WeiHelpers
       }
+
+      import PhoenixFormAwesomplete
     end
   end
 

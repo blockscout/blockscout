@@ -61,7 +61,7 @@ defmodule Explorer.Chain.BlockNumberCache do
 
   defp update_cache do
     current_time = current_time()
-    {min, max} = Chain.fetch_min_and_max_block_numbers()
+    {min, max} = min_and_max_from_db()
     tuple = {min, max, current_time}
 
     :ets.insert(@tab, {@key, tuple})
@@ -83,6 +83,13 @@ defmodule Explorer.Chain.BlockNumberCache do
     [{_, cache_period}] = :ets.lookup(@tab, @opts_key)
 
     cache_period
+  end
+
+  defp min_and_max_from_db do
+    Chain.fetch_min_and_max_block_numbers()
+  rescue
+    _e ->
+      {0, 0}
   end
 
   defp current_time do

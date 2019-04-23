@@ -12,7 +12,7 @@ defmodule Explorer.Chain.TransactionCountCache do
 
   # 2 hours
   @cache_period 1_000 * 60 * 60 * 2
-  @default_value 0
+  @default_value nil
   @key "count"
   @name __MODULE__
 
@@ -143,7 +143,7 @@ defmodule Explorer.Chain.TransactionCountCache do
     case System.get_env("TXS_COUNT_CACHE_PERIOD") do
       value when is_binary(value) ->
         case Integer.parse(value) do
-          {integer, ""} -> integer * 1_000 * 60 * 60
+          {integer, ""} -> integer * 1_000
           _ -> nil
         end
 

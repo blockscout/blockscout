@@ -29,6 +29,8 @@ defmodule Explorer.Counters.AddressesWithBalanceCounter do
   config = Application.get_env(:explorer, Explorer.Counters.AddressesWithBalanceCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
+  @update_interval_in_seconds Keyword.get(config, :update_interval_in_seconds)
+
   @doc """
   Starts a process to periodically update the counter of the token holders.
   """
@@ -62,7 +64,7 @@ defmodule Explorer.Counters.AddressesWithBalanceCounter do
 
   defp schedule_next_consolidation do
     if enable_consolidation?() do
-      Process.send_after(self(), :consolidate, :timer.minutes(30))
+      Process.send_after(self(), :consolidate, :timer.seconds(@update_interval_in_seconds))
     end
   end
 

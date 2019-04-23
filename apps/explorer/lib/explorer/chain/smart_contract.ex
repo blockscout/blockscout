@@ -209,8 +209,8 @@ defmodule Explorer.Chain.SmartContract do
     field(:constructor_arguments, :string)
     field(:abi, {:array, :map})
 
-    has_one(
-      :decompiled_smart_contract,
+    has_many(
+      :decompiled_smart_contracts,
       DecompiledSmartContract,
       foreign_key: :address_hash
     )
@@ -227,7 +227,7 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   def preload_decompiled_smart_contract(contract) do
-    Repo.preload(contract, :decompiled_smart_contract)
+    Repo.preload(contract, :decompiled_smart_contracts)
   end
 
   def changeset(%__MODULE__{} = smart_contract, attrs) do

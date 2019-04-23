@@ -20,6 +20,7 @@ defmodule Explorer.Chain do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
+  alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
   alias Explorer.Chain.{
@@ -660,7 +661,9 @@ defmodule Explorer.Chain do
         where: address.hash == ^hash
       )
 
-    query
+    query_with_decompiled_flag = with_decompiled_code_flag(query, hash)
+
+    query_with_decompiled_flag
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -691,11 +694,24 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.one()
+    |> Repo.all()
     |> case do
-      nil -> {:error, :not_found}
-      hash -> {:ok, hash}
+      [] -> {:error, :not_found}
+      hashes -> {:ok, List.first(hashes)}
     end
+  end
+
+  @spec search_token(String.t()) :: [Token.t()]
+  def search_token(word) do
+    term = String.replace(word, ~r/\W/u, "") <> ":*"
+
+    query =
+      from(token in Token,
+        where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
+        limit: 5
+      )
+
+    Repo.all(query)
   end
 
   @doc """
@@ -763,6 +779,7 @@ defmodule Explorer.Chain do
     Repo.all(query)
   end
 
+  @spec find_contract_address(Hash.t()) :: {:ok, Address.t()} | {:error, :not_found}
   def find_contract_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
     query =
       from(
@@ -775,6 +792,33 @@ defmodule Explorer.Chain do
           :contracts_creation_transaction
         ],
         where: address.hash == ^hash and not is_nil(address.contract_code)
+      )
+
+    query_with_decompiled_flag = with_decompiled_code_flag(query, hash)
+
+    address = Repo.one(query_with_decompiled_flag)
+
+    if address do
+      {:ok, address}
+    else
+      {:error, :not_found}
+    end
+  end
+
+  @spec find_decompiled_contract_address(Hash.t()) :: {:ok, Address.t()} | {:error, :not_found}
+  def find_decompiled_contract_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
+    query =
+      from(
+        address in Address,
+        preload: [
+          :contracts_creation_internal_transaction,
+          :names,
+          :smart_contract,
+          :token,
+          :contracts_creation_transaction,
+          :decompiled_smart_contracts
+        ],
+        where: address.hash == ^hash
       )
 
     address = Repo.one(query)
@@ -1435,24 +1479,23 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of all `t:Explorer.Chain.Block.t/0` `hash`es that are marked as unfetched in
-  `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`.
+  Returns a stream of all blocks that are marked as unfetched in `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`.
+  For each uncle block a `hash` of nephew block and an `index` of the block in it are returned.
 
   When a block is fetched, its uncles are transformed into `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` and can be
   returned.  Once the uncle is imported its corresponding `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`
   `uncle_fetched_at` will be set and it won't be returned anymore.
   """
-  @spec stream_unfetched_uncle_hashes(
+  @spec stream_unfetched_uncles(
           initial :: accumulator,
-          reducer :: (entry :: Hash.Full.t(), accumulator -> accumulator)
+          reducer :: (entry :: term(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_unfetched_uncle_hashes(initial, reducer) when is_function(reducer, 2) do
+  def stream_unfetched_uncles(initial, reducer) when is_function(reducer, 2) do
     query =
       from(bsdr in Block.SecondDegreeRelation,
-        where: is_nil(bsdr.uncle_fetched_at),
-        select: bsdr.uncle_hash,
-        group_by: bsdr.uncle_hash
+        where: is_nil(bsdr.uncle_fetched_at) and not is_nil(bsdr.index),
+        select: [:nephew_hash, :index]
       )
 
     Repo.stream_reduce(query, initial, reducer)
@@ -1868,7 +1911,16 @@ defmodule Explorer.Chain do
   """
   @spec transaction_estimated_count() :: non_neg_integer()
   def transaction_estimated_count do
-    TransactionCountCache.value()
+    cached_value = TransactionCountCache.value()
+
+    if is_nil(cached_value) do
+      %Postgrex.Result{rows: [[rows]]} =
+        SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
+
+      rows
+    else
+      cached_value
+    end
   end
 
   @doc """
@@ -2321,7 +2373,7 @@ defmodule Explorer.Chain do
   end
 
   defp supply_module do
-    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
+    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.CoinMarketCap)
   end
 
   @doc """
@@ -2573,11 +2625,20 @@ defmodule Explorer.Chain do
   end
 
   defp normalize_balances_by_day(balances_by_day) do
-    balances_by_day
-    |> Enum.map(fn day -> Map.take(day, [:date, :value]) end)
-    |> Enum.filter(fn day -> day.value end)
-    |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
-    |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
+    result =
+      balances_by_day
+      |> Enum.map(fn day -> Map.take(day, [:date, :value]) end)
+      |> Enum.filter(fn day -> day.value end)
+      |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
+      |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
+
+    today = Date.to_string(NaiveDateTime.utc_now())
+
+    if Enum.count(result) > 0 && !Enum.any?(result, fn map -> map[:date] == today end) do
+      [%{date: today, value: List.last(result)[:value]} | result]
+    else
+      result
+    end
   end
 
   @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
@@ -2608,37 +2669,38 @@ defmodule Explorer.Chain do
   @spec data() :: Dataloader.Ecto.t()
   def data, do: DataloaderEcto.new(Repo)
 
-  @doc """
-  Returns a list of block numbers with invalid consensus.
-  """
-  @spec list_block_numbers_with_invalid_consensus :: [integer()]
-  def list_block_numbers_with_invalid_consensus do
-    query =
-      from(
-        block in Block,
-        join: parent in Block,
-        on: parent.hash == block.parent_hash,
-        where: block.consensus == true,
-        where: parent.consensus == false,
-        select: parent.number
-      )
-
-    Repo.all(query, timeout: :infinity)
-  end
-
-  def list_decompiled_contracts(limit, offset) do
+  def list_decompiled_contracts(limit, offset, not_decompiled_with_version \\ nil) do
     query =
       from(
         address in Address,
-        join: decompiled_smart_contract in DecompiledSmartContract,
-        on: decompiled_smart_contract.address_hash == address.hash,
-        preload: [{:decompiled_smart_contract, decompiled_smart_contract}, :smart_contract],
+        where:
+          fragment(
+            "EXISTS (SELECT 1 FROM decompiled_smart_contracts WHERE decompiled_smart_contracts.address_hash = ?)",
+            address.hash
+          ),
+        preload: [:decompiled_smart_contracts, :smart_contract],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
       )
 
-    Repo.all(query)
+    query
+    |> filter_decompiled_with_version(not_decompiled_with_version)
+    |> Repo.all()
+  end
+
+  defp filter_decompiled_with_version(query, nil) do
+    query
+  end
+
+  defp filter_decompiled_with_version(query, not_decompiled_with_version) do
+    from(address in query,
+      left_join: decompiled_smart_contract in DecompiledSmartContract,
+      on: decompiled_smart_contract.decompiler_version == ^not_decompiled_with_version,
+      on: decompiled_smart_contract.address_hash == address.hash,
+      where: is_nil(decompiled_smart_contract.id),
+      distinct: [address.hash]
+    )
   end
 
   def list_verified_contracts(limit, offset) do
@@ -2648,7 +2710,7 @@ defmodule Explorer.Chain do
         where: not is_nil(address.contract_code),
         join: smart_contract in SmartContract,
         on: smart_contract.address_hash == address.hash,
-        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contract],
+        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contracts],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
@@ -2662,7 +2724,7 @@ defmodule Explorer.Chain do
       from(
         address in Address,
         where: not is_nil(address.contract_code),
-        preload: [:smart_contract, :decompiled_smart_contract],
+        preload: [:smart_contract, :decompiled_smart_contracts],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
@@ -2679,7 +2741,7 @@ defmodule Explorer.Chain do
         on: smart_contract.address_hash == address.hash,
         where: not is_nil(address.contract_code),
         where: is_nil(smart_contract.address_hash),
-        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contract],
+        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contracts],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
@@ -2692,11 +2754,16 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
+        where:
+          fragment(
+            "NOT EXISTS (SELECT 1 FROM decompiled_smart_contracts WHERE decompiled_smart_contracts.address_hash = ?)",
+            address.hash
+          ),
         left_join: smart_contract in SmartContract,
         on: smart_contract.address_hash == address.hash,
         left_join: decompiled_smart_contract in DecompiledSmartContract,
         on: decompiled_smart_contract.address_hash == address.hash,
-        preload: [smart_contract: smart_contract, decompiled_smart_contract: decompiled_smart_contract],
+        preload: [:smart_contract, :decompiled_smart_contracts],
         where: not is_nil(address.contract_code),
         where: is_nil(smart_contract.address_hash),
         where: is_nil(decompiled_smart_contract.address_hash),
@@ -2726,5 +2793,20 @@ defmodule Explorer.Chain do
       |> Wei.cast()
 
     value
+  end
+
+  defp with_decompiled_code_flag(query, hash) do
+    has_decompiled_code_query =
+      from(decompiled_contract in DecompiledSmartContract,
+        where: decompiled_contract.address_hash == ^hash,
+        limit: 1,
+        select: %{has_decompiled_code?: not is_nil(decompiled_contract.address_hash)}
+      )
+
+    from(
+      address in query,
+      left_join: decompiled_code in subquery(has_decompiled_code_query),
+      select_merge: %{has_decompiled_code?: decompiled_code.has_decompiled_code?}
+    )
   end
 end
