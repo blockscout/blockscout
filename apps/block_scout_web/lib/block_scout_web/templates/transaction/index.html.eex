@@ -38,7 +38,7 @@
         <%= gettext("Loading") %>...
       </div>
 
-      <div data-selector="transactions-list" data-items></div >
+      <div data-selector="transactions-list" data-items></div>
 
       <a href="#" data-next-page-button class="button button-secondary button-small float-right mt-4" style="display: none;">
         <%= gettext("Older") %>
