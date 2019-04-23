@@ -99,7 +99,6 @@
                   <span class="text-muted"> (<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> Cldr.Number.to_string!(format: "#.#%") %>) </span>
                 </dt>
               </dl>
-
               <dl class="row mb-0">
                 <dt class="col-sm-3 text-muted"><%= gettext "Gas Limit" %></dt>
                 <dd class="col-sm-9">
@@ -113,31 +112,29 @@
     </div>
 
     <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
+
       <!-- Validator -->
       <div class="card card-background-1 flex-grow-1">
-        <div class="card-body">
-          <h2 class="card-title balance-card-title"> <%= gettext "Miner" %> </h2>
+        <div class="card-body card-body-flex-column-space-between">
+          <h2 class="card-title balance-card-title"><%= gettext "Miner" %></h2>
           <div class="text-right">
             <!-- Validator's Name -->
-            <h3 class="text-truncate">
+            <h3 class="address-balance-text text-truncate">
               <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: @block.miner,
                 contract: false,
                 class: "" %>
             </h3>
-            <!-- Validator's address hash -->
-            <span class="text-truncate"> </span>
           </div>
         </div>
       </div>
 
       <!-- Validator Reward or Gas-->
       <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
-        <div class="card-body">
+        <div class="card-body card-body-flex-column-space-between">
           <%= if show_reward?(@block.rewards) do %>
-            <h2 class="card-title"> <%= gettext "Block Rewards" %> </h2>
-
+            <h2 class="card-title balance-card-title"><%= gettext "Block Rewards" %></h2>
             <%= for block_reward <- @block.rewards do %>
               <dl class="row">
                 <dt class="col-sm-5 text-muted"><%= block_reward_text(block_reward) %></dt>
@@ -147,16 +144,13 @@
               </dl>
             <% end %>
           <% else %>
-            <h2 class="card-title"> <%= gettext "Gas Used" %> </h2>
-
+            <h2 class="card-title balance-card-title"><%= gettext "Gas Used" %></h2>
             <div class="text-right">
-              <!-- Gas Used -->
-              <h3>
+              <h3 class="address-balance-text">
                 <%= @block.gas_used |> Cldr.Number.to_string! %>
-                <span class="text-muted"> (<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> Cldr.Number.to_string!(format: "#.#%") %>) </span>
+                <span class="text-muted">(<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> Cldr.Number.to_string!(format: "#.#%") %>)</span>
               </h3>
-              <!-- Gas Limit -->
-              <span class="text-muted"> <%= @block.gas_limit |> Cldr.Number.to_string! %> <%= gettext "Gas Limit" %> </span>
+              <p class="address-current-balance"><%= @block.gas_limit |> Cldr.Number.to_string! %><%= gettext "Gas Limit" %></p>
             </div>
           <% end %>
         </div>

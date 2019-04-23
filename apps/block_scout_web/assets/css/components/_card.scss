@@ -17,6 +17,11 @@ $card-background-1-text-color: #fff !default;
 .card-background-1 {
   background-color: $card-background-1;
   color: $card-background-1-text-color;
+
+  a,
+  a:hover {
+    color: $card-background-1-text-color;
+  }
 }
 
 .card-header {
