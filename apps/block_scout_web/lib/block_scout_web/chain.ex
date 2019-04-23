@@ -81,6 +81,10 @@ defmodule BlockScoutWeb.Chain do
     Map.merge(params, paging_params(List.last(list)))
   end
 
+  def paging_options(%{"hash" => hash, "fetched_coin_balance" => fetched_coin_balance}) do
+    [paging_options: %{@default_paging_options | key: {fetched_coin_balance, hash}}]
+  end
+
   def paging_options(%{
         "block_number" => block_number_string,
         "transaction_index" => transaction_index_string,
