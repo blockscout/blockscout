@@ -2,6 +2,8 @@
 
 ### Features
 
+- [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
+
 ### Fixes
 
 ### Chore
