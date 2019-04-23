@@ -39,6 +39,23 @@ defmodule BlockScoutWeb.ChainController do
     end
   end
 
+  def token_autocomplete(conn, %{"q" => term}) when is_binary(term) do
+    if term == "" do
+      json(conn, "{}")
+    else
+      result =
+        term
+        |> String.trim()
+        |> Chain.search_token()
+
+      json(conn, result)
+    end
+  end
+
+  def token_autocomplete(conn, _) do
+    json(conn, "{}")
+  end
+
   def chain_blocks(conn, _params) do
     if ajax?(conn) do
       blocks =
