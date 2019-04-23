@@ -10,13 +10,14 @@ defmodule Indexer.TokenBalances do
 
   alias Explorer.Chain
   alias Explorer.Token.BalanceReader
-  alias Indexer.{TokenBalance, Tracer}
+  alias Indexer.Fetcher.TokenBalance
+  alias Indexer.Tracer
 
   @doc """
   Fetches TokenBalances from specific Addresses and Blocks in the Blockchain
 
   In case an exception is raised during the RPC call the particular TokenBalance request
-  is ignored and sent to `TokenBalance.Fetcher` to be fetched again.
+  is ignored and sent to `TokenBalance` to be fetched again.
 
   ## token_balances
 
@@ -84,7 +85,7 @@ defmodule Indexer.TokenBalances do
         block_number: token_balance.block_number
       })
     end)
-    |> TokenBalance.Fetcher.async_fetch()
+    |> TokenBalance.async_fetch()
   end
 
   defp ignore_request_with_errors(%{value: nil, value_fetched_at: nil, error: _error}), do: false
