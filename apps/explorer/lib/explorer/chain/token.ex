@@ -48,6 +48,14 @@ defmodule Explorer.Chain.Token do
           holder_count: non_neg_integer() | nil
         }
 
+  @derive {Poison.Encoder,
+           except: [
+             :__meta__,
+             :contract_address,
+             :inserted_at,
+             :updated_at
+           ]}
+
   @primary_key false
   schema "tokens" do
     field(:name, :string)
