@@ -7,6 +7,7 @@
         border-radius: 4px;
         background-color: #ffffff;
         padding: 30px 40px 28px;
+        margin-bottom: 30px;
         @media (max-width: 768px) {
             padding: 20px;
         }
@@ -14,6 +15,8 @@
             .blockscoutHeaderInner{
                 position: relative;
                 margin-bottom: 19px;
+                display: flex;
+                justify-content: space-between;
                 @media (max-width: 768px) {
                     margin-bottom: 27px;
                 }
@@ -37,6 +40,14 @@
                         @media (max-width: 768px) {
                             left: -20px;
                         }
+                    }
+                }
+                span{
+                    color: #004bc4;
+                    cursor: pointer;
+                    i{
+                        font-size: 14px;
+                        margin-left: 6px;
                     }
                 }
             }
@@ -191,4 +202,158 @@
             }
         }
     }
+}
+
+
+// Blockchain Details
+.blockchainDetailsContentParent{
+    display: none;
+    .blockchainDetailsContent{
+        display: flex;
+        margin-top: 28px;
+        @media (max-width: 768px) {
+            display: block;
+        }
+        .blockchainDetailsContentLeft{
+            .blockchainDetailsContentInner{
+                display: flex;
+                .blockchainLable{
+                    p{
+                        font-size: 12px;
+                        font-weight: 500;
+                        line-height: 1.33;
+                        text-align: left;
+                        color: #4a4a4a;
+                        margin-bottom: 10px;
+                    }
+                }
+                .blockchainvalues{
+                    margin-left: 41px;
+                    text-align: left;
+                    color: #808080;
+                    p{
+                        font-weight: normal;
+                        &:first-child{
+                            color: #004fc1;
+                        }
+                    }
+                }
+            }
+        }
+        .blockchainDetailsContentRight{
+            margin-left: 176px; 
+            @media (max-width: 768px) {
+                margin-left: 0;
+            }
+            .blcokchainSpringValues{
+                display: flex;
+                .blcokchainSpringValueslabel{
+                    p{
+                        font-size: 12px;
+                        font-weight: 500;
+                        line-height: 1.33;
+                        text-align: left;
+                        color: #4a4a4a;
+                    }
+                }
+                .blcokchainSpringValuesCurrentValues{
+                    margin-left: 84px;
+                    p{
+                        font-size: 12px;
+                        line-height: 1.33;
+                        text-align: left;
+                        color: #808080;
+                        margin-bottom: 9px;
+                    }
+                }
+            }
+        }
+    }
+    .rawInput{
+        display: flex;
+        @media (max-width: 768px) {
+            display: block;
+        }
+        .rawInputlable{
+            p{
+                font-size: 12px;
+                font-weight: 500;
+                line-height: 1.33;
+                text-align: left;
+                color: #4a4a4a;
+            }
+        }
+        .rawInputValueParent{
+            margin-left: 41px;
+            @media (max-width: 768px) {
+                margin-left: 0;
+            }
+            button{
+                width: 110px;
+                line-height: 31px;
+                border-radius: 15.5px;
+                border: solid 1px #004fc1;
+                background: transparent;
+                font-size: 12px;
+                font-weight: 500;
+                color: #004fc1;
+                cursor: pointer;
+                margin-top: 8px;
+            }
+            .rawInputValue{
+                width: 700px;
+                border-radius: 15.5px;
+                border: solid 1px #d2d2d2;
+                padding: 10px 48px 10px 12px;
+                position: relative;
+                @media (max-width: 768px) {
+                    width: 100%;
+                }
+                textarea{
+                    width: 100%;
+                    border: 0;
+                    resize: none;
+                    padding-right: 11px;
+                    outline: none;
+                }
+                .rawInputValueIcons{
+                    position: absolute;
+                    top: 10px;
+                    right: 13px;
+                    margin: auto;
+                    img{
+                        &:last-child{
+                            margin-top: 10px;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+.detailsInputLogs{
+    margin-bottom: 0 !important;
+    border-bottom: 1px solid #f5f7f8;
+    &:last-child{
+        border: 0;
+    }
+    .blockscoutHeader{
+        .blockscoutHeaderInner{
+            margin-bottom: 0 !important;
+        }
+    }
+}
+.rotateMe{
+    transform: rotate(180deg);
+}
+
+
+
+#scrollBar::-webkit-scrollbar{
+	width: 3px;
+    background-color: transparent;
+}
+
+#scrollBar::-webkit-scrollbar-thumb{
+	background-color: #d8d8d8;
 }

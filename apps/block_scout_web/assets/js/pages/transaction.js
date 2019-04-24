@@ -59,3 +59,19 @@ if ($transactionDetailsPage.length) {
   transactionChannel.join()
   transactionChannel.on('collated', () => window.location.reload())
 }
+
+
+
+//Code that needs to be applied starts here
+
+$(document).ready(function(){
+  $("#viewDetails").click(function(){
+    $(".blockchainDetailsContentParent").slideToggle("slow");
+  });
+
+  $("#viewDetails").click(function(){
+    $(this).text($(this).text() == 'View Details' ? 'Hide Details' : 'View Details');
+  });
+});
+
+//Code that needs to be applied ends here
