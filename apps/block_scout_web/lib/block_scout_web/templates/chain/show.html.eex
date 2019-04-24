@@ -55,6 +55,14 @@
         </div>
         <div class="dashboard-banner-network-stats-item">
           <span class="dashboard-banner-network-stats-label">
+            <%= gettext "Total blocks" %>
+          </span>
+          <span class="dashboard-banner-network-stats-value" data-selector="block-count">
+            <%= Cldr.Number.to_string!(@block_count, format: "#,###") %>
+          </span>
+        </div>
+        <div class="dashboard-banner-network-stats-item">
+          <span class="dashboard-banner-network-stats-label">
             <%= gettext "Wallet addresses" %>
           </span>
           <span class="dashboard-banner-network-stats-value" data-selector="address-count">
