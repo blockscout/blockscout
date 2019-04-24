@@ -115,13 +115,17 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def paging_options(%{"index" => index_string}) do
+  def paging_options(%{"index" => index_string}) when is_binary(index_string) do
     with {index, ""} <- Integer.parse(index_string) do
       [paging_options: %{@default_paging_options | key: {index}}]
     else
       _ ->
         [paging_options: @default_paging_options]
     end
+  end
+
+  def paging_options(%{"index" => index}) when is_integer(index) do
+    [paging_options: %{@default_paging_options | key: {index}}]
   end
 
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}) do
