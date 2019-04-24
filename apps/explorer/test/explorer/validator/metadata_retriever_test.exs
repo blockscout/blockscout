@@ -32,22 +32,22 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
     end
 
     test "raise error when the first contract call fails" do
-      contract_request_with_error("getValidators")
+      contract_request_with_error()
       assert_raise(MatchError, fn -> MetadataRetriever.fetch_data() end)
     end
 
     test "raise error when a call to the metadatc contract fails" do
       validators_list_mox_ok()
-      contract_request_with_error("validators")
+      contract_request_with_error()
       assert_raise(MatchError, fn -> MetadataRetriever.fetch_data() end)
     end
   end
 
-  defp contract_request_with_error(id) do
+  defp contract_request_with_error() do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      fn [%{id: ^id, method: _, params: _}], _options ->
+      fn [%{id: id, method: _, params: _}], _options ->
         {:ok,
          [
            %{
@@ -65,11 +65,11 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
       EthereumJSONRPC.Mox,
       :json_rpc,
       1,
-      fn [%{id: "getValidators"}], _opts ->
+      fn [%{id: id}], _opts ->
         {:ok,
          [
            %{
-             id: "getValidators",
+             id: id,
              jsonrpc: "2.0",
              result:
                "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001"
@@ -84,11 +84,11 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
       EthereumJSONRPC.Mox,
       :json_rpc,
       1,
-      fn [%{id: "validators"}], _opts ->
+      fn [%{id: id}], _opts ->
         {:ok,
          [
            %{
-             id: "validators",
+             id: id,
              jsonrpc: "2.0",
              result:
                "0x546573746e616d65000000000000000000000000000000000000000000000000556e69746172696f6e000000000000000000000000000000000000000000000030303030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000140585800000000000000000000000000000000000000000000000000000000000030303030300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003afe130e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000058585858585858207374726565742058585858585800000000000000000000000000000000000000000000000000000000000000000000000000000000000000"

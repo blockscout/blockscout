@@ -17,7 +17,7 @@ defmodule Explorer.Chain.Block.SecondDegreeRelation do
   alias Explorer.Chain.{Block, Hash}
 
   @optional_fields ~w(uncle_fetched_at)a
-  @required_fields ~w(nephew_hash uncle_hash)a
+  @required_fields ~w(nephew_hash uncle_hash index)a
   @allowed_fields @optional_fields ++ @required_fields
 
   @typedoc """
@@ -27,6 +27,7 @@ defmodule Explorer.Chain.Block.SecondDegreeRelation do
      `uncle_hash` was fetched for some other reason already.
    * `uncle_fetched_at` - when `t:Explorer.Chain.Block.t/0` for `uncle_hash` was confirmed as fetched.
    * `uncle_hash` - foreign key for `uncle`.
+   * `index` - index of the uncle within its nephew. Can be `nil` for blocks fetched before this field was added.
   """
   @type t ::
           %__MODULE__{
@@ -34,19 +35,22 @@ defmodule Explorer.Chain.Block.SecondDegreeRelation do
             nephew_hash: Hash.Full.t(),
             uncle: %Ecto.Association.NotLoaded{} | Block.t() | nil,
             uncle_fetched_at: nil,
-            uncle_hash: Hash.Full.t()
+            uncle_hash: Hash.Full.t(),
+            index: non_neg_integer() | nil
           }
           | %__MODULE__{
               nephew: %Ecto.Association.NotLoaded{} | Block.t(),
               nephew_hash: Hash.Full.t(),
               uncle: %Ecto.Association.NotLoaded{} | Block.t(),
               uncle_fetched_at: DateTime.t(),
-              uncle_hash: Hash.Full.t()
+              uncle_hash: Hash.Full.t(),
+              index: non_neg_integer() | nil
             }
 
   @primary_key false
   schema "block_second_degree_relations" do
     field(:uncle_fetched_at, :utc_datetime_usec)
+    field(:index, :integer)
 
     belongs_to(:nephew, Block, foreign_key: :nephew_hash, primary_key: true, references: :hash, type: Hash.Full)
     belongs_to(:uncle, Block, foreign_key: :uncle_hash, primary_key: true, references: :hash, type: Hash.Full)

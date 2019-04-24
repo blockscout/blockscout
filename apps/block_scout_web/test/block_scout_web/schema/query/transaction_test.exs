@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
                    "r" => to_string(transaction.r),
                    "s" => to_string(transaction.s),
                    "status" => transaction.status |> to_string() |> String.upcase(),
-                   "v" => transaction.v,
+                   "v" => to_string(transaction.v),
                    "value" => to_string(transaction.value.value),
                    "from_address_hash" => to_string(transaction.from_address_hash),
                    "to_address_hash" => to_string(transaction.to_address_hash),

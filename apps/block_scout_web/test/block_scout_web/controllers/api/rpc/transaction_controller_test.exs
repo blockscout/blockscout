@@ -367,6 +367,59 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
       refute response["result"]
     end
 
+    test "paginates logs", %{conn: conn} do
+      block = insert(:block, hash: "0x30d522bcf2d8e0cabc286e6e40623c475c3bc05d0ec484ea239c103b1ac0ded9", number: 99)
+
+      transaction =
+        :transaction
+        |> insert(hash: "0x13b6bb8e06322096dc83e8d7e6332ca19919ea642212cd259c6b20e7523a0599")
+        |> with_block(block, status: :ok)
+
+      address = insert(:address)
+
+      Enum.each(1..100, fn _ ->
+        insert(:log,
+          address: address,
+          transaction: transaction,
+          first_topic: "first topic",
+          second_topic: "second topic"
+        )
+      end)
+
+      params1 = %{
+        "module" => "transaction",
+        "action" => "gettxinfo",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      assert response1 =
+               conn
+               |> get("/api", params1)
+               |> json_response(200)
+
+      assert response1["status"] == "1"
+      assert response1["message"] == "OK"
+
+      assert %{
+               "action" => "gettxinfo",
+               "index" => _,
+               "module" => "transaction",
+               "txhash" => _
+             } = response1["result"]["next_page_params"]
+
+      params2 = response1["result"]["next_page_params"]
+
+      assert response2 =
+               conn
+               |> get("/api", params2)
+               |> json_response(200)
+
+      assert response2["status"] == "1"
+      assert response2["message"] == "OK"
+      assert is_nil(response2["result"]["next_page_params"])
+      assert response1["result"]["logs"] != response2["result"]["logs"]
+    end
+
     test "with a txhash with ok status", %{conn: conn} do
       block = insert(:block)
 
@@ -409,7 +462,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
             "data" => "#{log.data}",
             "topics" => ["first topic", "second topic", nil, nil]
           }
-        ]
+        ],
+        "next_page_params" => nil
       }
 
       assert response =

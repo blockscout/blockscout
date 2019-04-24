@@ -247,16 +247,6 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
 
       assert {:ok,
               %{
-                deleted_address_current_token_balances: [
-                  %{
-                    address_hash: ^non_holder_becomes_holder_address_hash,
-                    token_contract_address_hash: ^token_contract_address_hash
-                  },
-                  %{
-                    address_hash: ^holder_becomes_non_holder_address_hash,
-                    token_contract_address_hash: ^token_contract_address_hash
-                  }
-                ],
                 address_current_token_balances: [
                   %{
                     address_hash: ^non_holder_becomes_holder_address_hash,

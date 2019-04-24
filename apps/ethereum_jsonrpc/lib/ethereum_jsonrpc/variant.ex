@@ -44,6 +44,22 @@ defmodule EthereumJSONRPC.Variant do
             ) :: {:ok, [internal_transaction_params]} | {:error, reason :: term} | :ignore
 
   @doc """
+  Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the variant of the Ethereum JSONRPC API.
+  Uses API for fetching all internal transactions in the block
+
+  ## Returns
+
+   * `{:ok, [internal_transaction_params]}` - internal transactions were successfully fetched for all blocks
+   * `{:error, reason}` - there was one or more errors with `reason` in fetching at least one of the blocks'
+       internal transactions
+   * `:ignore` - the variant does not support fetching internal transactions.
+  """
+  @callback fetch_block_internal_transactions(
+              [EthereumJSONRPC.block_number()],
+              EthereumJSONRPC.json_rpc_named_arguments()
+            ) :: {:ok, [internal_transaction_params]} | {:error, reason :: term} | :ignore
+
+  @doc """
   Fetch the `t:Explorer.Chain.Transaction.changeset/2` params for pending transactions from the variant of the Ethereum
   JSONRPC API.
 

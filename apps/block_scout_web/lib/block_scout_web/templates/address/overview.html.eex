@@ -33,40 +33,62 @@
                 <%= link(token_title(@address.token), to: token_path(@conn, :show, @address.hash), "data-test": "token_hash_link" ) %>
               </span>
             <% end %>
-            <span class="mr-4 mb-2">
-              <span data-selector="transaction-count">
-                <%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %>
+            <span>
+              <span class="address-detail-item">
+                <%= if contract?(@address) do %>
+                  <%= gettext(">=") %>
+                  <span data-selector="transaction-count">
+                    <%= incoming_transaction_count(@address) %>
+                  </span>
+                  <%= gettext("Incoming Transactions") %>
+                <% else %>
+                  <span data-selector="transaction-count">
+                    <%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %>
+                  </span>
+                  <%= gettext("Transactions Sent") %>
+                <% end %>
               </span>
-              <%= gettext("Transactions sent") %>
+              <span class="address-detail-item">
+                <%= gettext("Last Balance Update: Block #") %><span data-selector="fetched-coin-balance-block-number"><%= @address.fetched_coin_balance_block_number %></span>
+              </span>
               <%= if validator?(@validation_count) do %>
-                <span data-selector="validation-count">
-                  <%= Cldr.Number.to_string!(@validation_count, format: "#,###") %>
-                </span> <%= gettext("Blocks Validated") %>
+                <span class="address-detail-item">
+                  <span data-selector="validation-count">
+                    <%= Cldr.Number.to_string!(@validation_count, format: "#,###") %>
+                  </span>
+                  <%= gettext("Blocks Validated") %>
+                </span>
               <% end %>
             </span>
           </div>
+          <% from_address_hash = from_address_hash(@address) %>
+
           <%= if contract?(@address) do %>
             <span class="text-muted" data-test="address_contract_creator">
-              <%= gettext "Created by" %>
-              <%= link(
-                trimmed_hash(from_address_hash(@address)),
-                to: address_path(@conn, :show, from_address_hash(@address))
-              ) %>
+              <%= if from_address_hash do %>
+                <%= gettext "Created by" %>
+                <%= link(
+                  trimmed_hash(from_address_hash(@address)),
+                  to: address_path(@conn, :show, from_address_hash(@address))
+                ) %>
 
-              <%= gettext "at" %>
+                <%= gettext "at" %>
 
-              <%= link(
-                trimmed_hash(transaction_hash(@address)),
-                to: transaction_path(@conn, :show, transaction_hash(@address)),
-                "data-test": "transaction_hash_link"
-              ) %>
+                <%= link(
+                  trimmed_hash(transaction_hash(@address)),
+                  to: transaction_path(@conn, :show, transaction_hash(@address)),
+                  "data-test": "transaction_hash_link"
+                ) %>
+              <% else %>
+                <p class="alert alert-danger" role="alert"><%= gettext("Error: Could not determine contract creator.") %></p>
+              <% end %>
             </span>
           <% end %>
         </div>
       </div>
     </div>
     <div class="card-section col-md-12 col-lg-4" data-selector="balance-card">
-      <%= render BlockScoutWeb.AddressView, "_balance_card.html", conn: @conn, address: @address, exchange_rate: @exchange_rate %>
+      <%= render BlockScoutWeb.AddressView, "_balance_card.html", conn: @conn, address: @address, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status %>
     </div>
 
   </div>

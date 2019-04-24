@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
+  alias BlockScoutWeb.Plug.GraphQL
+
   forward("/wobserver", Wobserver.Web.Router)
   forward("/admin", BlockScoutWeb.AdminRouter)
 
@@ -20,6 +22,8 @@ defmodule BlockScoutWeb.Router do
     pipe_through(:api)
 
     get("/supply", SupplyController, :supply)
+
+    resources("/decompiled_smart_contract", DecompiledSmartContractController, only: [:create])
   end
 
   scope "/api", BlockScoutWeb.API.RPC do
@@ -49,7 +53,8 @@ defmodule BlockScoutWeb.Router do
 
   forward("/graphiql", Absinthe.Plug.GraphiQL,
     schema: BlockScoutWeb.Schema,
-    interface: :playground,
+    interface: :advanced,
+    default_query: GraphQL.default_query(),
     socket: BlockScoutWeb.UserSocket,
     analyze_complexity: true,
     max_complexity: @max_complexity
@@ -122,6 +127,13 @@ defmodule BlockScoutWeb.Router do
         AddressContractController,
         only: [:index],
         as: :contract
+      )
+
+      resources(
+        "/decompiled_contracts",
+        AddressDecompiledContractController,
+        only: [:index],
+        as: :decompiled_contract
       )
 
       resources(
@@ -207,6 +219,8 @@ defmodule BlockScoutWeb.Router do
     )
 
     get("/search", ChainController, :search)
+
+    get("/token_autocomplete", ChainController, :token_autocomplete)
 
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
 

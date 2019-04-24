@@ -4,6 +4,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   """
 
   @new_contract_name "New.sol"
+  @allowed_evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople", "petersburg"]
 
   @doc """
   Compiles a code in the solidity command line.
@@ -12,10 +13,10 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
   ## Examples
 
-      iex(1)> Explorer.SmartContract.Solidity.CodeCompiler.run(
-      ...>      "SimpleStorage",
-      ...>      "v0.4.24+commit.e67f0147",
-      ...>      \"""
+      iex(1)> Explorer.SmartContract.Solidity.CodeCompiler.run([
+      ...>      name: "SimpleStorage",
+      ...>      compiler_version: "v0.4.24+commit.e67f0147",
+      ...>      code: \"""
       ...>      pragma solidity ^0.4.24;
       ...>
       ...>      contract SimpleStorage {
@@ -30,8 +31,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
       ...>          }
       ...>      }
       ...>      \""",
-      ...>      false
-      ...>  )
+      ...>      optimize: false, evm_version: "byzantium"
+      ...>  ])
       {
         :ok,
         %{
@@ -60,7 +61,24 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         }
       }
   """
-  def run(name, compiler_version, code, optimize, external_libs \\ %{}) do
+  def run(params) do
+    name = Keyword.fetch!(params, :name)
+    compiler_version = Keyword.fetch!(params, :compiler_version)
+    code = Keyword.fetch!(params, :code)
+    optimize = Keyword.fetch!(params, :optimize)
+    optimization_runs = params |> Keyword.get(:optimization_runs, 200) |> Integer.to_string()
+    evm_version = Keyword.get(params, :evm_version, List.last(@allowed_evm_versions))
+    external_libs = Keyword.get(params, :external_libs, %{})
+
+    external_libs_string = Jason.encode!(external_libs)
+
+    checked_evm_version =
+      if evm_version in @allowed_evm_versions do
+        evm_version
+      else
+        "byzantium"
+      end
+
     {response, _status} =
       System.cmd(
         "node",
@@ -69,16 +87,17 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           code,
           compiler_version,
           optimize_value(optimize),
-          @new_contract_name
+          optimization_runs,
+          @new_contract_name,
+          external_libs_string,
+          checked_evm_version
         ]
       )
 
     with {:ok, contracts} <- Jason.decode(response),
          %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode}}} <-
            get_contract_info(contracts, name) do
-      bytecode_with_libraries = add_library_addresses(bytecode, external_libs)
-
-      {:ok, %{"abi" => abi, "bytecode" => bytecode_with_libraries, "name" => name}}
+      {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name}}
     else
       {:error, %Jason.DecodeError{}} ->
         {:error, :compilation}
@@ -87,6 +106,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         parse_error(error)
     end
   end
+
+  def allowed_evm_versions, do: @allowed_evm_versions
 
   def get_contract_info(contracts, _) when contracts == %{}, do: {:error, :compilation}
 
@@ -103,16 +124,6 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
       _ ->
         {:error, :name}
     end
-  end
-
-  defp add_library_addresses(bytecode, external_libs) do
-    Enum.reduce(external_libs, bytecode, fn {library_name, address}, acc ->
-      placeholder = String.replace(@new_contract_name, ".", "\.") <> ":" <> library_name
-      regex = Regex.compile!("_+#{placeholder}_+")
-      address = String.replace(address, "0x", "")
-
-      String.replace(acc, regex, address)
-    end)
   end
 
   def parse_error(%{"error" => error}), do: {:error, [error]}

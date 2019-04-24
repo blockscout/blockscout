@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
   alias BlockScoutWeb.TransactionView
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
+  alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
   @transaction_necessity_by_association [
@@ -90,6 +91,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         conn,
         "index.html",
         address: address,
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         transaction_count: transaction_count(address),

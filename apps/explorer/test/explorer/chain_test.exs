@@ -1,10 +1,12 @@
 defmodule Explorer.ChainTest do
   use Explorer.DataCase
+  use EthereumJSONRPC.Case, async: true
 
   require Ecto.Query
 
   import Ecto.Query
   import Explorer.Factory
+  import Mox
 
   alias Explorer.{Chain, Factory, PagingOptions, Repo}
 
@@ -12,6 +14,7 @@ defmodule Explorer.ChainTest do
     Address,
     Block,
     Data,
+    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     Log,
@@ -26,6 +29,10 @@ defmodule Explorer.ChainTest do
   alias Explorer.Counters.AddressesWithBalanceCounter
 
   doctest Explorer.Chain
+
+  setup :set_mox_global
+
+  setup :verify_on_exit!
 
   describe "count_addresses_with_balance_from_cache/0" do
     test "returns the number of addresses with fetched_coin_balance > 0" do
@@ -591,6 +598,20 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "address_to_incoming_transaction_count/1" do
+    test "without transactions" do
+      address = insert(:address)
+
+      assert Chain.address_to_incoming_transaction_count(address) == 0
+    end
+
+    test "with transactions" do
+      %Transaction{to_address: to_address} = insert(:transaction)
+
+      assert Chain.address_to_incoming_transaction_count(to_address) == 1
+    end
+  end
+
   describe "confirmations/1" do
     test "with block.number == block_height " do
       block = insert(:block)
@@ -833,6 +854,47 @@ defmodule Explorer.ChainTest do
 
       assert {:ok, address} = Chain.hash_to_address(address.hash)
     end
+
+    test "has_decompiled_code? is true if there are decompiled contracts" do
+      address = insert(:address)
+      insert(:decompiled_smart_contract, address_hash: address.hash)
+
+      {:ok, found_address} = Chain.hash_to_address(address.hash)
+
+      assert found_address.has_decompiled_code?
+    end
+
+    test "has_decompiled_code? is false if there are no decompiled contracts" do
+      address = insert(:address)
+
+      {:ok, found_address} = Chain.hash_to_address(address.hash)
+
+      refute found_address.has_decompiled_code?
+    end
+  end
+
+  describe "token_contract_address_from_token_name/1" do
+    test "return not found if token doesn't exist" do
+      name = "AYR"
+
+      assert {:error, :not_found} = Chain.token_contract_address_from_token_name(name)
+    end
+
+    test "return the correct token if it exists" do
+      name = "AYR"
+      insert(:token, symbol: name)
+
+      assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
+    end
+
+    test "return only one result if multiple records are found" do
+      name = "TOKEN"
+
+      insert(:token, symbol: name)
+      insert(:token, symbol: name)
+
+      assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
+    end
   end
 
   describe "find_or_insert_address_from_hash/1" do
@@ -982,7 +1044,8 @@ defmodule Explorer.ChainTest do
         params: [
           %{
             nephew_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-            uncle_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471be"
+            uncle_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471be",
+            index: 0
           }
         ]
       },
@@ -990,6 +1053,7 @@ defmodule Explorer.ChainTest do
       internal_transactions: %{
         params: [
           %{
+            block_number: 37,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             index: 0,
             trace_address: [],
@@ -2284,6 +2348,18 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "find_decompiled_contract_address/1" do
+    test "returns contract with decompiled contracts" do
+      address = insert(:address)
+      insert(:decompiled_smart_contract, address_hash: address.hash)
+      insert(:decompiled_smart_contract, address_hash: address.hash, decompiler_version: "2")
+
+      {:ok, address} = Chain.find_decompiled_contract_address(address.hash)
+
+      assert Enum.count(address.decompiled_smart_contracts) == 2
+    end
+  end
+
   describe "block_reward/1" do
     setup do
       %{block_range: range} = emission_reward = insert(:emission_reward)
@@ -2547,6 +2623,75 @@ defmodule Explorer.ChainTest do
       )
 
       assert Chain.smart_contract_bytecode(created_contract_address.hash) == smart_contract_bytecode
+    end
+  end
+
+  describe "create_decompiled_smart_contract/1" do
+    test "with valid params creates decompiled smart contract" do
+      address_hash = to_string(insert(:address).hash)
+      decompiler_version = "test_decompiler"
+      decompiled_source_code = "hello world"
+
+      params = %{
+        address_hash: address_hash,
+        decompiler_version: decompiler_version,
+        decompiled_source_code: decompiled_source_code
+      }
+
+      {:ok, decompiled_smart_contract} = Chain.create_decompiled_smart_contract(params)
+
+      assert decompiled_smart_contract.decompiler_version == decompiler_version
+      assert decompiled_smart_contract.decompiled_source_code == decompiled_source_code
+      assert address_hash == to_string(decompiled_smart_contract.address_hash)
+    end
+
+    test "with invalid params can't create decompiled smart contract" do
+      params = %{code: "cat"}
+
+      {:error, _changeset} = Chain.create_decompiled_smart_contract(params)
+    end
+
+    test "updates smart contract code" do
+      inserted_decompiled_smart_contract = insert(:decompiled_smart_contract)
+      code = "code2"
+
+      {:ok, _decompiled_smart_contract} =
+        Chain.create_decompiled_smart_contract(%{
+          decompiler_version: inserted_decompiled_smart_contract.decompiler_version,
+          decompiled_source_code: code,
+          address_hash: inserted_decompiled_smart_contract.address_hash
+        })
+
+      decompiled_smart_contract =
+        Repo.one(
+          from(ds in DecompiledSmartContract,
+            where:
+              ds.address_hash == ^inserted_decompiled_smart_contract.address_hash and
+                ds.decompiler_version == ^inserted_decompiled_smart_contract.decompiler_version
+          )
+        )
+
+      assert decompiled_smart_contract.decompiled_source_code == code
+    end
+
+    test "creates two smart contracts for different decompiler versions" do
+      inserted_decompiled_smart_contract = insert(:decompiled_smart_contract)
+      code = "code2"
+      version = "2"
+
+      {:ok, _decompiled_smart_contract} =
+        Chain.create_decompiled_smart_contract(%{
+          decompiler_version: version,
+          decompiled_source_code: code,
+          address_hash: inserted_decompiled_smart_contract.address_hash
+        })
+
+      decompiled_smart_contracts =
+        Repo.all(
+          from(ds in DecompiledSmartContract, where: ds.address_hash == ^inserted_decompiled_smart_contract.address_hash)
+        )
+
+      assert Enum.count(decompiled_smart_contracts) == 2
     end
   end
 
@@ -3114,21 +3259,24 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "stream_unfetched_uncle_hashes/2" do
+  describe "stream_unfetched_uncles/2" do
     test "does not return uncle hashes where t:Explorer.Chain.Block.SecondDegreeRelation.t/0 uncle_fetched_at is not nil" do
-      %Block.SecondDegreeRelation{nephew: %Block{}, uncle_hash: uncle_hash} = insert(:block_second_degree_relation)
+      %Block.SecondDegreeRelation{nephew: %Block{}, nephew_hash: nephew_hash, index: index, uncle_hash: uncle_hash} =
+        insert(:block_second_degree_relation)
 
-      assert {:ok, [^uncle_hash]} = Explorer.Chain.stream_unfetched_uncle_hashes([], &[&1 | &2])
+      assert {:ok, [%{nephew_hash: ^nephew_hash, index: ^index}]} =
+               Explorer.Chain.stream_unfetched_uncles([], &[&1 | &2])
 
       query = from(bsdr in Block.SecondDegreeRelation, where: bsdr.uncle_hash == ^uncle_hash)
 
       assert {1, _} = Repo.update_all(query, set: [uncle_fetched_at: DateTime.utc_now()])
 
-      assert {:ok, []} = Explorer.Chain.stream_unfetched_uncle_hashes([], &[&1 | &2])
+      assert {:ok, []} = Explorer.Chain.stream_unfetched_uncles([], &[&1 | &2])
     end
   end
 
   test "total_supply/0" do
+    Application.put_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
     height = 2_000_000
     insert(:block, number: height)
     expected = ProofOfAuthority.initial_supply() + height
@@ -3137,6 +3285,7 @@ defmodule Explorer.ChainTest do
   end
 
   test "circulating_supply/0" do
+    Application.put_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
     assert Chain.circulating_supply() == ProofOfAuthority.circulating()
   end
 
@@ -3183,10 +3332,45 @@ defmodule Explorer.ChainTest do
 
       expected_response =
         [token1, token2]
-        |> Enum.sort(&(&1.updated_at < &2.updated_at))
+        |> Enum.sort(&(Timex.to_unix(&1.updated_at) < Timex.to_unix(&2.updated_at)))
         |> Enum.map(& &1.contract_address_hash)
 
       assert Chain.stream_cataloged_token_contract_address_hashes([], &(&2 ++ [&1])) == {:ok, expected_response}
+    end
+  end
+
+  describe "search_token/1" do
+    test "finds by part of the name" do
+      token = insert(:token, name: "magic token", symbol: "MAGIC")
+
+      [result] = Chain.search_token("magic")
+
+      assert result.contract_address_hash == token.contract_address_hash
+    end
+
+    test "finds multiple results in different columns" do
+      insert(:token, name: "magic token", symbol: "TOKEN")
+      insert(:token, name: "token", symbol: "MAGIC")
+
+      result = Chain.search_token("magic")
+
+      assert Enum.count(result) == 2
+    end
+
+    test "do not returns wrong tokens" do
+      insert(:token, name: "token", symbol: "TOKEN")
+
+      result = Chain.search_token("magic")
+
+      assert Enum.empty?(result)
+    end
+
+    test "finds record by the term in the second word" do
+      insert(:token, name: "token magic", symbol: "TOKEN")
+
+      result = Chain.search_token("magic")
+
+      assert Enum.count(result) == 1
     end
   end
 
@@ -3477,48 +3661,65 @@ defmodule Explorer.ChainTest do
 
   describe "uncataloged_token_transfer_block_numbers/0" do
     test "returns a list of block numbers" do
-      log = insert(:token_transfer_log)
+      block = insert(:block)
+      address = insert(:address)
+
+      log =
+        insert(:token_transfer_log,
+          transaction:
+            insert(:transaction,
+              block_number: block.number,
+              block_hash: block.hash,
+              cumulative_gas_used: 0,
+              gas_used: 0,
+              index: 0
+            ),
+          address_hash: address.hash
+        )
+
       block_number = log.transaction.block_number
       assert {:ok, [^block_number]} = Chain.uncataloged_token_transfer_block_numbers()
+    end
+
+    test "does not include transactions without a block_number" do
+      insert(:token_transfer_log)
+      assert {:ok, []} = Chain.uncataloged_token_transfer_block_numbers()
     end
   end
 
   describe "address_to_balances_by_day/1" do
     test "return a list of balances by day" do
       address = insert(:address)
-      noon = ~D[2018-12-06] |> Timex.to_datetime() |> Timex.set(hour: 12)
+      today = NaiveDateTime.utc_now()
+      noon = Timex.set(today, hour: 12)
       block = insert(:block, timestamp: noon)
-      block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1))
+      yesterday = Timex.shift(noon, days: -1)
+      block_one_day_ago = insert(:block, timestamp: yesterday)
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
       insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_one_day_ago.number)
 
       balances = Chain.address_to_balances_by_day(address.hash)
 
       assert balances == [
-               %{date: "2018-12-05", value: Decimal.new("2E-15")},
-               %{date: "2018-12-06", value: Decimal.new("1E-15")}
+               %{date: yesterday |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("2E-15")},
+               %{date: today |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")}
              ]
     end
-  end
 
-  describe "list_block_numbers_with_invalid_consensus/0" do
-    test "returns a list of block numbers with invalid consensus" do
-      block1 = insert(:block)
-      block2_with_invalid_consensus = insert(:block, parent_hash: block1.hash, consensus: false)
-      _block2 = insert(:block, parent_hash: block1.hash, number: block2_with_invalid_consensus.number)
-      block3 = insert(:block, parent_hash: block2_with_invalid_consensus.hash)
-      block4 = insert(:block, parent_hash: block3.hash)
-      block5 = insert(:block, parent_hash: block4.hash)
-      block6_without_consensus = insert(:block, parent_hash: block5.hash, consensus: false)
-      block6 = insert(:block, parent_hash: block5.hash, number: block6_without_consensus.number)
-      block7 = insert(:block, parent_hash: block6.hash)
-      block8_with_invalid_consensus = insert(:block, parent_hash: block7.hash, consensus: false)
-      _block8 = insert(:block, parent_hash: block7.hash, number: block8_with_invalid_consensus.number)
-      block9 = insert(:block, parent_hash: block8_with_invalid_consensus.hash)
-      _block10 = insert(:block, parent_hash: block9.hash)
+    test "adds todays entry" do
+      address = insert(:address)
+      today = NaiveDateTime.utc_now()
+      noon = Timex.set(today, hour: 12)
+      yesterday = Timex.shift(noon, days: -1)
+      block_one_day_ago = insert(:block, timestamp: yesterday)
+      insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block_one_day_ago.number)
 
-      assert Chain.list_block_numbers_with_invalid_consensus() ==
-               [block2_with_invalid_consensus.number, block8_with_invalid_consensus.number]
+      balances = Chain.address_to_balances_by_day(address.hash)
+
+      assert balances == [
+               %{date: today |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")},
+               %{date: yesterday |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")}
+             ]
     end
   end
 
@@ -3555,6 +3756,124 @@ defmodule Explorer.ChainTest do
       {:ok, expected_value} = Wei.cast(3_000_000_000_000_000_000)
 
       assert Chain.block_combined_rewards(block) == expected_value
+    end
+  end
+
+  describe "contract_creation_input_data/1" do
+    test "fetches contract creation input data from contract creation transaction" do
+      address = insert(:address)
+
+      input = %Data{
+        bytes: <<1, 2, 3, 4, 5>>
+      }
+
+      :transaction
+      |> insert(created_contract_address_hash: address.hash, input: input)
+      |> with_block()
+
+      found_creation_data = Chain.contract_creation_input_data(address.hash)
+
+      assert found_creation_data == Data.to_string(input)
+    end
+
+    test "fetches contract creation input data from internal transaction" do
+      created_contract_address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      input = %Data{
+        bytes: <<1, 2, 3, 4, 5>>
+      }
+
+      insert(
+        :internal_transaction_create,
+        transaction: transaction,
+        index: 0,
+        created_contract_address: created_contract_address,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        input: input
+      )
+
+      assert Chain.contract_creation_input_data(created_contract_address.hash) == Data.to_string(input)
+    end
+
+    test "can't find address" do
+      hash = %Hash{
+        byte_count: 20,
+        bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+      }
+
+      found_creation_data = Chain.contract_creation_input_data(hash)
+
+      assert found_creation_data == ""
+    end
+  end
+
+  describe "contract_address?/2" do
+    test "returns true if address has contract code" do
+      code = %Data{
+        bytes: <<1, 2, 3, 4, 5>>
+      }
+
+      address = insert(:address, contract_code: code)
+
+      assert Chain.contract_address?(to_string(address.hash), 1)
+    end
+
+    test "returns false if address has not contract code" do
+      address = insert(:address)
+
+      refute Chain.contract_address?(to_string(address.hash), 1)
+    end
+
+    @tag :no_parity
+    @tag :no_geth
+    test "returns true if fetched code from json rpc", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      hash = "0x71300d93a8CdF93385Af9635388cF2D00b95a480"
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn _arguments, _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               result: "0x0102030405"
+             }
+           ]}
+        end)
+      end
+
+      assert Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
+    end
+
+    @tag :no_parity
+    @tag :no_geth
+    test "returns false if no fetched code from json rpc", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      hash = "0x71300d93a8CdF93385Af9635388cF2D00b95a480"
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn _arguments, _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               result: "0x"
+             }
+           ]}
+        end)
+      end
+
+      refute Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
     end
   end
 end
