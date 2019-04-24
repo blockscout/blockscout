@@ -32,6 +32,8 @@ defmodule BlockScoutWeb.Chain do
 
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
+  @address_hash_len 40
+  @tx_block_hash_len 64
 
   def default_paging_options do
     @default_paging_options
@@ -60,16 +62,16 @@ defmodule BlockScoutWeb.Chain do
   @spec from_param(String.t()) :: {:ok, Address.t() | Block.t() | Transaction.t()} | {:error, :not_found}
   def from_param(param)
 
-  def from_param("0x" <> number_string = param) when byte_size(number_string) == 40,
+  def from_param("0x" <> number_string = param) when byte_size(number_string) == @address_hash_len,
     do: address_from_param(param)
 
-  def from_param("0x" <> number_string = param) when byte_size(number_string) == 64,
+  def from_param("0x" <> number_string = param) when byte_size(number_string) == @tx_block_hash_len,
     do: block_or_transaction_from_param(param)
 
-  def from_param(param) when byte_size(param) == 40,
+  def from_param(param) when byte_size(param) == @address_hash_len,
     do: address_from_param("0x" <> param)
 
-  def from_param(param) when byte_size(param) == 64,
+  def from_param(param) when byte_size(param) == @tx_block_hash_len,
     do: block_or_transaction_from_param("0x" <> param)
 
   def from_param(string) when is_binary(string) do
