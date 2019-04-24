@@ -15,13 +15,24 @@ defmodule BlockScoutWeb.AddressController do
 
     {addresses_page, next_page} = split_list_by_page(addresses)
 
+    cur_page_number =
+      cond do
+        !params["prev_page_number"] -> 1
+        params["next_page"] -> String.to_integer(params["prev_page_number"]) + 1
+        params["prev_page"] -> String.to_integer(params["prev_page_number"]) - 1
+      end
+
     next_page_path =
       case next_page_params(next_page, addresses_page, params) do
         nil ->
           nil
 
         next_page_params ->
-          next_params = Map.put(next_page_params, "prev_page_path", cur_page_path(conn, params))
+          next_params =
+            next_page_params
+            |> Map.put("prev_page_path", cur_page_path(conn, params))
+            |> Map.put("next_page", true)
+            |> Map.put("prev_page_number", cur_page_number)
 
           address_path(
             conn,
@@ -37,7 +48,8 @@ defmodule BlockScoutWeb.AddressController do
       exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
       total_supply: Chain.total_supply(),
       next_page_path: next_page_path,
-      prev_page_path: params["prev_page_path"]
+      prev_page_path: params["prev_page_path"],
+      cur_page_number: cur_page_number
     )
   end
 
@@ -54,10 +66,12 @@ defmodule BlockScoutWeb.AddressController do
   end
 
   defp cur_page_path(conn, %{"hash" => _hash, "fetched_coin_balance" => _balance} = params) do
+    new_params = Map.put(params, "next_page", false)
+
     address_path(
       conn,
       :index,
-      params
+      new_params
     )
   end
 
