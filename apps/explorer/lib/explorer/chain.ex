@@ -1117,7 +1117,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
+  Lists the top `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance and address hash.
 
   """
   @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
