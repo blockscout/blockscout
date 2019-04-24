@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
 - [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
 
 ### Fixes
