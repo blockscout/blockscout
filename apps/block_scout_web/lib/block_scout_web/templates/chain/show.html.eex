@@ -35,43 +35,46 @@
           </div>
         </div>
       </div>
-      <div class="dashboard-banner-network-stats">
-        <%= case @average_block_time do %>
-          <% {:error, :disabled} -> %>
-            <%= nil %>
-          <% average_block_time -> %>
-            <div class="dashboard-banner-network-stats-item">
-              <span class="dashboard-banner-network-stats-label">
-                <%= gettext "Average block time" %>
-              </span>
-              <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
-                <%= Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %>
-              </span>
-            </div>
-        <% end %>
-        <div class="dashboard-banner-network-stats-item">
-          <span class="dashboard-banner-network-stats-label">
-            <%= gettext "Total transactions" %>
-          </span>
-          <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
-            <%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
-          </span>
-        </div>
-        <div class="dashboard-banner-network-stats-item">
-          <span class="dashboard-banner-network-stats-label">
-            <%= gettext "Total blocks" %>
-          </span>
-          <span class="dashboard-banner-network-stats-value" data-selector="block-count">
-            <%= Cldr.Number.to_string!(@block_count, format: "#,###") %>
-          </span>
-        </div>
-        <div class="dashboard-banner-network-stats-item">
-          <span class="dashboard-banner-network-stats-label">
-            <%= gettext "Wallet addresses" %>
-          </span>
-          <span class="dashboard-banner-network-stats-value" data-selector="address-count">
-            <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
-          </span>
+      <!-- Stats -->
+      <div class="dashboard-banner-network-plain-container">
+        <div class="dashboard-banner-network-stats">
+          <%= case @average_block_time do %>
+            <% {:error, :disabled} -> %>
+              <%= nil %>
+            <% average_block_time -> %>
+              <div class="dashboard-banner-network-stats-item">
+                <span class="dashboard-banner-network-stats-label">
+                  <%= gettext "Average block time" %>
+                </span>
+                <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
+                  <%= Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %>
+                </span>
+              </div>
+          <% end %>
+          <div class="dashboard-banner-network-stats-item">
+            <span class="dashboard-banner-network-stats-label">
+              <%= gettext "Total transactions" %>
+            </span>
+            <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
+              <%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
+            </span>
+          </div>
+          <div class="dashboard-banner-network-stats-item">
+            <span class="dashboard-banner-network-stats-label">
+              <%= gettext "Total blocks" %>
+            </span>
+            <span class="dashboard-banner-network-stats-value" data-selector="block-count">
+              <%= Cldr.Number.to_string!(@block_count, format: "#,###") %>
+            </span>
+          </div>
+          <div class="dashboard-banner-network-stats-item">
+            <span class="dashboard-banner-network-stats-label">
+              <%= gettext "Wallet addresses" %>
+            </span>
+            <span class="dashboard-banner-network-stats-value" data-selector="address-count">
+              <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
+            </span>
+          </div>
         </div>
       </div>
     </div>
