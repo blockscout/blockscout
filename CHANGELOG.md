@@ -8,6 +8,8 @@
 
 ### Fixes
 
+- [#1829](https://github.com/poanetwork/blockscout/pull/1829) - Handle nil quantities in block decoding routine
+
 ### Chore
 
 - [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
