@@ -89,7 +89,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClientTest do
 
       port = :ranch.get_port(EthereumJSONRPC.WebSocket.Cowboy)
 
-      pid = start_supervised!({WebSocketClient, ["ws://localhost:#{port}/websocket", []]})
+      pid = start_supervised!({WebSocketClient, ["ws://localhost:#{port}/websocket", [keepalive: :timer.hours(1)], []]})
 
       %{pid: pid, port: port}
     end
