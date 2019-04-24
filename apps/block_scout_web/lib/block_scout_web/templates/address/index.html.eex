@@ -8,19 +8,25 @@
         <%= gettext " addresses of" %>
         <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
         <%= gettext "total addresses with a balance" %>
-      </p>
 
+        <%= if @next_page_path do %>
+          <a href="<%= "#{@next_page_path}" %>" class="button button-secondary button-small float-right mt-0 ml-1">
+            <%= gettext("Next") %>
+          </a>
+        <% end %>
+        <%= if @prev_page_path do %>
+          <a href="<%= "#{@prev_page_path}" %>" class="button button-secondary button-small float-right mt-0">
+            <%= gettext("Back") %>
+          </a>
+        <% end %>
+      </p>
+      <br>
       <span data-selector="top-addresses-list">
         <%= for {{address, tx_count}, index} <- Enum.with_index(@address_tx_count_pairs, 1) do %>
           <%= render "_tile.html",
             address: address, index: index, exchange_rate: @exchange_rate,
             total_supply: @total_supply, tx_count: tx_count,
             validation_count: validation_count(address) %>
-        <% end %>
-        <%= if @next_page_path do %>
-          <a href="<%= "#{@next_page_path}" %>" class="button button-secondary button-small float-right mt-4">
-            <%= gettext("Next") %>
-          </a>
         <% end %>
       </span>
     </div>
