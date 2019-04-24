@@ -2,12 +2,15 @@
 
 ### Features
 
+- [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
 - [#1813](https://github.com/poanetwork/blockscout/pull/1813) - add total blocks counter to the main page
+- [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
 
 ### Fixes
 
 ### Chore
 
+- [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
 
 ## 1.3.10-beta
 
