@@ -26,6 +26,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
       %Token{
         available_supply: to_decimal(item["total_supply"]),
+        total_supply: to_decimal(item["total_supply"]),
         btc_value: btc_value,
         id: id,
         last_updated: last_updated,

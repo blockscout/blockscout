@@ -10,6 +10,7 @@ defmodule Explorer.ExchangeRates.Source.OneCoinSource do
   def format_data(_) do
     pseudo_token = %Token{
       available_supply: Decimal.new(10_000_000),
+      total_supply: Decimal.new(10_000_000_000),
       btc_value: Decimal.new(1),
       id: "",
       last_updated: Timex.now(),
