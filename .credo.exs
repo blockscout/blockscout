@@ -67,6 +67,9 @@
         {Credo.Check.Readability.TrailingBlankLine, false},
         {Credo.Check.Readability.TrailingWhiteSpace, false},
 
+        # outdated by lazy Logger in Elixir 1.7.  See https://elixir-lang.org/blog/2018/07/25/elixir-v1-7-0-released/
+        {Credo.Check.Warning.LazyLogging, false},
+
         # not handled by formatter
         {Credo.Check.Consistency.ExceptionNames},
         {Credo.Check.Consistency.ParameterPatternMatching},
@@ -118,7 +121,6 @@
         {Credo.Check.Warning.ExpensiveEmptyEnumCheck},
         {Credo.Check.Warning.IExPry},
         {Credo.Check.Warning.IoInspect},
-        {Credo.Check.Warning.LazyLogging},
         {Credo.Check.Warning.OperationOnSameValues},
         {Credo.Check.Warning.OperationWithConstantResult},
         {Credo.Check.Warning.UnusedEnumOperation},

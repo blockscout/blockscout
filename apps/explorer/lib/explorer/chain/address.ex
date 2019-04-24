@@ -8,7 +8,19 @@ defmodule Explorer.Chain.Address do
   use Explorer.Schema
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Address, Block, Data, Hash, InternalTransaction, SmartContract, Token, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Data,
+    DecompiledSmartContract,
+    Hash,
+    InternalTransaction,
+    SmartContract,
+    Token,
+    Transaction,
+    Wei
+  }
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce)a
   @required_attrs ~w(hash)a
@@ -30,6 +42,9 @@ defmodule Explorer.Chain.Address do
    * `names` - names known for the address
    * `inserted_at` - when this address was inserted
    * `updated_at` when this address was last updated
+
+   `fetched_coin_balance` and `fetched_coin_balance_block_number` may be updated when a new coin_balance row is fetched.
+    They may also be updated when the balance is fetched via the on demand fetcher.
   """
   @type t :: %__MODULE__{
           fetched_coin_balance: Wei.t(),
@@ -43,12 +58,24 @@ defmodule Explorer.Chain.Address do
           nonce: non_neg_integer() | nil
         }
 
+  @derive {Poison.Encoder,
+           except: [
+             :__meta__,
+             :smart_contract,
+             :decompiled_smart_contract,
+             :token,
+             :contracts_creation_internal_transaction,
+             :contracts_creation_transaction,
+             :names
+           ]}
+
   @primary_key {:hash, Hash.Address, autogenerate: false}
   schema "addresses" do
     field(:fetched_coin_balance, Wei)
     field(:fetched_coin_balance_block_number, :integer)
     field(:contract_code, Data)
     field(:nonce, :integer)
+    field(:has_decompiled_code?, :boolean, virtual: true)
 
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)
@@ -66,6 +93,7 @@ defmodule Explorer.Chain.Address do
     )
 
     has_many(:names, Address.Name, foreign_key: :address_hash)
+    has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash)
 
     timestamps()
   end

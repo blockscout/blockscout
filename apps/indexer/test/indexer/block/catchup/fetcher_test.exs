@@ -7,8 +7,10 @@ defmodule Indexer.Block.Catchup.FetcherTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward
-  alias Indexer.{Block, CoinBalance, InternalTransaction, Token, TokenBalance}
+  alias Explorer.Chain.Hash
+  alias Indexer.Block
   alias Indexer.Block.Catchup.Fetcher
+  alias Indexer.Fetcher.{BlockReward, CoinBalance, InternalTransaction, Token, TokenBalance, UncleBlock}
 
   @moduletag capture_log: true
 
@@ -48,9 +50,12 @@ defmodule Indexer.Block.Catchup.FetcherTest do
           end
         end)
 
-      Process.register(pid, Block.Uncle.Fetcher)
+      Process.register(pid, UncleBlock)
 
-      nephew_hash = block_hash() |> to_string()
+      nephew_hash_data = block_hash()
+      %Hash{bytes: nephew_hash_bytes} = nephew_hash_data
+      nephew_hash = nephew_hash_data |> to_string()
+      nephew_index = 0
       uncle_hash = block_hash() |> to_string()
       miner_hash = address_hash() |> to_string()
       block_number = 0
@@ -95,7 +100,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                    params: [
                      %{
                        nephew_hash: nephew_hash,
-                       uncle_hash: uncle_hash
+                       uncle_hash: uncle_hash,
+                       index: nephew_index
                      }
                    ]
                  },
@@ -112,7 +118,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                  }
                })
 
-      assert_receive {:uncles, [^uncle_hash]}
+      assert_receive {:uncles, [{^nephew_hash_bytes, ^nephew_index}]}
     end
   end
 
@@ -315,7 +321,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
           end
         end)
 
-      Process.register(pid, Indexer.Block.Reward.Fetcher)
+      Process.register(pid, BlockReward)
 
       assert %{first_block_number: ^block_number, missing_block_count: 1, shrunk: false} =
                Fetcher.task(%Fetcher{
@@ -414,7 +420,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
           end
         end)
 
-      Process.register(pid, Indexer.Block.Reward.Fetcher)
+      Process.register(pid, BlockReward)
 
       assert %{first_block_number: ^block_number, missing_block_count: 1, shrunk: false} =
                Fetcher.task(%Fetcher{

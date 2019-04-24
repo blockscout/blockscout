@@ -33,7 +33,9 @@
             <!-- USD value of the balance -->
             <span
               data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
-              data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+              <% if !empty_exchange_rate?(@exchange_rate) do %>
+                data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+              <% end %>
             </span>
             <!-- percentage of coins from total supply -->
             <span class="ml-0 ml-md-2">(<%= balance_percentage(@address, @total_supply) %>)</span>

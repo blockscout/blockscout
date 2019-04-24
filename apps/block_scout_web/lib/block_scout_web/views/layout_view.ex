@@ -76,6 +76,16 @@ defmodule BlockScoutWeb.LayoutView do
     BlockScoutWeb.version()
   end
 
+  def release_link(version) do
+    release_link = Application.get_env(:block_scout_web, :release_link)
+
+    if release_link == "" || release_link == nil do
+      version
+    else
+      html_escape({:safe, "<a href=\"#{release_link}\" class=\"footer-link\" target=\"_blank\">#{version}</a>"})
+    end
+  end
+
   def ignore_version?("unknown"), do: true
   def ignore_version?(_), do: false
 
@@ -85,6 +95,7 @@ defmodule BlockScoutWeb.LayoutView do
     |> Enum.reject(fn %{title: title} ->
       title == subnetwork_title()
     end)
+    |> Enum.sort()
   end
 
   def main_nets do

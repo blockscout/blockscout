@@ -1,0 +1,47 @@
+<table summary="<%= gettext "Transaction Info" %>" class="table thead-light table-bordered table-responsive transaction-info-table">
+  <tr>
+  <td><%= gettext "Method Id" %></td>
+  <td colspan="3"><code>0x<%= @method_id %></code></td>
+  </tr>
+  <tr>
+  <td>Call</td>
+  <td colspan="3"><code><%= @text %></code></td>
+  </tr>
+</table>
+
+<%= unless Enum.empty?(@mapping) do %>
+  <table summary="<%= gettext "Transaction Inputs" %>" class="table thead-light table-bordered table-responsive">
+    <tr>
+    <th scope="col"></th>
+    <th scope="col"><%= gettext "Name" %></th>
+    <th scope="col"><%= gettext "Type" %></th>
+    <th scope="col"><%= gettext "Data" %></th>
+    <tr>
+    <%= for {name, type, value} <- @mapping do %>
+      <tr>
+        <th scope="row">
+          <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
+            <% :error -> %>
+              <%= nil %>
+            <% copy_text -> %>
+              <button type="button" class="copy icon-link" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= copy_text %>" aria-label="<%= gettext "Copy Value" %>">
+                <i class="fas fa-clone"></i>
+              </button>
+          <% end %>
+        </th>
+        <td><%= name %></td>
+        <td><%= type %></td>
+        <td>
+          <%= case BlockScoutWeb.ABIEncodedValueView.value_html(type, value) do %>
+            <% :error -> %>
+              <div class="alert alert-danger">
+                <%= gettext "Error rendering value" %>
+              </div>
+            <% value -> %>
+              <pre class="transaction-input-text tile"><code><%= value %></code></pre>
+            <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </table>
+<% end %>

@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Supply.TokenBridgeTest do
         EthereumJSONRPC.Mox
         |> expect(:json_rpc, fn [
                                   %{
-                                    id: "mintedTotally",
+                                    id: id,
                                     method: "eth_call",
                                     params: [
                                       %{data: "0x553a5c85", to: "0x867305d19606aadba405ce534e303d0e225f9556"},
@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Supply.TokenBridgeTest do
           {:ok,
            [
              %{
-               id: "mintedTotally",
+               id: id,
                jsonrpc: "2.0",
                result: "0x00000000000000000000000000000000000000000000042aa8fe57ebb112dcc8"
              }
@@ -39,7 +39,7 @@ defmodule Explorer.Chain.Supply.TokenBridgeTest do
         end)
         |> expect(:json_rpc, fn [
                                   %{
-                                    id: "totalBurntCoins",
+                                    id: id,
                                     jsonrpc: "2.0",
                                     method: "eth_call",
                                     params: [
@@ -52,7 +52,7 @@ defmodule Explorer.Chain.Supply.TokenBridgeTest do
           {:ok,
            [
              %{
-               id: "totalBurntCoins",
+               id: id,
                jsonrpc: "2.0",
                result: "0x00000000000000000000000000000000000000000000033cc192839185166fc6"
              }

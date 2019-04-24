@@ -1,13 +1,17 @@
 defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
+  alias ABI.TypeDecoder
+  alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
   alias Cldr.Number
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
-  alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, TokenTransfer, Transaction, Wei}
+  alias Explorer.ExchangeRates.Token
+  alias Timex.Duration
 
   import BlockScoutWeb.Gettext
+  import BlockScoutWeb.Tokens.Helpers
 
   @tabs ["token_transfers", "internal_transactions", "logs"]
 
@@ -29,6 +33,131 @@ defmodule BlockScoutWeb.TransactionView do
 
   def value_transfer?(_), do: false
 
+  def erc20_token_transfer(
+        %Transaction{
+          status: :ok,
+          created_contract_address_hash: nil,
+          input: input,
+          value: value
+        },
+        token_transfers
+      ) do
+    zero_wei = %Wei{value: Decimal.new(0)}
+
+    case {to_string(input), value} do
+      {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
+        types = [:address, {:uint, 256}]
+
+        [address, value] = decode_params(params, types)
+
+        decimal_value = Decimal.new(value)
+
+        Enum.find(token_transfers, fn token_transfer ->
+          token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value
+        end)
+
+      _ ->
+        nil
+    end
+  rescue
+    _ -> nil
+  end
+
+  def erc20_token_transfer(_, _) do
+    nil
+  end
+
+  def erc721_token_transfer(
+        %Transaction{
+          status: :ok,
+          created_contract_address_hash: nil,
+          input: input,
+          value: value
+        },
+        token_transfers
+      ) do
+    zero_wei = %Wei{value: Decimal.new(0)}
+
+    # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721.sol#L35
+    {from_address, to_address} =
+      case {to_string(input), value} do
+        # transferFrom(address,address,uint256)
+        {"0x23b872dd" <> params, ^zero_wei} ->
+          types = [:address, :address, {:uint, 256}]
+          [from_address, to_address, _value] = decode_params(params, types)
+          {from_address, to_address}
+
+        # safeTransferFrom(address,address,uint256)
+        {"0x42842e0e" <> params, ^zero_wei} ->
+          types = [:address, :address, {:uint, 256}]
+          [from_address, to_address, _value] = decode_params(params, types)
+          {from_address, to_address}
+
+        # safeTransferFrom(address,address,uint256,bytes)
+        {"0xb88d4fde" <> params, ^zero_wei} ->
+          types = [:address, :address, {:uint, 256}, :bytes]
+          [from_address, to_address, _value, _data] = decode_params(params, types)
+          {from_address, to_address}
+
+        _ ->
+          nil
+      end
+
+    Enum.find(token_transfers, fn token_transfer ->
+      token_transfer.from_address_hash.bytes == from_address && token_transfer.to_address_hash.bytes == to_address
+    end)
+  rescue
+    _ -> nil
+  end
+
+  def erc721_token_transfer(_, _), do: nil
+
+  def processing_time_duration(%Transaction{block: nil}) do
+    :pending
+  end
+
+  def processing_time_duration(%Transaction{earliest_processing_start: nil}) do
+    :unknown
+  end
+
+  def processing_time_duration(%Transaction{
+        block: %Block{timestamp: end_time},
+        earliest_processing_start: earliest_processing_start,
+        inserted_at: inserted_at
+      }) do
+    with {:ok, long_interval} <- humanized_diff(earliest_processing_start, end_time),
+         {:ok, short_interval} <- humanized_diff(inserted_at, end_time) do
+      {:ok, merge_intervals(short_interval, long_interval)}
+    else
+      _ ->
+        :ignore
+    end
+  end
+
+  defp merge_intervals(short, long) when short == long, do: short
+
+  defp merge_intervals(short, long) do
+    [short_time, short_unit] = String.split(short, " ")
+    [long_time, long_unit] = String.split(long, " ")
+
+    if short_unit == long_unit do
+      short_time <> "-" <> long_time <> " " <> short_unit
+    else
+      short <> " - " <> long
+    end
+  end
+
+  defp humanized_diff(left, right) do
+    left
+    |> Timex.diff(right, :milliseconds)
+    |> Duration.from_milliseconds()
+    |> Timex.format_duration(Explorer.Counters.AverageBlockTimeDurationFormat)
+    |> case do
+      {:error, _} = error -> error
+      duration -> {:ok, duration}
+    end
+  end
+
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
       nil ->
@@ -43,6 +172,9 @@ defmodule BlockScoutWeb.TransactionView do
   def contract_creation?(%Transaction{to_address: nil}), do: true
 
   def contract_creation?(_), do: false
+
+  #  def utf8_encode() do
+  #  end
 
   def fee(%Transaction{} = transaction) do
     {_, value} = Chain.fee(transaction, :wei)
@@ -63,10 +195,16 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
-  def formatted_status(transaction) do
-    transaction
-    |> Chain.transaction_to_status()
-    |> case do
+  def transaction_status(transaction) do
+    Chain.transaction_to_status(transaction)
+  end
+
+  def empty_exchange_rate?(exchange_rate) do
+    Token.null?(exchange_rate)
+  end
+
+  def formatted_status(status) do
+    case status do
       :pending -> gettext("Pending")
       :awaiting_internal_transactions -> gettext("(Awaiting internal transactions for status)")
       :success -> gettext("Success")
@@ -86,7 +224,7 @@ defmodule BlockScoutWeb.TransactionView do
     Cldr.Number.to_string!(gas)
   end
 
-  def should_decode?(transaction) do
+  def skip_decoding?(transaction) do
     contract_creation?(transaction) || value_transfer?(transaction)
   end
 
@@ -200,4 +338,10 @@ defmodule BlockScoutWeb.TransactionView do
   defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["logs"]), do: gettext("Logs")
+
+  defp decode_params(params, types) do
+    params
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw(types)
+  end
 end

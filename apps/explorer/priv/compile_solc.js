@@ -5,7 +5,10 @@ const solc = require('solc');
 var sourceCode = process.argv[2];
 var version = process.argv[3];
 var optimize = process.argv[4];
-var newContractName = process.argv[5];
+var optimizationRuns = parseInt(process.argv[5], 10);
+var newContractName = process.argv[6];
+var externalLibraries = JSON.parse(process.argv[7])
+var evmVersion = process.argv[8];
 
 var compiled_code = solc.loadRemoteVersion(version, function (err, solcSnapshot) {
   if (err) {
@@ -19,10 +22,13 @@ var compiled_code = solc.loadRemoteVersion(version, function (err, solcSnapshot)
         }
       },
       settings: {
-        evmVersion: 'byzantium',
+        evmVersion: evmVersion,
         optimizer: {
           enabled: optimize == '1',
-          runs: 200
+          runs: optimizationRuns
+        },
+        libraries: {
+          [newContractName]: externalLibraries
         },
         outputSelection: {
           '*': {

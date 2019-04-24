@@ -15,7 +15,7 @@ defmodule EthereumJsonrpc.MixProject do
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.6",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
@@ -80,7 +80,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Tracing
       {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
       # `:spandex` integration with Datadog
-      {:spandex_datadog, "~> 0.3.1"},
+      {:spandex_datadog, "~> 0.4.0"},
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.4"},
       # Encode/decode function names and arguments
