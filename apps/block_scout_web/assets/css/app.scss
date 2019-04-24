@@ -119,6 +119,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/btn_dropdown_line";
 @import "components/transaction";
 @import "components/api";
+@import "components/alerts";
 
 :export {
   primary: $primary;
