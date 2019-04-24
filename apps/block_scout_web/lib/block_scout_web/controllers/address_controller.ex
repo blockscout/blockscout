@@ -21,10 +21,12 @@ defmodule BlockScoutWeb.AddressController do
           nil
 
         next_page_params ->
+          next_params = Map.put(next_page_params, "prev_page_path", cur_page_path(conn, params))
+
           address_path(
             conn,
             :index,
-            next_page_params
+            next_params
           )
       end
 
@@ -34,7 +36,8 @@ defmodule BlockScoutWeb.AddressController do
       address_count: Chain.count_addresses_with_balance_from_cache(),
       exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
       total_supply: Chain.total_supply(),
-      next_page_path: next_page_path
+      next_page_path: next_page_path,
+      prev_page_path: params["prev_page_path"]
     )
   end
 
@@ -49,4 +52,14 @@ defmodule BlockScoutWeb.AddressController do
   def validation_count(%Address{} = address) do
     Chain.address_to_validation_count(address)
   end
+
+  defp cur_page_path(conn, %{"hash" => _hash, "fetched_coin_balance" => _balance} = params) do
+    address_path(
+      conn,
+      :index,
+      params
+    )
+  end
+
+  defp cur_page_path(conn, _), do: address_path(conn, :index)
 end
