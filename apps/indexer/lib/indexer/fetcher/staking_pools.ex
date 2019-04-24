@@ -11,6 +11,7 @@ defmodule Indexer.Fetcher.StakingPools do
   alias Explorer.Chain
   alias Explorer.Staking.PoolsReader
   alias Indexer.BufferedTask
+  alias Indexer.Fetcher.StakingPools.Supervisor, as: StakingPoolsSupervisor
 
   @behaviour BufferedTask
 
@@ -25,9 +26,9 @@ defmodule Indexer.Fetcher.StakingPools do
 
   @spec async_fetch() :: :ok
   def async_fetch do
-    pid = GenServer.whereis(__MODULE__)
-
-    if pid && Process.alive?(pid) do
+    if StakingPoolsSupervisor.disabled?() do
+      :ok
+    else
       pools =
         PoolsReader.get_pools()
         |> Enum.map(&entry/1)

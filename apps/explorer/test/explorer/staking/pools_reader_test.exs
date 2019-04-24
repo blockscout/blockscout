@@ -36,7 +36,7 @@ defmodule Explorer.Token.PoolsReaderTest do
       response = {
         :ok,
         %{
-          banned_unitil: 0,
+          banned_until: 0,
           delegators_count: 0,
           is_active: true,
           is_banned: false,

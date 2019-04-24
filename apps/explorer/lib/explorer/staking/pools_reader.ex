@@ -31,7 +31,7 @@ defmodule Explorer.Staking.PoolsReader do
          {:ok, [is_validator]} <- call_validators_method("isValidator", [mining_address]),
          {:ok, [was_validator_count]} <- call_validators_method("validatorCounter", [mining_address]),
          {:ok, [is_banned]} <- call_validators_method("isValidatorBanned", [mining_address]),
-         {:ok, [banned_unitil]} <- call_validators_method("bannedUntil", [mining_address]),
+         {:ok, [banned_until]} <- call_validators_method("bannedUntil", [mining_address]),
          {:ok, [was_banned_count]} <- call_validators_method("banCounter", [mining_address]) do
       {
         :ok,
@@ -44,7 +44,7 @@ defmodule Explorer.Staking.PoolsReader do
           is_validator: is_validator,
           was_validator_count: was_validator_count,
           is_banned: is_banned,
-          banned_unitil: banned_unitil,
+          banned_until: banned_until,
           was_banned_count: was_banned_count
         }
       }
