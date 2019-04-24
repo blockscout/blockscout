@@ -103,13 +103,16 @@ $navbar-logo-width: auto !default;
       margin-top: -8px;
     }
   }
+
   .form-inline {
     height: 100%;
   }
+
   .input-group {
     height: 100%;
     position: relative;
   }
+
   .form-control {
     background: $header-textfield-background-color;
     border-color: $header-textfield-background-color;
@@ -122,7 +125,21 @@ $navbar-logo-width: auto !default;
     width: 100%;
     z-index: 1;
 
-    @include textfield-placeholder();
+    &[placeholder]{
+      text-overflow: ellipsis !important;
+    }
+    &::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+        text-overflow: ellipsis  !important;
+    }
+    &::-moz-placeholder { /* Firefox 19+ */
+        text-overflow: ellipsis  !important;
+    }
+    &:-ms-input-placeholder { /* IE 10+ */
+        text-overflow: ellipsis  !important;
+    }
+    &:-moz-placeholder { /* Firefox 18- */
+        text-overflow: ellipsis  !important;
+    }
 
     &:focus {
       box-shadow: none;
