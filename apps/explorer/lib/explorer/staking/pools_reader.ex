@@ -24,15 +24,16 @@ defmodule Explorer.Staking.PoolsReader do
   @spec pool_data(String.t()) :: {:ok, map()} | :error
   def pool_data(staking_address) do
     with {:ok, [mining_address]} <- call_validators_method("miningByStakingAddress", [staking_address]),
-         {:ok, [is_active]} <- call_staking_method("isPoolActive", [staking_address]),
-         {:ok, [delegator_addresses]} <- call_staking_method("poolDelegators", [staking_address]),
+         data = fetch_data(staking_address, mining_address),
+         {:ok, [is_active]} <- data["isPoolActive"],
+         {:ok, [delegator_addresses]} <- data["poolDelegators"],
          delegators_count = Enum.count(delegator_addresses),
-         {:ok, [staked_amount]} <- call_staking_method("stakeAmountTotalMinusOrderedWithdraw", [staking_address]),
-         {:ok, [is_validator]} <- call_validators_method("isValidator", [mining_address]),
-         {:ok, [was_validator_count]} <- call_validators_method("validatorCounter", [mining_address]),
-         {:ok, [is_banned]} <- call_validators_method("isValidatorBanned", [mining_address]),
-         {:ok, [banned_until]} <- call_validators_method("bannedUntil", [mining_address]),
-         {:ok, [was_banned_count]} <- call_validators_method("banCounter", [mining_address]) do
+         {:ok, [staked_amount]} <- data["stakeAmountTotalMinusOrderedWithdraw"],
+         {:ok, [is_validator]} <- data["isValidator"],
+         {:ok, [was_validator_count]} <- data["validatorCounter"],
+         {:ok, [is_banned]} <- data["isValidatorBanned"],
+         {:ok, [banned_until]} <- data["bannedUntil"],
+         {:ok, [was_banned_count]} <- data["banCounter"] do
       {
         :ok,
         %{
@@ -71,6 +72,40 @@ defmodule Explorer.Staking.PoolsReader do
 
     resp
   end
+
+  defp fetch_data(staking_address, mining_address) do
+    contract_abi = abi("staking.json") ++ abi("validators.json")
+
+    methods = [
+      {:staking, "isPoolActive", staking_address},
+      {:staking, "poolDelegators", staking_address},
+      {:staking, "stakeAmountTotalMinusOrderedWithdraw", staking_address},
+      {:validators, "isValidator", mining_address},
+      {:validators, "validatorCounter", mining_address},
+      {:validators, "isValidatorBanned", mining_address},
+      {:validators, "bannedUntil", mining_address},
+      {:validators, "banCounter", mining_address}
+    ]
+
+    methods
+    |> Enum.map(&format_request/1)
+    |> Reader.query_contracts(contract_abi)
+    |> Enum.zip(methods)
+    |> Enum.into(%{}, fn {response, {_, function_name, _}} ->
+      {function_name, response}
+    end)
+  end
+
+  defp format_request({contract_name, function_name, param}) do
+    %{
+      contract_address: contract(contract_name),
+      function_name: function_name,
+      args: [param]
+    }
+  end
+
+  defp contract(:staking), do: config(:staking_contract_address)
+  defp contract(:validators), do: config(:validators_contract_address)
 
   defp config(key) do
     Application.get_env(:explorer, __MODULE__, [])[key]

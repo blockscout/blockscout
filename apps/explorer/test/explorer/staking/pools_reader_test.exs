@@ -101,7 +101,7 @@ defmodule Explorer.Token.PoolsReaderTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      9,
+      2,
       fn requests, _opts ->
         {:ok,
          Enum.map(requests, fn

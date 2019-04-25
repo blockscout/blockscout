@@ -68,7 +68,7 @@ defmodule Indexer.Fetcher.StakingPoolsTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      11,
+      4,
       fn requests, _opts ->
         {:ok,
          Enum.map(requests, fn
