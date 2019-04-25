@@ -42,7 +42,7 @@
             <% {:error, :disabled} -> %>
               <%= nil %>
             <% average_block_time -> %>
-              <div class="dashboard-banner-network-stats-item">
+              <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-1">
                 <span class="dashboard-banner-network-stats-label">
                   <%= gettext "Average block time" %>
                 </span>
@@ -51,7 +51,7 @@
                 </span>
               </div>
           <% end %>
-          <div class="dashboard-banner-network-stats-item">
+          <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-2">
             <span class="dashboard-banner-network-stats-label">
               <%= gettext "Total transactions" %>
             </span>
@@ -59,7 +59,7 @@
               <%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
             </span>
           </div>
-          <div class="dashboard-banner-network-stats-item">
+          <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-3">
             <span class="dashboard-banner-network-stats-label">
               <%= gettext "Total blocks" %>
             </span>
@@ -67,7 +67,7 @@
               <%= Cldr.Number.to_string!(@block_count, format: "#,###") %>
             </span>
           </div>
-          <div class="dashboard-banner-network-stats-item">
+          <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-4">
             <span class="dashboard-banner-network-stats-label">
               <%= gettext "Wallet addresses" %>
             </span>
