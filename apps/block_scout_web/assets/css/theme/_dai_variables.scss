@@ -75,6 +75,43 @@ $badge-neutral-color: #20446e;
 $badge-neutral-background-color: rgba(#20446e, .1);
 $api-text-monospace-color: #20446e;
 
+// Staking
+$stakes-btn-remove-pool-color: $secondary;
+$stakes-dashboard-copy-icon-color: $secondary;
+$btn-full-primary-bg: $secondary;
+$stakes-address-color: $secondary;
+$stakes-control-color: $secondary;
+$progress-from-to-progress-background: $secondary;
+$stakes-stats-item-border-color: rgba(#fff, .5);
+$check-color: $secondary;
+$modal-status-graph-success: $secondary;
+.modal-content {
+	.form-control {
+		box-shadow: none !important;
+		outline: none !important;
+		border-color: #e2e5ec !important;
+	}
+	.btn-line {
+		border-color: $primary;
+		color: $primary;
+		&:hover {
+			background-color: $primary
+		}
+	}
+}
+.stakes-table-th-content {
+	.i-tooltip {
+		position: relative;
+		top: -2px;
+	}
+}
+.stakes-address-container {
+	.check-tooltip {
+		position: relative;
+		top: -1px;
+	}
+}
+
 // Dark theme
 $dark-primary: #15bba6;
 $dark-secondary: #93d7ff;
