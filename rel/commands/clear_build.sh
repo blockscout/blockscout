@@ -7,6 +7,6 @@ rm -rf ./apps/explorer/node_modules
 rm -rf ./apps/block_scout_web/assets/node_modules
 
 case "$1" in
-		--f)
+		-f)
 		rm -rf ./apps/block_scout_web/priv/static;;
 esac
