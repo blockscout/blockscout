@@ -10,10 +10,9 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.{Address, Gas, Hash, Transaction}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
-  @optional_attrs ~w(internal_transactions_indexed_at)a
+  @optional_attrs ~w(internal_transactions_indexed_at size)a
 
-  @required_attrs ~w(consensus difficulty gas_limit gas_used hash miner_hash nonce number parent_hash size timestamp
-                     total_difficulty)a
+  @required_attrs ~w(consensus difficulty gas_limit gas_used hash miner_hash nonce number parent_hash timestamp total_difficulty)a
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
@@ -102,6 +101,14 @@ defmodule Explorer.Chain.Block do
     block
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
+    |> foreign_key_constraint(:parent_hash)
+    |> unique_constraint(:hash, name: :blocks_pkey)
+  end
+
+  def number_only_changeset(%__MODULE__{} = block, attrs) do
+    block
+    |> cast(attrs, @required_attrs ++ @optional_attrs)
+    |> validate_required([:number])
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
   end

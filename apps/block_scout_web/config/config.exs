@@ -10,7 +10,8 @@ config :block_scout_web,
   namespace: BlockScoutWeb,
   ecto_repos: [Explorer.Repo],
   version: System.get_env("BLOCKSCOUT_VERSION"),
-  release_link: System.get_env("RELEASE_LINK")
+  release_link: System.get_env("RELEASE_LINK"),
+  decompiled_smart_contract_token: System.get_env("DECOMPILED_SMART_CONTRACT_TOKEN")
 
 config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
@@ -67,6 +68,18 @@ config :block_scout_web,
     %{
       title: "Ethereum Classic",
       url: "https://blockscout.com/etc/mainnet"
+    },
+    %{
+      title: "Aerum Mainnet",
+      url: "https://blockscout.com/aerum/mainnet"
+    },
+    %{
+      title: "Callisto Mainnet",
+      url: "https://blockscout.com/callisto/mainnet"
+    },
+    %{
+      title: "RSK Mainnet",
+      url: "https://blockscout.com/rsk/mainnet"
     }
   ]
 
@@ -92,7 +105,7 @@ config :block_scout_web, BlockScoutWeb.Gettext, locales: ~w(en), default_locale:
 
 config :block_scout_web, BlockScoutWeb.SocialMedia,
   twitter: "PoaNetwork",
-  telegram: "oraclesnetwork",
+  telegram: "poa_network",
   facebook: "PoaNetwork",
   instagram: "PoaNetwork"
 

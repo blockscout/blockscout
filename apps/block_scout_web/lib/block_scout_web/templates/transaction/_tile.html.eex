@@ -35,7 +35,7 @@
       <span class="mr-2 mr-md-0 order-1">
         <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
       </span>
-      <span class="mr-2 mr-md-0 order-2" data-from-now="<%= block_timestamp(@transaction) %>"></span>
+      <span class="mr-2 mr-md-0 order-2" in-tile data-from-now="<%= block_timestamp(@transaction) %>"></span>
       <%= if from_or_to_address?(@transaction, assigns[:current_address]) do %>
         <span class="mr-2 mr-md-0 order-0 order-md-3">
           <%= if @transaction.from_address_hash == assigns[:current_address].hash do %>

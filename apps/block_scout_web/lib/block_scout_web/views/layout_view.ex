@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.LayoutView do
     if release_link == "" || release_link == nil do
       version
     else
-      html_escape({:safe, "<a href=\"#{release_link}\" target=\"_blank\">#{version}</a>"})
+      html_escape({:safe, "<a href=\"#{release_link}\" class=\"footer-link\" target=\"_blank\">#{version}</a>"})
     end
   end
 
@@ -95,6 +95,7 @@ defmodule BlockScoutWeb.LayoutView do
     |> Enum.reject(fn %{title: title} ->
       title == subnetwork_title()
     end)
+    |> Enum.sort()
   end
 
   def main_nets do

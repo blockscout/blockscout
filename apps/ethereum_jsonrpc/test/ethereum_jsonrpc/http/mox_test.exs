@@ -189,6 +189,98 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
 
       assert MapSet.equal?(response_block_number_set, block_number_set)
     end
+
+    @tag :no_geth
+    # Regression test for https://github.com/poanetwork/blockscout/issues/418
+    test "transparently splits batch payloads that would trigger a request timeout", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      block_numbers = [862_272, 862_273, 862_274, 862_275, 862_276, 862_277, 862_278, 862_279, 862_280, 862_281]
+
+      if json_rpc_named_arguments[:transport_options][:http] == EthereumJSONRPC.HTTP.Mox do
+        EthereumJSONRPC.HTTP.Mox
+        |> expect(:json_rpc, fn _url, _json, _options ->
+          {:error, :timeout}
+        end)
+        |> expect(:json_rpc, fn _url, json, _options ->
+          json_binary = IO.iodata_to_binary(json)
+
+          refute json_binary =~ "0xD2849"
+          assert json_binary =~ "0xD2844"
+
+          body =
+            0..4
+            |> Enum.map(fn id ->
+              %{
+                jsonrpc: "2.0",
+                id: id,
+                result: [
+                  %{
+                    "trace" => [
+                      %{
+                        "type" => "create",
+                        "action" => %{"from" => "0x", "gas" => "0x0", "init" => "0x", "value" => "0x0"},
+                        "traceAddress" => "0x",
+                        "result" => %{"address" => "0x", "code" => "0x", "gasUsed" => "0x0"}
+                      }
+                    ],
+                    "transactionHash" => "0x221aaf59f7a05702f0f53744b4fdb5f74e3c6fdade7324fda342cc1ebc73e01c"
+                  }
+                ]
+              }
+            end)
+            |> Jason.encode!()
+
+          {:ok, %{body: body, status_code: 200}}
+        end)
+        |> expect(:json_rpc, fn _url, json, _options ->
+          json_binary = IO.iodata_to_binary(json)
+
+          refute json_binary =~ "0xD2844"
+          assert json_binary =~ "0xD2845"
+          assert json_binary =~ "0xD2849"
+
+          body =
+            5..9
+            |> Enum.map(fn id ->
+              %{
+                jsonrpc: "2.0",
+                id: id,
+                result: [
+                  %{
+                    "trace" => [
+                      %{
+                        "type" => "create",
+                        "action" => %{"from" => "0x", "gas" => "0x0", "init" => "0x", "value" => "0x0"},
+                        "traceAddress" => "0x",
+                        "result" => %{"address" => "0x", "code" => "0x", "gasUsed" => "0x0"}
+                      }
+                    ],
+                    "transactionHash" => "0x221aaf59f7a05702f0f53744b4fdb5f74e3c6fdade7324fda342cc1ebc73e01c"
+                  }
+                ]
+              }
+            end)
+            |> Jason.encode!()
+
+          {:ok, %{body: body, status_code: 200}}
+        end)
+      end
+
+      assert {:ok, responses} =
+               EthereumJSONRPC.fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments)
+
+      assert Enum.count(responses) == Enum.count(block_numbers)
+
+      block_number_set = MapSet.new(block_numbers)
+
+      response_block_number_set =
+        Enum.into(responses, MapSet.new(), fn %{block_number: block_number} ->
+          block_number
+        end)
+
+      assert MapSet.equal?(response_block_number_set, block_number_set)
+    end
   end
 
   defp assert_payload_too_large(payload, json_rpc_named_arguments) do

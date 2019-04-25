@@ -42,7 +42,14 @@ defmodule Indexer.Block.Fetcher.Receipts do
       end)
 
     Enum.map(transactions_params, fn %{hash: transaction_hash} = transaction_params ->
-      Map.merge(transaction_params, Map.fetch!(transaction_hash_to_receipt_params, transaction_hash))
+      receipts_params = Map.fetch!(transaction_hash_to_receipt_params, transaction_hash)
+      merged_params = Map.merge(transaction_params, receipts_params)
+
+      if transaction_params[:created_contract_address_hash] && is_nil(receipts_params[:created_contract_address_hash]) do
+        Map.put(merged_params, :created_contract_address_hash, transaction_params[:created_contract_address_hash])
+      else
+        merged_params
+      end
     end)
   end
 
