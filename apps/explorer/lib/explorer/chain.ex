@@ -2359,7 +2359,7 @@ defmodule Explorer.Chain do
   @doc """
   The current total number of coins minted minus verifiably burned coins.
   """
-  @spec total_supply :: non_neg_integer()
+  @spec total_supply :: non_neg_integer() | nil
   def total_supply do
     supply_module().total()
   end
@@ -2367,7 +2367,7 @@ defmodule Explorer.Chain do
   @doc """
   The current number coins in the market for trading.
   """
-  @spec circulating_supply :: non_neg_integer()
+  @spec circulating_supply :: non_neg_integer() | nil
   def circulating_supply do
     supply_module().circulating()
   end
