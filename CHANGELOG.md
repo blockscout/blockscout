@@ -9,6 +9,9 @@
 
 ### Fixes
 
+- [#1829](https://github.com/poanetwork/blockscout/pull/1829) - Handle nil quantities in block decoding routine
+- [#1830](https://github.com/poanetwork/blockscout/pull/1830) - Make block size field nullable
+
 ### Chore
 
 - [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
@@ -41,6 +44,7 @@
  - [#1802](https://github.com/poanetwork/blockscout/pull/1802) - make coinmarketcap's number of pages configurable
  - [#1799](https://github.com/poanetwork/blockscout/pull/1799) - Use eth_getUncleByBlockHashAndIndex for uncle block fetching
  - [#1531](https://github.com/poanetwork/blockscout/pull/1531) - docker: fix dockerFile for secp256k1 building
+ - [#1835](https://github.com/poanetwork/blockscout/pull/1835) - fix: ignore `pong` messages without error
 
 ### Chore
 
