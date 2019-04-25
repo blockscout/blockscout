@@ -184,6 +184,7 @@ $tile-padding: 1rem;
 
   @include media-breakpoint-down(md) {
     margin-bottom: 1rem;
+    min-height: 105px;
   }
 
   &.tile-type-block {
