@@ -10,6 +10,7 @@
 
 - [#1829](https://github.com/poanetwork/blockscout/pull/1829) - Handle nil quantities in block decoding routine
 - [#1830](https://github.com/poanetwork/blockscout/pull/1830) - Make block size field nullable
+- [#1838](https://github.com/poanetwork/blockscout/pull/1838) - Block counter calculates only consensus blocks
 
 ### Chore
 
