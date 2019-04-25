@@ -134,8 +134,18 @@ $card-background-1-text-color: #fff !default;
 .card-chain-blocks {
   height: auto;
 
-  @include media-breakpoint-down(md) {
-    height: 595px;
+  [class*="col-"]:last-child {
+    .tile {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.card-chain-transactions {
+  height: auto;
+
+  .tile {
+    margin-bottom: 0;
   }
 }
 
