@@ -1,7 +1,9 @@
 hr {
-  margin: 2.75em 0;
-  border-style: solid;
-  border-color: $gray-300 transparent transparent transparent;
+  border-bottom: none;
+  border-left: none;
+  border-right: none;
+  border-top: 1px solid #f5f6fa;
+  margin: 30px 0;
 }
 
 svg {
@@ -12,4 +14,16 @@ svg {
   font-variant: normal;
   text-rendering: auto;
   line-height: 1;
+}
+
+dl {
+  margin-bottom: 12px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  dd {
+    margin: 0;
+  }
 }

@@ -1,7 +1,8 @@
 <% status = transaction_status(@transaction) %>
 <div class="tile tile-type-<%= type_suffix(@transaction) %> fade-in <%= status_class(@transaction) %>" data-test="<%= type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
   <div class="row tile-body" data-selector="token-transfers-toggle" data-test="chain_transaction">
-    <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
+    <!-- Color Block -->
+    <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
       <span class="tile-label" data-test="transaction_type">
         <%= transaction_display_type(@transaction) %>
       </span>
@@ -15,6 +16,7 @@
         <%= formatted_status(status) %>
       </span>
     </div>
+    <!-- Content -->
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
       <%= render "_link.html", transaction_hash: @transaction.hash %>
       <span class="text-nowrap">
@@ -24,14 +26,41 @@
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">
-          <%= value(@transaction, include_label: false) %> <%= gettext "Ether" %>
+          <%= value(@transaction, include_label: false) %>
+          <%= gettext "Ether" %>
         </span>
         <span class="ml-0 ml-md-1 text-nowrap">
-          <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %>
+          <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %>
+          <%= gettext "TX Fee" %>
         </span>
       </span>
+
+      <!-- Transfer -->
+      <%= if involves_token_transfers?(@transaction) do %>
+        <div class="d-flex flex-column mt-2">
+          <% [first_token_transfer | remaining_token_transfers] = @transaction.token_transfers %>
+
+          <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: first_token_transfer %>
+
+          <div class="collapse token-transfer-toggle" id="transaction-<%= @transaction.hash %>">
+            <%= for token_transfer <- remaining_token_transfers do %>
+              <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer %>
+            <% end %>
+          </div>
+        </div>
+
+        <%= if Enum.any?(remaining_token_transfers) do %>
+          <div class="col-md-12 d-flex flex-column mt-1 mb-2 text-center token-tile-view-more">
+            <span class="token-tile-more-lines">
+              <%= link gettext("View More Transfers"), to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-open", "data-test": "token_transfers_expansion" %>
+              <%= link gettext("View Less Transfers"), class: "d-none", to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-close" %>
+            </span>
+          </div>
+        <% end %>
+      <% end %>
     </div>
-    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-start text-md-right mt-3 mt-md-0">
+    <!-- Block info -->
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-center text-md-right mt-3 mt-md-0">
       <span class="mr-2 mr-md-0 order-1">
         <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
       </span>
@@ -50,28 +79,5 @@
         </span>
       <% end %>
     </div>
-
-    <%= if involves_token_transfers?(@transaction) do %>
-      <div class="offset-md-2 col-md-10 col-lg-8 d-flex flex-column mt-2 mb-2">
-        <% [first_token_transfer | remaining_token_transfers] = @transaction.token_transfers %>
-
-        <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: first_token_transfer %>
-
-        <div class="collapse token-transfer-toggle" id="transaction-<%= @transaction.hash %>">
-          <%= for token_transfer <- remaining_token_transfers do %>
-            <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer %>
-          <% end %>
-        </div>
-      </div>
-
-      <%= if Enum.any?(remaining_token_transfers) do %>
-        <div class="col-md-12 d-flex flex-column mt-1 mb-2 text-center token-tile-view-more">
-          <span class="token-tile-more-lines">
-            <%= link gettext("View More Transfers"), to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-open", "data-test": "token_transfers_expansion" %>
-            <%= link gettext("View Less Transfers"), class: "d-none", to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-close" %>
-          </span>
-        </div>
-      <% end %>
-    <% end %>
   </div>
 </div>
