@@ -161,6 +161,8 @@
 
   &.header {
     font-weight: bold;
+    padding-left: 10px;
+    pointer-events: none;
 
     &.division {
       border-top: 1px solid rgb(183, 185, 184);

@@ -102,8 +102,17 @@ defmodule BlockScoutWeb.LayoutView do
     Enum.reject(other_networks(), &Map.get(&1, :test_net?))
   end
 
+  def head_main_nets do
+    main_nets()
+    |> Enum.reject(&Map.get(&1, :other?))
+  end
+
   def test_nets do
     Enum.filter(other_networks(), &Map.get(&1, :test_net?))
+  end
+
+  def other_nets do
+    Enum.filter(other_networks(), &Map.get(&1, :other?))
   end
 
   def other_explorers do

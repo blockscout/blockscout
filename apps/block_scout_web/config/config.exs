@@ -67,19 +67,23 @@ config :block_scout_web,
     },
     %{
       title: "Ethereum Classic",
-      url: "https://blockscout.com/etc/mainnet"
+      url: "https://blockscout.com/etc/mainnet",
+      other?: true
     },
     %{
       title: "Aerum Mainnet",
-      url: "https://blockscout.com/aerum/mainnet"
+      url: "https://blockscout.com/aerum/mainnet",
+      other?: true
     },
     %{
       title: "Callisto Mainnet",
-      url: "https://blockscout.com/callisto/mainnet"
+      url: "https://blockscout.com/callisto/mainnet",
+      other?: true
     },
     %{
       title: "RSK Mainnet",
-      url: "https://blockscout.com/rsk/mainnet"
+      url: "https://blockscout.com/rsk/mainnet",
+      other?: true
     }
   ]
 
