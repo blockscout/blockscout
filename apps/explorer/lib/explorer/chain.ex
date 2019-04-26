@@ -1042,7 +1042,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer(), non_neg_integer}
+  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer, non_neg_integer}
   def fetch_min_and_max_block_numbers do
     query =
       from(block in Block,
@@ -1056,6 +1056,17 @@ defmodule Explorer.Chain do
       {nil, nil} -> {0, 0}
       _ -> result
     end
+  end
+
+  @spec fetch_count_consensus_block() :: non_neg_integer
+  def fetch_count_consensus_block do
+    query =
+      from(block in Block,
+        select: count(block.hash),
+        where: block.consensus == true
+      )
+
+    Repo.one!(query)
   end
 
   @doc """
