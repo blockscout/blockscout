@@ -5,7 +5,7 @@ $btn-address-card-icon-dimensions: 31px !default;
   @include square-icon-button($btn-address-card-icon-color, $btn-address-card-icon-dimensions);
 
   svg {
-    height: 22px;
-    width: 22px;
+    height: 10px;
+    width: 20px;
   }
 }

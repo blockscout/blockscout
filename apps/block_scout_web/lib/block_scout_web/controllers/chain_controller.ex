@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.ChainController do
 
   def show(conn, _params) do
     transaction_estimated_count = Chain.transaction_estimated_count()
-    block_count = Chain.block_count()
+    block_count = Chain.block_consensus_count()
 
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 

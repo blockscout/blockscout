@@ -16,10 +16,28 @@ $tile-padding: 1rem;
 
 @mixin generate-tile-block($prefix, $color, $label-color: false) {
 
+  a {
+    @if ($label-color) {
+      color: $label-color;
+    }
+    @else {
+      color: $color;
+    }
+  }
+
   &.tile-type-#{ $prefix } {
     border-left: 4px solid $color;
 
     .tile-label {
+      @if ($label-color) {
+        color: $label-color;
+      }
+      @else {
+        color: $color;
+      }
+    }
+
+    .tile-status-label {
       @if ($label-color) {
         color: $label-color;
       }

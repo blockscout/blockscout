@@ -330,6 +330,21 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  The number of consensus blocks.
+
+      iex> insert(:block, consensus: true)
+      iex> insert(:block, consensus: false)
+      iex> Explorer.Chain.block_consensus_count()
+      1
+
+  """
+  def block_consensus_count do
+    Block
+    |> where(consensus: true)
+    |> Repo.aggregate(:count, :hash)
+  end
+
+  @doc """
   Reward for mining a block.
 
   The block reward is the sum of the following:
@@ -2359,7 +2374,7 @@ defmodule Explorer.Chain do
   @doc """
   The current total number of coins minted minus verifiably burned coins.
   """
-  @spec total_supply :: non_neg_integer()
+  @spec total_supply :: non_neg_integer() | nil
   def total_supply do
     supply_module().total()
   end
@@ -2367,7 +2382,7 @@ defmodule Explorer.Chain do
   @doc """
   The current number coins in the market for trading.
   """
-  @spec circulating_supply :: non_neg_integer()
+  @spec circulating_supply :: non_neg_integer() | nil
   def circulating_supply do
     supply_module().circulating()
   end
