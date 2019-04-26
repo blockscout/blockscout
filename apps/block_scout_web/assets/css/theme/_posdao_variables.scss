@@ -10,6 +10,8 @@ $dashboard-line-color-price: #00b39c;
 $dashboard-line-color-market: #5ab0d3;
 $dashboard-stats-item-border-color: $dashboard-line-color-market;
 
+$stakes-stats-item-border-color: rgba(#fff, 0.5);
+
 $tile-type-block-border-color: $secondary;
 $tile-type-block-color: #333;
 
@@ -29,3 +31,5 @@ $btn-copy-color: $secondary;
 $btn-qr-color: $secondary;
 
 $btn-dropdown-line-color: $secondary;
+
+$tooltip-background-color: $secondary;
