@@ -4,10 +4,7 @@
 
   <section data-page="address-transactions">
     <div class="card">
-      <div class="card-header">
-        <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-      </div>
-
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div class="card-body" data-async-listing="<%= @current_path %>">
         <div data-selector="channel-disconnected-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-danger">
@@ -15,7 +12,7 @@
           </div>
         </div>
         <div class="dropdown float-right u-push-sm">
-          <button data-test="filter_dropdown" class="button button-secondary button-xs dropdown-toggle" type="button"
+          <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
             id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Filter: <%= format_current_filter(@filter) %>
           </button>
