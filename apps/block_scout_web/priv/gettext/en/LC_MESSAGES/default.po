@@ -431,7 +431,7 @@ msgid "GET"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:194
+#: lib/block_scout_web/templates/transaction/overview.html.eex:199
 msgid "Gas"
 msgstr ""
 
@@ -513,7 +513,7 @@ msgid "Less than"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:206
+#: lib/block_scout_web/templates/transaction/overview.html.eex:211
 msgid "Limit"
 msgstr ""
 
@@ -995,7 +995,7 @@ msgid "Unique Token"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:199
+#: lib/block_scout_web/templates/transaction/overview.html.eex:204
 msgid "Used"
 msgstr ""
 

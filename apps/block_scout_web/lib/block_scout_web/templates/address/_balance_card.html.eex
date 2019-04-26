@@ -9,7 +9,7 @@
           <span class="current-balance-in-wei"
             data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
               data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
-          </spanc>
+          </span>
           <small>(@ <span data-usd-unit-price="<%= @exchange_rate.usd_value %>"></span>/<%= gettext("Ether") %>)</small>
           <br>
         </span>
