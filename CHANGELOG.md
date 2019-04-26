@@ -11,10 +11,12 @@
 - [#1829](https://github.com/poanetwork/blockscout/pull/1829) - Handle nil quantities in block decoding routine
 - [#1830](https://github.com/poanetwork/blockscout/pull/1830) - Make block size field nullable
 - [#1840](https://github.com/poanetwork/blockscout/pull/1840) - Handle case when total supply is nil
+- [#1838](https://github.com/poanetwork/blockscout/pull/1838) - Block counter calculates only consensus blocks
 
 ### Chore
 
 - [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
+- [#1837](https://github.com/poanetwork/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
 
 ## 1.3.10-beta
 
