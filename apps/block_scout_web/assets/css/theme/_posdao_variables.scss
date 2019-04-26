@@ -6,7 +6,9 @@ $header-links-color-active: #333;
 $dashboard-banner-gradient-start: $secondary;
 $dashboard-banner-gradient-end: #1e4168;
 
-$dashboard-line-color-market: $primary;
+$dashboard-line-color-price: #00b39c;
+$dashboard-line-color-market: #5ab0d3;
+$dashboard-stats-item-border-color: $dashboard-line-color-market;
 
 $tile-type-block-border-color: $secondary;
 $tile-type-block-color: #333;
