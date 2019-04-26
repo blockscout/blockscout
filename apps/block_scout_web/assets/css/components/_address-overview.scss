@@ -25,7 +25,18 @@
 
 .address-overview {
   .card-section {
-    margin-bottom: 3rem;
+    margin-bottom: $common-container-margin;
+
+    &:first-child {
+
+      .card {
+        margin-right: $common-container-margin;
+
+        @include media-breakpoint-down(md) {
+          margin-right: 0;
+        }
+      }
+    }
   }
 
   .card {

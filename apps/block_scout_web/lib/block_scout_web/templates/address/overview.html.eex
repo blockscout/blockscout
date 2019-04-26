@@ -1,7 +1,7 @@
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>">
   <div class="row">
     <!-- Address details -->
-    <div class="card-section col-md-12 col-lg-8">
+    <div class="card-section col-md-12 col-lg-8 pr-0-md">
       <div class="card">
         <div class="card-body">
           <h1 class="card-title">
@@ -123,7 +123,7 @@
       </div>
     </div>
     <!-- Balance -->
-    <div class="card-section col-md-12 col-lg-4" data-selector="balance-card">
+    <div class="card-section col-md-12 col-lg-4 pl-0-md" data-selector="balance-card">
       <%= render BlockScoutWeb.AddressView, "_balance_card.html", conn: @conn, address: @address, exchange_rate: @exchange_rate, coin_balance_status: @coin_balance_status %>
     </div>
 

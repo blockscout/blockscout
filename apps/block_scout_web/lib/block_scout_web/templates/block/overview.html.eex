@@ -1,8 +1,8 @@
 <section>
   <div class="row">
-    <div class="col-md-12 col-lg-8">
+    <div class="col-md-12 col-lg-8 pr-0-md">
       <!-- Block Details -->
-      <div class="card">
+      <div class="card card-mr-50-md">
         <div class="card-body">
           <h1 class="card-title" data-test="detail_type">
             <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
@@ -111,7 +111,7 @@
       </div>
     </div>
 
-    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
+    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md">
 
       <!-- Validator -->
       <div class="card card-background-1 flex-grow-1">

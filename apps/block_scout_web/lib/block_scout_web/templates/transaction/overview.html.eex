@@ -3,9 +3,9 @@
 <% status = transaction_status(@transaction) %>
 <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
-    <div class="col-md-12 col-lg-8">
+    <div class="col-md-12 col-lg-8 pr-0-md">
       <!-- Transaction Details -->
-      <div class="card">
+      <div class="card card-mr-50-md">
         <div class="card-body">
           <h1 class="card-title">
             <%= gettext "Transaction Details" %>
@@ -170,7 +170,7 @@
     <%= cond do %>
       <% erc20_token_transfer = assigns[:token_transfers] && erc20_token_transfer(@transaction, @token_transfers) -> %>
 
-        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
+        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0">
         <!-- Value -->
         <div class="card card-background-1 flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
@@ -200,7 +200,7 @@
           </div>
         </div>
       <% true -> %>
-        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
+        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md">
         <!-- Value -->
         <div class="card card-background-1 flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
