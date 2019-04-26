@@ -123,7 +123,7 @@
               <%= for %{url: url, title: title} <- head_main_nets() do %>
                 <a class="dropdown-item" href="<%= url%>"><%= title %></a>
               <% end %>
-              <a class="dropdown-item header division">Testnet</a>
+              <a class="dropdown-item header division">Testnets</a>
               <%= for %{url: url, title: title} <- test_nets() do %>
                 <a class="dropdown-item" href="<%= url%>"><%= title %></a>
               <% end %>
