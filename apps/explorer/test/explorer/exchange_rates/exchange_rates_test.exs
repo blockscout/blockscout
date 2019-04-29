@@ -19,6 +19,7 @@ defmodule Explorer.ExchangeRatesTest do
 
     Application.put_env(:explorer, Explorer.ExchangeRates.Source, source: TestSource)
     Application.put_env(:explorer, Explorer.ExchangeRates, table_name: :rates)
+    Application.put_env(:explorer, Explorer.ExchangeRates, enabled: true)
 
     on_exit(fn ->
       Application.put_env(:explorer, Explorer.ExchangeRates.Source, source_configuration)
@@ -134,5 +135,11 @@ defmodule Explorer.ExchangeRatesTest do
 
     assert z == ExchangeRates.lookup("z")
     assert nil == ExchangeRates.lookup("nope")
+  end
+
+  test "lookup when desibled" do
+    Application.put_env(:explorer, Explorer.ExchangeRates, enabled: false)
+
+    assert nil == ExchangeRates.lookup("z")
   end
 end

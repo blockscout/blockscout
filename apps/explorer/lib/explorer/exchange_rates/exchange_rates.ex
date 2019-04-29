@@ -90,7 +90,7 @@ defmodule Explorer.ExchangeRates do
   """
   @spec lookup(String.t()) :: Token.t() | nil
   def lookup(symbol) do
-    if store() == :ets do
+    if store() == :ets and enabled?() do
       case :ets.lookup(table_name(), symbol) do
         [tuple | _] when is_tuple(tuple) -> Token.from_tuple(tuple)
         _ -> nil
@@ -132,5 +132,11 @@ defmodule Explorer.ExchangeRates do
 
   defp store do
     config(:store) || :ets
+  end
+
+  defp enabled? do
+    :explorer
+    |> Application.fetch_env!(__MODULE__)
+    |> Keyword.fetch!(:enabled)
   end
 end
