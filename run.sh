@@ -39,5 +39,8 @@ echo "Postgres is available: continuing with database setup..."
 mix ecto.create
 mix ecto.migrate
 
+# perform assets compilation
+mix phx.digest
+
 echo " Launching Phoenix web server..."
 mix phx.server

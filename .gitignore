@@ -45,3 +45,5 @@ screenshots/
 
 # docker-compose env vars
 .env
+# ignore postgres data from mounted volume
+postgres-data/
