@@ -3,10 +3,7 @@
 
   <section>
     <div class="card">
-      <div class="card-header">
-        <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-      </div>
-
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div data-async-load data-async-listing="<%= @current_path %>" class="card-body">
         <h2 class="card-title">
           <span class="text-muted"><%= gettext "Tokens" %></span> / <%= token_name(@token) %>

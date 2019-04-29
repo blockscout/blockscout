@@ -3,10 +3,7 @@
 
   <section>
     <div class="card">
-      <div class="card-header">
-        <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-      </div>
-
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div class="card-body">
         <h2 class="card-title"><%= gettext "Tokens" %></h2>
         <%= if Enum.any?(@tokens) do %>
