@@ -1732,3 +1732,10 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:225
 msgid "Gas"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:24
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:10
+#: lib/block_scout_web/views/transaction_view.ex:341
+msgid "Raw Trace"
+msgstr ""
