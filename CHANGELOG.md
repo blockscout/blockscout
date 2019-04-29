@@ -2,11 +2,32 @@
 
 ### Features
 
+- [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
+- [#1813](https://github.com/poanetwork/blockscout/pull/1813) - add total blocks counter to the main page
+- [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
+
+### Fixes
+
+- [#1829](https://github.com/poanetwork/blockscout/pull/1829) - Handle nil quantities in block decoding routine
+- [#1830](https://github.com/poanetwork/blockscout/pull/1830) - Make block size field nullable
+- [#1840](https://github.com/poanetwork/blockscout/pull/1840) - Handle case when total supply is nil
+- [#1838](https://github.com/poanetwork/blockscout/pull/1838) - Block counter calculates only consensus blocks
+
+### Chore
+
+- [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
+- [#1837](https://github.com/poanetwork/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
+
+## 1.3.10-beta
+
+### Features
+
 - [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
 - [#1696](https://github.com/poanetwork/blockscout/pull/1696) - full-text search by tokens
 - [#1742](https://github.com/poanetwork/blockscout/pull/1742) - Support RSK
 - [#1777](https://github.com/poanetwork/blockscout/pull/1777) - show ERC-20 token transfer info on transaction page
 - [#1770](https://github.com/poanetwork/blockscout/pull/1770) - set a websocket keepalive from config
+- [#1789](https://github.com/poanetwork/blockscout/pull/1789) - add ERC-721 info to transaction overview page
 
 ### Fixes
 
@@ -18,9 +39,18 @@
  - [#1769](https://github.com/poanetwork/blockscout/pull/1769) - add timestamp to block overview
  - [#1768](https://github.com/poanetwork/blockscout/pull/1768) - fix first block parameter
  - [#1778](https://github.com/poanetwork/blockscout/pull/1778) - Make websocket optional for realtime fetcher
+ - [#1790](https://github.com/poanetwork/blockscout/pull/1790) - fix constructor arguments verification
+ - [#1793](https://github.com/poanetwork/blockscout/pull/1793) - fix top nav autocomplete
+ - [#1795](https://github.com/poanetwork/blockscout/pull/1795) - fix line numbers for decompiled contracts
+ - [#1803](https://github.com/poanetwork/blockscout/pull/1803) - use coinmarketcap for total_supply by default
+ - [#1802](https://github.com/poanetwork/blockscout/pull/1802) - make coinmarketcap's number of pages configurable
+ - [#1799](https://github.com/poanetwork/blockscout/pull/1799) - Use eth_getUncleByBlockHashAndIndex for uncle block fetching
+ - [#1531](https://github.com/poanetwork/blockscout/pull/1531) - docker: fix dockerFile for secp256k1 building
+ - [#1835](https://github.com/poanetwork/blockscout/pull/1835) - fix: ignore `pong` messages without error
 
 ### Chore
 
+ - [#1804](https://github.com/poanetwork/blockscout/pull/1804) - (Chore) Divide chains by Mainnet/Testnet in menu
  - [#1783](https://github.com/poanetwork/blockscout/pull/1783) - Update README with the chains that use Blockscout
  - [#1780](https://github.com/poanetwork/blockscout/pull/1780) - Update link to the Github repo in the footer
  - [#1757](https://github.com/poanetwork/blockscout/pull/1757) - Change twitter acc link to official Blockscout acc twitter
@@ -29,6 +59,7 @@
  - [#1753](https://github.com/poanetwork/blockscout/pull/1753) - Add a check mark to decompiled contract tab
  - [#1744](https://github.com/poanetwork/blockscout/pull/1744) - remove `0x0..0` from tests
  - [#1763](https://github.com/poanetwork/blockscout/pull/1763) - Describe indexer structure and list existing fetchers
+ - [#1800](https://github.com/poanetwork/blockscout/pull/1800) - Disable lazy logging check in Credo
 
 
 ## 1.3.9-beta

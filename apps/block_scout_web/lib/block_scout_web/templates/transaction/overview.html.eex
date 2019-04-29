@@ -138,9 +138,10 @@
       </div>
     </div>
 
-    <% token_transfer = assigns[:token_transfers] && erc20_token_transfer(@transaction, @token_transfers) %>
-    <%= if token_transfer do %>
-      <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
+    <%= cond do %>
+      <% erc20_token_transfer = assigns[:token_transfers] && erc20_token_transfer(@transaction, @token_transfers) -> %>
+
+        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
         <!-- Value -->
         <div class="card card-primary flex-grow-1">
           <div class="card-body">
@@ -148,15 +149,32 @@
             <div class="text-right">
               <h3 class="text-white">
                 <span class="col-12 col-md-7 ml-3 ml-sm-0">
-                  <%= token_transfer_amount(token_transfer) %>
-                  <%= link(token_symbol(token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, token_transfer.token.contract_address_hash)) %>
+                  <%= token_transfer_amount(erc20_token_transfer) %>
+                  <%= link(token_symbol(erc20_token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, erc20_token_transfer.token.contract_address_hash)) %>
                 </span>
               </h3>
             </div>
           </div>
-      </div>
-    <% else %>
-      <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
+        </div>
+      <% erc721_token_transfer = assigns[:token_transfers] && erc721_token_transfer(@transaction, @token_transfers) -> %>
+
+        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
+        <!-- Value -->
+        <div class="card card-primary flex-grow-1">
+          <div class="card-body">
+            <h2 class="card-title text-white"><%= gettext "ERC-721" %> <%= gettext "Token Transfer" %></h2>
+            <div class="text-right">
+              <h3 class="text-white">
+                <span class="col-12 col-md-7 ml-3 ml-sm-0">
+                  <%= token_transfer_amount(erc721_token_transfer) %>
+                  <%= link(token_symbol(erc721_token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, erc721_token_transfer.token.contract_address_hash)) %>
+                </span>
+              </h3>
+            </div>
+          </div>
+        </div>
+      <% true -> %>
+        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
         <!-- Value -->
         <div class="card card-primary flex-grow-1">
           <div class="card-body">

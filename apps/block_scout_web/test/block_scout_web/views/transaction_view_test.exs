@@ -47,6 +47,30 @@ defmodule BlockScoutWeb.TransactionViewTest do
     end
   end
 
+  describe "erc721_token_transfer/2" do
+    test "finds token transfer" do
+      from_address_hash = "0x7a30272c902563b712245696f0a81c5a0e45ddc8"
+      to_address_hash = "0xb544cead8b660aae9f2e37450f7be2ffbc501793"
+      from_address = insert(:address, hash: from_address_hash)
+      to_address = insert(:address, hash: to_address_hash)
+      block = insert(:block)
+
+      transaction =
+        insert(:transaction,
+          input:
+            "0x23b872dd0000000000000000000000007a30272c902563b712245696f0a81c5a0e45ddc8000000000000000000000000b544cead8b660aae9f2e37450f7be2ffbc5017930000000000000000000000000000000000000000000000000000000000000002",
+          value: Decimal.new(0),
+          created_contract_address_hash: nil
+        )
+        |> with_block(block, status: :ok)
+
+      token_transfer =
+        insert(:token_transfer, from_address: from_address, to_address: to_address, transaction: transaction)
+
+      assert TransactionView.erc721_token_transfer(transaction, [token_transfer]) == token_transfer
+    end
+  end
+
   describe "processing_time_duration/2" do
     test "returns :pending if the transaction has no block" do
       transaction = build(:transaction, block: nil)

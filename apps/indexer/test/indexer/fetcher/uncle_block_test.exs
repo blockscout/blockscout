@@ -4,6 +4,8 @@ defmodule Indexer.Fetcher.UncleBlockTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
 
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+
   alias Explorer.Chain
   alias Indexer.Block
   alias Indexer.Fetcher.UncleBlock
@@ -43,16 +45,30 @@ defmodule Indexer.Fetcher.UncleBlockTest do
 
   describe "init/1" do
     test "fetched unfetched uncle hashes", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      assert %Chain.Block.SecondDegreeRelation{nephew_hash: nephew_hash, uncle_hash: uncle_hash, uncle: nil} =
+      assert %Chain.Block.SecondDegreeRelation{
+               nephew_hash: nephew_hash,
+               uncle_hash: uncle_hash,
+               index: index,
+               uncle: nil
+             } =
                :block_second_degree_relation
                |> insert()
                |> Repo.preload([:nephew, :uncle])
 
+      nephew_hash_data = to_string(nephew_hash)
       uncle_hash_data = to_string(uncle_hash)
       uncle_uncle_hash_data = to_string(block_hash())
+      index_data = integer_to_quantity(index)
 
       EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [%{id: id, method: "eth_getBlockByHash", params: [^uncle_hash_data, true]}], _ ->
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  method: "eth_getUncleByBlockHashAndIndex",
+                                  params: [^nephew_hash_data, ^index_data]
+                                }
+                              ],
+                              _ ->
         number_quantity = "0x0"
 
         {:ok,
