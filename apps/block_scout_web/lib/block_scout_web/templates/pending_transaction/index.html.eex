@@ -1,14 +1,12 @@
 <section class="container" data-page="transaction-pending-list">
   <div class="card">
     <div class="card-body" data-async-listing="<%= @current_path %>">
-
-      <h1><%= gettext "Pending Transactions" %></h1>
-      <p>
+      <h1 class="card-title margin-bottom-0"><%= gettext "Pending Transactions" %></h1>
+      <p class="card-subtitle">
         <%= gettext("Showing") %>
         <span data-selector="transaction-pending-count"><%= Cldr.Number.to_string!(@pending_transaction_count, format: "#,###") %></span>
         <%= gettext("Pending Transactions") %>
       </p>
-
       <div data-selector="channel-batching-message" style="display:none;">
         <div data-selector="reload-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>

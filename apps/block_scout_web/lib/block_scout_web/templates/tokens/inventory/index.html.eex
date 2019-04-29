@@ -10,9 +10,7 @@
 
   <section>
     <div class="card">
-      <div class="card-header">
-        <%= render OverviewView, "_tabs.html", assigns %>
-      </div>
+      <%= render OverviewView, "_tabs.html", assigns %>
 
       <div class="card-body">
         <h2 class="card-title"><%= gettext "Inventory" %></h2>

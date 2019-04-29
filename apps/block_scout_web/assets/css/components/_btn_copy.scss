@@ -1,0 +1,6 @@
+$btn-copy-color: $primary !default;
+$btn-copy-dimensions: 31px !default;
+
+.btn-copy-icon {
+  @include square-icon-button($btn-copy-color, $btn-copy-dimensions);
+}

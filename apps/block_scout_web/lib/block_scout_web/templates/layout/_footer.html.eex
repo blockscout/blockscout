@@ -1,43 +1,35 @@
 <footer class="footer">
   <div class="footer-body container">
-    <div class="row">
-      <div class="col-md-4">
+    <!-- Logo -->
+    <div class="row footer-logo-row">
+      <div class="col-md-12">
         <%= link to: chain_path(@conn, :show), class: "footer-brand" do %>
-          <img class="footer-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
+          <img class="footer-logo" src="<%= logo_footer() %>" alt="<%= subnetwork_title() %>" />
         <% end %>
-      </div>
-      <div class="col-md-5">
-      </div>
-
-      <div class="col-md-3">
-        <div class="icon-links icon-links-primary footer-social-icons">
-          <a href="https://github.com/poanetwork/blockscout" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Github") %>">
-            <i class="fab fa-github"></i>
-          </a>
-          <a href="https://www.twitter.com/_blockscout/" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Twitter") %>">
-            <i class="fab fa-twitter"></i>
-          </a>
-          <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Telegram") %>">
-            <i class="fab fa-telegram-plane"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <div class="row footer-info">
-      <div class="col-12">
-        <%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %>
       </div>
     </div>
 
     <% other_explorers = other_explorers() %>
-
-    <% col_size = if Enum.empty?(other_explorers), do: 4, else: 3 %>
+    <% col_size = if Enum.empty?(other_explorers), do: 3, else: 4 %>
 
     <div class="row">
+      <div class="col-md-<%= col_size %>">
+        <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
+        <div class="footer-social-icons">
+          <a href="https://github.com/poanetwork/blockscout" rel="noreferrer" target="_blank" class="footer-social-icon" data-toggle="tooltip" data-placement="top" title='<%= gettext("Github") %>'>
+            <i class="fab fa-github"></i>
+          </a>
+          <a href="https://www.twitter.com/_blockscout/" rel="noreferrer" target="_blank" class="footer-social-icon" data-toggle="tooltip" data-placement="top" title='<%= gettext("Twitter") %>'>
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="footer-social-icon" data-toggle="tooltip" data-placement="top" title='<%= gettext("Telegram") %>'>
+            <i class="fab fa-telegram-plane"></i>
+          </a>
+        </div>
+      </div>
+
       <div class="col-md-<%= col_size %> footer-list">
         <h3>BlockScout</h3>
-        <hr>
         <ul>
           <li><a href="<%= issue_link(@conn) %>" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
           <li><a href="https://github.com/poanetwork/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
@@ -50,7 +42,6 @@
       <%= unless Enum.empty?(main_nets) do %>
         <div class="col-md-<%= col_size %> footer-list">
           <h3><%= gettext("Main Networks") %></h3>
-          <hr>
           <ul>
             <%= for %{title: title, url: url} <- main_nets do %>
               <li><a href="<%= url%>" rel="norefferer" class="footer-link"> <%= title %> </a></li>
@@ -64,7 +55,6 @@
       <%= unless Enum.empty?(test_nets) do %>
         <div class="col-md-<%= col_size %> footer-list">
           <h3><%= gettext("Test Networks") %></h3>
-          <hr>
           <ul>
             <%= for %{title: title, url: url} <- test_nets do %>
               <li><a href="<%= url%>" rel="noreferrer" class="footer-link"> <%= title %> </a></li>
@@ -73,11 +63,9 @@
         </div>
       <% end %>
 
-
       <%= unless Enum.empty?(other_explorers) do %>
         <div class="col-md-<%= col_size %> footer-list">
           <h3><%= gettext("Other Explorers") %></h3>
-          <hr>
           <ul>
             <%= for {name, url} <- other_explorers do %>
               <li><a href="<%= url%>" rel="noreferrer" class="footer-link"> <%= name %> </a></li>

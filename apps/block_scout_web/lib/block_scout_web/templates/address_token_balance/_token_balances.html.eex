@@ -13,7 +13,7 @@
      <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>
   </a>
 <% else %>
-   <span data-tokens-count class="text-white text-faded"><%= tokens_count_title(@token_balances) %></span>
+   <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>
 <% end %>
 
 <div class="dropdown-menu dropdown-menu-right token-balance-dropdown p-0" aria-labelledby="dropdown-tokens">

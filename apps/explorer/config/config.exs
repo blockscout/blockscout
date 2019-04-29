@@ -82,6 +82,8 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   tracer: Explorer.Tracer,
   otp_app: :explorer
 
+config :explorer, Explorer.Chain.BlockCountCache, ttl: System.get_env("BLOCK_COUNT_CACHE_TTL")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
