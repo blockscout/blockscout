@@ -90,7 +90,7 @@ defmodule Explorer.ExchangeRates do
   """
   @spec lookup(String.t()) :: Token.t() | nil
   def lookup(symbol) do
-    if store() == :ets and enabled?() do
+    if store() == :ets && enabled?() do
       case :ets.lookup(table_name(), symbol) do
         [tuple | _] when is_tuple(tuple) -> Token.from_tuple(tuple)
         _ -> nil
