@@ -10,6 +10,7 @@
 
 - [#1829](https://github.com/poanetwork/blockscout/pull/1829) - Handle nil quantities in block decoding routine
 - [#1830](https://github.com/poanetwork/blockscout/pull/1830) - Make block size field nullable
+- [#1840](https://github.com/poanetwork/blockscout/pull/1840) - Handle case when total supply is nil
 - [#1838](https://github.com/poanetwork/blockscout/pull/1838) - Block counter calculates only consensus blocks
 
 ### Chore
@@ -21,6 +22,7 @@
 
 ### Features
 
+- [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
 - [#1739](https://github.com/poanetwork/blockscout/pull/1739) - highlight decompiled source code
 - [#1696](https://github.com/poanetwork/blockscout/pull/1696) - full-text search by tokens
 - [#1742](https://github.com/poanetwork/blockscout/pull/1742) - Support RSK

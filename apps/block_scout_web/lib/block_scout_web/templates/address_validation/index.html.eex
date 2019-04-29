@@ -3,57 +3,13 @@
 
   <section data-page="blocks-validated">
     <div class="card">
-      <div class="card-header">
-        <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-
-        <ul class="nav nav-tabs card-header-tabs d-md-none">
-          <li class="nav-item dropdown flex-fill text-center">
-            <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><%= gettext "Tokens" %></a>
-            <div class="dropdown-menu">
-              <%= link(
-                gettext("Transactions"),
-                class: "dropdown-item",
-                to: address_transaction_path(@conn, :index, @address.hash)
-              ) %>
-              <%= link(
-                gettext("Tokens"),
-                class: "dropdown-item",
-                to: address_token_path(@conn, :index, @address.hash)
-              ) %>
-              <%= link(
-                gettext("Internal Transactions"),
-                class: "dropdown-item",
-                "data-test": "internal_transactions_tab_link",
-                to: address_internal_transaction_path(@conn, :index, @address.hash)
-              ) %>
-              <%= link(
-                gettext("Blocks Validated"),
-                class: "dropdown-item active",
-                "data-test": "validations_tab_link",
-                to: address_validation_path(@conn, :index, @address.hash)
-              ) %>
-              <%= if contract?(@address) do %>
-                <%= link(
-                  to: address_contract_path(@conn, :index, @address.hash),
-                  class: "dropdown-item") do %>
-                    <%= gettext("Code") %>
-                    <%= if smart_contract_verified?(@address) do %>
-                      <i class="far fa-check-circle"></i>
-                    <% end %>
-                  <% end %>
-              <% end %>
-            </div>
-          </li>
-        </ul>
-      </div>
-
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div data-async-listing="<%= @current_path %>" class="card-body">
         <div data-selector="channel-disconnected-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer validations" %></a>
           </div>
         </div>
-
         <h2 class="card-title"><%=gettext("Blocks Validated")%></h2>
         <div data-loading-message class="tile tile-muted text-center mt-3">
           <span class="loading-spinner-small mr-2">
