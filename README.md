@@ -394,7 +394,7 @@ If all queues are at their minimum size, then no more memory can be reclaimed an
 
 See `Dockerfile` and `docker-compose.yml` for more.
 
-## Acknowledgementsh
+## Acknowledgements
 
 We would like to thank the [EthPrize foundation](http://ethprize.io/) for their funding support.
 

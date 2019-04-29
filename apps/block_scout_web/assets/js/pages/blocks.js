@@ -99,18 +99,18 @@ if ($blockListPage.length || $uncleListPage.length || $reorgListPage.length) {
 
 export function placeHolderBlock (blockNumber) {
   return `
-    <div class="my-3" style="height: 98px;" data-selector="place-holder" data-block-number="${blockNumber}">
+    <div class="my-3" data-selector="place-holder" data-block-number="${blockNumber}">
       <div
         class="tile tile-type-block d-flex align-items-center fade-up"
-        style="height: 98px;"
+        style="min-height: 90px;"
       >
         <span class="loading-spinner-small ml-1 mr-4">
           <span class="loading-spinner-block-1"></span>
           <span class="loading-spinner-block-2"></span>
         </span>
         <div>
-          <div class="tile-title">${blockNumber}</div>
-          <div>${window.localized['Block Processing']}</div>
+          <span class="tile-title pr-0 pl-0">${blockNumber}</span>
+          <div class="tile-transactions">${window.localized['Block Processing']}</div>
         </div>
       </div>
     </div>

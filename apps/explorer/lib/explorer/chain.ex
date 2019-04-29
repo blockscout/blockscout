@@ -330,6 +330,21 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  The number of consensus blocks.
+
+      iex> insert(:block, consensus: true)
+      iex> insert(:block, consensus: false)
+      iex> Explorer.Chain.block_consensus_count()
+      1
+
+  """
+  def block_consensus_count do
+    Block
+    |> where(consensus: true)
+    |> Repo.aggregate(:count, :hash)
+  end
+
+  @doc """
   Reward for mining a block.
 
   The block reward is the sum of the following:
@@ -1027,7 +1042,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer(), non_neg_integer}
+  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer, non_neg_integer}
   def fetch_min_and_max_block_numbers do
     query =
       from(block in Block,
@@ -1041,6 +1056,17 @@ defmodule Explorer.Chain do
       {nil, nil} -> {0, 0}
       _ -> result
     end
+  end
+
+  @spec fetch_count_consensus_block() :: non_neg_integer
+  def fetch_count_consensus_block do
+    query =
+      from(block in Block,
+        select: count(block.hash),
+        where: block.consensus == true
+      )
+
+    Repo.one!(query)
   end
 
   @doc """
@@ -1479,24 +1505,23 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of all `t:Explorer.Chain.Block.t/0` `hash`es that are marked as unfetched in
-  `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`.
+  Returns a stream of all blocks that are marked as unfetched in `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`.
+  For each uncle block a `hash` of nephew block and an `index` of the block in it are returned.
 
   When a block is fetched, its uncles are transformed into `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` and can be
   returned.  Once the uncle is imported its corresponding `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`
   `uncle_fetched_at` will be set and it won't be returned anymore.
   """
-  @spec stream_unfetched_uncle_hashes(
+  @spec stream_unfetched_uncles(
           initial :: accumulator,
-          reducer :: (entry :: Hash.Full.t(), accumulator -> accumulator)
+          reducer :: (entry :: term(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_unfetched_uncle_hashes(initial, reducer) when is_function(reducer, 2) do
+  def stream_unfetched_uncles(initial, reducer) when is_function(reducer, 2) do
     query =
       from(bsdr in Block.SecondDegreeRelation,
-        where: is_nil(bsdr.uncle_fetched_at),
-        select: bsdr.uncle_hash,
-        group_by: bsdr.uncle_hash
+        where: is_nil(bsdr.uncle_fetched_at) and not is_nil(bsdr.index),
+        select: [:nephew_hash, :index]
       )
 
     Repo.stream_reduce(query, initial, reducer)
@@ -2360,7 +2385,7 @@ defmodule Explorer.Chain do
   @doc """
   The current total number of coins minted minus verifiably burned coins.
   """
-  @spec total_supply :: non_neg_integer()
+  @spec total_supply :: non_neg_integer() | nil
   def total_supply do
     supply_module().total()
   end
@@ -2368,13 +2393,13 @@ defmodule Explorer.Chain do
   @doc """
   The current number coins in the market for trading.
   """
-  @spec circulating_supply :: non_neg_integer()
+  @spec circulating_supply :: non_neg_integer() | nil
   def circulating_supply do
     supply_module().circulating()
   end
 
   defp supply_module do
-    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
+    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.CoinMarketCap)
   end
 
   @doc """
