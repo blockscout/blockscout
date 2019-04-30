@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.ChainController do
 
   alias BlockScoutWeb.ChainView
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain.{Address, Block, BlockCountCache, Transaction}
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market
@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.ChainController do
 
   def show(conn, _params) do
     transaction_estimated_count = Chain.transaction_estimated_count()
+    block_count = BlockCountCache.count()
 
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
@@ -22,7 +23,8 @@ defmodule BlockScoutWeb.ChainController do
       exchange_rate: exchange_rate,
       chart_data_path: market_history_chart_path(conn, :show),
       transaction_estimated_count: transaction_estimated_count,
-      transactions_path: recent_transactions_path(conn, :index)
+      transactions_path: recent_transactions_path(conn, :index),
+      block_count: block_count
     )
   end
 
@@ -37,6 +39,23 @@ defmodule BlockScoutWeb.ChainController do
       {:error, :not_found} ->
         not_found(conn)
     end
+  end
+
+  def token_autocomplete(conn, %{"q" => term}) when is_binary(term) do
+    if term == "" do
+      json(conn, "{}")
+    else
+      result =
+        term
+        |> String.trim()
+        |> Chain.search_token()
+
+      json(conn, result)
+    end
+  end
+
+  def token_autocomplete(conn, _) do
+    json(conn, "{}")
   end
 
   def chain_blocks(conn, _params) do
