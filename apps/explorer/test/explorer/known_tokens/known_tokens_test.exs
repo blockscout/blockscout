@@ -130,7 +130,7 @@ defmodule Explorer.KnownTokensTest do
     assert nil == KnownTokens.lookup("nope")
   end
 
-  test "lookup when desibled" do
+  test "lookup when disabled" do
     Application.put_env(:explorer, Explorer.KnownTokens, enabled: false)
 
     assert nil == KnownTokens.lookup("z")

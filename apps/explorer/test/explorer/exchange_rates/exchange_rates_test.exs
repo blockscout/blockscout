@@ -137,7 +137,7 @@ defmodule Explorer.ExchangeRatesTest do
     assert nil == ExchangeRates.lookup("nope")
   end
 
-  test "lookup when desibled" do
+  test "lookup when disabled" do
     Application.put_env(:explorer, Explorer.ExchangeRates, enabled: false)
 
     assert nil == ExchangeRates.lookup("z")
