@@ -124,7 +124,7 @@
                     call.createdContractAddressHash = toHex(toAddress(ret.toString(16)));
                     call.createdContractCode = toHex(db.getCode(toAddress(ret.toString(16))));
                 } else {
-                    call.output = toHex(log.memory.slice(call.outOff, call.outOff + call.outLen));
+                    call.output = toHex(log.memory.slice(call.outputOffset, call.outputOffset + call.outputLength));
                 }
             } else if (call.error === undefined) {
                 call.error = 'internal failure';
