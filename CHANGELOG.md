@@ -13,6 +13,7 @@
 - [#1840](https://github.com/poanetwork/blockscout/pull/1840) - Handle case when total supply is nil
 - [#1838](https://github.com/poanetwork/blockscout/pull/1838) - Block counter calculates only consensus blocks
 - [#1849](https://github.com/poanetwork/blockscout/pull/1849) - Improve chains menu
+- [#1868](https://github.com/poanetwork/blockscout/pull/1868) - fix: logs list endpoint performance
 
 ### Chore
 
