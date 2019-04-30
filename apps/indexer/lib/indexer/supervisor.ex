@@ -25,7 +25,8 @@ defmodule Indexer.Supervisor do
   alias Indexer.Temporary.{
     AddressesWithoutCode,
     FailedCreatedAddresses,
-    UncatalogedTokenTransfers
+    UncatalogedTokenTransfers,
+    UnclesWithoutIndex
   }
 
   def child_spec([]) do
@@ -129,7 +130,9 @@ defmodule Indexer.Supervisor do
         # Temporary workers
         {AddressesWithoutCode.Supervisor, [fixing_realtime_fetcher]},
         {FailedCreatedAddresses.Supervisor, [json_rpc_named_arguments]},
-        {UncatalogedTokenTransfers.Supervisor, [[]]}
+        {UncatalogedTokenTransfers.Supervisor, [[]]},
+        {UnclesWithoutIndex.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
       ],
       strategy: :one_for_one
     )

@@ -1044,7 +1044,8 @@ defmodule Explorer.ChainTest do
         params: [
           %{
             nephew_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-            uncle_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471be"
+            uncle_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471be",
+            index: 0
           }
         ]
       },
@@ -3258,21 +3259,24 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "stream_unfetched_uncle_hashes/2" do
+  describe "stream_unfetched_uncles/2" do
     test "does not return uncle hashes where t:Explorer.Chain.Block.SecondDegreeRelation.t/0 uncle_fetched_at is not nil" do
-      %Block.SecondDegreeRelation{nephew: %Block{}, uncle_hash: uncle_hash} = insert(:block_second_degree_relation)
+      %Block.SecondDegreeRelation{nephew: %Block{}, nephew_hash: nephew_hash, index: index, uncle_hash: uncle_hash} =
+        insert(:block_second_degree_relation)
 
-      assert {:ok, [^uncle_hash]} = Explorer.Chain.stream_unfetched_uncle_hashes([], &[&1 | &2])
+      assert {:ok, [%{nephew_hash: ^nephew_hash, index: ^index}]} =
+               Explorer.Chain.stream_unfetched_uncles([], &[&1 | &2])
 
       query = from(bsdr in Block.SecondDegreeRelation, where: bsdr.uncle_hash == ^uncle_hash)
 
       assert {1, _} = Repo.update_all(query, set: [uncle_fetched_at: DateTime.utc_now()])
 
-      assert {:ok, []} = Explorer.Chain.stream_unfetched_uncle_hashes([], &[&1 | &2])
+      assert {:ok, []} = Explorer.Chain.stream_unfetched_uncles([], &[&1 | &2])
     end
   end
 
   test "total_supply/0" do
+    Application.put_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
     height = 2_000_000
     insert(:block, number: height)
     expected = ProofOfAuthority.initial_supply() + height
@@ -3281,6 +3285,7 @@ defmodule Explorer.ChainTest do
   end
 
   test "circulating_supply/0" do
+    Application.put_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
     assert Chain.circulating_supply() == ProofOfAuthority.circulating()
   end
 
@@ -3331,6 +3336,41 @@ defmodule Explorer.ChainTest do
         |> Enum.map(& &1.contract_address_hash)
 
       assert Chain.stream_cataloged_token_contract_address_hashes([], &(&2 ++ [&1])) == {:ok, expected_response}
+    end
+  end
+
+  describe "search_token/1" do
+    test "finds by part of the name" do
+      token = insert(:token, name: "magic token", symbol: "MAGIC")
+
+      [result] = Chain.search_token("magic")
+
+      assert result.contract_address_hash == token.contract_address_hash
+    end
+
+    test "finds multiple results in different columns" do
+      insert(:token, name: "magic token", symbol: "TOKEN")
+      insert(:token, name: "token", symbol: "MAGIC")
+
+      result = Chain.search_token("magic")
+
+      assert Enum.count(result) == 2
+    end
+
+    test "do not returns wrong tokens" do
+      insert(:token, name: "token", symbol: "TOKEN")
+
+      result = Chain.search_token("magic")
+
+      assert Enum.empty?(result)
+    end
+
+    test "finds record by the term in the second word" do
+      insert(:token, name: "token magic", symbol: "TOKEN")
+
+      result = Chain.search_token("magic")
+
+      assert Enum.count(result) == 1
     end
   end
 
@@ -3663,6 +3703,22 @@ defmodule Explorer.ChainTest do
       assert balances == [
                %{date: yesterday |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("2E-15")},
                %{date: today |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")}
+             ]
+    end
+
+    test "adds todays entry" do
+      address = insert(:address)
+      today = NaiveDateTime.utc_now()
+      noon = Timex.set(today, hour: 12)
+      yesterday = Timex.shift(noon, days: -1)
+      block_one_day_ago = insert(:block, timestamp: yesterday)
+      insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block_one_day_ago.number)
+
+      balances = Chain.address_to_balances_by_day(address.hash)
+
+      assert balances == [
+               %{date: today |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")},
+               %{date: yesterday |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")}
              ]
     end
   end

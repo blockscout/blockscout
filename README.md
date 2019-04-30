@@ -52,6 +52,9 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 * [Goerli Testnet](https://blockscout.com/eth/goerli)
 * [Rinkeby Testnet](https://blockscout.com/eth/rinkeby)
 * [Ethereum Classic](https://blockscout.com/etc/mainnet)
+* [Aerum](https://blockscout.com/aerum/mainnet)
+* [Callisto](https://blockscout.com/callisto/mainnet)
+* [RSK](https://blockscout.com/rsk/mainnet)
 
 #### Additional Chains Utilizing BlockScout
 
@@ -61,6 +64,7 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 * [SafeChain](https://explorer.safechain.io)
 * [SpringChain](https://explorer.springrole.com/)
 * [PIRL](http://pirl.es/)
+* [Petrichor](https://explorer.petrichor-dev.com/)
 
 
 ### Visual Interface

@@ -57,8 +57,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   @impl GenServer
-  def init(%{block_fetcher: %Block.Fetcher{} = block_fetcher, subscribe_named_arguments: subscribe_named_arguments})
-      when is_list(subscribe_named_arguments) do
+  def init(%{block_fetcher: %Block.Fetcher{} = block_fetcher, subscribe_named_arguments: subscribe_named_arguments}) do
     Logger.metadata(fetcher: :block_realtime)
 
     {:ok, %__MODULE__{block_fetcher: %Block.Fetcher{block_fetcher | broadcast: :realtime, callback_module: __MODULE__}},
@@ -66,17 +65,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   @impl GenServer
-  def handle_continue({:init, subscribe_named_arguments}, %__MODULE__{subscription: nil} = state)
-      when is_list(subscribe_named_arguments) do
-    case EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments) do
-      {:ok, subscription} ->
-        timer = schedule_polling()
-
-        {:noreply, %__MODULE__{state | subscription: subscription, timer: timer}}
-
-      {:error, reason} ->
-        {:stop, reason, state}
-    end
+  def handle_continue({:init, subscribe_named_arguments}, %__MODULE__{subscription: nil} = state) do
+    timer = schedule_polling()
+    {:noreply, %__MODULE__{state | timer: timer} |> subscribe_to_new_heads(subscribe_named_arguments)}
   end
 
   @impl GenServer
@@ -140,6 +131,20 @@ defmodule Indexer.Block.Realtime.Fetcher do
          timer: timer
      }}
   end
+
+  defp subscribe_to_new_heads(%__MODULE__{subscription: nil} = state, subscribe_named_arguments)
+       when is_list(subscribe_named_arguments) do
+    case EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments) do
+      {:ok, subscription} ->
+        %__MODULE__{state | subscription: subscription}
+
+      {:error, reason} ->
+        Logger.debug(fn -> ["Could not connect to websocket: ", reason, ". Continuing with polling."] end)
+        state
+    end
+  end
+
+  defp subscribe_to_new_heads(state, _), do: state
 
   defp new_max_number(number, nil), do: number
 
