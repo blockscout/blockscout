@@ -1,0 +1,9 @@
+<div class="progress-from-to">
+    <div class="progress-from-to-values">
+        <div class="progress-from-to-value"><%= @from %></div>
+        <div class="progress-from-to-value"><%= @to %></div>
+    </div>
+    <div class="progress-from-to-background">
+        <div class="progress-from-to-progress" style="width: <%= @progress %>%"></div>
+    </div>
+</div>

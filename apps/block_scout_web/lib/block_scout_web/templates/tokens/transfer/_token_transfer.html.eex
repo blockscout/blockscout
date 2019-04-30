@@ -1,14 +1,13 @@
 <div class="tile tile-type-token-transfer fade-in">
-  <div class="row">
-    <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
+  <div class="row tile-body">
+    <!-- Color Block -->
+    <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
       <span class="tile-label"><%= gettext "Token Transfer" %></span>
     </div>
-
-    <div class="col-md-7 col-lg-8 d-flex flex-column">
-      <p class="tile-title text-truncate">
-        <%= render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @transfer.transaction_hash %>
-      </p>
-      <span>
+    <!-- Content -->
+    <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
+      <%= render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @transfer.transaction_hash %>
+      <span class="text-nowrap">
         <%= link to: address_token_transfers_path(@conn, :index, @transfer.from_address, @token.contract_address_hash), "data-test": "address_hash_link" do %>
             <%= render(
                   BlockScoutWeb.AddressView,
@@ -17,9 +16,7 @@
                   contract: BlockScoutWeb.AddressView.contract?(@transfer.from_address)
                 ) %>
         <% end %>
-
         &rarr;
-
         <%= link to: address_token_transfers_path(@conn, :index, @transfer.to_address, @token.contract_address_hash), "data-test": "address_hash_link" do %>
             <%= render(
                   BlockScoutWeb.AddressView,
@@ -29,26 +26,22 @@
                 ) %>
         <% end %>
       </span>
-
-      <span>
-        <span>
-          <%= token_transfer_amount(@transfer) %> <%= @transfer.token.symbol %></span>
+      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+        <span class="tile-title">
+          <%= token_transfer_amount(@transfer) %>
+          <%= @transfer.token.symbol %>
+        </span>
       </span>
     </div>
-
-    <div class="col-md-2 col-lg-2 d-flex flex-row flex-md-column justify-content-start align-items-end text-md-right">
-        <span class="ml-1 mr-sm-0 text-muted" data-from-now="<%= @transfer.transaction.block.timestamp %>"></span>
-
-        <span class="ml-2">
-          <%= link(
-            gettext(
-              "Block #%{number}",
-              number: @transfer.block_number
-            ),
-            class: "mr-2 mr-sm-0 text-muted",
-            to: block_path(BlockScoutWeb.Endpoint, :show, @transfer.transaction.block_number)
-          ) %>
-        </span>
+    <!-- Block info -->
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-center text-md-right mt-3 mt-md-0">
+      <span class="mr-2 mr-md-0 order-1">
+        <%= link(
+          gettext("Block #%{number}", number: @transfer.block_number),
+          to: block_path(BlockScoutWeb.Endpoint, :show, @transfer.transaction.block_number)
+        ) %>
+      </span>
+      <span class="mr-2 mr-md-0 order-2" data-from-now="<%= @transfer.transaction.block.timestamp %>"></span>
     </div>
   </div>
 </div>

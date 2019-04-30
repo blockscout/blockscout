@@ -1,13 +1,12 @@
 <section class="container">
   <div class="card">
     <div class="card-body">
-      <h1><%= gettext "Addresses" %></h1>
-      <p>
+      <h1 class="card-title margin-bottom-0"><%= gettext "Addresses" %></h1>
+      <p class="card-subtitle">
         <%= gettext "Showing 250 addresses of" %>
         <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
         <%= gettext "total addresses with a balance" %>
       </p>
-
       <span data-selector="top-addresses-list">
         <%= for {{address, tx_count}, index} <- Enum.with_index(@address_tx_count_pairs, 1) do %>
           <%= render "_tile.html",

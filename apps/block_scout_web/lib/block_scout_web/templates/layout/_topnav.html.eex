@@ -16,13 +16,13 @@
             <%= gettext("Blocks") %>
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarBlocksDropdown">
-            <%= link to: block_path(@conn, :index), class: "dropdown-item" do %>
+            <%= link to: block_path(@conn, :index), class: "dropdown-item #{tab_status("blocks", @conn.request_path)}" do %>
               <%= gettext("Blocks") %>
             <% end %>
-            <%= link to: uncle_path(@conn, :uncle), class: "dropdown-item" do %>
+            <%= link to: uncle_path(@conn, :uncle), class: "dropdown-item #{tab_status("uncles", @conn.request_path)}" do %>
               <%= gettext("Uncles") %>
             <% end %>
-            <%= link to: reorg_path(@conn, :reorg), class: "dropdown-item" do %>
+            <%= link to: reorg_path(@conn, :reorg), class: "dropdown-item #{tab_status("reorgs", @conn.request_path)}" do %>
               <%= gettext("Forked Blocks (Reorgs)") %>
             <% end %>
           </div>
@@ -37,19 +37,19 @@
           <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
             <%= link(
                   gettext("Validated"),
-                  class: "dropdown-item",
+                  class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
                   to: transaction_path(@conn, :index)
                 ) %>
             <%= link(
                   gettext("Pending"),
-                  class: "dropdown-item",
+                  class: "dropdown-item #{tab_status("pending_transactions", @conn.request_path)}",
                   "data-test": "pending_transactions_link",
                   to: pending_transaction_path(@conn, :index)
                 ) %>
           </div>
         </li>
         <li class="nav-item">
-          <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
+          <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("accounts", @conn.request_path)}" do %>
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
             </span>
@@ -66,21 +66,43 @@
           <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
             <%= link(
                   gettext("GraphQL"),
-                  class: "dropdown-item",
+                  class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
                   to: "/graphiql"
                 ) %>
             <%= link(
                   gettext("RPC"),
-                  class: "dropdown-item",
+                  class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
                   to: api_docs_path(@conn, :index)
                 ) %>
           </div>
         </li>
+        <li class="nav-item dropdown nav-item-networks">
+          <a class="nav-link topnav-nav-link dropdown-toggle active-icon" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="nav-link-icon">
+              <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
+            </span>
+            <%= subnetwork_title() %>
+          </a>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <a class="dropdown-item header division">Mainnets</a>
+            <%= for %{url: url, title: title} <- head_main_nets() do %>
+              <a class="dropdown-item" href="<%= url%>"><%= title %></a>
+            <% end %>
+            <a class="dropdown-item header division">Testnets</a>
+            <%= for %{url: url, title: title} <- test_nets() do %>
+              <a class="dropdown-item" href="<%= url%>"><%= title %></a>
+            <% end %>
+            <a class="dropdown-item header division">Other networks</a>
+            <%= for %{url: url, title: title} <- other_nets() do %>
+              <a class="dropdown-item" href="<%= url%>"><%= title %></a>
+            <% end %>
+          </div>
+        </li>
       </ul>
+      <!-- Search navbar -->
       <div class="search-form d-lg-flex d-inline-block">
-        <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0 add-border", method: :get, enforce_utf8: false], fn f -> %>
-
-        <div class="input-group">
+        <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
+        <div class="input-group" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
               <%= awesomplete(f, :q,
                    [
                   class: "form-control me auto",
@@ -104,33 +126,8 @@
                 </button>
               </div>
           </div>
-          <button class="btn btn-outline-success my-2 my-sm-0 sr-only" type="submit"><%= gettext "Search" %></button>
+          <button class="btn btn-outline-success my-2 my-sm-0 sr-only hidden" type="submit"><%= gettext "Search" %></button>
         <% end %>
-        <ul class="navbar-nav">
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle pl-lg-2" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <!-- ICON FOR MAINNET -->
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, network_icon_partial() %>
-              </span>
-              <!-- ICON FOR TESTNET -->
-              <!-- <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_test_network_icon.html" %>
-              </span> -->
-              <%= subnetwork_title() %>
-            </a>
-            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <a class="dropdown-item header">Mainnet</a>
-              <%= for %{url: url, title: title} <- main_nets() do %>
-                <a class="dropdown-item" href="<%= url%>"><%= title %></a>
-              <% end %>
-              <a class="dropdown-item header division">Testnet</a>
-              <%= for %{url: url, title: title} <- test_nets() do %>
-                <a class="dropdown-item" href="<%= url%>"><%= title %></a>
-              <% end %>
-            </div>
-          </li>
-        </ul>
       </div>
     </div>
   </div>

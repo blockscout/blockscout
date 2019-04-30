@@ -1,2 +1,29 @@
-@import "neutral_variables";
 @import "theme/base_variables";
+@import "neutral_variables";
+// @import "dai_variables";
+// @import "ethereum_classic_variables";
+// @import "ethereum_variables";
+// @import "expanse_variables";
+// @import "gochain_variables";
+// @import "goerli_variables";
+// @import "kovan_variables";
+// @import "lukso_variables";
+// @import "musicoin_variables";
+// @import "pirl_variables";
+// @import "poa_variables";
+// @import "posdao_variables";
+// @import "rinkeby_variables";
+// @import "ropsten_variables";
+// @import "social_variables";
+// @import "sokol_variables";
+// @import "tobalaba_variables";
+// @import "tomochain_variables";
+
+// responsive breakpoints
+$breakpoint-xs: 320px;
+$breakpoint-sm: 480px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1024px;
+$breakpoint-xxl: 1280px;
+$breakpoint-xxxl: 1366px;
