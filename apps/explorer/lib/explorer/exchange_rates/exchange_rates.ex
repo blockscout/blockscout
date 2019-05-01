@@ -135,8 +135,6 @@ defmodule Explorer.ExchangeRates do
   end
 
   defp enabled? do
-    :explorer
-    |> Application.fetch_env!(__MODULE__)
-    |> Keyword.fetch!(:enabled)
+    Application.get_env(:explorer, __MODULE__, [])[:enabled] == true
   end
 end
