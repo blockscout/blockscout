@@ -13,6 +13,6 @@ defmodule BlockScoutWeb.TransactionRawTraceView do
     |> InternalTransaction.internal_transactions_to_raw()
     |> Jason.encode!(pretty: true)
     |> String.split("\n")
-    |> Enum.with_index()
+    |> Enum.with_index(1)
   end
 end
