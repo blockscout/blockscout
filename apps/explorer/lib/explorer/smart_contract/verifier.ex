@@ -86,17 +86,28 @@ defmodule Explorer.SmartContract.Verifier do
   In order to discover the bytecode we need to remove the `swarm source` from
   the hash.
 
-  `64` characters to the left of `0029` are the `swarm source`. The rest on
+  `64` characters to the left of the last `0029` are the `swarm source`. The rest on
   the left is the `bytecode` to be validated.
   """
-  def extract_bytecode(code) do
-    {bytecode, _swarm_source} =
-      code
-      |> String.split("0029")
-      |> List.first()
-      |> String.split_at(-64)
+  def extract_bytecode("0x" <> code) do
+    "0x" <> extract_bytecode(code)
+  end
 
-    bytecode
+  def extract_bytecode(code) do
+    do_extract_bytecode(<<>>, String.downcase(code))
+  end
+
+  defp do_extract_bytecode(extracted, remaining) do
+    case remaining do
+      <<>> ->
+        String.reverse(extracted)
+
+      "a165627a7a72305820" <> <<_::binary-size(64)>> <> "0029" <> _constructor_arguments ->
+        String.reverse(extracted)
+
+      <<next::binary-size(1)>> <> rest ->
+        do_extract_bytecode(next <> extracted, rest)
+    end
   end
 
   def next_evm_version(current_evm_version) do

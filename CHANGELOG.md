@@ -3,6 +3,7 @@
 ### Fixes
 
 - [#1868](https://github.com/poanetwork/blockscout/pull/1868) - fix: logs list endpoint performance
+- [#1875](https://github.com/poanetwork/blockscout/pull/1875) - fix: resolve false positive constructor arguments 
 
 
 ## 1.3.11-beta
