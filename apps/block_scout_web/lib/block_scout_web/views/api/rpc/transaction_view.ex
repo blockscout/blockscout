@@ -3,8 +3,13 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
 
   alias BlockScoutWeb.API.RPC.RPCView
 
-  def render("gettxinfo.json", %{transaction: transaction, block_height: block_height, logs: logs}) do
-    data = prepare_transaction(transaction, block_height, logs)
+  def render("gettxinfo.json", %{
+        transaction: transaction,
+        block_height: block_height,
+        logs: logs,
+        next_page_params: next_page_params
+      }) do
+    data = prepare_transaction(transaction, block_height, logs, next_page_params)
     RPCView.render("show.json", data: data)
   end
 
@@ -50,7 +55,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
     }
   end
 
-  defp prepare_transaction(transaction, block_height, logs) do
+  defp prepare_transaction(transaction, block_height, logs, next_page_params) do
     %{
       "hash" => "#{transaction.hash}",
       "timeStamp" => "#{DateTime.to_unix(transaction.block.timestamp)}",
@@ -63,7 +68,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "input" => "#{transaction.input}",
       "gasLimit" => "#{transaction.gas}",
       "gasUsed" => "#{transaction.gas_used}",
-      "logs" => Enum.map(logs, &prepare_log/1)
+      "logs" => Enum.map(logs, &prepare_log/1),
+      "next_page_params" => next_page_params
     }
   end
 

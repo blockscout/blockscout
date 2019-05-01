@@ -75,20 +75,4 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslatorTest do
       assert json_response(result, 200) == %{}
     end
   end
-
-  test "translate_module/2" do
-    assert RPCTranslator.translate_module(%{"test" => __MODULE__}, "tesT") == {:ok, __MODULE__}
-    assert RPCTranslator.translate_module(%{}, "test") == :error
-  end
-
-  test "translate_action/1" do
-    expected = :test_atom
-    assert RPCTranslator.translate_action("test_atoM") == {:ok, expected}
-    assert RPCTranslator.translate_action("some_atom_that_should_not_exist") == :error
-  end
-
-  test "call_controller/3", %{conn: conn} do
-    assert RPCTranslator.call_controller(conn, TestController, :bad_action) == :error
-    assert {:ok, %Plug.Conn{}} = RPCTranslator.call_controller(conn, TestController, :test_action)
-  end
 end
