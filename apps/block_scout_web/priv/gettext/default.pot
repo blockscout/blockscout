@@ -427,11 +427,6 @@ msgid "GET"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:220
-msgid "Gas"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:54
 #: lib/block_scout_web/templates/block/overview.html.eex:103
 #: lib/block_scout_web/templates/block/overview.html.eex:150
@@ -505,7 +500,7 @@ msgid "Less than"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:230
+#: lib/block_scout_web/templates/transaction/overview.html.eex:235
 msgid "Limit"
 msgstr ""
 
@@ -716,8 +711,8 @@ msgid "Responses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:107
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:125
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:111
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:129
 msgid "Search"
 msgstr ""
 
@@ -974,7 +969,7 @@ msgid "Unique Token"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:224
+#: lib/block_scout_web/templates/transaction/overview.html.eex:229
 msgid "Used"
 msgstr ""
 
@@ -1658,8 +1653,8 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:101
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:105
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:109
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1731,4 +1726,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:107
 msgid "View All Transactions"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:225
+msgid "Gas"
 msgstr ""
