@@ -56,9 +56,7 @@ defmodule Explorer.Application do
   end
 
   defp should_start?(process) do
-    :explorer
-    |> Application.fetch_env!(process)
-    |> Keyword.fetch!(:enabled)
+    Application.get_env(:explorer, process, [])[:enabled] == true
   end
 
   defp configure(process) do
