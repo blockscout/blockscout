@@ -29,15 +29,17 @@ defmodule Explorer.Chain.BlockCountCache do
   end
 
   def count do
-    initial_cache = {_count, old_current_time} = cached_values()
+    initial_cache = cached_values()
 
     {count, _current_time} =
-      if current_time() - old_current_time > cache_period() do
+      with {_count, old_current_time} <- initial_cache,
+           true <- current_time() - old_current_time > cache_period() do
         update_cache()
 
         cached_values()
       else
-        initial_cache
+        _ ->
+          initial_cache
       end
 
     count
@@ -58,9 +60,13 @@ defmodule Explorer.Chain.BlockCountCache do
   end
 
   defp cached_values do
-    [{_, cached_values}] = :ets.lookup(@tab, @key)
+    case :ets.lookup(@tab, @key) do
+      [{_, cached_values}] ->
+        cached_values
 
-    cached_values
+      [] ->
+        nil
+    end
   end
 
   defp cache_period do
