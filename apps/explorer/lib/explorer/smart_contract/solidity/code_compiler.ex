@@ -63,6 +63,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         }
       }
   """
+  @spec run(Keyword.t()) :: {:ok, map} | {:error, :compilation | :name}
   def run(params) do
     name = Keyword.fetch!(params, :name)
     compiler_version = Keyword.fetch!(params, :compiler_version)
@@ -108,9 +109,14 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         {:error, %Jason.DecodeError{}} ->
           {:error, :compilation}
 
+        {:error, reason} when reason in [:name, :compilation] ->
+          {:error, reason}
+
         error ->
           parse_error(error)
       end
+    else
+      {:error, :compilation}
     end
   end
 
