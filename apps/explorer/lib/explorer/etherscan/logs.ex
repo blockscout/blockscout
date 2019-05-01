@@ -5,7 +5,7 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [from: 2, where: 3]
+  import Ecto.Query, only: [from: 2, where: 3, subquery: 1, order_by: 3, limit: 2]
 
   alias Explorer.Chain.Log
   alias Explorer.Repo
@@ -77,8 +77,6 @@ defmodule Explorer.Etherscan.Logs do
         inner_join: b in assoc(t, :block),
         where: b.number >= ^prepared_filter.from_block,
         where: b.number <= ^prepared_filter.to_block,
-        order_by: b.number,
-        limit: 1_000,
         select:
           merge(map(l, ^@log_fields), %{
             gas_price: t.gas_price,
@@ -90,8 +88,11 @@ defmodule Explorer.Etherscan.Logs do
       )
 
     query
+    |> subquery()
     |> where_address_match(prepared_filter)
     |> where_topic_match(prepared_filter)
+    |> order_by([l], l.block_number)
+    |> limit(1_000)
     |> Repo.all()
   end
 
