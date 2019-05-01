@@ -711,8 +711,8 @@ msgid "Responses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:110
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:128
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:111
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:129
 msgid "Search"
 msgstr ""
 
@@ -1653,8 +1653,8 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:104
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:108
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:105
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:109
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
