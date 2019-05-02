@@ -22,6 +22,7 @@
 - [#1868](https://github.com/poanetwork/blockscout/pull/1868) - fix: logs list endpoint performance
 - [#1822](https://github.com/poanetwork/blockscout/pull/1822) - Fix style breaks in decompiled contract code view
 - [#1896](https://github.com/poanetwork/blockscout/pull/1896) - re-query tokens in top nav automplete
+- [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
 
 ### Chore
 
