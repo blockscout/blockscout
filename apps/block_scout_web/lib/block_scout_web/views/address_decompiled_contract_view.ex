@@ -17,13 +17,131 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     "\e[94m" => ""
   }
 
-  @reserved_words [
+  @comment_start "#"
+
+  @reserved_words_types [
+    "var",
+    "bool",
+    "string",
+    "int",
+    "uint",
+    "int8",
+    "uint8",
+    "int16",
+    "uint16",
+    "int24",
+    "uint24",
+    "int32",
+    "uint32",
+    "int40",
+    "uint40",
+    "int48",
+    "uint48",
+    "int56",
+    "uint56",
+    "int64",
+    "uint64",
+    "int72",
+    "uint72",
+    "int80",
+    "uint80",
+    "int88",
+    "uint88",
+    "int96",
+    "uint96",
+    "int104",
+    "uint104",
+    "int112",
+    "uint112",
+    "int120",
+    "uint120",
+    "int128",
+    "uint128",
+    "int136",
+    "uint136",
+    "int144",
+    "uint144",
+    "int152",
+    "uint152",
+    "int160",
+    "uint160",
+    "int168",
+    "uint168",
+    "int176",
+    "uint176",
+    "int184",
+    "uint184",
+    "int192",
+    "uint192",
+    "int200",
+    "uint200",
+    "int208",
+    "uint208",
+    "int216",
+    "uint216",
+    "int224",
+    "uint224",
+    "int232",
+    "uint232",
+    "int240",
+    "uint240",
+    "int248",
+    "uint248",
+    "int256",
+    "uint256",
+    "byte",
+    "bytes",
+    "bytes1",
+    "bytes2",
+    "bytes3",
+    "bytes4",
+    "bytes5",
+    "bytes6",
+    "bytes7",
+    "bytes8",
+    "bytes9",
+    "bytes10",
+    "bytes11",
+    "bytes12",
+    "bytes13",
+    "bytes14",
+    "bytes15",
+    "bytes16",
+    "bytes17",
+    "bytes18",
+    "bytes19",
+    "bytes20",
+    "bytes21",
+    "bytes22",
+    "bytes23",
+    "bytes24",
+    "bytes25",
+    "bytes26",
+    "bytes27",
+    "bytes28",
+    "bytes29",
+    "bytes30",
+    "bytes31",
+    "bytes32",
+    "true",
+    "false",
+    "enum",
+    "struct",
+    "mapping",
+    "address"
+  ]
+
+  @reserved_words_keywords [
     "def",
     "require",
     "revert",
     "return",
     "assembly",
     "memory",
+    "mem"
+  ]
+
+  @modifiers [
     "payable",
     "public",
     "view",
@@ -31,6 +149,12 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     "returns",
     "internal"
   ]
+
+  @reserved_words @reserved_words_keywords ++ @reserved_words_types
+
+  @reserved_words_regexp ([@comment_start | @reserved_words] ++ @modifiers)
+                         |> Enum.reduce("", fn el, acc -> acc <> "|" <> el end)
+                         |> Regex.compile!()
 
   def highlight_decompiled_code(code) do
     {_, result} =
@@ -72,29 +196,34 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     code
     |> String.split("\n")
     |> Enum.map(fn line ->
-      parts =
-        line
-        |> String.split(~r/def|require|revert|return|assembly|memory|payable|public|view|pure|returns|internal|#/,
-          include_captures: true
-        )
-
-      comment_position = Enum.find_index(parts, fn part -> part == "#" end)
-
-      parts
-      |> Enum.with_index()
-      |> Enum.map(fn {el, index} ->
-        if (is_nil(comment_position) || comment_position > index) && el in @reserved_words do
-          "<span class=\"hljs-keyword\">" <> el <> "</span>"
-        else
-          el
-        end
-      end)
-      |> Enum.reduce("", fn el, acc ->
-        acc <> el
-      end)
+      add_styles_to_line(line)
     end)
     |> Enum.reduce("", fn el, acc ->
       acc <> el <> "\n"
+    end)
+  end
+
+  defp add_styles_to_line(line) do
+    parts =
+      line
+      |> String.split(@reserved_words_regexp,
+        include_captures: true
+      )
+
+    comment_position = Enum.find_index(parts, fn part -> part == "#" end)
+
+    parts
+    |> Enum.with_index()
+    |> Enum.map(fn {el, index} ->
+      cond do
+        !(is_nil(comment_position) || comment_position > index) -> el
+        el in @reserved_words -> "<span class=\"hljs-keyword\">" <> el <> "</span>"
+        el in @modifiers -> "<span class=\"hljs-title\">" <> el <> "</span>"
+        true -> el
+      end
+    end)
+    |> Enum.reduce("", fn el, acc ->
+      acc <> el
     end)
   end
 
