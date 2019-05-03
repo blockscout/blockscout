@@ -4,7 +4,7 @@ defmodule Explorer.Chain.BlockCountCacheTest do
   alias Explorer.Chain.BlockCountCache
 
   test "returns default transaction count" do
-    BlockCountCache.start_link([name: BlockTestCache])
+    BlockCountCache.start_link(name: BlockTestCache)
 
     result = BlockCountCache.count(BlockTestCache)
 
@@ -12,7 +12,7 @@ defmodule Explorer.Chain.BlockCountCacheTest do
   end
 
   test "updates cache if initial value is zero" do
-    BlockCountCache.start_link([name: BlockTestCache])
+    BlockCountCache.start_link(name: BlockTestCache)
 
     insert(:block, consensus: true)
     insert(:block, consensus: true)
@@ -28,7 +28,7 @@ defmodule Explorer.Chain.BlockCountCacheTest do
   end
 
   test "does not update cache if cache period did not pass" do
-    BlockCountCache.start_link([name: BlockTestCache])
+    BlockCountCache.start_link(name: BlockTestCache)
 
     insert(:block, consensus: true)
     insert(:block, consensus: true)
