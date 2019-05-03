@@ -50,6 +50,7 @@
               <% end %>
             </span>
           </div>
+          <%= render BlockScoutWeb.AddressView, "_verify_other_explorers.html", address: @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, nil) %>
           <hr>
           <!-- Block Hash -->
           <dl class="row">

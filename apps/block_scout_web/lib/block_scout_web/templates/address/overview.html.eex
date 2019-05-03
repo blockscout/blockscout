@@ -119,6 +119,7 @@
                 <p class="alert alert-danger" role="alert"><%= gettext("Error: Could not determine contract creator.") %></p>
               <% end %>
             </span>
+            <%= render "_verify_other_explorers.html", address: @address %>
           <% end %>
         </div>
       </div>

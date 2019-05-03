@@ -256,6 +256,16 @@ defmodule BlockScoutWeb.AddressView do
     nil
   end
 
+  def address_link_to_other_explorer(link, address) do
+    link <> trimmed_hash(address.hash)
+  end
+
+  def address_link_to_other_explorer(_, address), do: ""
+
+  def address_link_to_other_explorer(_, _), do: ""
+
+  def address_link_to_other_explorer(link, _), do: ""
+
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
     [
       view_module: __MODULE__,
