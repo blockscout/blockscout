@@ -1961,7 +1961,7 @@ defmodule Explorer.Chain do
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[rows]]} =
-        SQL.query!(Repo, "SELECT count_estimate('SELECT 1 FROM blocks WHERE consensus = true');") |> IO.inspect()
+        SQL.query!(Repo, "SELECT count_estimate('SELECT 1 FROM blocks WHERE consensus = true');")
 
       rows
     else
