@@ -99,6 +99,13 @@ defmodule BlockScoutWeb.Router do
         as: :internal_transaction
       )
 
+      resources(
+        "/raw_trace",
+        TransactionRawTraceController,
+        only: [:index],
+        as: :raw_trace
+      )
+
       resources("/logs", TransactionLogController, only: [:index], as: :log)
 
       resources("/token_transfers", TransactionTokenTransferController,
