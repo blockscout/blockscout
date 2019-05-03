@@ -29,6 +29,7 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
+    BlockCountCache,
     BlockNumberCache,
     Data,
     DecompiledSmartContract,
@@ -1942,6 +1943,25 @@ defmodule Explorer.Chain do
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[rows]]} =
         SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
+
+      rows
+    else
+      cached_value
+    end
+  end
+
+  @doc """
+  Estimated count of `t:Explorer.Chain.Block.t/0`.
+
+  Estimated count of consensus blocks.
+  """
+  @spec block_estimated_count() :: non_neg_integer()
+  def block_estimated_count do
+    cached_value = BlockCountCache.count()
+
+    if is_nil(cached_value) do
+      %Postgrex.Result{rows: [[rows]]} =
+        SQL.query!(Repo, "SELECT count_estimate('SELECT 1 FROM blocks WHERE consensus = true');") |> IO.inspect()
 
       rows
     else
