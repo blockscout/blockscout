@@ -29,7 +29,8 @@ defmodule Explorer.Application do
       Explorer.SmartContract.SolcDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
-      {TransactionCountCache, [[], []]}
+      {TransactionCountCache, [[], []]},
+      {BlockCountCache, []}
     ]
 
     children = base_children ++ configurable_children()
