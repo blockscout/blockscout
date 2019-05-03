@@ -257,7 +257,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def address_link_to_other_explorer(link, address) do
-    link <> trimmed_hash(address.hash)
+    link <> trimmed_hash(address)
   end
 
   def address_link_to_other_explorer(_, address), do: ""
