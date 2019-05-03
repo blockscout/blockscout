@@ -12,7 +12,7 @@ var evmVersion = process.argv[8];
 
 var compiled_code = solc.loadRemoteVersion(version, function (err, solcSnapshot) {
   if (err) {
-    console.log(JSON.stringify(err));
+    console.log(JSON.stringify(err.message));
   } else {
     const input = {
       language: 'Solidity',

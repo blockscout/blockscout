@@ -24,7 +24,8 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
       Runner.Tokens,
       Runner.TokenTransfers,
       Runner.Address.CurrentTokenBalances,
-      Runner.Address.TokenBalances
+      Runner.Address.TokenBalances,
+      Runner.StakingPools
     ]
 
   @impl Stage

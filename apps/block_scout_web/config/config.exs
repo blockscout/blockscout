@@ -18,6 +18,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
   subnetwork: System.get_env("SUBNETWORK"),
   network_icon: System.get_env("NETWORK_ICON"),
   logo: System.get_env("LOGO"),
+  logo_footer: System.get_env("LOGO_FOOTER"),
   has_emission_funds: false
 
 config :block_scout_web,
@@ -67,19 +68,23 @@ config :block_scout_web,
     },
     %{
       title: "Ethereum Classic",
-      url: "https://blockscout.com/etc/mainnet"
+      url: "https://blockscout.com/etc/mainnet",
+      other?: true
     },
     %{
       title: "Aerum Mainnet",
-      url: "https://blockscout.com/aerum/mainnet"
+      url: "https://blockscout.com/aerum/mainnet",
+      other?: true
     },
     %{
       title: "Callisto Mainnet",
-      url: "https://blockscout.com/callisto/mainnet"
+      url: "https://blockscout.com/callisto/mainnet",
+      other?: true
     },
     %{
       title: "RSK Mainnet",
-      url: "https://blockscout.com/rsk/mainnet"
+      url: "https://blockscout.com/rsk/mainnet",
+      other?: true
     }
   ]
 

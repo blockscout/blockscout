@@ -6,7 +6,7 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
-  alias Explorer.Chain.{BlockNumberCache, TransactionCountCache}
+  alias Explorer.Chain.{BlockCountCache, BlockNumberCache, TransactionCountCache}
   alias Explorer.Repo.PrometheusLogger
 
   @impl Application
@@ -38,6 +38,7 @@ defmodule Explorer.Application do
     res = Supervisor.start_link(children, opts)
 
     BlockNumberCache.setup()
+    BlockCountCache.setup()
 
     res
   end
@@ -55,9 +56,7 @@ defmodule Explorer.Application do
   end
 
   defp should_start?(process) do
-    :explorer
-    |> Application.fetch_env!(process)
-    |> Keyword.fetch!(:enabled)
+    Application.get_env(:explorer, process, [])[:enabled] == true
   end
 
   defp configure(process) do
