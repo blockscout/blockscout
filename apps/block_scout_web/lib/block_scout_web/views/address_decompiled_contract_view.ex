@@ -76,18 +76,12 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
         part
 
       true ->
-        result =
-          part
-          |> String.split("\n")
-          |> Enum.reduce("", fn p, a ->
-            a <> new_style <> p <> "</span>\n"
-          end)
-
-        if String.ends_with?(part, "\n") do
-          result
-        else
-          String.slice(result, 0..-2)
-        end
+        part
+        |> String.split("\n")
+        |> Enum.reduce("", fn p, a ->
+          a <> new_style <> p <> "</span>\n"
+        end)
+        |> String.slice(0..-2)
     end
   end
 end
