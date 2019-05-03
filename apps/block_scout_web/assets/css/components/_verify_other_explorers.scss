@@ -1,0 +1,31 @@
+.verify-other-explorers-table {
+	display: table;
+}
+.verify-other-explorers-row {
+	display: table-row;
+	height: 29px;
+}
+.verify-other-explorers-cell {
+	display: table-cell;
+	&.left {
+		min-width: 120px;
+	}
+}
+.link {
+	background-image: url("/images/icons/link.svg");
+	background-repeat: no-repeat;
+	padding-left: 15px;
+	background-size: 12px 12px;
+}
+.blockchair-logo {
+	background-image: url("/images/icons/blockchair.png");
+	background-repeat: no-repeat;
+	padding-left: 25px;
+	background-size: 10px 16px;
+}
+.etherchain-logo {
+	background-image: url("/images/icons/etherchain.png");
+	background-repeat: no-repeat;
+	padding-left: 25px;
+	background-size: 16px 16px;
+}
