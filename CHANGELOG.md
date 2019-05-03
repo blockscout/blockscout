@@ -197,4 +197,4 @@
  - [https://github.com/poanetwork/blockscout/pull/1465](https://github.com/poanetwork/blockscout/pull/1465) - Resolve lodash security alert
 
 ### Improvements
--[#1874] - add changes to ethereum theme and ethereum logo
+- [#1874](https://github.com/poanetwork/blockscout/pull/1874) - add changes to ethereum theme and ethereum logo
