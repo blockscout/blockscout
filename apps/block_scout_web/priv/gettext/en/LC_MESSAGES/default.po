@@ -577,6 +577,12 @@ msgstr ""
 msgid "Newer"
 msgstr ""
 
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address/index.html.eex:16
+#: lib/block_scout_web/templates/address_token/index.html.eex:22
+msgid "Next"
+msgstr ""
+
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:37
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:32
@@ -1723,4 +1729,29 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:10
 #: lib/block_scout_web/views/transaction_view.ex:341
 msgid "Raw Trace"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:11
+msgid " (page"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address/index.html.eex:8
+msgid " addresses of"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:21
+msgid "Back"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address/index.html.eex:6
+msgid "Showing "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/chain/show.html.eex:64
+msgid "Total blocks"
 msgstr ""
