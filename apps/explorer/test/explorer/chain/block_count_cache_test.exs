@@ -3,56 +3,54 @@ defmodule Explorer.Chain.BlockCountCacheTest do
 
   alias Explorer.Chain.BlockCountCache
 
-  describe "count/0" do
-    test "return count" do
-      Application.put_env(:explorer, BlockCountCache, ttl: 200)
-      BlockCountCache.start_link(name: BlockTest)
-      Process.sleep(300)
+  test "returns default transaction count" do
+    BlockCountCache.start_link([[], [name: TestCache]])
 
-      insert(:block, number: 1, consensus: true)
-      insert(:block, number: 2, consensus: true)
-      insert(:block, number: 3, consensus: false)
+    result = BlockCountCache.value(TestCache)
 
-      _result = BlockCountCache.count(BlockTest)
+    assert is_nil(result)
+  end
 
-      Process.sleep(300)
+  test "updates cache if initial value is zero" do
+    BlockCountCache.start_link([[], [name: TestCache]])
 
-      assert BlockCountCache.count(BlockTest) == 2
-    end
+    insert(:block, consensus: true)
+    insert(:block, consensus: true)
+    insert(:block, consensus: false)
 
-    test "invalidates cache if period did pass" do
-      Application.put_env(:explorer, BlockCountCache, ttl: 200)
-      BlockCountCache.start_link(name: BlockTest)
-      Process.sleep(300)
+    _result = BlockCountCache.value(TestCache)
 
-      insert(:block, number: 1, consensus: true)
+    Process.sleep(1000)
 
-      _result = BlockCountCache.count(BlockTest)
+    updated_value = BlockCountCache.value(TestCache)
 
-      Process.sleep(300)
-      assert BlockCountCache.count(BlockTest) == 1
+    assert updated_value == 2
+  end
 
-      insert(:block, number: 2, consensus: true)
-      Process.sleep(300)
+  test "does not update cache if cache period did not pass" do
+    BlockCountCache.start_link([[], [name: TestCache]])
 
-      assert BlockCountCache.count(BlockTest) == 2
-    end
+    insert(:block, consensus: true)
+    insert(:block, consensus: true)
+    insert(:block, consensus: false)
 
-    test "does not invalidate cache if period time did not pass" do
-      Application.put_env(:explorer, BlockCountCache, ttl: 200)
-      BlockCountCache.start_link(name: BlockTest)
-      Process.sleep(300)
+    _result = BlockCountCache.value(TestCache)
 
-      insert(:block, number: 1, consensus: true)
+    Process.sleep(1000)
 
-      _result = BlockCountCache.count(BlockTest)
-      Process.sleep(300)
+    updated_value = BlockCountCache.value(TestCache)
 
-      assert BlockCountCache.count(BlockTest) == 1
+    assert updated_value == 2
 
-      insert(:block, number: 2, consensus: true)
+    insert(:block, consensus: true)
+    insert(:block, consensus: true)
 
-      assert BlockCountCache.count(BlockTest) == 1
-    end
+    _updated_value = BlockCountCache.value(TestCache)
+
+    Process.sleep(1000)
+
+    updated_value = BlockCountCache.value(TestCache)
+
+    assert updated_value == 2
   end
 end

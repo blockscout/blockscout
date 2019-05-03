@@ -1,71 +1,129 @@
 defmodule Explorer.Chain.BlockCountCache do
   @moduledoc """
-  Cache for count consensus blocks.
+  Cache for block count.
   """
 
-  alias Explorer.Chain
+  require Logger
+
   use GenServer
 
-  @tab :block_count_cache
+  alias Explorer.Chain
+
   # 1 minutes
   @cache_period 1_000 * 60
   @key "count"
-  @opts "ttl"
+  @default_value nil
+  @name __MODULE__
 
   def start_link(params) do
-    name = Keyword.get(params, :name, __MODULE__)
-    GenServer.start_link(__MODULE__, params, name: name)
+    name = params[:name] || @name
+    params_with_name = Keyword.put(params, :name, name)
+
+    GenServer.start_link(__MODULE__, params_with_name, name: name)
   end
 
-  def init(_) do
-    if :ets.whereis(@tab) == :undefined do
-      :ets.new(@tab, [
+  def init(params) do
+    cache_period = period_from_env_var() || params[:cache_period] || @cache_period
+    current_value = params[:default_value] || @default_value
+    name = params[:name]
+
+    init_ets_table(name)
+
+    {:ok, {{cache_period, current_value, name}, nil}}
+  end
+
+  def count(process_name \\ __MODULE__) do
+    GenServer.call(process_name, :count)
+  end
+
+  def handle_call(:count, _, {{cache_period, default_value, name}, task}) do
+    {count, task} =
+      case cached_values(name) do
+        nil ->
+          {default_value, update_cache(task, name)}
+
+        {cached_value, timestamp} ->
+          task =
+            if current_time() - timestamp > cache_period do
+              update_cache(task, name)
+            end
+
+          {cached_value, task}
+      end
+
+    {:reply, count, {{cache_period, default_value, name}, task}}
+  end
+
+  def update_cache(nil, name) do
+    async_update_cache(name)
+  end
+
+  def update_cache(task, _) do
+    task
+  end
+
+  def handle_cast({:update_cache, value}, {{cache_period, default_value, name}, _}) do
+    current_time = current_time()
+    tuple = {value, current_time}
+
+    table_name = table_name(name)
+
+    :ets.insert(table_name, {@key, tuple})
+
+    {:noreply, {{cache_period, default_value, name}, nil}}
+  end
+
+  def handle_info({:DOWN, _, _, _, _}, {{cache_period, default_value, name}, _}) do
+    {:noreply, {{cache_period, default_value, name}, nil}}
+  end
+
+  def handle_info(_, {{cache_period, default_value, name}, _}) do
+    {:noreply, {{cache_period, default_value, name}, nil}}
+  end
+
+  # sobelow_skip ["DOS"]
+  defp table_name(name) do
+    name
+    |> Atom.to_string()
+    |> Macro.underscore()
+    |> String.to_atom()
+  end
+
+  def async_update_cache(name) do
+    Task.async(fn ->
+      try do
+        result = Chain.fetch_count_consensus_block()
+
+        GenServer.cast(name, {:update_cache, result})
+      rescue
+        e ->
+          Logger.debug([
+            "Coudn't update block count test #{inspect(e)}"
+          ])
+      end
+    end)
+  end
+
+  defp init_ets_table(name) do
+    table_name = table_name(name)
+
+    if :ets.whereis(table_name) == :undefined do
+      :ets.new(table_name, [
         :set,
         :named_table,
         :public,
         write_concurrency: true
       ])
     end
-
-    cache_period = Application.get_env(:explorer, __MODULE__)[:ttl] || @cache_period
-    :ets.insert(@tab, {@opts, cache_period})
-
-    {:ok, nil}
   end
 
-  def count(name \\ __MODULE__) do
-    case :ets.lookup(@tab, @key) do
-      [{_, {cached_values, timestamp}}] ->
-        if timeout?(timestamp), do: send(name, :update_cache)
+  defp cached_values(name) do
+    table_name = table_name(name)
 
-        cached_values
-
-      [] ->
-        send(name, :update_cache)
-        nil
+    case :ets.lookup(table_name, @key) do
+      [{_, cached_values}] -> cached_values
+      _ -> nil
     end
-  end
-
-  def handle_info(:set_timer, nil) do
-    [{_, cache_period}] = :ets.lookup(@tab, @opts)
-    timer = Process.send_after(self(), :update_cache, cache_period)
-    {:noreply, timer}
-  end
-
-  def handle_info(:update_cache, timer) do
-    if timer, do: Process.cancel_timer(timer)
-
-    count = count_from_db()
-
-    :ets.insert(@tab, {@key, {count, current_time()}})
-
-    send(self(), :set_timer)
-
-    {:noreply, nil}
-  end
-
-  defp count_from_db do
-    Chain.fetch_count_consensus_block()
   end
 
   defp current_time do
@@ -74,8 +132,16 @@ defmodule Explorer.Chain.BlockCountCache do
     DateTime.to_unix(utc_now, :millisecond)
   end
 
-  defp timeout?(timestamp) do
-    [{_, cache_period}] = :ets.lookup(@tab, @opts)
-    current_time() - timestamp > cache_period
+  defp period_from_env_var do
+    case System.get_env("BLOCK_COUNT_CACHE_PERIOD") do
+      value when is_binary(value) ->
+        case Integer.parse(value) do
+          {integer, ""} -> integer * 1_000
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
   end
 end
