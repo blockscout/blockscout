@@ -18,13 +18,32 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
   }
 
   def highlight_decompiled_code(code) do
-    @colors
-    |> Enum.reduce(code, fn {symbol, rgb}, acc ->
-      String.replace(acc, symbol, "<span style=\"color:rgb(#{rgb})\">")
+    {_, result} =
+      @colors
+      |> Enum.reduce(code, fn {symbol, rgb}, acc ->
+        String.replace(acc, symbol, "<span style=\"color:rgb(#{rgb})\">")
+      end)
+      |> String.replace("\e[1m", "<span style=\"font-weight:bold\">")
+      |> String.replace("»", "&raquo;")
+      |> String.replace("\e[0m", "</span>")
+      |> String.split(~r/\<span style=.*?\)"\>|\<\/span\>/, include_captures: true, trim: true)
+      |> Enum.reduce({"", []}, fn part, {style, acc} ->
+        new_style =
+          cond do
+            String.contains?(part, "<span style") -> part
+            part == "</span>" -> ""
+            true -> style
+          end
+
+        new_part = new_part(part, new_style)
+
+        {new_style, [new_part | acc]}
+      end)
+
+    result
+    |> Enum.reduce("", fn part, acc ->
+      part <> acc
     end)
-    |> String.replace("\e[1m", "<span style=\"font-weight:bold\">")
-    |> String.replace("»", "&raquo;")
-    |> String.replace("\e[0m", "</span>")
     |> add_line_numbers()
   end
 
@@ -40,5 +59,35 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     |> Enum.reduce("", fn line, acc ->
       acc <> "<code>#{line}</code>\n"
     end)
+  end
+
+  defp new_part(part, new_style) do
+    cond do
+      part == "" ->
+        ""
+
+      part == "</span>" ->
+        ""
+
+      part == new_style ->
+        ""
+
+      new_style == "" ->
+        part
+
+      true ->
+        result =
+          part
+          |> String.split("\n")
+          |> Enum.reduce("", fn p, a ->
+            a <> new_style <> p <> "</span>\n"
+          end)
+
+        if String.ends_with?(part, "\n") do
+          result
+        else
+          String.slice(result, 0..-2)
+        end
+    end
   end
 end
