@@ -17,6 +17,7 @@
 - [#1849](https://github.com/poanetwork/blockscout/pull/1849) - Improve chains menu
 - [#1869](https://github.com/poanetwork/blockscout/pull/1869) - Fix output and gas extraction in JS tracer for Geth
 - [#1868](https://github.com/poanetwork/blockscout/pull/1868) - fix: logs list endpoint performance
+- [#1822](https://github.com/poanetwork/blockscout/pull/1822) - Fix style breaks in decompiled contract code view
 
 ### Chore
 
