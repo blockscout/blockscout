@@ -14,10 +14,12 @@ services:
           memory: 300M
   web:
     container_name: blockscout
+    working_dir: /app
+    build:
+      context: ../..
+      dockerfile: ./docker/Dockerfile
     env_file:
       - .env
-    build:
-      context: .
     volumes:
       - type: bind
         source: .
@@ -31,6 +33,5 @@ services:
       - "4000:4000"
     depends_on:
       - db
-
     command:
       - ./run.sh
