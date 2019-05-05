@@ -24,7 +24,8 @@ export const initialState = {
   transactionsError: false,
   transactionsLoading: true,
   transactionCount: null,
-  usdMarketCap: null
+  usdMarketCap: null,
+  blockCount: null
 }
 
 export const reducer = withMissingBlocks(baseReducer)
@@ -46,11 +47,13 @@ function baseReducer (state = initialState, action) {
           blocks: [
             action.msg,
             ...state.blocks.slice(0, -1)
-          ]
+          ],
+          blockCount: action.msg.blockNumber + 1
         })
       } else {
         return Object.assign({}, state, {
-          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
+          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block),
+          blockCount: action.msg.blockNumber + 1
         })
       }
     }
@@ -150,6 +153,15 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.transactionCount === state.transactionCount) return
       $el.empty().append(numeral(state.transactionCount).format())
+    }
+  },
+  '[data-selector="block-count"]': {
+    load ($el) {
+      return { blockCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (oldState.blockCount === state.blockCount) return
+      $el.empty().append(numeral(state.blockCount).format())
     }
   },
   '[data-selector="address-count"]': {
