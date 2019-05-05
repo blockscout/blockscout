@@ -1,7 +1,11 @@
 # BlockScout Docker integration
+## Docker Support
 
-For now this integration is not production ready. It made only for local usage only !
+1. `cp .env.example .env`
+2. update environment variables
+3. `docker-compose up --build`
 
+See `Dockerfile` and `docker-compose.yml` for more.
 ## How to use ?
 First of all, blockscout requires `PostgreSQL` server for working. 
 It will be provided by starting script (new docker image will be created named `postgres`)

@@ -1,4 +1,4 @@
-version: '3.2'
+version: '2.4'
 services:
   db:
     container_name: postgres
@@ -7,11 +7,11 @@ services:
       - .env
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
-    deploy:
-      resources:
-        limits:
-          cpus: '0.3'
-          memory: 300M
+    build:
+      resource:
+      limits:
+        cpus: '0.3'
+        memory: 300M
   web:
     container_name: blockscout
     working_dir: /app
