@@ -7,7 +7,7 @@
 - [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
 - [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir 
 - [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
-- [#1889](https://github.com/poanetwork/blockscout/pull/1889) - Verification links to other explorers
+- [#1890](https://github.com/poanetwork/blockscout/pull/1890) - Verification links to other explorers for ETH Mainnet
 
 ### Fixes
 
