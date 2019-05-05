@@ -264,12 +264,6 @@ defmodule BlockScoutWeb.AddressView do
     end
   end
 
-  def address_link_to_other_explorer(_, address, full), do: ""
-
-  def address_link_to_other_explorer(_, _, full), do: ""
-
-  def address_link_to_other_explorer(link, _, full), do: ""
-
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
     [
       view_module: __MODULE__,
