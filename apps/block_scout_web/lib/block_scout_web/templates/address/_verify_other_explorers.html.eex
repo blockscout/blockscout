@@ -12,8 +12,8 @@
       <div class="verify-other-explorers-cell">
         <span class='link'>
           <%= link(
-            address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address),
-            to: address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address)
+            address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address, false),
+            to: address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address ,true)
           ) %>
         </span>
       </div>
@@ -27,8 +27,8 @@
       <div class="verify-other-explorers-cell right">
         <span class='link'>
           <%= link(
-            address_link_to_other_explorer("https://www.etherchain.org/account/", @address),
-            to: address_link_to_other_explorer("https://www.etherchain.org/account/", @address)
+            address_link_to_other_explorer("https://www.etherchain.org/account/", @address, false),
+            to: address_link_to_other_explorer("https://www.etherchain.org/account/", @address, true)
           ) %>
       </span>
       </div>

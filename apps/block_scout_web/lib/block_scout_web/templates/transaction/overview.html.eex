@@ -50,7 +50,9 @@
               <% end %>
             </span>
           </div>
-          <%= render BlockScoutWeb.AddressView, "_verify_other_explorers.html", address: @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, nil) |> BlockScoutWeb.RenderHelpers.render_partial() %>
+          <%= if contract_creation?(@transaction) do %>
+            <%= render BlockScoutWeb.AddressView, "_verify_other_explorers.html", address: to_address_hash(@transaction) %>
+          <% end %>
           <hr>
           <!-- Block Hash -->
           <dl class="row">
