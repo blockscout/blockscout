@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#1895](https://github.com/poanetwork/blockscout/pull/1874) - add changes to poa theme and poa logo
 - [#1812](https://github.com/poanetwork/blockscout/pull/1812) - add pagination to addresses page
 - [#1874](https://github.com/poanetwork/blockscout/pull/1874) - add changes to ethereum theme and ethereum logo
 - [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
