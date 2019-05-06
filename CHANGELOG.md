@@ -5,7 +5,7 @@
 - [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
 - [#1813](https://github.com/poanetwork/blockscout/pull/1813) - add total blocks counter to the main page
 - [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
-- [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir 
+- [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir
 - [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
 
 ### Fixes
@@ -18,6 +18,7 @@
 - [#1869](https://github.com/poanetwork/blockscout/pull/1869) - Fix output and gas extraction in JS tracer for Geth
 - [#1868](https://github.com/poanetwork/blockscout/pull/1868) - fix: logs list endpoint performance
 - [#1822](https://github.com/poanetwork/blockscout/pull/1822) - Fix style breaks in decompiled contract code view
+- [#1885](https://github.com/poanetwork/blockscout/pull/1885) - highlight reserved words in decompiled code
 
 ### Chore
 
