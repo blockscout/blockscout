@@ -428,11 +428,6 @@ msgid "GET"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:220
-msgid "Gas"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:54
 #: lib/block_scout_web/templates/block/overview.html.eex:103
 #: lib/block_scout_web/templates/block/overview.html.eex:150
@@ -506,7 +501,7 @@ msgid "Less than"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:230
+#: lib/block_scout_web/templates/transaction/overview.html.eex:235
 msgid "Limit"
 msgstr ""
 
@@ -717,8 +712,8 @@ msgid "Responses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:134
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:152
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:111
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:129
 msgid "Search"
 msgstr ""
 
@@ -975,7 +970,7 @@ msgid "Unique Token"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:224
+#: lib/block_scout_web/templates/transaction/overview.html.eex:229
 msgid "Used"
 msgstr ""
 
@@ -1659,8 +1654,8 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:128
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:132
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:105
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:109
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1842,4 +1837,16 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:17
 msgid "Your Mining Address"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:225
+msgid "Gas"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:24
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:10
+#: lib/block_scout_web/views/transaction_view.ex:341
+msgid "Raw Trace"
 msgstr ""

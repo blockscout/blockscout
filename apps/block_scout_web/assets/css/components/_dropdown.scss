@@ -45,6 +45,7 @@
     &,
     &:hover,
     &:active {
+      padding-left: 10px;
       background-color: transparent;
       cursor: default;
       color: #333;
@@ -53,7 +54,7 @@
   }
 
   &.division {
-    border-color: $base-border-color;
+    border-top: 1px solid $base-border-color;
   }
 }
 
