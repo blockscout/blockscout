@@ -3,9 +3,11 @@
 ### Features
 
 - [#1812](https://github.com/poanetwork/blockscout/pull/1812) - add pagination to addresses page
+- [#1874](https://github.com/poanetwork/blockscout/pull/1874) - add changes to ethereum theme and ethereum logo
 - [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
 - [#1813](https://github.com/poanetwork/blockscout/pull/1813) - add total blocks counter to the main page
 - [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
+- [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir 
 - [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
 
 ### Fixes
@@ -17,6 +19,7 @@
 - [#1849](https://github.com/poanetwork/blockscout/pull/1849) - Improve chains menu
 - [#1869](https://github.com/poanetwork/blockscout/pull/1869) - Fix output and gas extraction in JS tracer for Geth
 - [#1868](https://github.com/poanetwork/blockscout/pull/1868) - fix: logs list endpoint performance
+- [#1822](https://github.com/poanetwork/blockscout/pull/1822) - Fix style breaks in decompiled contract code view
 
 ### Chore
 
@@ -199,3 +202,4 @@
  - [https://github.com/poanetwork/blockscout/pull/1532](https://github.com/poanetwork/blockscout/pull/1532) - Upgrade elixir to 1.8.1
  - [https://github.com/poanetwork/blockscout/pull/1553](https://github.com/poanetwork/blockscout/pull/1553) - Dockerfile: remove 1.7.1 version pin FROM bitwalker/alpine-elixir-phoenix
  - [https://github.com/poanetwork/blockscout/pull/1465](https://github.com/poanetwork/blockscout/pull/1465) - Resolve lodash security alert
+
