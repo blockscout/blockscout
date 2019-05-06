@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#1874](https://github.com/poanetwork/blockscout/pull/1874) - add changes to ethereum theme and ethereum logo
 - [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
 - [#1813](https://github.com/poanetwork/blockscout/pull/1813) - add total blocks counter to the main page
 - [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
@@ -200,3 +201,4 @@
  - [https://github.com/poanetwork/blockscout/pull/1532](https://github.com/poanetwork/blockscout/pull/1532) - Upgrade elixir to 1.8.1
  - [https://github.com/poanetwork/blockscout/pull/1553](https://github.com/poanetwork/blockscout/pull/1553) - Dockerfile: remove 1.7.1 version pin FROM bitwalker/alpine-elixir-phoenix
  - [https://github.com/poanetwork/blockscout/pull/1465](https://github.com/poanetwork/blockscout/pull/1465) - Resolve lodash security alert
+
