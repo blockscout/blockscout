@@ -23,9 +23,7 @@ defmodule Indexer.Supervisor do
   }
 
   alias Indexer.Temporary.{
-    AddressesWithoutCode,
     BlocksTransactionsMismatch,
-    FailedCreatedAddresses,
     UncatalogedTokenTransfers,
     UnclesWithoutIndex
   }
@@ -129,8 +127,6 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor, [%{update_interval: metadata_updater_inverval}]},
 
         # Temporary workers
-        {AddressesWithoutCode.Supervisor, [fixing_realtime_fetcher]},
-        {FailedCreatedAddresses.Supervisor, [json_rpc_named_arguments]},
         {UncatalogedTokenTransfers.Supervisor, [[]]},
         {UnclesWithoutIndex.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
