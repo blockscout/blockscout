@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
   alias Plug.Conn
+  alias Poison.Parser
 
   @issue_url "https://github.com/poanetwork/blockscout/issues/new"
   @default_other_networks [
@@ -158,7 +159,7 @@ defmodule BlockScoutWeb.LayoutView do
       if Application.get_env(:block_scout_web, :other_networks) do
         :block_scout_web
         |> Application.get_env(:other_networks)
-        |> Poison.Parser.parse!(%{keys: :atoms!})
+        |> Parser.parse!(%{keys: :atoms!})
       else
         @default_other_networks
       end
