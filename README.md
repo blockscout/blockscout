@@ -139,7 +139,7 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
       ```
       * If using Chrome, Enable `chrome://flags/#allow-insecure-localhost`.
 
-  9. Start Phoenix Server.
+  9. Run the Phoenix Server from the root directory of your application.
   `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.

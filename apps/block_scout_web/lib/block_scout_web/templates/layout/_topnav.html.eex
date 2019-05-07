@@ -112,9 +112,8 @@
                   "data-test": "search_input"
                   ],
                   [ url: "#{chain_path(@conn, :token_autocomplete)}?q=",
-                  prepop: true,
-                  minChars: 3,
-                  maxItems: 8,
+                  limit: 0,
+                  minChars: 2,
                   value: "contract_address_hash",
                   label: "contract_address_hash",
                   descrSearch: true,

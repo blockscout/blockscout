@@ -26,6 +26,7 @@ defmodule Explorer.Application do
       Supervisor.Spec.worker(SpandexDatadog.ApiServer, [datadog_opts()]),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
+      Explorer.SmartContract.SolcDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
       {TransactionCountCache, [[], []]}
