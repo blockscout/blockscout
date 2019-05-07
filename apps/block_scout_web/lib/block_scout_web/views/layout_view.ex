@@ -98,8 +98,8 @@ defmodule BlockScoutWeb.LayoutView do
     :block_scout_web
     |> Application.get_env(:other_networks)
     |> Poison.decode!()
-    |> Enum.map(fn chain -> 
-      chain = for {key, val} <- chain, into: %{}, do: {String.to_atom(key), val}
+    |> Enum.map(fn chain ->
+      for {key, val} <- chain, into: %{}, do: {String.to_atom(key), val}
     end)
     |> Enum.reject(fn %{title: title} ->
       title == subnetwork_title()
