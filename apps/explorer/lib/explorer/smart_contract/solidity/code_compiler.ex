@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   Module responsible to compile the Solidity code of a given Smart Contract.
   """
 
+  alias Explorer.SmartContract.SolcDownloader
+
   @new_contract_name "New.sol"
   @allowed_evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople", "petersburg"]
 
@@ -79,31 +81,36 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         "byzantium"
       end
 
-    {response, _status} =
-      System.cmd(
-        "node",
-        [
-          Application.app_dir(:explorer, "priv/compile_solc.js"),
-          code,
-          compiler_version,
-          optimize_value(optimize),
-          optimization_runs,
-          @new_contract_name,
-          external_libs_string,
-          checked_evm_version
-        ]
-      )
+    path = SolcDownloader.ensure_exists(compiler_version)
 
-    with {:ok, contracts} <- Jason.decode(response),
-         %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode}}} <-
-           get_contract_info(contracts, name) do
-      {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name}}
-    else
-      {:error, %Jason.DecodeError{}} ->
-        {:error, :compilation}
+    if path do
+      {response, _status} =
+        System.cmd(
+          "node",
+          [
+            Application.app_dir(:explorer, "priv/compile_solc.js"),
+            code,
+            compiler_version,
+            optimize_value(optimize),
+            optimization_runs,
+            @new_contract_name,
+            external_libs_string,
+            checked_evm_version,
+            path
+          ]
+        )
 
-      error ->
-        parse_error(error)
+      with {:ok, contracts} <- Jason.decode(response),
+           %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode}}} <-
+             get_contract_info(contracts, name) do
+        {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name}}
+      else
+        {:error, %Jason.DecodeError{}} ->
+          {:error, :compilation}
+
+        error ->
+          parse_error(error)
+      end
     end
   end
 
