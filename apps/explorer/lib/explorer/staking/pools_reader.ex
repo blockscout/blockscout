@@ -29,6 +29,7 @@ defmodule Explorer.Staking.PoolsReader do
          {:ok, [delegator_addresses]} <- data["poolDelegators"],
          delegators_count = Enum.count(delegator_addresses),
          {:ok, [staked_amount]} <- data["stakeAmountTotalMinusOrderedWithdraw"],
+         {:ok, [self_staked_amount]} <- data["stakeAmountMinusOrderedWithdraw"],
          {:ok, [is_validator]} <- data["isValidator"],
          {:ok, [was_validator_count]} <- data["validatorCounter"],
          {:ok, [is_banned]} <- data["isValidatorBanned"],
@@ -42,6 +43,7 @@ defmodule Explorer.Staking.PoolsReader do
           is_active: is_active,
           delegators_count: delegators_count,
           staked_amount: staked_amount,
+          self_staked_amount: self_staked_amount,
           is_validator: is_validator,
           was_validator_count: was_validator_count,
           is_banned: is_banned,
@@ -77,14 +79,15 @@ defmodule Explorer.Staking.PoolsReader do
     contract_abi = abi("staking.json") ++ abi("validators.json")
 
     methods = [
-      {:staking, "isPoolActive", staking_address},
-      {:staking, "poolDelegators", staking_address},
-      {:staking, "stakeAmountTotalMinusOrderedWithdraw", staking_address},
-      {:validators, "isValidator", mining_address},
-      {:validators, "validatorCounter", mining_address},
-      {:validators, "isValidatorBanned", mining_address},
-      {:validators, "bannedUntil", mining_address},
-      {:validators, "banCounter", mining_address}
+      {:staking, "isPoolActive", [staking_address]},
+      {:staking, "poolDelegators", [staking_address]},
+      {:staking, "stakeAmountTotalMinusOrderedWithdraw", [staking_address]},
+      {:staking, "stakeAmountMinusOrderedWithdraw", [staking_address, staking_address]},
+      {:validators, "isValidator", [mining_address]},
+      {:validators, "validatorCounter", [mining_address]},
+      {:validators, "isValidatorBanned", [mining_address]},
+      {:validators, "bannedUntil", [mining_address]},
+      {:validators, "banCounter", [mining_address]},
     ]
 
     methods
@@ -96,11 +99,11 @@ defmodule Explorer.Staking.PoolsReader do
     end)
   end
 
-  defp format_request({contract_name, function_name, param}) do
+  defp format_request({contract_name, function_name, params}) do
     %{
       contract_address: contract(contract_name),
       function_name: function_name,
-      args: [param]
+      args: params
     }
   end
 
