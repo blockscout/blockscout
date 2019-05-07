@@ -154,38 +154,47 @@ defmodule BlockScoutWeb.LayoutView do
   def ignore_version?(_), do: false
 
   def other_networks do
-    if Application.get_env(:block_scout_web, :other_networks) do
-      :block_scout_web
-      |> Application.get_env(:other_networks)
-      |> Poison.decode!()
-      |> Kernel.||(@default_other_networks)
-      |> Enum.map(fn chain ->
-        for {key, val} <- chain, into: %{}, do: {String.to_atom(key), val}
-      end)
-    else
-      @default_other_networks
-    end
+    get_other_networks =
+      if Application.get_env(:block_scout_web, :other_networks) do
+        :block_scout_web
+        |> Application.get_env(:other_networks)
+        |> Poison.Parser.parse!(%{keys: :atoms!})
+      else
+        @default_other_networks
+      end
+
+    get_other_networks
     |> Enum.reject(fn %{title: title} ->
       title == subnetwork_title()
     end)
     |> Enum.sort()
   end
 
-  def main_nets do
-    Enum.reject(other_networks(), &Map.get(&1, :test_net?))
+  def main_nets(nets) do
+    nets
+    |> Enum.reject(&Map.get(&1, :test_net?))
   end
 
-  def head_main_nets do
-    main_nets()
+  def test_nets(nets) do
+    nets
+    |> Enum.filter(&Map.get(&1, :test_net?))
+  end
+
+  def dropdown_nets do
+    other_networks()
+    |> Enum.reject(&Map.get(&1, :hide_in_dropdown?))
+  end
+
+  def dropdown_head_main_nets do
+    dropdown_nets()
+    |> main_nets()
     |> Enum.reject(&Map.get(&1, :other?))
   end
 
-  def test_nets do
-    Enum.filter(other_networks(), &Map.get(&1, :test_net?))
-  end
-
-  def other_nets do
-    Enum.filter(other_networks(), &Map.get(&1, :other?))
+  def dropdown_other_nets do
+    dropdown_nets()
+    |> main_nets()
+    |> Enum.filter(&Map.get(&1, :other?))
   end
 
   def other_explorers do
