@@ -39,6 +39,4 @@ const input = {
 
 
 const output = JSON.parse(solc.compile(JSON.stringify(input)))
-/** Older solc-bin versions don't use filename as contract key */
-const response = output.contracts[newContractName] || output.contracts['']
-console.log(JSON.stringify(response));
+console.log(JSON.stringify(output));
