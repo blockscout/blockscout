@@ -4,6 +4,65 @@ defmodule BlockScoutWeb.LayoutView do
   alias Plug.Conn
 
   @issue_url "https://github.com/poanetwork/blockscout/issues/new"
+  @default_other_networks [
+    %{
+      title: "POA Core",
+      url: "https://blockscout.com/poa/core"
+    },
+    %{
+      title: "POA Sokol",
+      url: "https://blockscout.com/poa/sokol",
+      test_net?: true
+    },
+    %{
+      title: "xDai Chain",
+      url: "https://blockscout.com/poa/dai"
+    },
+    %{
+      title: "Ethereum Mainnet",
+      url: "https://blockscout.com/eth/mainnet"
+    },
+    %{
+      title: "Kovan Testnet",
+      url: "https://blockscout.com/eth/kovan",
+      test_net?: true
+    },
+    %{
+      title: "Ropsten Testnet",
+      url: "https://blockscout.com/eth/ropsten",
+      test_net?: true
+    },
+    %{
+      title: "Goerli Testnet",
+      url: "https://blockscout.com/eth/goerli",
+      test_net?: true
+    },
+    %{
+      title: "Rinkeby Testnet",
+      url: "https://blockscout.com/eth/rinkeby",
+      test_net?: true
+    },
+    %{
+      title: "Ethereum Classic",
+      url: "https://blockscout.com/etc/mainnet",
+      other?: true
+    },
+    %{
+      title: "Aerum Mainnet",
+      url: "https://blockscout.com/aerum/mainnet",
+      other?: true
+    },
+    %{
+      title: "Callisto Mainnet",
+      url: "https://blockscout.com/callisto/mainnet",
+      other?: true
+    },
+    %{
+      title: "RSK Mainnet",
+      url: "https://blockscout.com/rsk/mainnet",
+      other?: true
+    }
+  ]
 
   alias BlockScoutWeb.SocialMedia
 
@@ -95,12 +154,17 @@ defmodule BlockScoutWeb.LayoutView do
   def ignore_version?(_), do: false
 
   def other_networks do
-    :block_scout_web
-    |> Application.get_env(:other_networks)
-    |> Poison.decode!()
-    |> Enum.map(fn chain ->
-      for {key, val} <- chain, into: %{}, do: {String.to_atom(key), val}
-    end)
+    if Application.get_env(:block_scout_web, :other_networks) do
+      :block_scout_web
+      |> Application.get_env(:other_networks)
+      |> Poison.decode!()
+      |> Kernel.||(@default_other_networks)
+      |> Enum.map(fn chain ->
+        for {key, val} <- chain, into: %{}, do: {String.to_atom(key), val}
+      end)
+    else
+      @default_other_networks
+    end
     |> Enum.reject(fn %{title: title} ->
       title == subnetwork_title()
     end)
