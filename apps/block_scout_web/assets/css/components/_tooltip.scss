@@ -13,7 +13,7 @@ $tooltip-color: #fff !default;
   }
 
   .arrow::before {
-    border-top-color: $tooltip-background-color !important;
-    border-bottom-color: $tooltip-background-color !important;
+    border-top-color: $tooltip-background-color;
+    border-bottom-color: $tooltip-background-color;
   }
 }
