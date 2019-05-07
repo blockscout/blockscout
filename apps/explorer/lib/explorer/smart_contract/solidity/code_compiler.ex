@@ -5,6 +5,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
   alias Explorer.SmartContract.SolcDownloader
 
+  require Logger
+
   @new_contract_name "New.sol"
   @allowed_evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople", "petersburg"]
 
@@ -101,7 +103,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           ]
         )
 
-      with {:ok, contracts} <- Jason.decode(response),
+      with {:ok, decoded} <- Jason.decode(response),
+           {:ok, contracts} <- get_contracts(decoded),
            %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode}}} <-
              get_contract_info(contracts, name) do
         {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name}}
@@ -113,7 +116,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           {:error, reason}
 
         error ->
-          parse_error(error)
+          error = parse_error(error)
+          Logger.warn(["There was an error compiling a provided contract: ", inspect(error)])
+          {:error, :compilation}
       end
     else
       {:error, :compilation}
@@ -139,9 +144,14 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     end
   end
 
-  def parse_error(%{"error" => error}), do: {:error, [error]}
-  def parse_error(%{"errors" => errors}), do: {:error, errors}
+  def parse_error({:error, %{"error" => error}}), do: {:error, [error]}
+  def parse_error({:error, %{"errors" => errors}}), do: {:error, errors}
   def parse_error({:error, _} = error), do: error
+
+  # Older solc-bin versions don't use filename as contract key
+  defp get_contracts(%{"contracts" => %{"New.sol" => contracts}}), do: {:ok, contracts}
+  defp get_contracts(%{"contracts" => %{"" => contracts}}), do: {:ok, contracts}
+  defp get_contracts(response), do: {:error, response}
 
   defp optimize_value(false), do: "0"
   defp optimize_value("false"), do: "0"
