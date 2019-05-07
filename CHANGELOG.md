@@ -24,6 +24,7 @@
 - [#1885](https://github.com/poanetwork/blockscout/pull/1885) - highlight reserved words in decompiled code
 - [#1896](https://github.com/poanetwork/blockscout/pull/1896) - re-query tokens in top nav automplete
 - [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
+- [#1904](https://github.com/poanetwork/blockscout/pull/1904) - fix `BLOCK_COUNT_CACHE_TTL` env var type
 
 ### Chore
 
