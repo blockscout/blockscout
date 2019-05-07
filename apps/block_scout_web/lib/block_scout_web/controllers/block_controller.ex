@@ -8,14 +8,24 @@ defmodule BlockScoutWeb.BlockController do
   alias Phoenix.View
 
   def index(conn, params) do
-    [
-      necessity_by_association: %{
-        :transactions => :optional,
-        [miner: :names] => :optional,
-        :rewards => :optional
-      }
-    ]
-    |> handle_render(conn, params)
+    case params["block_type"] do
+      "Uncle" ->
+        uncle(conn, params)
+
+      "Reorg" ->
+        reorg(conn, params)
+
+      _ ->
+        [
+          necessity_by_association: %{
+            :transactions => :optional,
+            [miner: :names] => :optional,
+            :rewards => :optional
+          },
+          block_type: "Block"
+        ]
+        |> handle_render(conn, params)
+    end
   end
 
   def show(conn, %{"hash_or_number" => hash_or_number}) do
@@ -64,7 +74,7 @@ defmodule BlockScoutWeb.BlockController do
           block_path(
             conn,
             :index,
-            Map.delete(next_page_params, "type")
+            next_page_params
           )
       end
 
