@@ -2832,13 +2832,27 @@ defmodule Explorer.Chain do
     value
   end
 
-  @doc """
-  List of staking pools which are validators
-  """
-  @spec validators_pools(lim :: integer, off :: integer) :: [map]
-  def validators_pools(lim, off) when is_integer(lim) and is_integer(off) do
+  @doc "Get staking pools from the DB"
+  @spec staking_pools(filter :: :validator | :active | :inactive, lim :: integer, off :: integer) :: [map()]
+  def staking_pools(filter, lim, off) when is_integer(lim) and is_integer(off) do
     Address.Name
-    |> where(
+    |> staking_pool_filter(filter)
+    |> limit(^lim)
+    |> offset(^off)
+    |> Repo.all()
+  end
+
+  @doc "Get count of staking pools from the DB"
+  @spec staking_pools_count(filter :: :validator | :active | :inactive) :: integer
+  def staking_pools_count(filter) do
+    Address.Name
+    |> staking_pool_filter(filter)
+    |> Repo.aggregate(:count, :address_hash)
+  end
+
+  defp staking_pool_filter(query, :validator) do
+    where(
+      query,
       [_],
       fragment("""
       (metadata->>'is_active')::boolean = true and
@@ -2846,34 +2860,31 @@ defmodule Explorer.Chain do
       (metadata->>'is_validator')::boolean = true
       """)
     )
-    |> limit(^lim)
-    |> offset(^off)
-    |> Repo.all()
   end
 
-  @doc """
-  List of active pools
-  """
-  @spec active_pools(lim :: integer, off :: integer) :: [map]
-  def active_pools(lim, off) when is_integer(lim) and is_integer(off) do
-    Address.Name
-    |> where([_], fragment("(metadata->>'is_active')::boolean = true"))
-    |> limit(^lim)
-    |> offset(^off)
-    |> Repo.all()
+  defp staking_pool_filter(query, :active) do
+    where(
+      query,
+      [_],
+      fragment("""
+      (metadata->>'is_active')::boolean = true and
+      (metadata->>'deleted')::boolean is not true
+      """)
+    )
   end
 
-  @doc """
-  List of inactive pools
-  """
-  @spec inactive_pools(lim :: integer, off :: integer) :: [map]
-  def inactive_pools(lim, off) when is_integer(lim) and is_integer(off) do
-    Address.Name
-    |> where([_], fragment("(metadata->>'is_active')::boolean = false"))
-    |> limit(^lim)
-    |> offset(^off)
-    |> Repo.all()
+  defp staking_pool_filter(query, :inactive) do
+    where(
+      query,
+      [_],
+      fragment("""
+      (metadata->>'is_active')::boolean = false and
+      (metadata->>'deleted')::boolean is not true
+      """)
+    )
   end
+
+  defp staking_pool_filter(query, _), do: query
 
   defp with_decompiled_code_flag(query, hash) do
     has_decompiled_code_query =
