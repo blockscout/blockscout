@@ -2233,6 +2233,14 @@ defmodule Explorer.Chain do
     |> repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
   end
 
+  @spec address_hash_to_address_with_source_code(%Explorer.Chain.Hash{}) :: %Explorer.Chain.Address{} | nil
+  def address_hash_to_address_with_source_code(%Explorer.Chain.Hash{} = address_hash) do
+    case Repo.get(Address, address_hash) do
+      nil -> nil
+      address -> Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
+    end
+  end
+
   @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{} | nil
   def address_hash_to_smart_contract(%Explorer.Chain.Hash{} = address_hash) do
     query =

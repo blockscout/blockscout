@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Address do
            except: [
              :__meta__,
              :smart_contract,
-             :decompiled_smart_contract,
+             :decompiled_smart_contracts,
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
