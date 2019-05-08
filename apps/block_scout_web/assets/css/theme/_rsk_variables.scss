@@ -1,13 +1,13 @@
 // general
-$primary: #153550;
-$secondary: #49a2ee;
-$tertiary: #4ad7a7;
-$additional-font: #89cae6;
+$primary: #101f25;
+$secondary: #27ac8d;
+$tertiary: #e39a54;
+$additional-font: #a1ded1;
 
 // footer
 $footer-background-color: $primary;
 $footer-title-color: #fff;
-$footer-text-color: #89cae6;
+$footer-text-color: $additional-font;
 $footer-item-disc-color: $secondary;
 .footer-logo { filter: brightness(0) invert(1); }
 
@@ -24,7 +24,7 @@ $dashboard-banner-gradient-start: $primary; // gradient begin
 
 $dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
 
-$dashboard-banner-network-plain-container-background-color: #1c476c; // stats bg
+$dashboard-banner-network-plain-container-background-color: #1a323b; // stats bg
 
 
 // navigation

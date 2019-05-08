@@ -1,11 +1,15 @@
 ## Current
 
 ### Features
-
+- [#1907](https://github.com/poanetwork/blockscout/pull/1907) - dropdown color bug fix (lukso theme) and tooltip color bug fix
+- [#1903](https://github.com/poanetwork/blockscout/pull/1903) - added rsk theme and rsk logo
+- [#1895](https://github.com/poanetwork/blockscout/pull/1895) - add changes to poa theme and poa logo
+- [#1812](https://github.com/poanetwork/blockscout/pull/1812) - add pagination to addresses page
+- [#1874](https://github.com/poanetwork/blockscout/pull/1874) - add changes to ethereum theme and ethereum logo
 - [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
 - [#1813](https://github.com/poanetwork/blockscout/pull/1813) - add total blocks counter to the main page
 - [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
-- [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir 
+- [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir
 - [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
 
 ### Fixes
@@ -18,11 +22,17 @@
 - [#1869](https://github.com/poanetwork/blockscout/pull/1869) - Fix output and gas extraction in JS tracer for Geth
 - [#1868](https://github.com/poanetwork/blockscout/pull/1868) - fix: logs list endpoint performance
 - [#1822](https://github.com/poanetwork/blockscout/pull/1822) - Fix style breaks in decompiled contract code view
+- [#1885](https://github.com/poanetwork/blockscout/pull/1885) - highlight reserved words in decompiled code
+- [#1896](https://github.com/poanetwork/blockscout/pull/1896) - re-query tokens in top nav automplete
+- [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
+- [#1904](https://github.com/poanetwork/blockscout/pull/1904) - fix `BLOCK_COUNT_CACHE_TTL` env var type
+- [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
 
 ### Chore
 
 - [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
 - [#1837](https://github.com/poanetwork/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
+- [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
 
 ## 1.3.10-beta
 

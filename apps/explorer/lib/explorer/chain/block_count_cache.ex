@@ -9,8 +9,8 @@ defmodule Explorer.Chain.BlockCountCache do
 
   alias Explorer.Chain
 
-  # 1 minutes
-  @cache_period 1_000 * 60
+  # 10 minutes
+  @cache_period 1_000 * 60 * 10
   @key "count"
   @default_value nil
   @name __MODULE__
