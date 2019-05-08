@@ -4,7 +4,8 @@
 
 ### Features
 
- - [#1812](https://github.com/poanetwork/blockscout/pull/1812) - add pagination to addresses page
+- [#1812](https://github.com/poanetwork/blockscout/pull/1812) - add pagination to addresses page
+- [#1920](https://github.com/poanetwork/blockscout/pull/1920) - fix: remove source code fields from list endpoint
 
 ### Fixes
 
