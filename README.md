@@ -65,6 +65,7 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 * [SpringChain](https://explorer.springrole.com/)
 * [PIRL](http://pirl.es/)
 * [Petrichor](https://explorer.petrichor-dev.com/)
+* [Ether-1](https://blocks.ether1.wattpool.net/)
 
 
 ### Visual Interface

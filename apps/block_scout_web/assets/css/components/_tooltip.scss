@@ -14,5 +14,6 @@ $tooltip-color: #fff !default;
 
   .arrow::before {
     border-top-color: $tooltip-background-color;
+    border-bottom-color: $tooltip-background-color;
   }
 }
