@@ -1,6 +1,5 @@
 defmodule Explorer.Token.PoolsReaderTest do
   use EthereumJSONRPC.Case
-  use Explorer.DataCase
 
   alias Explorer.Staking.PoolsReader
 
@@ -44,6 +43,7 @@ defmodule Explorer.Token.PoolsReaderTest do
           mining_address:
             <<187, 202, 168, 212, 130, 137, 187, 31, 252, 249, 128, 141, 154, 164, 177, 210, 21, 5, 76, 120>>,
           staked_amount: 0,
+          self_staked_amount: 0,
           staking_address: <<11, 47, 94, 47, 60, 189, 134, 78, 170, 44, 100, 46, 55, 105, 193, 88, 35, 97, 202, 246>>,
           was_banned_count: 0,
           was_validator_count: 2
@@ -161,6 +161,24 @@ defmodule Explorer.Token.PoolsReaderTest do
                id: id,
                result: "0x0000000000000000000000000000000000000000000000000000000000000000"
              }
+
+           # stakeAmountMinusOrderedWithdraw
+           %{
+            id: id,
+            jsonrpc: "2.0",
+            method: "eth_call",
+            params: [
+              %{
+                data: "0x58daab6a0000000000000000000000000b2f5e2f3cbd864eaa2c642e3769c1582361caf60000000000000000000000000b2f5e2f3cbd864eaa2c642e3769c1582361caf6",
+                to: _
+              },
+              "latest"
+            ]
+          } ->
+            %{
+              id: id,
+              result: "0x0000000000000000000000000000000000000000000000000000000000000000"
+            }
 
            # isValidator
            %{
