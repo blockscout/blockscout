@@ -6,8 +6,8 @@ defmodule Explorer.Chain.BlockCountCache do
   alias Explorer.Chain
 
   @tab :block_count_cache
-  # 1 minutes
-  @cache_period 1_000 * 60
+  # 10 minutes
+  @cache_period 1_000 * 60 * 10
   @key "count"
   @opts_key "opts"
 
