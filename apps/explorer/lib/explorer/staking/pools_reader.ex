@@ -87,7 +87,7 @@ defmodule Explorer.Staking.PoolsReader do
       {:validators, "validatorCounter", [mining_address]},
       {:validators, "isValidatorBanned", [mining_address]},
       {:validators, "bannedUntil", [mining_address]},
-      {:validators, "banCounter", [mining_address]},
+      {:validators, "banCounter", [mining_address]}
     ]
 
     methods

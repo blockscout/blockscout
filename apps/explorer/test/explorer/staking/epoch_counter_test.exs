@@ -53,33 +53,33 @@ defmodule Explorer.Staking.EpochCounterTest do
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn [
-        %{
-          id: 0,
-          jsonrpc: "2.0",
-          method: "eth_call",
-          params: _
-        },
-        %{
-          id: 1,
-          jsonrpc: "2.0",
-          method: "eth_call",
-          params: _
-        }
-      ], _options ->
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: _
+           },
+           %{
+             id: 1,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: _
+           }
+         ],
+         _options ->
         {:ok,
-          [
-            %{
-              id: 0,
-              jsonrpc: "2.0",
-              result: encode_num(epoch_num)
-            },
-            %{
-              id: 1,
-              jsonrpc: "2.0",
-              result: encode_num(end_block_num)
-            }
-          ]
-        }
+         [
+           %{
+             id: 0,
+             jsonrpc: "2.0",
+             result: encode_num(epoch_num)
+           },
+           %{
+             id: 1,
+             jsonrpc: "2.0",
+             result: encode_num(end_block_num)
+           }
+         ]}
       end
     )
   end
