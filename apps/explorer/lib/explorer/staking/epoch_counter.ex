@@ -62,14 +62,16 @@ defmodule Explorer.Staking.EpochCounter do
   end
 
   def handle_info({:chain_event, :blocks, :realtime, blocks}, state) do
-    new_block = Enum.max_by(blocks, &Map.get(&1, :number), fn -> 0 end)
-    block_number = new_block.number
+    new_block_number =
+      blocks
+      |> Enum.map(& &1[:number])
+      |> Enum.max(fn -> 0 end)
 
     case :ets.lookup(@table_name, @epoch_end_key) do
       [] ->
         fetch_epoch_info()
 
-      [{_, epoch_end_block}] when epoch_end_block < block_number ->
+      [{_, epoch_end_block}] when epoch_end_block < new_block_number ->
         fetch_epoch_info()
 
       _ ->
