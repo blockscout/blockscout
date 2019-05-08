@@ -74,7 +74,7 @@ defmodule Explorer.SmartContract.Verifier do
       generated_bytecode != blockchain_bytecode_without_whisper ->
         {:error, :generated_bytecode}
 
-      !ConstructorArguments.verify(address_hash, arguments_data) ->
+      has_constructor_with_params?(abi) && !ConstructorArguments.verify(address_hash, arguments_data) ->
         {:error, :constructor_arguments}
 
       true ->
@@ -125,5 +125,9 @@ defmodule Explorer.SmartContract.Verifier do
     else
       prev_version
     end
+  end
+
+  defp has_constructor_with_params?(abi) do
+    Enum.any?(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
   end
 end
