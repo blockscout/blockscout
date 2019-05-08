@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#1913](https://github.com/poanetwork/blockscout/pull/1913) - added aerum theme and aerum logo
 - [#1907](https://github.com/poanetwork/blockscout/pull/1907) - dropdown color bug fix (lukso theme) and tooltip color bug fix
 - [#1903](https://github.com/poanetwork/blockscout/pull/1903) - added rsk theme and rsk logo
 - [#1895](https://github.com/poanetwork/blockscout/pull/1895) - add changes to poa theme and poa logo
