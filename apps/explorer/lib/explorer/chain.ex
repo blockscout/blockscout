@@ -10,6 +10,7 @@ defmodule Explorer.Chain do
       limit: 2,
       order_by: 2,
       order_by: 3,
+      offset: 2,
       preload: 2,
       select: 2,
       subquery: 1,
@@ -2829,6 +2830,49 @@ defmodule Explorer.Chain do
       |> Wei.cast()
 
     value
+  end
+
+  @doc """
+  List of staking pools which are validators
+  """
+  @spec validators_pools(lim :: integer, off :: integer) :: [map]
+  def validators_pools(lim, off) when is_integer(lim) and is_integer(off) do
+    Address.Name
+    |> where(
+      [_],
+      fragment("""
+      (metadata->>'is_active')::boolean = true and
+      (metadata->>'deleted')::boolean is not true and
+      (metadata->>'is_validator')::boolean = true
+      """)
+    )
+    |> limit(^lim)
+    |> offset(^off)
+    |> Repo.all()
+  end
+
+  @doc """
+  List of active pools
+  """
+  @spec active_pools(lim :: integer, off :: integer) :: [map]
+  def active_pools(lim, off) when is_integer(lim) and is_integer(off) do
+    Address.Name
+    |> where([_], fragment("(metadata->>'is_active')::boolean = true"))
+    |> limit(^lim)
+    |> offset(^off)
+    |> Repo.all()
+  end
+
+  @doc """
+  List of inactive pools
+  """
+  @spec inactive_pools(lim :: integer, off :: integer) :: [map]
+  def inactive_pools(lim, off) when is_integer(lim) and is_integer(off) do
+    Address.Name
+    |> where([_], fragment("(metadata->>'is_active')::boolean = false"))
+    |> limit(^lim)
+    |> offset(^off)
+    |> Repo.all()
   end
 
   defp with_decompiled_code_flag(query, hash) do
