@@ -65,20 +65,25 @@ defmodule BlockScoutWeb.BlockController do
 
     {blocks, next_page} = split_list_by_page(blocks_plus_one)
 
+    block_type = Keyword.get(full_options, :block_type, "Block")
+
     next_page_path =
       case next_page_params(next_page, blocks, params) do
         nil ->
           nil
 
         next_page_params ->
+          params_with_block_type =
+            next_page_params
+            |> Map.delete("type")
+            |> Map.put("block_type", block_type)
+
           block_path(
             conn,
             :index,
-            next_page_params
+            params_with_block_type
           )
       end
-
-    block_type = Keyword.get(full_options, :block_type, "Block")
 
     json(
       conn,

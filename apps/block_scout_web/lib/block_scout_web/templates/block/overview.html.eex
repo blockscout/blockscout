@@ -20,8 +20,10 @@
             <!-- # of Transactions -->
             <span class="mr-4"> <%= gettext "%{count} Transactions", count: @block_transaction_count %> </span>
 
+            <%= if @block.size do %>
             <!-- Block Size -->
-            <span class="mr-4"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
+              <span class="mr-4"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
+            <% end %>
 
             <!-- Block Age -->
             <span class="mr-4" data-from-now="<%= @block.timestamp %>"></span>
