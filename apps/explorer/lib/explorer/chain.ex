@@ -1964,10 +1964,7 @@ defmodule Explorer.Chain do
     cached_value = BlockCountCache.count()
 
     if is_nil(cached_value) do
-      %Postgrex.Result{rows: [[rows]]} =
-        SQL.query!(Repo, "SELECT count_estimate('SELECT 1 FROM blocks WHERE consensus = true');")
-
-      rows
+      block_consensus_count()
     else
       cached_value
     end
