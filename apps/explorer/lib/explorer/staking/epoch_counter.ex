@@ -1,6 +1,6 @@
 defmodule Explorer.Staking.EpochCounter do
   @moduledoc """
-  Counts staking epoch
+  Fetches current staking epoch number and the epoch end block number
   """
 
   use GenServer
@@ -14,23 +14,27 @@ defmodule Explorer.Staking.EpochCounter do
 
   @doc "Current staking epoch number"
   def epoch_number do
-    case :ets.lookup(@table_name, @epoch_key) do
-      [{_, epoch_num}] ->
-        epoch_num
+    if :ets.info(@table_name) != :undefined do
+      case :ets.lookup(@table_name, @epoch_key) do
+        [{_, epoch_num}] ->
+          epoch_num
 
-      _ ->
-        0
+        _ ->
+          0
+      end
     end
   end
 
   @doc "Block number on which will start new epoch"
   def epoch_end_block do
-    case :ets.lookup(@table_name, @epoch_end_key) do
-      [{_, epoch_end}] ->
-        epoch_end
+    if :ets.info(@table_name) != :undefined do
+      case :ets.lookup(@table_name, @epoch_end_key) do
+        [{_, epoch_end}] ->
+          epoch_end
 
-      _ ->
-        0
+        _ ->
+          0
+      end
     end
   end
 
