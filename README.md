@@ -65,6 +65,7 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 * [SpringChain](https://explorer.springrole.com/)
 * [PIRL](http://pirl.es/)
 * [Petrichor](https://explorer.petrichor-dev.com/)
+* [Ether-1](https://blocks.ether1.wattpool.net/)
 
 
 ### Visual Interface
@@ -139,7 +140,7 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
       ```
       * If using Chrome, Enable `chrome://flags/#allow-insecure-localhost`.
 
-  9. Start Phoenix Server.
+  9. Run the Phoenix Server from the root directory of your application.
   `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
