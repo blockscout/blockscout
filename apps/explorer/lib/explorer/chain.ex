@@ -2565,7 +2565,7 @@ defmodule Explorer.Chain do
         join: duplicate in subquery(query),
         on: duplicate.nonce == pending.nonce,
         on: duplicate.from_address_hash == pending.from_address_hash,
-        where: pending.hash in ^hashes
+        where: pending.hash in ^hashes and is_nil(pending.block_hash)
       )
 
     Repo.update_all(transactions_to_update, [set: [error: "dropped/replaced", status: :error]], timeout: timeout)
