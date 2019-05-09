@@ -1,6 +1,7 @@
 defmodule Explorer.Staking.EpochCounter do
   @moduledoc """
-  Fetches current staking epoch number and the epoch end block number
+  Fetches current staking epoch number and the epoch end block number.
+  It subscribes to handle new blocks and conclude whether the epoch is over.
   """
 
   use GenServer
