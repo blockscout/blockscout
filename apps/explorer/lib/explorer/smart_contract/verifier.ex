@@ -17,7 +17,8 @@ defmodule Explorer.SmartContract.Verifier do
     do: {:error, :contract_source_code}
 
   def evaluate_authenticity(address_hash, params) do
-    evm_version = Map.get(params, "evm_version", "petersburg")
+    latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
+    evm_version = Map.get(params, "evm_version", latest_evm_version)
 
     Enum.reduce([evm_version | previous_evm_versions(evm_version)], false, fn version, acc ->
       case acc do

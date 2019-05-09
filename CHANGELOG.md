@@ -27,6 +27,7 @@
 - [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
 - [#1904](https://github.com/poanetwork/blockscout/pull/1904) - fix `BLOCK_COUNT_CACHE_TTL` env var type
 - [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
+- [#1915](https://github.com/poanetwork/blockscout/pull/1915) - fallback to 2 latest evm versions
 
 ### Chore
 
