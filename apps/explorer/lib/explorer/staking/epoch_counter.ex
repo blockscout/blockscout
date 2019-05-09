@@ -62,6 +62,7 @@ defmodule Explorer.Staking.EpochCounter do
     {:noreply, state}
   end
 
+  @doc "Handles new blocks and decides to fetch new epoch info"
   def handle_info({:chain_event, :blocks, :realtime, blocks}, state) do
     new_block_number =
       blocks
