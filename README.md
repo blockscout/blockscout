@@ -390,6 +390,12 @@ If all queues are at their minimum size, then no more memory can be reclaimed an
 
 See `./docker/README.md`
 
+## Docker Compose Support
+
+1. `cp .env.example .env`
+2. update environment variables
+3. `docker-compose up --build`
+
 ## Acknowledgements
 
 We would like to thank the [EthPrize foundation](http://ethprize.io/) for their funding support.

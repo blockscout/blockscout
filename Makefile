@@ -1,7 +1,7 @@
 .PHONY: start stop
 
 start:
-	docker-compose -f docker/docker-compose.yml up --build
+	docker-compose up --build
 
 stop:
-	docker-compose -f docker/docker-compose.yml down
+	docker-compose down

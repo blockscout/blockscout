@@ -7,31 +7,19 @@ services:
       - .env
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
-    build:
-      resource:
-      limits:
-        cpus: '0.3'
-        memory: 300M
   web:
     container_name: blockscout
-    working_dir: /app
+    working_dir: /blockscout
     build:
-      context: ../..
-      dockerfile: ./docker/Dockerfile
+      context: .
     env_file:
       - .env
     volumes:
       - type: bind
         source: .
-        target: /app
-    deploy:
-      resources:
-        limits:
-          cpus: '0.7'
-          memory: 700M
+        target: /blockscout
     ports:
       - "4000:4000"
     depends_on:
       - db
-    command:
-      - ./run.sh
+    command: ./run.sh
