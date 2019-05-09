@@ -11,6 +11,7 @@
 - [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
 - [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir
 - [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
+- [#1876](https://github.com/poanetwork/blockscout/pull/1876) - async calculate a count of blocks
 
 ### Fixes
 
@@ -29,6 +30,7 @@
 - [#1875](https://github.com/poanetwork/blockscout/pull/1875) - fix: resolve false positive constructor arguments 
 - [#1904](https://github.com/poanetwork/blockscout/pull/1904) - fix `BLOCK_COUNT_CACHE_TTL` env var type
 - [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
+- [#1915](https://github.com/poanetwork/blockscout/pull/1915) - fallback to 2 latest evm versions
 
 ### Chore
 
