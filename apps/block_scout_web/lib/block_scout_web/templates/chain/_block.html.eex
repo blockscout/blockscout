@@ -8,7 +8,7 @@
         ) %>
     <div class="tile-bottom-contents">
       <div class="tile-transactions">
-        <span class="mr-2"><%= gettext("%{count} Transactions", count: Enum.count(@block.transactions)) %></span>
+        <span class="mr-2"><%= gettext("%{count} Transactions", count: @block.transaction_count) %></span>
         <span class="text-nowrap" data-from-now="<%= @block.timestamp %>"> </span>
       </div>
       <div class="text-truncate">
