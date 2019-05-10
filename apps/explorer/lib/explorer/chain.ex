@@ -1129,7 +1129,7 @@ defmodule Explorer.Chain do
       )
 
     from(block in query,
-      join: t in subquery(count_subquery),
+      left_join: t in subquery(count_subquery),
       select_merge: %{transaction_count: coalesce(t.count, 0)}
     )
   end
