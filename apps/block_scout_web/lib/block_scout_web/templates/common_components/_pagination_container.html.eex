@@ -9,7 +9,7 @@
         </select>
         <%= gettext "Records" %>
     </div>
-    <%= end %>
+    <% end %>
     <ul class="pagination">
         <li class="page-item">
             <a
