@@ -92,6 +92,7 @@ After all deployed instances get all needed data, these fetchers should be depre
 - `addresses_without_codes`: forces complete refetch of blocks, which have created contract addresses without contract code
 - `failed_created_addresses`: forces refetch of contract code for failed transactions, which previously got incorrectly overwritten
 - `uncles_without_index`: adds previously unfetched `index` field for unfetched blocks in `block_second_degree_relations`
+- `blocks_transactions_mismatch`: refetches each block once and revokes consensus to those whose transaction number mismatches with the number currently stored. This is meant to force the correction of a race condition that caused successfully fetched transactions to be overwritten by a following non-consensus block: [#1911](https://github.com/poanetwork/blockscout/issues/1911).
 
 ## Memory Usage
 

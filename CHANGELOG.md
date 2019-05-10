@@ -1,5 +1,11 @@
 ## Current
 
+## 1.3.14-beta
+
+### Fixes
+
+- [#1917](https://github.com/poanetwork/blockscout/pull/1917) - Force block refetch if transaction is re-collated in a different block
+
 ## 1.3.13-beta
 
 ### Features
