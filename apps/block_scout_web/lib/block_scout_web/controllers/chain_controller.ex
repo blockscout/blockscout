@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.ChainController do
       blocks =
         [paging_options: %PagingOptions{page_size: 4}]
         |> Chain.list_blocks()
-        |> Repo.preload([[miner: :names], :transactions, :rewards])
+        |> Repo.preload([[miner: :names], :rewards])
         |> Enum.map(fn block ->
           %{
             chain_block_html:

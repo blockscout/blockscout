@@ -1122,9 +1122,15 @@ defmodule Explorer.Chain do
   end
 
   defp add_transaction_count(query) do
+    count_subquery =
+      from(t in Transaction,
+        select: %{block_hash: t.block_hash, count: count(t.hash)},
+        group_by: t.block_hash
+      )
+
     from(block in query,
-      join: t in assoc(block, :transactions),
-      select_merge: %{transaction_count: count(t.hash)}
+      join: t in subquery(count_subquery),
+      select_merge: %{transaction_count: coalesce(t.count, 0)}
     )
   end
 

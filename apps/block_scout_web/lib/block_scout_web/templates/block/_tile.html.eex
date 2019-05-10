@@ -24,7 +24,7 @@
       <div>
         <!-- transactions -->
         <span class="mr-2">
-          <%= ngettext("%{count} transaction", "%{count} transactions", Enum.count(@block.transactions)) %>
+          <%= ngettext("%{count} transaction", "%{count} transactions", @block.transaction_count) %>
         </span>
         <!-- size -->
         <span class="mr-2"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
