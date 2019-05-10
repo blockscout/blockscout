@@ -1,13 +1,13 @@
 <div class='pagination-container <%= if assigns[:position] == "top" do %>position-top<% end %> <%= if assigns[:position] == "bottom" do %>position-bottom<% end %>'>
     <%= if assigns[:show_pagination_limit] do %>
     <div class="pagination-limit">
-        Show
+        <%= gettext "Show" %>
         <select>
             <option>20</option>
             <option>50</option>
             <option>100</option>
         </select>
-        records
+        <%= gettext "Records" %>
     </div>
     <%= end %>
     <ul class="pagination">
