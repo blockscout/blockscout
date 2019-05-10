@@ -7,6 +7,9 @@
         <span data-selector="transaction-pending-count"><%= Cldr.Number.to_string!(@pending_transaction_count, format: "#,###") %></span>
         <%= gettext("Pending Transactions") %>
       </p>
+
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", prev_page_path: "#", next_page_path: "#", cur_page_number: "1", show_pagination_limit: true %>
+
       <div data-selector="channel-batching-message" style="display:none;">
         <div data-selector="reload-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
@@ -33,9 +36,15 @@
         </span>
         <%= gettext("Loading") %>...
       </div>
+
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", prev_page_path: "#", next_page_path: "#", cur_page_number: "1", show_pagination_limit: true %>
+
+      <!--
       <a href="#" class="button button-secondary button-small float-right mt-4" data-next-page-button style="display: none;">
         <%= gettext("Older") %>
       </a>
+      -->
+
       <div class="button button-secondary button-small float-right mt-4" data-loading-button style="display: none;">
         <span class="loading-spinner-small mr-2">
           <span class="loading-spinner-block-1"></span>

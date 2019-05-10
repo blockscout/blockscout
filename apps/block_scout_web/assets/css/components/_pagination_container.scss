@@ -17,6 +17,10 @@ $pagination-page-link-color-active: #fff !default;
   display: flex;
   justify-content: space-between;
 
+  @include media-breakpoint-down(sm) {
+    flex-direction: column;
+  }
+
   &.position-bottom {
     padding-top: 30px;
   }
@@ -33,6 +37,10 @@ $pagination-page-link-color-active: #fff !default;
     font-weight: 600;
     line-height: 1.2;
 
+    @include media-breakpoint-down(sm) {
+      margin-bottom: 15px;
+    }
+
     select {
       margin: 0 10px;
     }
@@ -43,7 +51,7 @@ $pagination-page-link-color-active: #fff !default;
     padding: 0;
 
     .page-item {
-      margin: 0 10px 0 0;
+      margin: 0 5px 0 0;
 
       &:last-child {
         margin-right: 0;
@@ -69,9 +77,11 @@ $pagination-page-link-color-active: #fff !default;
       font-weight: 600;
       height: 24px;
       margin: 0;
-      padding: 0 10px;
+      padding: 0 8px;
       position: relative;
       user-select: none;
+      text-align: center;
+      white-space: nowrap;
 
       &:not(.no-hover):hover {
         @include pagination-container-base($pagination-page-link-background-active, $pagination-page-link-color-active);
