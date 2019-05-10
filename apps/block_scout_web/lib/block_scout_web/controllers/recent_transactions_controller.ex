@@ -15,7 +15,8 @@ defmodule BlockScoutWeb.RecentTransactionsController do
             [from_address: :names] => :required,
             [to_address: :names] => :optional
           },
-          paging_options: %PagingOptions{page_size: 5}
+          paging_options: %PagingOptions{page_size: 5},
+          with_token_transfers: false
         )
 
       transactions =

@@ -1805,15 +1805,23 @@ defmodule Explorer.Chain do
   @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def recent_collated_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    with_token_transfers = Keyword.get(options, :with_token_transfers, true)
 
-    options
-    |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
-    |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
-    |> join_associations(necessity_by_association)
-    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
-    |> Repo.all()
+    base_query =
+      options
+      |> Keyword.get(:paging_options, @default_paging_options)
+      |> fetch_transactions()
+      |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+      |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+      |> join_associations(necessity_by_association)
+
+    if with_token_transfers do
+      base_query
+      |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
+      |> Repo.all()
+    else
+      Repo.all(base_query)
+    end
   end
 
   @doc """
