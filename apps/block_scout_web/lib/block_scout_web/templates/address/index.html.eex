@@ -1,16 +1,7 @@
 <section class="container">
   <div class="card">
     <div class="card-body">
-      <%= if @next_page_path do %>
-        <a href="<%= "#{@next_page_path}" %>" class="button button-secondary button-small float-right ml-1">
-          <%= gettext("Next") %>
-        </a>
-      <% end %>
-      <%= if @prev_page_path do %>
-        <a href="<%= "#{@prev_page_path}" %>" class="button button-secondary button-small float-right">
-          <%= gettext("Back") %>
-        </a>
-      <% end %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", prev_page_path: @prev_page_path, next_page_path: @next_page_path, cur_page_number: @cur_page_number, show_pagination_limit: true %>
 
       <h1 class="card-title margin-bottom-0"><%= gettext "Addresses" %></h1>
       <p class="card-subtitle">
@@ -23,25 +14,16 @@
         <%= Cldr.Number.to_string!(@cur_page_number, format: "#,###)") %>
       </p>
 
-      <span data-selector="top-addresses-list">
+      <div data-selector="top-addresses-list">
         <%= for {{address, tx_count}, index} <- Enum.with_index(@address_tx_count_pairs, 1) do %>
           <%= render "_tile.html",
             address: address, index: index, exchange_rate: @exchange_rate,
             total_supply: @total_supply, tx_count: tx_count,
             validation_count: validation_count(address) %>
         <% end %>
-        <br>
-        <%= if @next_page_path do %>
-          <a href="<%= "#{@next_page_path}" %>" class="button button-secondary button-small float-right mt-0 mb-0 ml-1">
-            <%= gettext("Next") %>
-          </a>
-        <% end %>
-        <%= if @prev_page_path do %>
-          <a href="<%= "#{@prev_page_path}" %>" class="button button-secondary button-small float-right mt-0 mb-0">
-            <%= gettext("Back") %>
-          </a>
-        <% end %>
-      </span>
+      </div>
+
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", prev_page_path: @prev_page_path, next_page_path: @next_page_path, cur_page_number: @cur_page_number, show_pagination_limit: true %>
     </div>
   </div>
 </section>
