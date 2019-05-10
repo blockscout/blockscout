@@ -86,7 +86,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       conflict_target: :hash,
       on_conflict: on_conflict,
       for: Transaction,
-      returning: ~w(block_number index hash internal_transactions_indexed_at block_hash nonce from_address_hash)a,
+      returning:
+        ~w(block_number index hash internal_transactions_indexed_at block_hash nonce from_address_hash created_contract_address_hash)a,
       timeout: timeout,
       timestamps: timestamps
     )

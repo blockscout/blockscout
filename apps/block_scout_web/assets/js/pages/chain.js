@@ -24,7 +24,8 @@ export const initialState = {
   transactionsError: false,
   transactionsLoading: true,
   transactionCount: null,
-  usdMarketCap: null
+  usdMarketCap: null,
+  blockCount: null
 }
 
 export const reducer = withMissingBlocks(baseReducer)
@@ -46,11 +47,13 @@ function baseReducer (state = initialState, action) {
           blocks: [
             action.msg,
             ...state.blocks.slice(0, -1)
-          ]
+          ],
+          blockCount: action.msg.blockNumber + 1
         })
       } else {
         return Object.assign({}, state, {
-          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
+          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block),
+          blockCount: action.msg.blockNumber + 1
         })
       }
     }
@@ -150,6 +153,15 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.transactionCount === state.transactionCount) return
       $el.empty().append(numeral(state.transactionCount).format())
+    }
+  },
+  '[data-selector="block-count"]': {
+    load ($el) {
+      return { blockCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (oldState.blockCount === state.blockCount) return
+      $el.empty().append(numeral(state.blockCount).format())
     }
   },
   '[data-selector="address-count"]': {
@@ -290,22 +302,20 @@ function bindTransactionErrorMessage (store) {
 export function placeHolderBlock (blockNumber) {
   return `
     <div
-      class="col-lg-3 fade-up-blocks-chain"
-      style="min-height: 100px;"
-      data-selector="place-holder"
+      class="col-lg-3 d-flex fade-up-blocks-chain"
       data-block-number="${blockNumber}"
+      data-selector="place-holder"
     >
       <div
         class="tile tile-type-block d-flex align-items-center fade-up"
-        style="height: 100px;"
       >
         <span class="loading-spinner-small ml-1 mr-4">
           <span class="loading-spinner-block-1"></span>
           <span class="loading-spinner-block-2"></span>
         </span>
         <div>
-          <div class="tile-title">${blockNumber}</div>
-          <div>${window.localized['Block Processing']}</div>
+          <span class="tile-title pr-0 pl-0">${blockNumber}</span>
+          <div class="tile-transactions">${window.localized['Block Processing']}</div>
         </div>
       </div>
     </div>

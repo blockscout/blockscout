@@ -24,6 +24,7 @@ defmodule BlockScoutWeb.Router do
     get("/supply", SupplyController, :supply)
 
     resources("/decompiled_smart_contract", DecompiledSmartContractController, only: [:create])
+    resources("/verified_smart_contracts", VerifiedSmartContractController, only: [:create])
   end
 
   scope "/api", BlockScoutWeb.API.RPC do
@@ -71,7 +72,10 @@ defmodule BlockScoutWeb.Router do
 
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
 
-    resources("/market_history_chart", Chain.MarketHistoryChartController, only: [:show], singleton: true)
+    resources("/market_history_chart", Chain.MarketHistoryChartController,
+      only: [:show],
+      singleton: true
+    )
 
     resources "/blocks", BlockController, only: [:index, :show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
@@ -93,6 +97,13 @@ defmodule BlockScoutWeb.Router do
         TransactionInternalTransactionController,
         only: [:index],
         as: :internal_transaction
+      )
+
+      resources(
+        "/raw_trace",
+        TransactionRawTraceController,
+        only: [:index],
+        as: :raw_trace
       )
 
       resources("/logs", TransactionLogController, only: [:index], as: :log)

@@ -1,0 +1,6 @@
+$btn-dropdown-line-bg: #fff !default;
+$btn-dropdown-line-color: $primary !default;
+
+.btn-dropdown-line {
+    @include btn-line($btn-dropdown-line-bg, $btn-dropdown-line-color);
+}

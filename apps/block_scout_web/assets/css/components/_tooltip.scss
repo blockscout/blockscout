@@ -1,0 +1,19 @@
+$tooltip-background-color: $primary !default;
+$tooltip-color: #fff !default;
+
+.tooltip {
+  max-width: 250px;
+  min-width: 100px;
+
+  .tooltip-inner {
+    background-color: $tooltip-background-color;
+    border-radius: 5px;
+    color: $tooltip-color;
+    padding: 15px;
+  }
+
+  .arrow::before {
+    border-top-color: $tooltip-background-color;
+    border-bottom-color: $tooltip-background-color;
+  }
+}

@@ -29,6 +29,7 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
+    BlockCountCache,
     BlockNumberCache,
     Data,
     DecompiledSmartContract,
@@ -327,6 +328,21 @@ defmodule Explorer.Chain do
   """
   def block_count do
     Repo.aggregate(Block, :count, :hash)
+  end
+
+  @doc """
+  The number of consensus blocks.
+
+      iex> insert(:block, consensus: true)
+      iex> insert(:block, consensus: false)
+      iex> Explorer.Chain.block_consensus_count()
+      1
+
+  """
+  def block_consensus_count do
+    Block
+    |> where(consensus: true)
+    |> Repo.aggregate(:count, :hash)
   end
 
   @doc """
@@ -1027,7 +1043,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer(), non_neg_integer}
+  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer, non_neg_integer}
   def fetch_min_and_max_block_numbers do
     query =
       from(block in Block,
@@ -1041,6 +1057,17 @@ defmodule Explorer.Chain do
       {nil, nil} -> {0, 0}
       _ -> result
     end
+  end
+
+  @spec fetch_count_consensus_block() :: non_neg_integer
+  def fetch_count_consensus_block do
+    query =
+      from(block in Block,
+        select: count(block.hash),
+        where: block.consensus == true
+      )
+
+    Repo.one!(query)
   end
 
   @doc """
@@ -1117,21 +1144,25 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
+  Lists the top `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance and address hash.
 
   """
   @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
-  def list_top_addresses do
-    query =
+  def list_top_addresses(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
       from(a in Address,
         where: a.fetched_coin_balance > ^0,
         order_by: [desc: a.fetched_coin_balance, asc: a.hash],
         preload: [:names],
-        select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)},
-        limit: 250
+        select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)}
       )
 
-    Repo.all(query)
+    base_query
+    |> page_addresses(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
   end
 
   @doc """
@@ -1924,6 +1955,22 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Estimated count of `t:Explorer.Chain.Block.t/0`.
+
+  Estimated count of consensus blocks.
+  """
+  @spec block_estimated_count() :: non_neg_integer()
+  def block_estimated_count do
+    cached_value = BlockCountCache.count()
+
+    if is_nil(cached_value) do
+      block_consensus_count()
+    else
+      cached_value
+    end
+  end
+
+  @doc """
   `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`.
 
   ## Options
@@ -2267,6 +2314,12 @@ defmodule Explorer.Chain do
     end)
   end
 
+  defp page_addresses(query, %PagingOptions{key: nil}), do: query
+
+  defp page_addresses(query, %PagingOptions{key: {coin_balance, hash}}) do
+    where(query, [address], address.fetched_coin_balance <= ^coin_balance and address.hash > ^hash)
+  end
+
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
 
   defp page_blocks(query, %PagingOptions{key: {block_number}}) do
@@ -2359,7 +2412,7 @@ defmodule Explorer.Chain do
   @doc """
   The current total number of coins minted minus verifiably burned coins.
   """
-  @spec total_supply :: non_neg_integer()
+  @spec total_supply :: non_neg_integer() | nil
   def total_supply do
     supply_module().total()
   end
@@ -2367,7 +2420,7 @@ defmodule Explorer.Chain do
   @doc """
   The current number coins in the market for trading.
   """
-  @spec circulating_supply :: non_neg_integer()
+  @spec circulating_supply :: non_neg_integer() | nil
   def circulating_supply do
     supply_module().circulating()
   end
