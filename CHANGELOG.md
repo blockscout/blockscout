@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
 - [#1922](https://github.com/poanetwork/blockscout/pull/1922) - added ethereum classic theme and logo
 - [#1907](https://github.com/poanetwork/blockscout/pull/1907) - dropdown color bug fix (lukso theme) and tooltip color bug fix
 - [#1903](https://github.com/poanetwork/blockscout/pull/1903) - added rsk theme and rsk logo
@@ -28,7 +29,7 @@
 - [#1896](https://github.com/poanetwork/blockscout/pull/1896) - re-query tokens in top nav automplete
 - [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
 - [#1905](https://github.com/poanetwork/blockscout/pull/1905) - fix reorgs, uncles pagination
-- [#1875](https://github.com/poanetwork/blockscout/pull/1875) - fix: resolve false positive constructor arguments 
+- [#1875](https://github.com/poanetwork/blockscout/pull/1875) - fix: resolve false positive constructor arguments
 - [#1904](https://github.com/poanetwork/blockscout/pull/1904) - fix `BLOCK_COUNT_CACHE_TTL` env var type
 - [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
 - [#1915](https://github.com/poanetwork/blockscout/pull/1915) - fallback to 2 latest evm versions
