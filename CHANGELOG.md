@@ -40,6 +40,7 @@
 
 - [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
 - [#1837](https://github.com/poanetwork/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
+- [#1900](https://github.com/poanetwork/blockscout/pull/1900) - SUPPORTED_CHAINS ENV var
 - [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
 
 ## 1.3.10-beta
