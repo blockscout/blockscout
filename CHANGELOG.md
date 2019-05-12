@@ -1,11 +1,46 @@
 ##  Current
 
 ### Features
+- [#1925](https://github.com/poanetwork/blockscout/pull/1925) - added dai theme and logo
+- [#1922](https://github.com/poanetwork/blockscout/pull/1922) - added ethereum classic theme and logo
+- [#1907](https://github.com/poanetwork/blockscout/pull/1907) - dropdown color bug fix (lukso theme) and tooltip color bug fix
+- [#1903](https://github.com/poanetwork/blockscout/pull/1903) - added rsk theme and rsk logo
+- [#1895](https://github.com/poanetwork/blockscout/pull/1895) - add changes to poa theme and poa logo
+- [#1812](https://github.com/poanetwork/blockscout/pull/1812) - add pagination to addresses page
+- [#1874](https://github.com/poanetwork/blockscout/pull/1874) - add changes to ethereum theme and ethereum logo
+- [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
+- [#1813](https://github.com/poanetwork/blockscout/pull/1813) - add total blocks counter to the main page
+- [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
+- [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir
+- [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
+- [#1920](https://github.com/poanetwork/blockscout/pull/1920) - fix: remove source code fields from list endpoint
+- [#1876](https://github.com/poanetwork/blockscout/pull/1876) - async calculate a count of blocks
 
 ### Fixes
 
+- [#1926](https://github.com/poanetwork/blockscout/pull/1926) - status label alignment
+- [#1829](https://github.com/poanetwork/blockscout/pull/1829) - Handle nil quantities in block decoding routine
+- [#1830](https://github.com/poanetwork/blockscout/pull/1830) - Make block size field nullable
+- [#1840](https://github.com/poanetwork/blockscout/pull/1840) - Handle case when total supply is nil
+- [#1838](https://github.com/poanetwork/blockscout/pull/1838) - Block counter calculates only consensus blocks
+- [#1849](https://github.com/poanetwork/blockscout/pull/1849) - Improve chains menu
+- [#1869](https://github.com/poanetwork/blockscout/pull/1869) - Fix output and gas extraction in JS tracer for Geth
+- [#1868](https://github.com/poanetwork/blockscout/pull/1868) - fix: logs list endpoint performance
+- [#1822](https://github.com/poanetwork/blockscout/pull/1822) - Fix style breaks in decompiled contract code view
+- [#1885](https://github.com/poanetwork/blockscout/pull/1885) - highlight reserved words in decompiled code
+- [#1896](https://github.com/poanetwork/blockscout/pull/1896) - re-query tokens in top nav automplete
+- [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
+- [#1905](https://github.com/poanetwork/blockscout/pull/1905) - fix reorgs, uncles pagination
+- [#1875](https://github.com/poanetwork/blockscout/pull/1875) - fix: resolve false positive constructor arguments
+- [#1904](https://github.com/poanetwork/blockscout/pull/1904) - fix `BLOCK_COUNT_CACHE_TTL` env var type
+- [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
+- [#1915](https://github.com/poanetwork/blockscout/pull/1915) - fallback to 2 latest evm versions
+
 ### Chore
 
+- [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
+- [#1837](https://github.com/poanetwork/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
+- [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
 
 ##  1.3.9-beta
 
