@@ -1,62 +1,50 @@
-$primary:       #fec042;
-$secondary:     #53546a;
-$tertiary:      #1755e4;
+// general
+$primary: #2b2b2b;
+$secondary: #ffb045;
+$tertiary: #929292;
+$additional-font: #ffffff;
 
-.navbar.navbar-primary {
-  background-color: #f2f6f8;
+// footer
+$footer-background-color: $primary;
+$footer-title-color: #fff;
+$footer-text-color: #7e7e7e;
+$footer-item-disc-color: $secondary;
+.footer-logo { filter: brightness(0) invert(1); }
 
-  &.navbar-dark .navbar-nav .nav-link {
-    color: $secondary;
+// dashboard
+$dashboard-line-color-price: $tertiary; // price left border
 
-    &:hover,
-    &:focus {
-      color: rgba($secondary, 0.75);
-    }
-  }
+$dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
 
-  .form-control {
-    color: $secondary;
-    border-color: transparentize($secondary, 0.30);
+$dashboard-stats-item-value-color: $additional-font; // stat values
 
-    &::-webkit-input-placeholder { /* Chrome/Opera/Safari */
-      color: transparentize($secondary, 0.5);
-    }
-    &::-moz-placeholder { /* Firefox 19+ */
-      color: transparentize($secondary, 0.5);
-    }
-    &:-ms-input-placeholder { /* IE 10+ */
-      color: transparentize($secondary, 0.5);
-    }
-    &:-moz-placeholder { /* Firefox 18- */
-      color: transparentize($secondary, 0.5);
-    }
-  }
+$dashboard-stats-item-border-color: $secondary; // stat border
 
-  .input-group-text {
-    border-color: transparentize($secondary, 0.30);
-  }
-}
+$dashboard-banner-gradient-start: $primary; // gradient begin
 
-.navbar-logo {
-  height: 1.75em;
-}
+$dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
 
-.navbar.navbar-dark .navbar-toggler {
-  color: $secondary;
-  border-color: $secondary;
+$dashboard-banner-network-plain-container-background-color: #424242; // stats bg
 
-  .navbar-toggler-icon {
-    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='#{transparentize($secondary, 0.5)}' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-  }
-}
 
-.button.button-secondary {
-  color: $secondary;
-  border-color: $secondary;
+// navigation
+.navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
+$header-icon-border-color-hover: $secondary; // top border on hover
+$header-icon-color-hover: $secondary; // nav icon on hover
+.dropdown-item:hover, .dropdown-item:focus { background-color: $secondary !important; } // dropdown item on hover
 
-  &:hover,
-  &:focus {
-    background-color: $secondary;
-    border-color: $secondary;
-  }
-}
+// buttons
+$btn-line-bg: #fff; // button bg
+$btn-line-color: #424242; // button border and font color && hover bg color
+$btn-copy-color: #424242; // btn copy
+$btn-qr-color: #424242; // btn qr-code
+
+//links & tile
+.tile a { color: #4b89fb !important; } // links color for badges
+.tile-type-block {
+    border-left: 4px solid $secondary;
+} // tab active bg
+
+// card
+$card-background-1: $secondary;
+$card-tab-active: $secondary;

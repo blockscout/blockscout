@@ -2,10 +2,7 @@
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
 
   <div class="card">
-    <div class="card-header">
-      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-    </div>
-
+    <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
     <div class="card-body">
       <%= if !BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
         <%= link(

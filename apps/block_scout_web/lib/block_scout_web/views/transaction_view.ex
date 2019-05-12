@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.TransactionView do
   import BlockScoutWeb.Gettext
   import BlockScoutWeb.Tokens.Helpers
 
-  @tabs ["token_transfers", "internal_transactions", "logs"]
+  @tabs ["token_transfers", "internal_transactions", "logs", "raw_trace"]
 
   defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
 
@@ -338,6 +338,7 @@ defmodule BlockScoutWeb.TransactionView do
   defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["logs"]), do: gettext("Logs")
+  defp tab_name(["raw_trace"]), do: gettext("Raw Trace")
 
   defp decode_params(params, types) do
     params
