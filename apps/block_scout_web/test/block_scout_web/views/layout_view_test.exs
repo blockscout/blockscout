@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
                  title: "RSK Mainnet",
                  url: "https://blockscout.com/rsk/mainnet",
                  other?: true
-               }
+               },
                %{
                  title: "POA Sokol",
                  url: "https://blockscout.com/poa/sokol",
