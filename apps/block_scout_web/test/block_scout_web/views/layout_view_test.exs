@@ -99,18 +99,18 @@ defmodule BlockScoutWeb.LayoutViewTest do
                  url: "https://blockscout.com/poa/core"
                },
                %{
-                 title: "POA Sokol",
-                 url: "https://blockscout.com/poa/sokol",
-                 test_net?: true
-               },
-               %{
                  title: "RSK Mainnet",
                  url: "https://blockscout.com/rsk/mainnet",
                  other?: true
                },
                %{
+                 title: "POA Sokol",
+                 url: "https://blockscout.com/poa/sokol",
+                 test_net?: true
+               },
+               %{
                  title: "LUKSO L14 testnet",
-                 url: "http://blockscout.com/lukso/l14",
+                 url: "https://blockscout.com/lukso/l14",
                  test_net?: true,
                  hide_in_dropdown?: true
                }
@@ -119,7 +119,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
   end
 
   describe "main_nets/1" do
-    test "get all dropdown networks list based on env variables" do
+    test "get all main networks list based on env variables" do
       Application.put_env(:block_scout_web, :other_networks, @supported_chains_pattern)
 
       assert LayoutView.main_nets(LayoutView.other_networks()) == [
@@ -128,17 +128,16 @@ defmodule BlockScoutWeb.LayoutViewTest do
                  url: "https://blockscout.com/poa/core"
                },
                %{
-                 title: "LUKSO L14 testnet",
-                 url: "http://blockscout.com/lukso/l14",
-                 test_net?: true,
-                 hide_in_dropdown?: true
+                 title: "RSK Mainnet",
+                 url: "https://blockscout.com/rsk/mainnet",
+                 other?: true
                }
              ]
     end
   end
 
   describe "test_nets/1" do
-    test "get all dropdown networks list based on env variables" do
+    test "get all networks list based on env variables" do
       Application.put_env(:block_scout_web, :other_networks, @supported_chains_pattern)
 
       assert LayoutView.test_nets(LayoutView.other_networks()) == [
@@ -149,7 +148,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
                },
                %{
                  title: "LUKSO L14 testnet",
-                 url: "http://blockscout.com/lukso/l14",
+                 url: "https://blockscout.com/lukso/l14",
                  test_net?: true,
                  hide_in_dropdown?: true
                }
@@ -165,6 +164,11 @@ defmodule BlockScoutWeb.LayoutViewTest do
                %{
                  title: "POA Core",
                  url: "https://blockscout.com/poa/core"
+               },
+               %{
+                 title: "POA Sokol",
+                 url: "https://blockscout.com/poa/sokol",
+                 test_net?: true
                },
                %{
                  title: "RSK Mainnet",
