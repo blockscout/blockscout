@@ -29,6 +29,7 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
+    BlockCountCache,
     BlockNumberCache,
     Data,
     DecompiledSmartContract,
@@ -1954,6 +1955,22 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Estimated count of `t:Explorer.Chain.Block.t/0`.
+
+  Estimated count of consensus blocks.
+  """
+  @spec block_estimated_count() :: non_neg_integer()
+  def block_estimated_count do
+    cached_value = BlockCountCache.count()
+
+    if is_nil(cached_value) do
+      block_consensus_count()
+    else
+      cached_value
+    end
+  end
+
+  @doc """
   `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`.
 
   ## Options
@@ -2231,6 +2248,14 @@ defmodule Explorer.Chain do
     %Address.Name{}
     |> Address.Name.changeset(params)
     |> repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
+  end
+
+  @spec address_hash_to_address_with_source_code(%Explorer.Chain.Hash{}) :: %Explorer.Chain.Address{} | nil
+  def address_hash_to_address_with_source_code(%Explorer.Chain.Hash{} = address_hash) do
+    case Repo.get(Address, address_hash) do
+      nil -> nil
+      address -> Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
+    end
   end
 
   @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{} | nil
