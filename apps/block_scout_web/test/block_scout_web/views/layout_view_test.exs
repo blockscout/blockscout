@@ -91,7 +91,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
   describe "other_networks/0" do
     test "get networks list based on env variables" do
-      Application.put_env(:block_scout_web, :supported_chains, @supported_chains_pattern)
+      Application.put_env(:block_scout_web, :other_networks, @supported_chains_pattern)
 
       assert LayoutView.other_networks() == [
                %{
@@ -120,7 +120,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
   describe "main_nets/1" do
     test "get all dropdown networks list based on env variables" do
-      Application.put_env(:block_scout_web, :supported_chains, @supported_chains_pattern)
+      Application.put_env(:block_scout_web, :other_networks, @supported_chains_pattern)
 
       assert LayoutView.main_nets(LayoutView.other_networks()) == [
                %{
@@ -139,7 +139,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
   describe "test_nets/1" do
     test "get all dropdown networks list based on env variables" do
-      Application.put_env(:block_scout_web, :supported_chains, @supported_chains_pattern)
+      Application.put_env(:block_scout_web, :other_networks, @supported_chains_pattern)
 
       assert LayoutView.test_nets(LayoutView.other_networks()) == [
                %{
@@ -159,7 +159,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
   describe "dropdown_nets/0" do
     test "get all dropdown networks list based on env variables" do
-      Application.put_env(:block_scout_web, :supported_chains, @supported_chains_pattern)
+      Application.put_env(:block_scout_web, :other_networks, @supported_chains_pattern)
 
       assert LayoutView.dropdown_nets() == [
                %{
@@ -177,7 +177,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
   describe "dropdown_head_main_nets/0" do
     test "get dropdown all main networks except those of 'other' type list based on env variables" do
-      Application.put_env(:block_scout_web, :supported_chains, @supported_chains_pattern)
+      Application.put_env(:block_scout_web, :other_networks, @supported_chains_pattern)
 
       assert LayoutView.dropdown_head_main_nets() == [
                %{
@@ -190,7 +190,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
   describe "dropdown_other_nets/0" do
     test "get dropdown networks of 'other' type list based on env variables" do
-      Application.put_env(:block_scout_web, :supported_chains, @supported_chains_pattern)
+      Application.put_env(:block_scout_web, :other_networks, @supported_chains_pattern)
 
       assert LayoutView.dropdown_other_nets() == [
                %{
