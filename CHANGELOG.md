@@ -2,6 +2,7 @@
 
 ### Features
 - [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
+- [#1925](https://github.com/poanetwork/blockscout/pull/1925) - added dai theme and logo
 - [#1922](https://github.com/poanetwork/blockscout/pull/1922) - added ethereum classic theme and logo
 - [#1907](https://github.com/poanetwork/blockscout/pull/1907) - dropdown color bug fix (lukso theme) and tooltip color bug fix
 - [#1903](https://github.com/poanetwork/blockscout/pull/1903) - added rsk theme and rsk logo
@@ -17,6 +18,7 @@
 
 ### Fixes
 
+- [#1926](https://github.com/poanetwork/blockscout/pull/1926) - status label alignment
 - [#1829](https://github.com/poanetwork/blockscout/pull/1829) - Handle nil quantities in block decoding routine
 - [#1830](https://github.com/poanetwork/blockscout/pull/1830) - Make block size field nullable
 - [#1840](https://github.com/poanetwork/blockscout/pull/1840) - Handle case when total supply is nil
