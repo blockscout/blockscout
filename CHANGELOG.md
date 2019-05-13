@@ -14,6 +14,7 @@
 - [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
 - [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir
 - [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
+- [#1920](https://github.com/poanetwork/blockscout/pull/1920) - fix: remove source code fields from list endpoint
 - [#1876](https://github.com/poanetwork/blockscout/pull/1876) - async calculate a count of blocks
 
 ### Fixes
@@ -40,6 +41,7 @@
 
 - [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
 - [#1837](https://github.com/poanetwork/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
+- [#1900](https://github.com/poanetwork/blockscout/pull/1900) - SUPPORTED_CHAINS ENV var
 - [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
 
 ## 1.3.10-beta
