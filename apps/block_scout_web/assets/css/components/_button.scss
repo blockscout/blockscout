@@ -1,7 +1,7 @@
 $button-primary-color: $primary !default;
 $button-secondary-color: $secondary !default;
 
-.button {
+.button, .btn {
   border-radius: 2px;
   border: none;
   cursor: pointer;
