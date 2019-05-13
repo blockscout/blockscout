@@ -20,6 +20,7 @@
 
 ### Fixes
 
+- [#1944](https://github.com/poanetwork/blockscout/pull/1944) - fixed styles for token's dropdown.
 - [#1926](https://github.com/poanetwork/blockscout/pull/1926) - status label alignment
 - [#1829](https://github.com/poanetwork/blockscout/pull/1829) - Handle nil quantities in block decoding routine
 - [#1830](https://github.com/poanetwork/blockscout/pull/1830) - Make block size field nullable
