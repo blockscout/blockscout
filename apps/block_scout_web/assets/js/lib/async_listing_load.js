@@ -145,11 +145,12 @@ export const elements = {
   },
   '[data-async-listing] [data-next-page-button]': {
     render ($el, state) {
-      if (state.requestError) return $el.hide()
-      if (!state.nextPagePath) return $el.hide()
-      if (state.loading) return $el.hide()
+      if ((state.requestError) || (!state.nextPagePath) || (state.loading)) {
+        $el.attr('disabled', 'disabled')
+        return
+      }
 
-      $el.show()
+      // $el.show()
       $el.attr('href', state.nextPagePath)
     }
   },

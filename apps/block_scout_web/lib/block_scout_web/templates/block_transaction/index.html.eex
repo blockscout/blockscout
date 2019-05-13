@@ -15,6 +15,15 @@
       </div>
       <div class="card-body">
         <h2 class="card-title"><%= gettext "Transactions" %></h2>
+
+        <%= if @next_page_params do %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, next_page_path: transaction_path(@conn, :index, @next_page_params) %>
+        <% end %>
+
+        <%= if !@next_page_params do %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true %>
+        <% end %>
+
         <%= if Enum.count(@transactions) > 0 do %>
           <span data-selector="transactions-list">
             <%= for transaction <- @transactions do %>
@@ -28,6 +37,15 @@
         <% end %>
 
         <%= if @next_page_params do %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, next_page_path: transaction_path(@conn, :index, @next_page_params) %>
+        <% end %>
+
+        <%= if !@next_page_params do %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true %>
+        <% end %>
+
+        <!--
+        <%= if @next_page_params do %>
           <%= link(
             gettext("Older"),
             class: "button button-secondary button-sm float-right mt-3",
@@ -38,6 +56,7 @@
             )
           ) %>
         <% end %>
+        -->
       </div>
     </div>
   </section>

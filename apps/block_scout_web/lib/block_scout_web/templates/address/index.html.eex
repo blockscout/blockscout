@@ -1,16 +1,7 @@
 <section class="container">
   <div class="card">
     <div class="card-body">
-      <h1 class="card-title margin-bottom-0"><%= gettext "Addresses" %></h1>
-      <p class="card-subtitle">
-        <%= gettext "Showing " %>
-        <%= Cldr.Number.to_string!(@page_address_count, format: "#,###") %>
-        <%= gettext " addresses of" %>
-        <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
-        <%= gettext "total addresses with a balance" %>
-        <%= gettext " (page" %>
-        <%= Cldr.Number.to_string!(@cur_page_number, format: "#,###)") %>
-      </p>
+      <h1 class="card-title"><%= gettext "Addresses" %></h1>
 
       <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", prev_page_path: @prev_page_path, next_page_path: @next_page_path, cur_page_number: @cur_page_number, show_pagination_limit: true %>
 
