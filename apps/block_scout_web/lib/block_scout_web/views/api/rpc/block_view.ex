@@ -22,6 +22,14 @@ defmodule BlockScoutWeb.API.RPC.BlockView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("eth_block_number.json", %{number: number}) do
+    data = %{
+      "blockNumber" => to_string(number)
+    }
+
+    RPCView.render("show.json", data: data)
+  end
+
   def render("error.json", %{error: error}) do
     RPCView.render("error.json", error: error)
   end

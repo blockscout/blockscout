@@ -23,4 +23,10 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
         render(conn, :error, error: "Block does not exist")
     end
   end
+
+  def eth_block_number(conn, _params) do
+    max_block_number = Chain.fetch_max_block_number()
+
+    render(conn, :eth_block_number, number: max_block_number)
+  end
 end
