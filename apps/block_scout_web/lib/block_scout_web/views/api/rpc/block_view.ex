@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.BlockView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.RPC.RPCView
+  alias BlockScoutWeb.API.RPC.{EthRPCView, RPCView}
   alias Explorer.Chain.{Hash, Wei}
 
   def render("block_reward.json", %{block: block, reward: reward}) do
@@ -22,15 +22,15 @@ defmodule BlockScoutWeb.API.RPC.BlockView do
     RPCView.render("show.json", data: data)
   end
 
-  def render("eth_block_number.json", %{number: number}) do
-    data = %{
-      "blockNumber" => to_string(number)
-    }
+  def render("eth_block_number.json", %{number: number, id: id}) do
+    result = integer_to_hex(number)
 
-    RPCView.render("show.json", data: data)
+    EthRPCView.render("show.json", %{result: result, id: id})
   end
 
   def render("error.json", %{error: error}) do
     RPCView.render("error.json", error: error)
   end
+
+  defp integer_to_hex(integer), do: Integer.to_string(integer, 16)
 end
