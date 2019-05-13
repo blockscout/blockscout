@@ -18,6 +18,7 @@ defmodule BlockScoutWeb.BlockController do
       _ ->
         [
           necessity_by_association: %{
+            :transactions => :optional,
             [miner: :names] => :optional,
             :rewards => :optional
           },
@@ -34,6 +35,7 @@ defmodule BlockScoutWeb.BlockController do
   def reorg(conn, params) do
     [
       necessity_by_association: %{
+        :transactions => :optional,
         [miner: :names] => :optional,
         :rewards => :optional
       },
@@ -45,6 +47,7 @@ defmodule BlockScoutWeb.BlockController do
   def uncle(conn, params) do
     [
       necessity_by_association: %{
+        :transactions => :optional,
         [miner: :names] => :optional,
         :nephews => :required,
         :rewards => :optional

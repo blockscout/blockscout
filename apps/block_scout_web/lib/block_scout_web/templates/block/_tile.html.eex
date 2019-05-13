@@ -24,7 +24,7 @@
       <div>
         <!-- transactions -->
         <span class="mr-2">
-          <%= ngettext("%{count} transaction", "%{count} transactions", @block.transaction_count) %>
+          <%= ngettext("%{count} transaction", "%{count} transactions", Enum.count(@block.transactions)) %>
         </span>
         <%= if @block.size do %>
            <!-- size -->

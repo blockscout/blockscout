@@ -1113,26 +1113,11 @@ defmodule Explorer.Chain do
 
     Block
     |> Block.block_type_filter(block_type)
-    |> add_transaction_count()
     |> page_blocks(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(desc: :number)
     |> join_associations(necessity_by_association)
     |> Repo.all()
-  end
-
-  defp add_transaction_count(query) do
-    count_subquery =
-      from(t in Transaction,
-        select: %{block_hash: t.block_hash, count: count(t.hash)},
-        group_by: t.block_hash
-      )
-
-    from(block in query,
-      left_join: t in subquery(count_subquery),
-      on: block.hash == t.block_hash,
-      select_merge: %{transaction_count: coalesce(t.count, 0)}
-    )
   end
 
   @doc """

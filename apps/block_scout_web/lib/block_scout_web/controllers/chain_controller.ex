@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.ChainController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.ChainView
-  alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
@@ -60,10 +60,18 @@ defmodule BlockScoutWeb.ChainController do
 
   def chain_blocks(conn, _params) do
     if ajax?(conn) do
+      params = [
+        necessity_by_association: %{
+          :transactions => :optional,
+          [miner: :names] => :optional,
+          :rewards => :optional
+        },
+        paging_options: %PagingOptions{page_size: 4}
+      ]
+
       blocks =
-        [paging_options: %PagingOptions{page_size: 4}]
+        params
         |> Chain.list_blocks()
-        |> Repo.preload([[miner: :names], :rewards])
         |> Enum.map(fn block ->
           %{
             chain_block_html:

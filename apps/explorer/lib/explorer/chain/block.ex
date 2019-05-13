@@ -78,7 +78,6 @@ defmodule Explorer.Chain.Block do
     field(:timestamp, :utc_datetime_usec)
     field(:total_difficulty, :decimal)
     field(:internal_transactions_indexed_at, :utc_datetime_usec)
-    field(:transaction_count, :integer, virtual: true)
 
     timestamps()
 
