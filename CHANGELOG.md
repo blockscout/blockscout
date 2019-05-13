@@ -1,10 +1,17 @@
 ## Current
 
+## 1.3.12-beta
+
+Reverting of synchronous block counter, implemented in #1848
+
+## 1.3.11-beta
+
 ### Features
 
-- [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
-- [#1813](https://github.com/poanetwork/blockscout/pull/1813) - add total blocks counter to the main page
-- [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
+- [#1815](https://github.com/poanetwork/blockscout/pull/1815) - Be able to search without prefix "0x"
+- [#1813](https://github.com/poanetwork/blockscout/pull/1813) - Add total blocks counter to the main page
+- [#1806](https://github.com/poanetwork/blockscout/pull/1806) - Verify contracts with a post request
+- [#1848](https://github.com/poanetwork/blockscout/pull/1848) - Add cache for block counter
 
 ### Fixes
 
