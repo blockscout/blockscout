@@ -2,6 +2,7 @@
 
 ### Features
 - [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
+- [#1936](https://github.com/poanetwork/blockscout/pull/1936) - added kovan, sokol themes and logos
 - [#1925](https://github.com/poanetwork/blockscout/pull/1925) - added dai theme and logo
 - [#1922](https://github.com/poanetwork/blockscout/pull/1922) - added ethereum classic theme and logo
 - [#1907](https://github.com/poanetwork/blockscout/pull/1907) - dropdown color bug fix (lukso theme) and tooltip color bug fix
