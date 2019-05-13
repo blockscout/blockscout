@@ -2853,34 +2853,47 @@ defmodule Explorer.Chain do
   defp staking_pool_filter(query, :validator) do
     where(
       query,
-      [_],
-      fragment("""
-      (metadata->>'is_active')::boolean = true and
-      (metadata->>'deleted')::boolean is not true and
-      (metadata->>'is_validator')::boolean = true
-      """)
+      [address],
+      fragment(
+        """
+        (?->>'is_active')::boolean = true and
+        (?->>'deleted')::boolean is not true and
+        (?->>'is_validator')::boolean = true
+        """,
+        address.metadata,
+        address.metadata,
+        address.metadata
+      )
     )
   end
 
   defp staking_pool_filter(query, :active) do
     where(
       query,
-      [_],
-      fragment("""
-      (metadata->>'is_active')::boolean = true and
-      (metadata->>'deleted')::boolean is not true
-      """)
+      [address],
+      fragment(
+        """
+        (?->>'is_active')::boolean = true and
+        (?->>'deleted')::boolean is not true
+        """,
+        address.metadata,
+        address.metadata
+      )
     )
   end
 
   defp staking_pool_filter(query, :inactive) do
     where(
       query,
-      [_],
-      fragment("""
-      (metadata->>'is_active')::boolean = false and
-      (metadata->>'deleted')::boolean is not true
-      """)
+      [address],
+      fragment(
+        """
+        (?->>'is_active')::boolean = false and
+        (?->>'deleted')::boolean is not true
+        """,
+        address.metadata,
+        address.metadata
+      )
     )
   end
 

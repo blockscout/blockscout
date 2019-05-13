@@ -60,10 +60,10 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
         address_name in Address.Name,
         where:
           address_name.address_hash not in ^addresses and
-            fragment("(metadata->>'is_pool')::boolean = true"),
+            fragment("(?->>'is_pool')::boolean = true", address_name.metadata),
         update: [
           set: [
-            metadata: fragment("metadata || '{\"deleted\": true}'::jsonb")
+            metadata: fragment("? || '{\"deleted\": true}'::jsonb", address_name.metadata)
           ]
         ]
       )
