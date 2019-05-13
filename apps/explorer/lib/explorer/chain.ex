@@ -1059,6 +1059,22 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec fetch_max_block_number() :: non_neg_integer
+  def fetch_max_block_number do
+    query =
+      from(block in Block,
+        select: max(block.number),
+        where: block.consensus == true
+      )
+
+    result = Repo.one!(query)
+
+    case result do
+      nil -> 0
+      _ -> result
+    end
+  end
+
   @spec fetch_count_consensus_block() :: non_neg_integer
   def fetch_count_consensus_block do
     query =
