@@ -60,11 +60,13 @@ defmodule Explorer.Chain.BlockNumberCache do
   end
 
   def update_max_number(max) do
-    {min, _max, time} = cached_values()
+    {min, old_max, time} = cached_values()
 
-    tuple = {min, max, time}
+    if max > old_max do
+      tuple = {min, max, time}
 
-    :ets.insert(@tab, {@key, tuple})
+      :ets.insert(@tab, {@key, tuple})
+    end
   end
 
   defp update_cache do
