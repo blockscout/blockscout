@@ -20,6 +20,7 @@
 - [#1920](https://github.com/poanetwork/blockscout/pull/1920) - fix: remove source code fields from list endpoint
 - [#1876](https://github.com/poanetwork/blockscout/pull/1876) - async calculate a count of blocks
 - [#1941](https://github.com/poanetwork/blockscout/pull/1941) - feat: add on demand fetching and stale attr to rpc
+- [#1952](https://github.com/poanetwork/blockscout/pull/1952) - feat: exclude empty contracts by default
 
 ### Fixes
 
