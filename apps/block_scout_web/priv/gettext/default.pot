@@ -1357,7 +1357,7 @@ msgid "Loading balances"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:23
+#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:22
 #: lib/block_scout_web/templates/chain/show.html.eex:13
 msgid "Loading chart"
 msgstr ""
@@ -1368,7 +1368,7 @@ msgid "There is no coin history for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:26
+#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:25
 #: lib/block_scout_web/templates/chain/show.html.eex:16
 msgid "There was a problem loading the chart."
 msgstr ""
