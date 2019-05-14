@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
     {:ok, _} =
       Import.insert_changes_list(
         repo,
-        changes_list,
+        stakes_ratio(changes_list),
         conflict_target: {:unsafe_fragment, "(address_hash) where \"primary\" = true"},
         on_conflict: on_conflict,
         for: Address.Name,
@@ -84,5 +84,19 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
         ]
       ]
     )
+  end
+
+  # Calculates staked ratio for each pool
+  defp stakes_ratio(pools) do
+    active_pools = Enum.filter(pools, & &1.metadata[:is_active])
+
+    stakes_total = Enum.reduce(pools, 0, fn pool, acc ->
+      acc + pool.metadata[:staked_amount]
+    end)
+
+    Enum.map(active_pools, fn pool ->
+      staked_ratio = pool.metadata[:staked_amount] / stakes_total
+      put_in(pool, [:metadata, :staked_ratio], staked_ratio)
+    end)
   end
 end
