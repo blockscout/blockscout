@@ -2833,11 +2833,13 @@ defmodule Explorer.Chain do
   end
 
   @doc "Get staking pools from the DB"
-  @spec staking_pools(filter :: :validator | :active | :inactive, lim :: integer, off :: integer) :: [map()]
-  def staking_pools(filter, lim, off) when is_integer(lim) and is_integer(off) do
+  @spec staking_pools(filter :: :validator | :active | :inactive, options :: PagingOptions.t()) :: [map()]
+  def staking_pools(filter, %PagingOptions{page_size: page_size, page_number: page_number} \\ @default_paging_options) do
+    off = page_size * (page_number - 1)
+
     Address.Name
     |> staking_pool_filter(filter)
-    |> limit(^lim)
+    |> limit(^page_size)
     |> offset(^off)
     |> Repo.all()
   end

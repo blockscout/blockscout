@@ -3909,7 +3909,9 @@ defmodule Explorer.ChainTest do
       inserted_validator = insert(:address_name, primary: true, metadata: %{is_active: true, is_validator: true})
       insert(:address_name, primary: true, metadata: %{is_active: true, is_validator: false})
 
-      assert [gotten_validator] = Chain.staking_pools(:validator, 20, 0)
+      options = %PagingOptions{page_size: 20, page_number: 1}
+
+      assert [gotten_validator] = Chain.staking_pools(:validator, options)
       assert inserted_validator.address_hash == gotten_validator.address_hash
     end
 
@@ -3917,7 +3919,9 @@ defmodule Explorer.ChainTest do
       inserted_validator = insert(:address_name, primary: true, metadata: %{is_active: true})
       insert(:address_name, primary: true, metadata: %{is_active: false})
 
-      assert [gotten_validator] = Chain.staking_pools(:active, 20, 0)
+      options = %PagingOptions{page_size: 20, page_number: 1}
+
+      assert [gotten_validator] = Chain.staking_pools(:active, options)
       assert inserted_validator.address_hash == gotten_validator.address_hash
     end
 
@@ -3925,7 +3929,9 @@ defmodule Explorer.ChainTest do
       insert(:address_name, primary: true, metadata: %{is_active: true})
       inserted_validator = insert(:address_name, primary: true, metadata: %{is_active: false})
 
-      assert [gotten_validator] = Chain.staking_pools(:inactive, 20, 0)
+      options = %PagingOptions{page_size: 20, page_number: 1}
+
+      assert [gotten_validator] = Chain.staking_pools(:inactive, options)
       assert inserted_validator.address_hash == gotten_validator.address_hash
     end
   end
