@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#1948](https://github.com/poanetwork/blockscout/pull/1948) - added ropsten theme and ropsten logo
 - [#1940](https://github.com/poanetwork/blockscout/pull/1940) - qr modal button and background issue
 - [#1936](https://github.com/poanetwork/blockscout/pull/1936) - added kovan, sokol themes and logos
 - [#1925](https://github.com/poanetwork/blockscout/pull/1925) - added dai theme and logo
