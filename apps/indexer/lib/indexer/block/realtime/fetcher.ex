@@ -324,7 +324,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp update_block_cache(blocks) do
     max_block = Enum.max_by(blocks, fn block -> block.number end)
 
-    BlockNumberCache.update_max_number(max_block.number)
+    BlockNumberCache.update(max_block.number)
   end
 
   defp retry_fetch_and_import_block(%{retry: retry}) when retry < 1, do: :ignore
