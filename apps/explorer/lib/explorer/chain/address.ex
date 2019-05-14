@@ -76,6 +76,7 @@ defmodule Explorer.Chain.Address do
     field(:contract_code, Data)
     field(:nonce, :integer)
     field(:has_decompiled_code?, :boolean, virtual: true)
+    field(:stale?, :boolean, virtual: true)
 
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)
