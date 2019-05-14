@@ -151,6 +151,7 @@ export const elements = {
       }
 
       // $el.show()
+      $el.attr('disabled', false)
       $el.attr('href', state.nextPagePath)
     }
   },
