@@ -17,6 +17,7 @@
 - [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
 - [#1920](https://github.com/poanetwork/blockscout/pull/1920) - fix: remove source code fields from list endpoint
 - [#1876](https://github.com/poanetwork/blockscout/pull/1876) - async calculate a count of blocks
+- [#1941](https://github.com/poanetwork/blockscout/pull/1941) - feat: add on demand fetching and stale attr to rpc
 
 ### Fixes
 
