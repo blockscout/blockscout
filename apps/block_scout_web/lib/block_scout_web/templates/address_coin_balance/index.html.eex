@@ -13,22 +13,22 @@
 
         <h2 class="card-title"><%= gettext "Balances" %></h2>
 
-        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true %>
-
-        <div data-chart-loading-message class="tile tile-muted text-center mt-3">
+        <!-- Chart -->
+        <div data-chart-loading-message class="tile tile-muted text-center mt-3 mb-4">
           <span class="loading-spinner-small mr-2">
             <span class="loading-spinner-block-1"></span>
             <span class="loading-spinner-block-2"></span>
           </span>
           <%= gettext("Loading chart") %>...
         </div>
-        <button data-chart-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+        <button data-chart-error-message class="alert alert-danger col-12 text-left mb-4" style="display: none;">
           <span><%= gettext("There was a problem loading the chart.") %></span>
         </button>
-        <div data-chart-container style="display: none;">
+        <div data-chart-container style="display: none;" class="mb-4">
           <canvas data-chart="coinBalanceHistoryChart" data-coin_balance_history_data_path="<%= address_coin_balance_by_day_path(@conn, :index, @address) %>" width="350" height="152"></canvas>
         </div>
 
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true %>
 
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
