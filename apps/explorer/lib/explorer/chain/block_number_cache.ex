@@ -59,6 +59,7 @@ defmodule Explorer.Chain.BlockNumberCache do
     end
   end
 
+  @spec update(non_neg_integer()) :: boolean()
   def update(number) do
     {old_min, old_max, time} = cached_values()
 
