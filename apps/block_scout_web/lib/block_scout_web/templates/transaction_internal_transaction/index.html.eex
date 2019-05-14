@@ -4,6 +4,15 @@
     <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
     <div class="card-body">
       <h2 class="card-title"><%= gettext "Internal Transactions" %></h2>
+
+      <%= if @next_page_params do %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, next_page_path: transaction_internal_transaction_path(@conn, :index, @transaction, @next_page_params) %>
+      <% end %>
+
+      <%= if !@next_page_params do %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true %>
+      <% end %>
+
       <%= if Enum.count(@internal_transactions) > 0 do %>
         <%= for internal_transaction <- @internal_transactions do %>
           <%= render BlockScoutWeb.InternalTransactionView, "_tile.html", internal_transaction: internal_transaction %>
@@ -14,6 +23,15 @@
         </div>
       <% end %>
 
+      <%= if @next_page_params do %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, next_page_path: transaction_internal_transaction_path(@conn, :index, @transaction, @next_page_params) %>
+      <% end %>
+
+      <%= if !@next_page_params do %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true %>
+      <% end %>
+
+      <!--
       <%= if @next_page_params do %>
         <%= link(
           gettext("Newer"),
@@ -26,6 +44,7 @@
           )
         ) %>
       <% end %>
+      -->
     </div>
   </div>
 </section>
