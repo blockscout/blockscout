@@ -21,15 +21,18 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => [
       %{
         "account" => "0xddbd2b932c763ba5b1b7ae3b362eac3e8d40121a",
-        "balance" => "40807168566070000000000"
+        "balance" => "40807168566070000000000",
+        "stale" => true
       },
       %{
         "account" => "0x63a9975ba31b0b9626b34300f7f627147df1f526",
-        "balance" => "332567136222827062478"
+        "balance" => "332567136222827062478",
+        "stale" => false
       },
       %{
         "account" => "0x198ef1ec325a96cc354c7266a038be8b5c558f67",
-        "balance" => "185178830000000000"
+        "balance" => "185178830000000000",
+        "stale" => false
       }
     ]
   }
@@ -496,6 +499,13 @@ defmodule BlockScoutWeb.Etherscan do
     example: ~s("0x95426f2bc716022fcf1def006dbc4bb81f5b5164")
   }
 
+  @stale_type %{
+    type: "boolean",
+    definition:
+      "Represents whether or not the balance has not been checked in the last 24 hours, and will be rechecked.",
+    example: true
+  }
+
   @transaction_hash_type %{
     type: "transaction hash",
     definition:
@@ -571,7 +581,8 @@ defmodule BlockScoutWeb.Etherscan do
     name: "AddressBalance",
     fields: %{
       address: @address_hash_type,
-      balance: @wei_type
+      balance: @wei_type,
+      stale: @stale_type
     }
   }
 
@@ -988,7 +999,16 @@ defmodule BlockScoutWeb.Etherscan do
 
   @account_balance_action %{
     name: "balance",
-    description: "Get balance for address. Also available through a GraphQL 'addresses' query.",
+    description: """
+        Get balance for address. Also available through a GraphQL 'addresses' query.
+
+        If the balance hasn't been updated in a long time, we will double check
+        with the node to fetch the absolute latest balance. This will not be
+        reflected in the current request, but once it is updated, subsequent requests
+        will show the updated balance. If you want to know whether or not we are checking
+        for another balance, use the `balancemulti` action. That contains a property
+        called `stale` that will let you know to recheck that balance in the near future.
+    """,
     required_params: [
       %{
         key: "address",
@@ -1022,7 +1042,15 @@ defmodule BlockScoutWeb.Etherscan do
 
   @account_balancemulti_action %{
     name: "balancemulti",
-    description: "Get balance for multiple addresses. Also available through a GraphQL 'addresses' query.",
+    description: """
+        Get balance for multiple addresses. Also available through a GraphQL 'addresses' query.
+
+        If the balance hasn't been updated in a long time, we will double check
+        with the node to fetch the absolute latest balance. This will not be
+        reflected in the current request, but once it is updated, subsequent requests
+        will show the updated balance. You can know that this is taking place via
+        the `stale` attribute, which is set to `true` if a new balance is being fetched.
+    """,
     required_params: [
       %{
         key: "address",
@@ -1767,7 +1795,7 @@ defmodule BlockScoutWeb.Etherscan do
         key: "filter",
         type: "string",
         description:
-          "verified|decompiled|unverified|not_decompiled, or 1|2|3|4 respectively. This requests only contracts with that status."
+          "verified|decompiled|unverified|not_decompiled|empty, or 1|2|3|4|5 respectively. This requests only contracts with that status."
       },
       %{
         key: "not_decompiled_with_version",
