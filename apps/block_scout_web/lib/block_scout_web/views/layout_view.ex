@@ -142,13 +142,13 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   def release_link(version) do
-    release_link = Application.get_env(:block_scout_web, :release_link)
+    release_link_env_var = Application.get_env(:block_scout_web, :release_link)
 
     release_link =
-      if release_link == "" || release_link == nil do
+      if release_link_env_var == "" || release_link_env_var == nil do
         "https://github.com/poanetwork/blockscout/releases/tag/" <> version
       else
-        release_link
+        release_link_env_var
       end
 
     html_escape({:safe, "<a href=\"#{release_link}\" class=\"footer-link\" target=\"_blank\">#{version}</a>"})
