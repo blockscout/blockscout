@@ -48,6 +48,7 @@
 - [#1837](https://github.com/poanetwork/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
 - [#1900](https://github.com/poanetwork/blockscout/pull/1900) - SUPPORTED_CHAINS ENV var
 - [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
+- [#1958](https://github.com/poanetwork/blockscout/pull/1958) - Default value for release link env var
 
 ## 1.3.10-beta
 
