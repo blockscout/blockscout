@@ -96,7 +96,8 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
       end)
 
     Enum.map(active_pools, fn pool ->
-      staked_ratio = pool.metadata[:staked_amount] / stakes_total
+      staked_ratio = if stakes_total > 0, do: pool.metadata[:staked_amount] / stakes_total, else: 0
+
       put_in(pool, [:metadata, :staked_ratio], staked_ratio)
     end)
   end
