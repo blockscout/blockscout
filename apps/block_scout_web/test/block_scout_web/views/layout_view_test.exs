@@ -65,13 +65,15 @@ defmodule BlockScoutWeb.LayoutViewTest do
     test "use the version when there is no release_link env configured for it" do
       Application.put_env(:block_scout_web, :release_link, nil)
 
-      assert LayoutView.release_link("1.3.4") == "1.3.4"
+      assert LayoutView.release_link("1.3.4") == {:safe,
+                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">1.3.4</a>)}
     end
 
     test "use the version when empty release_link env configured for it" do
       Application.put_env(:block_scout_web, :release_link, "")
 
-      assert LayoutView.release_link("1.3.4") == "1.3.4"
+      assert LayoutView.release_link("1.3.4") == {:safe,
+                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">1.3.4</a>)}
     end
 
     test "use the enviroment release link when it's configured" do
