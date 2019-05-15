@@ -2,6 +2,7 @@
 
 ### Features
 - [#1959](https://github.com/poanetwork/blockscout/pull/1959) - added goerli theme and goerli logo
+- [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
 - [#1948](https://github.com/poanetwork/blockscout/pull/1948) - added ropsten theme and ropsten logo
 - [#1940](https://github.com/poanetwork/blockscout/pull/1940) - qr modal button and background issue
 - [#1936](https://github.com/poanetwork/blockscout/pull/1936) - added kovan, sokol themes and logos
@@ -15,11 +16,15 @@
 - [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
 - [#1813](https://github.com/poanetwork/blockscout/pull/1813) - add total blocks counter to the main page
 - [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
-- [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir 
+- [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir
 - [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
+- [#1920](https://github.com/poanetwork/blockscout/pull/1920) - fix: remove source code fields from list endpoint
+- [#1876](https://github.com/poanetwork/blockscout/pull/1876) - async calculate a count of blocks
+- [#1941](https://github.com/poanetwork/blockscout/pull/1941) - feat: add on demand fetching and stale attr to rpc
 
 ### Fixes
 
+- [#1926](https://github.com/poanetwork/blockscout/pull/1926) - status label alignment
 - [#1829](https://github.com/poanetwork/blockscout/pull/1829) - Handle nil quantities in block decoding routine
 - [#1830](https://github.com/poanetwork/blockscout/pull/1830) - Make block size field nullable
 - [#1840](https://github.com/poanetwork/blockscout/pull/1840) - Handle case when total supply is nil
@@ -28,11 +33,22 @@
 - [#1869](https://github.com/poanetwork/blockscout/pull/1869) - Fix output and gas extraction in JS tracer for Geth
 - [#1868](https://github.com/poanetwork/blockscout/pull/1868) - fix: logs list endpoint performance
 - [#1822](https://github.com/poanetwork/blockscout/pull/1822) - Fix style breaks in decompiled contract code view
+- [#1885](https://github.com/poanetwork/blockscout/pull/1885) - highlight reserved words in decompiled code
+- [#1896](https://github.com/poanetwork/blockscout/pull/1896) - re-query tokens in top nav automplete
+- [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
+- [#1905](https://github.com/poanetwork/blockscout/pull/1905) - fix reorgs, uncles pagination
+- [#1875](https://github.com/poanetwork/blockscout/pull/1875) - fix: resolve false positive constructor arguments
+- [#1904](https://github.com/poanetwork/blockscout/pull/1904) - fix `BLOCK_COUNT_CACHE_TTL` env var type
+- [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
+- [#1915](https://github.com/poanetwork/blockscout/pull/1915) - fallback to 2 latest evm versions
+- [#1937](https://github.com/poanetwork/blockscout/pull/1937) - Check the presence of overlap[i] object before retrieving properties from it
 
 ### Chore
 
 - [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
 - [#1837](https://github.com/poanetwork/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
+- [#1900](https://github.com/poanetwork/blockscout/pull/1900) - SUPPORTED_CHAINS ENV var
+- [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
 
 ## 1.3.10-beta
 
@@ -210,4 +226,3 @@
  - [https://github.com/poanetwork/blockscout/pull/1532](https://github.com/poanetwork/blockscout/pull/1532) - Upgrade elixir to 1.8.1
  - [https://github.com/poanetwork/blockscout/pull/1553](https://github.com/poanetwork/blockscout/pull/1553) - Dockerfile: remove 1.7.1 version pin FROM bitwalker/alpine-elixir-phoenix
  - [https://github.com/poanetwork/blockscout/pull/1465](https://github.com/poanetwork/blockscout/pull/1465) - Resolve lodash security alert
-

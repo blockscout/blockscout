@@ -3,43 +3,54 @@ defmodule Explorer.Chain.BlockCountCacheTest do
 
   alias Explorer.Chain.BlockCountCache
 
-  describe "count/0" do
-    test "return count" do
-      insert(:block, number: 1, consensus: true)
-      insert(:block, number: 2, consensus: true)
-      insert(:block, number: 3, consensus: false)
+  test "returns default transaction count" do
+    BlockCountCache.start_link(name: BlockTestCache)
 
-      BlockCountCache.setup()
+    result = BlockCountCache.count(BlockTestCache)
 
-      assert BlockCountCache.count() == 2
-    end
+    assert is_nil(result)
+  end
 
-    test "invalidates cache if period did pass" do
-      insert(:block, number: 1, consensus: true)
+  test "updates cache if initial value is zero" do
+    BlockCountCache.start_link(name: BlockTestCache)
 
-      Application.put_env(:explorer, BlockCountCache, ttl: 2_00)
-      BlockCountCache.setup()
+    insert(:block, consensus: true)
+    insert(:block, consensus: true)
+    insert(:block, consensus: false)
 
-      assert BlockCountCache.count() == 1
+    _result = BlockCountCache.count(BlockTestCache)
 
-      insert(:block, number: 2, consensus: true)
+    Process.sleep(1000)
 
-      Process.sleep(2_000)
+    updated_value = BlockCountCache.count(BlockTestCache)
 
-      assert BlockCountCache.count() == 2
-    end
+    assert updated_value == 2
+  end
 
-    test "does not invalidate cache if period time did not pass" do
-      insert(:block, number: 1, consensus: true)
+  test "does not update cache if cache period did not pass" do
+    BlockCountCache.start_link(name: BlockTestCache)
 
-      Application.put_env(:explorer, BlockCountCache, ttl: 2_00)
-      BlockCountCache.setup()
+    insert(:block, consensus: true)
+    insert(:block, consensus: true)
+    insert(:block, consensus: false)
 
-      assert BlockCountCache.count() == 1
+    _result = BlockCountCache.count(BlockTestCache)
 
-      insert(:block, number: 2, consensus: true)
+    Process.sleep(1000)
 
-      assert BlockCountCache.count() == 1
-    end
+    updated_value = BlockCountCache.count(BlockTestCache)
+
+    assert updated_value == 2
+
+    insert(:block, consensus: true)
+    insert(:block, consensus: true)
+
+    _updated_value = BlockCountCache.count(BlockTestCache)
+
+    Process.sleep(1000)
+
+    updated_value = BlockCountCache.count(BlockTestCache)
+
+    assert updated_value == 2
   end
 end

@@ -1,0 +1,113 @@
+$pagination-page-link-background: #f5f6fa !default;
+$pagination-page-link-color: #a3a9b5 !default;
+$pagination-page-link-background-active: $primary !default;
+$pagination-page-link-color-active: #fff !default;
+
+@mixin pagination-container-base($background-color, $text-color) {
+  background-color: $background-color;
+  border: 1px solid $background-color;
+  color: $text-color;
+
+  path {
+    fill: $text-color;
+  }
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+
+  @include media-breakpoint-down(sm) {
+    flex-direction: column;
+  }
+
+  &.position-bottom {
+    padding-top: 30px;
+  }
+
+  &.position-top {
+    padding-bottom: 30px;
+  }
+
+  .pagination-limit {
+    align-items: center;
+    color: #033333;
+    display: flex;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+
+    @include media-breakpoint-down(sm) {
+      margin-bottom: 15px;
+    }
+
+    select {
+      margin: 0 10px;
+    }
+  }
+
+  .pagination {
+    margin: 0 0 0 auto;
+    padding: 0;
+
+    @include media-breakpoint-down(sm) {
+      justify-content: space-between;
+      margin: 0;
+    }
+
+    .page-item {
+      margin: 0 5px 0 0;
+
+      &:last-child {
+        margin-right: 0;
+      }
+
+      &.active .page-link {
+        @include pagination-container-base($pagination-page-link-background-active, $pagination-page-link-color-active);
+        cursor: default;
+        pointer-events: none;
+
+        &:hover {
+          @include pagination-container-base($pagination-page-link-background-active, $pagination-page-link-color-active);
+        }
+      }
+    }
+
+    .page-link {
+      @include pagination-container-base($pagination-page-link-background, $pagination-page-link-color);
+      align-items: center;
+      border-radius: 2px;
+      display: flex;
+      font-size: 12px;
+      font-weight: 600;
+      height: 24px;
+      margin: 0;
+      padding: 0 8px;
+      position: relative;
+      user-select: none;
+      text-align: center;
+      white-space: nowrap;
+
+      &:not(.no-hover):hover {
+        @include pagination-container-base($pagination-page-link-background-active, $pagination-page-link-color-active);
+      }
+
+      &[href=''] {
+        pointer-events: none;
+      }
+
+      &.no-hover {
+        cursor: default;
+      }
+
+      &[disabled] {
+        @include pagination-container-base($pagination-page-link-background, $pagination-page-link-color);
+        cursor: not-allowed;
+        opacity: 0.4;
+        outline: none;
+        pointer-events: none;
+      }
+    }
+  }
+
+}

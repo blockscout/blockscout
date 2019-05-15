@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, Wei}
+  alias Indexer.Fetcher.CoinBalanceOnDemand
 
   def listaccounts(conn, params) do
     options =
@@ -279,12 +280,15 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     offset = (max(page_number, 1) - 1) * page_size
 
     # limit is just page_size
-    Chain.list_ordered_addresses(offset, page_size)
+    offset
+    |> Chain.list_ordered_addresses(page_size)
+    |> trigger_balances_and_add_status()
   end
 
   defp hashes_to_addresses(address_hashes) do
     address_hashes
     |> Chain.hashes_to_addresses()
+    |> trigger_balances_and_add_status()
     |> add_not_found_addresses(address_hashes)
   end
 
@@ -304,6 +308,18 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         hash: hash,
         fetched_coin_balance: %Wei{value: 0}
       }
+    end)
+  end
+
+  defp trigger_balances_and_add_status(addresses) do
+    Enum.map(addresses, fn address ->
+      case CoinBalanceOnDemand.trigger_fetch(address) do
+        :current ->
+          %{address | stale?: false}
+
+        _ ->
+          %{address | stale?: true}
+      end
     end)
   end
 
