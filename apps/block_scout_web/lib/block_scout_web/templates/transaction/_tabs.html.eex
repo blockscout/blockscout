@@ -22,7 +22,7 @@
     %>
   <%= link(
       gettext("Raw Trace"),
-      class: "nav-link #{tab_status("raw_trace", @conn.request_path)}",
+      class: "card-tab #{tab_status("raw_trace", @conn.request_path)}",
       to: transaction_raw_trace_path(@conn, :index, @transaction)
       ) %>
 </div>

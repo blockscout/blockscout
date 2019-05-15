@@ -6,6 +6,15 @@
 
     <div class="card-body">
       <h2 class="card-title"><%= gettext "Logs" %></h2>
+
+      <%= if @next_page_params do %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, next_page_path: transaction_log_path(@conn,:index, @transaction, @next_page_params) %>
+      <% end %>
+
+      <%= if !@next_page_params do %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true %>
+      <% end %>
+
       <%= if Enum.count(@logs) > 0 do %>
         <%= for log <- @logs do %>
           <div data-test="transaction_log" class="tile tile-muted">
@@ -140,6 +149,15 @@
       <% end %>
 
       <%= if @next_page_params do %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, next_page_path: transaction_log_path(@conn,:index, @transaction, @next_page_params) %>
+      <% end %>
+
+      <%= if !@next_page_params do %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true %>
+      <% end %>
+
+      <!--
+      <%= if @next_page_params do %>
         <%= link(
           gettext("Newer"),
           class: "button button-secondary button-sm u-float-right mt-3",
@@ -151,6 +169,7 @@
           )
         ) %>
       <% end %>
+      -->
     </div>
   </div>
 </section>
