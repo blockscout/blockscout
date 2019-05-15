@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.API.RPC.BlockView do
   end
 
   def render("eth_block_number.json", %{number: number, id: id}) do
-    result = integer_to_hex(number)
+    result = encode_quantity(number)
 
     EthRPCView.render("show.json", %{result: result, id: id})
   end
@@ -32,5 +32,23 @@ defmodule BlockScoutWeb.API.RPC.BlockView do
     RPCView.render("error.json", error: error)
   end
 
-  defp integer_to_hex(integer), do: Integer.to_string(integer, 16)
+  defp encode_quantity(binary) when is_binary(binary) do
+    hex_binary = Base.encode16(binary, case: :lower)
+
+    result = String.replace_leading(hex_binary, "0", "")
+
+    final_result = if result == "", do: "0", else: result
+
+    "0x#{final_result}"
+  end
+
+  defp encode_quantity(value) when is_integer(value) do
+    value
+    |> :binary.encode_unsigned()
+    |> encode_quantity()
+  end
+
+  defp encode_quantity(value) when is_nil(value) do
+    nil
+  end
 end

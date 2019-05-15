@@ -3,17 +3,17 @@ defmodule BlockScoutWeb.API.RPC.EthRPCView do
 
   def render("show.json", %{result: result, id: id}) do
     %{
-      "id" => id,
       "jsonrpc" => "2.0",
-      "result" => result
+      "result" => result,
+      "id" => id
     }
   end
 
   def render("error.json", %{error: message, id: id}) do
     %{
-      "id" => id,
       "jsonrpc" => "2.0",
-      "error" => message
+      "error" => message,
+      "id" => id
     }
   end
 end
