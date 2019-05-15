@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#1959](https://github.com/poanetwork/blockscout/pull/1959) - added goerli theme and goerli logo
 - [#1948](https://github.com/poanetwork/blockscout/pull/1948) - added ropsten theme and ropsten logo
 - [#1940](https://github.com/poanetwork/blockscout/pull/1940) - qr modal button and background issue
 - [#1936](https://github.com/poanetwork/blockscout/pull/1936) - added kovan, sokol themes and logos
