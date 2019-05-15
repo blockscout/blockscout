@@ -42,6 +42,8 @@
 - [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
 - [#1915](https://github.com/poanetwork/blockscout/pull/1915) - fallback to 2 latest evm versions
 - [#1937](https://github.com/poanetwork/blockscout/pull/1937) - Check the presence of overlap[i] object before retrieving properties from it
+- [#1960](https://github.com/poanetwork/blockscout/pull/1960) - do not remove bold text in decompiled contacts #1960
+
 
 ### Chore
 
