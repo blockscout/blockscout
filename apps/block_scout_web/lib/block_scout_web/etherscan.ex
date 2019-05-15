@@ -1845,7 +1845,7 @@ defmodule BlockScoutWeb.Etherscan do
         key: "filter",
         type: "string",
         description:
-          "verified|decompiled|unverified|not_decompiled, or 1|2|3|4 respectively. This requests only contracts with that status."
+          "verified|decompiled|unverified|not_decompiled|empty, or 1|2|3|4|5 respectively. This requests only contracts with that status."
       },
       %{
         key: "not_decompiled_with_version",
