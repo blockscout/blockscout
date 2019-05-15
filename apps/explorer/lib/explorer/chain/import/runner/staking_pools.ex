@@ -90,9 +90,10 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
   defp stakes_ratio(pools) do
     active_pools = Enum.filter(pools, & &1.metadata[:is_active])
 
-    stakes_total = Enum.reduce(pools, 0, fn pool, acc ->
-      acc + pool.metadata[:staked_amount]
-    end)
+    stakes_total =
+      Enum.reduce(pools, 0, fn pool, acc ->
+        acc + pool.metadata[:staked_amount]
+      end)
 
     Enum.map(active_pools, fn pool ->
       staked_ratio = pool.metadata[:staked_amount] / stakes_total
