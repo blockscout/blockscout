@@ -27,7 +27,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Ecto.Changeset
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
-  alias Explorer.Chain.BlockNumberCache
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
@@ -258,9 +257,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       {:ok, %{inserted: _, errors: []}} ->
         Logger.debug("Fetched and imported.")
 
-      {:ok, %{inserted: inserted, errors: [_ | _] = errors}} ->
-        update_block_cache(inserted["blocks"])
-
+      {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
         Logger.error(fn ->
           [
             "failed to fetch block: ",
@@ -319,12 +316,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
           step: step
         )
     end
-  end
-
-  defp update_block_cache(blocks) do
-    max_block = Enum.max_by(blocks, fn block -> block.number end)
-
-    BlockNumberCache.update(max_block.number)
   end
 
   defp retry_fetch_and_import_block(%{retry: retry}) when retry < 1, do: :ignore
