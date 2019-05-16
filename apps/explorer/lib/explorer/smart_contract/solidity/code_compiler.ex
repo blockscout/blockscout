@@ -4,11 +4,19 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   """
 
   alias Explorer.SmartContract.SolcDownloader
+  alias Poison.Parser
 
   require Logger
 
   @new_contract_name "New.sol"
-  @allowed_evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople", "petersburg"]
+  @default_allowed_evm_versions [
+    "homestead",
+    "tangerineWhistle",
+    "spuriousDragon",
+    "byzantium",
+    "constantinople",
+    "petersburg"
+  ]
 
   @doc """
   Compiles a code in the solidity command line.
@@ -72,13 +80,13 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     code = Keyword.fetch!(params, :code)
     optimize = Keyword.fetch!(params, :optimize)
     optimization_runs = params |> Keyword.get(:optimization_runs, 200) |> Integer.to_string()
-    evm_version = Keyword.get(params, :evm_version, List.last(@allowed_evm_versions))
+    evm_version = Keyword.get(params, :evm_version, List.last(allowed_evm_versions()))
     external_libs = Keyword.get(params, :external_libs, %{})
 
     external_libs_string = Jason.encode!(external_libs)
 
     checked_evm_version =
-      if evm_version in @allowed_evm_versions do
+      if evm_version in allowed_evm_versions() do
         evm_version
       else
         "byzantium"
@@ -125,7 +133,15 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     end
   end
 
-  def allowed_evm_versions, do: @allowed_evm_versions
+  def allowed_evm_versions() do
+    if Application.get_env(:explorer, :allowed_evm_versions) do
+      :explorer
+      |> Application.get_env(:allowed_evm_versions)
+      |> Parser.parse!()
+    else
+      @default_allowed_evm_versions
+    end
+  end
 
   def get_contract_info(contracts, _) when contracts == %{}, do: {:error, :compilation}
 

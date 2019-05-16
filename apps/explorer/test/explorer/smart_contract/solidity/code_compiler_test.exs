@@ -270,6 +270,29 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
     end
   end
 
+  describe "allowed_evm_versions/0" do
+
+    @allowed_evm_versions_pattern '[
+      "homestead",
+      "tangerineWhistle",
+      "spuriousDragon",
+      "byzantium",
+      "constantinople",
+      "petersburg2"
+    ]'
+
+    test "returns default_allowed_evm_versions" do
+      response = CodeCompiler.allowed_evm_versions()
+      assert response = ["homestead","tangerineWhistle","spuriousDragon","byzantium","constantinople","petersburg"]
+    end
+
+    test "returns allowed evm versions defined by ALLOWED_EVM_VERSIONS env var" do
+      Application.put_env(:explorer, :allowed_evm_versions, @allowed_evm_versions_pattern)
+      response = CodeCompiler.allowed_evm_versions()
+      assert response = ["homestead","tangerineWhistle","spuriousDragon","byzantium","constantinople","petersburg2"]
+    end
+  end
+
   describe "get_contract_info/1" do
     test "return name error when the Contract name doesn't match" do
       name = "Name"
