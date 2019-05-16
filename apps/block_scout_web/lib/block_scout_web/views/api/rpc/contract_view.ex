@@ -76,16 +76,12 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
   defp prepare_contract(%Address{
          hash: hash,
-         smart_contract: nil,
-         decompiled_smart_contracts: decompiled_smart_contracts
+         smart_contract: nil
        }) do
-    decompiled_smart_contract = latest_decompiled_smart_contract(decompiled_smart_contracts)
-
     %{
       "Address" => to_string(hash),
       "ABI" => "Contract source code not verified",
       "ContractName" => "",
-      "DecompilerVersion" => decompiler_version(decompiled_smart_contract),
       "CompilerVersion" => "",
       "OptimizationUsed" => ""
     }
@@ -93,16 +89,12 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
   defp prepare_contract(%Address{
          hash: hash,
-         smart_contract: %SmartContract{} = contract,
-         decompiled_smart_contracts: decompiled_smart_contracts
+         smart_contract: %SmartContract{} = contract
        }) do
-    decompiled_smart_contract = latest_decompiled_smart_contract(decompiled_smart_contracts)
-
     %{
       "Address" => to_string(hash),
       "ABI" => Jason.encode!(contract.abi),
       "ContractName" => contract.name,
-      "DecompilerVersion" => decompiler_version(decompiled_smart_contract),
       "CompilerVersion" => contract.compiler_version,
       "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
     }

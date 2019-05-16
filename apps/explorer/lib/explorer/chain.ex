@@ -554,9 +554,19 @@ defmodule Explorer.Chain do
 
   @spec create_decompiled_smart_contract(map()) :: {:ok, Address.t()} | {:error, Ecto.Changeset.t()}
   def create_decompiled_smart_contract(attrs) do
-    %DecompiledSmartContract{}
-    |> DecompiledSmartContract.changeset(attrs)
-    |> Repo.insert(on_conflict: :replace_all, conflict_target: [:decompiler_version, :address_hash])
+    changeset = DecompiledSmartContract.changeset(%DecompiledSmartContract{}, attrs)
+
+    Multi.new()
+    |> Multi.insert(:decompiled_smart_contract, changeset,
+      on_conflict: :replace_all,
+      conflict_target: [:decompiler_version, :address_hash]
+    )
+    |> Multi.run(:set_address_decompiled, &set_address_decompiled/2)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{decompiled_smart_contract: decompiled_smart_contract}} -> {:ok, decompiled_smart_contract}
+      {:error, _, error_value, _} -> {:error, error_value}
+    end
   end
 
   @doc """
@@ -2235,6 +2245,7 @@ defmodule Explorer.Chain do
       |> Multi.insert(:smart_contract, smart_contract_changeset)
       |> Multi.run(:clear_primary_address_names, &clear_primary_address_names/2)
       |> Multi.run(:insert_address_name, &create_address_name/2)
+      |> Multi.run(:set_address_verified, &set_address_verified/2)
       |> Repo.transaction()
 
     with {:ok, %{smart_contract: smart_contract}} <- insert_result do
@@ -2242,6 +2253,35 @@ defmodule Explorer.Chain do
     else
       {:error, :smart_contract, changeset, _} ->
         {:error, changeset}
+
+      {:error, :set_address_verified, message, _} ->
+        {:error, message}
+    end
+  end
+
+  defp set_address_verified(repo, %{smart_contract: %SmartContract{address_hash: address_hash}}) do
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^address_hash
+      )
+
+    case repo.update_all(query, set: [verified: true]) do
+      {1, _} -> {:ok, []}
+      _ -> {:error, "There was an error annotating that the address has been verified."}
+    end
+  end
+
+  defp set_address_decompiled(repo, %{decompiled_smart_contract: %DecompiledSmartContract{address_hash: address_hash}}) do
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^address_hash
+      )
+
+    case repo.update_all(query, set: [decompiled: true]) do
+      {1, _} -> {:ok, []}
+      _ -> {:error, "There was an error annotating that the address has been verified."}
     end
   end
 
@@ -2754,50 +2794,46 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
-        where:
-          fragment(
-            "EXISTS (SELECT 1 FROM decompiled_smart_contracts WHERE decompiled_smart_contracts.address_hash = ?)",
-            address.hash
-          ),
-        preload: [:decompiled_smart_contracts, :smart_contract],
-        order_by: [asc: address.inserted_at],
+        where: address.contract_code != <<>>,
+        where: not is_nil(address.contract_code),
+        where: address.decompiled == true,
         limit: ^limit,
-        offset: ^offset
+        offset: ^offset,
+        order_by: [asc: address.inserted_at],
+        preload: [:smart_contract]
       )
 
     query
-    |> filter_decompiled_with_version(not_decompiled_with_version)
+    |> reject_decompiled_with_version(not_decompiled_with_version)
     |> Repo.all()
   end
 
-  defp filter_decompiled_with_version(query, nil) do
-    query
-  end
+  defp reject_decompiled_with_version(query, nil), do: query
 
-  defp filter_decompiled_with_version(query, not_decompiled_with_version) do
-    from(address in query,
-      left_join: decompiled_smart_contract in DecompiledSmartContract,
-      on: decompiled_smart_contract.decompiler_version == ^not_decompiled_with_version,
-      on: decompiled_smart_contract.address_hash == address.hash,
-      where: is_nil(decompiled_smart_contract.id),
-      distinct: [address.hash]
+  defp reject_decompiled_with_version(query, reject_version) do
+    from(
+      address in query,
+      left_join: decompiled_smart_contract in assoc(address, :decompiled_smart_contracts),
+      on: decompiled_smart_contract.decompiler_version == ^reject_version,
+      where: is_nil(decompiled_smart_contract.address_hash)
     )
   end
 
   def list_verified_contracts(limit, offset) do
     query =
       from(
-        address in Address,
-        where: not is_nil(address.contract_code),
-        join: smart_contract in SmartContract,
-        on: smart_contract.address_hash == address.hash,
-        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contracts],
-        order_by: [asc: address.inserted_at],
+        smart_contract in SmartContract,
+        order_by: [asc: smart_contract.inserted_at],
         limit: ^limit,
-        offset: ^offset
+        offset: ^offset,
+        preload: [:address]
       )
 
-    Repo.all(query)
+    query
+    |> Repo.all()
+    |> Enum.map(fn smart_contract ->
+      Map.put(smart_contract.address, :smart_contract, smart_contract)
+    end)
   end
 
   def list_contracts(limit, offset) do
@@ -2805,7 +2841,7 @@ defmodule Explorer.Chain do
       from(
         address in Address,
         where: not is_nil(address.contract_code),
-        preload: [:smart_contract, :decompiled_smart_contracts],
+        preload: [:smart_contract],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
@@ -2814,22 +2850,22 @@ defmodule Explorer.Chain do
     Repo.all(query)
   end
 
-  def list_unverified_contracts(limit, offset) do
+  def list_unordered_unverified_contracts(limit, offset) do
     query =
       from(
         address in Address,
-        left_join: smart_contract in SmartContract,
-        on: smart_contract.address_hash == address.hash,
-        where: not is_nil(address.contract_code),
-        where: is_nil(smart_contract.address_hash),
         where: address.contract_code != <<>>,
-        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contracts],
-        order_by: [asc: address.inserted_at],
+        where: not is_nil(address.contract_code),
+        where: fragment("? IS NOT TRUE", address.verified),
         limit: ^limit,
         offset: ^offset
       )
 
-    Repo.all(query)
+    query
+    |> Repo.all()
+    |> Enum.map(fn address ->
+      %{address | smart_contract: nil}
+    end)
   end
 
   def list_empty_contracts(limit, offset) do
@@ -2845,30 +2881,23 @@ defmodule Explorer.Chain do
     Repo.all(query)
   end
 
-  def list_not_decompiled_contracts(limit, offset) do
+  def list_unordered_not_decompiled_contracts(limit, offset) do
     query =
       from(
         address in Address,
-        where:
-          fragment(
-            "NOT EXISTS (SELECT 1 FROM decompiled_smart_contracts WHERE decompiled_smart_contracts.address_hash = ?)",
-            address.hash
-          ),
+        where: fragment("? IS NOT TRUE", address.verified),
+        where: fragment("? IS NOT TRUE", address.decompiled),
         where: address.contract_code != <<>>,
-        left_join: smart_contract in SmartContract,
-        on: smart_contract.address_hash == address.hash,
-        left_join: decompiled_smart_contract in DecompiledSmartContract,
-        on: decompiled_smart_contract.address_hash == address.hash,
-        preload: [:smart_contract, :decompiled_smart_contracts],
         where: not is_nil(address.contract_code),
-        where: is_nil(smart_contract.address_hash),
-        where: is_nil(decompiled_smart_contract.address_hash),
-        order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
       )
 
-    Repo.all(query)
+    query
+    |> Repo.all()
+    |> Enum.map(fn address ->
+      %{address | smart_contract: nil}
+    end)
   end
 
   @doc """
