@@ -3,6 +3,10 @@ defmodule Explorer.Chain.BlockNumberCacheTest do
 
   alias Explorer.Chain.BlockNumberCache
 
+  setup do
+    Application.put_env(:explorer, Explorer.Chain.BlockNumberCache, enabled: true)
+  end
+
   describe "max_number/1" do
     test "returns max number" do
       insert(:block, number: 5)
