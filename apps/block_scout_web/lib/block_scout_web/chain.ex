@@ -209,6 +209,11 @@ defmodule BlockScoutWeb.Chain do
     %{"index" => index}
   end
 
+  defp paging_params({block_number, transaction_index, %Log{index: index}})
+       when is_integer(block_number) and is_integer(transaction_index) do
+    %{"block_number" => block_number, "transaction_index" => transaction_index, "index" => index}
+  end
+
   defp paging_params(%Transaction{block_number: nil, inserted_at: inserted_at, hash: hash}) do
     %{"inserted_at" => DateTime.to_iso8601(inserted_at), "hash" => hash}
   end
