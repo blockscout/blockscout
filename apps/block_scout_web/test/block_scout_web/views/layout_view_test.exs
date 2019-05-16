@@ -62,16 +62,32 @@ defmodule BlockScoutWeb.LayoutViewTest do
   end
 
   describe "release_link/1" do
-    test "use the version when there is no release_link env configured for it" do
-      Application.put_env(:block_scout_web, :release_link, nil)
+    test "set empty string if no blockscout version configured" do
+      Application.put_env(:block_scout_web, :blockscout_version, nil)
 
-      assert LayoutView.release_link("1.3.4") == "1.3.4"
+      assert LayoutView.release_link(nil) == ""
     end
 
-    test "use the version when empty release_link env configured for it" do
+    test "set empty string if blockscout version is empty string" do
+      Application.put_env(:block_scout_web, :blockscout_version, "")
+
+      assert LayoutView.release_link("") == ""
+    end
+
+    test "use the default value when there is no release_link env configured for it" do
+      Application.put_env(:block_scout_web, :release_link, nil)
+
+      assert LayoutView.release_link("v1.3.4-beta") ==
+               {:safe,
+                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
+    end
+
+    test "use the default value when empty release_link env configured for it" do
       Application.put_env(:block_scout_web, :release_link, "")
 
-      assert LayoutView.release_link("1.3.4") == "1.3.4"
+      assert LayoutView.release_link("v1.3.4-beta") ==
+               {:safe,
+                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
     end
 
     test "use the enviroment release link when it's configured" do
@@ -81,9 +97,9 @@ defmodule BlockScoutWeb.LayoutViewTest do
         "https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta"
       )
 
-      assert LayoutView.release_link("1.3.4") ==
+      assert LayoutView.release_link("v1.3.4-beta") ==
                {:safe,
-                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">1.3.4</a>)}
+                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
     end
   end
 
