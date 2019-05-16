@@ -11,33 +11,6 @@ defmodule Explorer.Chain.BlockNumberCacheTest do
 
       assert BlockNumberCache.max_number() == 5
     end
-
-    test "invalidates cache if period did pass" do
-      insert(:block, number: 5)
-
-      BlockNumberCache.setup(cache_period: 2_000)
-
-      assert BlockNumberCache.max_number() == 5
-
-      insert(:block, number: 10)
-
-      Process.sleep(2_000)
-
-      assert BlockNumberCache.max_number() == 10
-      assert BlockNumberCache.min_number() == 5
-    end
-
-    test "does not invalidate cache if period time did not pass" do
-      insert(:block, number: 5)
-
-      BlockNumberCache.setup(cache_period: 10_000)
-
-      assert BlockNumberCache.max_number() == 5
-
-      insert(:block, number: 10)
-
-      assert BlockNumberCache.max_number() == 5
-    end
   end
 
   describe "min_number/1" do
@@ -48,32 +21,31 @@ defmodule Explorer.Chain.BlockNumberCacheTest do
 
       assert BlockNumberCache.max_number() == 2
     end
+  end
 
-    test "invalidates cache" do
-      insert(:block, number: 5)
-
-      BlockNumberCache.setup(cache_period: 2_000)
-
-      assert BlockNumberCache.min_number() == 5
-
+  describe "update/1" do
+    test "updates max number" do
       insert(:block, number: 2)
 
-      Process.sleep(2_000)
+      BlockNumberCache.setup()
 
-      assert BlockNumberCache.min_number() == 2
-      assert BlockNumberCache.max_number() == 5
+      assert BlockNumberCache.max_number() == 2
+
+      assert BlockNumberCache.update(3)
+
+      assert BlockNumberCache.max_number() == 3
     end
 
-    test "does not invalidate cache if period time did not pass" do
-      insert(:block, number: 5)
-
-      BlockNumberCache.setup(cache_period: 10_000)
-
-      assert BlockNumberCache.max_number() == 5
-
+    test "updates min number" do
       insert(:block, number: 2)
 
-      assert BlockNumberCache.max_number() == 5
+      BlockNumberCache.setup()
+
+      assert BlockNumberCache.min_number() == 2
+
+      assert BlockNumberCache.update(1)
+
+      assert BlockNumberCache.min_number() == 1
     end
   end
 end
