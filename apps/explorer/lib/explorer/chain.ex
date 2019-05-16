@@ -2597,7 +2597,7 @@ defmodule Explorer.Chain do
         join: duplicate in subquery(query),
         on: duplicate.nonce == pending.nonce,
         on: duplicate.from_address_hash == pending.from_address_hash,
-        where: pending.hash in ^hashes
+        where: pending.hash in ^hashes and is_nil(pending.block_hash)
       )
 
     Repo.update_all(transactions_to_update, [set: [error: "dropped/replaced", status: :error]], timeout: timeout)
@@ -2834,7 +2834,21 @@ defmodule Explorer.Chain do
         on: smart_contract.address_hash == address.hash,
         where: not is_nil(address.contract_code),
         where: is_nil(smart_contract.address_hash),
+        where: address.contract_code != <<>>,
         preload: [{:smart_contract, smart_contract}, :decompiled_smart_contracts],
+        order_by: [asc: address.inserted_at],
+        limit: ^limit,
+        offset: ^offset
+      )
+
+    Repo.all(query)
+  end
+
+  def list_empty_contracts(limit, offset) do
+    query =
+      from(address in Address,
+        where: address.contract_code == <<>>,
+        preload: [:smart_contract, :decompiled_smart_contracts],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
@@ -2852,6 +2866,7 @@ defmodule Explorer.Chain do
             "NOT EXISTS (SELECT 1 FROM decompiled_smart_contracts WHERE decompiled_smart_contracts.address_hash = ?)",
             address.hash
           ),
+        where: address.contract_code != <<>>,
         left_join: smart_contract in SmartContract,
         on: smart_contract.address_hash == address.hash,
         left_join: decompiled_smart_contract in DecompiledSmartContract,

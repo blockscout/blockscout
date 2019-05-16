@@ -18,8 +18,8 @@ $card-background-1-text-color: #fff !default;
   background-color: $card-background-1;
   color: $card-background-1-text-color;
 
-  a,
-  a:hover {
+  a:not(.dropdown-item),
+  a:not(.dropdown-item):hover {
     color: $card-background-1-text-color;
   }
 }
