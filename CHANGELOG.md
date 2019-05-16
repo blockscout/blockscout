@@ -1,10 +1,29 @@
 ## Current
 
+## 1.3.13-beta
+
 ### Features
 
-- [#1815](https://github.com/poanetwork/blockscout/pull/1815) - able to search without prefix "0x"
-- [#1813](https://github.com/poanetwork/blockscout/pull/1813) - add total blocks counter to the main page
-- [#1806](https://github.com/poanetwork/blockscout/pull/1806) - verify contracts with a post request
+- [#1933](https://github.com/poanetwork/blockscout/pull/1933) - add eth_BlockNumber json rpc method
+
+### Fixes
+
+- [#1875](https://github.com/poanetwork/blockscout/pull/1875) - fix: resolve false positive constructor arguments
+- [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
+- [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
+
+## 1.3.12-beta
+
+Reverting of synchronous block counter, implemented in #1848
+
+## 1.3.11-beta
+
+### Features
+
+- [#1815](https://github.com/poanetwork/blockscout/pull/1815) - Be able to search without prefix "0x"
+- [#1813](https://github.com/poanetwork/blockscout/pull/1813) - Add total blocks counter to the main page
+- [#1806](https://github.com/poanetwork/blockscout/pull/1806) - Verify contracts with a post request
+- [#1848](https://github.com/poanetwork/blockscout/pull/1848) - Add cache for block counter
 
 ### Fixes
 
