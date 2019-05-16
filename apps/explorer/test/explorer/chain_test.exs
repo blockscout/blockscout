@@ -88,13 +88,13 @@ defmodule Explorer.ChainTest do
 
       paging_options1 = %PagingOptions{page_size: 1}
 
-      [log] = Chain.address_to_logs(address, paging_options: paging_options1)
+      [{_, _, log}] = Chain.address_to_logs(address, paging_options: paging_options1)
       assert log.index == log1.index
 
       paging_options2 = %PagingOptions{page_size: 60, key: {transaction.block_number, transaction.index, log1.index}}
 
       returned_log_indexes =
-        Chain.address_to_logs(address, paging_options: paging_options2) |> Enum.map(fn log -> log.index end)
+        Chain.address_to_logs(address, paging_options: paging_options2) |> Enum.map(fn {_, _, log} -> log.index end)
 
       assert second_page_indexes == returned_log_indexes
     end

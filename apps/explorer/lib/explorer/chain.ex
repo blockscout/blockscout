@@ -295,6 +295,7 @@ defmodule Explorer.Chain do
       from(log in Log,
         inner_join: transaction in assoc(log, :transaction),
         order_by: [desc: transaction.block_number, desc: transaction.index, asc: log.index],
+        preload: [:transaction],
         where:
           (transaction.from_address_hash == ^address_hash or transaction.to_address_hash == ^address_hash or
              transaction.created_contract_address_hash == ^address_hash) and log.address_hash == ^address_hash and
@@ -302,7 +303,8 @@ defmodule Explorer.Chain do
                (transaction.block_number == ^block_number and transaction.index > ^transaction_index) or
                (transaction.block_number == ^block_number and transaction.index == ^transaction_index and
                   log.index > ^log_index)),
-        limit: ^paging_options.page_size
+        limit: ^paging_options.page_size,
+        select: {transaction.block_number, transaction.index, log}
       )
 
     query
