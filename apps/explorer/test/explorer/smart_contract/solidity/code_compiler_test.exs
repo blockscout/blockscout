@@ -291,6 +291,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
                "CustomEVM2",
                "CustomEVM3"
              ]
+      Application.put_env(:explorer, :allowed_evm_versions, nil)
     end
   end
 
