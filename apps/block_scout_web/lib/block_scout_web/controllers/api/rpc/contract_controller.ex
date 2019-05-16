@@ -8,15 +8,20 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   def verify(conn, %{"addressHash" => address_hash} = params) do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_verify_params(params)},
+         {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:params, external_libraries} <-
            {:params, fetch_external_libraries(params)},
-         {:publish, {:ok, smart_contract}} <-
-           {:publish, Publisher.publish(address_hash, fetched_params, external_libraries)},
-         preloaded_smart_contract <- SmartContract.preload_decompiled_smart_contract(smart_contract) do
-      render(conn, :verify, %{contract: preloaded_smart_contract, address_hash: address_hash})
+         {:publish, {:ok, _}} <-
+           {:publish, Publisher.publish(address_hash, fetched_params, external_libraries)} do
+      address = Chain.address_hash_to_address_with_source_code(casted_address_hash)
+
+      render(conn, :verify, %{contract: address})
     else
       {:publish, _} ->
         render(conn, :error, error: "Something went wrong while publishing the contract.")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address hash")
 
       {:params, {:error, error}} ->
         render(conn, :error, error: error)
@@ -63,11 +68,11 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   def getsourcecode(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
-         {:format, {:ok, address_hash}} <- to_address_hash(address_param),
-         {:contract, {:ok, contract}} <- to_smart_contract(address_hash) do
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
+      address = Chain.address_hash_to_address_with_source_code(address_hash)
+
       render(conn, :getsourcecode, %{
-        contract: contract,
-        address_hash: address_hash
+        contract: address
       })
     else
       {:address_param, :error} ->
@@ -97,6 +102,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       :not_decompiled ->
         Chain.list_not_decompiled_contracts(page_size, offset)
+
+      :empty ->
+        Chain.list_empty_contracts(page_size, offset)
 
       _ ->
         Chain.list_contracts(page_size, offset)
@@ -135,10 +143,12 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp contracts_filter(2), do: {:ok, :decompiled}
   defp contracts_filter(3), do: {:ok, :unverified}
   defp contracts_filter(4), do: {:ok, :not_decompiled}
+  defp contracts_filter(5), do: {:ok, :empty}
   defp contracts_filter("verified"), do: {:ok, :verified}
   defp contracts_filter("decompiled"), do: {:ok, :decompiled}
   defp contracts_filter("unverified"), do: {:ok, :unverified}
   defp contracts_filter("not_decompiled"), do: {:ok, :not_decompiled}
+  defp contracts_filter("empty"), do: {:ok, :empty}
 
   defp contracts_filter(filter) when is_bitstring(filter) do
     case Integer.parse(filter) do
