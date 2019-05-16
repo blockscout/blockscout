@@ -13,6 +13,8 @@ config :explorer,
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
+config :explorer, Explorer.Chain.BlockNumberCache, enabled: true
+
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
   pages: String.to_integer(System.get_env("COINMARKETCAP_PAGES") || "10")
 
@@ -77,7 +79,6 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   service: :ecto,
   tracer: Explorer.Tracer,
   otp_app: :explorer
-
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
