@@ -272,12 +272,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
   describe "allowed_evm_versions/0" do
     @allowed_evm_versions_pattern '[
-      "homestead",
-      "tangerineWhistle",
-      "spuriousDragon",
-      "byzantium",
-      "constantinople",
-      "petersburg2"
+      "CustomEVM1",
+      "CustomEVM2",
+      "CustomEVM3"
     ]'
 
     test "returns default_allowed_evm_versions" do
@@ -290,12 +287,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
       response = CodeCompiler.allowed_evm_versions()
 
       assert response = [
-               "homestead",
-               "tangerineWhistle",
-               "spuriousDragon",
-               "byzantium",
-               "constantinople",
-               "petersburg2"
+               "CustomEVM1",
+               "CustomEVM2",
+               "CustomEVM3"
              ]
     end
   end
