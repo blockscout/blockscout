@@ -16,7 +16,9 @@ BlockScout provides a comprehensive, easy-to-use interface for users to view, co
 
 Following is an overview of the project and instructions for [getting started](#getting-started).
 
-Visit the [POA BlockScout forum](https://forum.poa.network/c/blockscout) or the [Gitter Channel](https://gitter.im/poanetwork/blockscout) to access additional information or post questions.
+Visit the [POA BlockScout forum](https://forum.poa.network/c/blockscout) for additional deployment instructions, FAQs, troubleshooting, and other BlockScout related items. You can also post and answer questions here. 
+
+You can also access the dev chatroom on our [Gitter Channel](https://gitter.im/poanetwork/blockscout). 
 
 ## About BlockScout
 
@@ -41,31 +43,16 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 
 ### Supported Projects
 
-#### Hosted Chains
-
-* [POA Core Network](https://blockscout.com/poa/core)
-* [POA Sokol Testnet](https://blockscout.com/poa/sokol)
-* [xDai Chain](https://blockscout.com/poa/dai)
-* [Ethereum Mainnet](https://blockscout.com/eth/mainnet)
-* [Kovan Testnet](https://blockscout.com/eth/kovan)
-* [Ropsten Testnet](https://blockscout.com/eth/ropsten)
-* [Goerli Testnet](https://blockscout.com/eth/goerli)
-* [Rinkeby Testnet](https://blockscout.com/eth/rinkeby)
-* [Ethereum Classic](https://blockscout.com/etc/mainnet)
-* [Aerum](https://blockscout.com/aerum/mainnet)
-* [Callisto](https://blockscout.com/callisto/mainnet)
-* [RSK](https://blockscout.com/rsk/mainnet)
-
-#### Additional Chains Utilizing BlockScout
-
-* [Oasis Labs](https://blockexplorer.oasiscloud.io/)
-* [Fuse Network](https://explorer.fuse.io/)
-* [ARTIS](https://explorer.sigma1.artis.network)
-* [SafeChain](https://explorer.safechain.io)
-* [SpringChain](https://explorer.springrole.com/)
-* [PIRL](http://pirl.es/)
-* [Petrichor](https://explorer.petrichor-dev.com/)
-* [Ether-1](https://blocks.ether1.wattpool.net/)
+| **Hosted Mainnets** | **Hosted Testnets** | **Additional Chains using BlockScout** |
+|--------------------------------------------------------|-------------------------------------------------------|----------------------------------------------------|
+| [Aerum](https://blockscout.com/aerum/mainnet) | [Goerli Testnet](https://blockscout.com/eth/goerli) | [ARTIS](https://explorer.sigma1.artis.network) |
+| [Callisto](https://blockscout.com/callisto/mainnet) | [Kovan Testnet](https://blockscout.com/eth/kovan) | [Ether-1](https://blocks.ether1.wattpool.net/) |
+| [Ethereum Classic](https://blockscout.com/etc/mainnet) | [POA Sokol Testnet](https://blockscout.com/poa/sokol) | [Fuse Network](https://explorer.fuse.io/) |
+| [Ethereum Mainnet](https://blockscout.com/eth/mainnet) | [Rinkeby Testnet](https://blockscout.com/eth/rinkeby) | [Oasis Labs](https://blockexplorer.oasiscloud.io/) |
+| [POA Core Network](https://blockscout.com/poa/core) | [Ropsten Testnet](https://blockscout.com/eth/ropsten) | [Petrichor](https://explorer.petrichor-dev.com/) |
+| [RSK](https://blockscout.com/rsk/mainnet) |  | [PIRL](http://pirl.es/) |
+| [xDai Chain](https://blockscout.com/poa/dai) |  | [SafeChain](https://explorer.safechain.io) |
+|  |  | [SpringChain](https://explorer.springrole.com/) |
 
 
 ### Visual Interface
@@ -74,116 +61,6 @@ Interface for the POA network _updated 02/2019_
 
 ![BlockScout Example](explorer_example_2_2019.gif)
 
-## Getting Started
-
-We use [Terraform](https://www.terraform.io/intro/getting-started/install.html) to build the correct infrastructure to run BlockScout. See [https://github.com/poanetwork/blockscout-terraform](https://github.com/poanetwork/blockscout-terraform) for details.
-
-### Requirements
-
-The [development stack page](https://github.com/poanetwork/blockscout/wiki/Development-Stack) contains more information about these frameworks.
-
-| Dependency  | Mac | Linux |
-|-------------|-----|-------|
-| [Erlang/OTP 21.0.4](https://github.com/erlang/otp) | `brew install erlang` | [Erlang Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L134) |
-| [Elixir 1.8.1](https://elixir-lang.org/) | :point_up: | [Elixir Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L138) |
-| [Postgres 10.3](https://www.postgresql.org/) | `brew install postgresql` | [Postgres Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L187) |
-| [Node.js 10.5.0](https://nodejs.org/en/) | `brew install node` | [Node.js Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L66) |
-| [Automake](https://www.gnu.org/software/automake/) | `brew install automake` | [Automake Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L72) |
-| [Libtool](https://www.gnu.org/software/libtool/) | `brew install libtool` | [Libtool Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L62) |
-| [Inotify-tools](https://github.com/rvoicilas/inotify-tools/wiki) | Not Required | Ubuntu - `apt-get install inotify-tools` |
-| [GCC Compiler](https://gcc.gnu.org/) | `brew install gcc` | [GCC Compiler Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L70) |
-| [GMP](https://gmplib.org/) | `brew install gmp` | [Install GMP Devel](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L74) |
-
-### Build and Run
-
-  1. Clone the repository.
-  `git clone https://github.com/poanetwork/blockscout`
-
-  2. Go to the explorer subdirectory.
-  `cd blockscout`
-
-  3. Set up default configurations.
-  `cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`
-  `cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs`
-  <br />Linux: Update the database username and password configuration in `apps/explorer/config/dev.secret.exs`
-  <br />Mac: Remove the `username` and `password` fields from `apps/explorer/config/dev.secret.exs`
-  <br />Optional: Set up default configuration for testing.
-  `cp apps/explorer/config/test.secret.exs.example apps/explorer/config/test.secret.exs`
-  Example usage: Changing the default Postgres port from localhost:15432 if [Boxen](https://github.com/boxen/boxen) is installed.
-
-  4. Install dependencies.
-  `mix do deps.get, local.rebar --force, deps.compile, compile`
-
-  5. Create and migrate database.
-  `mix ecto.create && mix ecto.migrate`
-  <br />_Note:_ If you have run previously, drop the previous database
-  `mix do ecto.drop, ecto.create, ecto.migrate`
-
-  6. Install Node.js dependencies.
-  `cd apps/block_scout_web/assets && npm install; cd -`
-  `cd apps/explorer && npm install; cd -`
-
-  7. Update your JSON RPC Variant in `apps/explorer/config/dev.exs` and `apps/indexer/config/dev.exs`.
-  For `variant`, enter `ganache`, `geth`, `parity`, or `rsk`
-
-  8. Update your JSON RPC Endpoint in `apps/explorer/config/dev/` and `apps/indexer/config/dev/`
-  For the `variant` chosen in step 7, enter the correct information for the corresponding JSON RPC Endpoint in `parity.exs`, `geth.exs`, or `ganache.exs`
-
-  9. Enable HTTPS in development. The Phoenix server only runs with HTTPS.
-     * `cd apps/block_scout_web`
-     * `mix phx.gen.cert blockscout blockscout.local; cd -`
-     * Add blockscout and blockscout.local to your `/etc/hosts`
-     ```
-        127.0.0.1       localhost blockscout blockscout.local
-        255.255.255.255 broadcasthost
-        ::1             localhost blockscout blockscout.local
-      ```
-      * If using Chrome, Enable `chrome://flags/#allow-insecure-localhost`.
-
-  9. Run the Phoenix Server from the root directory of your application.
-  `mix phx.server`
-
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
-
-_Additional runtime options:_
-
-*  Run Phoenix Server with IEx (Interactive Elixer)
-`iex -S mix phx.server`
-
-*  Run Phoenix Server with real time indexer
-`iex -S mix phx.server`
-
-### Automating Restarts
-
-By default `blockscout` does not restart if it crashes. To enable automated
-restarts, set the environment variable `HEART_COMMAND` to whatever you run to
-start `blockscout`. You can configure the heart beat timeout, which will change
-how long it will wait before considering the application to be unresponsive. At
-that point, it will kill the current blockscout and execute `HEART_COMMAND`.
-By default a crash dump is not written unless you set `ERL_CRASH_DUMP_SECONDS`
-to a positive or negative integer. See the documentation for
-[heart](http://erlang.org/doc/man/heart.html) for more information.
-
-
-### Configuring Ethereum Classic and other EVM Chains
-**Note: Most of these modifications will be consolidated into a single file in the future.**
-
-  1. Update the import file in `apps/block_scout_web/assets/css/theme/_variables.scss`. There are several preset css files for our supported chains which include Ethereum Classic, Ethereum Mainnet, Ropsten Testnet, Kovan Testnet, POA Core, and POA Sokol. To deploy Ethereum Classic, change the import to `ethereum_classic_variables`.
-
-  2. Update the logo file in `apps/block_scout_web/config/config.exs`. To deploy Ethereum Classic, change this file to `classic_ethereum_logo.svg`.
-
-  3. Update the `check_origin` configuration in `apps/block_scout_web/config/prod.exs`. This allows realtime events to occur on your endpoint.
-
-  4. Update the node configuration. You will need a full tracing node with WebSockets enabled. Make the changes in the following files (dev/prod):
-
-   * `apps/explorer/config/dev/parity.exs`
-   * `apps/explorer/config/prod/parity.exs`
-   * `apps/indexer/config/dev/parity.exs`
-   * `apps/indexer/config/prod/parity.exs`
-
-  5. Update the dropdown menu in the main navigation `apps/block_scout_web/lib/block_scout_web/templates/layout/_topnav.html.eex`
-
-  6. Update the coin in `apps/explorer/config/config.exs`. This will pull relevant information from Coinmarketcap.com.
 
 ### Umbrella Project Organization
 
@@ -199,18 +76,60 @@ Each OTP application has a restricted domain.
 | `apps/indexer`          | `:indexer`          | `Indexer`         | Uses `:ethereum_jsonrpc` to index chain and batch import data into `:explorer`.  Any process, `Task`, or `GenServer` that automatically reads from the chain and writes to `:explorer` should be in `:indexer`. This restricts automatic writes to `:indexer` and read-only mode can be achieved by not running `:indexer`.                                             |
 
 
-### CircleCI Updates
+## Getting Started
+
+### Requirements
+
+| Dependency  | Mac | Linux |
+|-------------|-----|-------|
+| [Erlang/OTP 21.0.4](https://github.com/erlang/otp) | `brew install erlang` | [Erlang Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L134) |
+| [Elixir 1.8.1](https://elixir-lang.org/) | :point_up: | [Elixir Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L138) |
+| [Postgres 10.3](https://www.postgresql.org/) | `brew install postgresql` | [Postgres Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L187) |
+| [Node.js 10.5.0](https://nodejs.org/en/) | `brew install node` | [Node.js Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L66) |
+| [Automake](https://www.gnu.org/software/automake/) | `brew install automake` | [Automake Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L72) |
+| [Libtool](https://www.gnu.org/software/libtool/) | `brew install libtool` | [Libtool Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L62) |
+| [Inotify-tools](https://github.com/rvoicilas/inotify-tools/wiki) | Not Required | Ubuntu - `apt-get install inotify-tools` |
+| [GCC Compiler](https://gcc.gnu.org/) | `brew install gcc` | [GCC Compiler Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L70) |
+| [GMP](https://gmplib.org/) | `brew install gmp` | [Install GMP Devel](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L74) |
+
+### Build and Run
+
+#### Playbook Deployment
+
+We use [Ansible](https://docs.ansible.com/ansible/latest/index.html) & [Terraform](https://www.terraform.io/intro/getting-started/install.html) to build the correct infrastructure to run BlockScout. See [https://github.com/poanetwork/blockscout-terraform](https://github.com/poanetwork/blockscout-terraform) for details and instructions.
+
+#### Manual Deployment
+
+See [Manual BlockScout Deployment](https://forum.poa.network/t/manual-blockscout-deployment/2458) for instructions.
+
+#### Environment Variables
+
+Our forum contains a [full list of BlockScout environment variables](https://forum.poa.network/t/faq-blockscout-environment-variables/1814).
+
+#### Configuring EVM Chains
+
+* **CSS:** Update the import instruction in `apps/block_scout_web/assets/css/theme/_variables.scss` to select a preset css file. This is reflected in the `production-${chain}` branch for each instance. For example, in the `production-xdai` branch, it is set to `@import "dai-variables"`.
+
+* **ENV:** Update the [environment variables](https://forum.poa.network/t/faq-blockscout-environment-variables/1814) to match the chain specs.
+
+#### Automating Restarts
+
+By default `blockscout` does not restart if it crashes. To enable automated
+restarts, set the environment variable `HEART_COMMAND` to whatever command you run to start `blockscout`. Configure the heart beat timeout to change how long it waits before considering the application unresponsive. At that point, it will kill the current blockscout instance and execute the `HEART_COMMAND`. By default a crash dump is not written unless you set `ERL_CRASH_DUMP_SECONDS` to a positive or negative integer. See the [heart](http://erlang.org/doc/man/heart.html) documentation for more information.
+
+
+#### CircleCI Updates
 
 To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with the following url: [`https://circleci.com/gh/poanetwork/blockscout.cc.xml?circle-token=f8823a3d0090407c11f87028c73015a331dbf604`](https://circleci.com/gh/poanetwork/blockscout.cc.xml?circle-token=f8823a3d0090407c11f87028c73015a331dbf604)
 
 
-### Testing
+## Testing
 
-#### Requirements
+### Requirements
 
   * PhantomJS (for wallaby)
 
-#### Running the tests
+### Running the tests
 
   1. Build the assets.
   `cd apps/block_scout_web/assets && npm run build; cd -`
@@ -237,9 +156,9 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
   8. Test the JavaScript code.
   `cd apps/block_scout_web/assets && npm run test; cd -`
 
-##### Parity
+#### Parity
 
-###### Mox
+##### Mox
 
 **This is the default setup.  `mix coveralls.html --umbrella` will work on its own, but to be explicit, use the following setup**:
 
@@ -249,7 +168,7 @@ export ETHEREUM_JSONRPC_WEB_SOCKET_CASE=EthereumJSONRPC.WebSocket.Case.Mox
 mix coveralls.html --umbrella --exclude no_parity
 ```
 
-###### HTTP / WebSocket
+##### HTTP / WebSocket
 
 ```shell
 export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Parity.HTTPWebSocket
@@ -262,9 +181,9 @@ mix coveralls.html --umbrella --exclude no_parity
 | HTTP      | `http://localhost:8545`  |
 | WebSocket | `ws://localhost:8546`    |
 
-##### Geth
+#### Geth
 
-###### Mox
+##### Mox
 
 ```shell
 export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Geth.Mox
@@ -272,7 +191,7 @@ export ETHEREUM_JSONRPC_WEB_SOCKET_CASE=EthereumJSONRPC.WebSocket.Case.Mox
 mix coveralls.html --umbrella --exclude no_geth
 ```
 
-###### HTTP / WebSocket
+##### HTTP / WebSocket
 
 ```shell
 export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Geth.HTTPWebSocket
