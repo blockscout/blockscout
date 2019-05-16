@@ -133,7 +133,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     end
   end
 
-  def allowed_evm_versions() do
+  def allowed_evm_versions do
     if Application.get_env(:explorer, :allowed_evm_versions) do
       :explorer
       |> Application.get_env(:allowed_evm_versions)
