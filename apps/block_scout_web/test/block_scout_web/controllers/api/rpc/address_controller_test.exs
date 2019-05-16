@@ -6,6 +6,29 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias Explorer.Chain.{Transaction, Wei}
   alias BlockScoutWeb.API.RPC.AddressController
 
+  setup :set_mox_global
+  setup :verify_on_exit!
+
+  setup do
+    mocked_json_rpc_named_arguments = [
+      transport: EthereumJSONRPC.Mox,
+      transport_options: []
+    ]
+
+    start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+    start_supervised!(AverageBlockTime)
+    start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
+    start_supervised!(AddressesWithBalanceCounter)
+
+    Application.put_env(:explorer, AverageBlockTime, enabled: true)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, AverageBlockTime, enabled: false)
+    end)
+
+    :ok
+  end
+
   describe "listaccounts" do
     setup do
       %{params: %{"module" => "account", "action" => "listaccounts"}}
