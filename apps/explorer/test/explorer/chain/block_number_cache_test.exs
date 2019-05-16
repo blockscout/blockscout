@@ -5,6 +5,10 @@ defmodule Explorer.Chain.BlockNumberCacheTest do
 
   setup do
     Application.put_env(:explorer, Explorer.Chain.BlockNumberCache, enabled: true)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.Chain.BlockNumberCache, enabled: false)
+    end)
   end
 
   describe "max_number/1" do

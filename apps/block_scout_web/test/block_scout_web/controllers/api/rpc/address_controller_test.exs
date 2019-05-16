@@ -25,7 +25,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     start_supervised!(AddressesWithBalanceCounter)
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true)
-    BlockNumberCache.setup(cache_period: 0)
 
     on_exit(fn ->
       Application.put_env(:explorer, AverageBlockTime, enabled: false)
