@@ -37,7 +37,12 @@ defmodule Explorer.Chain.BlockNumberCache do
   end
 
   defp value(type) do
-    {min, max} = cached_values()
+    {min, max} =
+      if Application.get_env(:explorer, __MODULE__)[:enabled] do
+        cached_values()
+      else
+        min_and_max_from_db()
+      end
 
     case type do
       :max -> max
