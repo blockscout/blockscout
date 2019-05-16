@@ -10,6 +10,7 @@
 
 - [#1875](https://github.com/poanetwork/blockscout/pull/1875) - fix: resolve false positive constructor arguments
 - [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
+- [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
 
 ## 1.3.12-beta
 
