@@ -44,14 +44,12 @@ defmodule Explorer.Staking.EpochCounter do
   end
 
   def init([]) do
-    if :ets.whereis(@table_name) == :undefined do
-      :ets.new(@table_name, [
-        :set,
-        :named_table,
-        :public,
-        write_concurrency: true
-      ])
-    end
+    :ets.new(@table_name, [
+      :set,
+      :named_table,
+      :public,
+      write_concurrency: true
+    ])
 
     Subscriber.to(:blocks, :realtime)
     {:ok, [], {:continue, :epoch_info}}
