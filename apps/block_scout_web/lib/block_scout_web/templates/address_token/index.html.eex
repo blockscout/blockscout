@@ -6,6 +6,15 @@
       <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div class="card-body">
         <h2 class="card-title"><%= gettext "Tokens" %></h2>
+
+        <%= if @next_page_params do %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, next_page_path: address_token_path(@conn, :index, @address, @next_page_params) %>
+        <% end %>
+
+        <%= if !@next_page_params do %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true %>
+        <% end %>
+
         <%= if Enum.any?(@tokens) do %>
           <%= for token <- @tokens do %>
             <%= render "_tokens.html", conn: @conn, token: token, address: @address %>
@@ -16,20 +25,28 @@
           </div>
         <% end %>
 
-        <div>
-          <%= if @next_page_params do %>
-            <%= link(
-              gettext("Next"),
-              class: "button button-secondary button-sm float-right mt-3",
-              to: address_token_path(
-                @conn,
-                :index,
-                @address,
-                @next_page_params
-              )
-            ) %>
-          <% end %>
-        </div>
+        <%= if @next_page_params do %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, next_page_path: address_token_path(@conn, :index, @address, @next_page_params) %>
+        <% end %>
+
+        <%= if !@next_page_params do %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true %>
+        <% end %>
+
+        <!--
+        <%= if @next_page_params do %>
+          <%= link(
+            gettext("Next"),
+            class: "button button-secondary button-sm float-right mt-3",
+            to: address_token_path(
+              @conn,
+              :index,
+              @address,
+              @next_page_params
+            )
+          ) %>
+        <% end %>
+        -->
       </div>
     </div>
   </section>

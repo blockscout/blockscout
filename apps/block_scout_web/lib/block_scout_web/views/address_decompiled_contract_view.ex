@@ -165,7 +165,10 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
       |> String.replace("\e[1m", "<span style=\"font-weight:bold\">")
       |> String.replace("»", "&raquo;")
       |> String.replace("\e[0m", "</span>")
-      |> String.split(~r/\<span style=.*?\)"\>|\<\/span\>/, include_captures: true, trim: true)
+      |> String.split(~r/\<span style=.*?\)"\>|\<span style=\"font-weight:bold\"\>|\<\/span\>/,
+        include_captures: true,
+        trim: true
+      )
       |> add_styles_to_every_line()
 
     result
