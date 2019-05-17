@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.AddressController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.PaginationHelpers
 
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
@@ -15,12 +16,7 @@ defmodule BlockScoutWeb.AddressController do
 
     {addresses_page, next_page} = split_list_by_page(addresses)
 
-    cur_page_number =
-      cond do
-        !params["prev_page_number"] -> 1
-        params["next_page"] -> String.to_integer(params["prev_page_number"]) + 1
-        params["prev_page"] -> String.to_integer(params["prev_page_number"]) - 1
-      end
+    cur_page_number = current_page_number(params)
 
     next_page_path =
       case next_page_params(next_page, addresses_page, params) do
@@ -28,11 +24,7 @@ defmodule BlockScoutWeb.AddressController do
           nil
 
         next_page_params ->
-          next_params =
-            next_page_params
-            |> Map.put("prev_page_path", cur_page_path(conn, params))
-            |> Map.put("next_page", true)
-            |> Map.put("prev_page_number", cur_page_number)
+          next_params = add_navigation_params(next_page_params, cur_page_path(conn, params), cur_page_number)
 
           address_path(
             conn,
