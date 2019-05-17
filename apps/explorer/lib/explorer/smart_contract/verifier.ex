@@ -74,7 +74,7 @@ defmodule Explorer.SmartContract.Verifier do
       generated_bytecode != blockchain_bytecode_without_whisper ->
         {:error, :generated_bytecode}
 
-      !ConstructorArguments.verify(address_hash, arguments_data) ->
+      has_constructor_with_params?(abi) && !ConstructorArguments.verify(address_hash, arguments_data) ->
         {:error, :constructor_arguments}
 
       true ->
@@ -86,17 +86,32 @@ defmodule Explorer.SmartContract.Verifier do
   In order to discover the bytecode we need to remove the `swarm source` from
   the hash.
 
-  `64` characters to the left of `0029` are the `swarm source`. The rest on
-  the left is the `bytecode` to be validated.
+  For more information on the swarm hash, check out:
+  https://solidity.readthedocs.io/en/v0.5.3/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
   """
-  def extract_bytecode(code) do
-    {bytecode, _swarm_source} =
-      code
-      |> String.split("0029")
-      |> List.first()
-      |> String.split_at(-64)
+  def extract_bytecode("0x" <> code) do
+    "0x" <> extract_bytecode(code)
+  end
 
-    bytecode
+  def extract_bytecode(code) do
+    do_extract_bytecode([], String.downcase(code))
+  end
+
+  defp do_extract_bytecode(extracted, remaining) do
+    case remaining do
+      <<>> ->
+        extracted
+        |> Enum.reverse()
+        |> :binary.list_to_bin()
+
+      "a165627a7a72305820" <> <<_::binary-size(64)>> <> "0029" <> _constructor_arguments ->
+        extracted
+        |> Enum.reverse()
+        |> :binary.list_to_bin()
+
+      <<next::binary-size(2)>> <> rest ->
+        do_extract_bytecode([next | extracted], rest)
+    end
   end
 
   def next_evm_version(current_evm_version) do
@@ -110,5 +125,9 @@ defmodule Explorer.SmartContract.Verifier do
     else
       prev_version
     end
+  end
+
+  defp has_constructor_with_params?(abi) do
+    Enum.any?(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
   end
 end
