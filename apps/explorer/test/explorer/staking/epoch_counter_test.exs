@@ -37,7 +37,7 @@ defmodule Explorer.Staking.EpochCounterTest do
 
     event_type = :blocks
     broadcast_type = :realtime
-    event_data = [%{number: 881}]
+    event_data = [%Explorer.Chain.Block{number: 881}]
 
     set_mox(11, 960)
     Publisher.broadcast([{event_type, event_data}], broadcast_type)
