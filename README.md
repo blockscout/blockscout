@@ -64,7 +64,7 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 * [SafeChain](https://explorer.safechain.io)
 * [SpringChain](https://explorer.springrole.com/)
 * [PIRL](http://pirl.es/)
-* [Petrichor](https://explorer.petrichor-dev.com/)
+* [Petrichor](https://explorer.petrachor.com/)
 * [Ether-1](https://blocks.ether1.wattpool.net/)
 
 
