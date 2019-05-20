@@ -125,14 +125,17 @@ defmodule BlockScoutWeb.AddressTransactionController do
   end
 
   defp cur_page_path(conn, address, %{"block_number" => _, "index" => _} = params) do
-    new_params = Map.put(params, "next_page", false)
+    # new_params = Map.put(params, "next_page", false)
 
-    address_transaction_path(
-      conn,
-      :index,
-      address,
-      new_params
-    )
+    if params["prev_page_path"] do
+      params["prev_page_path"] |> URI.decode()
+    else
+      address_transaction_path(
+        conn,
+        :index,
+        address
+      )
+    end
   end
 
   defp cur_page_path(conn, address, params), do: address_transaction_path(conn, :index, address, params)
