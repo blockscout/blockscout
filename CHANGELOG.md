@@ -2,6 +2,10 @@
 
 ## 1.3.14-beta
 
+### Features
+
+ - [#1812](https://github.com/poanetwork/blockscout/pull/1812) - add pagination to addresses page
+
 ### Fixes
 
 - [#1917](https://github.com/poanetwork/blockscout/pull/1917) - Force block refetch if transaction is re-collated in a different block
