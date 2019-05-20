@@ -41,6 +41,9 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
       |> Map.put(:timestamps, timestamps)
 
     multi
+    |> Multi.run(:mark_as_deleted, fn repo, _ ->
+      mark_as_deleted(repo, changes_list, insert_options)
+    end)
     |> Multi.run(:insert_staking_pools, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
@@ -48,6 +51,32 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
 
   @impl Import.Runner
   def timeout, do: @timeout
+
+  defp mark_as_deleted(repo, changes_list, %{timeout: timeout}) when is_list(changes_list) do
+    addresses = Enum.map(changes_list, & &1.address_hash)
+
+    query =
+      from(
+        address_name in Address.Name,
+        where:
+          address_name.address_hash not in ^addresses and
+            fragment("(?->>'is_pool')::boolean = true", address_name.metadata),
+        update: [
+          set: [
+            metadata: fragment("? || '{\"deleted\": true}'::jsonb", address_name.metadata)
+          ]
+        ]
+      )
+
+    try do
+      {_, result} = repo.update_all(query, [], timeout: timeout)
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error}}
+    end
+  end
 
   @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
