@@ -27,6 +27,7 @@
                 <%= if !assigns[:prev_page_path] do %>disabled<% end %>
                 class="page-link"
                 href='<%= "#{assigns[:prev_page_path]}" %>'
+                <%= if assigns[:data_prev_page_button] do %>data-prev-page-button<% end %>
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="6" height="10">
                     <path fill-rule="evenodd" d="M2.358 5l3.357 3.358a.959.959 0 1 1-1.357 1.357L.502 5.859c-.076-.042-.153-.08-.217-.144A.949.949 0 0 1 .011 5a.949.949 0 0 1 .274-.715c.064-.064.142-.102.217-.145L4.358.285a.959.959 0 1 1 1.357 1.357L2.358 5z"/>

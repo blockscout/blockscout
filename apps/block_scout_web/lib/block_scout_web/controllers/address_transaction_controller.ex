@@ -46,13 +46,18 @@ defmodule BlockScoutWeb.AddressTransactionController do
             nil
 
           next_page_params ->
-            next_params = add_navigation_params(next_page_params, cur_page_path(conn, address, params), cur_page_number)
+            next_params =
+              add_navigation_params(
+                Map.delete(next_page_params, "type"),
+                cur_page_path(conn, address, Map.delete(next_page_params, "type")),
+                cur_page_number
+              )
 
             address_transaction_path(
               conn,
               :index,
               address,
-              Map.delete(next_params, "type")
+              next_params
             )
         end
 
@@ -108,7 +113,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
         transaction_count: transaction_count(address),
         validation_count: validation_count(address),
         current_path: current_path(conn),
-        prev_page_path: params["prev_page_path"],
         cur_page_number: cur_page_number
       )
     else

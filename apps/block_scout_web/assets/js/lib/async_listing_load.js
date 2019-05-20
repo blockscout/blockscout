@@ -51,13 +51,15 @@ export const asyncInitialState = {
   /* if it is loading the first page */
   loadingFirstPage: true,
   /* link to the next page */
-  nextPagePath: null
+  nextPagePath: null,
+  /* link to the previous page */
+  prevPagePath: null
 }
 
 export function asyncReducer (state = asyncInitialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, { nextPagePath: action.nextPagePath })
+      return Object.assign({}, state, { nextPagePath: action.nextPagePath, prevPagePath: action.prevPagePath })
     }
     case 'ADD_ITEM_KEY': {
       return Object.assign({}, state, { itemKey: action.itemKey })
@@ -81,7 +83,8 @@ export function asyncReducer (state = asyncInitialState, action) {
       return Object.assign({}, state, {
         requestError: false,
         items: action.items,
-        nextPagePath: action.nextPagePath
+        nextPagePath: action.nextPagePath,
+        prevPagePath: action.prevPagePath
       })
     }
     case 'NAVIGATE_TO_OLDER': {
@@ -151,6 +154,17 @@ export const elements = {
 
       $el.attr('disabled', false)
       $el.attr('href', state.nextPagePath)
+    }
+  },
+  '[data-async-listing] [data-prev-page-button]': {
+    render ($el, state) {
+      if (state.requestError || !state.prevPagePath || state.loading) {
+        return $el.attr('disabled', 'disabled')
+      }
+
+      $el.attr('disabled', false)
+      $el.attr('href', state.prevPagePath)
+
     }
   },
   '[data-async-listing] [data-loading-button]': {
