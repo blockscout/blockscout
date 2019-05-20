@@ -6,6 +6,10 @@
 
 - [#1917](https://github.com/poanetwork/blockscout/pull/1917) - Force block refetch if transaction is re-collated in a different block
 
+### Chore
+
+- [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
+
 ## 1.3.13-beta
 
 ### Features
