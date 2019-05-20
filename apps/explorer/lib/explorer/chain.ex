@@ -279,6 +279,38 @@ defmodule Explorer.Chain do
     |> Enum.take(paging_options.page_size)
   end
 
+  @spec address_to_logs(Address.t(), [paging_options]) :: [
+          Log.t()
+        ]
+  def address_to_logs(
+        %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
+        options \\ []
+      )
+      when is_list(options) do
+    paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
+
+    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumberCache.max_number(), 0, 0}
+
+    query =
+      from(log in Log,
+        inner_join: transaction in assoc(log, :transaction),
+        order_by: [desc: transaction.block_number, desc: transaction.index],
+        preload: [:transaction],
+        where:
+          log.address_hash == ^address_hash and
+            (transaction.block_number < ^block_number or
+               (transaction.block_number == ^block_number and transaction.index > ^transaction_index) or
+               (transaction.block_number == ^block_number and transaction.index == ^transaction_index and
+                  log.index > ^log_index)),
+        limit: ^paging_options.page_size,
+        select: log
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.take(paging_options.page_size)
+  end
+
   @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0`s given the address_hash and the token contract
   address hash.
