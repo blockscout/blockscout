@@ -4,19 +4,10 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   """
 
   alias Explorer.SmartContract.SolcDownloader
-  alias Poison.Parser
 
   require Logger
 
   @new_contract_name "New.sol"
-  @default_allowed_evm_versions [
-    "homestead",
-    "tangerineWhistle",
-    "spuriousDragon",
-    "byzantium",
-    "constantinople",
-    "petersburg"
-  ]
 
   @doc """
   Compiles a code in the solidity command line.
@@ -134,13 +125,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   end
 
   def allowed_evm_versions do
-    if Application.get_env(:explorer, :allowed_evm_versions) do
-      :explorer
-      |> Application.get_env(:allowed_evm_versions)
-      |> Parser.parse!()
-    else
-      @default_allowed_evm_versions
-    end
+    :explorer
+    |> Application.get_env(:allowed_evm_versions)
+    |> String.split(",")
   end
 
   def get_contract_info(contracts, _) when contracts == %{}, do: {:error, :compilation}

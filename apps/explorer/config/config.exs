@@ -10,7 +10,9 @@ config :explorer,
   ecto_repos: [Explorer.Repo],
   coin: System.get_env("COIN") || "POA",
   token_functions_reader_max_retries: 3,
-  allowed_evm_versions: System.get_env("ALLOWED_EVM_VERSIONS")
+  allowed_evm_versions:
+    System.get_env("ALLOWED_EVM_VERSIONS") ||
+      "homestead, tangerineWhistle, spuriousDragon, byzantium, constantinople, petersburg"
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
