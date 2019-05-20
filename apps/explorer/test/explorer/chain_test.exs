@@ -50,6 +50,51 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "address_to_logs/2" do
+    test "fetches logs" do
+      address = insert(:address)
+
+      transaction1 =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction1, index: 1, address: address)
+
+      transaction2 =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction2, index: 2, address: address)
+
+      assert Enum.count(Chain.address_to_logs(address)) == 2
+    end
+
+    test "paginates logs" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      log1 = insert(:log, transaction: transaction, index: 1, address: address)
+
+      2..51
+      |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index, address: address) end)
+      |> Enum.map(& &1.index)
+
+      paging_options1 = %PagingOptions{page_size: 1}
+
+      [_log] = Chain.address_to_logs(address, paging_options: paging_options1)
+
+      paging_options2 = %PagingOptions{page_size: 60, key: {transaction.block_number, transaction.index, log1.index}}
+
+      assert Enum.count(Chain.address_to_logs(address, paging_options: paging_options2)) == 50
+    end
+  end
+
   describe "address_to_transactions_with_rewards/2" do
     test "without transactions" do
       address = insert(:address)
