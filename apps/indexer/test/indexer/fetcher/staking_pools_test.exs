@@ -129,6 +129,25 @@ defmodule Indexer.Fetcher.StakingPoolsTest do
                result: "0x0000000000000000000000000000000000000000000000000000000000000000"
              }
 
+           # stakeAmountMinusOrderedWithdraw
+           %{
+             id: id,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [
+               %{
+                 data:
+                   "0x58daab6a0000000000000000000000000b2f5e2f3cbd864eaa2c642e3769c1582361caf60000000000000000000000000b2f5e2f3cbd864eaa2c642e3769c1582361caf6",
+                 to: _
+               },
+               "latest"
+             ]
+           } ->
+             %{
+               id: id,
+               result: "0x0000000000000000000000000000000000000000000000000000000000000000"
+             }
+
            # isValidator
            %{
              id: id,

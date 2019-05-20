@@ -594,6 +594,11 @@ defmodule BlockScoutWeb.Etherscan do
         type: "block number",
         definition: "A nonnegative number used to identify blocks.",
         example: ~s("0x5c958")
+      },
+      index: %{
+        type: "log index",
+        definition: "A nonnegative number used to identify logs.",
+        example: ~s("1")
       }
     }
   }

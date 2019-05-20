@@ -3948,4 +3948,59 @@ defmodule Explorer.ChainTest do
       refute Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
     end
   end
+
+  describe "staking_pools/3" do
+    test "validators staking pools" do
+      inserted_validator = insert(:address_name, primary: true, metadata: %{is_active: true, is_validator: true})
+      insert(:address_name, primary: true, metadata: %{is_active: true, is_validator: false})
+
+      options = %PagingOptions{page_size: 20, page_number: 1}
+
+      assert [gotten_validator] = Chain.staking_pools(:validator, options)
+      assert inserted_validator.address_hash == gotten_validator.address_hash
+    end
+
+    test "active staking pools" do
+      inserted_validator = insert(:address_name, primary: true, metadata: %{is_active: true})
+      insert(:address_name, primary: true, metadata: %{is_active: false})
+
+      options = %PagingOptions{page_size: 20, page_number: 1}
+
+      assert [gotten_validator] = Chain.staking_pools(:active, options)
+      assert inserted_validator.address_hash == gotten_validator.address_hash
+    end
+
+    test "inactive staking pools" do
+      insert(:address_name, primary: true, metadata: %{is_active: true})
+      inserted_validator = insert(:address_name, primary: true, metadata: %{is_active: false})
+
+      options = %PagingOptions{page_size: 20, page_number: 1}
+
+      assert [gotten_validator] = Chain.staking_pools(:inactive, options)
+      assert inserted_validator.address_hash == gotten_validator.address_hash
+    end
+  end
+
+  describe "staking_pools_count/1" do
+    test "validators staking pools" do
+      insert(:address_name, primary: true, metadata: %{is_active: true, is_validator: true})
+      insert(:address_name, primary: true, metadata: %{is_active: true, is_validator: false})
+
+      assert Chain.staking_pools_count(:validator) == 1
+    end
+
+    test "active staking pools" do
+      insert(:address_name, primary: true, metadata: %{is_active: true})
+      insert(:address_name, primary: true, metadata: %{is_active: false})
+
+      assert Chain.staking_pools_count(:active) == 1
+    end
+
+    test "inactive staking pools" do
+      insert(:address_name, primary: true, metadata: %{is_active: true})
+      insert(:address_name, primary: true, metadata: %{is_active: false})
+
+      assert Chain.staking_pools_count(:inactive) == 1
+    end
+  end
 end
