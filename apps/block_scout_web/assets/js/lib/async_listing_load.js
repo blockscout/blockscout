@@ -164,7 +164,6 @@ export const elements = {
 
       $el.attr('disabled', false)
       $el.attr('href', state.prevPagePath)
-
     }
   },
   '[data-async-listing] [data-loading-button]': {

@@ -1,4 +1,8 @@
 defmodule BlockScoutWeb.PaginationHelpers do
+  @moduledoc """
+    Common pagination logic helpers.
+  """
+
   def current_page_number(params) do
     cond do
       !params["prev_page_number"] -> 1
