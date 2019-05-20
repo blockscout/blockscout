@@ -14,6 +14,8 @@ config :explorer,
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
+config :explorer, Explorer.Chain.BlockNumberCache, enabled: true
+
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
   pages: String.to_integer(System.get_env("COINMARKETCAP_PAGES") || "10")
 
@@ -58,6 +60,14 @@ end
 config :explorer, Explorer.Staking.PoolsReader,
   validators_contract_address: System.get_env("POS_VALIDATORS_CONTRACT"),
   staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
+
+if System.get_env("POS_STAKING_CONTRACT") do
+  config :explorer, Explorer.Staking.EpochCounter,
+    enabled: true,
+    staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
+else
+  config :explorer, Explorer.Staking.EpochCounter, enabled: false
+end
 
 if System.get_env("SUPPLY_MODULE") == "TokenBridge" do
   config :explorer, supply: Explorer.Chain.Supply.TokenBridge
