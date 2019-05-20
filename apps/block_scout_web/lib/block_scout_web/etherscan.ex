@@ -279,6 +279,12 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @block_eth_block_number_example_value %{
+    "jsonrpc" => "2.0",
+    "result" => "767969",
+    "id" => 1
+  }
+
   @contract_listcontracts_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -476,9 +482,24 @@ defmodule BlockScoutWeb.Etherscan do
     enum_interpretation: %{"0" => "error", "1" => "ok"}
   }
 
+  @jsonrpc_version_type %{
+    type: "string",
+    example: ~s("2.0")
+  }
+
   @message_type %{
     type: "string",
     example: ~s("OK")
+  }
+
+  @hex_number_type %{
+    type: "string",
+    example: ~s("767969")
+  }
+
+  @id_type %{
+    type: "string",
+    example: ~s("1")
   }
 
   @wei_type %{
@@ -1737,6 +1758,35 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @block_eth_block_number_action %{
+    name: "eth_block_number",
+    description: "Mimics Ethereum JSON RPC's eth_blockNumber. Returns the lastest block number",
+    required_params: [],
+    optional_params: [
+      %{
+        key: "id",
+        placeholder: "request id",
+        type: "integer",
+        description: "A nonnegative integer that represents the json rpc request id."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful request",
+        example_value: Jason.encode!(@block_eth_block_number_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            jsonrpc: @jsonrpc_version_type,
+            id: @id_type,
+            result: @hex_number_type
+          }
+        }
+      }
+    ]
+  }
+
   @block_getblockreward_action %{
     name: "getblockreward",
     description: "Get block reward by block number.",
@@ -1795,7 +1845,7 @@ defmodule BlockScoutWeb.Etherscan do
         key: "filter",
         type: "string",
         description:
-          "verified|decompiled|unverified|not_decompiled, or 1|2|3|4 respectively. This requests only contracts with that status."
+          "verified|decompiled|unverified|not_decompiled|empty, or 1|2|3|4|5 respectively. This requests only contracts with that status."
       },
       %{
         key: "not_decompiled_with_version",
@@ -2171,7 +2221,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @block_module %{
     name: "block",
-    actions: [@block_getblockreward_action]
+    actions: [@block_getblockreward_action, @block_eth_block_number_action]
   }
 
   @contract_module %{

@@ -125,6 +125,7 @@ defmodule Indexer.Fetcher.StakingPools do
       pool
       |> Map.delete(:staking_address)
       |> Map.put(:mining_address, mining_address)
+      |> Map.put(:is_pool, true)
 
     %{
       name: "anonymous",
