@@ -1,5 +1,9 @@
 ## Current
 
+### Features
+
+- [#1989](https://github.com/poanetwork/blockscout/pull/1989) - fix: consolidate address w/ balance one at a time
+
 ### Fixes
 
 - [#1992](https://github.com/poanetwork/blockscout/pull/1992) - fix: support https for wobserver polling
