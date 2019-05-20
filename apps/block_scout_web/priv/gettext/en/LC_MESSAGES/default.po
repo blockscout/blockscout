@@ -1767,8 +1767,3 @@ msgstr ""
 #: lib/block_scout_web/templates/address/index.html.eex:17
 msgid "Showing "
 msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:58
-msgid "Total blocks"
-msgstr ""
