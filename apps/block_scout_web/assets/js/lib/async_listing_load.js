@@ -221,12 +221,12 @@ function firstPageLoad (store) {
   }
 
   function loadItemsPrev () {
-      const path = store.getState().prevPagePath
-      store.dispatch({type: 'START_REQUEST'})
-      $.getJSON(path, {type: 'JSON'})
-          .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
-          .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-          .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+    const path = store.getState().prevPagePath
+    store.dispatch({type: 'START_REQUEST'})
+    $.getJSON(path, {type: 'JSON'})
+        .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
+        .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
+        .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
   }
   loadItemsNext()
 
