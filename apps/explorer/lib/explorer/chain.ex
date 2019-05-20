@@ -1042,7 +1042,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer, non_neg_integer}
+  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer(), non_neg_integer}
   def fetch_min_and_max_block_numbers do
     query =
       from(block in Block,
