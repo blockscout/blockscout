@@ -24,8 +24,8 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Temporary.{
     AddressesWithoutCode,
-    FailedCreatedAddresses,
     BlocksTransactionsMismatch,
+    FailedCreatedAddresses,
     UncatalogedTokenTransfers,
     UnclesWithoutIndex
   }
