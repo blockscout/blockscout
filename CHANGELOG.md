@@ -57,6 +57,7 @@
 - [#1900](https://github.com/poanetwork/blockscout/pull/1900) - SUPPORTED_CHAINS ENV var
 - [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
 - [#1958](https://github.com/poanetwork/blockscout/pull/1958) - Default value for release link env var
+- [#1975](https://github.com/poanetwork/blockscout/pull/1975) - add log index to transaction view
 
 ## 1.3.10-beta
 
