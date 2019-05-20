@@ -271,11 +271,12 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
   end
 
   describe "allowed_evm_versions/0" do
-    @allowed_evm_versions_pattern 'CustomEVM1, CustomEVM2, CustomEVM3'
+    @allowed_evm_versions_default "homestead, tangerineWhistle, spuriousDragon, byzantium, constantinople, petersburg"
+    @allowed_evm_versions_pattern "CustomEVM1, CustomEVM2, CustomEVM3"
 
     test "returns default_allowed_evm_versions" do
       response = CodeCompiler.allowed_evm_versions()
-      assert response = "homestead, tangerineWhistle, spuriousDragon, byzantium, constantinople, petersburg"
+      assert response = @allowed_evm_versions_default
     end
 
     test "returns allowed evm versions defined by ALLOWED_EVM_VERSIONS env var" do
@@ -284,7 +285,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
       assert response = "CustomEVM1, CustomEVM2, CustomEVM3"
 
-      Application.put_env(:explorer, :allowed_evm_versions, nil)
+      Application.put_env(:explorer, :allowed_evm_versions, @allowed_evm_versions_default)
     end
   end
 
