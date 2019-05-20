@@ -105,7 +105,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/index.html.eex:15
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:59
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:39
 msgid "Addresses"
 msgstr ""
 
@@ -594,7 +594,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/index.html.eex:6
 #: lib/block_scout_web/templates/address/index.html.eex:36
-#: lib/block_scout_web/templates/address_token/index.html.eex:22
+#: lib/block_scout_web/templates/address_token/index.html.eex:25
 msgid "Next"
 msgstr ""
 
