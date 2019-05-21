@@ -326,7 +326,12 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
     end
 
     test "returns default_allowed_evm_versions" do
-      Application.put_env(:explorer, :allowed_evm_versions, "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg")
+      Application.put_env(
+        :explorer,
+        :allowed_evm_versions,
+        "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg"
+      )
+
       response = CodeCompiler.allowed_evm_versions()
 
       assert ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople", "petersburg"] = response
