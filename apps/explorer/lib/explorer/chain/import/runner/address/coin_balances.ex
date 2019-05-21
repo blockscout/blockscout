@@ -119,13 +119,48 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
               balance.value_fetched_at,
               balance.value_fetched_at
             ),
-          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", balance.inserted_at),
-          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", balance.updated_at)
+          delta:
+            fragment(
+              """
+              CASE WHEN EXCLUDED.delta IS NOT NULL AND (? IS NULL OR EXCLUDED.delta_updated_at > ?) THEN
+                     EXCLUDED.delta
+                   ELSE
+                     ?
+              END
+              """,
+              balance.delta_updated_at,
+              balance.delta_updated_at,
+              balance.delta
+            ),
+          delta_updated_at:
+            fragment(
+              """
+              CASE WHEN EXCLUDED.delta IS NOT NULL AND (? IS NULL OR EXCLUDED.delta_updated_at > ?) THEN
+                     EXCLUDED.delta_updated_at
+                   ELSE
+                     ?
+              END
+              """,
+              balance.delta_updated_at,
+              balance.delta_updated_at,
+              balance.delta_updated_at
+            ),
+          inserted_at: balance.inserted_at,
+          updated_at: fragment("EXCLUDED.updated_at")
         ]
       ],
       where:
-        fragment("EXCLUDED.value IS NOT NULL") and
-          (is_nil(balance.value_fetched_at) or fragment("EXCLUDED.value_fetched_at > ?", balance.value_fetched_at))
+        fragment(
+          """
+            (EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?))
+            OR
+            (EXCLUDED.delta IS NOT NULL AND (? IS NULL OR EXCLUDED.delta_updated_at > ?))
+          """,
+          balance.value_fetched_at,
+          balance.value_fetched_at,
+          balance.delta_updated_at,
+          balance.delta_updated_at
+        )
     )
   end
 end

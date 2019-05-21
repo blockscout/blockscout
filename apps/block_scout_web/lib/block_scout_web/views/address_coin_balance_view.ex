@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceView do
   end
 
   def delta_arrow(value) do
-    if value.sign == 1 do
+    if Wei.sign(value) == 1 do
       "▲"
     else
       "▼"
@@ -16,14 +16,14 @@ defmodule BlockScoutWeb.AddressCoinBalanceView do
   end
 
   def delta_sign(value) do
-    if value.sign == 1 do
+    if Wei.sign(value) == 1 do
       "Positive"
     else
       "Negative"
     end
   end
 
-  def format_delta(%Decimal{} = value) do
+  def format_delta(%Wei{value: value}) do
     value
     |> Decimal.abs()
     |> Wei.from(:wei)

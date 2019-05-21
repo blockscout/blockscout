@@ -238,6 +238,16 @@ defmodule Explorer.Chain.Wei do
 
   @spec to(t(), :wei) :: wei()
   def to(%__MODULE__{value: wei}, :wei), do: wei
+
+  @spec to_integer(t()) :: integer()
+  def to_integer(%Wei{value: value}) do
+    Decimal.to_integer(value)
+  end
+
+  @spec sign(t()) :: Decimal.sign()
+  def sign(%Wei{value: value}) do
+    value.sign
+  end
 end
 
 defimpl Inspect, for: Explorer.Chain.Wei do

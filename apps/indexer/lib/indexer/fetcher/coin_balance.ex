@@ -121,10 +121,69 @@ defmodule Indexer.Fetcher.CoinBalance do
     end)
   end
 
-  def import_fetched_balances(%FetchedBalances{params_list: params_list}, broadcast_type \\ false) do
-    value_fetched_at = DateTime.utc_now()
+  # For each balance we want to update the newly fetched value, but also its delta
+  # to the preceding value and the delta of its following balance when necessary.
+  def importable_balances_params(balances_params) do
+    current_time = DateTime.utc_now()
 
-    importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
+    balances_params
+    |> Enum.group_by(fn %{address_hash: address_hash} -> address_hash end)
+    |> Enum.map(fn {address_hash, new_balances} ->
+      involved_balances_params(address_hash, new_balances, current_time)
+    end)
+    |> Enum.concat()
+  end
+
+  defp involved_balances_params(address_hash, [balance_params], current_time) do
+    value_before = Chain.balance_value_before(address_hash, balance_params.block_number)
+    new_params = update_balance_params(balance_params, value_before || 0, current_time)
+
+    following =
+      case Chain.balance_params_following(address_hash, balance_params.block_number) do
+        nil ->
+          []
+
+        following_params ->
+          [update_balance_params(following_params, new_params.value, current_time)]
+      end
+
+    [new_params | following]
+  end
+
+  defp involved_balances_params(address_hash, balances_params, current_time) do
+    {first_balance, last_balance} = Enum.min_max_by(balances_params, & &1.block_number)
+
+    value_before = Chain.balance_value_before(address_hash, first_balance.block_number)
+    new_head = update_balance_params(first_balance, value_before || 0, current_time)
+
+    new_last =
+      case Chain.balance_params_following(address_hash, last_balance.block_number) do
+        nil -> last_balance
+        val -> val
+      end
+
+    address_hash
+    |> Chain.balances_params_between(first_balance.block_number, last_balance.block_number)
+    |> Enum.concat(balances_params)
+    |> Enum.into(%{}, &{&1.block_number, &1})
+    |> Map.put_new(new_last.block_number, new_last)
+    |> Map.delete(first_balance.block_number)
+    |> Map.values()
+    |> Enum.sort_by(& &1.block_number)
+    |> Enum.reduce([new_head], fn el, [%{value: previous_value} | _] = rest ->
+      [update_balance_params(el, previous_value, current_time) | rest]
+    end)
+  end
+
+  defp update_balance_params(balance_params, previous_value, current_time) do
+    balance_params
+    |> Map.put(:delta, balance_params.value - previous_value)
+    |> Map.put(:delta_updated_at, current_time)
+    |> Map.put_new(:value_fetched_at, current_time)
+  end
+
+  def import_fetched_balances(%FetchedBalances{params_list: params_list}, broadcast_type \\ false) do
+    importable_balances_params = importable_balances_params(params_list)
 
     addresses_params = balances_params_to_address_params(importable_balances_params)
 

@@ -30,6 +30,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Fetcher.CoinBalance, as: CoinBalanceFetcher
   alias Indexer.Transform.Addresses
   alias Timex.Duration
 
@@ -368,9 +369,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           |> Kernel.++(addresses_params)
           |> Addresses.merge_addresses()
 
-        value_fetched_at = DateTime.utc_now()
-
-        importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
+        importable_balances_params = CoinBalanceFetcher.importable_balances_params(params_list)
 
         {:ok, %{addresses_params: merged_addresses_params, balances_params: importable_balances_params}}
 

@@ -228,6 +228,17 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
         |> Enum.sort()
         |> Enum.map(&integer_to_quantity/1)
 
+      expected_delta_by_block_number =
+        expected_balance_by_block_number
+        |> Enum.sort_by(fn {block_number, _} -> block_number end)
+        |> Enum.reduce([], fn {block_number, value}, previous ->
+          case previous do
+            [] -> [{block_number, value}]
+            [{_, previous_value} | _] -> [{block_number, value - previous_value} | previous]
+          end
+        end)
+        |> Map.new()
+
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expected_requests =
           block_quantities
@@ -265,10 +276,13 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
               {block_number, balance}
             end)
 
-          Enum.each(expected_balance_by_block_number, fn {block_number, expected_balance} ->
-            expected_value = %Explorer.Chain.Wei{value: Decimal.new(expected_balance)}
+          Enum.each(expected_balance_by_block_number, fn {block_number, expected_balance_value} ->
+            expected_value = %Explorer.Chain.Wei{value: Decimal.new(expected_balance_value)}
+            expected_balance_delta = expected_delta_by_block_number[block_number]
+            expected_delta = %Explorer.Chain.Wei{value: Decimal.new(expected_balance_delta)}
 
-            assert %Address.CoinBalance{value: ^expected_value} = balance_by_block_number[block_number]
+            assert %Address.CoinBalance{value: ^expected_value, delta: ^expected_delta} =
+                     balance_by_block_number[block_number]
           end)
 
           fetched_address = Repo.one!(from(address in Address, where: address.hash == ^hash_data))
