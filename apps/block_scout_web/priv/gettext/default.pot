@@ -1702,3 +1702,8 @@ msgstr ""
 #: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:37
 msgid "of"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block_transaction/404.html.eex:7
+msgid "Block Details"
+msgstr ""

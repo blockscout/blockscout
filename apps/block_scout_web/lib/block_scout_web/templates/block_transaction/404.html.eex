@@ -4,8 +4,8 @@
       <img alt="Block Not Found" src="/images/errors-img/eth-block-not-found.png" srcset="/images/eth-block-not-found@2x.png 2x">
     </div>
     <div class="block-not-found-content">
-      <h1 class="card-title error-title">Lorem Ipsum Dolor</h1>
-      <p class="error-descr">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</p>
+      <h1 class="card-title error-title"><%= gettext("Block Details") %></h1>
+      <p class="error-descr"><%= block_not_found_message(@block_above_tip) %></p>
       <a class="error-btn btn-line" href="/">Back Home</a>
     </div>
   </div>
