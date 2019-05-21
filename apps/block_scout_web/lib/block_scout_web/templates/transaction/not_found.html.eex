@@ -1,57 +1,7 @@
-<%#
-<section class="container">
-  <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction_hash %>">
-    <div class="row">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-body">
-            <div class="icon-links float-right">
-              <span data-clipboard-text="<%= @transaction_hash %>">
-                <span
-                  aria-label='<%= gettext("Copy Transaction Hash") %>'
-                  class="btn-copy-ico"
-                  data-placement="top"
-                  data-toggle="tooltip"
-                  title='<%= gettext("Copy Txn Hash") %>'
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
-                    <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
-                  </svg>
-                </span>
-              </span>
-            </div>
-            <h1 class="card-title"><%= gettext "Transaction Details" %> </h1>
-            <div class="tile tile-muted text-center">
-              <div class="loading-spinner mx-auto">
-                <span class="loading-spinner-block-1"></span>
-                <span class="loading-spinner-block-2"></span>
-              </div>
-              <br>
-              <span><%= gettext("The transaction %{bold_hash} was not processed yet", bold_hash: "<span class=\"font-weight-bold\">#{@transaction_hash}</span>") |> raw() %> <span>
-            </div>
-            <hr>
-            <div class="text-center">
-              <h2><%= gettext "Once we have the transaction's data this page will refresh automatically" %></h2>
-              <h3><%= gettext "The possible reasons for this transaction not being processed include the following:" %></h3>
-              <ul class="d-inline-block text-left">
-                <li><%= gettext "The transaction was made a few seconds ago" %></li>
-                <li><%= gettext "The transaction may be in the pool of a node that didn't broadcast it yet" %></li>
-                <li><%= gettext "Some transactions may take a while longer to be indexed depending on the load on the network" %></li>
-                <li><%= gettext "The transaction still does not exist" %></li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-</section>
-%>
-
 <section class="container">
   <div class="tx-nf">
     <div class="tx-nf-illustr">
-      <img alt="Block Not Found" src="images/errors-img/eth-tx-not-found.png" srcset="images/eth-tx-not-found@2x.png 2x">
+      <img alt="Block Not Found" src="/images/errors-img/eth-tx-not-found.png" srcset="/images/errors-img/eth-tx-not-found@2x.png 2x">
     </div>
     <div class="tx-nf-content">
       <h1 class="card-title error-title">Sorry, We are unable to locate this transaction Hash</h1>
