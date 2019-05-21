@@ -84,13 +84,9 @@ export function asyncReducer (state = asyncInitialState, action) {
   case 'ITEMS_FETCHED': {
       var prevPagePath = null
 
-      console.log(state.pagesStack)
-
       if (state.pagesStack.length >= 2) {
           prevPagePath = state.pagesStack[state.pagesStack.length - 2]
       }
-
-      console.log(state.pagesStack)
 
       return Object.assign({}, state, {
         requestError: false,
@@ -100,10 +96,9 @@ export function asyncReducer (state = asyncInitialState, action) {
       })
     }
   case 'NAVIGATE_TO_OLDER': {
-      console.log('NAVIGATE_TO_OLDER')
       history.replaceState({}, null, state.nextPagePath)
 
-      if (state.pagesStack.length == 0) {
+      if (state.pagesStack.length === 0) {
           state.pagesStack.push(window.location.href.split('?')[0])
       }
 
@@ -195,7 +190,7 @@ export const elements = {
   '[data-async-listing] [data-page-number]': {
     render ($el, state) {
 
-        if (state.pagesStack.length == 0) {
+        if (state.pagesStack.length === 0) {
          return $el.text('Page 1')
       }
 
@@ -255,9 +250,9 @@ function firstPageLoad (store) {
     const path = store.getState().prevPagePath
     store.dispatch({type: 'START_REQUEST'})
     $.getJSON(path, {type: 'JSON'})
-        .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
-        .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-        .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+      .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
+      .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
+      .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
   }
   loadItemsNext()
 
