@@ -3,7 +3,7 @@
     <div class="card-body" data-async-listing="<%= @current_path %>">
       <h1 class="card-title"><%= gettext "Pending Transactions" %></h1>
 
-      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, prev_next_page_button: true %>
 
       <div data-selector="channel-batching-message" style="display:none;">
         <div data-selector="reload-button" class="alert alert-info">
