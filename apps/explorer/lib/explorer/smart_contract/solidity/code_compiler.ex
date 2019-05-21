@@ -128,6 +128,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     :explorer
     |> Application.get_env(:allowed_evm_versions)
     |> String.split(",")
+    |> Enum.map(fn version -> String.trim(version) end)
   end
 
   def get_contract_info(contracts, _) when contracts == %{}, do: {:error, :compilation}
