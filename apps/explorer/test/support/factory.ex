@@ -609,4 +609,24 @@ defmodule Explorer.Factory do
       user: build(:user)
     }
   end
+
+  def staking_pool_factory do
+    %{
+      address_hash: address_hash(),
+      metadata: %{
+        banned_unitil: 0,
+        delegators_count: 0,
+        is_active: true,
+        is_banned: false,
+        is_validator: true,
+        mining_address: address_hash(),
+        retries_count: 1,
+        staked_amount: 25,
+        was_banned_count: 0,
+        was_validator_count: 1
+      },
+      name: "anonymous",
+      primary: true
+    }
+  end
 end

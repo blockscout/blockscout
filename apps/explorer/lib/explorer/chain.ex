@@ -10,6 +10,7 @@ defmodule Explorer.Chain do
       limit: 2,
       order_by: 2,
       order_by: 3,
+      offset: 2,
       preload: 2,
       select: 2,
       subquery: 1,
@@ -29,6 +30,7 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
+    BlockCountCache,
     BlockNumberCache,
     Data,
     DecompiledSmartContract,
@@ -275,6 +277,38 @@ defmodule Explorer.Chain do
           {-item.block_number, -item.index}
       end
     end)
+    |> Enum.take(paging_options.page_size)
+  end
+
+  @spec address_to_logs(Address.t(), [paging_options]) :: [
+          Log.t()
+        ]
+  def address_to_logs(
+        %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
+        options \\ []
+      )
+      when is_list(options) do
+    paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
+
+    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumberCache.max_number(), 0, 0}
+
+    query =
+      from(log in Log,
+        inner_join: transaction in assoc(log, :transaction),
+        order_by: [desc: transaction.block_number, desc: transaction.index],
+        preload: [:transaction],
+        where:
+          log.address_hash == ^address_hash and
+            (transaction.block_number < ^block_number or
+               (transaction.block_number == ^block_number and transaction.index > ^transaction_index) or
+               (transaction.block_number == ^block_number and transaction.index == ^transaction_index and
+                  log.index > ^log_index)),
+        limit: ^paging_options.page_size,
+        select: log
+      )
+
+    query
+    |> Repo.all()
     |> Enum.take(paging_options.page_size)
   end
 
@@ -1143,21 +1177,25 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
+  Lists the top `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance and address hash.
 
   """
   @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
-  def list_top_addresses do
-    query =
+  def list_top_addresses(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    base_query =
       from(a in Address,
         where: a.fetched_coin_balance > ^0,
         order_by: [desc: a.fetched_coin_balance, asc: a.hash],
         preload: [:names],
-        select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)},
-        limit: 250
+        select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)}
       )
 
-    Repo.all(query)
+    base_query
+    |> page_addresses(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
   end
 
   @doc """
@@ -1950,6 +1988,22 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Estimated count of `t:Explorer.Chain.Block.t/0`.
+
+  Estimated count of consensus blocks.
+  """
+  @spec block_estimated_count() :: non_neg_integer()
+  def block_estimated_count do
+    cached_value = BlockCountCache.count()
+
+    if is_nil(cached_value) do
+      block_consensus_count()
+    else
+      cached_value
+    end
+  end
+
+  @doc """
   `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`.
 
   ## Options
@@ -2229,6 +2283,14 @@ defmodule Explorer.Chain do
     |> repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
   end
 
+  @spec address_hash_to_address_with_source_code(%Explorer.Chain.Hash{}) :: %Explorer.Chain.Address{} | nil
+  def address_hash_to_address_with_source_code(%Explorer.Chain.Hash{} = address_hash) do
+    case Repo.get(Address, address_hash) do
+      nil -> nil
+      address -> Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
+    end
+  end
+
   @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{} | nil
   def address_hash_to_smart_contract(%Explorer.Chain.Hash{} = address_hash) do
     query =
@@ -2291,6 +2353,12 @@ defmodule Explorer.Chain do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
+  end
+
+  defp page_addresses(query, %PagingOptions{key: nil}), do: query
+
+  defp page_addresses(query, %PagingOptions{key: {coin_balance, hash}}) do
+    where(query, [address], address.fetched_coin_balance <= ^coin_balance and address.hash > ^hash)
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
@@ -2530,7 +2598,7 @@ defmodule Explorer.Chain do
         join: duplicate in subquery(query),
         on: duplicate.nonce == pending.nonce,
         on: duplicate.from_address_hash == pending.from_address_hash,
-        where: pending.hash in ^hashes
+        where: pending.hash in ^hashes and is_nil(pending.block_hash)
       )
 
     Repo.update_all(transactions_to_update, [set: [error: "dropped/replaced", status: :error]], timeout: timeout)
@@ -2767,7 +2835,21 @@ defmodule Explorer.Chain do
         on: smart_contract.address_hash == address.hash,
         where: not is_nil(address.contract_code),
         where: is_nil(smart_contract.address_hash),
+        where: address.contract_code != <<>>,
         preload: [{:smart_contract, smart_contract}, :decompiled_smart_contracts],
+        order_by: [asc: address.inserted_at],
+        limit: ^limit,
+        offset: ^offset
+      )
+
+    Repo.all(query)
+  end
+
+  def list_empty_contracts(limit, offset) do
+    query =
+      from(address in Address,
+        where: address.contract_code == <<>>,
+        preload: [:smart_contract, :decompiled_smart_contracts],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
@@ -2785,6 +2867,7 @@ defmodule Explorer.Chain do
             "NOT EXISTS (SELECT 1 FROM decompiled_smart_contracts WHERE decompiled_smart_contracts.address_hash = ?)",
             address.hash
           ),
+        where: address.contract_code != <<>>,
         left_join: smart_contract in SmartContract,
         on: smart_contract.address_hash == address.hash,
         left_join: decompiled_smart_contract in DecompiledSmartContract,
@@ -2820,6 +2903,75 @@ defmodule Explorer.Chain do
 
     value
   end
+
+  @doc "Get staking pools from the DB"
+  @spec staking_pools(filter :: :validator | :active | :inactive, options :: PagingOptions.t()) :: [map()]
+  def staking_pools(filter, %PagingOptions{page_size: page_size, page_number: page_number} \\ @default_paging_options) do
+    off = page_size * (page_number - 1)
+
+    Address.Name
+    |> staking_pool_filter(filter)
+    |> limit(^page_size)
+    |> offset(^off)
+    |> Repo.all()
+  end
+
+  @doc "Get count of staking pools from the DB"
+  @spec staking_pools_count(filter :: :validator | :active | :inactive) :: integer
+  def staking_pools_count(filter) do
+    Address.Name
+    |> staking_pool_filter(filter)
+    |> Repo.aggregate(:count, :address_hash)
+  end
+
+  defp staking_pool_filter(query, :validator) do
+    where(
+      query,
+      [address],
+      fragment(
+        """
+        (?->>'is_active')::boolean = true and
+        (?->>'deleted')::boolean is not true and
+        (?->>'is_validator')::boolean = true
+        """,
+        address.metadata,
+        address.metadata,
+        address.metadata
+      )
+    )
+  end
+
+  defp staking_pool_filter(query, :active) do
+    where(
+      query,
+      [address],
+      fragment(
+        """
+        (?->>'is_active')::boolean = true and
+        (?->>'deleted')::boolean is not true
+        """,
+        address.metadata,
+        address.metadata
+      )
+    )
+  end
+
+  defp staking_pool_filter(query, :inactive) do
+    where(
+      query,
+      [address],
+      fragment(
+        """
+        (?->>'is_active')::boolean = false and
+        (?->>'deleted')::boolean is not true
+        """,
+        address.metadata,
+        address.metadata
+      )
+    )
+  end
+
+  defp staking_pool_filter(query, _), do: query
 
   defp with_decompiled_code_flag(query, hash) do
     has_decompiled_code_query =

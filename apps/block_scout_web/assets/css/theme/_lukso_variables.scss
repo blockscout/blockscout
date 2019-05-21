@@ -12,7 +12,7 @@ $dashboard-stats-item-value-color: $primary;
 $dashboard-stats-item-border-color: $primary;
 
 $header-links-color-active: #333;
-
+.dropdown-item:hover, .dropdown-item:focus { background-color: $primary !important; }
 $tile-type-block-color: $secondary;
 
 $navbar-logo-height: 18px;

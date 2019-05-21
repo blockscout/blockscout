@@ -85,15 +85,15 @@
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
             <a class="dropdown-item header division">Mainnets</a>
-            <%= for %{url: url, title: title} <- head_main_nets() do %>
+            <%= for %{url: url, title: title} <- dropdown_head_main_nets() do %>
               <a class="dropdown-item" href="<%= url%>"><%= title %></a>
             <% end %>
             <a class="dropdown-item header division">Testnets</a>
-            <%= for %{url: url, title: title} <- test_nets() do %>
+            <%= for %{url: url, title: title} <- test_nets(dropdown_nets()) do %>
               <a class="dropdown-item" href="<%= url%>"><%= title %></a>
             <% end %>
             <a class="dropdown-item header division">Other networks</a>
-            <%= for %{url: url, title: title} <- other_nets() do %>
+            <%= for %{url: url, title: title} <- dropdown_other_nets() do %>
               <a class="dropdown-item" href="<%= url%>"><%= title %></a>
             <% end %>
           </div>
@@ -112,9 +112,8 @@
                   "data-test": "search_input"
                   ],
                   [ url: "#{chain_path(@conn, :token_autocomplete)}?q=",
-                  prepop: true,
-                  minChars: 3,
-                  maxItems: 8,
+                  limit: 0,
+                  minChars: 2,
                   value: "contract_address_hash",
                   label: "contract_address_hash",
                   descrSearch: true,

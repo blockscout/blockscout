@@ -21,15 +21,18 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => [
       %{
         "account" => "0xddbd2b932c763ba5b1b7ae3b362eac3e8d40121a",
-        "balance" => "40807168566070000000000"
+        "balance" => "40807168566070000000000",
+        "stale" => true
       },
       %{
         "account" => "0x63a9975ba31b0b9626b34300f7f627147df1f526",
-        "balance" => "332567136222827062478"
+        "balance" => "332567136222827062478",
+        "stale" => false
       },
       %{
         "account" => "0x198ef1ec325a96cc354c7266a038be8b5c558f67",
-        "balance" => "185178830000000000"
+        "balance" => "185178830000000000",
+        "stale" => false
       }
     ]
   }
@@ -276,6 +279,12 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @block_eth_block_number_example_value %{
+    "jsonrpc" => "2.0",
+    "result" => "767969",
+    "id" => 1
+  }
+
   @contract_listcontracts_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -473,9 +482,24 @@ defmodule BlockScoutWeb.Etherscan do
     enum_interpretation: %{"0" => "error", "1" => "ok"}
   }
 
+  @jsonrpc_version_type %{
+    type: "string",
+    example: ~s("2.0")
+  }
+
   @message_type %{
     type: "string",
     example: ~s("OK")
+  }
+
+  @hex_number_type %{
+    type: "string",
+    example: ~s("767969")
+  }
+
+  @id_type %{
+    type: "string",
+    example: ~s("1")
   }
 
   @wei_type %{
@@ -494,6 +518,13 @@ defmodule BlockScoutWeb.Etherscan do
     type: "address hash",
     definition: "A 160-bit code used for identifying accounts or contracts.",
     example: ~s("0x95426f2bc716022fcf1def006dbc4bb81f5b5164")
+  }
+
+  @stale_type %{
+    type: "boolean",
+    definition:
+      "Represents whether or not the balance has not been checked in the last 24 hours, and will be rechecked.",
+    example: true
   }
 
   @transaction_hash_type %{
@@ -563,6 +594,11 @@ defmodule BlockScoutWeb.Etherscan do
         type: "block number",
         definition: "A nonnegative number used to identify blocks.",
         example: ~s("0x5c958")
+      },
+      index: %{
+        type: "log index",
+        definition: "A nonnegative number used to identify logs.",
+        example: ~s("1")
       }
     }
   }
@@ -571,7 +607,8 @@ defmodule BlockScoutWeb.Etherscan do
     name: "AddressBalance",
     fields: %{
       address: @address_hash_type,
-      balance: @wei_type
+      balance: @wei_type,
+      stale: @stale_type
     }
   }
 
@@ -825,47 +862,10 @@ defmodule BlockScoutWeb.Etherscan do
     name: "Contract",
     fields: %{
       "Address" => @address_hash_type,
-      "SourceCode" => %{
-        type: "contract source code",
-        definition: "The contract's source code.",
-        example: """
-        "pragma solidity >0.4.24;
-
-        contract Test {
-          constructor() public { b = hex"12345678901234567890123456789012"; }
-          event Event(uint indexed a, bytes32 b);
-          event Event2(uint indexed a, bytes32 b);
-          function foo(uint a) public { emit Event(a, b); }
-          bytes32 b;
-        }"
-        """
-      },
       "DecompilerVersion" => %{
         type: "decompiler version",
         definition: "When decompiled source code is present, the decompiler version with which it was generated.",
         example: "decompiler.version"
-      },
-      "DecompiledSourceCode" => %{
-        type: "contract decompiled source code",
-        definition: "The contract's decompiled source code.",
-        example: """
-        const name() = 'CryptoKitties'
-        const GEN0_STARTING_PRICE() = 10^16
-        const GEN0_AUCTION_DURATION() = 86400
-        const GEN0_CREATION_LIMIT() = 45000
-        const symbol() = 'CK'
-        const PROMO_CREATION_LIMIT() = 5000
-        def storage:
-          ceoAddress is addr # mask(160, 0) at storage #0
-          cfoAddress is addr # mask(160, 0) at storage #1
-          stor1.768 is uint16 => uint256 # mask(256, 768) at storage #1
-          cooAddress is addr # mask(160, 0) at storage #2
-          stor2.0 is uint256 => uint256 # mask(256, 0) at storage #2
-          paused is uint8 # mask(8, 160) at storage #2
-          stor2.256 is uint256 => uint256 # mask(256, 256) at storage #2
-          stor3 is uint32 #
-        ...<continues>
-        """
       },
       "ABI" => %{
         type: "ABI",
@@ -898,6 +898,49 @@ defmodule BlockScoutWeb.Etherscan do
       }
     }
   }
+
+  @contract_source_code_type %{
+    type: "contract source code",
+    definition: "The contract's source code.",
+    example: """
+    "pragma solidity >0.4.24;
+
+    contract Test {
+      constructor() public { b = hex"12345678901234567890123456789012"; }
+      event Event(uint indexed a, bytes32 b);
+      event Event2(uint indexed a, bytes32 b);
+      function foo(uint a) public { emit Event(a, b); }
+      bytes32 b;
+    }"
+    """
+  }
+
+  @contract_decompiled_source_code_type %{
+    type: "contract decompiled source code",
+    definition: "The contract's decompiled source code.",
+    example: """
+    const name() = 'CryptoKitties'
+    const GEN0_STARTING_PRICE() = 10^16
+    const GEN0_AUCTION_DURATION() = 86400
+    const GEN0_CREATION_LIMIT() = 45000
+    const symbol() = 'CK'
+    const PROMO_CREATION_LIMIT() = 5000
+    def storage:
+      ceoAddress is addr # mask(160, 0) at storage #0
+      cfoAddress is addr # mask(160, 0) at storage #1
+      stor1.768 is uint16 => uint256 # mask(256, 768) at storage #1
+      cooAddress is addr # mask(160, 0) at storage #2
+      stor2.0 is uint256 => uint256 # mask(256, 0) at storage #2
+      paused is uint8 # mask(8, 160) at storage #2
+      stor2.256 is uint256 => uint256 # mask(256, 256) at storage #2
+      stor3 is uint32 #
+    ...<continues>
+    """
+  }
+
+  @contract_with_sourcecode_model @contract_model
+                                  |> put_in([:fields, "SourceCode"], @contract_source_code_type)
+                                  |> put_in([:fields, "DecompiledSourceCode"], @contract_decompiled_source_code_type)
 
   @transaction_receipt_status_model %{
     name: "TransactionReceiptStatus",
@@ -982,7 +1025,16 @@ defmodule BlockScoutWeb.Etherscan do
 
   @account_balance_action %{
     name: "balance",
-    description: "Get balance for address. Also available through a GraphQL 'addresses' query.",
+    description: """
+        Get balance for address. Also available through a GraphQL 'addresses' query.
+
+        If the balance hasn't been updated in a long time, we will double check
+        with the node to fetch the absolute latest balance. This will not be
+        reflected in the current request, but once it is updated, subsequent requests
+        will show the updated balance. If you want to know whether or not we are checking
+        for another balance, use the `balancemulti` action. That contains a property
+        called `stale` that will let you know to recheck that balance in the near future.
+    """,
     required_params: [
       %{
         key: "address",
@@ -1016,7 +1068,15 @@ defmodule BlockScoutWeb.Etherscan do
 
   @account_balancemulti_action %{
     name: "balancemulti",
-    description: "Get balance for multiple addresses. Also available through a GraphQL 'addresses' query.",
+    description: """
+        Get balance for multiple addresses. Also available through a GraphQL 'addresses' query.
+
+        If the balance hasn't been updated in a long time, we will double check
+        with the node to fetch the absolute latest balance. This will not be
+        reflected in the current request, but once it is updated, subsequent requests
+        will show the updated balance. You can know that this is taking place via
+        the `stale` attribute, which is set to `true` if a new balance is being fetched.
+    """,
     required_params: [
       %{
         key: "address",
@@ -1703,6 +1763,35 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @block_eth_block_number_action %{
+    name: "eth_block_number",
+    description: "Mimics Ethereum JSON RPC's eth_blockNumber. Returns the lastest block number",
+    required_params: [],
+    optional_params: [
+      %{
+        key: "id",
+        placeholder: "request id",
+        type: "integer",
+        description: "A nonnegative integer that represents the json rpc request id."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful request",
+        example_value: Jason.encode!(@block_eth_block_number_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            jsonrpc: @jsonrpc_version_type,
+            id: @id_type,
+            result: @hex_number_type
+          }
+        }
+      }
+    ]
+  }
+
   @block_getblockreward_action %{
     name: "getblockreward",
     description: "Get block reward by block number.",
@@ -1761,7 +1850,7 @@ defmodule BlockScoutWeb.Etherscan do
         key: "filter",
         type: "string",
         description:
-          "verified|decompiled|unverified|not_decompiled, or 1|2|3|4 respectively. This requests only contracts with that status."
+          "verified|decompiled|unverified|not_decompiled|empty, or 1|2|3|4|5 respectively. This requests only contracts with that status."
       },
       %{
         key: "not_decompiled_with_version",
@@ -1971,7 +2060,7 @@ defmodule BlockScoutWeb.Etherscan do
             message: @message_type,
             result: %{
               type: "array",
-              array_type: @contract_model
+              array_type: @contract_with_sourcecode_model
             }
           }
         }
@@ -2137,7 +2226,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @block_module %{
     name: "block",
-    actions: [@block_getblockreward_action]
+    actions: [@block_getblockreward_action, @block_eth_block_number_action]
   }
 
   @contract_module %{
