@@ -26,7 +26,8 @@ defmodule Explorer.Factory do
     SmartContract,
     Token,
     TokenTransfer,
-    Transaction
+    Transaction,
+    StakingPool
   }
 
   alias Explorer.Market.MarketHistory
@@ -611,22 +612,24 @@ defmodule Explorer.Factory do
   end
 
   def staking_pool_factory do
-    %{
-      address_hash: address_hash(),
-      metadata: %{
-        banned_unitil: 0,
-        delegators_count: 0,
-        is_active: true,
-        is_banned: false,
-        is_validator: true,
-        mining_address: address_hash(),
-        retries_count: 1,
-        staked_amount: 25,
-        was_banned_count: 0,
-        was_validator_count: 1
-      },
-      name: "anonymous",
-      primary: true
+    wei_per_ether = 1_000_000_000_000_000_000
+
+    %StakingPool{
+      staking_address_hash: address_hash(),
+      mining_address_hash: address_hash(),
+      banned_until: 0,
+      delegators_count: 0,
+      is_active: true,
+      is_banned: false,
+      is_validator: true,
+      staked_amount: wei_per_ether * 500,
+      self_staked_amount: wei_per_ether * 300,
+      was_banned_count: 0,
+      was_validator_count: 1,
+      min_delegators_stake: wei_per_ether * 100,
+      min_candidate_stake: wei_per_ether * 200,
+      staked_ratio: 0,
+      likelihood: 0,
     }
   end
 end
