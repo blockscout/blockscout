@@ -23,9 +23,15 @@
 - [#1920](https://github.com/poanetwork/blockscout/pull/1920) - fix: remove source code fields from list endpoint
 - [#1876](https://github.com/poanetwork/blockscout/pull/1876) - async calculate a count of blocks
 - [#1941](https://github.com/poanetwork/blockscout/pull/1941) - feat: add on demand fetching and stale attr to rpc
+- [#1957](https://github.com/poanetwork/blockscout/pull/1957) - Calculate stakes ratio before insert pools
+- [#1956](https://github.com/poanetwork/blockscout/pull/1956) - add logs tab to address
+- [#1933](https://github.com/poanetwork/blockscout/pull/1933) - add eth_BlockNumber json rpc method
+- [#1952](https://github.com/poanetwork/blockscout/pull/1952) - feat: exclude empty contracts by default
+- [#1954](https://github.com/poanetwork/blockscout/pull/1954) - feat: use creation init on self destruct
 
 ### Fixes
 
+- [#1944](https://github.com/poanetwork/blockscout/pull/1944) - fixed styles for token's dropdown.
 - [#1926](https://github.com/poanetwork/blockscout/pull/1926) - status label alignment
 - [#1829](https://github.com/poanetwork/blockscout/pull/1829) - Handle nil quantities in block decoding routine
 - [#1830](https://github.com/poanetwork/blockscout/pull/1830) - Make block size field nullable
@@ -44,6 +50,8 @@
 - [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
 - [#1915](https://github.com/poanetwork/blockscout/pull/1915) - fallback to 2 latest evm versions
 - [#1937](https://github.com/poanetwork/blockscout/pull/1937) - Check the presence of overlap[i] object before retrieving properties from it
+- [#1960](https://github.com/poanetwork/blockscout/pull/1960) - do not remove bold text in decompiled contacts
+- [#1917](https://github.com/poanetwork/blockscout/pull/1917) - Force block refetch if transaction is re-collated in a different block
 
 ### Chore
 
@@ -51,6 +59,8 @@
 - [#1837](https://github.com/poanetwork/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
 - [#1900](https://github.com/poanetwork/blockscout/pull/1900) - SUPPORTED_CHAINS ENV var
 - [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
+- [#1958](https://github.com/poanetwork/blockscout/pull/1958) - Default value for release link env var
+- [#1975](https://github.com/poanetwork/blockscout/pull/1975) - add log index to transaction view
 
 ## 1.3.10-beta
 
