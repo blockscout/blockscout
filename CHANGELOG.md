@@ -27,6 +27,7 @@
 - [#1933](https://github.com/poanetwork/blockscout/pull/1933) - add eth_BlockNumber json rpc method
 - [#1952](https://github.com/poanetwork/blockscout/pull/1952) - feat: exclude empty contracts by default
 - [#1954](https://github.com/poanetwork/blockscout/pull/1954) - feat: use creation init on self destruct
+- [#1974](https://github.com/poanetwork/blockscout/pull/1974) - feat: previous page button logic
 
 ### Fixes
 
