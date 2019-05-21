@@ -1,0 +1,82 @@
+<section class="container">
+  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+  <div class="card">
+    <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+
+    <div class="card-body">
+
+      <h2 class="card-title"><%= gettext "Logs" %></h2>
+
+      <%= if @next_page_url do %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, next_page_path: @next_page_url %>
+      <% end %>
+
+      <%= if !@next_page_url do %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true %>
+      <% end %>
+
+     <%= if Enum.count(@logs) > 0 do %>
+        <%= for log <- @logs do %>
+          <div data-test="transaction_log" class="tile tile-muted">
+            <dl class="row">
+              <dt class="col-md-2"> <%= gettext "Transaction" %> </dt>
+              <dd class="col-md-10">
+                <h3 class="">
+                  <%= link(
+                      log.transaction,
+                      to: transaction_path(@conn, :show, log.transaction),
+                      "data-test": "log_address_link",
+                      "data-address-hash": log.transaction
+                      ) %>
+                </h3>
+              </dd>
+              <dt class="col-md-2"><%= gettext "Topics" %></dt>
+              <dd class="col-md-10">
+                <div class="raw-transaction-log-topics">
+                  <%= unless is_nil(log.first_topic) do %>
+                    <div class="text-dark">
+                      <span class="text-dark">[0]</span>
+                      <%= log.first_topic %>
+                    </div>
+                  <% end %>
+                  <%= unless is_nil(log.second_topic) do %>
+                    <div class="text-dark">
+                      <span class="">[1] </span>
+                      <%= log.second_topic %>
+                    </div>
+                  <% end %>
+                  <%= unless is_nil(log.third_topic) do %>
+                    <div class="text-dark">
+                      <span>[2]</span>
+                      <%= log.third_topic %>
+                    </div>
+                  <% end %>
+                  <%= unless is_nil(log.fourth_topic) do %>
+                    <div class="text-dark">
+                      <span>[3]</span>
+                      <%= log.fourth_topic %>
+                    </div>
+                  <% end %>
+                </div>
+              </dd>
+              <dt class="col-md-2">
+                <%= gettext "Data" %>
+              </dt>
+              <dd class="col-md-10">
+                <%= unless is_nil(log.data) do %>
+                  <div class="text-dark raw-transaction-log-data">
+                    <%= log.data %>
+                  </div>
+                <% end %>
+              </dd>
+            </dl>
+          </div>
+        <% end %>
+    <% else %>
+      <div class="tile tile-muted text-center">
+        <span><%= gettext "There are no logs for this address." %></span>
+      </div>
+      <% end %>
+    </div>
+  </div>
+</section>

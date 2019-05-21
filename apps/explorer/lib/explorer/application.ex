@@ -51,7 +51,8 @@ defmodule Explorer.Application do
       configure(Explorer.Market.History.Cataloger),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
       configure(Explorer.Counters.AverageBlockTime),
-      configure(Explorer.Validator.MetadataProcessor)
+      configure(Explorer.Validator.MetadataProcessor),
+      configure(Explorer.Staking.EpochCounter)
     ]
     |> List.flatten()
   end

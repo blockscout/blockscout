@@ -41,6 +41,9 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
       |> Map.put(:timestamps, timestamps)
 
     multi
+    |> Multi.run(:mark_as_deleted, fn repo, _ ->
+      mark_as_deleted(repo, changes_list, insert_options)
+    end)
     |> Multi.run(:insert_staking_pools, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
@@ -48,6 +51,32 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
 
   @impl Import.Runner
   def timeout, do: @timeout
+
+  defp mark_as_deleted(repo, changes_list, %{timeout: timeout}) when is_list(changes_list) do
+    addresses = Enum.map(changes_list, & &1.address_hash)
+
+    query =
+      from(
+        address_name in Address.Name,
+        where:
+          address_name.address_hash not in ^addresses and
+            fragment("(?->>'is_pool')::boolean = true", address_name.metadata),
+        update: [
+          set: [
+            metadata: fragment("? || '{\"deleted\": true}'::jsonb", address_name.metadata)
+          ]
+        ]
+      )
+
+    try do
+      {_, result} = repo.update_all(query, [], timeout: timeout)
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error}}
+    end
+  end
 
   @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
@@ -62,7 +91,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
     {:ok, _} =
       Import.insert_changes_list(
         repo,
-        changes_list,
+        stakes_ratio(changes_list),
         conflict_target: {:unsafe_fragment, "(address_hash) where \"primary\" = true"},
         on_conflict: on_conflict,
         for: Address.Name,
@@ -84,5 +113,21 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
         ]
       ]
     )
+  end
+
+  # Calculates staked ratio for each pool
+  defp stakes_ratio(pools) do
+    active_pools = Enum.filter(pools, & &1.metadata[:is_active])
+
+    stakes_total =
+      Enum.reduce(pools, 0, fn pool, acc ->
+        acc + pool.metadata[:staked_amount]
+      end)
+
+    Enum.map(active_pools, fn pool ->
+      staked_ratio = if stakes_total > 0, do: pool.metadata[:staked_amount] / stakes_total, else: 0
+
+      put_in(pool, [:metadata, :staked_ratio], staked_ratio)
+    end)
   end
 end
