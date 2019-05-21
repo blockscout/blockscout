@@ -12,7 +12,7 @@ config :explorer,
   token_functions_reader_max_retries: 3,
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
-      "homestead, tangerineWhistle, spuriousDragon, byzantium, constantinople, petersburg"
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg"
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
