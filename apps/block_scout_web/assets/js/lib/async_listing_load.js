@@ -192,6 +192,16 @@ export const elements = {
       $el.attr('href', state.prevPagePath)
     }
   },
+  '[data-async-listing] [data-page-number]': {
+    render ($el, state) {
+
+        if (state.pagesStack.length == 0) {
+         return $el.text('Page 1')
+      }
+
+      $el.text('Page ' + state.pagesStack.length)
+    }
+  },
   '[data-async-listing] [data-loading-button]': {
     render ($el, state) {
       if (!state.loadingFirstPage && state.loading) return $el.show()
