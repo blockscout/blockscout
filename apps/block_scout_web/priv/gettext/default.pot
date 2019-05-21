@@ -1707,9 +1707,12 @@ msgstr ""
 
 #, elixir-format
 <<<<<<< HEAD
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/block_transaction/404.html.eex:7
 msgid "Block Details"
 =======
+=======
+>>>>>>> 59d33a42ddf629ec042ae03fa17818f4c6eb8211
 #: lib/block_scout_web/templates/address_contract/index.html.eex:83
 msgid "Contract Byte Code"
 msgstr ""
@@ -1737,5 +1740,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:77
 msgid "There are no logs for this address."
+<<<<<<< HEAD
+>>>>>>> 59d33a42ddf629ec042ae03fa17818f4c6eb8211
+=======
 >>>>>>> 59d33a42ddf629ec042ae03fa17818f4c6eb8211
 msgstr ""
