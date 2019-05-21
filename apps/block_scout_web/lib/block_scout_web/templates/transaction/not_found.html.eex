@@ -1,3 +1,4 @@
+<%#
 <section class="container">
   <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction_hash %>">
     <div class="row">
@@ -44,4 +45,39 @@
       </div>
     </div>
   </section>
+</section>
+%>
+
+<section class="container">
+  <div class="tx-nf">
+    <div class="tx-nf-illustr">
+      <img alt="Block Not Found" src="images/errors-img/eth-tx-not-found.png" srcset="images/eth-tx-not-found@2x.png 2x">
+    </div>
+    <div class="tx-nf-content">
+      <h1 class="card-title error-title">Sorry, We are unable to locate this transaction Hash</h1>
+      <div class="tx-nf-blocks">
+        <div class="tx-nf-blocks-row">
+          <div class="tx-nf-block">
+            <span class="tx-nf-number">1</span>
+            <p class="error-descr">If you have just submitted this transaction please wait for at least 30 seconds before refreshing this page.</p>
+          </div>
+          <div class="tx-nf-block">
+            <span class="tx-nf-number">2</span>
+            <p class="error-descr">It could still be in the TX Pool of a different node, waiting to be broadcasted.</p>
+          </div>
+        </div>
+        <div class="tx-nf-blocks-row">
+          <div class="tx-nf-block">
+            <span class="tx-nf-number">3</span>
+            <p class="error-descr">During times when the network is busy (i.e during ICOs) it can take a while for your transaction to propagate through the network and for us to index it.</p>
+          </div>
+          <div class="tx-nf-block">
+            <span class="tx-nf-number">4</span>
+            <p class="error-descr">If it still does not show up after 1 hour, please check with your sender/exchange/wallet/transaction provider for additional information.</p>
+          </div>
+        </div>
+      </div>
+      <a class="error-btn btn-line" href="/">Back Home</a>
+    </div>
+  </div>
 </section>

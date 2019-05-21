@@ -1,3 +1,4 @@
+<%#
 <section class="container">
   <div class="row">
     <div class="col-12">
@@ -11,6 +12,20 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+%>
+
+<section class="container">
+  <div class="block-not-found">
+    <div class="block-not-found-img">
+      <img alt="Block Not Found" src="images/errors-img/eth-block-not-found.png" srcset="images/eth-block-not-found@2x.png 2x">
+    </div>
+    <div class="block-not-found-content">
+      <h1 class="card-title error-title">Lorem Ipsum Dolor</h1>
+      <p class="error-descr">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua</p>
+      <a class="error-btn btn-line" href="/">Back Home</a>
     </div>
   </div>
 </section>
