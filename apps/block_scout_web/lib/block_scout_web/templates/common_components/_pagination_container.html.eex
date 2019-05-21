@@ -1,5 +1,5 @@
 <div class='pagination-container <%= if assigns[:position] == "top" do %>position-top<% end %> <%= if assigns[:position] == "bottom" do %>position-bottom<% end %>'>
-    <%= if assigns[:show_pagination_limit] do %>
+    <%= if false do %>
     <!-- Pagination limit -->
     <div class="pagination-limit">
         <%= gettext "Show" %>
@@ -14,13 +14,15 @@
     <!-- Pagination -->
     <ul class="pagination">
         <!-- First -->
-        <li class="page-item">
-            <a
-                <%= if !assigns[:first_page_path] do %>disabled<% end %>
-                class="page-link"
-                href='<%= "#{assigns[:first_page_path]}" %>'
-            >First</a>
-        </li>
+        <%= if assigns[:first_page_path] do %>
+          <li class="page-item">
+              <a
+                  <%= if !assigns[:first_page_path] do %>disabled<% end %>
+                  class="page-link"
+                  href='<%= "#{assigns[:first_page_path]}" %>'
+              >First</a>
+          </li>
+        <% end %>
         <!-- Previous -->
         <li class="page-item">
             <a
@@ -50,6 +52,7 @@
             </a>
         </li>
         <!-- Last -->
+        <%= if assigns[:last_page_path] do %>
         <li class="page-item">
             <a
                 <%= if !assigns[:last_page_path] do %>disabled<% end %>
@@ -57,5 +60,6 @@
                 href='<%= "#{assigns[:last_page_path]}" %>'
             >Last</a>
         </li>
+        <% end %>
     </ul>
 </div>

@@ -99,21 +99,21 @@ export function asyncReducer (state = asyncInitialState, action) {
       history.replaceState({}, null, state.nextPagePath)
 
       if (state.pagesStack.length === 0) {
-          state.pagesStack.push(window.location.href.split('?')[0])
+        state.pagesStack.push(window.location.href.split('?')[0])
       }
 
       state.pagesStack.push(state.nextPagePath)
 
       return Object.assign({}, state, { beyondPageOne: true })
     }
-  case 'NAVIGATE_TO_NEWER': {
+    case 'NAVIGATE_TO_NEWER': {
       history.replaceState({}, null, state.prevPagePath)
 
       state.pagesStack.pop()
 
       return Object.assign({}, state, { beyondPageOne: true })
     }
-  default:
+    default:
       return state
   }
 }
