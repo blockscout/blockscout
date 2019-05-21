@@ -106,14 +106,14 @@ export function asyncReducer (state = asyncInitialState, action) {
 
       return Object.assign({}, state, { beyondPageOne: true })
     }
-    case 'NAVIGATE_TO_NEWER': {
-        history.replaceState({}, null, state.prevPagePath)
+  case 'NAVIGATE_TO_NEWER': {
+      history.replaceState({}, null, state.prevPagePath)
 
-        state.pagesStack.pop()
+      state.pagesStack.pop()
 
-        return Object.assign({}, state, { beyondPageOne: true })
+      return Object.assign({}, state, { beyondPageOne: true })
     }
-    default:
+  default:
       return state
   }
 }
@@ -190,8 +190,8 @@ export const elements = {
   '[data-async-listing] [data-page-number]': {
     render ($el, state) {
 
-        if (state.pagesStack.length === 0) {
-         return $el.text('Page 1')
+      if (state.pagesStack.length === 0) {
+        return $el.text('Page 1')
       }
 
       $el.text('Page ' + state.pagesStack.length)
