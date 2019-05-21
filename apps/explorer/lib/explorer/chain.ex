@@ -1338,6 +1338,52 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Returns the last coin balance value for the given address preceeding the given
+  block, as an integer.
+  """
+  @spec balance_value_before(String.t(), integer()) :: integer() | nil
+  def balance_value_before(address_hash, block_number) do
+    address_hash
+    |> CoinBalance.balance_value_before(block_number)
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      value -> Wei.to_integer(value)
+    end
+  end
+
+  @doc """
+  Returns a map for every coin balance for the given address between the given
+  blocks.
+  """
+  @spec balances_params_between(String.t(), integer(), integer()) :: [map()]
+  def balances_params_between(address_hash, lower_block_num, higher_block_num) do
+    address_hash
+    |> CoinBalance.balances_params_between(lower_block_num, higher_block_num)
+    |> Repo.all()
+    |> Enum.map(fn %{value: v, address_hash: h} = balance_params ->
+      %{balance_params | value: Wei.to_integer(v), address_hash: to_string(h)}
+    end)
+  end
+
+  @doc """
+  Returns a map of the coin balance following the given block for the given address.
+  """
+  @spec balance_params_following(String.t(), integer()) :: map() | nil
+  def balance_params_following(address_hash, block_number) do
+    address_hash
+    |> CoinBalance.balance_params_following(block_number)
+    |> Repo.one()
+    |> case do
+      nil ->
+        nil
+
+      %{value: v, address_hash: h} = balance_params ->
+        %{balance_params | value: Wei.to_integer(v), address_hash: to_string(h)}
+    end
+  end
+
+  @doc """
   Returns a stream of all token balances that weren't fetched values.
   """
   @spec stream_unfetched_token_balances(

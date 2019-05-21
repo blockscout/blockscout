@@ -65,8 +65,11 @@ defmodule Explorer.Factory do
   end
 
   def fetched_balance_factory do
+    value = Enum.random(1..100_000)
+
     unfetched_balance_factory()
-    |> struct!(value: Enum.random(1..100_000))
+    |> struct!(value: value)
+    |> struct!(delta: value)
   end
 
   def contract_address_factory do

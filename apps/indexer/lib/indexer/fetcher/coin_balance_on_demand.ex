@@ -3,8 +3,8 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   Ensures that we have a reasonably up to date coin balance for a given address.
 
   If we have an unfetched coin balance for that address, it will be synchronously fetched.
-  If not we will fetch the coin balance and created a fetched coin balance.
-  If we have a fetched coin balance, but it is over 100 blocks old, we will fetch and create a fetched coin baalnce.
+  If not we will fetch the coin balance and create a fetched coin balance.
+  If we have a fetched coin balance, but it is over 100 blocks old, we will fetch and create a fetched coin balance.
   """
 
   @latest_balance_stale_threshold :timer.hours(24)

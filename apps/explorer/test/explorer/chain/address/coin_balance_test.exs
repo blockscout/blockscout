@@ -94,43 +94,124 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
 
       assert(length(result) == 10, "Should return 10 coin balances")
     end
+  end
 
-    test "includes the delta between successive blocks" do
+  describe "balance_value_before/2" do
+    test "previous value is nil when there is no previous balance" do
+      address = insert(:address)
+      block = insert(:block)
+      insert(:fetched_balance, address_hash: address.hash, block_number: block.number)
+
+      result =
+        address.hash
+        |> CoinBalance.balance_value_before(block.number)
+        |> Repo.one()
+
+      assert(is_nil(result))
+    end
+
+    test "previous value is nil when previous balances are unfetched" do
+      address = insert(:address)
+      block_a = insert(:block)
+      block_b = insert(:block)
+      insert(:unfetched_balance, address_hash: address.hash, block_number: block_a.number)
+      insert(:fetched_balance, address_hash: address.hash, block_number: block_b.number)
+
+      result =
+        address.hash
+        |> CoinBalance.balance_value_before(block_b.number)
+        |> Repo.one()
+
+      assert(is_nil(result))
+    end
+
+    test "finds the previous value when a previous balace is fetched" do
+      address = insert(:address)
+      block_a = insert(:block)
+      block_b = insert(:block)
+      insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block_a.number)
+      insert(:fetched_balance, address_hash: address.hash, block_number: block_b.number)
+
+      result =
+        address.hash
+        |> CoinBalance.balance_value_before(block_b.number)
+        |> Repo.one()
+
+      assert(result == Wei.from(Decimal.new(1000), :wei))
+    end
+  end
+
+  describe "balances_params_between/3" do
+    test "finds the params between two block numbers of the fetched balances only" do
       address = insert(:address)
       block_a = insert(:block)
       block_b = insert(:block)
       block_c = insert(:block)
-      insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block_a.number)
-      insert(:fetched_balance, address_hash: address.hash, value: 2200, block_number: block_b.number)
-      insert(:fetched_balance, address_hash: address.hash, value: 1500, block_number: block_c.number)
+      block_d = insert(:block)
+      block_e = insert(:block)
+      insert(:fetched_balance, address_hash: address.hash, block_number: block_a.number)
+      insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block_b.number)
+      insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_c.number)
+      insert(:unfetched_balance, address_hash: address.hash, block_number: block_d.number)
+      insert(:fetched_balance, address_hash: address.hash, block_number: block_e.number)
 
       result =
         address.hash
-        |> CoinBalance.fetch_coin_balances(%PagingOptions{page_size: 50})
+        |> CoinBalance.balances_params_between(block_a.number, block_e.number)
         |> Repo.all()
 
-      deltas = result |> Enum.map(fn cb -> cb.delta end)
-      expected_deltas = [-700, 1200, 1000] |> Enum.map(&Decimal.new(&1))
-      assert(deltas == expected_deltas)
+      block_number_value = result |> Map.new(&{&1.block_number, &1.value})
+      assert(Enum.count(result) == 2)
+      assert(block_number_value[block_b.number] == Wei.from(Decimal.new(1000), :wei))
+      assert(block_number_value[block_c.number] == Wei.from(Decimal.new(2000), :wei))
+      assert(not Enum.member?(block_number_value, block_d.number))
+    end
+  end
+
+  describe "balance_params_following/2" do
+    test "following balance params are nil when there is no following balance" do
+      address = insert(:address)
+      block = insert(:block)
+      insert(:fetched_balance, address_hash: address.hash, block_number: block.number)
+
+      result =
+        address.hash
+        |> CoinBalance.balance_params_following(block.number)
+        |> Repo.one()
+
+      assert(is_nil(result))
     end
 
-    test "includes delta even when paginating" do
+    test "following balance params are nil when following balance is unfetched" do
       address = insert(:address)
-
-      values = [1000, 2200, 1500, 2000, 2800, 2500, 3100]
-
-      Enum.each(values, fn value ->
-        insert(:fetched_balance, address_hash: address.hash, value: value, block_number: insert(:block).number)
-      end)
+      block_a = insert(:block)
+      block_b = insert(:block)
+      insert(:fetched_balance, address_hash: address.hash, block_number: block_a.number)
+      insert(:unfetched_balance, address_hash: address.hash, block_number: block_b.number)
 
       result =
         address.hash
-        |> CoinBalance.fetch_coin_balances(%PagingOptions{page_size: 5})
-        |> Repo.all()
+        |> CoinBalance.balance_params_following(block_a.number)
+        |> Repo.one()
 
-      deltas = result |> Enum.map(fn cb -> cb.delta end)
-      expected_deltas = [600, -300, 800, 500, -700] |> Enum.map(&Decimal.new(&1))
-      assert(deltas == expected_deltas)
+      assert(is_nil(result))
+    end
+
+    test "finds the following balance params when a following balance is fetched" do
+      address = insert(:address)
+      block_a = insert(:block)
+      block_b = insert(:block)
+      insert(:fetched_balance, address_hash: address.hash, block_number: block_a.number)
+      insert(:fetched_balance, address_hash: address.hash, value: 500, block_number: block_b.number)
+
+      result =
+        address.hash
+        |> CoinBalance.balance_params_following(block_a.number)
+        |> Repo.one()
+
+      assert(not is_nil(result))
+      assert(result.value == Wei.from(Decimal.new(500), :wei))
+      assert(result.block_number == block_b.number)
     end
   end
 

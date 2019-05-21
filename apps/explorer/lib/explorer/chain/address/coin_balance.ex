@@ -10,7 +10,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
   alias Explorer.Chain.{Address, Block, Hash, Wei}
   alias Explorer.Chain.Address.CoinBalance
 
-  @optional_fields ~w(value value_fetched_at)a
+  @optional_fields ~w(value value_fetched_at delta delta_updated_at)a
   @required_fields ~w(address_hash block_number)a
   @allowed_fields @optional_fields ++ @required_fields
 
@@ -26,6 +26,9 @@ defmodule Explorer.Chain.Address.CoinBalance do
        `t:Explorer.Chain.Block.t/0`.  When `block_number` is the greatest `t:Explorer.Chain.Block.block_number/0` for a
        given `address`, the `t:Explorer.Chain.Address.t/0` `fetched_coin_balance` will match this value.
    * `value_fetched_at` - when `value` was fetched.
+   * `delta` - the difference between the value of `address` at the `t:Explorer.Chain.Block.block_number/0` for the
+       `t:Explorer.Chain.Block.t/0` and the value it had before this `t:Explorer.Chain.Block.t/0`.
+   * `delta_updated_at` - when `delta` was updated.
   """
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -33,7 +36,8 @@ defmodule Explorer.Chain.Address.CoinBalance do
           block_number: Block.block_number(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t(),
-          value: Wei.t() | nil
+          value: Wei.t() | nil,
+          delta: Wei.t() | nil
         }
 
   @primary_key false
@@ -41,7 +45,8 @@ defmodule Explorer.Chain.Address.CoinBalance do
     field(:block_number, :integer)
     field(:value, Wei)
     field(:value_fetched_at, :utc_datetime_usec)
-    field(:delta, Wei, virtual: true)
+    field(:delta, Wei)
+    field(:delta_updated_at, :utc_datetime_usec)
     field(:block_timestamp, :utc_datetime_usec, virtual: true)
 
     timestamps()
@@ -61,7 +66,6 @@ defmodule Explorer.Chain.Address.CoinBalance do
       on: cb.block_number == b.number,
       limit: ^1,
       order_by: [desc: :block_number],
-      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
       select_merge: %{block_timestamp: b.timestamp}
     )
   end
@@ -80,9 +84,59 @@ defmodule Explorer.Chain.Address.CoinBalance do
       on: cb.block_number == b.number,
       order_by: [desc: :block_number],
       limit: ^page_size,
-      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
       select_merge: %{block_timestamp: b.timestamp}
     )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the last known coin balance value of the
+  given address before the given block.
+  """
+  def balance_value_before(address_hash, block_number) do
+    from(
+      cb in CoinBalance,
+      where: cb.address_hash == ^address_hash,
+      where: cb.block_number < ^block_number,
+      select: cb.value,
+      order_by: [asc: :block_number],
+      limit: ^1
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch all the coin balances of the given address
+  between the given blocks.
+
+  The result is a map with: address_hash, block_number, value, value_fetched_at
+  """
+  def balances_params_between(address_hash, lower_block_num, higher_block_num) do
+    from(
+      cb in CoinBalance,
+      where: cb.address_hash == ^address_hash,
+      where: cb.block_number > ^lower_block_num,
+      where: cb.block_number < ^higher_block_num,
+      where: not is_nil(cb.value),
+      select: map(cb, [:address_hash, :block_number, :value, :value_fetched_at])
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the first coin balance of the given address
+  after the given block.
+
+  The result is a map with: address_hash, block_number, value, value_fetched_at
+  """
+  def balance_params_following(address_hash, block_number) do
+    query =
+      from(
+        cb in CoinBalance,
+        where: cb.address_hash == ^address_hash,
+        where: cb.block_number > ^block_number,
+        where: not is_nil(cb.value),
+        select: map(cb, [:address_hash, :block_number, :value, :value_fetched_at])
+      )
+
+    first(query, :block_number)
   end
 
   @doc """

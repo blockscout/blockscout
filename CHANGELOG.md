@@ -2,6 +2,7 @@
 
 ### Features
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
+- [#1991](https://github.com/poanetwork/blockscout/pull/1991) - Make CoinBalance's delta a non-virtual field
 
 ### Fixes
 - [#2120](https://github.com/poanetwork/blockscout/pull/2120) - footer links and socials focus color issue
