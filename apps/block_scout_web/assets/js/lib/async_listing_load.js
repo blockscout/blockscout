@@ -81,11 +81,11 @@ export function asyncReducer (state = asyncInitialState, action) {
         loadingFirstPage: false
       })
     }
-  case 'ITEMS_FETCHED': {
+    case 'ITEMS_FETCHED': {
       var prevPagePath = null
 
       if (state.pagesStack.length >= 2) {
-          prevPagePath = state.pagesStack[state.pagesStack.length - 2]
+        prevPagePath = state.pagesStack[state.pagesStack.length - 2]
       }
 
       return Object.assign({}, state, {
@@ -95,7 +95,7 @@ export function asyncReducer (state = asyncInitialState, action) {
         prevPagePath: prevPagePath
       })
     }
-  case 'NAVIGATE_TO_OLDER': {
+    case 'NAVIGATE_TO_OLDER': {
       history.replaceState({}, null, state.nextPagePath)
 
       if (state.pagesStack.length === 0) {
