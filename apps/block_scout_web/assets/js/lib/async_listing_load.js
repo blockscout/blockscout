@@ -189,7 +189,6 @@ export const elements = {
   },
   '[data-async-listing] [data-page-number]': {
     render ($el, state) {
-
       if (state.pagesStack.length === 0) {
         return $el.text('Page 1')
       }
