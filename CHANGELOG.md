@@ -1,5 +1,9 @@
 ## Current
 
+### Fixes
+
+- [#1992](https://github.com/poanetwork/blockscout/pull/1992) - fix: support https for wobserver polling
+
 ## 1.3.14-beta
 
 ### Features
