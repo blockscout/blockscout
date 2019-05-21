@@ -53,13 +53,15 @@ export const asyncInitialState = {
   /* link to the next page */
   nextPagePath: null,
   /* link to the previous page */
-  prevPagePath: null
+  prevPagePath: null,
+  /* visited pages */
+  pagesStack: []
 }
 
 export function asyncReducer (state = asyncInitialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, { nextPagePath: action.nextPagePath, prevPagePath: action.prevPagePath })
+      return Object.assign({}, state, { nextPagePath: action.nextPagePath })
     }
     case 'ADD_ITEM_KEY': {
       return Object.assign({}, state, { itemKey: action.itemKey })
@@ -79,21 +81,40 @@ export function asyncReducer (state = asyncInitialState, action) {
         loadingFirstPage: false
       })
     }
-    case 'ITEMS_FETCHED': {
+  case 'ITEMS_FETCHED': {
+      var prevPagePath = null
+
+      console.log(state.pagesStack)
+
+      if (state.pagesStack.length >= 2) {
+          prevPagePath = state.pagesStack[state.pagesStack.length - 2]
+      }
+
+      console.log(state.pagesStack)
+
       return Object.assign({}, state, {
         requestError: false,
         items: action.items,
         nextPagePath: action.nextPagePath,
-        prevPagePath: action.prevPagePath
+        prevPagePath: prevPagePath
       })
     }
-    case 'NAVIGATE_TO_OLDER': {
+  case 'NAVIGATE_TO_OLDER': {
+      console.log('NAVIGATE_TO_OLDER')
       history.replaceState({}, null, state.nextPagePath)
+
+      if (state.pagesStack.length == 0) {
+          state.pagesStack.push(window.location.href.split('?')[0])
+      }
+
+      state.pagesStack.push(state.nextPagePath)
 
       return Object.assign({}, state, { beyondPageOne: true })
     }
     case 'NAVIGATE_TO_NEWER': {
         history.replaceState({}, null, state.prevPagePath)
+
+        state.pagesStack.pop()
 
         return Object.assign({}, state, { beyondPageOne: true })
     }

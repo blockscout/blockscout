@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
-  import BlockScoutWeb.PaginationHelpers
 
   alias BlockScoutWeb.TransactionView
   alias Explorer.{Chain, Market}
@@ -38,7 +37,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
       results_plus_one = Chain.address_to_transactions_with_rewards(address, options)
       {results, next_page} = split_list_by_page(results_plus_one)
-      cur_page_number = current_page_number(params)
 
       next_page_url =
         case next_page_params(next_page, results, params) do
@@ -46,18 +44,11 @@ defmodule BlockScoutWeb.AddressTransactionController do
             nil
 
           next_page_params ->
-            next_params =
-              add_navigation_params(
-                Map.delete(next_page_params, "type"),
-                cur_page_path(conn, address, Map.delete(next_page_params, "type")),
-                cur_page_number
-              )
-
             address_transaction_path(
               conn,
               :index,
               address,
-              next_params
+              Map.delete(next_page_params, "type")
             )
         end
 
@@ -83,12 +74,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
           end
         end)
 
-      json(conn, %{
-        items: items_json,
-        next_page_path: next_page_url,
-        prev_page_path: params["prev_page_path"],
-        cur_page_number: cur_page_number
-      })
+      json(conn, %{items: items_json, next_page_path: next_page_url})
     else
       :error ->
         unprocessable_entity(conn)
@@ -101,8 +87,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
-      cur_page_number = current_page_number(params)
-
       render(
         conn,
         "index.html",
@@ -112,8 +96,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         filter: params["filter"],
         transaction_count: transaction_count(address),
         validation_count: validation_count(address),
-        current_path: current_path(conn),
-        cur_page_number: cur_page_number
+        current_path: current_path(conn)
       )
     else
       :error ->
@@ -123,20 +106,4 @@ defmodule BlockScoutWeb.AddressTransactionController do
         not_found(conn)
     end
   end
-
-  defp cur_page_path(conn, address, %{"block_number" => _, "index" => _} = params) do
-    # new_params = Map.put(params, "next_page", false)
-
-    if params["prev_page_path"] do
-      params["prev_page_path"] |> URI.decode()
-    else
-      address_transaction_path(
-        conn,
-        :index,
-        address
-      )
-    end
-  end
-
-  defp cur_page_path(conn, address, params), do: address_transaction_path(conn, :index, address, params)
 end
