@@ -10,6 +10,7 @@ defmodule Explorer.Chain do
       limit: 2,
       order_by: 2,
       order_by: 3,
+      offset: 2,
       preload: 2,
       select: 2,
       subquery: 1,
@@ -2902,6 +2903,75 @@ defmodule Explorer.Chain do
 
     value
   end
+
+  @doc "Get staking pools from the DB"
+  @spec staking_pools(filter :: :validator | :active | :inactive, options :: PagingOptions.t()) :: [map()]
+  def staking_pools(filter, %PagingOptions{page_size: page_size, page_number: page_number} \\ @default_paging_options) do
+    off = page_size * (page_number - 1)
+
+    Address.Name
+    |> staking_pool_filter(filter)
+    |> limit(^page_size)
+    |> offset(^off)
+    |> Repo.all()
+  end
+
+  @doc "Get count of staking pools from the DB"
+  @spec staking_pools_count(filter :: :validator | :active | :inactive) :: integer
+  def staking_pools_count(filter) do
+    Address.Name
+    |> staking_pool_filter(filter)
+    |> Repo.aggregate(:count, :address_hash)
+  end
+
+  defp staking_pool_filter(query, :validator) do
+    where(
+      query,
+      [address],
+      fragment(
+        """
+        (?->>'is_active')::boolean = true and
+        (?->>'deleted')::boolean is not true and
+        (?->>'is_validator')::boolean = true
+        """,
+        address.metadata,
+        address.metadata,
+        address.metadata
+      )
+    )
+  end
+
+  defp staking_pool_filter(query, :active) do
+    where(
+      query,
+      [address],
+      fragment(
+        """
+        (?->>'is_active')::boolean = true and
+        (?->>'deleted')::boolean is not true
+        """,
+        address.metadata,
+        address.metadata
+      )
+    )
+  end
+
+  defp staking_pool_filter(query, :inactive) do
+    where(
+      query,
+      [address],
+      fragment(
+        """
+        (?->>'is_active')::boolean = false and
+        (?->>'deleted')::boolean is not true
+        """,
+        address.metadata,
+        address.metadata
+      )
+    )
+  end
+
+  defp staking_pool_filter(query, _), do: query
 
   defp with_decompiled_code_flag(query, hash) do
     has_decompiled_code_query =

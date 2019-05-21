@@ -1,7 +1,7 @@
 defmodule Explorer.Chain.InternalTransactionTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.{InternalTransaction, Wei}
+  alias Explorer.Chain.{Data, InternalTransaction, Wei}
   alias Explorer.Factory
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
@@ -173,7 +173,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
     end
 
     test "it correctly formats a create" do
-      contract_code = Factory.contract_code_info().bytecode
+      {:ok, contract_code} = Data.cast(Factory.contract_code_info().bytecode)
       contract_address = Factory.address_hash()
       from = Factory.address_hash()
       gas = 50_000
