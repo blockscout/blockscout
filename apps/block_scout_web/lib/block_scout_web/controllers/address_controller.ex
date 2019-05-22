@@ -33,24 +33,26 @@ defmodule BlockScoutWeb.AddressController do
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
     total_supply = Chain.total_supply()
 
+    items =
+      addresses_page
+      |> Enum.with_index(1)
+      |> Enum.map(fn {{address, tx_count}, index} ->
+        View.render_to_string(
+          AddressView,
+          "_tile.html",
+          address: address,
+          index: index,
+          exchange_rate: exchange_rate,
+          total_supply: total_supply,
+          tx_count: tx_count,
+          validation_count: validation_count(address)
+        )
+      end)
+
     json(
       conn,
       %{
-        items:
-          addresses_page
-          |> Enum.with_index(1)
-          |> Enum.map(fn {{address, tx_count}, index} ->
-            View.render_to_string(
-              AddressView,
-              "_tile.html",
-              address: address,
-              index: index,
-              exchange_rate: exchange_rate,
-              total_supply: total_supply,
-              tx_count: tx_count,
-              validation_count: validation_count(address)
-            )
-          end),
+        items: items,
         next_page_path: next_page_path
       }
     )
