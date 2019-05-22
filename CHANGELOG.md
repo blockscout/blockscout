@@ -27,6 +27,7 @@
 - [#1933](https://github.com/poanetwork/blockscout/pull/1933) - add eth_BlockNumber json rpc method
 - [#1952](https://github.com/poanetwork/blockscout/pull/1952) - feat: exclude empty contracts by default
 - [#1954](https://github.com/poanetwork/blockscout/pull/1954) - feat: use creation init on self destruct
+- [#2002](https://github.com/poanetwork/blockscout/pull/2002) - Get estimated count of blocks when cache is empty
 
 ### Fixes
 
