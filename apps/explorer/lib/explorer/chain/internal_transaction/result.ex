@@ -19,7 +19,7 @@ defmodule Explorer.Chain.InternalTransaction.Result do
     {key, to_string(hash)}
   end
 
-  defp entry_to_raw({"code", _} = entry), do: entry
+  defp entry_to_raw({"code", code}), do: {"code", Data.to_string(code)}
 
   defp entry_to_raw({key, decimal}) when key in ~w(gasUsed) do
     integer =

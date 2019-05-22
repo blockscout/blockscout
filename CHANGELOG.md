@@ -22,10 +22,12 @@
 - [#1920](https://github.com/poanetwork/blockscout/pull/1920) - fix: remove source code fields from list endpoint
 - [#1876](https://github.com/poanetwork/blockscout/pull/1876) - async calculate a count of blocks
 - [#1941](https://github.com/poanetwork/blockscout/pull/1941) - feat: add on demand fetching and stale attr to rpc
+- [#1957](https://github.com/poanetwork/blockscout/pull/1957) - Calculate stakes ratio before insert pools
 - [#1956](https://github.com/poanetwork/blockscout/pull/1956) - add logs tab to address
 - [#1933](https://github.com/poanetwork/blockscout/pull/1933) - add eth_BlockNumber json rpc method
 - [#1952](https://github.com/poanetwork/blockscout/pull/1952) - feat: exclude empty contracts by default
 - [#1989](https://github.com/poanetwork/blockscout/pull/1989) - fix: consolidate address w/ balance one at a time
+- [#1954](https://github.com/poanetwork/blockscout/pull/1954) - feat: use creation init on self destruct
 
 ### Fixes
 
@@ -59,6 +61,7 @@
 - [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
 - [#1958](https://github.com/poanetwork/blockscout/pull/1958) - Default value for release link env var
 - [#1975](https://github.com/poanetwork/blockscout/pull/1975) - add log index to transaction view
+- [#1988](https://github.com/poanetwork/blockscout/pull/1988) - Fix wrong parity tasks names in Circle CI
 
 ## 1.3.10-beta
 
