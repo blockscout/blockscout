@@ -53,6 +53,7 @@
 - [#1937](https://github.com/poanetwork/blockscout/pull/1937) - Check the presence of overlap[i] object before retrieving properties from it
 - [#1960](https://github.com/poanetwork/blockscout/pull/1960) - do not remove bold text in decompiled contacts
 - [#1917](https://github.com/poanetwork/blockscout/pull/1917) - Force block refetch if transaction is re-collated in a different block
+- [#1992](https://github.com/poanetwork/blockscout/pull/1992) - fix: support https for wobserver polling
 
 ### Chore
 
