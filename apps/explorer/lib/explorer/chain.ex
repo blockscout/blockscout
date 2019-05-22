@@ -364,21 +364,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The number of consensus blocks.
-
-      iex> insert(:block, consensus: true)
-      iex> insert(:block, consensus: false)
-      iex> Explorer.Chain.block_consensus_count()
-      1
-
-  """
-  def block_consensus_count do
-    Block
-    |> where(consensus: true)
-    |> Repo.aggregate(:count, :hash)
-  end
-
-  @doc """
   Reward for mining a block.
 
   The block reward is the sum of the following:
@@ -1997,7 +1982,9 @@ defmodule Explorer.Chain do
     cached_value = BlockCountCache.count()
 
     if is_nil(cached_value) do
-      block_consensus_count()
+      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
+
+      trunc(count * 0.90)
     else
       cached_value
     end
