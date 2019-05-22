@@ -1,4 +1,5 @@
 ## Current
+- [#2000](https://github.com/poanetwork/blockscout/pull/2000) - docker/Makefile: always set a container name
 
 ### Features
 - [#1963](https://github.com/poanetwork/blockscout/pull/1963) - added rinkeby theme and rinkeby logo
