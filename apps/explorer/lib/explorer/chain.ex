@@ -1997,7 +1997,9 @@ defmodule Explorer.Chain do
     cached_value = BlockCountCache.count()
 
     if is_nil(cached_value) do
-      block_consensus_count()
+      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
+
+      trunc(count * 0.90)
     else
       cached_value
     end
