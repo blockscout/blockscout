@@ -1,7 +1,7 @@
 ## Current
 
 ### Features
-- [#1982](https://github.com/poanetwork/blockscout/pull/1982) - added "block not found" and "tx not found pages"
+- [#2005](https://github.com/poanetwork/blockscout/pull/2005) - added "block not found" and "tx not found pages"
 - [#1963](https://github.com/poanetwork/blockscout/pull/1963) - added rinkeby theme and rinkeby logo
 - [#1959](https://github.com/poanetwork/blockscout/pull/1959) - added goerli theme and goerli logo
 - [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
