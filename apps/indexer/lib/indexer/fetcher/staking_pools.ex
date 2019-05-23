@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.StakingPools do
   require Logger
 
   alias Explorer.Chain
+  alias Explorer.Chain.StakingPool
   alias Explorer.Staking.PoolsReader
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.StakingPools.Supervisor, as: StakingPoolsSupervisor
@@ -71,7 +72,7 @@ defmodule Indexer.Fetcher.StakingPools do
 
   def entry(pool_address) do
     %{
-      staking_address: pool_address,
+      staking_address_hash: pool_address,
       retries_count: 0
     }
   end
@@ -79,7 +80,7 @@ defmodule Indexer.Fetcher.StakingPools do
   defp fetch_from_blockchain(addresses) do
     addresses
     |> Enum.filter(&(&1.retries_count <= @max_retries))
-    |> Enum.map(fn %{staking_address: staking_address} = pool ->
+    |> Enum.map(fn %{staking_address_hash: staking_address} = pool ->
       case PoolsReader.pool_data(staking_address) do
         {:ok, data} ->
           Map.merge(pool, data)
@@ -93,11 +94,17 @@ defmodule Indexer.Fetcher.StakingPools do
   defp import_pools(pools) do
     {failed, success} =
       Enum.reduce(pools, {[], []}, fn
-        %{error: _error, staking_address: address}, {failed, success} ->
+        %{error: _error, staking_address_hash: address}, {failed, success} ->
           {[address | failed], success}
 
-        pool, {failed, success} ->
-          {failed, [changeset(pool) | success]}
+        %{staking_address_hash: address} = pool, {failed, success} ->
+          changeset = StakingPool.changeset(%StakingPool{}, pool)
+
+          if changeset.valid? do
+            {failed, [changeset.changes | success]}
+          else
+            {[address | failed], success}
+          end
       end)
 
     import_params = %{
@@ -116,22 +123,5 @@ defmodule Indexer.Fetcher.StakingPools do
     end
 
     failed
-  end
-
-  defp changeset(%{staking_address: staking_address} = pool) do
-    {:ok, mining_address} = Chain.Hash.Address.cast(pool[:mining_address])
-
-    data =
-      pool
-      |> Map.delete(:staking_address)
-      |> Map.put(:mining_address, mining_address)
-      |> Map.put(:is_pool, true)
-
-    %{
-      name: "anonymous",
-      primary: true,
-      address_hash: staking_address,
-      metadata: data
-    }
   end
 end
