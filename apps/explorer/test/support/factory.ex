@@ -627,9 +627,7 @@ defmodule Explorer.Factory do
       was_banned_count: 0,
       was_validator_count: 1,
       min_delegator_stake: wei_per_ether * 100,
-      min_candidate_stake: wei_per_ether * 200,
-      staked_ratio: 0,
-      likelihood: 0
+      min_candidate_stake: wei_per_ether * 200
     }
   end
 end

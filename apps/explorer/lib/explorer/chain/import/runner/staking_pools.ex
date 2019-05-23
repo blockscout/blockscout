@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, StakingPool, Wei}
+  alias Explorer.Chain.{Import, StakingPool}
 
   import Ecto.Query, only: [from: 2]
 
@@ -47,6 +47,9 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
     |> Multi.run(:insert_staking_pools, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
+    |> Multi.run(:calculate_stakes_ratio, fn repo, _ ->
+      calculate_stakes_ratio(repo, insert_options)
+    end)
   end
 
   @impl Import.Runner
@@ -61,7 +64,8 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
         where: pool.staking_address_hash not in ^addresses,
         update: [
           set: [
-            is_deleted: true
+            is_deleted: true,
+            is_active: false
           ]
         ]
       )
@@ -89,7 +93,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
     {:ok, _} =
       Import.insert_changes_list(
         repo,
-        stakes_ratio(changes_list),
+        changes_list,
         conflict_target: :staking_address_hash,
         on_conflict: on_conflict,
         for: StakingPool,
@@ -125,20 +129,38 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
     )
   end
 
-  # Calculates staked ratio for each pool
-  defp stakes_ratio(pools) do
-    active_pools = Enum.filter(pools, & &1.is_active)
+  defp calculate_stakes_ratio(repo, %{timeout: timeout}) do
+    try do
+      total_query =
+        from(
+          pool in StakingPool,
+          where: pool.is_active == true,
+          select: sum(pool.staked_amount)
+        )
 
-    stakes_total =
-      pools
-      |> Enum.reduce(0, fn pool, acc ->
-        acc + Wei.to(pool.staked_amount, :integer)
-      end)
+      total = repo.one!(total_query)
 
-    Enum.map(active_pools, fn pool ->
-      staked_ratio = if stakes_total > 0, do: Wei.to(pool.staked_amount, :integer) / stakes_total, else: 0
+      if total > 0 do
+        query =
+          from(
+            p in StakingPool,
+            where: p.is_active == true,
+            update: [
+              set: [
+                staked_ratio: p.staked_amount / ^total * 100,
+                likelihood: p.staked_amount / ^total * 100
+              ]
+            ]
+          )
 
-      Map.put(pool, :staked_ratio, staked_ratio)
-    end)
+        {count, _} = repo.update_all(query, [], timeout: timeout)
+        {:ok, count}
+      else
+        {:ok, 0}
+      end
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error}}
+    end
   end
 end

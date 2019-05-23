@@ -13,29 +13,34 @@ defmodule Explorer.Chain.StakingPool do
   }
 
   @type t :: %__MODULE__{
-    staking_address_hash: Hash.Address.t(),
-    mining_address_hash: Hash.Address.t(),
-    banned_until: boolean,
-    delegators_count: integer,
-    is_active: boolean,
-    is_banned: boolean,
-    is_validator: boolean,
-    likelihood: integer,
-    staked_ratio: Decimal.t(),
-    min_candidate_stake: Wei.t(),
-    min_delegator_stake: Wei.t(),
-    self_staked_amount: Wei.t(),
-    staked_amount: Wei.t(),
-    was_banned_count: integer,
-    was_validator_count: integer,
-    is_deleted: boolean
-  }
+          staking_address_hash: Hash.Address.t(),
+          mining_address_hash: Hash.Address.t(),
+          banned_until: boolean,
+          delegators_count: integer,
+          is_active: boolean,
+          is_banned: boolean,
+          is_validator: boolean,
+          likelihood: integer,
+          staked_ratio: Decimal.t(),
+          min_candidate_stake: Wei.t(),
+          min_delegator_stake: Wei.t(),
+          self_staked_amount: Wei.t(),
+          staked_amount: Wei.t(),
+          was_banned_count: integer,
+          was_validator_count: integer,
+          is_deleted: boolean
+        }
 
   @attrs ~w(
     is_active delegators_count staked_amount self_staked_amount is_validator
     was_validator_count is_banned was_banned_count banned_until likelihood
     staked_ratio min_delegator_stake min_candidate_stake
     staking_address_hash mining_address_hash
+  )a
+  @req_attrs ~w(
+    is_active delegators_count staked_amount self_staked_amount is_validator
+    was_validator_count is_banned was_banned_count banned_until min_delegator_stake
+    min_candidate_stake staking_address_hash mining_address_hash
   )a
 
   schema "staking_pools" do
@@ -77,7 +82,7 @@ defmodule Explorer.Chain.StakingPool do
   def changeset(staking_pool, attrs) do
     staking_pool
     |> cast(attrs, @attrs)
-    |> validate_required(@attrs)
+    |> validate_required(@req_attrs)
     |> validate_staked_amount()
     |> unique_constraint(:staking_address_hash)
   end

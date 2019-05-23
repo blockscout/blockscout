@@ -27,8 +27,8 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsTest do
           Map.put(acc, pool.staking_address_hash, pool)
         end)
 
-      assert saved_list[pool1.staking_address_hash].staked_ratio == Decimal.from_float(0.5)
-      assert saved_list[pool2.staking_address_hash].staked_ratio == Decimal.from_float(0.5)
+      assert saved_list[pool1.staking_address_hash].staked_ratio == Decimal.new("50.00")
+      assert saved_list[pool2.staking_address_hash].staked_ratio == Decimal.new("50.00")
     end
   end
 
