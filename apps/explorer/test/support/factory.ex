@@ -27,7 +27,8 @@ defmodule Explorer.Factory do
     Token,
     TokenTransfer,
     Transaction,
-    StakingPool
+    StakingPool,
+    StakingPoolsDelegators
   }
 
   alias Explorer.Market.MarketHistory
@@ -626,6 +627,20 @@ defmodule Explorer.Factory do
       self_staked_amount: wei_per_ether * 300,
       was_banned_count: 0,
       was_validator_count: 1
+    }
+  end
+
+  def staking_pools_delegators_factory do
+    wei_per_ether = 1_000_000_000_000_000_000
+
+    %StakingPoolsDelegators{
+      pool_address_hash: address_hash(),
+      delegator_address_hash: address_hash(),
+      max_ordered_withdraw_allowed: wei_per_ether * 100,
+      max_withdraw_allowed: wei_per_ether * 50,
+      ordered_withdraw: wei_per_ether * 600,
+      stake_amount: wei_per_ether * 200,
+      ordered_withdraw_epoch: 2
     }
   end
 end
