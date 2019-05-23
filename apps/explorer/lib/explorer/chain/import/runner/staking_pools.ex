@@ -115,8 +115,6 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           is_validator: fragment("EXCLUDED.is_validator"),
           likelihood: fragment("EXCLUDED.likelihood"),
           staked_ratio: fragment("EXCLUDED.staked_ratio"),
-          min_candidate_stake: fragment("EXCLUDED.min_candidate_stake"),
-          min_delegator_stake: fragment("EXCLUDED.min_delegator_stake"),
           self_staked_amount: fragment("EXCLUDED.self_staked_amount"),
           staked_amount: fragment("EXCLUDED.staked_amount"),
           was_banned_count: fragment("EXCLUDED.was_banned_count"),
@@ -140,7 +138,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
 
       total = repo.one!(total_query)
 
-      if total > 0 do
+      if total > Decimal.new(0) do
         query =
           from(
             p in StakingPool,
@@ -156,7 +154,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
         {count, _} = repo.update_all(query, [], timeout: timeout)
         {:ok, count}
       else
-        {:ok, 0}
+        {:ok, 1}
       end
     rescue
       postgrex_error in Postgrex.Error ->

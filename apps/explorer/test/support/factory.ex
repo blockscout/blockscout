@@ -625,9 +625,7 @@ defmodule Explorer.Factory do
       staked_amount: wei_per_ether * 500,
       self_staked_amount: wei_per_ether * 300,
       was_banned_count: 0,
-      was_validator_count: 1,
-      min_delegator_stake: wei_per_ether * 100,
-      min_candidate_stake: wei_per_ether * 200
+      was_validator_count: 1
     }
   end
 end
