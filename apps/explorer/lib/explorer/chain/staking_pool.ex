@@ -7,9 +7,28 @@ defmodule Explorer.Chain.StakingPool do
   import Ecto.Changeset
 
   alias Explorer.Chain.{
-    Wei,
     Address,
-    Hash
+    Hash,
+    Wei
+  }
+
+  @type t :: %__MODULE__{
+    staking_address_hash: Hash.Address.t(),
+    mining_address_hash: Hash.Address.t(),
+    banned_until: boolean,
+    delegators_count: integer,
+    is_active: boolean,
+    is_banned: boolean,
+    is_validator: boolean,
+    likelihood: integer,
+    staked_ratio: Decimal.t(),
+    min_candidate_stake: Wei.t(),
+    min_delegator_stake: Wei.t(),
+    self_staked_amount: Wei.t(),
+    staked_amount: Wei.t(),
+    was_banned_count: integer,
+    was_validator_count: integer,
+    is_deleted: boolean
   }
 
   @attrs ~w(
