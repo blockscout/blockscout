@@ -1,8 +1,7 @@
 ## Current
-- [#2000](https://github.com/poanetwork/blockscout/pull/2000) - docker/Makefile: always set a container name
 
 ### Features
-- [#2005](https://github.com/poanetwork/blockscout/pull/2005) - added "block not found" and "tx not found pages"
+- [#2010](https://github.com/poanetwork/blockscout/pull/2010) - added "block not found" and "tx not found pages"
 - [#1963](https://github.com/poanetwork/blockscout/pull/1963) - added rinkeby theme and rinkeby logo
 - [#1959](https://github.com/poanetwork/blockscout/pull/1959) - added goerli theme and goerli logo
 - [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
@@ -69,6 +68,7 @@
 - [#1958](https://github.com/poanetwork/blockscout/pull/1958) - Default value for release link env var
 - [#1975](https://github.com/poanetwork/blockscout/pull/1975) - add log index to transaction view
 - [#1988](https://github.com/poanetwork/blockscout/pull/1988) - Fix wrong parity tasks names in Circle CI
+- [#2000](https://github.com/poanetwork/blockscout/pull/2000) - docker/Makefile: always set a container name
 
 ## 1.3.10-beta
 
