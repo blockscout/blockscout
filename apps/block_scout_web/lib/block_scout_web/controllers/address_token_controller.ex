@@ -67,6 +67,12 @@ defmodule BlockScoutWeb.AddressTokenController do
         transaction_count: transaction_count(address),
         validation_count: validation_count(address)
       )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
     end
   end
 end
