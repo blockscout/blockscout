@@ -2859,6 +2859,12 @@ defmodule Explorer.ChainTest do
       assert {:ok, _} = Chain.create_smart_contract(attrs)
       assert Repo.get_by(Address.Name, name: "SimpleStorage")
     end
+
+    test "sets the address verified field to true", %{valid_attrs: valid_attrs} do
+      assert {:ok, %SmartContract{} = smart_contract} = Chain.create_smart_contract(valid_attrs)
+
+      assert Repo.get_by(Address, hash: smart_contract.address_hash).verified == true
+    end
   end
 
   describe "stream_unfetched_balances/2" do
