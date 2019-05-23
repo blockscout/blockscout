@@ -40,15 +40,10 @@ defmodule Explorer.Counters.AddressesWithBalanceCounter do
   end
 
   @impl true
-  def init(args) do
+  def init(_args) do
     create_table()
 
-    if enable_consolidation?() do
-      Task.start_link(&consolidate/0)
-      schedule_next_consolidation()
-    end
-
-    {:ok, args}
+    {:ok, %{consolidate?: enable_consolidation?()}, {:continue, :ok}}
   end
 
   def create_table do
@@ -63,9 +58,7 @@ defmodule Explorer.Counters.AddressesWithBalanceCounter do
   end
 
   defp schedule_next_consolidation do
-    if enable_consolidation?() do
-      Process.send_after(self(), :consolidate, :timer.seconds(@update_interval_in_seconds))
-    end
+    Process.send_after(self(), :consolidate, :timer.seconds(@update_interval_in_seconds))
   end
 
   @doc """
@@ -73,6 +66,19 @@ defmodule Explorer.Counters.AddressesWithBalanceCounter do
   """
   def insert_counter({key, info}) do
     :ets.insert(table_name(), {key, info})
+  end
+
+  @impl true
+  def handle_continue(:ok, %{consolidate?: true} = state) do
+    consolidate()
+    schedule_next_consolidation()
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_continue(:ok, state) do
+    {:noreply, state}
   end
 
   @impl true
