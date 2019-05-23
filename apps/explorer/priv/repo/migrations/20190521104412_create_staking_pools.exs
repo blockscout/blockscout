@@ -4,6 +4,7 @@ defmodule Explorer.Repo.Migrations.CreateStakingPools do
   def change do
     create table(:staking_pools) do
       add(:is_active, :boolean, default: false, null: false)
+      add(:is_deleted, :boolean, default: false, null: false)
       add(:delegators_count, :integer)
       add(:staked_amount, :numeric, precision: 100)
       add(:self_staked_amount, :numeric, precision: 100)
@@ -14,15 +15,15 @@ defmodule Explorer.Repo.Migrations.CreateStakingPools do
       add(:banned_until, :bigint)
       add(:likelihood, :decimal)
       add(:staked_ratio, :decimal)
-      add(:min_delegators_stake, :numeric, precision: 100)
+      add(:min_delegator_stake, :numeric, precision: 100)
       add(:min_candidate_stake, :numeric, precision: 100)
-      add(:staking_address_hash, references(:addresses, on_delete: :nothing, column: :hash, type: :bytea))
-      add(:mining_address_hash, references(:addresses, on_delete: :nothing, column: :hash, type: :bytea))
+      add(:staking_address_hash, :bytea)
+      add(:mining_address_hash, :bytea)
 
-      timestamps()
+      timestamps(null: false, type: :utc_datetime_usec)
     end
 
-    create(index(:staking_pools, [:staking_address_hash]))
+    create(index(:staking_pools, [:staking_address_hash], unique: true))
     create(index(:staking_pools, [:mining_address_hash]))
   end
 end
