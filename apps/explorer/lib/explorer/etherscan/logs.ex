@@ -79,9 +79,10 @@ defmodule Explorer.Etherscan.Logs do
         on: log.transaction_hash == internal_transaction.transaction_hash,
         where: internal_transaction.block_number >= ^prepared_filter.from_block,
         where: internal_transaction.block_number <= ^prepared_filter.to_block,
-        where: internal_transaction.to_address_hash == ^address_hash,
-        or_where: internal_transaction.from_address_hash == ^address_hash,
-        or_where: internal_transaction.created_contract_address_hash == ^address_hash,
+        where:
+          internal_transaction.to_address_hash == ^address_hash or
+            internal_transaction.from_address_hash == ^address_hash or
+            internal_transaction.created_contract_address_hash == ^address_hash,
         select:
           merge(map(log, ^@log_fields), %{
             gas_price: transaction.gas_price,
@@ -97,16 +98,15 @@ defmodule Explorer.Etherscan.Logs do
         on: log.transaction_hash == transaction.hash,
         where: transaction.block_number >= ^prepared_filter.from_block,
         where: transaction.block_number <= ^prepared_filter.to_block,
-        where: transaction.to_address_hash == ^address_hash,
-        or_where: transaction.from_address_hash == ^address_hash,
-        or_where: transaction.created_contract_address_hash == ^address_hash,
-        select:
-          merge(map(log, ^@log_fields), %{
-            gas_price: transaction.gas_price,
-            gas_used: transaction.gas_used,
-            transaction_index: transaction.index,
-            block_number: transaction.block_number
-          }),
+        where:
+          transaction.to_address_hash == ^address_hash or
+            transaction.from_address_hash == ^address_hash or
+            transaction.created_contract_address_hash == ^address_hash,
+        select: map(log, ^@log_fields),
+        select_merge: map(transaction, [:gas_price, :gas_used, :block_number]),
+        select_merge: %{
+          transaction_index: transaction.index
+        },
         union: ^internal_transaction_log_query
       )
 
@@ -114,7 +114,7 @@ defmodule Explorer.Etherscan.Logs do
       from(log_transaction_data in subquery(all_transaction_logs_query),
         join: block in Block,
         on: block.number == log_transaction_data.block_number,
-        on: block.consensus == true,
+        where: block.consensus == true,
         where: log_transaction_data.address_hash == ^address_hash,
         order_by: block.number,
         limit: 1000,
@@ -127,7 +127,9 @@ defmodule Explorer.Etherscan.Logs do
   end
 
   # Since address_hash was not present, we know that a
-  # topic filter has been applied, and th
+  # topic filter has been applied, so we use a different
+  # query that is optimized for a logs filter over an
+  # address_hash
   def list_logs(filter) do
     prepared_filter = Map.merge(@base_filter, filter)
 
@@ -136,9 +138,9 @@ defmodule Explorer.Etherscan.Logs do
     block_transaction_query =
       from(transaction in Transaction,
         join: block in assoc(transaction, :block),
-        on: block.number >= ^prepared_filter.from_block,
-        on: block.number <= ^prepared_filter.to_block,
-        on: block.consensus == true,
+        where: block.number >= ^prepared_filter.from_block,
+        where: block.number <= ^prepared_filter.to_block,
+        where: block.consensus == true,
         select: %{
           transaction_hash: transaction.hash,
           gas_price: transaction.gas_price,
