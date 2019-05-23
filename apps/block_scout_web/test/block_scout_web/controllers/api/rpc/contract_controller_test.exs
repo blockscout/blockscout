@@ -47,7 +47,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "Address" => to_string(contract.address_hash),
                  "CompilerVersion" => contract.compiler_version,
                  "ContractName" => contract.name,
-                 "DecompilerVersion" => "",
                  "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
                }
              ]
@@ -70,7 +69,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "Address" => to_string(address.hash),
                  "CompilerVersion" => "",
                  "ContractName" => "",
-                 "DecompilerVersion" => "",
                  "OptimizationUsed" => ""
                }
              ]
@@ -94,7 +92,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "Address" => to_string(address.hash),
                  "CompilerVersion" => "",
                  "ContractName" => "",
-                 "DecompilerVersion" => "",
                  "OptimizationUsed" => ""
                }
              ]
@@ -122,7 +119,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "Address" => to_string(address.hash),
                  "CompilerVersion" => "",
                  "ContractName" => "",
-                 "DecompilerVersion" => "",
                  "OptimizationUsed" => ""
                }
              ]
@@ -145,7 +141,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "ABI" => Jason.encode!(contract.abi),
                  "Address" => to_string(contract.address_hash),
                  "CompilerVersion" => contract.compiler_version,
-                 "DecompilerVersion" => "",
                  "ContractName" => contract.name,
                  "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
                }
@@ -170,7 +165,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "Address" => to_string(decompiled_smart_contract.address_hash),
                  "CompilerVersion" => "",
                  "ContractName" => "",
-                 "DecompilerVersion" => "test_decompiler",
                  "OptimizationUsed" => ""
                }
              ]
@@ -194,7 +188,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "Address" => to_string(smart_contract.address_hash),
                  "CompilerVersion" => "",
                  "ContractName" => "",
-                 "DecompilerVersion" => "bizbuz",
                  "OptimizationUsed" => ""
                }
              ]
@@ -214,16 +207,15 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
 
-      assert response["result"] == [
-               %{
-                 "ABI" => "Contract source code not verified",
-                 "Address" => to_string(smart_contract.address_hash),
-                 "CompilerVersion" => "",
-                 "ContractName" => "",
-                 "DecompilerVersion" => "bizbuz",
-                 "OptimizationUsed" => ""
-               }
-             ]
+      assert %{
+               "ABI" => "Contract source code not verified",
+               "Address" => to_string(smart_contract.address_hash),
+               "CompilerVersion" => "",
+               "ContractName" => "",
+               "OptimizationUsed" => ""
+             } in response["result"]
+
+      refute to_string(non_match.address_hash) in Enum.map(response["result"], &Map.get(&1, "Address"))
     end
 
     test "filtering for only not_decompiled (and by extension not verified contracts)", %{params: params, conn: conn} do
@@ -245,7 +237,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "Address" => to_string(contract_address.hash),
                  "CompilerVersion" => "",
                  "ContractName" => "",
-                 "DecompilerVersion" => "",
                  "OptimizationUsed" => ""
                }
              ]
@@ -274,7 +265,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "Address" => to_string(contract_address.hash),
                  "CompilerVersion" => "",
                  "ContractName" => "",
-                 "DecompilerVersion" => "",
                  "OptimizationUsed" => ""
                }
              ]

@@ -1,4 +1,5 @@
 ## Current
+- [#2000](https://github.com/poanetwork/blockscout/pull/2000) - docker/Makefile: always set a container name
 
 ### Features
 - [#1963](https://github.com/poanetwork/blockscout/pull/1963) - added rinkeby theme and rinkeby logo
@@ -26,8 +27,10 @@
 - [#1956](https://github.com/poanetwork/blockscout/pull/1956) - add logs tab to address
 - [#1933](https://github.com/poanetwork/blockscout/pull/1933) - add eth_BlockNumber json rpc method
 - [#1952](https://github.com/poanetwork/blockscout/pull/1952) - feat: exclude empty contracts by default
+- [#1989](https://github.com/poanetwork/blockscout/pull/1989) - fix: consolidate address w/ balance one at a time
 - [#1954](https://github.com/poanetwork/blockscout/pull/1954) - feat: use creation init on self destruct
 - [#1999](https://github.com/poanetwork/blockscout/pull/1999) - load data async on addresses page
+- [#2002](https://github.com/poanetwork/blockscout/pull/2002) - Get estimated count of blocks when cache is empty
 
 ### Fixes
 
@@ -52,6 +55,8 @@
 - [#1937](https://github.com/poanetwork/blockscout/pull/1937) - Check the presence of overlap[i] object before retrieving properties from it
 - [#1960](https://github.com/poanetwork/blockscout/pull/1960) - do not remove bold text in decompiled contacts
 - [#1917](https://github.com/poanetwork/blockscout/pull/1917) - Force block refetch if transaction is re-collated in a different block
+- [#1992](https://github.com/poanetwork/blockscout/pull/1992) - fix: support https for wobserver polling
+- [#1966](https://github.com/poanetwork/blockscout/pull/1966) - fix: add fields for contract filter performance
 
 ### Chore
 
