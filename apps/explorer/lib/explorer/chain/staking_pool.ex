@@ -15,7 +15,7 @@ defmodule Explorer.Chain.StakingPool do
   @attrs ~w(
     is_active delegators_count staked_amount self_staked_amount is_validator
     was_validator_count is_banned was_banned_count banned_until likelihood
-    staked_ratio min_delegators_stake min_candidate_stake
+    staked_ratio min_delegator_stake min_candidate_stake
     staking_address_hash mining_address_hash
   )a
 
@@ -28,11 +28,12 @@ defmodule Explorer.Chain.StakingPool do
     field(:likelihood, :decimal)
     field(:staked_ratio, :decimal)
     field(:min_candidate_stake, Wei)
-    field(:min_delegators_stake, Wei)
+    field(:min_delegator_stake, Wei)
     field(:self_staked_amount, Wei)
     field(:staked_amount, Wei)
     field(:was_banned_count, :integer)
     field(:was_validator_count, :integer)
+    field(:is_deleted, :boolean, default: false)
 
     belongs_to(
       :staking_address,
@@ -50,7 +51,7 @@ defmodule Explorer.Chain.StakingPool do
       type: Hash.Address
     )
 
-    timestamps()
+    timestamps(null: false, type: :utc_datetime_usec)
   end
 
   @doc false
@@ -59,6 +60,7 @@ defmodule Explorer.Chain.StakingPool do
     |> cast(attrs, @attrs)
     |> validate_required(@attrs)
     |> validate_staked_amount()
+    |> unique_constraint(:staking_address_hash)
   end
 
   defp validate_staked_amount(%{valid?: false} = c), do: c
