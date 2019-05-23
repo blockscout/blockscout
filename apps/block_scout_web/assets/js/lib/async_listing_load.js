@@ -48,6 +48,8 @@ export const asyncInitialState = {
   loading: false,
   /* if there was an error fetching items */
   requestError: false,
+  /* if response has no items */
+  emptyResponse: false,
   /* if it is loading the first page */
   loadingFirstPage: true,
   /* link to the next page */
@@ -90,6 +92,7 @@ export function asyncReducer (state = asyncInitialState, action) {
 
       return Object.assign({}, state, {
         requestError: false,
+        emptyResponse: action.items.length === 0,
         items: action.items,
         nextPagePath: action.nextPagePath,
         prevPagePath: prevPagePath
@@ -169,6 +172,10 @@ export const elements = {
   },
   '[data-async-listing] [data-next-page-button]': {
     render ($el, state) {
+      if (state.emptyResponse) {
+          return $el.hide()
+      }
+
       if (state.requestError || !state.nextPagePath || state.loading) {
         return $el.attr('disabled', 'disabled')
       }
@@ -179,6 +186,10 @@ export const elements = {
   },
   '[data-async-listing] [data-prev-page-button]': {
     render ($el, state) {
+      if (state.emptyResponse) {
+        return $el.hide()
+      }
+
       if (state.requestError || !state.prevPagePath || state.loading) {
         return $el.attr('disabled', 'disabled')
       }
@@ -189,6 +200,10 @@ export const elements = {
   },
   '[data-async-listing] [data-page-number]': {
     render ($el, state) {
+      if (state.emptyResponse) {
+          return $el.hide()
+      }
+
       if (state.pagesStack.length === 0) {
         return $el.text('Page 1')
       }
