@@ -173,7 +173,7 @@ export const elements = {
   '[data-async-listing] [data-next-page-button]': {
     render ($el, state) {
       if (state.emptyResponse) {
-          return $el.hide()
+        return $el.hide()
       }
 
       if (state.requestError || !state.nextPagePath || state.loading) {
@@ -201,7 +201,7 @@ export const elements = {
   '[data-async-listing] [data-page-number]': {
     render ($el, state) {
       if (state.emptyResponse) {
-          return $el.hide()
+        return $el.hide()
       }
 
       if (state.pagesStack.length === 0) {
