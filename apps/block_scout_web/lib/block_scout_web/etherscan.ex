@@ -862,11 +862,6 @@ defmodule BlockScoutWeb.Etherscan do
     name: "Contract",
     fields: %{
       "Address" => @address_hash_type,
-      "DecompilerVersion" => %{
-        type: "decompiler version",
-        definition: "When decompiled source code is present, the decompiler version with which it was generated.",
-        example: "decompiler.version"
-      },
       "ABI" => %{
         type: "ABI",
         definition: "JSON string for the contract's Application Binary Interface (ABI)",
@@ -938,9 +933,16 @@ defmodule BlockScoutWeb.Etherscan do
     """
   }
 
+  @contract_decompiler_version_type %{
+    type: "decompiler version",
+    definition: "When decompiled source code is present, the decompiler version with which it was generated.",
+    example: "decompiler.version"
+  }
+
   @contract_with_sourcecode_model @contract_model
                                   |> put_in([:fields, "SourceCode"], @contract_source_code_type)
                                   |> put_in([:fields, "DecompiledSourceCode"], @contract_decompiled_source_code_type)
+                                  |> put_in([:fields, "DecompilerVersion"], @contract_decompiler_version_type)
 
   @transaction_receipt_status_model %{
     name: "TransactionReceiptStatus",
@@ -1831,7 +1833,12 @@ defmodule BlockScoutWeb.Etherscan do
 
   @contract_listcontracts_action %{
     name: "listcontracts",
-    description: "Get a list of contracts, sorted ascending by the time they were first seen by the explorer.",
+    description: """
+    Get a list of contracts, sorted ascending by the time they were first seen by the explorer.
+
+    If you provide the filters `not_decompiled`(`4`) or `not_verified(4)` the results will not
+    be sorted for performance reasons.
+    """,
     required_params: [],
     optional_params: [
       %{
