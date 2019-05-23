@@ -30,6 +30,9 @@
 - [#1952](https://github.com/poanetwork/blockscout/pull/1952) - feat: exclude empty contracts by default
 - [#1989](https://github.com/poanetwork/blockscout/pull/1989) - fix: consolidate address w/ balance one at a time
 - [#1954](https://github.com/poanetwork/blockscout/pull/1954) - feat: use creation init on self destruct
+- [#1974](https://github.com/poanetwork/blockscout/pull/1974) - feat: previous page button logic
+- [#1999](https://github.com/poanetwork/blockscout/pull/1999) - load data async on addresses page
+- [#2002](https://github.com/poanetwork/blockscout/pull/2002) - Get estimated count of blocks when cache is empty
 
 ### Fixes
 
@@ -55,6 +58,7 @@
 - [#1960](https://github.com/poanetwork/blockscout/pull/1960) - do not remove bold text in decompiled contacts
 - [#1917](https://github.com/poanetwork/blockscout/pull/1917) - Force block refetch if transaction is re-collated in a different block
 - [#1992](https://github.com/poanetwork/blockscout/pull/1992) - fix: support https for wobserver polling
+- [#1966](https://github.com/poanetwork/blockscout/pull/1966) - fix: add fields for contract filter performance
 
 ### Chore
 

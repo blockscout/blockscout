@@ -98,10 +98,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         Chain.list_decompiled_contracts(page_size, offset, not_decompiled_with_version)
 
       :unverified ->
-        Chain.list_unverified_contracts(page_size, offset)
+        Chain.list_unordered_unverified_contracts(page_size, offset)
 
       :not_decompiled ->
-        Chain.list_not_decompiled_contracts(page_size, offset)
+        Chain.list_unordered_not_decompiled_contracts(page_size, offset)
 
       :empty ->
         Chain.list_empty_contracts(page_size, offset)

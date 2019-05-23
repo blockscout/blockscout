@@ -44,19 +44,6 @@
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true %>
         <% end %>
 
-        <!--
-        <%= if @next_page_params do %>
-          <%= link(
-            gettext("Older"),
-            class: "button button-secondary button-sm float-right mt-3",
-            to: transaction_path(
-              @conn,
-              :index,
-              @next_page_params
-            )
-          ) %>
-        <% end %>
-        -->
       </div>
     </div>
   </section>
