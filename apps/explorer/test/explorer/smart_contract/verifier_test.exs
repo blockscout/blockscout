@@ -21,7 +21,6 @@ defmodule Explorer.SmartContract.VerifierTest do
         "contract_source_code" => contract_code_info.source_code,
         "compiler_version" => contract_code_info.version,
         "name" => contract_code_info.name,
-        "evm_version" => "petersburg",
         "optimization" => contract_code_info.optimized
       }
 
@@ -69,7 +68,6 @@ defmodule Explorer.SmartContract.VerifierTest do
         "compiler_version" => contract_code_info.version,
         "name" => contract_code_info.name,
         "optimization" => contract_code_info.optimized,
-        "evm_version" => "petersburg",
         "constructor_arguments" => constructor_arguments
       }
 
