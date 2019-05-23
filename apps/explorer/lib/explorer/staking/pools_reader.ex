@@ -38,8 +38,8 @@ defmodule Explorer.Staking.PoolsReader do
       {
         :ok,
         %{
-          staking_address: staking_address,
-          mining_address: mining_address,
+          staking_address_hash: staking_address,
+          mining_address_hash: mining_address,
           is_active: is_active,
           delegators_count: delegators_count,
           staked_amount: staked_amount,

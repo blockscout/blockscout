@@ -40,11 +40,11 @@ defmodule Explorer.Token.PoolsReaderTest do
           is_active: true,
           is_banned: false,
           is_validator: true,
-          mining_address:
+          mining_address_hash:
             <<187, 202, 168, 212, 130, 137, 187, 31, 252, 249, 128, 141, 154, 164, 177, 210, 21, 5, 76, 120>>,
           staked_amount: 0,
           self_staked_amount: 0,
-          staking_address: <<11, 47, 94, 47, 60, 189, 134, 78, 170, 44, 100, 46, 55, 105, 193, 88, 35, 97, 202, 246>>,
+          staking_address_hash: <<11, 47, 94, 47, 60, 189, 134, 78, 170, 44, 100, 46, 55, 105, 193, 88, 35, 97, 202, 246>>,
           was_banned_count: 0,
           was_validator_count: 2
         }
