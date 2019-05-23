@@ -4,11 +4,13 @@ defmodule BlockScoutWeb.AddressController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
   import BlockScoutWeb.PaginationHelpers
 
+  alias BlockScoutWeb.AddressView
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
+  alias Phoenix.View
 
-  def index(conn, params) do
+  def index(conn, %{"type" => "JSON"} = params) do
     addresses =
       params
       |> paging_options()
@@ -16,32 +18,51 @@ defmodule BlockScoutWeb.AddressController do
 
     {addresses_page, next_page} = split_list_by_page(addresses)
 
-    cur_page_number = current_page_number(params)
-
     next_page_path =
       case next_page_params(next_page, addresses_page, params) do
         nil ->
           nil
 
         next_page_params ->
-          next_params = add_navigation_params(next_page_params, cur_page_path(conn, params), cur_page_number)
-
           address_path(
             conn,
             :index,
-            next_params
+            next_page_params
           )
       end
 
+    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    total_supply = Chain.total_supply()
+
+    items =
+      addresses_page
+      |> Enum.with_index(1)
+      |> Enum.map(fn {{address, tx_count}, index} ->
+        View.render_to_string(
+          AddressView,
+          "_tile.html",
+          address: address,
+          index: index,
+          exchange_rate: exchange_rate,
+          total_supply: total_supply,
+          tx_count: tx_count,
+          validation_count: validation_count(address)
+        )
+      end)
+
+    json(
+      conn,
+      %{
+        items: items,
+        next_page_path: next_page_path
+      }
+    )
+  end
+
+  def index(conn, _params) do
     render(conn, "index.html",
-      address_tx_count_pairs: addresses_page,
-      page_address_count: Enum.count(addresses_page),
-      address_count: Chain.count_addresses_with_balance_from_cache(),
-      exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-      total_supply: Chain.total_supply(),
-      next_page_path: next_page_path,
-      prev_page_path: params["prev_page_path"],
-      cur_page_number: cur_page_number
+      current_path: current_path(conn),
+      address_count: Chain.count_addresses_with_balance_from_cache()
     )
   end
 
@@ -56,16 +77,4 @@ defmodule BlockScoutWeb.AddressController do
   def validation_count(%Address{} = address) do
     Chain.address_to_validation_count(address)
   end
-
-  defp cur_page_path(conn, %{"hash" => _hash, "fetched_coin_balance" => _balance} = params) do
-    new_params = Map.put(params, "next_page", false)
-
-    address_path(
-      conn,
-      :index,
-      new_params
-    )
-  end
-
-  defp cur_page_path(conn, _), do: address_path(conn, :index)
 end
