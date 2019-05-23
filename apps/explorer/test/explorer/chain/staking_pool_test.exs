@@ -6,7 +6,7 @@ defmodule Explorer.Chain.StakingPoolTest do
   describe "changeset/2" do
     test "with valid attributes" do
       params = params_for(:staking_pool)
-      changeset = StakingPool.changeset(%StakingPool{}, params) |> IO.inspect()
+      changeset = StakingPool.changeset(%StakingPool{}, params)
       assert changeset.valid?
     end
 
