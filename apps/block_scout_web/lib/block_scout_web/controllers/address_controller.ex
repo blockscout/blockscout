@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.AddressController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
-  import BlockScoutWeb.PaginationHelpers
 
   alias BlockScoutWeb.AddressView
   alias Explorer.{Chain, Market}
