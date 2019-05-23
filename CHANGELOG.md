@@ -58,6 +58,7 @@
 - [#1917](https://github.com/poanetwork/blockscout/pull/1917) - Force block refetch if transaction is re-collated in a different block
 - [#1992](https://github.com/poanetwork/blockscout/pull/1992) - fix: support https for wobserver polling
 - [#1966](https://github.com/poanetwork/blockscout/pull/1966) - fix: add fields for contract filter performance
+- [#2008](https://github.com/poanetwork/blockscout/pull/2008) - add new function clause for xDai network beneficiaries
 
 ### Chore
 
