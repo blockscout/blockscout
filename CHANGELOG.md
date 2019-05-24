@@ -21,6 +21,7 @@
 
 ### Fixes
 
+- [#2025](https://github.com/poanetwork/blockscout/pull/2025) - Added a new color to display transactions' errors.
 - [#1944](https://github.com/poanetwork/blockscout/pull/1944) - fixed styles for token's dropdown.
 - [#1926](https://github.com/poanetwork/blockscout/pull/1926) - status label alignment
 - [#1849](https://github.com/poanetwork/blockscout/pull/1849) - Improve chains menu
