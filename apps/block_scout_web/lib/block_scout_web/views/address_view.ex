@@ -237,8 +237,6 @@ defmodule BlockScoutWeb.AddressView do
     "#{String.slice(string_hash, 0..21)}..."
   end
 
-  def trimmed_verify_link(_), do: ""
-
   def transaction_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
     address.contracts_creation_internal_transaction.transaction_hash
   end
