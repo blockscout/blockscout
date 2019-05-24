@@ -21,6 +21,7 @@
 
 ### Fixes
 
+- [#2019](https://github.com/poanetwork/blockscout/pull/2019) - Fixed the missing tx hashes.
 - [#1944](https://github.com/poanetwork/blockscout/pull/1944) - fixed styles for token's dropdown.
 - [#1926](https://github.com/poanetwork/blockscout/pull/1926) - status label alignment
 - [#1849](https://github.com/poanetwork/blockscout/pull/1849) - Improve chains menu
