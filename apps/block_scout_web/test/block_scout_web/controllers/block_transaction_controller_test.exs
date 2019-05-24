@@ -165,7 +165,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
   defp assert_block_above_tip(conn) do
     assert conn
            |> html_response(404)
-           |> Floki.find(~S|[data-selector="block-not-found-message"|)
+           |> Floki.find(~S|.error-descr|)
            |> Floki.text()
            |> String.trim() == "Easy Cowboy! This block does not exist yet!"
   end

@@ -86,7 +86,7 @@ defmodule Explorer.SmartContract.SolcDownloader do
     download_path = "https://ethereum.github.io/solc-bin/bin/soljson-#{version}.js"
 
     download_path
-    |> HTTPoison.get!([], timeout: 60_000)
+    |> HTTPoison.get!([], timeout: 60_000, recv_timeout: 60_000)
     |> Map.get(:body)
   end
 end
