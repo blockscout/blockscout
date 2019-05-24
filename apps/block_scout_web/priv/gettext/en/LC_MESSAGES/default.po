@@ -767,7 +767,7 @@ msgid "There are no transactions for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block_transaction/index.html.eex:35
+#: lib/block_scout_web/templates/block_transaction/index.html.eex:28
 msgid "There are no transactions for this block."
 msgstr ""
 
@@ -889,7 +889,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:3
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:15
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:10
-#: lib/block_scout_web/templates/block_transaction/index.html.eex:17
+#: lib/block_scout_web/templates/block_transaction/index.html.eex:18
 #: lib/block_scout_web/templates/chain/show.html.eex:108
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:35
 #: lib/block_scout_web/views/address_view.ex:294
@@ -1233,6 +1233,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:20
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:57
 #: lib/block_scout_web/templates/address_validation/index.html.eex:22
+#: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/chain/show.html.eex:91
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:19
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:21
@@ -1724,7 +1725,7 @@ msgstr ""
 msgid "Sorry, We are unable to locate this transaction Hash"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:17
 msgid "There are no token transfers for this transaction"
 msgstr ""
