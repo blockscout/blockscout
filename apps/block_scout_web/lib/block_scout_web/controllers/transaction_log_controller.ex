@@ -3,8 +3,7 @@ defmodule BlockScoutWeb.TransactionLogController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.TransactionView
-  alias BlockScoutWeb.TransactionLogView
+  alias BlockScoutWeb.{TransactionLogView, TransactionView}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
