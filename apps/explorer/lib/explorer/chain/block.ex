@@ -10,10 +10,9 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.{Address, Gas, Hash, Transaction}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
-  @optional_attrs ~w(internal_transactions_indexed_at)a
+  @optional_attrs ~w(internal_transactions_indexed_at size refetch_needed)a
 
-  @required_attrs ~w(consensus difficulty gas_limit gas_used hash miner_hash nonce number parent_hash size timestamp
-                     total_difficulty)a
+  @required_attrs ~w(consensus difficulty gas_limit gas_used hash miner_hash nonce number parent_hash timestamp total_difficulty)a
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
@@ -64,7 +63,8 @@ defmodule Explorer.Chain.Block do
           timestamp: DateTime.t(),
           total_difficulty: difficulty(),
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
-          internal_transactions_indexed_at: DateTime.t()
+          internal_transactions_indexed_at: DateTime.t(),
+          refetch_needed: boolean()
         }
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -79,6 +79,7 @@ defmodule Explorer.Chain.Block do
     field(:timestamp, :utc_datetime_usec)
     field(:total_difficulty, :decimal)
     field(:internal_transactions_indexed_at, :utc_datetime_usec)
+    field(:refetch_needed, :boolean)
 
     timestamps()
 
