@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.AddressController do
           address_path(
             conn,
             :index,
-            next_page_params
+            Map.delete(next_page_params, "type")
           )
       end
 
