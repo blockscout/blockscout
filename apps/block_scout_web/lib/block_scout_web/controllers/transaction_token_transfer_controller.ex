@@ -11,17 +11,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
   def index(conn, %{"transaction_id" => hash_string, "type" => "JSON"} = params) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
          {:ok, transaction} <-
-           Chain.hash_to_transaction(
-             hash,
-             necessity_by_association: %{
-               :block => :optional,
-               [created_contract_address: :names] => :optional,
-               [from_address: :names] => :optional,
-               [to_address: :names] => :optional,
-               [to_address: :smart_contract] => :optional,
-               :token_transfers => :optional
-             }
-           ) do
+           Chain.hash_to_transaction(hash) do
       full_options =
         Keyword.merge(
           [
