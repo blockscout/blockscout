@@ -53,6 +53,7 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 | [RSK](https://blockscout.com/rsk/mainnet) |  | [PIRL](http://pirl.es/) |
 | [xDai Chain](https://blockscout.com/poa/dai) |  | [SafeChain](https://explorer.safechain.io) |
 |  |  | [SpringChain](https://explorer.springrole.com/) |
+|  |  | [Kotti Testnet](https://kottiexplorer.ethernode.io/) |
 
 
 ### Visual Interface
