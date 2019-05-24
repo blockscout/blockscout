@@ -1713,3 +1713,18 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:26
 msgid "If it still does not show up after 1 hour, please check with your sender/exchange/wallet/transaction provider for additional information."
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:16
+msgid "It could still be in the TX Pool of a different node, waiting to be broadcasted."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:7
+msgid "Sorry, We are unable to locate this transaction Hash"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:17
+msgid "There are no token transfers for this transaction"
+msgstr ""
