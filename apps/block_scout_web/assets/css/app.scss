@@ -121,6 +121,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/api";
 @import "components/alerts";
 @import "components/verify_other_explorers";
+@import "components/errors";
 
 :export {
   primary: $primary;
