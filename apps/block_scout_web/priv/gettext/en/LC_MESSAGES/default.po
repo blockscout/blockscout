@@ -754,11 +754,6 @@ msgid "There are no token transfers for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:23
-msgid "There are no token transfers for this transaction."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address_token/index.html.eex:18
 msgid "There are no tokens for this address."
 msgstr ""
@@ -1287,6 +1282,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:20
 #: lib/block_scout_web/templates/transaction/index.html.eex:20
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:13
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:12
 msgid "Something went wrong, click to reload."
 msgstr ""
 
@@ -1734,4 +1730,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:17
 msgid "There are no logs for this address."
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:17
+msgid "There are no token transfers for this transaction"
 msgstr ""
