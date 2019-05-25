@@ -38,6 +38,7 @@
 - [#1966](https://github.com/poanetwork/blockscout/pull/1966) - fix: add fields for contract filter performance
 - [#2008](https://github.com/poanetwork/blockscout/pull/2008) - add new function clause for xDai network beneficiaries
 - [#2009](https://github.com/poanetwork/blockscout/pull/2009) - addresses page improvements
+- [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
 
 ### Chore
 
