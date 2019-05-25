@@ -3,6 +3,10 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   Module responsible to compile the Solidity code of a given Smart Contract.
   """
 
+  alias Explorer.SmartContract.SolcDownloader
+
+  require Logger
+
   @new_contract_name "New.sol"
   @allowed_evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople", "petersburg"]
 
@@ -61,6 +65,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         }
       }
   """
+  @spec run(Keyword.t()) :: {:ok, map} | {:error, :compilation | :name}
   def run(params) do
     name = Keyword.fetch!(params, :name)
     compiler_version = Keyword.fetch!(params, :compiler_version)
@@ -79,31 +84,44 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         "byzantium"
       end
 
-    {response, _status} =
-      System.cmd(
-        "node",
-        [
-          Application.app_dir(:explorer, "priv/compile_solc.js"),
-          code,
-          compiler_version,
-          optimize_value(optimize),
-          optimization_runs,
-          @new_contract_name,
-          external_libs_string,
-          checked_evm_version
-        ]
-      )
+    path = SolcDownloader.ensure_exists(compiler_version)
 
-    with {:ok, contracts} <- Jason.decode(response),
-         %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode}}} <-
-           get_contract_info(contracts, name) do
-      {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name}}
+    if path do
+      {response, _status} =
+        System.cmd(
+          "node",
+          [
+            Application.app_dir(:explorer, "priv/compile_solc.js"),
+            code,
+            compiler_version,
+            optimize_value(optimize),
+            optimization_runs,
+            @new_contract_name,
+            external_libs_string,
+            checked_evm_version,
+            path
+          ]
+        )
+
+      with {:ok, decoded} <- Jason.decode(response),
+           {:ok, contracts} <- get_contracts(decoded),
+           %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode}}} <-
+             get_contract_info(contracts, name) do
+        {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name}}
+      else
+        {:error, %Jason.DecodeError{}} ->
+          {:error, :compilation}
+
+        {:error, reason} when reason in [:name, :compilation] ->
+          {:error, reason}
+
+        error ->
+          error = parse_error(error)
+          Logger.warn(["There was an error compiling a provided contract: ", inspect(error)])
+          {:error, :compilation}
+      end
     else
-      {:error, %Jason.DecodeError{}} ->
-        {:error, :compilation}
-
-      error ->
-        parse_error(error)
+      {:error, :compilation}
     end
   end
 
@@ -126,9 +144,14 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     end
   end
 
-  def parse_error(%{"error" => error}), do: {:error, [error]}
-  def parse_error(%{"errors" => errors}), do: {:error, errors}
+  def parse_error({:error, %{"error" => error}}), do: {:error, [error]}
+  def parse_error({:error, %{"errors" => errors}}), do: {:error, errors}
   def parse_error({:error, _} = error), do: error
+
+  # Older solc-bin versions don't use filename as contract key
+  defp get_contracts(%{"contracts" => %{"New.sol" => contracts}}), do: {:ok, contracts}
+  defp get_contracts(%{"contracts" => %{"" => contracts}}), do: {:ok, contracts}
+  defp get_contracts(response), do: {:error, response}
 
   defp optimize_value(false), do: "0"
   defp optimize_value("false"), do: "0"
