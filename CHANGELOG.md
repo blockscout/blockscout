@@ -1,5 +1,21 @@
 ## Current
 
+## 1.3.14-beta
+
+### Features
+
+- [#1812](https://github.com/poanetwork/blockscout/pull/1812) - add pagination to addresses page
+- [#1920](https://github.com/poanetwork/blockscout/pull/1920) - fix: remove source code fields from list endpoint
+- [#1876](https://github.com/poanetwork/blockscout/pull/1876) - async calculate a count of blocks
+
+### Fixes
+
+- [#1917](https://github.com/poanetwork/blockscout/pull/1917) - Force block refetch if transaction is re-collated in a different block
+
+### Chore
+
+- [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
+
 ## 1.3.13-beta
 
 ### Features

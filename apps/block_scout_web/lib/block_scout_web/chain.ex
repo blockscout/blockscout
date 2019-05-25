@@ -25,7 +25,8 @@ defmodule BlockScoutWeb.Chain do
     InternalTransaction,
     Log,
     TokenTransfer,
-    Transaction
+    Transaction,
+    Wei
   }
 
   alias Explorer.PagingOptions
@@ -85,6 +86,16 @@ defmodule BlockScoutWeb.Chain do
 
   def next_page_params(_, list, params) do
     Map.merge(params, paging_params(List.last(list)))
+  end
+
+  def paging_options(%{"hash" => hash, "fetched_coin_balance" => fetched_coin_balance}) do
+    with {coin_balance, ""} <- Integer.parse(fetched_coin_balance),
+         {:ok, address_hash} <- string_to_address_hash(hash) do
+      [paging_options: %{@default_paging_options | key: {%Wei{value: Decimal.new(coin_balance)}, address_hash}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
   end
 
   def paging_options(%{
@@ -175,6 +186,10 @@ defmodule BlockScoutWeb.Chain do
       {:ok, hash} -> find_or_insert_address_from_hash(hash)
       _ -> {:error, :not_found}
     end
+  end
+
+  defp paging_params({%Address{hash: hash, fetched_coin_balance: fetched_coin_balance}, _}) do
+    %{"hash" => hash, "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)}
   end
 
   defp paging_params({%Reward{block: %{number: number}}, _}) do

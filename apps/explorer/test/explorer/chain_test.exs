@@ -1415,6 +1415,33 @@ defmodule Explorer.ChainTest do
                |> Enum.map(fn {address, _transaction_count} -> address end)
                |> Enum.map(& &1.hash)
     end
+
+    test "paginates addresses" do
+      test_hashes =
+        4..0
+        |> Enum.map(&Explorer.Chain.Hash.cast(Explorer.Chain.Hash.Address, &1))
+        |> Enum.map(&elem(&1, 1))
+
+      result =
+        4..1
+        |> Enum.map(&insert(:address, fetched_coin_balance: &1, hash: Enum.fetch!(test_hashes, &1 - 1)))
+        |> Enum.map(& &1.hash)
+
+      options = [paging_options: %PagingOptions{page_size: 1}]
+
+      [{top_address, _}] = Chain.list_top_addresses(options)
+      assert top_address.hash == List.first(result)
+
+      tail_options = [
+        paging_options: %PagingOptions{key: {top_address.fetched_coin_balance.value, top_address.hash}, page_size: 3}
+      ]
+
+      tail_result = tail_options |> Chain.list_top_addresses() |> Enum.map(fn {address, _} -> address.hash end)
+
+      [_ | expected_tail] = result
+
+      assert tail_result == expected_tail
+    end
   end
 
   describe "stream_blocks_without_rewards/2" do
