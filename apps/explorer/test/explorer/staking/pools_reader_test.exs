@@ -47,7 +47,8 @@ defmodule Explorer.Token.PoolsReaderTest do
           staking_address_hash:
             <<11, 47, 94, 47, 60, 189, 134, 78, 170, 44, 100, 46, 55, 105, 193, 88, 35, 97, 202, 246>>,
           was_banned_count: 0,
-          was_validator_count: 2
+          was_validator_count: 2,
+          delegators: []
         }
       }
 
