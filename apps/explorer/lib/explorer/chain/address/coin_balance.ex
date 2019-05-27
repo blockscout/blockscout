@@ -66,6 +66,9 @@ defmodule Explorer.Chain.Address.CoinBalance do
       on: cb.block_number == b.number,
       limit: ^1,
       order_by: [desc: :block_number],
+      select_merge: %{
+        delta: type(fragment("coalesce(delta, value - (lag(value, 1) over (order by block_number)), value)"), cb.delta)
+      },
       select_merge: %{block_timestamp: b.timestamp}
     )
   end
@@ -84,6 +87,9 @@ defmodule Explorer.Chain.Address.CoinBalance do
       on: cb.block_number == b.number,
       order_by: [desc: :block_number],
       limit: ^page_size,
+      select_merge: %{
+        delta: type(fragment("coalesce(delta, value - (lag(value, 1) over (order by block_number)), value)"), cb.delta)
+      },
       select_merge: %{block_timestamp: b.timestamp}
     )
   end
@@ -97,6 +103,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
       cb in CoinBalance,
       where: cb.address_hash == ^address_hash,
       where: cb.block_number < ^block_number,
+      where: not is_nil(cb.value),
       select: cb.value,
       order_by: [asc: :block_number],
       limit: ^1
