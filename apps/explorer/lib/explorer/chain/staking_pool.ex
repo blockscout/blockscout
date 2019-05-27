@@ -9,6 +9,7 @@ defmodule Explorer.Chain.StakingPool do
   alias Explorer.Chain.{
     Address,
     Hash,
+    StakingPoolsDelegators,
     Wei
   }
 
@@ -53,6 +54,7 @@ defmodule Explorer.Chain.StakingPool do
     field(:was_banned_count, :integer)
     field(:was_validator_count, :integer)
     field(:is_deleted, :boolean, default: false)
+    has_many(:delegators, StakingPoolsDelegators)
 
     belongs_to(
       :staking_address,
@@ -77,6 +79,7 @@ defmodule Explorer.Chain.StakingPool do
   def changeset(staking_pool, attrs) do
     staking_pool
     |> cast(attrs, @attrs)
+    |> cast_assoc(:delegators)
     |> validate_required(@req_attrs)
     |> validate_staked_amount()
     |> unique_constraint(:staking_address_hash)

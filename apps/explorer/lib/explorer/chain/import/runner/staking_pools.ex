@@ -128,37 +128,35 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
   end
 
   defp calculate_stakes_ratio(repo, %{timeout: timeout}) do
-    try do
-      total_query =
+    total_query =
+      from(
+        pool in StakingPool,
+        where: pool.is_active == true,
+        select: sum(pool.staked_amount)
+      )
+
+    total = repo.one!(total_query)
+
+    if total > Decimal.new(0) do
+      query =
         from(
-          pool in StakingPool,
-          where: pool.is_active == true,
-          select: sum(pool.staked_amount)
+          p in StakingPool,
+          where: p.is_active == true,
+          update: [
+            set: [
+              staked_ratio: p.staked_amount / ^total * 100,
+              likelihood: p.staked_amount / ^total * 100
+            ]
+          ]
         )
 
-      total = repo.one!(total_query)
-
-      if total > Decimal.new(0) do
-        query =
-          from(
-            p in StakingPool,
-            where: p.is_active == true,
-            update: [
-              set: [
-                staked_ratio: p.staked_amount / ^total * 100,
-                likelihood: p.staked_amount / ^total * 100
-              ]
-            ]
-          )
-
-        {count, _} = repo.update_all(query, [], timeout: timeout)
-        {:ok, count}
-      else
-        {:ok, 1}
-      end
-    rescue
-      postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error}}
+      {count, _} = repo.update_all(query, [], timeout: timeout)
+      {:ok, count}
+    else
+      {:ok, 1}
     end
+  rescue
+    postgrex_error in Postgrex.Error ->
+      {:error, %{exception: postgrex_error}}
   end
 end

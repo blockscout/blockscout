@@ -94,21 +94,22 @@ defmodule Indexer.Fetcher.StakingPools do
   defp import_pools(pools) do
     {failed, success} =
       Enum.reduce(pools, {[], []}, fn
-        %{error: _error, staking_address_hash: address}, {failed, success} ->
-          {[address | failed], success}
+        %{error: _error} = pool, {failed, success} ->
+          {[pool | failed], success}
 
-        %{staking_address_hash: address} = pool, {failed, success} ->
+        pool, {failed, success} ->
           changeset = StakingPool.changeset(%StakingPool{}, pool)
 
           if changeset.valid? do
             {failed, [changeset.changes | success]}
           else
-            {[address | failed], success}
+            {[pool | failed], success}
           end
       end)
 
     import_params = %{
-      staking_pools: %{params: success},
+      staking_pools: %{params: remove_assoc(success)},
+      staking_pools_delegators: %{params: delegators_list(success)},
       timeout: :infinity
     }
 
@@ -123,5 +124,17 @@ defmodule Indexer.Fetcher.StakingPools do
     end
 
     failed
+  end
+
+  defp delegators_list(pools) do
+    Enum.reduce(pools, [], fn pool, acc ->
+      pool.delegators
+      |> Enum.map(pool.delegators, &Map.get(&1, :changes))
+      |> Enum.concat(acc)
+    end)
+  end
+
+  defp remove_assoc(pools) do
+    Enum.map(pools, &Map.delete(&1, :delegators))
   end
 end
