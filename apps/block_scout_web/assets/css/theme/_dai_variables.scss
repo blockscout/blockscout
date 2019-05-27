@@ -7,7 +7,7 @@ $additional-font: #ffffff;
 // footer
 $footer-background-color: $primary;
 $footer-title-color: #fff;
-$footer-text-color: $secondary;
+$footer-text-color: #909dab;
 $footer-item-disc-color: $tertiary;
 .footer-logo { filter: brightness(0) invert(1); }
 
@@ -46,5 +46,5 @@ $btn-qr-color: $primary; // btn qr-code
 } // tab active bg
 
 // card
-$card-background-1: $secondary;
-$card-tab-active: $secondary;
+$card-background-1: #1b395c;
+$card-tab-active: $tertiary;
