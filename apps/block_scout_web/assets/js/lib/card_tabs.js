@@ -1,21 +1,26 @@
 import $ from 'jquery'
 
 $(function () {
-  const activeTabCard = $('.card-tab.active')
+  const tabCards = $('.js-card-tabs')
+  const activeTabCard = tabCards.find('.active')
+  const isMobileCardTabs = tabCards.children(':hidden').length
+  const isOnlyChild = !activeTabCard.siblings().length
 
-  if (!activeTabCard.siblings().length) {
+  if (isOnlyChild) {
     activeTabCard.addClass('noCaret')
   }
 
   activeTabCard.on('click', function (e) {
     e.preventDefault()
 
-    const siblings = $(this).siblings()
+    if (isMobileCardTabs) {
+      const siblings = $(this).siblings()
 
-    if (siblings.is(':hidden')) {
-      siblings.show()
-    } else {
-      siblings.hide()
+      if (siblings.is(':hidden')) {
+        siblings.show()
+      } else {
+        siblings.hide()
+      }
     }
   })
 })
