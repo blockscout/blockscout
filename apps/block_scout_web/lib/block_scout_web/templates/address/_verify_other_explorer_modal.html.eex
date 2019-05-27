@@ -11,12 +11,12 @@
           address_link_to_other_explorer(@address_link, @hash, false),
           to: address_link_to_other_explorer(@address_link, @hash ,true)
         ) %>
-      <%= else %>
+      <% else %>
         <%= link(
           address_link_to_other_explorer(@tx_link, @hash, false),
           to: address_link_to_other_explorer(@tx_link, @hash ,true)
         ) %>
-      <%= end %>
+      <% end %>
     </span>
   </div>
 </div>
