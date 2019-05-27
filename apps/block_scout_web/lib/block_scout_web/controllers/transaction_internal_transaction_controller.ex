@@ -47,6 +47,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
             transaction_internal_transaction_path(
               conn,
               :index,
+              transaction,
               Map.delete(next_page_params, "type")
             )
         end
