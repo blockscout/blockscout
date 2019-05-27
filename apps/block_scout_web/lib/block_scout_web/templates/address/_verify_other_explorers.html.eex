@@ -3,27 +3,9 @@
   <div class="verify-other-explorers">
     <h2>Verify with other Explorers:</h2>
     <div class="verify-other-explorers-row">
-      <a href="<%= address_link_to_other_explorer("https://etherscan.io/address/", @address ,true) %>" class="verify-other-explorers-elem">
-        <div class="exp-logo etherscan"></div>
-        <div class="exp-content">
-          <h3>Etherscan.io</h3>
-          <div><%= address_link_to_other_explorer("https://etherscan.io/address/", @address ,true) %></div>
-        </div>
-      </a>
-      <a href="<%= address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address ,true) %>" class="verify-other-explorers-elem">
-        <div class="exp-logo blockchair"></div>
-        <div class="exp-content">
-          <h3>Blockchair.com</h3>
-          <div><%= address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address ,true) %></div>
-        </div>
-      </a>
-      <a href="<%= address_link_to_other_explorer("https://www.etherchain.org/account/", @address, true) %>" class="verify-other-explorers-elem">
-        <div class="exp-logo etherchain"></div>
-        <div class="exp-content">
-          <h3>Etherchain.org</h3>
-          <div><%= address_link_to_other_explorer("https://www.etherchain.org/account/", @address, true) %></div>
-        </div>
-      </a>
+      <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Etherscan.io", class: "etherscan", address_link: "https://etherscan.io/address/", tx_link: "https://etherscan.io/tx/" %>
+      <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Blockchair.com", class: "blockchair", address_link: "https://blockchair.com/ethereum/address/", tx_link: "https://blockchair.com/ethereum/transaction/" %>
+      <%= render "_verify_other_explorer.html", hash: @hash, type: @type, header: "Etherchain.org", class: "etherchain", address_link: "https://www.etherchain.org/account/", tx_link: "https://www.etherchain.org/tx/" %>
       <a href="#" class="verify-other-explorers-more" data-toggle="modal" data-target="#explorersModal">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="4">
             <path fill="#49A2EE" fill-rule="evenodd" d="M16 4a2 2 0 1 1-.001-3.999A2 2 0 0 1 16 4zM9 4A2 2 0 1 1 8.999.001 2 2 0 0 1 9 4zM2 4A2 2 0 1 1 1.999.001 2 2 0 0 1 2 4z"/>
@@ -43,51 +25,9 @@
         </div>
         <div class="modal-body">
           <div class="verify-other-explorers-table">
-            <div class="verify-other-explorers-modal-row">
-              <div class="verify-other-explorers-cell">
-                <span class="etherscan-logo">
-                  Etherscan.io
-                </span>
-              </div>
-              <div class="verify-other-explorers-cell">
-                <span class='link'>
-                  <%= link(
-                    address_link_to_other_explorer("https://etherscan.io/address/", @address, false),
-                    to: address_link_to_other_explorer("https://etherscan.io/address/", @address ,true)
-                  ) %>
-                </span>
-              </div>
-            </div>
-            <div class="verify-other-explorers-modal-row">
-              <div class="verify-other-explorers-cell">
-                <span class="blockchair-logo">
-                  blockchair.com
-                </span>
-              </div>
-              <div class="verify-other-explorers-cell">
-                <span class='link'>
-                  <%= link(
-                    address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address, false),
-                    to: address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address ,true)
-                  ) %>
-                </span>
-              </div>
-            </div>
-            <div class="verify-other-explorers-modal-row">
-              <div class="verify-other-explorers-cell left">
-                <span class="etherchain-logo">
-                  etherchain.org
-                </span>                  
-              </div>
-              <div class="verify-other-explorers-cell right">
-                <span class='link'>
-                  <%= link(
-                    address_link_to_other_explorer("https://www.etherchain.org/account/", @address, false),
-                    to: address_link_to_other_explorer("https://www.etherchain.org/account/", @address, true)
-                  ) %>
-              </span>
-              </div>
-            </div>
+            <%= render "_verify_other_explorer_modal.html", hash: @hash, type: @type, header: "Etherscan.io", class: "etherscan", address_link: "https://etherscan.io/address/", tx_link: "https://etherscan.io/tx/" %>
+            <%= render "_verify_other_explorer_modal.html", hash: @hash, type: @type, header: "Blockchair.com", class: "blockchair", address_link: "https://blockchair.com/ethereum/address/", tx_link: "https://blockchair.com/ethereum/transaction/" %>
+            <%= render "_verify_other_explorer_modal.html", hash: @hash, type: @type, header: "Etherchain.org", class: "etherchain", address_link: "https://www.etherchain.org/account/", tx_link: "https://www.etherchain.org/tx/" %>
           </div>
         </div>
       </div>
