@@ -129,7 +129,7 @@ defmodule Indexer.Fetcher.StakingPools do
   defp delegators_list(pools) do
     Enum.reduce(pools, [], fn pool, acc ->
       pool.delegators
-      |> Enum.map(pool.delegators, &Map.get(&1, :changes))
+      |> Enum.map(&Map.get(&1, :changes))
       |> Enum.concat(acc)
     end)
   end

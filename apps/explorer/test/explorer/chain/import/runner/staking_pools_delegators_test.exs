@@ -10,12 +10,11 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegatorsTest do
   describe "run/1" do
     test "insert new pools list" do
       delegators =
-        [delegator1, delegator2] =
-          [params_for(:staking_pools_delegator), params_for(:staking_pools_delegator)]
-          |> Enum.map(fn param ->
-            changeset = StakingPoolsDelegator.changeset(%StakingPoolsDelegator{}, param)
-            changeset.changes
-          end)
+        [params_for(:staking_pools_delegator), params_for(:staking_pools_delegator)]
+        |> Enum.map(fn param ->
+          changeset = StakingPoolsDelegator.changeset(%StakingPoolsDelegator{}, param)
+          changeset.changes
+        end)
 
       assert {:ok, %{insert_staking_pools_delegators: list}} = run_changes(delegators)
       assert Enum.count(list) == Enum.count(delegators)
