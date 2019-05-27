@@ -4,7 +4,7 @@
 
   <section>
     <div class="card mb-3">
-      <div class="card-tabs">
+      <div class="card-tabs js-card-tabs">
         <%=
           link(
             gettext("Transactions"),
