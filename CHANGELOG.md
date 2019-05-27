@@ -49,6 +49,7 @@
 - [#1975](https://github.com/poanetwork/blockscout/pull/1975) - add log index to transaction view
 - [#1988](https://github.com/poanetwork/blockscout/pull/1988) - Fix wrong parity tasks names in Circle CI
 - [#2000](https://github.com/poanetwork/blockscout/pull/2000) - docker/Makefile: always set a container name
+- [#2018](https://github.com/poanetwork/blockscout/pull/2018) - Use PORT env variable in dev config
 
 ## 1.3.14-beta
 
