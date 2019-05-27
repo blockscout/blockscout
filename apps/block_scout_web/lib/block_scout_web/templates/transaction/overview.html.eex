@@ -50,7 +50,8 @@
               <% end %>
             </span>
           </div>
-          <%= render BlockScoutWeb.AddressView, "_verify_other_explorers.html", hash: hash(@transaction), type: "tx" %>
+          <!-- Verify in other explorers -->
+          <%# <%= render BlockScoutWeb.AddressView, "_verify_other_explorers.html", hash: hash(@transaction), type: "tx" %> %>
           <hr>
           <!-- Block Hash -->
           <dl class="row">
