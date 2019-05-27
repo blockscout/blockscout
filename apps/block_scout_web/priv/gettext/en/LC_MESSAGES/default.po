@@ -568,11 +568,6 @@ msgid "New Smart Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/inventory/index.html.eex:32
-msgid "Next Page"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:40
 msgid "No"
 msgstr ""
@@ -751,7 +746,7 @@ msgid "There are no tokens for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/inventory/index.html.eex:25
+#: lib/block_scout_web/templates/tokens/inventory/index.html.eex:26
 msgid "There are no tokens."
 msgstr ""
 
@@ -1231,6 +1226,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:91
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:19
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:21
+#: lib/block_scout_web/templates/tokens/inventory/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:20
 #: lib/block_scout_web/templates/transaction/index.html.eex:20
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:11
