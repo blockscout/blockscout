@@ -1338,8 +1338,8 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns the last coin balance value for the given address preceeding the given
-  block, as an integer.
+  Returns the the last different coin balance value of the given address
+  before the given block.
   """
   @spec balance_value_before(String.t(), integer()) :: integer() | nil
   def balance_value_before(address_hash, block_number) do
@@ -1367,7 +1367,8 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a map of the coin balance following the given block for the given address.
+  Returns a map of the first different coin balance following the given block
+  for the given address.
   """
   @spec balance_params_following(String.t(), integer()) :: map() | nil
   def balance_params_following(address_hash, block_number) do
