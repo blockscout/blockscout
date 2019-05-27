@@ -32,7 +32,7 @@
     </div>
   </div>
 
-  <div class="modal" tabindex="-1" role="dialog" id="explorersModal">
+  <div class="modal fade" tabindex="-1" role="dialog" id="explorersModal">
     <div class="modal-dialog verify-other-explorers-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
