@@ -484,6 +484,7 @@ defmodule Explorer.Factory do
 
     address = %Address{
       hash: address_hash(),
+      verified: true,
       contract_code: contract_code_info().bytecode,
       smart_contract: smart_contract
     }
@@ -521,7 +522,7 @@ defmodule Explorer.Factory do
     contract_code_info = contract_code_info()
 
     %SmartContract{
-      address_hash: insert(:address, contract_code: contract_code_info.bytecode).hash,
+      address_hash: insert(:address, contract_code: contract_code_info.bytecode, verified: true).hash,
       compiler_version: contract_code_info.version,
       name: contract_code_info.name,
       contract_source_code: contract_code_info.source_code,
@@ -534,7 +535,7 @@ defmodule Explorer.Factory do
     contract_code_info = contract_code_info()
 
     %DecompiledSmartContract{
-      address_hash: insert(:address, contract_code: contract_code_info.bytecode).hash,
+      address_hash: insert(:address, contract_code: contract_code_info.bytecode, decompiled: true).hash,
       decompiler_version: "test_decompiler",
       decompiled_source_code: contract_code_info.source_code
     }

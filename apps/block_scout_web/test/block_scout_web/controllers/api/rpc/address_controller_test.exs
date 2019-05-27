@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
   alias BlockScoutWeb.API.RPC.AddressController
   alias Explorer.Chain
-  alias Explorer.Chain.{BlockNumberCache, Events.Subscriber, Transaction, Wei}
+  alias Explorer.Chain.{Events.Subscriber, Transaction, Wei}
   alias Explorer.Counters.{AddressesWithBalanceCounter, AverageBlockTime}
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Explorer.Repo

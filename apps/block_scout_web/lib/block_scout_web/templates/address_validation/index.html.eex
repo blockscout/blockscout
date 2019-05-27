@@ -12,15 +12,8 @@
         </div>
         <h2 class="card-title"><%=gettext("Blocks Validated")%></h2>
 
-        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
-        <div data-loading-message class="tile tile-muted text-center mt-3">
-          <span class="loading-spinner-small mr-2">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </span>
-          <%= gettext("Loading...") %>
-        </div>
         <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
           <span><%= gettext "There are no blocks validated by this address." %></span>
         </div>
@@ -31,21 +24,8 @@
         </button>
         <div data-items data-selector="validations-list"></div>
 
-        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
-        <!--
-        <a data-next-page-button href="#" class="button button-secondary button-small float-right mt-4" style="display: none;">
-          <%= gettext("Older") %>
-        </a>
-        -->
-
-        <div data-loading-button class="button button-secondary button-small float-right mt-4" style="display: none;">
-          <span class="loading-spinner-small mr-2">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </span>
-          <%= gettext("Loading...") %>
-        </div>
       </div> <!-- Card Body -->
     </div> <!-- Card -->
   <section>
