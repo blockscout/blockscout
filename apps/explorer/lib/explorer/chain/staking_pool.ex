@@ -54,7 +54,7 @@ defmodule Explorer.Chain.StakingPool do
     field(:was_banned_count, :integer)
     field(:was_validator_count, :integer)
     field(:is_deleted, :boolean, default: false)
-    has_many(:delegators, StakingPoolsDelegator)
+    has_many(:delegators, StakingPoolsDelegator, foreign_key: :pool_address_hash)
 
     belongs_to(
       :staking_address,
