@@ -291,8 +291,9 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
     {block_number, transaction_index, log_index} = paging_options.key || {BlockNumberCache.max_number(), 0, 0}
+    topic = Keyword.get(options, :topic)
 
-    query =
+    base_query =
       from(log in Log,
         inner_join: transaction in assoc(log, :transaction),
         order_by: [desc: transaction.block_number, desc: transaction.index],
@@ -306,6 +307,17 @@ defmodule Explorer.Chain do
         limit: ^paging_options.page_size,
         select: log
       )
+
+    query =
+      if topic do
+        from(log in base_query,
+          where:
+            log.first_topic == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
+              log.fourth_topic == ^topic
+        )
+      else
+        base_query
+      end
 
     query
     |> Repo.all()
