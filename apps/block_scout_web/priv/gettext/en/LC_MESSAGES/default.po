@@ -568,12 +568,6 @@ msgid "New Smart Contract"
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:37
-msgid "Newer"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:32
 msgid "Next Page"
 msgstr ""
@@ -737,7 +731,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:22
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:15
 msgid "There are no internal transactions for this transaction."
 msgstr ""
 
@@ -1239,6 +1233,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:20
 #: lib/block_scout_web/templates/transaction/index.html.eex:20
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:11
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:13
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:12
 msgid "Something went wrong, click to reload."
