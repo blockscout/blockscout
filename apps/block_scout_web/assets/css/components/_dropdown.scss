@@ -52,6 +52,10 @@
       font-weight: 700;
     }
   }
+  
+  &.active {
+    background-color: $secondary;
+  }
 
   &.division {
     border-top: 1px solid $base-border-color;
