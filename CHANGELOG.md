@@ -1,8 +1,7 @@
 ## Current
 
 ### Features
-- [#2030](https://github.com/poanetwork/blockscout/pull/2030) - added 'Verify link to other explorers' block and modal dialog
-- [#1963](https://github.com/poanetwork/blockscout/pull/1963), [#1959](https://github.com/poanetwork/blockscout/pull/1959), [#1948](https://github.com/poanetwork/blockscout/pull/1948), [#1936](https://github.com/poanetwork/blockscout/pull/1936), [#1925](https://github.com/poanetwork/blockscout/pull/1925), [#1922](https://github.com/poanetwork/blockscout/pull/1922), [#1903](https://github.com/poanetwork/blockscout/pull/1903), [#1874](https://github.com/poanetwork/blockscout/pull/1874), [#1895](https://github.com/poanetwork/blockscout/pull/1895) - added new themes and logos for poa, eth, rinkeby, goerli, ropsten, kovan, sokol, xdai, etc, rsk
+- [#1963](https://github.com/poanetwork/blockscout/pull/1963), [#1959](https://github.com/poanetwork/blockscout/pull/1959), [#1948](https://github.com/poanetwork/blockscout/pull/1948), [#1936](https://github.com/poanetwork/blockscout/pull/1936), [#1925](https://github.com/poanetwork/blockscout/pull/1925), [#1922](https://github.com/poanetwork/blockscout/pull/1922), [#1903](https://github.com/poanetwork/blockscout/pull/1903), [#1874](https://github.com/poanetwork/blockscout/pull/1874), [#1895](https://github.com/poanetwork/blockscout/pull/1895), [#2031](https://github.com/poanetwork/blockscout/pull/2031) - added new themes and logos for poa, eth, rinkeby, goerli, ropsten, kovan, sokol, xdai, etc, rsk
 - [#2010](https://github.com/poanetwork/blockscout/pull/2010) - added "block not found" and "tx not found pages"
 - [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
 - [#1940](https://github.com/poanetwork/blockscout/pull/1940) - qr modal button and background issue
@@ -19,10 +18,12 @@
 - [#1999](https://github.com/poanetwork/blockscout/pull/1999) - load data async on addresses page
 - [#2002](https://github.com/poanetwork/blockscout/pull/2002) - Get estimated count of blocks when cache is empty
 - [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
-- [#1890](https://github.com/poanetwork/blockscout/pull/1890) - Verification links to other explorers for ETH 
+- [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH 
 
 ### Fixes
-
+- [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue
+- [#2019](https://github.com/poanetwork/blockscout/pull/2019) - Fixed the missing tx hashes.
+- [#2020](https://github.com/poanetwork/blockscout/pull/2020) - Fixed a bug triggered when a second click to a selected tab caused the other tabs to hide.
 - [#1944](https://github.com/poanetwork/blockscout/pull/1944) - fixed styles for token's dropdown.
 - [#1926](https://github.com/poanetwork/blockscout/pull/1926) - status label alignment
 - [#1849](https://github.com/poanetwork/blockscout/pull/1849) - Improve chains menu
@@ -49,6 +50,7 @@
 - [#1975](https://github.com/poanetwork/blockscout/pull/1975) - add log index to transaction view
 - [#1988](https://github.com/poanetwork/blockscout/pull/1988) - Fix wrong parity tasks names in Circle CI
 - [#2000](https://github.com/poanetwork/blockscout/pull/2000) - docker/Makefile: always set a container name
+- [#2018](https://github.com/poanetwork/blockscout/pull/2018) - Use PORT env variable in dev config
 
 ## 1.3.14-beta
 
