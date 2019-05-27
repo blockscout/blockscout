@@ -68,11 +68,6 @@ defmodule Explorer.Chain.Wei do
   @impl Ecto.Type
   def cast(_), do: :error
 
-  def cast!(arg) do
-    {:ok, wei} = cast(arg)
-    wei
-  end
-
   @impl Ecto.Type
   def dump(%__MODULE__{value: %Decimal{} = decimal}) do
     {:ok, decimal}
@@ -80,11 +75,6 @@ defmodule Explorer.Chain.Wei do
 
   @impl Ecto.Type
   def dump(_), do: :error
-
-  def dump!(arg) do
-    {:ok, decimal} = dump(arg)
-    decimal
-  end
 
   @impl Ecto.Type
   def load(%Decimal{} = decimal) do
@@ -248,11 +238,6 @@ defmodule Explorer.Chain.Wei do
 
   @spec to(t(), :wei) :: wei()
   def to(%__MODULE__{value: wei}, :wei), do: wei
-
-  @spec to(t(), :integer) :: integer()
-  def to(%__MODULE__{value: wei}, :integer) do
-    Decimal.to_integer(wei)
-  end
 end
 
 defimpl Inspect, for: Explorer.Chain.Wei do
