@@ -34,6 +34,7 @@ defmodule Explorer.Chain do
     BlockNumberCache,
     Data,
     DecompiledSmartContract,
+    StakingPool,
     Hash,
     Import,
     InternalTransaction,
@@ -2909,7 +2910,7 @@ defmodule Explorer.Chain do
   def staking_pools(filter, %PagingOptions{page_size: page_size, page_number: page_number} \\ @default_paging_options) do
     off = page_size * (page_number - 1)
 
-    Address.Name
+    StakingPool
     |> staking_pool_filter(filter)
     |> limit(^page_size)
     |> offset(^off)
@@ -2919,55 +2920,36 @@ defmodule Explorer.Chain do
   @doc "Get count of staking pools from the DB"
   @spec staking_pools_count(filter :: :validator | :active | :inactive) :: integer
   def staking_pools_count(filter) do
-    Address.Name
+    StakingPool
     |> staking_pool_filter(filter)
-    |> Repo.aggregate(:count, :address_hash)
+    |> Repo.aggregate(:count, :staking_address_hash)
   end
 
   defp staking_pool_filter(query, :validator) do
     where(
       query,
-      [address],
-      fragment(
-        """
-        (?->>'is_active')::boolean = true and
-        (?->>'deleted')::boolean is not true and
-        (?->>'is_validator')::boolean = true
-        """,
-        address.metadata,
-        address.metadata,
-        address.metadata
-      )
+      [pool],
+      pool.is_active == true and
+        pool.is_deleted == false and
+        pool.is_validator == true
     )
   end
 
   defp staking_pool_filter(query, :active) do
     where(
       query,
-      [address],
-      fragment(
-        """
-        (?->>'is_active')::boolean = true and
-        (?->>'deleted')::boolean is not true
-        """,
-        address.metadata,
-        address.metadata
-      )
+      [pool],
+      pool.is_active == true and
+        pool.is_deleted == false
     )
   end
 
   defp staking_pool_filter(query, :inactive) do
     where(
       query,
-      [address],
-      fragment(
-        """
-        (?->>'is_active')::boolean = false and
-        (?->>'deleted')::boolean is not true
-        """,
-        address.metadata,
-        address.metadata
-      )
+      [pool],
+      pool.is_active == false and
+        pool.is_deleted == false
     )
   end
 

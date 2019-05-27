@@ -3951,54 +3951,54 @@ defmodule Explorer.ChainTest do
 
   describe "staking_pools/3" do
     test "validators staking pools" do
-      inserted_validator = insert(:address_name, primary: true, metadata: %{is_active: true, is_validator: true})
-      insert(:address_name, primary: true, metadata: %{is_active: true, is_validator: false})
+      inserted_validator = insert(:staking_pool, is_active: true, is_validator: true)
+      insert(:staking_pool, is_active: true, is_validator: false)
 
       options = %PagingOptions{page_size: 20, page_number: 1}
 
       assert [gotten_validator] = Chain.staking_pools(:validator, options)
-      assert inserted_validator.address_hash == gotten_validator.address_hash
+      assert inserted_validator.staking_address_hash == gotten_validator.staking_address_hash
     end
 
     test "active staking pools" do
-      inserted_validator = insert(:address_name, primary: true, metadata: %{is_active: true})
-      insert(:address_name, primary: true, metadata: %{is_active: false})
+      inserted_pool = insert(:staking_pool, is_active: true)
+      insert(:staking_pool, is_active: false)
 
       options = %PagingOptions{page_size: 20, page_number: 1}
 
-      assert [gotten_validator] = Chain.staking_pools(:active, options)
-      assert inserted_validator.address_hash == gotten_validator.address_hash
+      assert [gotten_pool] = Chain.staking_pools(:active, options)
+      assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
     end
 
     test "inactive staking pools" do
-      insert(:address_name, primary: true, metadata: %{is_active: true})
-      inserted_validator = insert(:address_name, primary: true, metadata: %{is_active: false})
+      insert(:staking_pool, is_active: true)
+      inserted_pool = insert(:staking_pool, is_active: false)
 
       options = %PagingOptions{page_size: 20, page_number: 1}
 
-      assert [gotten_validator] = Chain.staking_pools(:inactive, options)
-      assert inserted_validator.address_hash == gotten_validator.address_hash
+      assert [gotten_pool] = Chain.staking_pools(:inactive, options)
+      assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
     end
   end
 
   describe "staking_pools_count/1" do
     test "validators staking pools" do
-      insert(:address_name, primary: true, metadata: %{is_active: true, is_validator: true})
-      insert(:address_name, primary: true, metadata: %{is_active: true, is_validator: false})
+      insert(:staking_pool, is_active: true, is_validator: true)
+      insert(:staking_pool, is_active: true, is_validator: false)
 
       assert Chain.staking_pools_count(:validator) == 1
     end
 
     test "active staking pools" do
-      insert(:address_name, primary: true, metadata: %{is_active: true})
-      insert(:address_name, primary: true, metadata: %{is_active: false})
+      insert(:staking_pool, is_active: true)
+      insert(:staking_pool, is_active: false)
 
       assert Chain.staking_pools_count(:active) == 1
     end
 
     test "inactive staking pools" do
-      insert(:address_name, primary: true, metadata: %{is_active: true})
-      insert(:address_name, primary: true, metadata: %{is_active: false})
+      insert(:staking_pool, is_active: true)
+      insert(:staking_pool, is_active: false)
 
       assert Chain.staking_pools_count(:inactive) == 1
     end
