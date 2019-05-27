@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreateStakingPoolsDelegators do
+defmodule Explorer.Repo.Migrations.CreateStakingPoolsDelegator do
   use Ecto.Migration
 
   def change do

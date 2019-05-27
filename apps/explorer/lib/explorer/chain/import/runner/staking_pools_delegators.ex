@@ -1,12 +1,12 @@
 defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
   @moduledoc """
-  Bulk imports staking pools to StakingPoolsDelegators tabe.
+  Bulk imports staking pools to StakingPoolsDelegator tabe.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, StakingPoolsDelegators}
+  alias Explorer.Chain.{Import, StakingPoolsDelegator}
 
   import Ecto.Query, only: [from: 2]
 
@@ -15,10 +15,10 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [StakingPoolsDelegators.t()]
+  @type imported :: [StakingPoolsDelegator.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: StakingPoolsDelegators
+  def ecto_schema_module, do: StakingPoolsDelegator
 
   @impl Import.Runner
   def option_key, do: :staking_pools_delegators
@@ -54,7 +54,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) ::
-          {:ok, [StakingPoolsDelegators.t()]}
+          {:ok, [StakingPoolsDelegator.t()]}
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
@@ -65,7 +65,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
         changes_list,
         conflict_target: [:pool_address_hash, :delegator_address_hash],
         on_conflict: on_conflict,
-        for: StakingPoolsDelegators,
+        for: StakingPoolsDelegator,
         returning: [:pool_address_hash, :delegator_address_hash],
         timeout: timeout,
         timestamps: timestamps
@@ -74,7 +74,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
 
   defp default_on_conflict do
     from(
-      name in StakingPoolsDelegators,
+      name in StakingPoolsDelegator,
       update: [
         set: [
           stake_amount: fragment("EXCLUDED.stake_amount"),

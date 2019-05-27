@@ -9,7 +9,7 @@ defmodule Explorer.Chain.StakingPool do
   alias Explorer.Chain.{
     Address,
     Hash,
-    StakingPoolsDelegators,
+    StakingPoolsDelegator,
     Wei
   }
 
@@ -54,7 +54,7 @@ defmodule Explorer.Chain.StakingPool do
     field(:was_banned_count, :integer)
     field(:was_validator_count, :integer)
     field(:is_deleted, :boolean, default: false)
-    has_many(:delegators, StakingPoolsDelegators)
+    has_many(:delegators, StakingPoolsDelegator)
 
     belongs_to(
       :staking_address,

@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.StakingPoolsDelegators do
+defmodule Explorer.Chain.StakingPoolsDelegator do
   @moduledoc """
   The representation of delegators from POSDAO network.
   Delegators make stakes on staking pools and withdraw from them.
@@ -55,8 +55,8 @@ defmodule Explorer.Chain.StakingPoolsDelegators do
   end
 
   @doc false
-  def changeset(staking_pools_delegators, attrs) do
-    staking_pools_delegators
+  def changeset(staking_pools_delegator, attrs) do
+    staking_pools_delegator
     |> cast(attrs, @attrs)
     |> validate_required(@attrs)
     |> unique_constraint(:pool_address_hash, name: :pools_delegator_index)
