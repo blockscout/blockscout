@@ -232,6 +232,11 @@ defmodule BlockScoutWeb.AddressView do
 
   def trimmed_hash(_), do: ""
 
+  def trimmed_verify_link(hash) do
+    string_hash = to_string(hash)
+    "#{String.slice(string_hash, 0..21)}..."
+  end
+
   def transaction_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
     address.contracts_creation_internal_transaction.transaction_hash
   end
@@ -252,6 +257,14 @@ defmodule BlockScoutWeb.AddressView do
     Logger.error(fn -> ["Found a contract with no creator: ", to_string(address)] end)
 
     nil
+  end
+
+  def address_link_to_other_explorer(link, address, full) do
+    if full do
+      link <> to_string(address)
+    else
+      trimmed_verify_link(link <> to_string(address))
+    end
   end
 
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
