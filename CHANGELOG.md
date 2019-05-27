@@ -1,7 +1,6 @@
 ## Current
 
 ### Features
-- [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue,
 - [#1963](https://github.com/poanetwork/blockscout/pull/1963), [#1959](https://github.com/poanetwork/blockscout/pull/1959), [#1948](https://github.com/poanetwork/blockscout/pull/1948), [#1936](https://github.com/poanetwork/blockscout/pull/1936), [#1925](https://github.com/poanetwork/blockscout/pull/1925), [#1922](https://github.com/poanetwork/blockscout/pull/1922), [#1903](https://github.com/poanetwork/blockscout/pull/1903), [#1874](https://github.com/poanetwork/blockscout/pull/1874), [#1895](https://github.com/poanetwork/blockscout/pull/1895), [#2031](https://github.com/poanetwork/blockscout/pull/2031) - added new themes and logos for poa, eth, rinkeby, goerli, ropsten, kovan, sokol, xdai, etc, rsk
 - [#2010](https://github.com/poanetwork/blockscout/pull/2010) - added "block not found" and "tx not found pages"
 - [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
@@ -21,7 +20,7 @@
 - [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
 
 ### Fixes
-
+- [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue
 - [#2019](https://github.com/poanetwork/blockscout/pull/2019) - Fixed the missing tx hashes.
 - [#2020](https://github.com/poanetwork/blockscout/pull/2020) - Fixed a bug triggered when a second click to a selected tab caused the other tabs to hide.
 - [#1944](https://github.com/poanetwork/blockscout/pull/1944) - fixed styles for token's dropdown.
