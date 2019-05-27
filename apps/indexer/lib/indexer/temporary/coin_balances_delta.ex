@@ -23,7 +23,7 @@ defmodule Indexer.Temporary.CoinBalancesDelta do
   @defaults [
     flush_interval: :timer.seconds(3),
     max_batch_size: 100,
-    max_concurrency: 4,
+    max_concurrency: 1,
     task_supervisor: Indexer.Temporary.CoinBalancesDelta.TaskSupervisor,
     metadata: [fetcher: :coin_balances_delta],
     state: nil

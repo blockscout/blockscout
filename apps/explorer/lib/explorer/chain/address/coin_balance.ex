@@ -95,7 +95,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
   end
 
   @doc """
-  Builds an `Ecto.Query` to fetch the last known coin balance value of the
+  Builds an `Ecto.Query` to fetch the last different coin balance `value` of the
   given address before the given block.
   """
   def balance_value_before(address_hash, block_number) do
@@ -105,7 +105,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
       where: cb.block_number < ^block_number,
       where: not is_nil(cb.value),
       select: cb.value,
-      order_by: [asc: :block_number],
+      order_by: [desc: :block_number],
       limit: ^1
     )
   end
@@ -114,7 +114,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
   Builds an `Ecto.Query` to fetch all the coin balances of the given address
   between the given blocks.
 
-  The result is a map with: address_hash, block_number, value, value_fetched_at
+  The results are given as a map with: address_hash, block_number, value, value_fetched_at
   """
   def balances_params_between(address_hash, lower_block_num, higher_block_num) do
     from(
@@ -128,22 +128,21 @@ defmodule Explorer.Chain.Address.CoinBalance do
   end
 
   @doc """
-  Builds an `Ecto.Query` to fetch the first coin balance of the given address
-  after the given block.
+  Builds an `Ecto.Query` to fetch the first different coin balance of the given
+  address after the given block.
 
   The result is a map with: address_hash, block_number, value, value_fetched_at
   """
   def balance_params_following(address_hash, block_number) do
-    query =
-      from(
-        cb in CoinBalance,
-        where: cb.address_hash == ^address_hash,
-        where: cb.block_number > ^block_number,
-        where: not is_nil(cb.value),
-        select: map(cb, [:address_hash, :block_number, :value, :value_fetched_at])
-      )
-
-    first(query, :block_number)
+    from(
+      cb in CoinBalance,
+      where: cb.address_hash == ^address_hash,
+      where: cb.block_number > ^block_number,
+      where: not is_nil(cb.value),
+      select: map(cb, [:address_hash, :block_number, :value, :value_fetched_at]),
+      order_by: [asc: :block_number],
+      limit: ^1
+    )
   end
 
   @doc """
