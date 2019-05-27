@@ -3,25 +3,25 @@
   <div class="verify-other-explorers">
     <h2>Verify with other Explorers:</h2>
     <div class="verify-other-explorers-row">
-      <a href="#" class="verify-other-explorers-elem">
+      <a href="<%= address_link_to_other_explorer("https://etherscan.io/address/", @address ,true) %>" class="verify-other-explorers-elem">
         <div class="exp-logo etherscan"></div>
         <div class="exp-content">
           <h3>Etherscan.io</h3>
-          <div>https://blockchair.com/ethereum/address/0x7c720f9b5bf7af340457e908555fecbd9db1f6da</div>
+          <div><%= address_link_to_other_explorer("https://etherscan.io/address/", @address ,true) %></div>
         </div>
       </a>
-      <a href="#" class="verify-other-explorers-elem">
+      <a href="<%= address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address ,true) %>" class="verify-other-explorers-elem">
         <div class="exp-logo blockchair"></div>
         <div class="exp-content">
           <h3>Blockchair.com</h3>
-          <div>https://blockchair.com/ethereum/address/0x7c720f9b5bf7af340457e908555fecbd9db1f6da</div>
+          <div><%= address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address ,true) %></div>
         </div>
       </a>
-      <a href="#" class="verify-other-explorers-elem">
+      <a href="<%= address_link_to_other_explorer("https://www.etherchain.org/account/", @address, true) %>" class="verify-other-explorers-elem">
         <div class="exp-logo etherchain"></div>
         <div class="exp-content">
           <h3>Etherchain.org</h3>
-          <div>https://blockchair.com/ethereum/address/0x7c720f9b5bf7af340457e908555fecbd9db1f6da</div>
+          <div><%= address_link_to_other_explorer("https://www.etherchain.org/account/", @address, true) %></div>
         </div>
       </a>
       <a href="#" class="verify-other-explorers-more" data-toggle="modal" data-target="#explorersModal">
@@ -52,8 +52,8 @@
               <div class="verify-other-explorers-cell">
                 <span class='link'>
                   <%= link(
-                    address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address, false),
-                    to: address_link_to_other_explorer("https://blockchair.com/ethereum/address/", @address ,true)
+                    address_link_to_other_explorer("https://etherscan.io/address/", @address, false),
+                    to: address_link_to_other_explorer("https://etherscan.io/address/", @address ,true)
                   ) %>
                 </span>
               </div>
