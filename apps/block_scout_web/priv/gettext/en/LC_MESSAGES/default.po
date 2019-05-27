@@ -452,7 +452,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:39
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:76
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:74
 msgid "IN"
 msgstr ""
 
@@ -597,7 +597,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:37
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:72
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:70
 msgid "OUT"
 msgstr ""
 
@@ -980,12 +980,12 @@ msgid "View Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:56
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:55
 msgid "View Less Transfers"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:55
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:54
 msgid "View More Transfers"
 msgstr ""
 
@@ -1107,6 +1107,7 @@ msgstr ""
 msgid "GraphQL"
 msgstr ""
 
+#, elixir-format
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:32
 msgid "Loading"
 msgstr ""
