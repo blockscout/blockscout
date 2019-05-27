@@ -50,11 +50,9 @@
         </div>
 
         <%= if Enum.any?(remaining_token_transfers) do %>
-          <div class="col-md-12 d-flex flex-column mt-1 mb-2 text-center token-tile-view-more">
-            <span class="token-tile-more-lines">
+          <div class="token-tile-view-more">
               <%= link gettext("View More Transfers"), to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-open", "data-test": "token_transfers_expansion" %>
               <%= link gettext("View Less Transfers"), class: "d-none", to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-close" %>
-            </span>
           </div>
         <% end %>
       <% end %>
