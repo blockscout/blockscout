@@ -105,7 +105,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
 
   defp default_on_conflict do
     from(
-      name in StakingPool,
+      pool in StakingPool,
       update: [
         set: [
           mining_address_hash: fragment("EXCLUDED.mining_address_hash"),
@@ -120,8 +120,8 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           was_banned_count: fragment("EXCLUDED.was_banned_count"),
           was_validator_count: fragment("EXCLUDED.was_validator_count"),
           is_deleted: fragment("EXCLUDED.is_deleted"),
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", name.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", name.updated_at)
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", pool.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", pool.updated_at)
         ]
       ]
     )
