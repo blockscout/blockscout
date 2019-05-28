@@ -1,82 +1,33 @@
 <section class="container">
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+  <section data-page="address-logs">
   <div class="card">
     <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
 
-    <div class="card-body">
-
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
       <h2 class="card-title"><%= gettext "Logs" %></h2>
 
-      <%= if @next_page_url do %>
-        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, next_page_path: @next_page_url %>
-      <% end %>
+      <input data-search-field type='text' placeholder=<%= gettext("Topic") %> id='search-text-input' />
+      <button data-search-button type="button"><%= gettext("Search") %></button>
 
-      <%= if !@next_page_url do %>
-        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true %>
-      <% end %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
-     <%= if Enum.count(@logs) > 0 do %>
-        <%= for log <- @logs do %>
-          <div data-test="transaction_log" class="tile tile-muted">
-            <dl class="row">
-              <dt class="col-md-2"> <%= gettext "Transaction" %> </dt>
-              <dd class="col-md-10">
-                <h3 class="">
-                  <%= link(
-                      log.transaction,
-                      to: transaction_path(@conn, :show, log.transaction),
-                      "data-test": "log_address_link",
-                      "data-address-hash": log.transaction
-                      ) %>
-                </h3>
-              </dd>
-              <dt class="col-md-2"><%= gettext "Topics" %></dt>
-              <dd class="col-md-10">
-                <div class="raw-transaction-log-topics">
-                  <%= unless is_nil(log.first_topic) do %>
-                    <div class="text-dark">
-                      <span class="text-dark">[0]</span>
-                      <%= log.first_topic %>
-                    </div>
-                  <% end %>
-                  <%= unless is_nil(log.second_topic) do %>
-                    <div class="text-dark">
-                      <span class="">[1] </span>
-                      <%= log.second_topic %>
-                    </div>
-                  <% end %>
-                  <%= unless is_nil(log.third_topic) do %>
-                    <div class="text-dark">
-                      <span>[2]</span>
-                      <%= log.third_topic %>
-                    </div>
-                  <% end %>
-                  <%= unless is_nil(log.fourth_topic) do %>
-                    <div class="text-dark">
-                      <span>[3]</span>
-                      <%= log.fourth_topic %>
-                    </div>
-                  <% end %>
-                </div>
-              </dd>
-              <dt class="col-md-2">
-                <%= gettext "Data" %>
-              </dt>
-              <dd class="col-md-10">
-                <%= unless is_nil(log.data) do %>
-                  <div class="text-dark raw-transaction-log-data">
-                    <%= log.data %>
-                  </div>
-                <% end %>
-              </dd>
-            </dl>
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+          <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+        </button>
+
+        <div data-empty-response-message style="display: none;">
+          <div class="tile tile-muted text-center" data-selector="empty-logs-list">
+            <%= gettext "There are no logs for this address." %>
           </div>
-        <% end %>
-    <% else %>
-      <div class="tile tile-muted text-center">
-        <span><%= gettext "There are no logs for this address." %></span>
-      </div>
-      <% end %>
+        </div>
+
+        <div data-items></div>
+
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
     </div>
+
   </div>
+  </section>
 </section>
