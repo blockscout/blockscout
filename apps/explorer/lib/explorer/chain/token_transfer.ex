@@ -175,7 +175,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.to_address_hash == ^address_hash,
-        select: tt.transaction_hash
+        select: type(tt.transaction_hash, :binary)
       )
 
     query
@@ -189,7 +189,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.from_address_hash == ^address_hash,
-        select: tt.transaction_hash
+        select: type(tt.transaction_hash, :binary)
       )
 
     query
