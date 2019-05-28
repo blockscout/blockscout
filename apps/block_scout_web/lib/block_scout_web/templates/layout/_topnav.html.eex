@@ -131,3 +131,4 @@
     </div>
   </div>
 </nav>
+<%= render BlockScoutWeb.LayoutView, "_network_selector.html" %>
