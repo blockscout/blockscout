@@ -21,6 +21,7 @@
 - [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH 
 
 ### Fixes
+- [#2043](https://github.com/poanetwork/blockscout/pull/2043) - Fixed modal dialog width for 'verify other explorers'
 - [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue
 - [#2019](https://github.com/poanetwork/blockscout/pull/2019) - Fixed the missing tx hashes.
 - [#2020](https://github.com/poanetwork/blockscout/pull/2020) - Fixed a bug triggered when a second click to a selected tab caused the other tabs to hide.
