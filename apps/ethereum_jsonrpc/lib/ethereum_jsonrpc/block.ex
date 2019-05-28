@@ -435,8 +435,13 @@ defmodule EthereumJSONRPC.Block do
   end
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice number size totalDifficulty) do
+       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice number size totalDifficulty) and not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
+  end
+
+  # Size may be `nil` for uncle blocks
+  defp entry_to_elixir({key, nil}) when key in ~w(size) do
+    {key, nil}
   end
 
   # double check that no new keys are being missed by requiring explicit match for passthrough
