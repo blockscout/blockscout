@@ -7,15 +7,25 @@ $network-selector-search-input-color: #a3a9b5 !default;
 $network-selector-tab-active-border-color: $primary !default;
 $network-selector-item-icon-dimensions: 30px !default;
 
+.network-selector-visible {
+  position: fixed;
+}
+
 .network-selector-overlay {
   background-color: rgba($network-selector-overlay-background, 0.9);
   bottom: 0;
-  display: flex;
+  display: none;
   left: 0;
   position: fixed;
   right: 0;
   top: 0;
   z-index: 123;
+}
+
+.network-selector-wrapper {
+  display: flex;
+  height: 100%;
+  width: 100%;
 }
 
 .network-selector {
@@ -26,7 +36,10 @@ $network-selector-item-icon-dimensions: 30px !default;
   flex-shrink: 1;
   margin-left: auto;
   max-width: 398px;
+  min-width: 0;
   padding: 28px 0 35px;
+  position: relative;
+  transition: right 0.25s ease-out;
 }
 
 .network-selector-close {
@@ -123,12 +136,16 @@ $network-selector-item-icon-dimensions: 30px !default;
 .network-selector-tab {
   color: #a3a9b5;
   cursor: pointer;
+  flex-shrink: 1;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.2;
-  padding: 20px 20px 15px;
+  min-width: 0;
+  padding: 20px 18px 15px;
   position: relative;
   text-align: center;
+  user-select: none;
+  white-space: nowrap;
 
   &:hover {
     color: #333;
@@ -136,6 +153,7 @@ $network-selector-item-icon-dimensions: 30px !default;
 
   &.active {
     color: #333;
+    cursor: default;
 
     &::after {
       background-color: $network-selector-tab-active-border-color;
@@ -165,7 +183,12 @@ $network-selector-item-icon-dimensions: 30px !default;
   position: relative;
 
   .radio {
+    cursor: pointer;
     margin: 0 15px 0 0;
+
+    input[type="radio"] {
+      cursor: pointer;
+    }
   }
 
   .radio-icon {
@@ -183,7 +206,13 @@ $network-selector-item-icon-dimensions: 30px !default;
   display: flex;
   flex-grow: 1;
   margin: 0;
-  padding: 20px 20px 20px 0;
+  padding: 20px 0;
+
+  &:hover {
+    .network-selector-item-type {
+      color: #333;
+    }
+  }
 }
 
 .network-selector-item-icon {
@@ -208,6 +237,7 @@ $network-selector-item-icon-dimensions: 30px !default;
   overflow: hidden;
   text-align: left;
   text-overflow: ellipsis;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -219,6 +249,7 @@ $network-selector-item-icon-dimensions: 30px !default;
   line-height: 1.2;
   padding-left: 10px;
   text-align: right;
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -254,7 +285,8 @@ $network-selector-item-icon-dimensions: 30px !default;
   flex-grow: 1;
   flex-shrink: 0;
   margin: 0;
-  max-width: 16px;
+  max-width: 36px;
+  padding-left: 20px;
   position: relative;
 
   input[type="checkbox"] {
@@ -280,4 +312,11 @@ $network-selector-item-icon-dimensions: 30px !default;
       fill: rgba(#ffb20d, 0.4);
     }
   }
+}
+
+.network-selector-tab-content-empty {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 40px;
+  text-align: center;
 }

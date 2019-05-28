@@ -1,5 +1,5 @@
 <div class="network-selector-item">
-    <label class="network-selector-item-url" network-selector-item-url="<%= @url %>">
+    <label class="network-selector-item-url js-network-selector-item-url" network-selector-item-url="<%= @url %>">
         <span class="radio">
             <input type="radio" name="networkSelectorItem" />
             <span class="radio-icon"></span>
