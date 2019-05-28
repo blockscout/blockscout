@@ -16,6 +16,9 @@ export function reducer (state, action) {
     case 'ELEMENTS_LOAD': {
         return Object.assign({}, state, _.omit(action, 'type'))
     }
+    case 'START_SEARCH': {
+        return Object.assign({}, state, {pagesStack: []})
+    }
     default:
         return state
     }
@@ -59,6 +62,9 @@ if ($('[data-page="address-logs"]').length) {
 
 
     $element.on('click', '[data-search-button]', (event) => {
+        store.dispatch({
+            type: 'START_SEARCH',
+            addressHash: addressHash})
         loadSearchItems()
     })
 }
