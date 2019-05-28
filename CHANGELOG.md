@@ -44,6 +44,7 @@
 - [#2017](https://github.com/poanetwork/blockscout/pull/2017) - fix: fix to/from filters on tx list pages
 - [#2008](https://github.com/poanetwork/blockscout/pull/2008) - add new function clause for xDai network beneficiaries
 - [#2009](https://github.com/poanetwork/blockscout/pull/2009) - addresses page improvements
+- [#2047](https://github.com/poanetwork/blockscout/pull/2047) - fix: show creating internal transactions
 
 ### Chore
 
