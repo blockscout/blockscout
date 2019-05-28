@@ -11,22 +11,24 @@ $tile-type-unique-token-image-color: $orange !default;
 $tile-type-internal-transaction-color: $teal !default;
 $tile-type-api-documentation-color: $primary !default;
 $tile-type-progress-bar-color: $primary !default;
-
+$tile-status-error-reason: #ff7986 !default;
+$tile-status-awaiting-internal-transactions: $warning !default;
 $tile-padding: 1rem;
 
 @mixin generate-tile-block($prefix, $color, $label-color: false) {
-
-  a {
-    @if ($label-color) {
-      color: $label-color;
-    }
-    @else {
-      color: $color;
-    }
-  }
-
-  &.tile-type-#{ $prefix } {
+  &#{ $prefix } {
     border-left: 4px solid $color;
+
+    .tile-transaction-type-block {
+      a {
+        @if ($label-color) {
+          color: $label-color;
+        }
+        @else {
+          color: $color;
+        }
+      }
+    }
 
     .tile-label {
       @if ($label-color) {
@@ -182,18 +184,20 @@ $tile-padding: 1rem;
   line-height: 1.4rem;
   padding: $tile-padding;
 
-  @include generate-tile-block('block', $tile-type-block-color, darken($tile-type-block-color, 20%));
-  @include generate-tile-block('uncle', $tile-type-uncle-color);
-  @include generate-tile-block('reorg', $tile-type-reorg-color);
-  @include generate-tile-block('emission-reward', $tile-type-emission-reward-color);
-  @include generate-tile-block('transaction', $tile-type-transaction-color);
-  @include generate-tile-block('contract-call', $tile-type-contract-call-color);
-  @include generate-tile-block('contract-creation', $tile-type-contract-creation-color);
-  @include generate-tile-block('token-transfer', $tile-type-token-transfer-color);
-  @include generate-tile-block('unique-token', $tile-type-unique-token-color);
-  @include generate-tile-block('unique-token-image', $tile-type-unique-token-image-color);
-  @include generate-tile-block('internal-transaction', $tile-type-internal-transaction-color);
-  @include generate-tile-block('api-documentation', $tile-type-api-documentation-color);
+  @include generate-tile-block('.tile-type-block', $tile-type-block-color, darken($tile-type-block-color, 20%));
+  @include generate-tile-block('.tile-type-uncle', $tile-type-uncle-color);
+  @include generate-tile-block('.tile-type-reorg', $tile-type-reorg-color);
+  @include generate-tile-block('.tile-type-emission-reward', $tile-type-emission-reward-color);
+  @include generate-tile-block('.tile-type-transaction', $tile-type-transaction-color);
+  @include generate-tile-block('.tile-type-contract-call', $tile-type-contract-call-color);
+  @include generate-tile-block('.tile-type-contract-creation', $tile-type-contract-creation-color);
+  @include generate-tile-block('.tile-type-token-transfer', $tile-type-token-transfer-color);
+  @include generate-tile-block('.tile-type-unique-token', $tile-type-unique-token-color);
+  @include generate-tile-block('.tile-type-unique-token-image', $tile-type-unique-token-image-color);
+  @include generate-tile-block('.tile-type-internal-transaction', $tile-type-internal-transaction-color);
+  @include generate-tile-block('.tile-type-api-documentation', $tile-type-api-documentation-color);
+  @include generate-tile-block('[class*="status--error"]', $tile-status-error-reason);
+  @include generate-tile-block('.tile-status--awaiting-internal-transactions', $tile-status-awaiting-internal-transactions);
 
   &.n-p {
     padding: 0;
@@ -254,26 +258,6 @@ $tile-padding: 1rem;
     padding: 15px;
     text-align: left;
     width: 100%;
-  }
-
-  .tile-status--error--reason {
-    border-bottom: 2px solid lighten($danger, 10%);
-    border-right: 2px solid lighten($danger, 10%);
-    border-top: 2px solid lighten($danger, 10%);
-
-    .tile-status-label {
-      color: $danger;
-    }
-  }
-
-  .tile-status--awaiting-internal-transactions {
-    border-bottom: 2px solid lighten($warning, 10%);
-    border-right: 2px solid lighten($warning, 10%);
-    border-top: 2px solid lighten($warning, 10%);
-
-    .tile-status-label {
-      color: $warning;
-    }
   }
 
   /* Progress bar */
