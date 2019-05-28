@@ -20,7 +20,7 @@
 - [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
 
 ### Fixes
-
+- [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue
 - [#2019](https://github.com/poanetwork/blockscout/pull/2019) - Fixed the missing tx hashes.
 - [#2020](https://github.com/poanetwork/blockscout/pull/2020) - Fixed a bug triggered when a second click to a selected tab caused the other tabs to hide.
 - [#1944](https://github.com/poanetwork/blockscout/pull/1944) - fixed styles for token's dropdown.
@@ -49,6 +49,7 @@
 - [#1975](https://github.com/poanetwork/blockscout/pull/1975) - add log index to transaction view
 - [#1988](https://github.com/poanetwork/blockscout/pull/1988) - Fix wrong parity tasks names in Circle CI
 - [#2000](https://github.com/poanetwork/blockscout/pull/2000) - docker/Makefile: always set a container name
+- [#2018](https://github.com/poanetwork/blockscout/pull/2018) - Use PORT env variable in dev config
 
 ## 1.3.14-beta
 
