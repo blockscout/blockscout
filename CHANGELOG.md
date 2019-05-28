@@ -22,7 +22,7 @@
 - [#1890](https://github.com/poanetwork/blockscout/pull/1890) - Verification links to other explorers for ETH 
 
 ### Fixes
-
+- [#2043](https://github.com/poanetwork/blockscout/pull/2043) - Fixed modal dialog width for 'verify other explorers'
 - [#1944](https://github.com/poanetwork/blockscout/pull/1944) - fixed styles for token's dropdown.
 - [#1926](https://github.com/poanetwork/blockscout/pull/1926) - status label alignment
 - [#1849](https://github.com/poanetwork/blockscout/pull/1849) - Improve chains menu
