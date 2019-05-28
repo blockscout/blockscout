@@ -123,9 +123,9 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/errors";
 
 :export {
-  primary: $primary;
-  secondary: $secondary;
+  dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;
   dashboardLineColorMarket: $dashboard-line-color-market;
   dashboardLineColorPrice: $dashboard-line-color-price;
-  dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;
+  primary: $primary;
+  secondary: $secondary;
 }
