@@ -20,6 +20,7 @@
 - [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
 
 ### Fixes
+- [#2025](https://github.com/poanetwork/blockscout/pull/2025) - Added a new color to display transactions' errors.
 - [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue
 - [#2019](https://github.com/poanetwork/blockscout/pull/2019) - Fixed the missing tx hashes.
 - [#2020](https://github.com/poanetwork/blockscout/pull/2020) - Fixed a bug triggered when a second click to a selected tab caused the other tabs to hide.
@@ -38,6 +39,7 @@
 - [#1960](https://github.com/poanetwork/blockscout/pull/1960) - do not remove bold text in decompiled contacts
 - [#1992](https://github.com/poanetwork/blockscout/pull/1992) - fix: support https for wobserver polling
 - [#1966](https://github.com/poanetwork/blockscout/pull/1966) - fix: add fields for contract filter performance
+- [#2017](https://github.com/poanetwork/blockscout/pull/2017) - fix: fix to/from filters on tx list pages
 - [#2008](https://github.com/poanetwork/blockscout/pull/2008) - add new function clause for xDai network beneficiaries
 - [#2009](https://github.com/poanetwork/blockscout/pull/2009) - addresses page improvements
 
