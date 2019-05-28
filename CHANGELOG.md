@@ -48,6 +48,7 @@
 - [#2017](https://github.com/poanetwork/blockscout/pull/2017) - fix: fix to/from filters on tx list pages
 - [#2014](https://github.com/poanetwork/blockscout/pull/2014) - fix: use better queries for listLogs endpoint
 - [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
+- [#2047](https://github.com/poanetwork/blockscout/pull/2047) - fix: show creating internal transactions
 
 ### Chore
 
