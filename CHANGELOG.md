@@ -18,8 +18,10 @@
 - [#1999](https://github.com/poanetwork/blockscout/pull/1999) - load data async on addresses page
 - [#2002](https://github.com/poanetwork/blockscout/pull/2002) - Get estimated count of blocks when cache is empty
 - [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
+- [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH 
 
 ### Fixes
+- [#2043](https://github.com/poanetwork/blockscout/pull/2043) - Fixed modal dialog width for 'verify other explorers'
 - [#2025](https://github.com/poanetwork/blockscout/pull/2025) - Added a new color to display transactions' errors.
 - [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue
 - [#2019](https://github.com/poanetwork/blockscout/pull/2019) - Fixed the missing tx hashes.
