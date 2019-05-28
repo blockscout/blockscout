@@ -7,7 +7,8 @@ import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
 
 export const initialState = {
-    addressHash: null
+    addressHash: null,
+    isSearch: false
 }
 
 export function reducer (state, action) {
@@ -17,7 +18,7 @@ export function reducer (state, action) {
         return Object.assign({}, state, _.omit(action, 'type'))
     }
     case 'START_SEARCH': {
-        return Object.assign({}, state, {pagesStack: []})
+        return Object.assign({}, state, {pagesStack: [], isSearch: true})
     }
     default:
         return state
@@ -34,11 +35,19 @@ const elements = {
         render ($el, state) {
             $el
         }
+    },
+    '[data-cancel-search-button]' : {
+        render ($el, state) {
+            if (!state.isSearch) {
+                return $el.hide()
+            }
+
+            return $el.show()
+        }
     }
 }
 
 if ($('[data-page="address-logs"]').length) {
-    console.log('iffff')
     const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
     const addressHash = $('[data-page="address-details"]')[0].dataset.pageAddressHash
     const $element = $('[data-async-listing]')
@@ -66,5 +75,10 @@ if ($('[data-page="address-logs"]').length) {
             type: 'START_SEARCH',
             addressHash: addressHash})
         loadSearchItems()
+    })
+
+    $element.on('click', '[data-cancel-search-button]', (event) => {
+        console.log('click')
+        window.location.replace(window.location.href.split('?')[0])
     })
 }

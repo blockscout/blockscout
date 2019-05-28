@@ -9,6 +9,7 @@
 
       <input data-search-field type='text' placeholder=<%= gettext("Topic") %> id='search-text-input' />
       <button data-search-button type="button"><%= gettext("Search") %></button>
+      <button data-cancel-search-button type="button"><%= gettext("Cancel Search") %></button>
 
       <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
