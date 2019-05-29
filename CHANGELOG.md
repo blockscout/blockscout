@@ -18,9 +18,12 @@
 - [#1999](https://github.com/poanetwork/blockscout/pull/1999) - load data async on addresses page
 - [#2002](https://github.com/poanetwork/blockscout/pull/2002) - Get estimated count of blocks when cache is empty
 - [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
-- [#1890](https://github.com/poanetwork/blockscout/pull/1890) - Verification links to other explorers for ETH 
+- [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH
+- [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
 
 ### Fixes
+- [#2043](https://github.com/poanetwork/blockscout/pull/2043) - Fixed modal dialog width for 'verify other explorers'
+- [#2025](https://github.com/poanetwork/blockscout/pull/2025) - Added a new color to display transactions' errors.
 - [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue
 - [#2019](https://github.com/poanetwork/blockscout/pull/2019) - Fixed the missing tx hashes.
 - [#2020](https://github.com/poanetwork/blockscout/pull/2020) - Fixed a bug triggered when a second click to a selected tab caused the other tabs to hide.
@@ -39,6 +42,7 @@
 - [#1960](https://github.com/poanetwork/blockscout/pull/1960) - do not remove bold text in decompiled contacts
 - [#1992](https://github.com/poanetwork/blockscout/pull/1992) - fix: support https for wobserver polling
 - [#1966](https://github.com/poanetwork/blockscout/pull/1966) - fix: add fields for contract filter performance
+- [#2017](https://github.com/poanetwork/blockscout/pull/2017) - fix: fix to/from filters on tx list pages
 - [#2008](https://github.com/poanetwork/blockscout/pull/2008) - add new function clause for xDai network beneficiaries
 - [#2009](https://github.com/poanetwork/blockscout/pull/2009) - addresses page improvements
 - [#2017](https://github.com/poanetwork/blockscout/pull/2017) - fix: fix to/from filters on tx list pages
@@ -54,6 +58,7 @@
 - [#1988](https://github.com/poanetwork/blockscout/pull/1988) - Fix wrong parity tasks names in Circle CI
 - [#2000](https://github.com/poanetwork/blockscout/pull/2000) - docker/Makefile: always set a container name
 - [#2018](https://github.com/poanetwork/blockscout/pull/2018) - Use PORT env variable in dev config
+- [#2055](https://github.com/poanetwork/blockscout/pull/2055) - Increase timeout for geth indexers
 
 ## 1.3.14-beta
 
