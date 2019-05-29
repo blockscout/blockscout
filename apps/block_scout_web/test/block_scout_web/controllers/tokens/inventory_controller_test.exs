@@ -62,13 +62,20 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
 
       conn =
         get(conn, token_inventory_path(conn, :index, token.contract_address_hash), %{
-          "token_id" => "999"
+          "token_id" => "999",
+          "type" => "JSON"
         })
 
-      assert Enum.map(conn.assigns.unique_tokens, & &1.token_id) == Enum.map(second_page_token_balances, & &1.token_id)
+      conn = get(conn, token_inventory_path(conn, :index, token.contract_address_hash), %{type: "JSON"})
+
+      {:ok, %{"items" => items}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      assert Enum.count(items) == Enum.count(second_page_token_balances)
     end
 
-    test "next_page_params exists if not on last page", %{conn: conn} do
+    test "next_page_path exists if not on last page", %{conn: conn} do
       token = insert(:token, type: "ERC-721")
 
       transaction =
@@ -87,17 +94,16 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
         )
       )
 
-      expected_next_page_params = %{
-        "token_id" => to_string(token.contract_address_hash),
-        "unique_token" => 1050
-      }
+      conn = get(conn, token_inventory_path(conn, :index, token.contract_address_hash), %{type: "JSON"})
 
-      conn = get(conn, token_inventory_path(conn, :index, token.contract_address_hash))
+      {:ok, %{"next_page_path" => next_page_path}} =
+        conn.resp_body
+        |> Poison.decode()
 
-      assert conn.assigns.next_page_params == expected_next_page_params
+      assert next_page_path
     end
 
-    test "next_page_params are empty if on last page", %{conn: conn} do
+    test "next_page_path is empty if on last page", %{conn: conn} do
       token = insert(:token, type: "ERC-721")
 
       transaction =
@@ -113,9 +119,13 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
         token_id: 1000
       )
 
-      conn = get(conn, token_inventory_path(conn, :index, token.contract_address_hash))
+      conn = get(conn, token_inventory_path(conn, :index, token.contract_address_hash), %{type: "JSON"})
 
-      refute conn.assigns.next_page_params
+      {:ok, %{"next_page_path" => next_page_path}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      refute next_page_path
     end
   end
 end
