@@ -54,6 +54,7 @@
 - [#1988](https://github.com/poanetwork/blockscout/pull/1988) - Fix wrong parity tasks names in Circle CI
 - [#2000](https://github.com/poanetwork/blockscout/pull/2000) - docker/Makefile: always set a container name
 - [#2018](https://github.com/poanetwork/blockscout/pull/2018) - Use PORT env variable in dev config
+- [#2055](https://github.com/poanetwork/blockscout/pull/2055) - Increase timeout for geth indexers
 
 ## 1.3.14-beta
 
