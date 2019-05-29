@@ -13,15 +13,15 @@ export const initialState = {
 
 export function reducer (state, action) {
   switch (action.type) {
-  case 'PAGE_LOAD':
-  case 'ELEMENTS_LOAD': {
-    return Object.assign({}, state, _.omit(action, 'type'))
-  }
-  case 'START_SEARCH': {
-    return Object.assign({}, state, {pagesStack: [], isSearch: true})
-  }
-  default:
-    return state
+    case 'PAGE_LOAD':
+    case 'ELEMENTS_LOAD': {
+      return Object.assign({}, state, _.omit(action, 'type'))
+    }
+    case 'START_SEARCH': {
+      return Object.assign({}, state, {pagesStack: [], isSearch: true})
+    }
+    default:
+      return state
   }
 }
 

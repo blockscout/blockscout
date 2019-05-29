@@ -280,7 +280,7 @@ defmodule Explorer.Chain do
     |> Enum.take(paging_options.page_size)
   end
 
-  @spec address_to_logs(Address.t(), [Keyword.t()]) :: [
+  @spec address_to_logs(Address.t(), Keyword.t()) :: [
           Log.t()
         ]
   def address_to_logs(
@@ -291,7 +291,6 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
     {block_number, transaction_index, log_index} = paging_options.key || {BlockNumberCache.max_number(), 0, 0}
-    topic = Keyword.get(options, :topic)
 
     base_query =
       from(log in Log,
@@ -308,21 +307,21 @@ defmodule Explorer.Chain do
         select: log
       )
 
-    query =
-      if topic do
-        from(log in base_query,
-          where:
-            log.first_topic == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
-              log.fourth_topic == ^topic
-        )
-      else
-        base_query
-      end
-
-    query
+    base_query
+    |> filter_topic(options)
     |> Repo.all()
     |> Enum.take(paging_options.page_size)
   end
+
+  defp filter_topic(base_query, topic: topic) do
+    from(log in base_query,
+      where:
+        log.first_topic == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
+          log.fourth_topic == ^topic
+    )
+  end
+
+  defp filter_topic(base_query, _), do: base_query
 
   @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0`s given the address_hash and the token contract
