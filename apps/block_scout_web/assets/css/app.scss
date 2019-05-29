@@ -123,6 +123,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/verify_other_explorers";
 @import "components/errors";
 @import "components/new_smart_contract";
+@import "components/radio_big";
 
 :export {
   dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;

@@ -54,13 +54,17 @@
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, "Optimization" %>
             <div class="center-column">
-              <div class="form-check mb-2">
-                <%= radio_button f, :optimization, false, checked: true, class: "form-check-input", "aria-describedby": "optimization-help-block" %>
-                <%= label :smart_contract_optimization, :false, gettext("No"), class: "form-check-label" %>
-              </div>
-              <div class="form-check">
-                <%= radio_button f, :optimization, true, class: "form-check-input", "aria-describedby": "optimization-help-block" %>
-                <%= label :smart_contract_optimization, :true, gettext("Yes"), class: "form-check-label" %>
+              <div class="form-radios-group">
+                <div class="radio-big">
+                  <%= radio_button f, :optimization, false, checked: true, class: "form-check-input" %>
+                  <div class="radio-icon"></div>
+                  <%= label :smart_contract_optimization, :false, gettext("No"), class: "radio-text" %>
+                </div>
+                <div class="radio-big">
+                  <%= radio_button f, :optimization, true, class: "form-check-input", "aria-describedby": "optimization-help-block" %>
+                  <div class="radio-icon"></div>
+                  <%= label :smart_contract_optimization, :true, gettext("Yes"), class: "radio-text" %>
+                </div>
               </div>
               <%= error_tag f, :optimization, id: "optimization-help-block", class: "text-danger form-error" %>
             </div>
