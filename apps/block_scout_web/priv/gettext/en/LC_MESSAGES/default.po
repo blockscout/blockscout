@@ -190,6 +190,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:32
 #: lib/block_scout_web/templates/address/overview.html.eex:95
 #: lib/block_scout_web/templates/address_validation/index.html.eex:13
+
 #: lib/block_scout_web/views/address_view.ex:313
 msgid "Blocks Validated"
 msgstr "Blocks Mined"
