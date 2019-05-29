@@ -1,5 +1,25 @@
 ## Current
 
+### Features
+
+### Fixes
+
+### Chore
+
+## 1.3.15-beta
+
+### Features
+
+- [#1989](https://github.com/poanetwork/blockscout/pull/1989) - fix: consolidate address w/ balance one at a time
+- [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir
+- [#2002](https://github.com/poanetwork/blockscout/pull/2002) - Get estimated count of blocks when cache is empty
+
+### Fixes
+
+- [#1992](https://github.com/poanetwork/blockscout/pull/1992) - fix: support https for wobserver polling
+- [#1869](https://github.com/poanetwork/blockscout/pull/1869) - Fix output and gas extraction in JS tracer for Geth
+- [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
+
 ## 1.3.14-beta
 
 ### Features
