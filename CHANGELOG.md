@@ -22,6 +22,7 @@
 - [#2037](https://github.com/poanetwork/blockscout/pull/2037) - add address logs search functionality
 - [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
 - [#1991](https://github.com/poanetwork/blockscout/pull/1991) - Make CoinBalance's delta a non-virtual field
+- [#2064](https://github.com/poanetwork/blockscout/pull/2064) - feat: add fields to tx apis, small cleanups
 
 ### Fixes
 - [#2056](https://github.com/poanetwork/blockscout/pull/2056) - log search form styles added
