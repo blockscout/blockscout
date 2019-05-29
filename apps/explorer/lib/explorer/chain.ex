@@ -280,7 +280,7 @@ defmodule Explorer.Chain do
     |> Enum.take(paging_options.page_size)
   end
 
-  @spec address_to_logs(Address.t(), [paging_options]) :: [
+  @spec address_to_logs(Address.t(), [Keyword.t()]) :: [
           Log.t()
         ]
   def address_to_logs(
