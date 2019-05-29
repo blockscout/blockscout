@@ -674,7 +674,7 @@ msgid "Responses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/index.html.eex:11
+#: lib/block_scout_web/templates/address_logs/index.html.eex:13
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:111
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:128
 msgid "Search"
@@ -1218,7 +1218,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_coin_balance/index.html.eex:34
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:61
-#: lib/block_scout_web/templates/address_logs/index.html.eex:17
+#: lib/block_scout_web/templates/address_logs/index.html.eex:20
 #: lib/block_scout_web/templates/address_token/index.html.eex:13
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:20
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:57
@@ -1683,7 +1683,7 @@ msgid "Displaying the init data provided of the creating transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/index.html.eex:22
+#: lib/block_scout_web/templates/address_logs/index.html.eex:25
 msgid "There are no logs for this address."
 msgstr ""
 
@@ -1723,11 +1723,6 @@ msgid "There are no token transfers for this transaction"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/index.html.eex:12
-msgid "Cancel Search"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_logs/index.html.eex:10
+#: lib/block_scout_web/templates/address_logs/index.html.eex:11
 msgid "Topic"
 msgstr ""
