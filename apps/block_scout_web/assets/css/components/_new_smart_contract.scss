@@ -1,6 +1,7 @@
 $new-smart-contract-container-tooltips-background-color: #fbfafc !default;
 $new-smart-contract-tooltips-width: 300px;
 $smart-contract-form-group-tooltip-color: #adb5bd !default;
+$new-smart-contract-center-column-margin-right: 30px;
 
 .new-smart-contract-container {
   background-color: #fff;
@@ -66,7 +67,7 @@ $smart-contract-form-group-tooltip-color: #adb5bd !default;
 
   .center-column {
     flex-grow: 1;
-    margin-right: 30px;
+    margin-right: $new-smart-contract-center-column-margin-right;
   }
 
   .form-control {
@@ -110,4 +111,32 @@ $smart-contract-form-group-tooltip-color: #adb5bd !default;
   background: rgba(0, 0, 0, 0.08);
   border-radius: 2px;
   padding: 0 5px;
+}
+
+
+.add-contract-libraries-wrapper {
+  border-bottom: 1px solid $base-border-color;
+  margin-right: $new-smart-contract-center-column-margin-right + $new-smart-contract-tooltips-width;
+  padding-bottom: 30px;
+}
+
+.smart-contract-form-buttons {
+  border-top: 1px solid $base-border-color;
+  margin-right: $new-smart-contract-center-column-margin-right + $new-smart-contract-tooltips-width;
+  margin-top: -1px;
+  padding-top: 30px;
+}
+
+.smart-contract-libraries-wrapper {
+  display: none;
+  padding-bottom: 30px;
+  padding-top: 30px;
+}
+
+.contract-library-form-group {
+  display: none;
+
+  &.active {
+    display: block;
+  }
 }
