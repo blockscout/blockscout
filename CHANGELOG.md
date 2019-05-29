@@ -18,7 +18,7 @@
 - [#1999](https://github.com/poanetwork/blockscout/pull/1999) - load data async on addresses page
 - [#2002](https://github.com/poanetwork/blockscout/pull/2002) - Get estimated count of blocks when cache is empty
 - [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
-- [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH 
+- [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH
 
 ### Fixes
 - [#2043](https://github.com/poanetwork/blockscout/pull/2043) - Fixed modal dialog width for 'verify other explorers'
@@ -44,6 +44,7 @@
 - [#2017](https://github.com/poanetwork/blockscout/pull/2017) - fix: fix to/from filters on tx list pages
 - [#2008](https://github.com/poanetwork/blockscout/pull/2008) - add new function clause for xDai network beneficiaries
 - [#2009](https://github.com/poanetwork/blockscout/pull/2009) - addresses page improvements
+- [#2052](https://github.com/poanetwork/blockscout/pull/2052) - allow bytes32 for name and symbol
 
 ### Chore
 
