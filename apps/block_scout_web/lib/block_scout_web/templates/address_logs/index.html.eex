@@ -6,12 +6,16 @@
 
     <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
       <h2 class="card-title"><%= gettext "Logs" %></h2>
+      <div class="logs-topbar">
+        
+        <div class="logs-search">
+          <input data-search-field class="logs-search-input" type='text' placeholder=<%= gettext("Topic") %> id='search-text-input' />
+          <button data-cancel-search-button class="logs-search-btn-cancel" type="button">x</button>
+          <button data-search-button class="logs-search-btn" type="button"><%= gettext("Search") %></button>
+        </div>
 
-      <input data-search-field type='text' placeholder=<%= gettext("Topic") %> id='search-text-input' />
-      <button data-search-button type="button"><%= gettext("Search") %></button>
-      <button data-cancel-search-button type="button"><%= gettext("Cancel Search") %></button>
-
-      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      </div>
 
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
