@@ -93,6 +93,50 @@ defmodule Explorer.ChainTest do
 
       assert Enum.count(Chain.address_to_logs(address, paging_options: paging_options2)) == 50
     end
+
+    test "searches logs by topic when the first topic matches" do
+      address = insert(:address)
+
+      transaction1 =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction1, index: 1, address: address)
+
+      transaction2 =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction2, index: 2, address: address, first_topic: "test")
+
+      [found_log] = Chain.address_to_logs(address, topic: "test")
+
+      assert found_log.transaction.hash == transaction2.hash
+    end
+
+    test "searches logs by topic when the fourth topic matches" do
+      address = insert(:address)
+
+      transaction1 =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction1, index: 1, address: address, fourth_topic: "test")
+
+      transaction2 =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction2, index: 2, address: address)
+
+      [found_log] = Chain.address_to_logs(address, topic: "test")
+
+      assert found_log.transaction.hash == transaction1.hash
+    end
   end
 
   describe "address_to_transactions_with_rewards/2" do

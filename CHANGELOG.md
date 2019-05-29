@@ -19,10 +19,12 @@
 - [#2002](https://github.com/poanetwork/blockscout/pull/2002) - Get estimated count of blocks when cache is empty
 - [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
 - [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH
+- [#2037](https://github.com/poanetwork/blockscout/pull/2037) - add address logs search functionality
 - [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
 - [#1991](https://github.com/poanetwork/blockscout/pull/1991) - Make CoinBalance's delta a non-virtual field
 
 ### Fixes
+- [#2056](https://github.com/poanetwork/blockscout/pull/2056) - log search form styles added
 - [#2043](https://github.com/poanetwork/blockscout/pull/2043) - Fixed modal dialog width for 'verify other explorers'
 - [#2025](https://github.com/poanetwork/blockscout/pull/2025) - Added a new color to display transactions' errors.
 - [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue
