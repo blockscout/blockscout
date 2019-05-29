@@ -70,7 +70,6 @@ if ($('[data-page="address-logs"]').length) {
   })
 
   $element.on('click', '[data-cancel-search-button]', (event) => {
-    console.log('click')
     window.location.replace(window.location.href.split('?')[0])
   })
 }
