@@ -1,7 +1,6 @@
 import $ from 'jquery'
 import _ from 'lodash'
 import humps from 'humps'
-import { subscribeChannel } from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
 
