@@ -47,16 +47,6 @@ const elements = {
   }
 }
 
-function loadSearchItems () {
-  var topic = $('[data-search-field]').val();
-  var path = "/search_logs?topic=" + topic + "&address_id=" + store.getState().addressHash
-  store.dispatch({type: 'START_REQUEST'})
-  $.getJSON(path, {type: 'JSON'})
-    .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
-    .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-    .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
-}
-
 if ($('[data-page="address-logs"]').length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
   const addressHash = $('[data-page="address-details"]')[0].dataset.pageAddressHash
@@ -72,7 +62,13 @@ if ($('[data-page="address-logs"]').length) {
     store.dispatch({
       type: 'START_SEARCH',
       addressHash: addressHash})
-    loadSearchItems()
+    var topic = $('[data-search-field]').val();
+    var path = "/search_logs?topic=" + topic + "&address_id=" + store.getState().addressHash
+    store.dispatch({type: 'START_REQUEST'})
+    $.getJSON(path, {type: 'JSON'})
+      .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
+      .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
+      .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
   })
 
   $element.on('click', '[data-cancel-search-button]', (event) => {
