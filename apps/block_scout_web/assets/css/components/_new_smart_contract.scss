@@ -35,11 +35,24 @@ $smart-contract-form-group-tooltip-color: #adb5bd !default;
   margin-bottom: 30px;
 }
 
+.form-radios-group {
+  display: flex;
+  justify-content: flex-start;
+
+  .radio-big {
+    margin-right: 20px;
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+}
+
 .smart-contract-form-group-inner-wrapper {
   display: flex;
   justify-content: space-between;
 
-  label {
+  > label {
     color: #333;
     flex-grow: 0;
     font-size: 14px;
