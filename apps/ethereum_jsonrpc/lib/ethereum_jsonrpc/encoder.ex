@@ -42,7 +42,8 @@ defmodule EthereumJSONRPC.Encoder do
   end
 
   def decode_result(result, selectors) when is_list(selectors) do
-    Enum.map(selectors, fn selector ->
+    selectors
+    |> Enum.map(fn selector ->
       try do
         decode_result(result, selector)
       rescue
