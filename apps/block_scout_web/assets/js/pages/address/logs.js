@@ -26,17 +26,17 @@ export function reducer (state, action) {
 }
 
 const elements = {
-  '[data-search-field]' : {
+  '[data-search-field]': {
     render ($el, state) {
       $el
     }
   },
-  '[data-search-button]' : {
+  '[data-search-button]': {
     render ($el, state) {
       $el
     }
   },
-  '[data-cancel-search-button]' : {
+  '[data-cancel-search-button]': {
     render ($el, state) {
       if (!state.isSearch) {
         return $el.hide()
