@@ -266,7 +266,7 @@ defmodule Explorer.Chain do
 
     queries
     |> Stream.flat_map(&Repo.all/1)
-    |> Stream.uniq()
+    |> Stream.uniq_by(& &1.hash)
     |> Stream.concat(rewards_list)
     |> Enum.sort_by(fn item ->
       case item do

@@ -46,6 +46,7 @@
 - [#2008](https://github.com/poanetwork/blockscout/pull/2008) - add new function clause for xDai network beneficiaries
 - [#2009](https://github.com/poanetwork/blockscout/pull/2009) - addresses page improvements
 - [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
+- [#2062](https://github.com/poanetwork/blockscout/pull/2062) - fix: uniq by hash, instead of transaction
 
 ### Chore
 
