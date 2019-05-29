@@ -28,10 +28,11 @@ defmodule EthereumJSONRPC.Contract do
 
   @spec execute_contract_functions([call()], [map()], EthereumJSONRPC.json_rpc_named_arguments()) :: [call_result()]
   def execute_contract_functions(requests, abi, json_rpc_named_arguments) do
-    functions =
+    parsed_abi =
       abi
       |> ABI.parse_specification()
-      |> Enum.into(%{}, &{&1.function, &1})
+
+    functions = Enum.into(parsed_abi, %{}, &{&1.function, &1})
 
     requests_with_index = Enum.with_index(requests)
 
@@ -58,7 +59,8 @@ defmodule EthereumJSONRPC.Contract do
           {:error, "No result"}
 
         response ->
-          {^index, result} = Encoder.decode_result(response, functions[function_name])
+          selectors = Enum.filter(parsed_abi, fn p_abi -> p_abi.function == function_name end)
+          {^index, result} = Encoder.decode_result(response, selectors)
           result
       end
     end)
