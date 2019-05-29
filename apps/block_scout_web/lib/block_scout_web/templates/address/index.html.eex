@@ -1,11 +1,26 @@
 <section class="container">
   <div class="card">
     <div class="card-body">
-      <h1><%= gettext "Addresses" %></h1>
-      <p>
-        <%= gettext "Showing 250 addresses of" %>
+      <%= if @next_page_path do %>
+        <a href="<%= "#{@next_page_path}" %>" class="button button-secondary button-small float-right ml-1">
+          <%= gettext("Next") %>
+        </a>
+      <% end %>
+      <%= if @prev_page_path do %>
+        <a href="<%= "#{@prev_page_path}" %>" class="button button-secondary button-small float-right">
+          <%= gettext("Back") %>
+        </a>
+      <% end %>
+
+      <h1 class="card-title margin-bottom-0"><%= gettext "Addresses" %></h1>
+      <p class="card-subtitle">
+        <%= gettext "Showing " %>
+        <%= Cldr.Number.to_string!(@page_address_count, format: "#,###") %>
+        <%= gettext " addresses of" %>
         <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
         <%= gettext "total addresses with a balance" %>
+        <%= gettext " (page" %>
+        <%= Cldr.Number.to_string!(@cur_page_number, format: "#,###)") %>
       </p>
 
       <span data-selector="top-addresses-list">
@@ -14,6 +29,17 @@
             address: address, index: index, exchange_rate: @exchange_rate,
             total_supply: @total_supply, tx_count: tx_count,
             validation_count: validation_count(address) %>
+        <% end %>
+        <br>
+        <%= if @next_page_path do %>
+          <a href="<%= "#{@next_page_path}" %>" class="button button-secondary button-small float-right mt-0 mb-0 ml-1">
+            <%= gettext("Next") %>
+          </a>
+        <% end %>
+        <%= if @prev_page_path do %>
+          <a href="<%= "#{@prev_page_path}" %>" class="button button-secondary button-small float-right mt-0 mb-0">
+            <%= gettext("Back") %>
+          </a>
         <% end %>
       </span>
     </div>
