@@ -703,25 +703,32 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.hash_to_address(hash)
       {:error, :not_found}
 
+  Optionally accepts:
+    - a list of bindings to preload, just like `Ecto.Query.preload/3`
+    - a boolean to also fetch the `has_decompiled_code?` virtual field or not
+
   """
-  @spec hash_to_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
-  def hash_to_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
-    query =
-      from(
-        address in Address,
-        preload: [
+  @spec hash_to_address(Hash.Address.t(), [Macro.t()], boolean()) :: {:ok, Address.t()} | {:error, :not_found}
+  def hash_to_address(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
+        preloads \\ [
           :contracts_creation_internal_transaction,
           :names,
           :smart_contract,
           :token,
           :contracts_creation_transaction
         ],
+        query_decompiled_code_flag \\ true
+      ) do
+    query =
+      from(
+        address in Address,
+        preload: ^preloads,
         where: address.hash == ^hash
       )
 
-    query_with_decompiled_flag = with_decompiled_code_flag(query, hash)
-
-    query_with_decompiled_flag
+    query
+    |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -3081,7 +3088,11 @@ defmodule Explorer.Chain do
 
   defp staking_pool_filter(query, _), do: query
 
-  defp with_decompiled_code_flag(query, hash) do
+  defp with_decompiled_code_flag(query, hash, use_option \\ true)
+
+  defp with_decompiled_code_flag(query, _hash, false), do: query
+
+  defp with_decompiled_code_flag(query, hash, true) do
     has_decompiled_code_query =
       from(decompiled_contract in DecompiledSmartContract,
         where: decompiled_contract.address_hash == ^hash,
