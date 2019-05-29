@@ -35,10 +35,26 @@ defmodule EthereumJSONRPC.Encoder do
   @doc """
   Given a result from the blockchain, and the function selector, returns the result decoded.
   """
-  @spec decode_result(map(), %ABI.FunctionSelector{}) ::
+  @spec decode_result(map(), %ABI.FunctionSelector{} | [%ABI.FunctionSelector{}]) ::
           {String.t(), {:ok, any()} | {:error, String.t() | :invalid_data}}
   def decode_result(%{error: %{code: code, message: message}, id: id}, _selector) do
     {id, {:error, "(#{code}) #{message}"}}
+  end
+
+  def decode_result(result, selectors) when is_list(selectors) do
+    Enum.map(selectors, fn selector ->
+      try do
+        decode_result(result, selector)
+      rescue
+        _ -> :error
+      end
+    end)
+    |> Enum.find(fn decode ->
+      case decode do
+        {_id, {:ok, _}} -> true
+        _ -> false
+      end
+    end)
   end
 
   def decode_result(%{id: id, result: result}, function_selector) do
