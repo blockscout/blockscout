@@ -121,10 +121,26 @@ $new-smart-contract-center-column-margin-right: 30px;
 }
 
 .smart-contract-form-buttons {
+  align-items: center;
   border-top: 1px solid $base-border-color;
+  display: flex;
   margin-right: $new-smart-contract-center-column-margin-right + $new-smart-contract-tooltips-width;
   margin-top: -1px;
   padding-top: 30px;
+  position: relative;
+
+  [class*="btn-"] {
+    position: relative;
+    z-index: 1;
+  }
+
+  .position-absolute {
+    &,
+    &:hover {
+      opacity: 1;
+      z-index: 12;
+    }
+  }
 }
 
 .smart-contract-libraries-wrapper {
