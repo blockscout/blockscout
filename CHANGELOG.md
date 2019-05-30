@@ -12,6 +12,7 @@
 - [#1956](https://github.com/poanetwork/blockscout/pull/1956) - add logs tab to address
 - [#1952](https://github.com/poanetwork/blockscout/pull/1952) - feat: exclude empty contracts by default
 - [#1954](https://github.com/poanetwork/blockscout/pull/1954) - feat: use creation init on self destruct
+- [#2036](https://github.com/poanetwork/blockscout/pull/2036) - New tables for staking pools and delegators
 - [#1974](https://github.com/poanetwork/blockscout/pull/1974) - feat: previous page button logic
 - [#1999](https://github.com/poanetwork/blockscout/pull/1999) - load data async on addresses page
 - [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
