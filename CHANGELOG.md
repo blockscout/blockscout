@@ -22,6 +22,7 @@
 - [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
 
 ### Fixes
+- [#2072](https://github.com/poanetwork/blockscout/pull/2072) - Fixed checkmarks not showing correctly in tabs.
 - [#2043](https://github.com/poanetwork/blockscout/pull/2043) - Fixed modal dialog width for 'verify other explorers'
 - [#2025](https://github.com/poanetwork/blockscout/pull/2025) - Added a new color to display transactions' errors.
 - [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue
