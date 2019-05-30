@@ -44,6 +44,8 @@
 - [#2017](https://github.com/poanetwork/blockscout/pull/2017) - fix: fix to/from filters on tx list pages
 - [#2008](https://github.com/poanetwork/blockscout/pull/2008) - add new function clause for xDai network beneficiaries
 - [#2009](https://github.com/poanetwork/blockscout/pull/2009) - addresses page improvements
+- [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
+- [#2062](https://github.com/poanetwork/blockscout/pull/2062) - fix: uniq by hash, instead of transaction
 - [#2052](https://github.com/poanetwork/blockscout/pull/2052) - allow bytes32 for name and symbol
 - [#2047](https://github.com/poanetwork/blockscout/pull/2047) - fix: show creating internal transactions
 - [#2014](https://github.com/poanetwork/blockscout/pull/2014) - fix: use better queries for listLogs endpoint
