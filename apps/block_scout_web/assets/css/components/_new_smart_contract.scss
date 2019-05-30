@@ -17,7 +17,7 @@ $new-smart-contract-center-column-margin-right: 30px;
   margin-bottom: 3rem;
   padding: 50px 0 50px 22px;
 
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(md) {
     background-image: none;
     padding-right: 22px;
   }
@@ -32,14 +32,14 @@ $new-smart-contract-center-column-margin-right: 30px;
   padding: 0;
   text-align: left;
 
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(md) {
     margin-bottom: 30px;
   }
 
   &.margin-bottom-md {
     margin-bottom: 50px;
 
-    @include media-breakpoint-down(sm) {
+    @include media-breakpoint-down(md) {
       margin-bottom: 15px;
     }
   }
@@ -48,7 +48,7 @@ $new-smart-contract-center-column-margin-right: 30px;
 .smart-contract-form-group {
   margin-bottom: 30px;
 
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(md) {
     margin-bottom: 20px;
   }
 }
@@ -70,7 +70,7 @@ $new-smart-contract-center-column-margin-right: 30px;
   display: flex;
   justify-content: space-between;
 
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(md) {
     flex-direction: column;
   }
 
@@ -85,7 +85,7 @@ $new-smart-contract-center-column-margin-right: 30px;
     text-align: left;
     width: 200px;
 
-    @include media-breakpoint-down(sm) {
+    @include media-breakpoint-down(md) {
       margin-bottom: 10px;
       padding-right: 0;
       width: auto;
@@ -96,7 +96,7 @@ $new-smart-contract-center-column-margin-right: 30px;
     flex-grow: 1;
     margin-right: $new-smart-contract-center-column-margin-right;
 
-    @include media-breakpoint-down(sm) {
+    @include media-breakpoint-down(md) {
       margin: 0;
     }
   }
@@ -123,13 +123,13 @@ $new-smart-contract-center-column-margin-right: 30px;
     text-align: left;
     width: #{$new-smart-contract-tooltips-width};
 
-    @include media-breakpoint-down(sm) {
+    @include media-breakpoint-down(md) {
       padding: 10px 0 0 0;
       width: auto;
     }
 
     &:empty {
-      @include media-breakpoint-down(sm) {
+      @include media-breakpoint-down(md) {
         display: none;
       }
     }
@@ -157,7 +157,7 @@ $new-smart-contract-center-column-margin-right: 30px;
   margin-right: $new-smart-contract-center-column-margin-right + $new-smart-contract-tooltips-width;
   padding-bottom: 30px;
 
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(md) {
     margin-right: 0;
   }
 }
@@ -171,7 +171,7 @@ $new-smart-contract-center-column-margin-right: 30px;
   padding-top: 30px;
   position: relative;
 
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(md) {
     margin-right: 0;
   }
 
