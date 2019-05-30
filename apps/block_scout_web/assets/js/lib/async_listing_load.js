@@ -105,7 +105,9 @@ export function asyncReducer (state = asyncInitialState, action) {
         state.pagesStack.push(window.location.href.split('?')[0])
       }
 
-      state.pagesStack.push(state.nextPagePath)
+      if (state.pagesStack[state.pagesStack.length - 1] !== state.nextPagePath) {
+        state.pagesStack.push(state.nextPagePath)
+      }
 
       return Object.assign({}, state, { beyondPageOne: true })
     }
@@ -279,12 +281,14 @@ function firstPageLoad (store) {
     event.preventDefault()
     loadItemsNext()
     store.dispatch({type: 'NAVIGATE_TO_OLDER'})
+    event.stopImmediatePropagation()
   })
 
   $element.on('click', '[data-prev-page-button]', (event) => {
     event.preventDefault()
     loadItemsPrev()
     store.dispatch({type: 'NAVIGATE_TO_NEWER'})
+    event.stopImmediatePropagation()
   })
 }
 

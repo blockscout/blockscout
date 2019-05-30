@@ -17,9 +17,12 @@
 - [#1999](https://github.com/poanetwork/blockscout/pull/1999) - load data async on addresses page
 - [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
 - [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH
+- [#2037](https://github.com/poanetwork/blockscout/pull/2037) - add address logs search functionality
 - [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
 
 ### Fixes
+- [#2066](https://github.com/poanetwork/blockscout/pull/2066) - fixed length of logs search input
+- [#2056](https://github.com/poanetwork/blockscout/pull/2056) - log search form styles added
 - [#2043](https://github.com/poanetwork/blockscout/pull/2043) - Fixed modal dialog width for 'verify other explorers'
 - [#2025](https://github.com/poanetwork/blockscout/pull/2025) - Added a new color to display transactions' errors.
 - [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue
