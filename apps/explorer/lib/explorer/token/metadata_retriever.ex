@@ -25,6 +25,16 @@ defmodule Explorer.Token.MetadataRetriever do
     %{
       "constant" => true,
       "inputs" => [],
+      "name" => "name",
+      "outputs" => [
+        %{"name" => "", "type" => "bytes32"}
+      ],
+      "payable" => false,
+      "type" => "function"
+    },
+    %{
+      "constant" => true,
+      "inputs" => [],
       "name" => "decimals",
       "outputs" => [
         %{
@@ -56,6 +66,19 @@ defmodule Explorer.Token.MetadataRetriever do
         %{
           "name" => "",
           "type" => "string"
+        }
+      ],
+      "payable" => false,
+      "type" => "function"
+    },
+    %{
+      "constant" => true,
+      "inputs" => [],
+      "name" => "symbol",
+      "outputs" => [
+        %{
+          "name" => "",
+          "type" => "bytes32"
         }
       ],
       "payable" => false,
