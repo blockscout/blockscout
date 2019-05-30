@@ -17,7 +17,7 @@ $(function () {
       const siblings = $(this).siblings()
 
       if (siblings.is(':hidden')) {
-        siblings.show()
+        siblings.css({ 'display': 'flex' })
       } else {
         siblings.hide()
       }
