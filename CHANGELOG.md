@@ -18,7 +18,8 @@
 - [#1999](https://github.com/poanetwork/blockscout/pull/1999) - load data async on addresses page
 - [#2002](https://github.com/poanetwork/blockscout/pull/2002) - Get estimated count of blocks when cache is empty
 - [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
-- [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH 
+- [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH
+- [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
 
 ### Fixes
 - [#2043](https://github.com/poanetwork/blockscout/pull/2043) - Fixed modal dialog width for 'verify other explorers'
@@ -44,6 +45,8 @@
 - [#2017](https://github.com/poanetwork/blockscout/pull/2017) - fix: fix to/from filters on tx list pages
 - [#2008](https://github.com/poanetwork/blockscout/pull/2008) - add new function clause for xDai network beneficiaries
 - [#2009](https://github.com/poanetwork/blockscout/pull/2009) - addresses page improvements
+- [#2014](https://github.com/poanetwork/blockscout/pull/2014) - fix: use better queries for listLogs endpoint
+- [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
 
 ### Chore
 
@@ -54,6 +57,7 @@
 - [#1988](https://github.com/poanetwork/blockscout/pull/1988) - Fix wrong parity tasks names in Circle CI
 - [#2000](https://github.com/poanetwork/blockscout/pull/2000) - docker/Makefile: always set a container name
 - [#2018](https://github.com/poanetwork/blockscout/pull/2018) - Use PORT env variable in dev config
+- [#2055](https://github.com/poanetwork/blockscout/pull/2055) - Increase timeout for geth indexers
 
 ## 1.3.14-beta
 
