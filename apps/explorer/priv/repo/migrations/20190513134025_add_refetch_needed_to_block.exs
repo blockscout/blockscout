@@ -6,6 +6,6 @@ defmodule Explorer.Repo.Migrations.AddRefetchNeededToBlock do
       add(:refetch_needed, :boolean, default: false)
     end
 
-    execute("UPDATE blocks SET refetch_needed = TRUE;", "")
+    execute("UPDATE blocks SET refetch_needed = TRUE WHERE consensus", "")
   end
 end
