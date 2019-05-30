@@ -11,6 +11,7 @@
 
 .logs-search {
 	display: flex;
+	position: relative;
 	@media (max-width: 599px) {
 		margin-bottom: 30px;
 	}
@@ -34,7 +35,7 @@
     flex-grow: 2;
     min-width: 160px;
     &::placeholder {
-    	color: #a3a9b5;
+    	color: #a3a9b5; 
     }
 }
 
@@ -54,6 +55,9 @@
 	color: #a3a9b5;
 	cursor: pointer;
 	transition: .1s ease-in;
+	position: absolute;
+	top: 0;
+	left: 136px;
 	&:hover {
 		color: #333;
 	}
