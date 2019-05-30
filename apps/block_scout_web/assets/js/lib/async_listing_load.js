@@ -281,12 +281,14 @@ function firstPageLoad (store) {
     event.preventDefault()
     loadItemsNext()
     store.dispatch({type: 'NAVIGATE_TO_OLDER'})
+    event.stopImmediatePropagation()
   })
 
   $element.on('click', '[data-prev-page-button]', (event) => {
     event.preventDefault()
     loadItemsPrev()
     store.dispatch({type: 'NAVIGATE_TO_NEWER'})
+    event.stopImmediatePropagation()
   })
 }
 
