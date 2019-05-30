@@ -105,7 +105,9 @@ export function asyncReducer (state = asyncInitialState, action) {
         state.pagesStack.push(window.location.href.split('?')[0])
       }
 
-      state.pagesStack.push(state.nextPagePath)
+      if (state.pagesStack[state.pagesStack.length - 1] !== state.nextPagePath) {
+        state.pagesStack.push(state.nextPagePath)
+      }
 
       return Object.assign({}, state, { beyondPageOne: true })
     }

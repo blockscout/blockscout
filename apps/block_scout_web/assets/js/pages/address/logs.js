@@ -46,7 +46,7 @@ const elements = {
 }
 
 if ($('[data-page="address-logs"]').length) {
-  const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
+  const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierLog')
   const addressHash = $('[data-page="address-details"]')[0].dataset.pageAddressHash
   const $element = $('[data-async-listing]')
 
