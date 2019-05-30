@@ -16,6 +16,11 @@ $new-smart-contract-center-column-margin-right: 30px;
   box-shadow: 0 0 25px 0 rgba(0, 0, 0, 0.15);
   margin-bottom: 3rem;
   padding: 50px 0 50px 22px;
+
+  @include media-breakpoint-down(sm) {
+    background-image: none;
+    padding-right: 22px;
+  }
 }
 
 .smart-contract-title {
@@ -27,13 +32,25 @@ $new-smart-contract-center-column-margin-right: 30px;
   padding: 0;
   text-align: left;
 
+  @include media-breakpoint-down(sm) {
+    margin-bottom: 30px;
+  }
+
   &.margin-bottom-md {
     margin-bottom: 50px;
+
+    @include media-breakpoint-down(sm) {
+      margin-bottom: 15px;
+    }
   }
 }
 
 .smart-contract-form-group {
   margin-bottom: 30px;
+
+  @include media-breakpoint-down(sm) {
+    margin-bottom: 20px;
+  }
 }
 
 .form-radios-group {
@@ -53,6 +70,10 @@ $new-smart-contract-center-column-margin-right: 30px;
   display: flex;
   justify-content: space-between;
 
+  @include media-breakpoint-down(sm) {
+    flex-direction: column;
+  }
+
   > label {
     color: #333;
     flex-grow: 0;
@@ -63,15 +84,21 @@ $new-smart-contract-center-column-margin-right: 30px;
     padding-right: 15px;
     text-align: left;
     width: 200px;
+
+    @include media-breakpoint-down(sm) {
+      margin-bottom: 10px;
+      padding-right: 0;
+      width: auto;
+    }
   }
 
   .center-column {
     flex-grow: 1;
     margin-right: $new-smart-contract-center-column-margin-right;
-  }
 
-  .form-control {
-
+    @include media-breakpoint-down(sm) {
+      margin: 0;
+    }
   }
 
   textarea.form-control {
@@ -96,6 +123,17 @@ $new-smart-contract-center-column-margin-right: 30px;
     text-align: left;
     width: #{$new-smart-contract-tooltips-width};
 
+    @include media-breakpoint-down(sm) {
+      padding: 10px 0 0 0;
+      width: auto;
+    }
+
+    &:empty {
+      @include media-breakpoint-down(sm) {
+        display: none;
+      }
+    }
+
     a {
       color: $smart-contract-form-group-tooltip-color;
       text-decoration: underline;
@@ -118,6 +156,10 @@ $new-smart-contract-center-column-margin-right: 30px;
   border-bottom: 1px solid $base-border-color;
   margin-right: $new-smart-contract-center-column-margin-right + $new-smart-contract-tooltips-width;
   padding-bottom: 30px;
+
+  @include media-breakpoint-down(sm) {
+    margin-right: 0;
+  }
 }
 
 .smart-contract-form-buttons {
@@ -128,6 +170,10 @@ $new-smart-contract-center-column-margin-right: 30px;
   margin-top: -1px;
   padding-top: 30px;
   position: relative;
+
+  @include media-breakpoint-down(sm) {
+    margin-right: 0;
+  }
 
   [class*="btn-"] {
     position: relative;
