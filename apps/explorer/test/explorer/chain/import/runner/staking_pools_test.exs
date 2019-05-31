@@ -5,25 +5,30 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsTest do
 
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.StakingPools
+  alias Explorer.Chain.StakingPool
 
   describe "run/1" do
     test "insert new pools list" do
-      pools = [pool1, pool2, pool3, pool4] = build_list(4, :staking_pool)
+      pools =
+        [pool1, pool2] =
+        [params_for(:staking_pool), params_for(:staking_pool)]
+        |> Enum.map(fn param ->
+          changeset = StakingPool.changeset(%StakingPool{}, param)
+          changeset.changes
+        end)
 
       assert {:ok, %{insert_staking_pools: list}} = run_changes(pools)
       assert Enum.count(list) == Enum.count(pools)
 
       saved_list =
-        Explorer.Chain.Address.Name
+        Explorer.Chain.StakingPool
         |> Repo.all()
         |> Enum.reduce(%{}, fn pool, acc ->
-          Map.put(acc, pool.address_hash, pool)
+          Map.put(acc, pool.staking_address_hash, pool)
         end)
 
-      assert saved_list[pool1.address_hash].metadata["staked_ratio"] == 0.25
-      assert saved_list[pool2.address_hash].metadata["staked_ratio"] == 0.25
-      assert saved_list[pool3.address_hash].metadata["staked_ratio"] == 0.25
-      assert saved_list[pool4.address_hash].metadata["staked_ratio"] == 0.25
+      assert saved_list[pool1.staking_address_hash].staked_ratio == Decimal.new("50.00")
+      assert saved_list[pool2.staking_address_hash].staked_ratio == Decimal.new("50.00")
     end
   end
 
