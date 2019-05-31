@@ -32,6 +32,7 @@ defmodule Explorer.Chain do
     Block,
     BlockCountCache,
     BlockNumberCache,
+    BlocksCache,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -1148,16 +1149,22 @@ defmodule Explorer.Chain do
   @spec list_blocks([paging_options | necessity_by_association_option]) :: [Block.t()]
   def list_blocks(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    paging_options = Keyword.get(options, :paging_options) || @default_paging_options
     block_type = Keyword.get(options, :block_type, "Block")
 
-    Block
-    |> Block.block_type_filter(block_type)
-    |> page_blocks(paging_options)
-    |> limit(^paging_options.page_size)
-    |> order_by(desc: :number)
-    |> join_associations(necessity_by_association)
-    |> Repo.all()
+    if block_type == "Block" && !paging_options.key && BlocksCache.enough_elements?(paging_options.page_size) do
+      cached_blocks = BlocksCache.blocks()
+
+      Enum.slice(cached_blocks, 0, paging_options.page_size)
+    else
+      Block
+      |> Block.block_type_filter(block_type)
+      |> page_blocks(paging_options)
+      |> limit(^paging_options.page_size)
+      |> order_by(desc: :number)
+      |> join_associations(necessity_by_association)
+      |> Repo.all()
+    end
   end
 
   @doc """

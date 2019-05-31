@@ -22,6 +22,16 @@ defmodule Explorer.Chain.BlocksCache do
     end
   end
 
+  def enough_elements?(number) do
+    ConCache.size(@cache_name) > number + 1
+  end
+
+  def update_blocks(blocks) do
+    Enum.each(blocks, fn block ->
+      update(block)
+    end)
+  end
+
   def blocks do
     numbers = block_numbers()
 

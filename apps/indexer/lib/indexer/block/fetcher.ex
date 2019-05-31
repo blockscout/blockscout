@@ -11,7 +11,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, BlockNumberCache, Hash, Import, Transaction}
+  alias Explorer.Chain.{Address, Block, BlockNumberCache, BlocksCache, Hash, Import, Transaction}
   alias Indexer.Block.Fetcher.Receipts
 
   alias Indexer.Fetcher.{
@@ -186,6 +186,7 @@ defmodule Indexer.Block.Fetcher do
 
     BlockNumberCache.update(max_block.number)
     BlockNumberCache.update(min_block.number)
+    BlocksCache.update_blocks(blocks)
   end
 
   def import(
