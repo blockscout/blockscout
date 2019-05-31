@@ -6,7 +6,7 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
-  alias Explorer.Chain.{BlocksCache, BlockCountCache, BlockNumberCache, TransactionCountCache}
+  alias Explorer.Chain.{BlockCountCache, BlockNumberCache, BlocksCache, TransactionCountCache}
   alias Explorer.Repo.PrometheusLogger
 
   @impl Application
