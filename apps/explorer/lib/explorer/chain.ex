@@ -227,60 +227,31 @@ defmodule Explorer.Chain do
     transaction_hashes_from_token_transfers =
       TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
 
-    token_transfers_query =
-      transaction_hashes_from_token_transfers
-      |> Transaction.where_transaction_hashes_match()
-      |> join_associations(necessity_by_association)
-      |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
-      |> Transaction.preload_token_transfers(address_hash)
-
-    base_query =
+    transactions_list =
       paging_options
       |> fetch_transactions()
+      |> Transaction.where_transaction_matches(transaction_hashes_from_token_transfers, direction, address_hash)
       |> join_associations(necessity_by_association)
       |> Transaction.preload_token_transfers(address_hash)
+      |> Repo.all()
 
-    from_address_query =
-      base_query
-      |> where([t], t.from_address_hash == ^address_hash)
+    if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
+      address_hash
+      |> Reward.fetch_emission_rewards_tuples(paging_options)
+      |> Enum.concat(transactions_list)
+      |> Enum.sort_by(fn item ->
+        case item do
+          {%Reward{} = emission_reward, _} ->
+            {-emission_reward.block.number, 1}
 
-    to_address_query =
-      base_query
-      |> where([t], t.to_address_hash == ^address_hash)
-
-    created_contract_query =
-      base_query
-      |> where([t], t.created_contract_address_hash == ^address_hash)
-
-    queries =
-      [token_transfers_query] ++
-        case direction do
-          :from -> [from_address_query]
-          :to -> [to_address_query, created_contract_query]
-          _ -> [from_address_query, to_address_query, created_contract_query]
+          item ->
+            {-item.block_number, -item.index}
         end
-
-    rewards_list =
-      if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
-        Reward.fetch_emission_rewards_tuples(address_hash, paging_options)
-      else
-        []
-      end
-
-    queries
-    |> Stream.flat_map(&Repo.all/1)
-    |> Stream.uniq_by(& &1.hash)
-    |> Stream.concat(rewards_list)
-    |> Enum.sort_by(fn item ->
-      case item do
-        {%Reward{} = emission_reward, _} ->
-          {-emission_reward.block.number, 1}
-
-        item ->
-          {-item.block_number, -item.index}
-      end
-    end)
-    |> Enum.take(paging_options.page_size)
+      end)
+      |> Enum.take(paging_options.page_size)
+    else
+      transactions_list
+    end
   end
 
   @spec address_to_logs(Address.t(), Keyword.t()) :: [

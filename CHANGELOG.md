@@ -13,6 +13,7 @@
 - [#2096](https://github.com/poanetwork/blockscout/pull/2096) - RSK theme fixes
 - [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
 - [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fixe uncle fetching without full transactions
+- [#2111](https://github.com/poanetwork/blockscout/pull/2111) - improve address transaction controller
 
 ### Chore
 
