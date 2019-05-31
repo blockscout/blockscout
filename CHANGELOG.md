@@ -24,6 +24,7 @@
 
 ### Fixes
 - [#2077](https://github.com/poanetwork/blockscout/pull/2077) - ui issues
+- [#2072](https://github.com/poanetwork/blockscout/pull/2072) - Fixed checkmarks not showing correctly in tabs.
 - [#2066](https://github.com/poanetwork/blockscout/pull/2066) - fixed length of logs search input
 - [#2056](https://github.com/poanetwork/blockscout/pull/2056) - log search form styles added
 - [#2043](https://github.com/poanetwork/blockscout/pull/2043) - Fixed modal dialog width for 'verify other explorers'
@@ -52,6 +53,8 @@
 - [#2052](https://github.com/poanetwork/blockscout/pull/2052) - allow bytes32 for name and symbol
 - [#2047](https://github.com/poanetwork/blockscout/pull/2047) - fix: show creating internal transactions
 - [#2014](https://github.com/poanetwork/blockscout/pull/2014) - fix: use better queries for listLogs endpoint
+- [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
+- [#2070](https://github.com/poanetwork/blockscout/pull/2070) - reduce `max_concurrency` of `BlocksTransactionsMismatch` fetcher
 
 ### Chore
 

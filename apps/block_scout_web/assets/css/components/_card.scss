@@ -5,6 +5,8 @@ $card-horizontal-padding: 30px;
 $card-vertical-padding: 30px;
 $card-background-1: $primary !default;
 $card-background-1-text-color: #fff !default;
+$card-tab-icon-color: #20b760 !default;
+$card-tab-icon-color-active: #20b760 !default;
 
 .card {
   background-color: $card-background-color;
@@ -158,20 +160,21 @@ $card-background-1-text-color: #fff !default;
   justify-content: flex-start;
   overflow: hidden;
 
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(md) {
     flex-direction: column;
   }
 }
 
 .card-tab {
+  align-items: center;
   background-color: $card-background-color;
   color: #333;
   cursor: pointer;
+  display: flex;
   font-size: 14px;
   font-weight: normal;
   height: 70px;
-  line-height: 70px;
-  padding: 0 30px;
+  padding: 0 25px;
   text-align: center;
 
   &:hover {
@@ -180,9 +183,14 @@ $card-background-1-text-color: #fff !default;
     text-decoration: none;
   }
 
-  @include media-breakpoint-down(sm) {
+  @include media-breakpoint-down(md) {
     display: none;
     width: 100%;
+  }
+
+  .fa-check-circle {
+    color: $card-tab-icon-color;
+    margin-left: 6px;
   }
 
   &.active {
@@ -191,9 +199,13 @@ $card-background-1-text-color: #fff !default;
     cursor: default;
     text-decoration: none;
 
-    @include media-breakpoint-down(sm) {
+    .fa-check-circle {
+      color: $card-tab-icon-color-active;
+    }
+
+    @include media-breakpoint-down(md) {
       cursor: pointer;
-      display: block;
+      display: flex;
       order: -1;
 
       &::after {
