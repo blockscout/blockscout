@@ -1,6 +1,6 @@
 // These styles extend the default Bootstrap styles
 .dropdown-menu {
-  border-radius: 8px !important;
+  border-radius: 0 0 8px 8px !important;
   border: none;
   box-shadow: $box-shadow;
   padding: 0;
@@ -32,8 +32,8 @@
   }
 
   &:first-child {
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
   }
 
   &:last-child {
@@ -46,7 +46,7 @@
     &:hover,
     &:active {
       padding-left: 10px;
-      background-color: transparent;
+      background-color: #fff !important;
       cursor: default;
       color: #333;
       font-weight: 700;

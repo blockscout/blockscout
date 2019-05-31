@@ -178,7 +178,9 @@ $card-tab-icon-color-active: #20b760 !default;
   text-align: center;
 
   &:hover {
-    text-decoration: underline;
+    background-color: rgba($card-tab-active, .1);
+    color: $card-tab-active;
+    text-decoration: none;
   }
 
   @include media-breakpoint-down(md) {
