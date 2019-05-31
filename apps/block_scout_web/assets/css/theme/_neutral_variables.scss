@@ -57,3 +57,15 @@ $btn-qr-color: $primary; // btn qr-code
 // card
 $card-background-1: $primary;
 $card-tab-active: $primary;
+
+.footer {
+  .tooltip {
+    .tooltip-inner  {
+      background-color: darken($footer-background-color, 10) !important;
+    }
+    .arrow::before {
+      border-top-color: darken($footer-background-color, 10) !important;
+      border-bottom-color: darken($footer-background-color, 10) !important;
+    }
+  }
+}
