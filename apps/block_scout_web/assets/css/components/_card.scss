@@ -175,7 +175,9 @@ $card-background-1-text-color: #fff !default;
   text-align: center;
 
   &:hover {
-    text-decoration: underline;
+    background-color: rgba($card-tab-active, .1);
+    color: $card-tab-active;
+    text-decoration: none;
   }
 
   @include media-breakpoint-down(sm) {

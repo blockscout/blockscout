@@ -92,7 +92,7 @@
             <%= for %{url: url, title: title} <- test_nets(dropdown_nets()) do %>
               <a class="dropdown-item" href="<%= url%>"><%= title %></a>
             <% end %>
-            <a class="dropdown-item header division">Other networks</a>
+            <a class="dropdown-item header division">Other Networks</a>
             <%= for %{url: url, title: title} <- dropdown_other_nets() do %>
               <a class="dropdown-item" href="<%= url%>"><%= title %></a>
             <% end %>
