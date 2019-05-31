@@ -24,7 +24,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
   @defaults [
     flush_interval: :timer.seconds(3),
     max_batch_size: 10,
-    max_concurrency: 4,
+    max_concurrency: 1,
     task_supervisor: Indexer.Temporary.BlocksTransactionsMismatch.TaskSupervisor,
     metadata: [fetcher: :blocks_transactions_mismatch]
   ]
