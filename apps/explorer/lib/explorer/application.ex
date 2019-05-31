@@ -6,7 +6,7 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
-  alias Explorer.Chain.{BlockCountCache, BlockNumberCache, TransactionCountCache}
+  alias Explorer.Chain.{BlocksCache, BlockCountCache, BlockNumberCache, TransactionCountCache}
   alias Explorer.Repo.PrometheusLogger
 
   @impl Application
@@ -30,7 +30,8 @@ defmodule Explorer.Application do
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
       {TransactionCountCache, [[], []]},
-      {BlockCountCache, []}
+      {BlockCountCache, []},
+      {ConCache, [name: BlocksCache.cache_name(), ttl_check_interval: false]}
     ]
 
     children = base_children ++ configurable_children()
