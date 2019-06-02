@@ -71,18 +71,18 @@
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Block Confirmations" %></dt>
             <dd class="col-sm-9">
-              <span data-selector="block-confirmations" class="font-weight-bold"><%= confirmations(@transaction, block_height: @block_height) %></span>
+              <span data-selector="block-confirmations"><%= confirmations(@transaction, block_height: @block_height) %></span>
           </dd>
           </dl>
           <!-- Nonce -->
           <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "Nonce" %> </dt>
-            <dd class="col-sm-9 font-weight-bold"> <%= @transaction.nonce %> </dd>
+            <dd class="col-sm-9"> <%= @transaction.nonce %> </dd>
           </dl>
           <!-- TX Fee -->
           <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "TX Fee" %> </dt>
-            <dd class="col-sm-9 font-weight-bold">
+            <dd class="col-sm-9">
               <%= formatted_fee(@transaction, denomination: :ether) %>
 
               <%= if !empty_exchange_rate?(@exchange_rate) do %>

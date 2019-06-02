@@ -24,10 +24,11 @@ defmodule Explorer.Staking.PoolsReader do
   @spec pool_data(String.t()) :: {:ok, map()} | :error
   def pool_data(staking_address) do
     with {:ok, [mining_address]} <- call_validators_method("miningByStakingAddress", [staking_address]),
-         data = fetch_data(staking_address, mining_address),
+         data = fetch_pool_data(staking_address, mining_address),
          {:ok, [is_active]} <- data["isPoolActive"],
          {:ok, [delegator_addresses]} <- data["poolDelegators"],
          delegators_count = Enum.count(delegator_addresses),
+         delegators = delegators_data(delegator_addresses, staking_address),
          {:ok, [staked_amount]} <- data["stakeAmountTotalMinusOrderedWithdraw"],
          {:ok, [self_staked_amount]} <- data["stakeAmountMinusOrderedWithdraw"],
          {:ok, [is_validator]} <- data["isValidator"],
@@ -38,8 +39,8 @@ defmodule Explorer.Staking.PoolsReader do
       {
         :ok,
         %{
-          staking_address: staking_address,
-          mining_address: mining_address,
+          staking_address_hash: staking_address,
+          mining_address_hash: mining_address,
           is_active: is_active,
           delegators_count: delegators_count,
           staked_amount: staked_amount,
@@ -48,13 +49,43 @@ defmodule Explorer.Staking.PoolsReader do
           was_validator_count: was_validator_count,
           is_banned: is_banned,
           banned_until: banned_until,
-          was_banned_count: was_banned_count
+          was_banned_count: was_banned_count,
+          delegators: delegators
         }
       }
     else
       _ ->
         :error
     end
+  end
+
+  defp delegators_data(delegators, pool_address) do
+    Enum.map(delegators, fn address ->
+      data =
+        call_methods([
+          {:staking, "stakeAmount", [pool_address, address]},
+          {:staking, "orderedWithdrawAmount", [pool_address, address]},
+          {:staking, "maxWithdrawAllowed", [pool_address, address]},
+          {:staking, "maxWithdrawOrderAllowed", [pool_address, address]},
+          {:staking, "orderWithdrawEpoch", [pool_address, address]}
+        ])
+
+      {:ok, [stake_amount]} = data["stakeAmount"]
+      {:ok, [ordered_withdraw]} = data["orderedWithdrawAmount"]
+      {:ok, [max_withdraw_allowed]} = data["maxWithdrawAllowed"]
+      {:ok, [max_ordered_withdraw_allowed]} = data["maxWithdrawOrderAllowed"]
+      {:ok, [ordered_withdraw_epoch]} = data["orderWithdrawEpoch"]
+
+      %{
+        delegator_address_hash: address,
+        pool_address_hash: pool_address,
+        stake_amount: stake_amount,
+        ordered_withdraw: ordered_withdraw,
+        max_withdraw_allowed: max_withdraw_allowed,
+        max_ordered_withdraw_allowed: max_ordered_withdraw_allowed,
+        ordered_withdraw_epoch: ordered_withdraw_epoch
+      }
+    end)
   end
 
   defp call_staking_method(method, params) do
@@ -75,10 +106,8 @@ defmodule Explorer.Staking.PoolsReader do
     resp
   end
 
-  defp fetch_data(staking_address, mining_address) do
-    contract_abi = abi("staking.json") ++ abi("validators.json")
-
-    methods = [
+  defp fetch_pool_data(staking_address, mining_address) do
+    call_methods([
       {:staking, "isPoolActive", [staking_address]},
       {:staking, "poolDelegators", [staking_address]},
       {:staking, "stakeAmountTotalMinusOrderedWithdraw", [staking_address]},
@@ -88,7 +117,11 @@ defmodule Explorer.Staking.PoolsReader do
       {:validators, "isValidatorBanned", [mining_address]},
       {:validators, "bannedUntil", [mining_address]},
       {:validators, "banCounter", [mining_address]}
-    ]
+    ])
+  end
+
+  defp call_methods(methods) do
+    contract_abi = abi("staking.json") ++ abi("validators.json")
 
     methods
     |> Enum.map(&format_request/1)

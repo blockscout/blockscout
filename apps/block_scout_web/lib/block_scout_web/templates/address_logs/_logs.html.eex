@@ -1,4 +1,4 @@
-<div data-test="transaction_log" class="tile tile-muted" data-identifier-hash="<%= @log.transaction.hash %>">
+<div data-test="address_log" class="tile tile-muted" data-identifier-log="<%= "#{to_string(@log.transaction.hash)}#{@log.index}" %>">
   <dl class="row">
     <dt class="col-md-2"> <%= gettext "Transaction" %> </dt>
     <dd class="col-md-10">

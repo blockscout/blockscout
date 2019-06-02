@@ -470,7 +470,12 @@ defmodule Explorer.Chain.InternalTransaction do
     from_address_hash, created_contract_address_hash from internal_transactions' table.
   """
   def where_address_fields_match(query, address_hash, :to) do
-    where(query, [t], t.to_address_hash == ^address_hash)
+    where(
+      query,
+      [t],
+      t.to_address_hash == ^address_hash or
+        (is_nil(t.to_address_hash) and t.created_contract_address_hash == ^address_hash)
+    )
   end
 
   def where_address_fields_match(query, address_hash, :from) do
