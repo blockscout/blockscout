@@ -17,3 +17,8 @@ $tooltip-color: #fff !default;
     border-bottom-color: $tooltip-background-color;
   }
 }
+
+.bs-tooltip-top { top: -4px !important; }
+.bs-tooltip-bottom { top: 4px !important; }
+.bs-tooltip-left { left: -4px !important; }
+.bs-tooltip-right { left: 4px !important; }
