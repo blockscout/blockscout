@@ -76,7 +76,10 @@ defmodule BlockScoutWeb.AddressLogsController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       topic = String.trim(topic)
-      logs_plus_one = Chain.address_to_logs(address, topic: topic)
+
+      formatted_topic = if String.starts_with?(topic, "0x"), do: topic, else: "0x" <> topic
+
+      logs_plus_one = Chain.address_to_logs(address, topic: formatted_topic)
 
       {results, next_page} = split_list_by_page(logs_plus_one)
 

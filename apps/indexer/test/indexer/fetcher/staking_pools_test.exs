@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.StakingPoolsTest do
 
   alias Indexer.Fetcher.StakingPools
   alias Explorer.Staking.PoolsReader
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.StakingPool
 
   @moduletag :capture_log
 
@@ -33,15 +33,15 @@ defmodule Indexer.Fetcher.StakingPoolsTest do
       success_address =
         list
         |> List.first()
-        |> Map.get(:staking_address)
+        |> Map.get(:staking_address_hash)
 
       get_pool_data_from_blockchain()
 
       assert {:retry, retry_list} = StakingPools.run(list, nil)
       assert Enum.count(retry_list) == 2
 
-      pool = Explorer.Repo.get_by(Address.Name, address_hash: success_address)
-      assert pool.name == "anonymous"
+      pool = Explorer.Repo.get_by(StakingPool, staking_address_hash: success_address)
+      assert pool.is_active == true
     end
   end
 
