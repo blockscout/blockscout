@@ -1,6 +1,6 @@
 <div class="verify-other-explorers-modal-row">
   <div class="verify-other-explorers-cell left">
-    <span class="exp-logo">
+    <span class="exp-logo st-logo">
       <%= @header %>
     </span>
   </div>

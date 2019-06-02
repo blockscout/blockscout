@@ -155,6 +155,7 @@
 .verify-other-explorers-modal-row {
 	display: table-row;
 	height: 29px;
+	
 	&:first-child {
 		.verify-other-explorers-cell.left {
 			.exp-logo {
@@ -166,6 +167,7 @@
 			}
 		}
 	}
+
 	&:nth-child(2) {
 		.verify-other-explorers-cell.left {
 			.exp-logo {
@@ -178,6 +180,7 @@
 			}
 		}
 	}
+
 	&:nth-child(3) {
 		.verify-other-explorers-cell.left {
 			.exp-logo {
