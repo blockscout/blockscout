@@ -9,14 +9,11 @@ $footer-background-color: $primary;
 $footer-title-color: #fff;
 $footer-text-color: $additional-font;
 $footer-item-disc-color: $tertiary;
-.footer-logo {
-  filter: brightness(0) invert(1);
-}
+$footer-social-icon-color: #5959d8;
 
 // dashboard
 $dashboard-line-color-price: $secondary;
 $dashboard-line-color-market: $tertiary;
-
 $dashboard-banner-gradient-start: #1b1b39;
 $dashboard-banner-gradient-end: #27275f;
 $dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
@@ -38,16 +35,17 @@ $btn-qr-color: #27275e; // btn qr-code
 $card-background-1: $tertiary;
 $card-tab-active: $tertiary;
 
-// CSS theme's idiosyncrasies
+// ETC theme's idiosyncrasies
 .layout-container {
   .navbar {
-    box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12);
-  } // header shadow
+    box-shadow: 0 0 30px 0 rgba(21, 53, 80, 0.12);
+  }
 
   .dropdown-item:hover,
+  .dropdown-item.active,
   .dropdown-item:focus {
-    background-color: $tertiary !important;
-  } // dropdown item on hover
+    background-color: $tertiary;
+  }
 
   .dashboard-banner-container {
     background-image: linear-gradient(
@@ -57,10 +55,7 @@ $card-tab-active: $tertiary;
     );
   }
 
-  .tile a {
-    color: $tertiary !important;
-  }
-  .tile-type-block {
-    border-left: 4px solid #27275e;
+  .footer-logo {
+    filter: brightness(0) invert(1);
   }
 }
