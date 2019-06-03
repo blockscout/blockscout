@@ -22,6 +22,11 @@ $(function () {
     $('#successStatusModal').modal()
   })
 
+  // TODO: Remove this
+  $(window).on('load', function () {
+    $('#questionStatusModal').modal()
+  })
+
   $('.js-stake-stake').on('click', function () {
     const modal = '#stakeModal'
     const progress = parseInt($(`${modal} .js-stakes-progress-data-progress`).text())

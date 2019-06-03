@@ -85,3 +85,8 @@
     <% end %>
   </div>
 </footer>
+<!-- TODO: Remove this -->
+<%=
+  render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: "question", title: "Lorem Ipsum", text: "Lorem ipsum dolor sit amet, consectetur
+adipiscing elit, sed do eiusmod tempor."
+%>
