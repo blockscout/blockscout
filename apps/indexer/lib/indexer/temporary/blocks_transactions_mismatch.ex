@@ -24,7 +24,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
   @defaults [
     flush_interval: :timer.seconds(3),
     max_batch_size: 10,
-    max_concurrency: 4,
+    max_concurrency: 1,
     task_supervisor: Indexer.Temporary.BlocksTransactionsMismatch.TaskSupervisor,
     metadata: [fetcher: :blocks_transactions_mismatch]
   ]
@@ -51,7 +51,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
   def init(initial, reducer, _) do
     query =
       from(block in Block,
-        join: transactions in assoc(block, :transactions),
+        left_join: transactions in assoc(block, :transactions),
         where: block.consensus and block.refetch_needed,
         group_by: block.hash,
         select: {block, count(transactions.hash)}
@@ -81,13 +81,18 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
   defp run_blocks(%Blocks{blocks_params: []}, blocks_data), do: {:retry, blocks_data}
 
   defp run_blocks(
-         %Blocks{transactions_params: transactions_params},
+         %Blocks{transactions_params: transactions_params, blocks_params: blocks_params},
          blocks_data
        ) do
-    found_blocks_map =
+    blocks_with_transactions_map =
       transactions_params
       |> Enum.group_by(&Map.fetch!(&1, :block_hash))
       |> Map.new(fn {block_hash, trans_lst} -> {block_hash, Enum.count(trans_lst)} end)
+
+    found_blocks_map =
+      blocks_params
+      |> Map.new(&{Map.fetch!(&1, :hash), 0})
+      |> Map.merge(blocks_with_transactions_map)
 
     {found_blocks_data, missing_blocks_data} =
       Enum.split_with(blocks_data, fn {block, _trans_num} ->

@@ -17,12 +17,17 @@ $modal-gray-background: #f6f7f9 !default;
   padding: #{$modal-vertical-padding} #{$modal-horizontal-padding};
 }
 
-.close.close-modal {
+.close.close-modal{
   left: auto;
   opacity: 1;
   position: absolute;
   right: -35px;
   top: -35px;
+  outline: none !important;
+}
+
+.close {
+  outline: none !important;
 }
 
 .modal-body {

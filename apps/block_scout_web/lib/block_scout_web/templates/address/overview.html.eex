@@ -121,7 +121,9 @@
             </span>
           <% end %>
           <!-- Verify in other explorers -->
+          <!--
           <%# <%= render "_verify_other_explorers.html", hash: @address.hash, type: "address" %> %>
+          -->
         </div>
       </div>
     </div>
