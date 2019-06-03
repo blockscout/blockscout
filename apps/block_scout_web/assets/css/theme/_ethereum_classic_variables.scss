@@ -12,7 +12,8 @@ $footer-item-disc-color: $tertiary;
 .footer-logo { filter: brightness(0) invert(1); }
 
 // dashboard
-$dashboard-line-color-price: $tertiary; // price left border
+$dashboard-line-color-price: $secondary;
+$dashboard-line-color-market: $tertiary;
 
 $dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
 
