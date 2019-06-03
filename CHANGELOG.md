@@ -22,6 +22,7 @@
 - [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
 
 ### Fixes
+- [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix
 - [#2077](https://github.com/poanetwork/blockscout/pull/2077) - ui issues
 - [#2072](https://github.com/poanetwork/blockscout/pull/2072) - Fixed checkmarks not showing correctly in tabs.
 - [#2066](https://github.com/poanetwork/blockscout/pull/2066) - fixed length of logs search input
