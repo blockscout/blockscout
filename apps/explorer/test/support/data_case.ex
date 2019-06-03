@@ -40,6 +40,9 @@ defmodule Explorer.DataCase do
     end
 
     Explorer.Chain.BlockNumberCache.setup()
+    Supervisor.terminate_child(Explorer.Supervisor, ConCache)
+    Supervisor.restart_child(Explorer.Supervisor, ConCache)
+
 
     :ok
   end
