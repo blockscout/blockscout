@@ -5,6 +5,9 @@
   box-shadow: $box-shadow;
   padding: 0;
   width: 100%;
+  border-left: 1px solid #e2e5ec;
+  border-right: 1px solid #e2e5ec;
+  border-bottom: 1px solid #e2e5ec;
 
   &.right {
     left: auto;
