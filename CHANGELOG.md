@@ -21,6 +21,7 @@
 - [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH
 - [#2037](https://github.com/poanetwork/blockscout/pull/2037) - add address logs search functionality
 - [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
+- [#2064](https://github.com/poanetwork/blockscout/pull/2064) - feat: add fields to tx apis, small cleanups
 
 ### Fixes
 - [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix
