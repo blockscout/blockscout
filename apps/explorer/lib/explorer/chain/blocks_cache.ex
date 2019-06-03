@@ -3,6 +3,8 @@ defmodule Explorer.Chain.BlocksCache do
   Caches the last imported blocks
   """
 
+  alias Explorer.Repo
+
   @block_numbers_key "block_numbers"
   @cache_name :blocks
   @number_of_elements 60
@@ -20,6 +22,24 @@ defmodule Explorer.Chain.BlocksCache do
         put_block(block, numbers)
       end
     end
+  end
+
+  def rewrite_cache(elements) do
+    numbers = block_numbers()
+
+    ConCache.delete(@cache_name, @block_numbers_key)
+
+    numbers
+    |> Enum.each(fn number ->
+      ConCache.delete(@cache_name, number)
+    end)
+
+    elements
+    |> Enum.reduce([], fn element, acc ->
+      put_block(element, acc)
+
+      [element.number | acc]
+    end)
   end
 
   def enough_elements?(number) do
@@ -54,7 +74,8 @@ defmodule Explorer.Chain.BlocksCache do
   end
 
   defp put_block(block, numbers) do
-    ConCache.put(@cache_name, block.number, block)
+    block_with_preloads = Repo.preload(block, [:transactions, [miner: :names], :rewards])
+    ConCache.put(@cache_name, block.number, block_with_preloads)
     ConCache.put(@cache_name, @block_numbers_key, [block.number | numbers])
   end
 end

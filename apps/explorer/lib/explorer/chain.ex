@@ -1152,19 +1152,31 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options) || @default_paging_options
     block_type = Keyword.get(options, :block_type, "Block")
 
-    if block_type == "Block" && !paging_options.key && BlocksCache.enough_elements?(paging_options.page_size) do
-      cached_blocks = BlocksCache.blocks()
+    if block_type == "Block" && !paging_options.key do
+      if BlocksCache.enough_elements?(paging_options.page_size) do
+        cached_blocks = BlocksCache.blocks()
 
-      Enum.slice(cached_blocks, 0, paging_options.page_size)
+        Enum.slice(cached_blocks, 0, paging_options.page_size)
+      else
+        elements = fetch_blocks(block_type, paging_options, necessity_by_association)
+
+        BlocksCache.rewrite_cache(elements)
+
+        elements
+      end
     else
-      Block
-      |> Block.block_type_filter(block_type)
-      |> page_blocks(paging_options)
-      |> limit(^paging_options.page_size)
-      |> order_by(desc: :number)
-      |> join_associations(necessity_by_association)
-      |> Repo.all()
+      fetch_blocks(block_type, paging_options, necessity_by_association)
     end
+  end
+
+  defp fetch_blocks(block_type, paging_options, necessity_by_association) do
+    Block
+    |> Block.block_type_filter(block_type)
+    |> page_blocks(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by(desc: :number)
+    |> join_associations(necessity_by_association)
+    |> Repo.all()
   end
 
   @doc """
