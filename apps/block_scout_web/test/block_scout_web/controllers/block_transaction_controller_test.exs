@@ -1,7 +1,6 @@
 defmodule BlockScoutWeb.BlockTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.Chain.Block
   import BlockScoutWeb.Router.Helpers, only: [block_transaction_path: 3]
 
   describe "GET index/2" do
@@ -153,7 +152,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
     end
 
     test "next_page_path exists if not on last page", %{conn: conn} do
-      block = %Block{number: number} = insert(:block)
+      block = insert(:block)
 
       60
       |> insert_list(:transaction)
