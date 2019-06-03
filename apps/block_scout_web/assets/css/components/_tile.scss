@@ -14,6 +14,8 @@ $tile-type-progress-bar-color: $primary !default;
 $tile-status-error-reason: #ff7986 !default;
 $tile-status-awaiting-internal-transactions: $warning !default;
 $tile-padding: 1rem;
+$tile-title-color: #333 !default;
+$tile-body-a-color: #5959d8 !default;
 
 @mixin generate-tile-block($prefix, $color, $label-color: false) {
   &#{ $prefix } {
@@ -23,8 +25,7 @@ $tile-padding: 1rem;
       a {
         @if ($label-color) {
           color: $label-color;
-        }
-        @else {
+        } @else {
           color: $color;
         }
       }
@@ -33,8 +34,7 @@ $tile-padding: 1rem;
     .tile-label {
       @if ($label-color) {
         color: $label-color;
-      }
-      @else {
+      } @else {
         color: $color;
       }
     }
@@ -42,8 +42,7 @@ $tile-padding: 1rem;
     .tile-status-label {
       @if ($label-color) {
         color: $label-color;
-      }
-      @else {
+      } @else {
         color: $color;
       }
     }
@@ -59,20 +58,6 @@ $tile-padding: 1rem;
 }
 
 /*********************************************************************/
-
-.tile-title {
-  color: #333;
-  font-size: 12px;
-
-  &-hash {
-    font-weight: 300;
-  }
-
-  &-lg {
-    color: $body-color;
-    font-size: 16px;
-  }
-}
 
 .tile-label {
   font-size: 12px;
@@ -154,7 +139,6 @@ $tile-padding: 1rem;
 }
 
 .tile-function-response {
-
   span.function-response-item {
     display: block;
     margin-left: 1rem;
@@ -167,7 +151,6 @@ $tile-padding: 1rem;
   p {
     margin: 0;
   }
-
 }
 
 .tile-image {
@@ -176,6 +159,23 @@ $tile-padding: 1rem;
 }
 
 .tile {
+  .tile-body a {
+    color: $tile-body-a-color;
+  }
+
+  .tile-title {
+    color: $tile-title-color;
+    font-size: 12px;
+
+    &-hash {
+      font-weight: 300;
+    }
+
+    &-lg {
+      color: $body-color;
+      font-size: 16px;
+    }
+  }
   border-radius: 4px;
   border: 1px solid $border-color;
   color: $text-muted;
@@ -184,20 +184,57 @@ $tile-padding: 1rem;
   line-height: 1.4rem;
   padding: $tile-padding;
 
-  @include generate-tile-block('.tile-type-block', $tile-type-block-color, darken($tile-type-block-color, 20%));
-  @include generate-tile-block('.tile-type-uncle', $tile-type-uncle-color);
-  @include generate-tile-block('.tile-type-reorg', $tile-type-reorg-color);
-  @include generate-tile-block('.tile-type-emission-reward', $tile-type-emission-reward-color);
-  @include generate-tile-block('.tile-type-transaction', $tile-type-transaction-color);
-  @include generate-tile-block('.tile-type-contract-call', $tile-type-contract-call-color);
-  @include generate-tile-block('.tile-type-contract-creation', $tile-type-contract-creation-color);
-  @include generate-tile-block('.tile-type-token-transfer', $tile-type-token-transfer-color);
-  @include generate-tile-block('.tile-type-unique-token', $tile-type-unique-token-color);
-  @include generate-tile-block('.tile-type-unique-token-image', $tile-type-unique-token-image-color);
-  @include generate-tile-block('.tile-type-internal-transaction', $tile-type-internal-transaction-color);
-  @include generate-tile-block('.tile-type-api-documentation', $tile-type-api-documentation-color);
-  @include generate-tile-block('[class*="status--error"]', $tile-status-error-reason);
-  @include generate-tile-block('.tile-status--awaiting-internal-transactions', $tile-status-awaiting-internal-transactions);
+  @include generate-tile-block(
+    ".tile-type-block",
+    $tile-type-block-color,
+    darken($tile-type-block-color, 20%)
+  );
+  @include generate-tile-block(".tile-type-uncle", $tile-type-uncle-color);
+  @include generate-tile-block(".tile-type-reorg", $tile-type-reorg-color);
+  @include generate-tile-block(
+    ".tile-type-emission-reward",
+    $tile-type-emission-reward-color
+  );
+  @include generate-tile-block(
+    ".tile-type-transaction",
+    $tile-type-transaction-color
+  );
+  @include generate-tile-block(
+    ".tile-type-contract-call",
+    $tile-type-contract-call-color
+  );
+  @include generate-tile-block(
+    ".tile-type-contract-creation",
+    $tile-type-contract-creation-color
+  );
+  @include generate-tile-block(
+    ".tile-type-token-transfer",
+    $tile-type-token-transfer-color
+  );
+  @include generate-tile-block(
+    ".tile-type-unique-token",
+    $tile-type-unique-token-color
+  );
+  @include generate-tile-block(
+    ".tile-type-unique-token-image",
+    $tile-type-unique-token-image-color
+  );
+  @include generate-tile-block(
+    ".tile-type-internal-transaction",
+    $tile-type-internal-transaction-color
+  );
+  @include generate-tile-block(
+    ".tile-type-api-documentation",
+    $tile-type-api-documentation-color
+  );
+  @include generate-tile-block(
+    '[class*="status--error"]',
+    $tile-status-error-reason
+  );
+  @include generate-tile-block(
+    ".tile-status--awaiting-internal-transactions",
+    $tile-status-awaiting-internal-transactions
+  );
 
   &.n-p {
     padding: 0;
