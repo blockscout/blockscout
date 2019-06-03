@@ -55,6 +55,7 @@
 - [#2014](https://github.com/poanetwork/blockscout/pull/2014) - fix: use better queries for listLogs endpoint
 - [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
 - [#2070](https://github.com/poanetwork/blockscout/pull/2070) - reduce `max_concurrency` of `BlocksTransactionsMismatch` fetcher
+- [#2083](https://github.com/poanetwork/blockscout/pull/2083) - allow total_difficuly to be nil
 
 ### Chore
 
