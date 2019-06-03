@@ -43,7 +43,6 @@ defmodule Explorer.DataCase do
     Supervisor.terminate_child(Explorer.Supervisor, ConCache)
     Supervisor.restart_child(Explorer.Supervisor, ConCache)
 
-
     :ok
   end
 
