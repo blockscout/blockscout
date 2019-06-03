@@ -440,7 +440,7 @@ defmodule EthereumJSONRPC.Block do
   end
 
   # Size may be `nil` for uncle blocks
-  defp entry_to_elixir({key, nil}) when key in ~w(size) do
+  defp entry_to_elixir({key, nil}) when key in ~w(size totalDifficulty) do
     {key, nil}
   end
 
