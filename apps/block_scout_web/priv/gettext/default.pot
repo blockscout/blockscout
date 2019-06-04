@@ -188,7 +188,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:40
-#: lib/block_scout_web/templates/address/_tabs.html.eex:114
+#: lib/block_scout_web/templates/address/_tabs.html.eex:119
 #: lib/block_scout_web/templates/address/overview.html.eex:59
 #: lib/block_scout_web/templates/address_validation/index.html.eex:30
 #: lib/block_scout_web/templates/address_validation/index.html.eex:57
@@ -218,7 +218,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:53
-#: lib/block_scout_web/templates/address/_tabs.html.eex:124
+#: lib/block_scout_web/templates/address/_tabs.html.eex:129
 #: lib/block_scout_web/templates/address_validation/index.html.eex:39
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:119
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:141
@@ -338,6 +338,7 @@ msgid "Curl"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address_logs/index.html.eex:63
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:18
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:60
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:118
@@ -518,9 +519,12 @@ msgid "Limit"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address/_tabs.html.eex:113
+#: lib/block_scout_web/templates/address_logs/index.html.eex:8
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:21
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:48
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:10
+#: lib/block_scout_web/views/address_view.ex:303
 #: lib/block_scout_web/views/transaction_view.ex:340
 msgid "Logs"
 msgstr ""
@@ -701,7 +705,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:76
-#: lib/block_scout_web/templates/address/_tabs.html.eex:142
+#: lib/block_scout_web/templates/address/_tabs.html.eex:147
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:33
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:75
 #: lib/block_scout_web/views/address_view.ex:300
@@ -905,6 +909,7 @@ msgid "Top Accounts - %{subnetwork} Explorer"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address_logs/index.html.eex:33
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:88
 msgid "Topics"
 msgstr ""
@@ -925,6 +930,7 @@ msgid "Total transactions"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address_logs/index.html.eex:22
 #: lib/block_scout_web/views/transaction_view.ex:287
 msgid "Transaction"
 msgstr ""
@@ -1713,7 +1719,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:67
-#: lib/block_scout_web/templates/address/_tabs.html.eex:134
+#: lib/block_scout_web/templates/address/_tabs.html.eex:139
 msgid "Decompiled code"
 msgstr ""
 
@@ -1766,4 +1772,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/index.html.eex:17
 msgid "Showing "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_logs/index.html.eex:77
+msgid "There are no logs for this address."
 msgstr ""
