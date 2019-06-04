@@ -1,0 +1,81 @@
+.address-detail-hash-title {
+  color: #333;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1.2;
+  margin: 0 0 12px;
+  text-align: left;
+}
+
+.overview-title-buttons {
+  display: flex;
+}
+
+.overview-title-item {
+  display: block;
+  flex-grow: 0;
+  flex-shrink: 0;
+  height: fit-content;
+  margin-right: 8px;
+
+  &:last-child {
+    margin-right: 0;
+  }
+}
+
+.address-overview {
+  .card-section {
+    margin-bottom: $common-container-margin;
+
+    &:first-child {
+
+      .card {
+        margin-right: $common-container-margin;
+
+        @include media-breakpoint-down(md) {
+          margin-right: 0;
+        }
+      }
+    }
+  }
+
+  .card {
+    margin-bottom: 0;
+    height: 100%;
+  }
+}
+
+.balance-card-title {
+  margin-bottom: 0.5rem;
+}
+
+.address-detail-item {
+  margin-right: 1em;
+  padding-bottom: 0.5em;
+}
+
+.address-balance-text {
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1.2;
+  margin: 0 0 12px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.address-current-balance {
+  font-size: 12px;
+  font-weight: 200;
+  line-height: 1.2;
+  margin: 0 0 12px;
+
+  small {
+    font-size: 11px;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}

@@ -1,200 +1,160 @@
-.tile {
-  font-size: 12px;
-  color: $text-muted;
-  line-height: 1.4rem;
-  border: 1px solid $border-color;
-  border-radius: 2px;
-  padding: 1rem;
-  box-shadow: 0 1px 5px rgba($black, 0.15);
+$tile-type-block-color: $primary !default;
+$tile-type-uncle-color: $cyan !default;
+$tile-type-reorg-color: $purple !default;
+$tile-type-emission-reward-color: $lilac !default;
+$tile-type-transaction-color: $blue !default;
+$tile-type-contract-call-color: $green !default;
+$tile-type-contract-creation-color: $pink !default;
+$tile-type-token-transfer-color: $orange !default;
+$tile-type-unique-token-color: $orange !default;
+$tile-type-unique-token-image-color: $orange !default;
+$tile-type-internal-transaction-color: $teal !default;
+$tile-type-api-documentation-color: $primary !default;
+$tile-type-progress-bar-color: $primary !default;
+$tile-status-error-reason: #ff7986 !default;
+$tile-status-awaiting-internal-transactions: $warning !default;
+$tile-padding: 1rem;
 
-  & + & {
-    margin-top: 1rem;
-  }
+@mixin generate-tile-block($prefix, $color, $label-color: false) {
+  &#{ $prefix } {
+    border-left: 4px solid $color;
 
-  @include media-breakpoint-down(md) {
-    margin-bottom: 1rem;
-  }
-
-  &-type {
-
-    &-block {
-      border-left: 4px solid $indigo;
-
-      .tile-label {
-        color: $indigo;
+    .tile-transaction-type-block {
+      a {
+        @if ($label-color) {
+          color: $label-color;
+        }
+        @else {
+          color: $color;
+        }
       }
     }
 
-    &-uncle {
-      border-left: 4px solid $cyan;
-
-      .tile-label {
-        color: $cyan;
+    .tile-label {
+      @if ($label-color) {
+        color: $label-color;
+      }
+      @else {
+        color: $color;
       }
     }
 
-    &-reorg {
-      border-left: 4px solid $purple;
-
-      .tile-label {
-        color: $purple;
+    .tile-status-label {
+      @if ($label-color) {
+        color: $label-color;
+      }
+      @else {
+        color: $color;
       }
     }
 
-    &-emission-reward {
-      border-left: 4px solid $lilac;
-
-      .tile-label {
-        color: $lilac;
-      }
-    }
-
-    &-transaction {
-      border-left: 4px solid $blue;
-
-      .tile-label {
-        color: $blue;
-      }
-    }
-
-    &-contract-call {
-      border-left: 4px solid $green;
-
-      .tile-label {
-        color: $green;
-      }
-    }
-
-    &-contract-creation {
-      border-left: 4px solid $pink;
-
-      .tile-label {
-        color: $pink;
-      }
-
-      .tile-text-highlight {
-        text-decoration: underline;
-        text-decoration-style: dashed;
-      }
-    }
-
-    &-token {
-      border: 1px solid $border-color;
-    }
-
-    &-token-transfer {
-      border-left: 4px solid $orange;
-      padding-bottom: 10px;
-
-      .tile-label {
-        color: $orange;
-      }
-
-      &-short-name {
-        overflow: hidden;
-        max-width: 45%;
-        vertical-align: middle;
-        text-overflow: ellipsis;
-      }
-    }
-
-    &-unique-token {
-      border-left: 4px solid $orange;
-      padding: 35px 0;
-
-      .tile-label {
-        color: $orange;
-      }
-    }
-
-    &-unique-token-image{
-      border-left: 4px solid $orange;
-      padding: 0;
-
-      .tile-label {
-        color: $orange;
-      }
-
-      & .tile-content {
-        padding: 45px 0;
-      }
-    }
-
-    &-internal-transaction {
-      border-left: 4px solid $teal;
-
-      .tile-label {
-        color: $teal;
-      }
-    }
-
-    &-api-documentation {
-      border-left: 4px solid $primary;
-      background-color: transparent;
-      width: 100%;
-      text-align: left;
-      padding: 15px;
-      cursor: pointer;
-
-      .tile-label {
-        color: $primary;
-      }
-    }
-  }
-
-  &-status {
-    &--error--reason {
-      border-top: 2px solid lighten($danger, 10%);
-      border-right: 2px solid lighten($danger, 10%);
-      border-bottom: 2px solid lighten($danger, 10%);
-
-      .tile-status-label {
-        color: $danger;
-      }
-    }
-    &--awaiting-internal-transactions {
-      border-top: 2px solid lighten($warning, 10%);
-      border-right: 2px solid lighten($warning, 10%);
-      border-bottom: 2px solid lighten($warning, 10%);
-
-      .tile-status-label {
-        color: $warning;
-      }
+    .tile-transaction-type-block {
+      background-color: rgba($color, 0.1);
+      border-bottom: 1px solid $color;
+      border-right: 1px solid $color;
+      border-top: 1px solid $color;
+      color: $color;
     }
   }
 }
 
+/*********************************************************************/
+
 .tile-title {
+  color: #333;
   font-size: 12px;
-  font-weight: 600;
-  color: $gray-700;
-  margin-bottom: 0;
 
   &-hash {
     font-weight: 300;
   }
 
   &-lg {
-    font-size: 16px;
     color: $body-color;
+    font-size: 16px;
   }
 }
 
+.tile-label {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 2px;
+  text-align: center;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &.font-weight-400 {
+    font-weight: 400;
+  }
+}
+
+.tile-transaction-type-block {
+  align-items: center;
+  bottom: -17px;
+  justify-content: center;
+  margin-left: -1px;
+  margin-top: -34px;
+  padding: 0;
+  position: relative;
+
+  @include media-breakpoint-down(sm) {
+    align-items: flex-start;
+    background: none !important;
+    border: none !important;
+    bottom: auto;
+    flex-direction: column !important;
+    margin: 0 0 10px;
+    padding-left: 1rem;
+    top: auto;
+
+    .tile-status-label {
+      margin-left: 0 !important;
+    }
+  }
+}
+
+.tile-status-label {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: center;
+  padding: 0 5px;
+}
+
+.tile-bottom-contents {
+  background-color: #f6f7f9;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 0.8rem 1rem;
+}
+
+.tile-transactions {
+  color: #a3a9b5;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
 .tile-badge {
+  line-height: 1.25rem;
   margin-bottom: 0.1rem;
   padding: 0;
-  width: 2.5rem;
-  line-height: 1.25rem;
   text-align: center;
+  width: 2.5rem;
 }
 
 .tile-muted {
-  border-left: 1px solid $border-color;
   background-color: $gray-100;
+  border-left: 1px solid $border-color;
   box-shadow: none;
 }
 
 .tile-function-response {
+
   span.function-response-item {
     display: block;
     margin-left: 1rem;
@@ -203,12 +163,114 @@
       content: ",";
     }
   }
+
   p {
     margin: 0;
   }
+
 }
 
 .tile-image {
-  max-width: 140px;
   max-height: 140px;
+  max-width: 140px;
+}
+
+.tile {
+  border-radius: 4px;
+  border: 1px solid $border-color;
+  color: $text-muted;
+  flex-grow: 1;
+  font-size: 12px;
+  line-height: 1.4rem;
+  padding: $tile-padding;
+
+  @include generate-tile-block('.tile-type-block', $tile-type-block-color, darken($tile-type-block-color, 20%));
+  @include generate-tile-block('.tile-type-uncle', $tile-type-uncle-color);
+  @include generate-tile-block('.tile-type-reorg', $tile-type-reorg-color);
+  @include generate-tile-block('.tile-type-emission-reward', $tile-type-emission-reward-color);
+  @include generate-tile-block('.tile-type-transaction', $tile-type-transaction-color);
+  @include generate-tile-block('.tile-type-contract-call', $tile-type-contract-call-color);
+  @include generate-tile-block('.tile-type-contract-creation', $tile-type-contract-creation-color);
+  @include generate-tile-block('.tile-type-token-transfer', $tile-type-token-transfer-color);
+  @include generate-tile-block('.tile-type-unique-token', $tile-type-unique-token-color);
+  @include generate-tile-block('.tile-type-unique-token-image', $tile-type-unique-token-image-color);
+  @include generate-tile-block('.tile-type-internal-transaction', $tile-type-internal-transaction-color);
+  @include generate-tile-block('.tile-type-api-documentation', $tile-type-api-documentation-color);
+  @include generate-tile-block('[class*="status--error"]', $tile-status-error-reason);
+  @include generate-tile-block('.tile-status--awaiting-internal-transactions', $tile-status-awaiting-internal-transactions);
+
+  &.n-p {
+    padding: 0;
+  }
+
+  & + & {
+    margin-top: 1rem;
+  }
+
+  @include media-breakpoint-down(md) {
+    margin-bottom: 1rem;
+
+    [data-selector="place-holder"] & {
+      min-height: 105px;
+    }
+  }
+
+  &.tile-type-block {
+    .tile-title {
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      padding: 1rem 1rem 0 1rem;
+    }
+  }
+
+  &.tile-type-contract-creation {
+    .tile-text-highlight {
+      text-decoration: underline;
+      text-decoration-style: dashed;
+    }
+  }
+
+  &.tile-type-token {
+    border: 1px solid $border-color;
+  }
+
+  &.tile-type-token-transfer {
+    &-short-name {
+      max-width: 45%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: middle;
+    }
+  }
+
+  &.tile-type-unique-token-image {
+    padding: 0;
+
+    & .tile-content {
+      padding: 45px 0;
+    }
+  }
+
+  &.tile-type-api-documentation {
+    background-color: transparent;
+    cursor: pointer;
+    padding: 15px;
+    text-align: left;
+    width: 100%;
+  }
+
+  /* Progress bar */
+  .progress {
+    background-color: #f5f6fa;
+    border-radius: 2px;
+    height: 4px;
+    margin-top: 8px;
+    width: 120px;
+
+    .progress-bar {
+      background-color: $tile-type-progress-bar-color;
+      border-radius: 2px;
+    }
+  }
 }

@@ -1,0 +1,24 @@
+$tooltip-background-color: $primary !default;
+$tooltip-color: #fff !default;
+
+.tooltip {
+  max-width: 250px;
+  min-width: 100px;
+
+  .tooltip-inner {
+    background-color: $tooltip-background-color;
+    border-radius: 5px;
+    color: $tooltip-color;
+    padding: 15px;
+  }
+
+  .arrow::before {
+    border-top-color: $tooltip-background-color;
+    border-bottom-color: $tooltip-background-color;
+  }
+}
+
+.bs-tooltip-top { top: -10px !important; }
+.bs-tooltip-bottom { top: 10px !important; }
+.bs-tooltip-left { left: -10px !important; }
+.bs-tooltip-right { left: 10px !important; }

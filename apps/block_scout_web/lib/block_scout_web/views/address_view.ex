@@ -3,8 +3,6 @@ defmodule BlockScoutWeb.AddressView do
 
   require Logger
 
-  import BlockScoutWeb.AddressController, only: [validation_count: 1]
-
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
@@ -234,6 +232,11 @@ defmodule BlockScoutWeb.AddressView do
 
   def trimmed_hash(_), do: ""
 
+  def trimmed_verify_link(hash) do
+    string_hash = to_string(hash)
+    "#{String.slice(string_hash, 0..21)}..."
+  end
+
   def transaction_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
     address.contracts_creation_internal_transaction.transaction_hash
   end
@@ -250,10 +253,16 @@ defmodule BlockScoutWeb.AddressView do
     address.contracts_creation_transaction.from_address_hash
   end
 
-  def from_address_hash(address) do
-    Logger.error(fn -> ["Found a contract with no creator: ", to_string(address)] end)
-
+  def from_address_hash(_address) do
     nil
+  end
+
+  def address_link_to_other_explorer(link, address, full) do
+    if full do
+      link <> to_string(address)
+    else
+      trimmed_verify_link(link <> to_string(address))
+    end
   end
 
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
@@ -300,6 +309,7 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["read_contract"]), do: gettext("Read Contract")
   defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
+  defp tab_name(["logs"]), do: gettext("Logs")
 
   def short_hash(%Address{hash: hash}) do
     <<

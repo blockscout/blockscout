@@ -1,0 +1,38 @@
+<section class="container">
+  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+  <section data-page="address-logs">
+  <div class="card">
+    <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+      <h2 class="card-title"><%= gettext "Logs" %></h2>
+      <div class="logs-topbar">
+        
+        <div class="logs-search">
+          <input data-search-field class="logs-search-input" type='text' placeholder=<%= gettext("Topic") %> id='search-text-input' />
+          <button data-cancel-search-button class="logs-search-btn-cancel" type="button">x</button>
+          <button data-search-button class="logs-search-btn" type="button"><%= gettext("Search") %></button>
+        </div>
+
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      </div>
+
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+          <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+        </button>
+
+        <div data-empty-response-message style="display: none;">
+          <div class="tile tile-muted text-center" data-selector="empty-logs-list">
+            <%= gettext "There are no logs for this address." %>
+          </div>
+        </div>
+
+        <div data-items></div>
+
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
+    </div>
+
+  </div>
+  </section>
+</section>

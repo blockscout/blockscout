@@ -1,8 +1,91 @@
 ## Current
 
-## 1.3.14-beta
+### Features
+- [#1726](https://github.com/poanetwork/blockscout/pull/2071) - Updated styles for the new smart contract page.
+- [#2081](https://github.com/poanetwork/blockscout/pull/2081) - Tooltip for 'more' button, explorers logos added
+- [#1963](https://github.com/poanetwork/blockscout/pull/1963), [#1959](https://github.com/poanetwork/blockscout/pull/1959), [#1948](https://github.com/poanetwork/blockscout/pull/1948), [#1936](https://github.com/poanetwork/blockscout/pull/1936), [#1925](https://github.com/poanetwork/blockscout/pull/1925), [#1922](https://github.com/poanetwork/blockscout/pull/1922), [#1903](https://github.com/poanetwork/blockscout/pull/1903), [#1874](https://github.com/poanetwork/blockscout/pull/1874), [#1895](https://github.com/poanetwork/blockscout/pull/1895), [#2031](https://github.com/poanetwork/blockscout/pull/2031), [#2073](https://github.com/poanetwork/blockscout/pull/2073), [#2074](https://github.com/poanetwork/blockscout/pull/2074),  - added new themes and logos for poa, eth, rinkeby, goerli, ropsten, kovan, sokol, xdai, etc, rsk and default theme
+- [#2010](https://github.com/poanetwork/blockscout/pull/2010) - added "block not found" and "tx not found pages"
+- [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
+- [#1940](https://github.com/poanetwork/blockscout/pull/1940) - qr modal button and background issue
+- [#1907](https://github.com/poanetwork/blockscout/pull/1907) - dropdown color bug fix (lukso theme) and tooltip color bug fix
+- [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
+- [#1941](https://github.com/poanetwork/blockscout/pull/1941) - feat: add on demand fetching and stale attr to rpc
+- [#1957](https://github.com/poanetwork/blockscout/pull/1957) - Calculate stakes ratio before insert pools
+- [#1956](https://github.com/poanetwork/blockscout/pull/1956) - add logs tab to address
+- [#1952](https://github.com/poanetwork/blockscout/pull/1952) - feat: exclude empty contracts by default
+- [#1954](https://github.com/poanetwork/blockscout/pull/1954) - feat: use creation init on self destruct
+- [#2036](https://github.com/poanetwork/blockscout/pull/2036) - New tables for staking pools and delegators
+- [#1974](https://github.com/poanetwork/blockscout/pull/1974) - feat: previous page button logic
+- [#1999](https://github.com/poanetwork/blockscout/pull/1999) - load data async on addresses page
+- [#1807](https://github.com/poanetwork/blockscout/pull/1807) - New theming capabilites.
+- [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH
+- [#2037](https://github.com/poanetwork/blockscout/pull/2037) - add address logs search functionality
+- [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
+- [#2064](https://github.com/poanetwork/blockscout/pull/2064) - feat: add fields to tx apis, small cleanups
+
+### Fixes
+- [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix, 404 page added
+- [#2077](https://github.com/poanetwork/blockscout/pull/2077) - ui issues
+- [#2072](https://github.com/poanetwork/blockscout/pull/2072) - Fixed checkmarks not showing correctly in tabs.
+- [#2066](https://github.com/poanetwork/blockscout/pull/2066) - fixed length of logs search input
+- [#2056](https://github.com/poanetwork/blockscout/pull/2056) - log search form styles added
+- [#2043](https://github.com/poanetwork/blockscout/pull/2043) - Fixed modal dialog width for 'verify other explorers'
+- [#2025](https://github.com/poanetwork/blockscout/pull/2025) - Added a new color to display transactions' errors.
+- [#2033](https://github.com/poanetwork/blockscout/pull/2033) - Header nav. dropdown active element color issue
+- [#2019](https://github.com/poanetwork/blockscout/pull/2019) - Fixed the missing tx hashes.
+- [#2020](https://github.com/poanetwork/blockscout/pull/2020) - Fixed a bug triggered when a second click to a selected tab caused the other tabs to hide.
+- [#1944](https://github.com/poanetwork/blockscout/pull/1944) - fixed styles for token's dropdown.
+- [#1926](https://github.com/poanetwork/blockscout/pull/1926) - status label alignment
+- [#1849](https://github.com/poanetwork/blockscout/pull/1849) - Improve chains menu
+- [#1868](https://github.com/poanetwork/blockscout/pull/1868) - fix: logs list endpoint performance
+- [#1822](https://github.com/poanetwork/blockscout/pull/1822) - Fix style breaks in decompiled contract code view
+- [#1885](https://github.com/poanetwork/blockscout/pull/1885) - highlight reserved words in decompiled code
+- [#1896](https://github.com/poanetwork/blockscout/pull/1896) - re-query tokens in top nav automplete
+- [#1905](https://github.com/poanetwork/blockscout/pull/1905) - fix reorgs, uncles pagination
+- [#1904](https://github.com/poanetwork/blockscout/pull/1904) - fix `BLOCK_COUNT_CACHE_TTL` env var type
+- [#1915](https://github.com/poanetwork/blockscout/pull/1915) - fallback to 2 latest evm versions
+- [#1937](https://github.com/poanetwork/blockscout/pull/1937) - Check the presence of overlap[i] object before retrieving properties from it
+- [#1960](https://github.com/poanetwork/blockscout/pull/1960) - do not remove bold text in decompiled contacts
+- [#1966](https://github.com/poanetwork/blockscout/pull/1966) - fix: add fields for contract filter performance
+- [#2017](https://github.com/poanetwork/blockscout/pull/2017) - fix: fix to/from filters on tx list pages
+- [#2008](https://github.com/poanetwork/blockscout/pull/2008) - add new function clause for xDai network beneficiaries
+- [#2009](https://github.com/poanetwork/blockscout/pull/2009) - addresses page improvements
+- [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
+- [#2062](https://github.com/poanetwork/blockscout/pull/2062) - fix: uniq by hash, instead of transaction
+- [#2052](https://github.com/poanetwork/blockscout/pull/2052) - allow bytes32 for name and symbol
+- [#2047](https://github.com/poanetwork/blockscout/pull/2047) - fix: show creating internal transactions
+- [#2014](https://github.com/poanetwork/blockscout/pull/2014) - fix: use better queries for listLogs endpoint
+- [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
+- [#2070](https://github.com/poanetwork/blockscout/pull/2070) - reduce `max_concurrency` of `BlocksTransactionsMismatch` fetcher
+
+### Chore
+
+- [#1900](https://github.com/poanetwork/blockscout/pull/1900) - SUPPORTED_CHAINS ENV var
+- [#1958](https://github.com/poanetwork/blockscout/pull/1958) - Default value for release link env var
+- [#1964](https://github.com/poanetwork/blockscout/pull/1964) - ALLOWED_EVM_VERSIONS env var
+- [#1975](https://github.com/poanetwork/blockscout/pull/1975) - add log index to transaction view
+- [#1988](https://github.com/poanetwork/blockscout/pull/1988) - Fix wrong parity tasks names in Circle CI
+- [#2000](https://github.com/poanetwork/blockscout/pull/2000) - docker/Makefile: always set a container name
+- [#2018](https://github.com/poanetwork/blockscout/pull/2018) - Use PORT env variable in dev config
+- [#2055](https://github.com/poanetwork/blockscout/pull/2055) - Increase timeout for geth indexers
+- [#2069](https://github.com/poanetwork/blockscout/pull/2069) - Docsify integration: static docs page generation
+
+## 1.3.15-beta
 
 ### Features
+
+- [#1857](https://github.com/poanetwork/blockscout/pull/1857) - Re-implement Geth JS internal transaction tracer in Elixir
+- [#1989](https://github.com/poanetwork/blockscout/pull/1989) - fix: consolidate address w/ balance one at a time
+- [#2002](https://github.com/poanetwork/blockscout/pull/2002) - Get estimated count of blocks when cache is empty
+
+### Fixes
+
+- [#1869](https://github.com/poanetwork/blockscout/pull/1869) - Fix output and gas extraction in JS tracer for Geth
+- [#1992](https://github.com/poanetwork/blockscout/pull/1992) - fix: support https for wobserver polling
+- [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
+
+
+## 1.3.14-beta
 
 - [#1812](https://github.com/poanetwork/blockscout/pull/1812) - add pagination to addresses page
 - [#1920](https://github.com/poanetwork/blockscout/pull/1920) - fix: remove source code fields from list endpoint
@@ -63,6 +146,7 @@ Reverting of synchronous block counter, implemented in #1848
 - [#1777](https://github.com/poanetwork/blockscout/pull/1777) - show ERC-20 token transfer info on transaction page
 - [#1770](https://github.com/poanetwork/blockscout/pull/1770) - set a websocket keepalive from config
 - [#1789](https://github.com/poanetwork/blockscout/pull/1789) - add ERC-721 info to transaction overview page
+- [#1801](https://github.com/poanetwork/blockscout/pull/1801) - Staking pools fetching
 
 ### Fixes
 
