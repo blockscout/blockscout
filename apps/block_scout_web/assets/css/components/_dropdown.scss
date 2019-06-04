@@ -30,8 +30,10 @@
   font-size: 12px;
   padding: 10px 20px;
 
-  &:hover {
+  &:hover, &.active {
     color: #fff;
+    background-color: rgba($primary, .1) !important;
+    color: $primary;
   }
 
   &:first-child {
