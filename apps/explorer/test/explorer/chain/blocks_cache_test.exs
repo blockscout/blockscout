@@ -33,10 +33,11 @@ defmodule Explorer.Chain.BlocksCacheTest do
       new_block = insert(:block, number: 70)
       BlocksCache.update(new_block)
 
-      new_blocks = blocks |> List.replace_at(0, new_block.number) |> Enum.sort()
+      new_blocks = blocks |> List.replace_at(0, new_block.number) |> Enum.sort() |> Enum.reverse()
 
       assert Enum.map(BlocksCache.blocks(), & &1.number) == new_blocks
     end
+
     test "adds missing element" do
       block1 = insert(:block, number: 10)
       block2 = insert(:block, number: 4)
@@ -67,7 +68,7 @@ defmodule Explorer.Chain.BlocksCacheTest do
 
       BlocksCache.rewrite_cache(new_blocks)
 
-      assert BlocksCache.blocks() == [block1, block2]
+      assert BlocksCache.blocks() == [block2, block1]
     end
   end
 end

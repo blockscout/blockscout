@@ -60,6 +60,7 @@ defmodule Explorer.Chain.BlocksCache do
 
     numbers
     |> Enum.sort()
+    |> Enum.reverse()
     |> Enum.map(fn number ->
       ConCache.get(@cache_name, number)
     end)
