@@ -1412,6 +1412,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "type" => "#{internal_transaction.type}",
           "gas" => "#{internal_transaction.gas}",
           "gasUsed" => "#{internal_transaction.gas_used}",
+          "index" => "#{internal_transaction.index}",
+          "transactionHash" => "#{transaction.hash}",
           "isError" => "0",
           "errCode" => "#{internal_transaction.error}"
         }
@@ -1559,6 +1561,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "gas" => "#{internal_transaction.gas}",
           "gasUsed" => "#{internal_transaction.gas_used}",
           "isError" => "0",
+          "index" => "#{internal_transaction.index}",
+          "transactionHash" => "#{transaction.hash}",
           "errCode" => "#{internal_transaction.error}"
         }
       ]
@@ -1767,6 +1771,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "gasPrice" => to_string(transaction.gas_price.value),
           "gasUsed" => to_string(transaction.gas_used),
           "cumulativeGasUsed" => to_string(transaction.cumulative_gas_used),
+          "logIndex" => to_string(token_transfer.log_index),
           "input" => to_string(transaction.input),
           "confirmations" => "0"
         }
