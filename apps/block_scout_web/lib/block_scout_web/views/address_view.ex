@@ -253,9 +253,7 @@ defmodule BlockScoutWeb.AddressView do
     address.contracts_creation_transaction.from_address_hash
   end
 
-  def from_address_hash(address) do
-    Logger.error(fn -> ["Found a contract with no creator: ", to_string(address)] end)
-
+  def from_address_hash(_address) do
     nil
   end
 
