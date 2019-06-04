@@ -13,8 +13,11 @@ defmodule Explorer.Chain.BlocksCache do
     numbers = block_numbers()
 
     max_number = if numbers == [], do: -1, else: Enum.max(numbers)
+    min_number = if numbers == [], do: -1, else: Enum.min(numbers)
 
-    if block.number > max_number do
+    in_range? = block.number > min_number && Enum.all?(numbers, fn number -> number != block.number end)
+
+    if block.number > max_number || Enum.count(numbers) == 1 || in_range? do
       if Enum.count(numbers) >= @number_of_elements do
         remove_block(numbers)
         put_block(block, List.delete(numbers, Enum.min(numbers)))

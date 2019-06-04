@@ -37,6 +37,21 @@ defmodule Explorer.Chain.BlocksCacheTest do
 
       assert Enum.map(BlocksCache.blocks(), & &1.number) == new_blocks
     end
+    test "adds missing element" do
+      block1 = insert(:block, number: 10)
+      block2 = insert(:block, number: 4)
+
+      BlocksCache.update(block1)
+      BlocksCache.update(block2)
+
+      assert Enum.count(BlocksCache.blocks()) == 2
+
+      block3 = insert(:block, number: 6)
+
+      BlocksCache.update(block3)
+
+      assert Enum.map(BlocksCache.blocks(), & &1.number) == [10, 6, 4]
+    end
   end
 
   describe "rewrite_cache/1" do
