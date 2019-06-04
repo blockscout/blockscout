@@ -12,8 +12,10 @@
 .logs-search {
 	display: flex;
 	position: relative;
+	width: 52%;
 	@media (max-width: 599px) {
 		margin-bottom: 30px;
+		width: 100%;
 	}
 }
 
@@ -57,7 +59,7 @@
 	transition: .1s ease-in;
 	position: absolute;
 	top: 0;
-	left: 136px;
+	right: 59px;
 	&:hover {
 		color: #333;
 	}
