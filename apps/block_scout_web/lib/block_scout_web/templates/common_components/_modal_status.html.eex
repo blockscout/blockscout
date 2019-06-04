@@ -37,10 +37,10 @@
               <span class="btn-line-text">Ok</span>
             </button>
           <% else %>
-            <button class="btn-line" type="button" data-dismiss="modal">
+            <button class="btn-line except" type="button" data-dismiss="modal">
               <span class="btn-line-text">No</span>
             </button>
-            <button class="btn-line" type="button" data-dismiss="modal">
+            <button class="btn-line accept" type="button" data-dismiss="modal">
               <span class="btn-line-text">Yes</span>
             </button>
           <% end %>
