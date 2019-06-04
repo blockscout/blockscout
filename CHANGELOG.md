@@ -75,6 +75,7 @@
 - [#2070](https://github.com/poanetwork/blockscout/pull/2070) - reduce `max_concurrency` of `BlocksTransactionsMismatch` fetcher
 - [#2083](https://github.com/poanetwork/blockscout/pull/2083) - allow total_difficuly to be nil
 - [#2086](https://github.com/poanetwork/blockscout/pull/2086) - fix geth's staticcall without output
+- [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
 
 ### Chore
 
