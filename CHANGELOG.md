@@ -1,5 +1,7 @@
 ## Current
 
+## 2.0.0-beta
+
 ### Features
 - [#1726](https://github.com/poanetwork/blockscout/pull/2071) - Updated styles for the new smart contract page.
 - [#2081](https://github.com/poanetwork/blockscout/pull/2081) - Tooltip for 'more' button, explorers logos added
