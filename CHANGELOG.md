@@ -33,6 +33,7 @@
 - [#1991](https://github.com/poanetwork/blockscout/pull/1991) - Make CoinBalance's delta a non-virtual field
 - [#2064](https://github.com/poanetwork/blockscout/pull/2064) - feat: add fields to tx apis, small cleanups
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
+- [#2100](https://github.com/poanetwork/blockscout/pull/2100) - feat: eth_get_balance rpc endpoint
 
 ### Fixes
 - [#2099](https://github.com/poanetwork/blockscout/pull/2099) - logs search input width

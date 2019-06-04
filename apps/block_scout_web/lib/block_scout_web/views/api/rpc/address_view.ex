@@ -1,11 +1,15 @@
 defmodule BlockScoutWeb.API.RPC.AddressView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.RPC.RPCView
+  alias BlockScoutWeb.API.RPC.{EthRPCView, RPCView}
 
   def render("listaccounts.json", %{accounts: accounts}) do
     accounts = Enum.map(accounts, &prepare_account/1)
     RPCView.render("show.json", data: accounts)
+  end
+
+  def render("eth_get_balance.json", %{balance: balance}) do
+    EthRPCView.render("show.json", %{id: 0, result: balance})
   end
 
   def render("balance.json", %{addresses: [address]}) do
@@ -49,6 +53,10 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   def render("getminedblocks.json", %{blocks: blocks}) do
     data = Enum.map(blocks, &prepare_block/1)
     RPCView.render("show.json", data: data)
+  end
+
+  def render("eth_get_balance_error.json", %{error: message}) do
+    EthRPCView.render("error.json", %{error: message, id: 0})
   end
 
   def render("error.json", assigns) do

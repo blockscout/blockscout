@@ -20,6 +20,35 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     |> render(:listaccounts, %{accounts: accounts})
   end
 
+  def eth_get_balance(conn, params) do
+    with {:address_param, {:ok, address_param}} <- fetch_address(params),
+         {:block_param, {:ok, block}} <- {:block_param, fetch_block_param(params)},
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:balance, {:ok, balance}} <- {:balance, Chain.get_balance_as_of_block(address_hash, block)} do
+      render(conn, :eth_get_balance, %{balance: Wei.hex_format(balance)})
+    else
+      {:address_param, :error} ->
+        conn
+        |> put_status(400)
+        |> render(:eth_get_balance_error, %{message: "Query parameter 'address' is required"})
+
+      {:format, :error} ->
+        conn
+        |> put_status(400)
+        |> render(:eth_get_balance_error, %{error: "Invalid address hash"})
+
+      {:block_param, :error} ->
+        conn
+        |> put_status(400)
+        |> render(:eth_get_balance_error, %{error: "Invalid block"})
+
+      {:balance, {:error, :not_found}} ->
+        conn
+        |> put_status(404)
+        |> render(:eth_get_balance_error, %{error: "Balance not found"})
+    end
+  end
+
   def balance(conn, params, template \\ :balance) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hashes}} <- to_address_hashes(address_param) do
@@ -216,6 +245,20 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
     {:required_params, result}
   end
+
+  defp fetch_block_param(%{"block" => "latest"}), do: {:ok, :latest}
+  defp fetch_block_param(%{"block" => "earliest"}), do: {:ok, :earliest}
+  defp fetch_block_param(%{"block" => "pending"}), do: {:ok, :pending}
+
+  defp fetch_block_param(%{"block" => string_integer}) when is_bitstring(string_integer) do
+    case Integer.parse(string_integer) do
+      {integer, ""} -> {:ok, integer}
+      _ -> :error
+    end
+  end
+
+  defp fetch_block_param(%{"block" => _block}), do: :error
+  defp fetch_block_param(_), do: {:ok, :latest}
 
   defp to_valid_format(params, :tokenbalance) do
     result =

@@ -113,6 +113,17 @@ defmodule Explorer.Chain.Wei do
   @wei_per_ether Decimal.new(1_000_000_000_000_000_000)
   @wei_per_gwei Decimal.new(1_000_000_000)
 
+  @spec hex_format(Wei.t()) :: String.t()
+  def hex_format(%Wei{value: decimal}) do
+    hex =
+      decimal
+      |> Decimal.to_integer()
+      |> Integer.to_string(16)
+      |> String.downcase()
+
+    "0x" <> hex
+  end
+
   @doc """
   Sums two Wei values.
 
