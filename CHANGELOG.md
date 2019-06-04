@@ -12,7 +12,6 @@
 - [#1963](https://github.com/poanetwork/blockscout/pull/1963), [#1959](https://github.com/poanetwork/blockscout/pull/1959), [#1948](https://github.com/poanetwork/blockscout/pull/1948), [#1936](https://github.com/poanetwork/blockscout/pull/1936), [#1925](https://github.com/poanetwork/blockscout/pull/1925), [#1922](https://github.com/poanetwork/blockscout/pull/1922), [#1903](https://github.com/poanetwork/blockscout/pull/1903), [#1874](https://github.com/poanetwork/blockscout/pull/1874), [#1895](https://github.com/poanetwork/blockscout/pull/1895), [#2031](https://github.com/poanetwork/blockscout/pull/2031), [#2073](https://github.com/poanetwork/blockscout/pull/2073), [#2074](https://github.com/poanetwork/blockscout/pull/2074),  - added new themes and logos for poa, eth, rinkeby, goerli, ropsten, kovan, sokol, xdai, etc, rsk and default theme
 - [#1726](https://github.com/poanetwork/blockscout/pull/2071) - Updated styles for the new smart contract page.
 - [#2081](https://github.com/poanetwork/blockscout/pull/2081) - Tooltip for 'more' button, explorers logos added
->>>>>>> origin/master
 - [#2010](https://github.com/poanetwork/blockscout/pull/2010) - added "block not found" and "tx not found pages"
 - [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
 - [#1940](https://github.com/poanetwork/blockscout/pull/1940) - qr modal button and background issue
@@ -30,7 +29,6 @@
 - [#2040](https://github.com/poanetwork/blockscout/pull/2040) - Verification links to other explorers for ETH
 - [#2037](https://github.com/poanetwork/blockscout/pull/2037) - add address logs search functionality
 - [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
-<<<<<<< HEAD
 - [#1991](https://github.com/poanetwork/blockscout/pull/1991) - Make CoinBalance's delta a non-virtual field
 - [#2064](https://github.com/poanetwork/blockscout/pull/2064) - feat: add fields to tx apis, small cleanups
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
@@ -38,6 +36,7 @@
 ### Fixes
 - [#2099](https://github.com/poanetwork/blockscout/pull/2099) - logs search input width
 - [#2098](https://github.com/poanetwork/blockscout/pull/2098) - nav dropdown issue, logo size issue
+- [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
 - [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix, 404 page added
 - [#2077](https://github.com/poanetwork/blockscout/pull/2077) - ui issues
 - [#2072](https://github.com/poanetwork/blockscout/pull/2072) - Fixed checkmarks not showing correctly in tabs.
