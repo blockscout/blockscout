@@ -2833,10 +2833,7 @@ defmodule Explorer.Chain do
       ) do
     zero_wei = %Wei{value: Decimal.new(0)}
 
-    transaction =
-      if Ecto.assoc_loaded?(transaction.token_transfers),
-        do: transaction,
-        else: Repo.preload(transaction, :token_transfers)
+    transaction = Repo.preload(transaction, token_transfers: :token)
 
     # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721.sol#L35
     case {to_string(input), value} do
@@ -2890,17 +2887,16 @@ defmodule Explorer.Chain do
   end
 
   defp find_erc721_or_erc20_token_transfer(token_transfers, {address, decimal_value}) do
-    IO.inspect({address, decimal_value})
-
     token_transfer =
       Enum.find(token_transfers, fn token_transfer ->
-        token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value
+        token_transfer.to_address_hash.bytes == address &&
+          (token_transfer.amount == decimal_value || token_transfer.token_id)
       end)
 
     if token_transfer do
-      case token_from_address_hash(token_transfer.token_contract_address_hash) do
-        {:ok, %Token{type: "ERC-20"}} -> {:erc20, token_transfer}
-        {:ok, %Token{type: "ERC-721"}} -> {:erc721, token_transfer}
+      case token_transfer.token do
+        %Token{type: "ERC-20"} -> {:erc20, token_transfer}
+        %Token{type: "ERC-721"} -> {:erc721, token_transfer}
         _ -> nil
       end
     end
