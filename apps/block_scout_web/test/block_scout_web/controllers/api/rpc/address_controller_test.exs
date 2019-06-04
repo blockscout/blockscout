@@ -1489,6 +1489,185 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
   end
 
+  describe "eth_get_balance" do
+    setup do
+      %{
+        params: %{
+          "module" => "account",
+          "action" => "eth_get_balance"
+        }
+      }
+    end
+
+    test "with an invalid address", %{conn: conn, params: params} do
+      assert response =
+               conn
+               |> get("/api", Map.put(params, "address", "badhash"))
+               |> json_response(400)
+
+      assert response["error"] == "Invalid address hash"
+    end
+
+    test "with a valid address that has no balance", %{conn: conn, params: params} do
+      address = insert(:address)
+
+      assert response =
+               conn
+               |> get("/api", Map.put(params, "address", to_string(address.hash)))
+               |> json_response(404)
+
+      assert response["error"] == "Balance not found"
+    end
+
+    test "with a valid address that has a balance", %{conn: conn, params: params} do
+      block = insert(:block)
+      address = insert(:address)
+
+      insert(:fetched_balance, block_number: block.number, address_hash: address.hash, value: 1)
+
+      assert response =
+               conn
+               |> get("/api", Map.put(params, "address", to_string(address.hash)))
+               |> json_response(200)
+
+      assert response["result"] == "0x1"
+    end
+
+    test "with a valid address that has no earliest balance", %{conn: conn, params: params} do
+      block = insert(:block, number: 1)
+      address = insert(:address)
+
+      insert(:fetched_balance, block_number: block.number, address_hash: address.hash, value: 1)
+
+      params =
+        params
+        |> Map.put("address", to_string(address.hash))
+        |> Map.put("block", "earliest")
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(404)
+
+      assert response["error"] == "Balance not found"
+    end
+
+    test "with a valid address that has an earliest balance", %{conn: conn, params: params} do
+      block = insert(:block, number: 0)
+      address = insert(:address)
+
+      insert(:fetched_balance, block_number: block.number, address_hash: address.hash, value: 1)
+
+      params =
+        params
+        |> Map.put("address", to_string(address.hash))
+        |> Map.put("block", "earliest")
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == "0x1"
+    end
+
+    test "with a valid address and no pending balance", %{conn: conn, params: params} do
+      block = insert(:block, number: 1, consensus: true)
+      address = insert(:address)
+
+      insert(:fetched_balance, block_number: block.number, address_hash: address.hash, value: 1)
+
+      params =
+        params
+        |> Map.put("address", to_string(address.hash))
+        |> Map.put("block", "pending")
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(404)
+
+      assert response["error"] == "Balance not found"
+    end
+
+    test "with a valid address and a pending balance", %{conn: conn, params: params} do
+      block = insert(:block, number: 1, consensus: false)
+      address = insert(:address)
+
+      insert(:fetched_balance, block_number: block.number, address_hash: address.hash, value: 1)
+
+      params =
+        params
+        |> Map.put("address", to_string(address.hash))
+        |> Map.put("block", "pending")
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == "0x1"
+    end
+
+    test "with a valid address and a pending balance after a consensus block", %{conn: conn, params: params} do
+      insert(:block, number: 1, consensus: true)
+      block = insert(:block, number: 2, consensus: false)
+      address = insert(:address)
+
+      insert(:fetched_balance, block_number: block.number, address_hash: address.hash, value: 1)
+
+      params =
+        params
+        |> Map.put("address", to_string(address.hash))
+        |> Map.put("block", "pending")
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == "0x1"
+    end
+
+    test "with a block provided", %{conn: conn, params: params} do
+      address = insert(:address)
+
+      insert(:fetched_balance, block_number: 1, address_hash: address.hash, value: 1)
+      insert(:fetched_balance, block_number: 2, address_hash: address.hash, value: 2)
+      insert(:fetched_balance, block_number: 3, address_hash: address.hash, value: 3)
+
+      params =
+        params
+        |> Map.put("address", to_string(address.hash))
+        |> Map.put("block", "2")
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == "0x2"
+    end
+
+    test "with a block provided and no balance", %{conn: conn, params: params} do
+      address = insert(:address)
+
+      insert(:fetched_balance, block_number: 3, address_hash: address.hash, value: 3)
+
+      params =
+        params
+        |> Map.put("address", to_string(address.hash))
+        |> Map.put("block", "2")
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(404)
+
+      assert response["error"] == "Balance not found"
+    end
+  end
+
   describe "txlistinternal with address" do
     test "with an invalid address", %{conn: conn} do
       params = %{
