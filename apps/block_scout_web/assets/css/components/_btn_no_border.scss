@@ -1,5 +1,5 @@
 $btn-no-border-bg: #fff !default;
-$btn-no-border-color: $secondary !default;
+$btn-no-border-color: $primary !default;
 
 .btn-no-border {
   @include btn-line($btn-no-border-bg, $btn-no-border-color);

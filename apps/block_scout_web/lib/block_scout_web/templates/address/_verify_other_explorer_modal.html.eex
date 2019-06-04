@@ -1,6 +1,6 @@
 <div class="verify-other-explorers-modal-row">
-  <div class="verify-other-explorers-cell">
-    <span class="etherscan-logo">
+  <div class="verify-other-explorers-cell left">
+    <span class="exp-logo">
       <%= @header %>
     </span>
   </div>

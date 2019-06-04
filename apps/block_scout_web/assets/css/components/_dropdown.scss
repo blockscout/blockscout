@@ -5,6 +5,9 @@
   box-shadow: $box-shadow;
   padding: 0;
   width: 100%;
+  border-left: 1px solid #e2e5ec;
+  border-right: 1px solid #e2e5ec;
+  border-bottom: 1px solid #e2e5ec;
 
   &.right {
     left: auto;
@@ -27,8 +30,10 @@
   font-size: 12px;
   padding: 10px 20px;
 
-  &:hover {
+  &:hover, &.active {
     color: #fff;
+    background-color: rgba($primary, .1) !important;
+    color: $primary;
   }
 
   &:first-child {
