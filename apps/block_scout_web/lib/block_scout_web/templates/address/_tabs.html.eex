@@ -34,6 +34,15 @@
         ) %>
   </li>
 
+  <li class="nav-item">
+    <%= link(
+            gettext("Logs"),
+            class: "nav-link #{tab_status("logs", @conn.request_path)}",
+            "data-test": "logs_tab_link",
+            to: address_logs_path(@conn, :index, @address.hash)
+          ) %>
+  </li>
+
   <%= if BlockScoutWeb.AddressView.validator?(@validation_count) do %>
     <li class="nav-item">
       <%= link(
@@ -111,7 +120,8 @@
           ) %>
       <%= link(
             gettext("Logs"),
-            class: "card-tab #{tab_status("logs", @conn.request_path)}",
+            class: "dropdown-item #{tab_status("logs", @conn.request_path)}",
+            "data-test": "logs_tab_link",
             to: address_logs_path(@conn, :index, @address.hash)
           ) %>
       <%= if validator?(@validation_count) do %>

@@ -51,6 +51,10 @@ defmodule BlockScoutWeb.AddressPage do
     click(session, css("[data-test='coin_balance_tab_link']"))
   end
 
+  def click_logs_history(session) do
+    click(session, css("[data-test='logs_tab_link']"))
+  end
+
   def click_balance_dropdown_toggle(session) do
     click(session, css("[data-dropdown-toggle]"))
   end
