@@ -1,13 +1,17 @@
+$dropdown-menu-item-color: #333 !default;
+$dropdown-menu-item-hover-color: #fff !default;
+$dropdown-menu-item-hover-background: $secondary !default;
+
 // These styles extend the default Bootstrap styles
 .dropdown-menu {
+  border-bottom: 1px solid #e2e5ec;
+  border-left: 1px solid #e2e5ec;
   border-radius: 0 0 8px 8px !important;
+  border-right: 1px solid #e2e5ec;
   border: none;
   box-shadow: $box-shadow;
   padding: 0;
   width: 100%;
-  border-left: 1px solid #e2e5ec;
-  border-right: 1px solid #e2e5ec;
-  border-bottom: 1px solid #e2e5ec;
 
   &.right {
     left: auto;
@@ -27,11 +31,17 @@
 }
 
 .dropdown-item {
+  color: $dropdown-menu-item-color;
   font-size: 12px;
   padding: 10px 20px;
 
-  &:hover {
-    color: #fff;
+  & {
+    &.active,
+    &:hover,
+    &:focus {
+      background-color: $dropdown-menu-item-hover-background;
+      color: $dropdown-menu-item-hover-color;
+    }
   }
 
   &:first-child {
@@ -54,10 +64,6 @@
       color: #333;
       font-weight: 700;
     }
-  }
-  
-  &.active {
-    background-color: $secondary;
   }
 
   &.division {
