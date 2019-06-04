@@ -57,15 +57,15 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         to_address: address
       )
 
-      conn = get(conn, address_token_path(conn, :index, address))
+      conn = get(conn, address_token_path(conn, :index, address), type: "JSON")
 
-      actual_token_hashes =
-        conn.assigns.tokens
-        |> Enum.map(& &1.contract_address_hash)
+      {:ok, %{"items" => items}} =
+        conn.resp_body
+        |> Poison.decode()
 
-      assert html_response(conn, 200)
-      assert Enum.member?(actual_token_hashes, token1.contract_address_hash)
-      refute Enum.member?(actual_token_hashes, token2.contract_address_hash)
+      assert json_response(conn, 200)
+      assert Enum.any?(items, fn item -> String.contains?(item, to_string(token1.contract_address_hash)) end)
+      refute Enum.any?(items, fn item -> String.contains?(item, to_string(token2.contract_address_hash)) end)
     end
 
     test "returns next page of results based on last seen token", %{conn: conn} do
@@ -102,15 +102,17 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash), %{
           "token_name" => name,
           "token_type" => type,
-          "token_inserted_at" => inserted_at
+          "token_inserted_at" => inserted_at,
+          "type" => "JSON"
         })
 
-      actual_tokens =
-        conn.assigns.tokens
-        |> Enum.map(& &1.name)
-        |> Enum.sort()
+      {:ok, %{"items" => items}} =
+        conn.resp_body
+        |> Poison.decode()
 
-      assert second_page_tokens == actual_tokens
+      assert Enum.any?(items, fn item ->
+               Enum.any?(second_page_tokens, fn token_name -> String.contains?(item, token_name) end)
+             end)
     end
 
     test "next_page_params exists if not on last page", %{conn: conn} do
@@ -129,9 +131,13 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
       end)
 
-      conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash))
+      conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash), type: "JSON")
 
-      assert conn.assigns.next_page_params
+      {:ok, %{"next_page_path" => next_page_path}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      assert next_page_path
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do
@@ -139,9 +145,13 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
       token = insert(:token)
       insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
 
-      conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash))
+      conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash), type: "JSON")
 
-      refute conn.assigns.next_page_params
+      {:ok, %{"next_page_path" => next_page_path}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      refute next_page_path
     end
   end
 end
