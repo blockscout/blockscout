@@ -104,7 +104,7 @@ msgid "Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/index.html.eex:4
+#: lib/block_scout_web/templates/address/index.html.eex:15
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:39
 msgid "Addresses"
 msgstr ""
@@ -592,6 +592,8 @@ msgid "Newer"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:6
+#: lib/block_scout_web/templates/address/index.html.eex:36
 #: lib/block_scout_web/templates/address_token/index.html.eex:25
 msgid "Next"
 msgstr ""
@@ -753,11 +755,6 @@ msgstr ""
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:7
 #: lib/block_scout_web/templates/transaction/index.html.eex:7
 msgid "Showing"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/index.html.eex:6
-msgid "Showing 250 addresses of"
 msgstr ""
 
 #, elixir-format
@@ -1114,7 +1111,7 @@ msgid "string"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/index.html.eex:8
+#: lib/block_scout_web/templates/address/index.html.eex:21
 msgid "total addresses with a balance"
 msgstr ""
 
@@ -1748,4 +1745,25 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:58
 msgid "Total blocks"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:22
+msgid " (page"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:19
+msgid " addresses of"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:11
+#: lib/block_scout_web/templates/address/index.html.eex:41
+msgid "Back"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:17
+msgid "Showing "
 msgstr ""

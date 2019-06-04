@@ -205,6 +205,11 @@ defmodule Explorer.Chain.Transaction do
     field(:v, :decimal)
     field(:value, Wei)
 
+    # A transient field for deriving old block hash during transaction upserts.
+    # Used to force refetch of a block in case a transaction is re-collated
+    # in a different block. See: https://github.com/poanetwork/blockscout/issues/1911
+    field(:old_block_hash, Hash.Full)
+
     timestamps()
 
     belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
