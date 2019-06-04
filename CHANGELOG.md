@@ -22,6 +22,7 @@
 - [#2037](https://github.com/poanetwork/blockscout/pull/2037) - add address logs search functionality
 - [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
 - [#2064](https://github.com/poanetwork/blockscout/pull/2064) - feat: add fields to tx apis, small cleanups
+- [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
 
 ### Fixes
 - [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix, 404 page added
