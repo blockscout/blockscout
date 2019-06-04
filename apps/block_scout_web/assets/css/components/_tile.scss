@@ -159,8 +159,14 @@ $tile-body-a-color: #5959d8 !default;
 }
 
 .tile {
-  .tile-body a {
+  span[data-address-hash] {
     color: $tile-body-a-color;
+  }
+
+  .tile-body {
+    a {
+      color: $tile-body-a-color;
+    }
   }
 
   .tile-title {
