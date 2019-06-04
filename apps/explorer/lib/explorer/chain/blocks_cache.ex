@@ -46,7 +46,7 @@ defmodule Explorer.Chain.BlocksCache do
   end
 
   def enough_elements?(number) do
-    ConCache.size(@cache_name) > number + 1
+    ConCache.size(@cache_name) > number
   end
 
   def update_blocks(blocks) do
