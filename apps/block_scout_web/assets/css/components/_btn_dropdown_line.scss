@@ -1,15 +1,15 @@
 $btn-dropdown-line-bg: #fff !default;
-$btn-dropdown-line-color: #333 !default;
+$btn-dropdown-line-color: #e2e5ec !default;
 
 .btn-dropdown-line {
   @include btn-line($btn-dropdown-line-bg, $btn-dropdown-line-color);
   border-color: $btn-dropdown-line-color;
-  color: $btn-dropdown-line-color;
+  color: #333;
   outline: none !important;
 
   &:hover {
     background-color: $btn-dropdown-line-color;
     border-color: $btn-dropdown-line-color;
-    color: $btn-dropdown-line-bg;
+    color: #333;
   }
 }
