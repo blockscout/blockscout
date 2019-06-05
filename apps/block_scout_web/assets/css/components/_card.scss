@@ -176,6 +176,7 @@ $card-tab-icon-color-active: #20b760 !default;
   height: 70px;
   padding: 0 25px;
   text-align: center;
+  transition: $transition-base;
 
   &:hover {
     background-color: rgba($card-tab-active, .1);
