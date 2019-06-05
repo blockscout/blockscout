@@ -2858,7 +2858,7 @@ defmodule Explorer.Chain do
 
         find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
 
-      # check for ERC 20 or for old ERC 721 token verions
+      # check for ERC 20 or for old ERC 721 token versions
       {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
         types = [:address, {:uint, 256}]
 
