@@ -39,5 +39,38 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       assert result.hash == to_string(transaction.hash)
       assert result.type == "OUT"
     end
+
+    test "fetches all transactions" do
+      address = insert(:address)
+
+      1..200
+      |> Enum.map(fn _ ->
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+      end)
+      |> Enum.count()
+
+      result =
+        address
+        |> AddressTransactionCsvExporter.export()
+        |> File.stream!()
+        |> NimbleCSV.RFC4180.parse_stream()
+        |> Stream.map(fn [hash, block_number, timestamp, from_address, to_address, created_address, type, value] ->
+          %{
+            hash: hash,
+            block_number: block_number,
+            timestamp: timestamp,
+            from_address: from_address,
+            to_address: to_address,
+            created_address: created_address,
+            type: type,
+            value: value
+          }
+        end)
+        |> Enum.to_list()
+
+      assert Enum.count(result) == 200
+    end
   end
 end

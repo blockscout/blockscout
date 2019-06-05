@@ -1,6 +1,7 @@
 defmodule Explorer.Chain.AddressTransactionCsvExporter do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Transaction}
+  alias Explorer.PagingOptions
 
   @necessity_by_association [
     necessity_by_association: %{
@@ -15,11 +16,32 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
     }
   ]
 
+  @page_size 150
+
+  @paging_options %PagingOptions{page_size: @page_size + 1}
+
   def export(address) do
     address
-    |> Chain.address_to_transactions_with_rewards(@necessity_by_association)
+    |> fetch_all_transactions(@paging_options)
     |> to_csv_format(address)
     |> dump_data_to_csv()
+  end
+
+  defp fetch_all_transactions(address, paging_options, acc \\ []) do
+    options = Keyword.merge(@necessity_by_association, paging_options: paging_options)
+
+    transactions = Chain.address_to_transactions_with_rewards(address, options)
+
+    new_acc = transactions ++ acc
+
+    case Enum.split(transactions, @page_size) do
+      {_, _transactions, [%Transaction{block_number: block_number, index: index}]} ->
+        new_paging_options = %{@paging_options | key: {block_number, index}}
+        fetch_all_transactions(address, new_paging_options, new_acc)
+
+      {_, []} ->
+        new_acc
+    end
   end
 
   defp dump_data_to_csv(transactions) do
