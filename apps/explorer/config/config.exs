@@ -8,8 +8,11 @@ use Mix.Config
 # General application configuration
 config :explorer,
   ecto_repos: [Explorer.Repo],
-  coin: System.get_env("COIN") || "RBTC",
-  token_functions_reader_max_retries: 3
+  coin: System.get_env("COIN") || "POA",
+  token_functions_reader_max_retries: 3,
+  allowed_evm_versions:
+    System.get_env("ALLOWED_EVM_VERSIONS") ||
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg"
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
@@ -54,6 +57,18 @@ if System.get_env("METADATA_CONTRACT") && System.get_env("VALIDATORS_CONTRACT") 
   config :explorer, Explorer.Validator.MetadataProcessor, enabled: true
 else
   config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
+end
+
+config :explorer, Explorer.Staking.PoolsReader,
+  validators_contract_address: System.get_env("POS_VALIDATORS_CONTRACT"),
+  staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
+
+if System.get_env("POS_STAKING_CONTRACT") do
+  config :explorer, Explorer.Staking.EpochCounter,
+    enabled: true,
+    staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
+else
+  config :explorer, Explorer.Staking.EpochCounter, enabled: false
 end
 
 if System.get_env("SUPPLY_MODULE") == "TokenBridge" do

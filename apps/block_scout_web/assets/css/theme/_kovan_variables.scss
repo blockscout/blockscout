@@ -1,3 +1,50 @@
-$primary: #28aca4;
-$secondary: #89edda;
-$tertiary: #997fdc;
+// general
+$primary: #101f25;
+$secondary: #35e3d8;
+$tertiary: #1f857f;
+$additional-font: #99fff9;
+
+// footer
+$footer-background-color: $primary;
+$footer-title-color: #fff;
+$footer-text-color: $secondary;
+$footer-item-disc-color: $secondary;
+.footer-logo { filter: brightness(0) invert(1); }
+
+// dashboard
+$dashboard-line-color-price: $tertiary; // price left border
+
+$dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
+
+$dashboard-stats-item-value-color: $additional-font; // stat values
+
+$dashboard-stats-item-border-color: $secondary; // stat border
+
+$dashboard-banner-gradient-start: $primary; // gradient begin
+
+$dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
+
+$dashboard-banner-network-plain-container-background-color: #1a323b; // stats bg
+
+
+// navigation
+.navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
+$header-icon-border-color-hover: $tertiary; // top border on hover
+$header-icon-color-hover: $tertiary; // nav icon on hover
+.dropdown-item:hover, .dropdown-item:focus { background-color: $tertiary !important; } // dropdown item on hover
+
+// buttons
+$btn-line-bg: #fff; // button bg
+$btn-line-color: $tertiary; // button border and font color && hover bg color
+$btn-copy-color: $tertiary; // btn copy
+$btn-qr-color: $tertiary; // btn qr-code
+
+//links & tile
+.tile a { color: $tertiary !important; } // links color for badges
+.tile-type-block {
+    border-left: 4px solid $tertiary;
+} // tab active bg
+
+// card
+$card-background-1: $primary;
+$card-tab-active: $primary;

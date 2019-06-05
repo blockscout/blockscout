@@ -1,25 +1,71 @@
-// ------------------------------- //
-// Neutral Theme 1: Blue Shifted
-// ------------------------------- //
+// $primary: #262d62;
+// $secondary: #687bf6;
+// $tertiary: #687bf6;
 
-// $primary:       #254F8D;
-// $secondary:     #72B0FB;
-// $tertiary:      #72B0FB;
+$dashboard-line-color-price: #8286a9 !default;
+
+$base-border-color: #e2e5ec !default;
+$common-container-margin: 50px !default;
+
+// general
+$primary: #5c34a2;
+$secondary: #87e1a9;
+$tertiary: #bf9cff;
+$additional-font: #fff;
+
+// footer
+$footer-background-color: #3c226a;
+$footer-title-color: #fff;
+$footer-text-color: #bda6e7;
+$footer-item-disc-color: $secondary;
+.footer-logo { filter: brightness(0) invert(1); }
+
+// dashboard
+$dashboard-line-color-price: $tertiary; // price left border
+
+$dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
+
+$dashboard-stats-item-value-color: $additional-font; // stat values
+
+$dashboard-stats-item-border-color: $secondary; // stat border
+
+$dashboard-banner-gradient-start: $primary; // gradient begin
+
+$dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
+
+$dashboard-banner-network-plain-container-background-color: #865bd4; // stats bg
 
 
-// ------------------------------- //
-// Neutral Theme 2: Black and Blue
-// ------------------------------- //
+// navigation
+.navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
+$header-icon-border-color-hover: $primary; // top border on hover
+$header-icon-color-hover: $primary; // nav icon on hover
+.dropdown-item:hover, .dropdown-item:focus { background-color: $primary !important; } // dropdown item on hover
 
-// $primary:       #34373E;
-// $secondary:     #72B0FB;
-// $tertiary:      #72B0FB;
+// buttons
+$btn-line-bg: #fff; // button bg
+$btn-line-color: $primary; // button border and font color && hover bg color
+$btn-copy-color: $primary; // btn copy
+$btn-qr-color: $primary; // btn qr-code
 
+//links & tile
+.tile a { color: $primary !important; } // links color for badges
+.tile-type-block {
+    border-left: 4px solid $primary;
+} // tab active bg
 
-// ------------------------------- //
-// Neutral Theme 3: Purple Shifted
-// ------------------------------- //
+// card
+$card-background-1: $primary;
+$card-tab-active: $primary;
 
-$primary:       #262D62;
-$secondary:     #687BF6;
-$tertiary:      #687BF6;
+.footer {
+  .tooltip {
+    .tooltip-inner  {
+      background-color: darken($footer-background-color, 10) !important;
+    }
+    .arrow::before {
+      border-top-color: darken($footer-background-color, 10) !important;
+      border-bottom-color: darken($footer-background-color, 10) !important;
+    }
+  }
+}

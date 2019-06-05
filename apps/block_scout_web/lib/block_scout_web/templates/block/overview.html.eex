@@ -1,8 +1,8 @@
 <section>
   <div class="row">
-    <div class="col-md-12 col-lg-8">
+    <div class="col-md-12 col-lg-8 pr-0-md">
       <!-- Block Details -->
-      <div class="card">
+      <div class="card card-mr-50-md">
         <div class="card-body">
           <h1 class="card-title" data-test="detail_type">
             <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
@@ -20,8 +20,10 @@
             <!-- # of Transactions -->
             <span class="mr-4"> <%= gettext "%{count} Transactions", count: @block_transaction_count %> </span>
 
+            <%= if @block.size do %>
             <!-- Block Size -->
-            <span class="mr-4"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
+              <span class="mr-4"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
+            <% end %>
 
             <!-- Block Age -->
             <span class="mr-4" data-from-now="<%= @block.timestamp %>"></span>
@@ -33,18 +35,18 @@
 
           <!-- Block Hash -->
           <dl class="row">
-            <dt class="col-sm-3 text-muted"> <%= gettext "Hash" %> </dt>
-            <dd class="col-sm-9"> <%= to_string(@block.hash) %> </dd>
+            <dt class="col-sm-3 text-muted"><%= gettext "Hash" %></dt>
+            <dd class="col-sm-9"><a class="transaction__link"><%= to_string(@block.hash) %></a></dd>
           </dl>
 
           <%= unless @block.number == 0 do %>
               <!-- Parent Hash -->
               <dl class="row">
-                <dt class="col-sm-3 text-muted"> <%= gettext "Parent Hash" %> </dt>
+                <dt class="col-sm-3 text-muted"><%= gettext "Parent Hash" %></dt>
                 <dd class="col-sm-9">
                   <%= link(
                       @block.parent_hash,
-                      class: "block__link",
+                      class: "transaction__link",
                       to: block_path(@conn, :show, @block.number - 1)
                     ) %>
                 </dd>
@@ -53,34 +55,34 @@
 
           <!-- Difficulty value -->
           <dl class="row">
-            <dt class="col-sm-3 text-muted"> <%= gettext "Difficulty" %> </dt>
+            <dt class="col-sm-3 text-muted"><%= gettext "Difficulty" %></dt>
             <dd class="col-sm-9">
-              <%= @block.difficulty |> Cldr.Number.to_string! %>
+              <span class="font-weight-bold"><%= @block.difficulty |> Cldr.Number.to_string! %></span>
             </dd>
           </dl>
 
           <%= if block_type(@block) == "Block" do %>
             <!-- Total Difficulty -->
             <dl class="row">
-              <dt class="col-sm-3 text-muted"> <%= gettext "Total Difficulty" %> </dt>
-              <dd class="col-sm-9"> <%= @block.total_difficulty |> Cldr.Number.to_string! %> </dd>
+              <dt class="col-sm-3 text-muted"><%= gettext "Total Difficulty" %></dt>
+              <dd class="col-sm-9"><span class="font-weight-bold"><%= @block.total_difficulty |> Cldr.Number.to_string! %></span></dd>
             </dl>
 
             <!-- Nonce -->
             <dl class="row">
-              <dt class="col-sm-3 text-muted"> <%= gettext "Nonce" %> </dt>
-              <dd class="col-sm-9"> <%= to_string(@block.nonce) %> </dd>
+              <dt class="col-sm-3 text-muted"><%= gettext "Nonce" %></dt>
+              <dd class="col-sm-9"><span class="font-weight-bold"><%= to_string(@block.nonce) %></span></dd>
             </dl>
 
             <%= if length(@block.uncle_relations) > 0 do %>
               <!-- Uncles -->
               <dl class="row mt-3">
-                <dt class="col-sm-3 text-muted"> <%= gettext "Uncles" %> </dt>
+                <dt class="col-sm-3 text-muted"><%= gettext "Uncles" %></dt>
                 <dd class="col-sm-9">
                   <%= for {relation, index} <- Enum.with_index(@block.uncle_relations) do %>
                     <%= link(
                         gettext("Position %{index}", index: index),
-                        class: "block__link",
+                        class: "transaction__link",
                         "data-test": "uncle_link",
                         "data-uncle-hash": to_string(relation.uncle_hash),
                         to: block_path(@conn, :show, relation.uncle_hash)
@@ -95,15 +97,14 @@
               <dl class="row">
                 <dt class="col-sm-3 text-muted"><%= gettext "Gas Used" %></dt>
                 <dd class="col-sm-9">
-                  <%= @block.gas_used |> Cldr.Number.to_string! %>
-                  <span class="text-muted"> (<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> Cldr.Number.to_string!(format: "#.#%") %>) </span>
+                  <span class="font-weight-bold"><%= @block.gas_used |> Cldr.Number.to_string! %></span>
+                  <span class="text-muted">(<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> Cldr.Number.to_string!(format: "#.#%") %>)</span>
                 </dt>
               </dl>
-
               <dl class="row mb-0">
                 <dt class="col-sm-3 text-muted"><%= gettext "Gas Limit" %></dt>
                 <dd class="col-sm-9">
-                  <%= Cldr.Number.to_string!(@block.gas_limit) %>
+                  <span class="font-weight-bold"><%= Cldr.Number.to_string!(@block.gas_limit) %></span>
                 </dd>
               </dl>
             <% end %>
@@ -112,51 +113,43 @@
       </div>
     </div>
 
-    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
+    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md">
+
       <!-- Validator -->
-      <div class="card card-primary flex-grow-1">
-        <div class="card-body">
-          <h2 class="card-title text-white"> <%= gettext "Miner" %> </h2>
+      <div class="card card-background-1 flex-grow-1">
+        <div class="card-body card-body-flex-column-space-between">
+          <h2 class="card-title balance-card-title"><%= gettext "Miner" %></h2>
           <div class="text-right">
             <!-- Validator's Name -->
-            <h3 class="text-white text-truncate">
+            <h3 class="address-balance-text text-truncate">
               <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: @block.miner,
                 contract: false,
-                class: "text-white" %>
+                class: "" %>
             </h3>
-            <!-- Validator's address hash -->
-            <span class="text-light text-truncate"> </span>
           </div>
         </div>
       </div>
 
       <!-- Validator Reward or Gas-->
       <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
-        <div class="card-body">
+        <div class="card-body card-body-flex-column-space-between">
           <%= if show_reward?(@block.rewards) do %>
-            <h2 class="card-title"> <%= gettext "Block Rewards" %> </h2>
-
-            <%= for block_reward <- @block.rewards do %>
-              <dl class="row">
-                <dt class="col-sm-5 text-muted"><%= block_reward_text(block_reward) %></dt>
-                <dd class="col-sm-7">
-                  <%= format_wei_value(block_reward.reward, :ether) %></dt>
-                </dd>
-              </dl>
-            <% end %>
-          <% else %>
-            <h2 class="card-title"> <%= gettext "Gas Used" %> </h2>
-
+            <h2 class="card-title balance-card-title"><%= gettext "Block Rewards" %></h2>
             <div class="text-right">
-              <!-- Gas Used -->
-              <h3>
+              <%= for block_reward <- @block.rewards do %>
+                <p class="address-current-balance"><%= block_reward_text(block_reward) %> <span class="text-muted"><%= format_wei_value(block_reward.reward, :ether) %></span></p>
+              <% end %>
+            </div>
+          <% else %>
+            <h2 class="card-title balance-card-title"><%= gettext "Gas Used" %></h2>
+            <div class="text-right">
+              <h3 class="address-balance-text">
                 <%= @block.gas_used |> Cldr.Number.to_string! %>
-                <span class="text-muted"> (<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> Cldr.Number.to_string!(format: "#.#%") %>) </span>
+                <span class="text-muted">(<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> Cldr.Number.to_string!(format: "#.#%") %>)</span>
               </h3>
-              <!-- Gas Limit -->
-              <span class="text-muted"> <%= @block.gas_limit |> Cldr.Number.to_string! %> <%= gettext "Gas Limit" %> </span>
+              <p class="address-current-balance"><%= @block.gas_limit |> Cldr.Number.to_string! %><%= gettext "Gas Limit" %></p>
             </div>
           <% end %>
         </div>
