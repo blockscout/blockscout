@@ -18,7 +18,18 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
         |> AddressTransactionCsvExporter.export()
         |> File.stream!()
         |> NimbleCSV.RFC4180.parse_stream()
-        |> Stream.map(fn [hash, block_number, timestamp, from_address, to_address, created_address, type, value] ->
+        |> Stream.map(fn [
+                           hash,
+                           block_number,
+                           timestamp,
+                           from_address,
+                           to_address,
+                           created_address,
+                           type,
+                           value,
+                           status,
+                           error
+                         ] ->
           %{
             hash: hash,
             block_number: block_number,
@@ -27,7 +38,9 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
             to_address: to_address,
             created_address: created_address,
             type: type,
-            value: value
+            value: value,
+            status: status,
+            error: error
           }
         end)
         |> Enum.to_list()
@@ -38,6 +51,9 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       assert result.to_address == to_string(transaction.to_address)
       assert result.hash == to_string(transaction.hash)
       assert result.type == "OUT"
+      assert result.value == "1"
+      assert result.status == to_string(transaction.status)
+      assert result.error == to_string(transaction.error)
     end
 
     test "fetches all transactions" do
@@ -56,18 +72,6 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
         |> AddressTransactionCsvExporter.export()
         |> File.stream!()
         |> NimbleCSV.RFC4180.parse_stream()
-        |> Stream.map(fn [hash, block_number, timestamp, from_address, to_address, created_address, type, value] ->
-          %{
-            hash: hash,
-            block_number: block_number,
-            timestamp: timestamp,
-            from_address: from_address,
-            to_address: to_address,
-            created_address: created_address,
-            type: type,
-            value: value
-          }
-        end)
         |> Enum.to_list()
 
       assert Enum.count(result) == 200

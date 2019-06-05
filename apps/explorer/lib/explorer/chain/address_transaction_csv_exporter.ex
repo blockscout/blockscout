@@ -71,7 +71,9 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
       "ToAddress",
       "ContractAddress",
       "Type",
-      "Value"
+      "Value",
+      "Status",
+      "ErrCode"
     ]
 
     transaction_lists =
@@ -85,7 +87,9 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
           to_string(transaction.to_address),
           to_string(transaction.created_contract_address),
           type(transaction, address),
-          1
+          1,
+          transaction.status,
+          transaction.error
         ]
       end)
 
