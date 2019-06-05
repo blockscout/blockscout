@@ -35,7 +35,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
     new_acc = transactions ++ acc
 
     case Enum.split(transactions, @page_size) do
-      {_, _transactions, [%Transaction{block_number: block_number, index: index}]} ->
+      {_transactions, [%Transaction{block_number: block_number, index: index}]} ->
         new_paging_options = %{@paging_options | key: {block_number, index}}
         fetch_all_transactions(address, new_paging_options, new_acc)
 
