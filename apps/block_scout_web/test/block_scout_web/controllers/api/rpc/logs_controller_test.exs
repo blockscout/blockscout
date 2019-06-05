@@ -266,7 +266,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       log = insert(:log, address: contract_address, transaction: transaction)
@@ -313,13 +313,13 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       transaction_block1 =
         %Transaction{} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block(first_block)
 
       transaction_block2 =
         %Transaction{} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block(second_block)
 
       insert(:log, address: contract_address, transaction: transaction_block1)
@@ -356,13 +356,13 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       transaction_block1 =
         %Transaction{} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block(first_block)
 
       transaction_block2 =
         %Transaction{} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block(second_block)
 
       insert(:log, address: contract_address, transaction: transaction_block1)

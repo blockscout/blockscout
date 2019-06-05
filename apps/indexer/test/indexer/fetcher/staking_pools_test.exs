@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.StakingPoolsTest do
 
   alias Indexer.Fetcher.StakingPools
   alias Explorer.Staking.PoolsReader
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.StakingPool
 
   @moduletag :capture_log
 
@@ -33,15 +33,15 @@ defmodule Indexer.Fetcher.StakingPoolsTest do
       success_address =
         list
         |> List.first()
-        |> Map.get(:staking_address)
+        |> Map.get(:staking_address_hash)
 
       get_pool_data_from_blockchain()
 
       assert {:retry, retry_list} = StakingPools.run(list, nil)
       assert Enum.count(retry_list) == 2
 
-      pool = Explorer.Repo.get_by(Address.Name, address_hash: success_address)
-      assert pool.name == "anonymous"
+      pool = Explorer.Repo.get_by(StakingPool, staking_address_hash: success_address)
+      assert pool.is_active == true
     end
   end
 
@@ -121,6 +121,25 @@ defmodule Indexer.Fetcher.StakingPoolsTest do
              method: "eth_call",
              params: [
                %{data: "0x234fbf2b0000000000000000000000000b2f5e2f3cbd864eaa2c642e3769c1582361caf6", to: _},
+               "latest"
+             ]
+           } ->
+             %{
+               id: id,
+               result: "0x0000000000000000000000000000000000000000000000000000000000000000"
+             }
+
+           # stakeAmountMinusOrderedWithdraw
+           %{
+             id: id,
+             jsonrpc: "2.0",
+             method: "eth_call",
+             params: [
+               %{
+                 data:
+                   "0x58daab6a0000000000000000000000000b2f5e2f3cbd864eaa2c642e3769c1582361caf60000000000000000000000000b2f5e2f3cbd864eaa2c642e3769c1582361caf6",
+                 to: _
+               },
                "latest"
              ]
            } ->

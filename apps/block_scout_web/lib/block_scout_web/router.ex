@@ -152,6 +152,13 @@ defmodule BlockScoutWeb.Router do
       )
 
       resources(
+        "/logs",
+        AddressLogsController,
+        only: [:index],
+        as: :logs
+      )
+
+      resources(
         "/contract_verifications",
         AddressContractVerificationController,
         only: [:new, :create],
@@ -234,6 +241,8 @@ defmodule BlockScoutWeb.Router do
     )
 
     get("/search", ChainController, :search)
+
+    get("/search_logs", AddressLogsController, :search_logs)
 
     get("/token_autocomplete", ChainController, :token_autocomplete)
 

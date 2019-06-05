@@ -9,9 +9,14 @@ use Mix.Config
 config :explorer,
   ecto_repos: [Explorer.Repo],
   coin: System.get_env("COIN") || "POA",
-  token_functions_reader_max_retries: 3
+  token_functions_reader_max_retries: 3,
+  allowed_evm_versions:
+    System.get_env("ALLOWED_EVM_VERSIONS") ||
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg"
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
+
+config :explorer, Explorer.Chain.BlockNumberCache, enabled: true
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
   pages: String.to_integer(System.get_env("COINMARKETCAP_PAGES") || "10")
@@ -58,6 +63,14 @@ config :explorer, Explorer.Staking.PoolsReader,
   validators_contract_address: System.get_env("POS_VALIDATORS_CONTRACT"),
   staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
 
+if System.get_env("POS_STAKING_CONTRACT") do
+  config :explorer, Explorer.Staking.EpochCounter,
+    enabled: true,
+    staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
+else
+  config :explorer, Explorer.Staking.EpochCounter, enabled: false
+end
+
 if System.get_env("SUPPLY_MODULE") == "TokenBridge" do
   config :explorer, supply: Explorer.Chain.Supply.TokenBridge
 end
@@ -81,8 +94,6 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   service: :ecto,
   tracer: Explorer.Tracer,
   otp_app: :explorer
-
-config :explorer, Explorer.Chain.BlockCountCache, ttl: System.get_env("BLOCK_COUNT_CACHE_TTL")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

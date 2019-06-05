@@ -24,8 +24,7 @@ defmodule Indexer.Supervisor do
   }
 
   alias Indexer.Temporary.{
-    AddressesWithoutCode,
-    FailedCreatedAddresses,
+    BlocksTransactionsMismatch,
     UncatalogedTokenTransfers,
     UnclesWithoutIndex
   }
@@ -80,12 +79,6 @@ defmodule Indexer.Supervisor do
       |> Map.drop(~w(block_interval blocks_concurrency memory_monitor subscribe_named_arguments realtime_overrides)a)
       |> Block.Fetcher.new()
 
-    fixing_realtime_fetcher = %Block.Fetcher{
-      broadcast: false,
-      callback_module: Realtime.Fetcher,
-      json_rpc_named_arguments: json_rpc_named_arguments
-    }
-
     realtime_block_fetcher =
       named_arguments
       |> Map.drop(~w(block_interval blocks_concurrency memory_monitor subscribe_named_arguments realtime_overrides)a)
@@ -130,10 +123,10 @@ defmodule Indexer.Supervisor do
         {TokenUpdater.Supervisor, [%{update_interval: metadata_updater_inverval}]},
 
         # Temporary workers
-        {AddressesWithoutCode.Supervisor, [fixing_realtime_fetcher]},
-        {FailedCreatedAddresses.Supervisor, [json_rpc_named_arguments]},
         {UncatalogedTokenTransfers.Supervisor, [[]]},
         {UnclesWithoutIndex.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {BlocksTransactionsMismatch.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
       ],
       strategy: :one_for_one

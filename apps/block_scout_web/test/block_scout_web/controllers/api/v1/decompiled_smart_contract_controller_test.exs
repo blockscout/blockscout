@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Repo
-  alias Explorer.Chain.DecompiledSmartContract
+  alias Explorer.Chain.{Address, DecompiledSmartContract}
 
   import Ecto.Query,
     only: [from: 2]
@@ -86,6 +86,24 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
       assert to_string(decompiled_smart_contract.address_hash) == address_hash
       assert decompiled_smart_contract.decompiler_version == decompiler_version
       assert decompiled_smart_contract.decompiled_source_code == decompiled_source_code
+    end
+
+    test "updates the address to be decompiled", %{conn: conn} do
+      address_hash = to_string(insert(:address, hash: "0x0000000000000000000000000000000000000001").hash)
+      decompiler_version = "test_decompiler"
+      decompiled_source_code = "hello world"
+
+      params = %{
+        "address_hash" => address_hash,
+        "decompiler_version" => decompiler_version,
+        "decompiled_source_code" => decompiled_source_code
+      }
+
+      request = post(conn, api_v1_decompiled_smart_contract_path(conn, :create), params)
+
+      assert request.status == 201
+
+      assert Repo.get!(Address, address_hash).decompiled
     end
   end
 

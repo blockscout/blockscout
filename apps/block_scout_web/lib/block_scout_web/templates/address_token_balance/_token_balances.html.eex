@@ -1,6 +1,6 @@
 <%= if Enum.any?(@token_balances) do %>
-  <a href="#"
-      class="text-white text-faded"
+  <a
+      href="#"
       data-dropdown-toggle
       data-toggle="dropdown"
       role="button"
