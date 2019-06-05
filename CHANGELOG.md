@@ -9,6 +9,7 @@
 ## 2.0.0-beta
 
 ### Features
+- [#2091](https://github.com/poanetwork/blockscout/pull/2091) - Added "Question" modal.
 - [#1963](https://github.com/poanetwork/blockscout/pull/1963), [#1959](https://github.com/poanetwork/blockscout/pull/1959), [#1948](https://github.com/poanetwork/blockscout/pull/1948), [#1936](https://github.com/poanetwork/blockscout/pull/1936), [#1925](https://github.com/poanetwork/blockscout/pull/1925), [#1922](https://github.com/poanetwork/blockscout/pull/1922), [#1903](https://github.com/poanetwork/blockscout/pull/1903), [#1874](https://github.com/poanetwork/blockscout/pull/1874), [#1895](https://github.com/poanetwork/blockscout/pull/1895), [#2031](https://github.com/poanetwork/blockscout/pull/2031), [#2073](https://github.com/poanetwork/blockscout/pull/2073), [#2074](https://github.com/poanetwork/blockscout/pull/2074),  - added new themes and logos for poa, eth, rinkeby, goerli, ropsten, kovan, sokol, xdai, etc, rsk and default theme
 - [#1726](https://github.com/poanetwork/blockscout/pull/2071) - Updated styles for the new smart contract page.
 - [#2081](https://github.com/poanetwork/blockscout/pull/2081) - Tooltip for 'more' button, explorers logos added
@@ -33,6 +34,8 @@
 
 ### Fixes
 - [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
+- [#2099](https://github.com/poanetwork/blockscout/pull/2099) - logs search input width
+- [#2098](https://github.com/poanetwork/blockscout/pull/2098) - nav dropdown issue, logo size issue
 - [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix, 404 page added
 - [#2077](https://github.com/poanetwork/blockscout/pull/2077) - ui issues
 - [#2072](https://github.com/poanetwork/blockscout/pull/2072) - Fixed checkmarks not showing correctly in tabs.
@@ -66,6 +69,8 @@
 - [#2014](https://github.com/poanetwork/blockscout/pull/2014) - fix: use better queries for listLogs endpoint
 - [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
 - [#2070](https://github.com/poanetwork/blockscout/pull/2070) - reduce `max_concurrency` of `BlocksTransactionsMismatch` fetcher
+- [#2083](https://github.com/poanetwork/blockscout/pull/2083) - allow total_difficuly to be nil
+- [#2086](https://github.com/poanetwork/blockscout/pull/2086) - fix geth's staticcall without output
 
 ### Chore
 
