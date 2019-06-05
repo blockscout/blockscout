@@ -4,7 +4,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
   """
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, Transaction}
+  alias Explorer.Chain.{Address, Transaction, Wei}
   alias NimbleCSV.RFC4180
 
   @necessity_by_association [
@@ -87,7 +87,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
           to_string(transaction.to_address),
           to_string(transaction.created_contract_address),
           type(transaction, address),
-          1,
+          Wei.to(transaction.value, :wei),
           transaction.status,
           transaction.error
         ]
