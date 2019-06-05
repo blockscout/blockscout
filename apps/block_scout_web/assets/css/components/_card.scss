@@ -1,16 +1,35 @@
-.card {
-  border: none;
-  box-shadow: 0 5px 40px -5px rgba($black, 0.25);
-  border-radius: 0;
-  margin-bottom: 3rem;
+$card-background-color: #fff !default;
+$card-tab-active: $primary !default;
+$card-default-border-radius: 10px !default;
+$card-horizontal-padding: 30px;
+$card-vertical-padding: 30px;
+$card-background-1: $primary !default;
+$card-background-1-text-color: #fff !default;
+$card-tab-icon-color: #20b760 !default;
+$card-tab-icon-color-active: #20b760 !default;
 
-  &-primary {
-    background-color: $primary;
+.card {
+  background-color: $card-background-color;
+  border-radius: $card-default-border-radius;
+  border: none;
+  box-shadow: 0 0 30px 0 rgba(202, 199, 226, 0.5);
+  margin-bottom: $common-container-margin;
+}
+
+.card-background-1 {
+  background-color: $card-background-1;
+  color: $card-background-1-text-color;
+
+  a:not(.dropdown-item),
+  a:not(.dropdown-item):hover {
+    color: $card-background-1-text-color;
   }
 }
 
 .card-header {
-  background-color: $white;
+  background: transparent;
+  border-bottom: 1px solid $base-border-color;
+  padding: $card-vertical-padding $card-horizontal-padding;
 
   &-tabs {
     margin: (-$card-spacer-y) (-$card-spacer-x);
@@ -18,12 +37,95 @@
 }
 
 .card-title {
-  line-height: 2.2rem;
+  font-size: 18px;
+  font-weight: normal;
+  line-height: 1.2rem;
   margin-bottom: 2rem;
+
+  &.margin-bottom-md {
+    margin-bottom: 25px;
+  }
+
+  &.margin-bottom-sm {
+    margin-bottom: 15px;
+  }
+
+  &.margin-bottom-xs {
+    margin-bottom: 10px;
+  }
+
+  &.margin-bottom-0 {
+    margin-bottom: 0;
+  }
+
+  .card-title-container & {
+    line-height: 1.2;
+    margin: 0;
+
+    @include media-breakpoint-down(sm) {
+      margin-bottom: 25px;
+    }
+  }
+}
+
+.card-subtitle {
+  color: #333;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.2;
+  margin: 0 0 30px;
+
+  &.margin-bottom-0 {
+    margin-bottom: 0;
+  }
+}
+
+.card-title-container {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 25px $card-horizontal-padding;
+
+  @include media-breakpoint-down(sm) {
+    flex-direction: column;
+  }
+}
+
+.card-title-controls {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+
+  @include media-breakpoint-down(sm) {
+    flex-direction: column;
+  }
+
+  .card-title-control {
+    margin-right: 20px;
+
+    &:last-child {
+      margin-right: 0;
+    }
+
+    @include media-breakpoint-down(sm) {
+      margin-bottom: 20px;
+      margin-right: 0;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
 }
 
 .card-body {
-  padding: 2.25rem 1.25rem;
+  padding: $card-horizontal-padding;
+}
+
+.card-body-flex-column-space-between {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .card-server-response-body {
@@ -34,5 +136,93 @@
 .card-chain-blocks {
   height: auto;
 
-  @include media-breakpoint-down(md) { height: 595px; }
+  [class*="col-"]:last-child {
+    .tile {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.card-chain-transactions {
+  height: auto;
+
+  .tile {
+    margin-bottom: 0;
+  }
+}
+
+.card-tabs {
+  align-items: center;
+  border-top-left-radius: $card-default-border-radius;
+  border-top-right-radius: $card-default-border-radius;
+  border-bottom: 1px solid $base-border-color;
+  display: flex;
+  justify-content: flex-start;
+  overflow: hidden;
+
+  @include media-breakpoint-down(md) {
+    flex-direction: column;
+  }
+}
+
+.card-tab {
+  align-items: center;
+  background-color: $card-background-color;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  font-weight: normal;
+  height: 70px;
+  padding: 0 25px;
+  text-align: center;
+
+  &:hover {
+    background-color: rgba($card-tab-active, .1);
+    color: $card-tab-active;
+    text-decoration: none;
+  }
+
+  @include media-breakpoint-down(md) {
+    display: none;
+    width: 100%;
+  }
+
+  .fa-check-circle {
+    color: $card-tab-icon-color;
+    margin-left: 6px;
+  }
+
+  &.active {
+    background-color: $card-tab-active;
+    color: #fff;
+    cursor: default;
+    text-decoration: none;
+
+    .fa-check-circle {
+      color: $card-tab-icon-color-active;
+    }
+
+    @include media-breakpoint-down(md) {
+      cursor: pointer;
+      display: flex;
+      order: -1;
+
+      &::after {
+        border-bottom: 0;
+        border-left: 0.3em solid transparent;
+        border-right: 0.3em solid transparent;
+        border-top: 0.3em solid;
+        content: "";
+        display: inline-block;
+        height: 0;
+        margin-left: 10px;
+        width: 0;
+      }
+
+      &.noCaret::after {
+        display: none;
+      }
+    }
+  }
 }

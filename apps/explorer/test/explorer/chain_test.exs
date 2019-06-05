@@ -50,6 +50,95 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "address_to_logs/2" do
+    test "fetches logs" do
+      address = insert(:address)
+
+      transaction1 =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction1, index: 1, address: address)
+
+      transaction2 =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction2, index: 2, address: address)
+
+      assert Enum.count(Chain.address_to_logs(address)) == 2
+    end
+
+    test "paginates logs" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      log1 = insert(:log, transaction: transaction, index: 1, address: address)
+
+      2..51
+      |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index, address: address) end)
+      |> Enum.map(& &1.index)
+
+      paging_options1 = %PagingOptions{page_size: 1}
+
+      [_log] = Chain.address_to_logs(address, paging_options: paging_options1)
+
+      paging_options2 = %PagingOptions{page_size: 60, key: {transaction.block_number, transaction.index, log1.index}}
+
+      assert Enum.count(Chain.address_to_logs(address, paging_options: paging_options2)) == 50
+    end
+
+    test "searches logs by topic when the first topic matches" do
+      address = insert(:address)
+
+      transaction1 =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction1, index: 1, address: address)
+
+      transaction2 =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction2, index: 2, address: address, first_topic: "test")
+
+      [found_log] = Chain.address_to_logs(address, topic: "test")
+
+      assert found_log.transaction.hash == transaction2.hash
+    end
+
+    test "searches logs by topic when the fourth topic matches" do
+      address = insert(:address)
+
+      transaction1 =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction1, index: 1, address: address, fourth_topic: "test")
+
+      transaction2 =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:log, transaction: transaction2, index: 2, address: address)
+
+      [found_log] = Chain.address_to_logs(address, topic: "test")
+
+      assert found_log.transaction.hash == transaction1.hash
+    end
+  end
+
   describe "address_to_transactions_with_rewards/2" do
     test "without transactions" do
       address = insert(:address)
@@ -2814,6 +2903,12 @@ defmodule Explorer.ChainTest do
       assert {:ok, _} = Chain.create_smart_contract(attrs)
       assert Repo.get_by(Address.Name, name: "SimpleStorage")
     end
+
+    test "sets the address verified field to true", %{valid_attrs: valid_attrs} do
+      assert {:ok, %SmartContract{} = smart_contract} = Chain.create_smart_contract(valid_attrs)
+
+      assert Repo.get_by(Address, hash: smart_contract.address_hash).verified == true
+    end
   end
 
   describe "stream_unfetched_balances/2" do
@@ -3901,6 +3996,61 @@ defmodule Explorer.ChainTest do
       end
 
       refute Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
+    end
+  end
+
+  describe "staking_pools/3" do
+    test "validators staking pools" do
+      inserted_validator = insert(:staking_pool, is_active: true, is_validator: true)
+      insert(:staking_pool, is_active: true, is_validator: false)
+
+      options = %PagingOptions{page_size: 20, page_number: 1}
+
+      assert [gotten_validator] = Chain.staking_pools(:validator, options)
+      assert inserted_validator.staking_address_hash == gotten_validator.staking_address_hash
+    end
+
+    test "active staking pools" do
+      inserted_pool = insert(:staking_pool, is_active: true)
+      insert(:staking_pool, is_active: false)
+
+      options = %PagingOptions{page_size: 20, page_number: 1}
+
+      assert [gotten_pool] = Chain.staking_pools(:active, options)
+      assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
+    end
+
+    test "inactive staking pools" do
+      insert(:staking_pool, is_active: true)
+      inserted_pool = insert(:staking_pool, is_active: false)
+
+      options = %PagingOptions{page_size: 20, page_number: 1}
+
+      assert [gotten_pool] = Chain.staking_pools(:inactive, options)
+      assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
+    end
+  end
+
+  describe "staking_pools_count/1" do
+    test "validators staking pools" do
+      insert(:staking_pool, is_active: true, is_validator: true)
+      insert(:staking_pool, is_active: true, is_validator: false)
+
+      assert Chain.staking_pools_count(:validator) == 1
+    end
+
+    test "active staking pools" do
+      insert(:staking_pool, is_active: true)
+      insert(:staking_pool, is_active: false)
+
+      assert Chain.staking_pools_count(:active) == 1
+    end
+
+    test "inactive staking pools" do
+      insert(:staking_pool, is_active: true)
+      insert(:staking_pool, is_active: false)
+
+      assert Chain.staking_pools_count(:inactive) == 1
     end
   end
 end

@@ -1,21 +1,25 @@
+<% contract_creation_code = contract_creation_code(@address) %>
+
 <section class="container">
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
 
   <div class="card">
-    <div class="card-header">
-      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-    </div>
-
+    <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
     <div class="card-body">
-      <%= if !BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
-        <%= link(
-              gettext("Verify & Publish"),
-              to: address_verify_contract_path(@conn, :new, @address.hash),
-              class: "button button-primary button-sm float-right ml-3",
-              "data-test": "verify_and_publish"
-            ) %>
+      <%= if match?({:selfdestructed, _}, contract_creation_code) do %>
+        <div class="button button-disabled button-sm float-right ml-3">
+          <%= gettext("Verify & Publish") %>
+        </div>
+      <% else %>
+        <%= if !BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
+          <%= link(
+                gettext("Verify & Publish"),
+                to: address_verify_contract_path(@conn, :new, @address.hash),
+                class: "button button-primary button-sm float-right ml-3",
+                "data-test": "verify_and_publish"
+              ) %>
+        <% end %>
       <% end %>
-
       <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
         <div class="mb-4">
           <dl class="row">
@@ -59,15 +63,32 @@
 
       <% end %>
       <section>
-        <div class="d-flex justify-content-between align-items-baseline">
-          <h3><%= gettext "Contract creation code" %></h3>
-          <button type="button" class="button button-secondary button-sm" id="button" data-clipboard-text="<%= @address.contract_code %>" aria-label="copy contract creation code">
-            <%= gettext "Copy Contract Creation Code" %>
-          </button>
-        </div>
-        <div class="tile tile-muted">
-          <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= @address.contract_code %></code></pre>
-        </div>
+        <%= case contract_creation_code do %>
+          <% {:selfdestructed, transaction_init} -> %> 
+            <div class="d-flex justify-content-between align-items-baseline">
+              <h3><%= gettext "Contract Creation Code" %></h3>
+              <button type="button" class="button button-secondary button-sm" id="button" data-clipboard-text="<%= transaction_init %>" aria-label="copy contract creation code">
+                <%= gettext "Copy Contract Creation Code" %>
+              </button>
+            </div>
+            <div class="alert alert-info">
+              <p><%= gettext "Contracts that self destruct in their constructors have no contract code published and cannot be verified." %></p>
+              <p><%= gettext "Displaying the init data provided of the creating transaction." %></p>
+            </div>
+            <div class="tile tile-muted">
+              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= transaction_init %></code></pre>
+            </div>
+          <% {:ok, contract_code} -> %>
+            <div class="d-flex justify-content-between align-items-baseline">
+              <h3><%= gettext "Contract Byte Code" %></h3>
+              <button type="button" class="button button-secondary button-sm" id="button" data-clipboard-text="<%= contract_code %>" aria-label="copy contract creation code">
+                <%= gettext "Copy Contract Byte Code" %>
+              </button>
+            </div>
+            <div class="tile tile-muted">
+              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= contract_code %></code></pre>
+            </div>
+        <% end %>
       </section>
 
     </div>

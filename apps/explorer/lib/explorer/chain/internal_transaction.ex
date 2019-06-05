@@ -4,7 +4,7 @@ defmodule Explorer.Chain.InternalTransaction do
   use Explorer.Schema
 
   alias Explorer.Chain.{Address, Data, Gas, Hash, Transaction, Wei}
-  alias Explorer.Chain.InternalTransaction.{CallType, Type}
+  alias Explorer.Chain.InternalTransaction.{Action, CallType, Result, Type}
 
   @typedoc """
    * `block_number` - the `t:Explorer.Chain.Block.t/0` `number` that the `transaction` is collated into.
@@ -470,7 +470,12 @@ defmodule Explorer.Chain.InternalTransaction do
     from_address_hash, created_contract_address_hash from internal_transactions' table.
   """
   def where_address_fields_match(query, address_hash, :to) do
-    where(query, [t], t.to_address_hash == ^address_hash)
+    where(
+      query,
+      [t],
+      t.to_address_hash == ^address_hash or
+        (is_nil(t.to_address_hash) and t.created_contract_address_hash == ^address_hash)
+    )
   end
 
   def where_address_fields_match(query, address_hash, :from) do
@@ -496,5 +501,122 @@ defmodule Explorer.Chain.InternalTransaction do
 
   def where_block_number_is_not_null(query) do
     where(query, [t], not is_nil(t.block_number))
+  end
+
+  def internal_transactions_to_raw(internal_transactions) when is_list(internal_transactions) do
+    internal_transactions
+    |> Enum.map(&internal_transaction_to_raw/1)
+    |> add_subtraces()
+  end
+
+  defp internal_transaction_to_raw(%{type: :call} = transaction) do
+    %{
+      call_type: call_type,
+      to_address_hash: to_address_hash,
+      from_address_hash: from_address_hash,
+      input: input,
+      gas: gas,
+      value: value,
+      trace_address: trace_address
+    } = transaction
+
+    action = %{
+      "callType" => call_type,
+      "to" => to_address_hash,
+      "from" => from_address_hash,
+      "input" => input,
+      "gas" => gas,
+      "value" => value
+    }
+
+    %{
+      "type" => "call",
+      "action" => Action.to_raw(action),
+      "traceAddress" => trace_address
+    }
+    |> put_raw_call_error_or_result(transaction)
+  end
+
+  defp internal_transaction_to_raw(%{type: :create} = transaction) do
+    %{
+      from_address_hash: from_address_hash,
+      gas: gas,
+      init: init,
+      trace_address: trace_address,
+      value: value
+    } = transaction
+
+    action = %{"from" => from_address_hash, "gas" => gas, "init" => init, "value" => value}
+
+    %{
+      "type" => "create",
+      "action" => Action.to_raw(action),
+      "traceAddress" => trace_address
+    }
+    |> put_raw_create_error_or_result(transaction)
+  end
+
+  defp internal_transaction_to_raw(%{type: :selfdestruct} = transaction) do
+    %{
+      to_address_hash: to_address_hash,
+      from_address_hash: from_address_hash,
+      trace_address: trace_address,
+      value: value
+    } = transaction
+
+    action = %{
+      "address" => from_address_hash,
+      "balance" => value,
+      "refundAddress" => to_address_hash
+    }
+
+    %{
+      "type" => "suicide",
+      "action" => Action.to_raw(action),
+      "traceAddress" => trace_address
+    }
+  end
+
+  defp add_subtraces(traces) do
+    Enum.map(traces, fn trace ->
+      Map.put(trace, "subtraces", count_subtraces(trace, traces))
+    end)
+  end
+
+  defp count_subtraces(%{"traceAddress" => trace_address}, traces) do
+    Enum.count(traces, fn %{"traceAddress" => trace_address_candidate} ->
+      direct_descendant?(trace_address, trace_address_candidate)
+    end)
+  end
+
+  defp direct_descendant?([], [_]), do: true
+
+  defp direct_descendant?([elem | remaining_left], [elem | remaining_right]),
+    do: direct_descendant?(remaining_left, remaining_right)
+
+  defp direct_descendant?(_, _), do: false
+
+  defp put_raw_call_error_or_result(raw, %{error: error}) when not is_nil(error) do
+    Map.put(raw, "error", error)
+  end
+
+  defp put_raw_call_error_or_result(raw, %{gas_used: gas_used, output: output}) do
+    Map.put(raw, "result", Result.to_raw(%{"gasUsed" => gas_used, "output" => output}))
+  end
+
+  defp put_raw_create_error_or_result(raw, %{error: error}) when not is_nil(error) do
+    Map.put(raw, "error", error)
+  end
+
+  defp put_raw_create_error_or_result(raw, %{
+         created_contract_code: code,
+         created_contract_address_hash: created_contract_address_hash,
+         gas_used: gas_used
+       }) do
+    Map.put(
+      raw,
+      "result",
+      Result.to_raw(%{"gasUsed" => gas_used, "code" => code, "address" => created_contract_address_hash})
+    )
   end
 end

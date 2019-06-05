@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain.{Address, Data, InternalTransaction}
+
   def render("scripts.html", %{conn: conn}) do
     render_scripts(conn, "address_contract/code_highlighting.js")
   end
@@ -33,5 +35,16 @@ defmodule BlockScoutWeb.AddressContractView do
     |> Enum.map(fn {value, line} ->
       {value, String.pad_leading(to_string(line), max_digits, " ")}
     end)
+  end
+
+  def contract_creation_code(%Address{
+        contract_code: %Data{bytes: <<>>},
+        contracts_creation_internal_transaction: %InternalTransaction{init: init}
+      }) do
+    {:selfdestructed, init}
+  end
+
+  def contract_creation_code(%Address{contract_code: contract_code}) do
+    {:ok, contract_code}
   end
 end
