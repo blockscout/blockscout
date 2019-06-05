@@ -1,7 +1,11 @@
 defmodule Explorer.Chain.AddressTransactionCsvExporter do
-  alias Explorer.Chain
+  @moduledoc """
+  Exports transactions to a csv file.
+  """
+
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Transaction}
-  alias Explorer.PagingOptions
+  alias NimbleCSV.RFC4180
 
   @necessity_by_association [
     necessity_by_association: %{
@@ -20,6 +24,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
 
   @paging_options %PagingOptions{page_size: @page_size + 1}
 
+  @spec export(Address.t()) :: String.t()
   def export(address) do
     address
     |> fetch_all_transactions(@paging_options)
@@ -47,10 +52,11 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
   defp dump_data_to_csv(transactions) do
     {:ok, path} = Briefly.create()
 
-    transactions
-    |> NimbleCSV.RFC4180.dump_to_stream()
-    |> Stream.into(File.stream!(path))
-    |> Enum.to_list()
+    _ =
+      transactions
+      |> RFC4180.dump_to_stream()
+      |> Stream.into(File.stream!(path))
+      |> Enum.to_list()
 
     path
   end
