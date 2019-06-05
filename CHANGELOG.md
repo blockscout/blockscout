@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2103](https://github.com/poanetwork/blockscout/pull/2103) - ui issues for all themes
 - [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
 - [#2096](https://github.com/poanetwork/blockscout/pull/2096) - RSK theme fixes
 
