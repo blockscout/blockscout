@@ -1,6 +1,6 @@
 // Default variables
 $header-background-color: #fff !default;
-$header-links-color: #a3a9b5 !default;
+$header-links-color: #828ba0 !default;
 $header-links-color-active: #333 !default;
 $header-icon-color: $header-links-color !default;
 $header-icon-color-hover: #333 !default;
@@ -10,7 +10,7 @@ $header-textfield-text-color: $header-links-color !default;
 $header-textfield-background-color: #f5f6fa !default;
 $header-textfield-magnifier-color: $header-links-color !default;
 $header-link-horizontal-padding: 0.71rem;
-$navbar-logo-height: 1.5em !default;
+$navbar-logo-height: 18px !default;
 $navbar-logo-width: auto !default;
 
 .navbar.navbar-primary {
@@ -30,6 +30,7 @@ $navbar-logo-width: auto !default;
       display: flex;
       font-size: 14px;
       position: relative;
+      transition: $transition-base;
 
       &:before {
         background-color: $header-icon-border-color-hover;
@@ -77,12 +78,16 @@ $navbar-logo-width: auto !default;
 
         path {
           fill: $header-icon-color;
+          transition: $transition-base;
         }
       }
     }
 
     .nav-item-networks {
       margin-left: auto;
+      .nav-link:before {
+        display: none;
+      }
     }
   }
 
@@ -208,7 +213,7 @@ $navbar-logo-width: auto !default;
 }
 
 .navbar-logo {
-  height: $navbar-logo-height;
+  max-height: $navbar-logo-height;
   width: $navbar-logo-width;
 }
 
