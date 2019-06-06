@@ -13,7 +13,6 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
 
   import Ecto.Query
 
-  alias Ecto.Multi
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain.Block
   alias Explorer.Repo
@@ -23,7 +22,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
 
   @defaults [
     flush_interval: :timer.seconds(3),
-    max_batch_size: 10,
+    max_batch_size: 50,
     max_concurrency: 1,
     task_supervisor: Indexer.Temporary.BlocksTransactionsMismatch.TaskSupervisor,
     metadata: [fetcher: :blocks_transactions_mismatch]
@@ -99,17 +98,26 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
         Map.has_key?(found_blocks_map, to_string(block.hash))
       end)
 
-    {:ok, _} =
-      found_blocks_data
-      |> Enum.reduce(Multi.new(), fn {block, trans_num}, multi ->
-        changes = %{
-          refetch_needed: false,
-          consensus: found_blocks_map[to_string(block.hash)] == trans_num
-        }
-
-        Multi.update(multi, block.hash, Block.changeset(block, changes))
+    {matching_blocks_data, unmatching_blocks_data} =
+      Enum.split_with(found_blocks_data, fn {block, trans_num} ->
+        found_blocks_map[to_string(block.hash)] == trans_num
       end)
-      |> Repo.transaction()
+
+    unless Enum.empty?(matching_blocks_data) do
+      hashes = Enum.map(matching_blocks_data, fn {block, _trans_num} -> block.hash end)
+
+      Block
+      |> where([block], block.hash in ^hashes)
+      |> Repo.update_all(set: [refetch_needed: false])
+    end
+
+    unless Enum.empty?(unmatching_blocks_data) do
+      hashes = Enum.map(unmatching_blocks_data, fn {block, _trans_num} -> block.hash end)
+
+      Block
+      |> where([block], block.hash in ^hashes)
+      |> Repo.update_all(set: [refetch_needed: false, consensus: false])
+    end
 
     if Enum.empty?(missing_blocks_data) do
       :ok
