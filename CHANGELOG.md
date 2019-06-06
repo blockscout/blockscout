@@ -3,6 +3,11 @@
 ### Features
 
 ### Fixes
+- [#2103](https://github.com/poanetwork/blockscout/pull/2103) - ui issues for all themes
+- [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
+- [#2096](https://github.com/poanetwork/blockscout/pull/2096) - RSK theme fixes
+- [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
+- [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fixe uncle fetching without full transactions
 
 ### Chore
 
@@ -38,7 +43,6 @@
 ### Fixes
 - [#2099](https://github.com/poanetwork/blockscout/pull/2099) - logs search input width
 - [#2098](https://github.com/poanetwork/blockscout/pull/2098) - nav dropdown issue, logo size issue
-- [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
 - [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix, 404 page added
 - [#2077](https://github.com/poanetwork/blockscout/pull/2077) - ui issues
 - [#2072](https://github.com/poanetwork/blockscout/pull/2072) - Fixed checkmarks not showing correctly in tabs.
@@ -76,7 +80,6 @@
 - [#2070](https://github.com/poanetwork/blockscout/pull/2070) - reduce `max_concurrency` of `BlocksTransactionsMismatch` fetcher
 - [#2083](https://github.com/poanetwork/blockscout/pull/2083) - allow total_difficuly to be nil
 - [#2086](https://github.com/poanetwork/blockscout/pull/2086) - fix geth's staticcall without output
-- [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
 
 ### Chore
 
