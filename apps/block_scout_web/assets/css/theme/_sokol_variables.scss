@@ -7,17 +7,21 @@ $additional-font: #93e8dd;
 // footer
 $footer-background-color: $primary;
 $footer-title-color: #fff;
-$footer-text-color: #93e8dd;
-$footer-item-disc-color: $secondary;
+$footer-text-color: $additional-font;
+$footer-item-disc-color: $additional-font;
 .footer-logo { filter: brightness(0) invert(1); }
 
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
 
+$dashboard-line-color-price: $secondary;
 
-$dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
+$dashboard-line-color-market: $tertiary;
 
-$dashboard-stats-item-value-color: $additional-font; // stat values
+$dashboard-banner-chart-legend-label-color: $additional-font;
+$dashboard-stats-item-label-color: $additional-font;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
 
 $dashboard-stats-item-border-color: $secondary; // stat border
 
@@ -30,9 +34,6 @@ $dashboard-banner-network-plain-container-background-color: #0e534a; // stats bg
 
 // navigation
 .navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
-$header-icon-border-color-hover: $secondary; // top border on hover
-$header-icon-color-hover: $secondary; // nav icon on hover
-.dropdown-item:hover, .dropdown-item:focus { background-color: $secondary !important; } // dropdown item on hover
 
 // buttons
 $btn-line-bg: #fff; // button bg
@@ -41,11 +42,21 @@ $btn-copy-color: #1c9f90; // btn copy
 $btn-qr-color: #1c9f90; // btn qr-code
 
 //links & tile
-.tile a { color: $secondary !important; } // links color for badges
-.tile-type-block {
-    border-left: 4px solid $secondary;
-} // tab active bg
+$tile-body-a-color: #1c9f90;
+$tile-type-block-color: #1c9f90;
+$tile-type-progress-bar-color: #1c9f90;
+a.tile-title { color: #1c9f90 !important; }
 
 // card
 $card-background-1: $secondary;
 $card-tab-active: $secondary;
+
+.layout-container {
+	.dashboard-banner-container {
+	  background-image: linear-gradient(
+	    to bottom,
+	    $dashboard-banner-gradient-start,
+	    $dashboard-banner-gradient-end
+	  );
+	}
+}

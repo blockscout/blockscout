@@ -12,7 +12,7 @@
 .logs-search {
 	display: flex;
 	position: relative;
-	width: 52%;
+	flex: 2;
 	@media (max-width: 599px) {
 		margin-bottom: 30px;
 		width: 100%;
@@ -29,6 +29,7 @@
 	font-family: Nunito, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     font-size: 12px;
     font-weight: 600;
+    -webkit-appearance: none;
 }
 
 .logs-search-input {
@@ -36,8 +37,10 @@
     display: inline-flex;
     flex-grow: 2;
     min-width: 160px;
+    font-weight: 300 !important;
     &::placeholder {
-    	color: #a3a9b5; 
+    	color: #a3a9b5;
+    	font-weight: 300 !important;
     }
 }
 
