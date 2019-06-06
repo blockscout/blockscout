@@ -30,7 +30,9 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
                            fee,
                            status,
                            error,
-                           cur_price
+                           cur_price,
+                           op_price,
+                           cl_price
                          ] ->
           %{
             hash: hash,
@@ -44,12 +46,15 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
             fee: fee,
             status: status,
             error: error,
-            current_price: cur_price
+            current_price: cur_price,
+            opening_price: op_price,
+            closing_price: cl_price
           }
         end)
         |> Enum.to_list()
 
       assert result.block_number == to_string(transaction.block_number)
+      assert result.timestamp
       assert result.created_address == to_string(transaction.created_contract_address_hash)
       assert result.from_address == to_string(transaction.from_address)
       assert result.to_address == to_string(transaction.to_address)
@@ -60,6 +65,8 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       assert result.status == to_string(transaction.status)
       assert result.error == to_string(transaction.error)
       assert result.current_price
+      assert result.opening_price
+      assert result.closing_price
     end
 
     test "fetches all transactions" do

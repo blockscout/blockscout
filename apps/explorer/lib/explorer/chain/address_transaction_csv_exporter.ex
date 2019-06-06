@@ -3,7 +3,13 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
   Exports transactions to a csv file.
   """
 
-  alias Explorer.{Chain, Market, PagingOptions}
+  import Ecto.Query,
+    only: [
+      from: 2
+    ]
+
+  alias Explorer.{Chain, Market, PagingOptions, Repo}
+  alias Explorer.Market.MarketHistory
   alias Explorer.Chain.{Address, Transaction, Wei}
   alias Explorer.ExchangeRates.Token
   alias NimbleCSV.RFC4180
@@ -78,12 +84,16 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
       "Fee",
       "Status",
       "ErrCode",
-      "CurrentPrice"
+      "CurrentPrice",
+      "TxDateOpeningPrice",
+      "TxDateClosingPrice"
     ]
 
     transaction_lists =
       transactions
       |> Stream.map(fn transaction ->
+        {opening_price, closing_price} = price_at_date(transaction.block.timestamp)
+
         [
           to_string(transaction.hash),
           transaction.block_number,
@@ -96,7 +106,9 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
           fee(transaction),
           transaction.status,
           transaction.error,
-          exchange_rate.usd_value
+          exchange_rate.usd_value,
+          opening_price,
+          closing_price
         ]
       end)
 
@@ -115,6 +127,21 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
     |> case do
       {:actual, value} -> value
       {:maximum, value} -> "Max of #{value}"
+    end
+  end
+
+  defp price_at_date(datetime) do
+    date = DateTime.to_date(datetime)
+
+    query =
+      from(
+        mh in MarketHistory,
+        where: mh.date == ^date
+      )
+
+    case Repo.one(query) do
+      nil -> {nil, nil}
+      price -> {price.opening_price, price.closing_price}
     end
   end
 end
