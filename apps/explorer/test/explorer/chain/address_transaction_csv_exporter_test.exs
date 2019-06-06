@@ -17,6 +17,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
         address
         |> AddressTransactionCsvExporter.export()
         |> Enum.to_list()
+        |> Enum.drop(1)
         |> Enum.map(fn [
                          hash,
                          _,
@@ -96,6 +97,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
         address
         |> AddressTransactionCsvExporter.export()
         |> Enum.to_list()
+        |> Enum.drop(1)
 
       assert Enum.count(result) == 200
     end

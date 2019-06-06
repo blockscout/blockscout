@@ -147,7 +147,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
       conn = get(conn, "/transactions_csv", %{"address_id" => to_string(address.hash)})
 
-      assert conn.resp_body |> String.split("\n") |> Enum.count() == 3
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
     end
   end
 end

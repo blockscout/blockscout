@@ -64,47 +64,47 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
   end
 
   defp to_csv_format(transactions, address, exchange_rate) do
-    # row_names = [
-    #   "TxHash",
-    #   "BlockNumber",
-    #   "UnixTimestamp",
-    #   "FromAddress",
-    #   "ToAddress",
-    #   "ContractAddress",
-    #   "Type",
-    #   "Value",
-    #   "Fee",
-    #   "Status",
-    #   "ErrCode",
-    #   "CurrentPrice",
-    #   "TxDateOpeningPrice",
-    #   "TxDateClosingPrice"
-    # ]
+    row_names = [
+      "TxHash",
+      "BlockNumber",
+      "UnixTimestamp",
+      "FromAddress",
+      "ToAddress",
+      "ContractAddress",
+      "Type",
+      "Value",
+      "Fee",
+      "Status",
+      "ErrCode",
+      "CurrentPrice",
+      "TxDateOpeningPrice",
+      "TxDateClosingPrice"
+    ]
 
-    # transaction_lists =
-    transactions
-    |> Stream.map(fn transaction ->
-      {opening_price, closing_price} = price_at_date(transaction.block.timestamp)
+    transaction_lists =
+      transactions
+      |> Stream.map(fn transaction ->
+        {opening_price, closing_price} = price_at_date(transaction.block.timestamp)
 
-      [
-        to_string(transaction.hash),
-        transaction.block_number,
-        transaction.block.timestamp,
-        to_string(transaction.from_address),
-        to_string(transaction.to_address),
-        to_string(transaction.created_contract_address),
-        type(transaction, address),
-        Wei.to(transaction.value, :wei),
-        fee(transaction),
-        transaction.status,
-        transaction.error,
-        exchange_rate.usd_value,
-        opening_price,
-        closing_price
-      ]
-    end)
+        [
+          to_string(transaction.hash),
+          transaction.block_number,
+          transaction.block.timestamp,
+          to_string(transaction.from_address),
+          to_string(transaction.to_address),
+          to_string(transaction.created_contract_address),
+          type(transaction, address),
+          Wei.to(transaction.value, :wei),
+          fee(transaction),
+          transaction.status,
+          transaction.error,
+          exchange_rate.usd_value,
+          opening_price,
+          closing_price
+        ]
+      end)
 
-    # Stream.concat([row_names], transaction_lists)
+    Stream.concat([row_names], transaction_lists)
   end
 
   defp type(%Transaction{from_address_hash: from_address}, %Address{hash: from_address}), do: "OUT"
