@@ -16,24 +16,37 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       [result] =
         address
         |> AddressTransactionCsvExporter.export()
-        |> File.stream!()
-        |> NimbleCSV.RFC4180.parse_stream()
-        |> Stream.map(fn [
-                           hash,
-                           block_number,
-                           timestamp,
-                           from_address,
-                           to_address,
-                           created_address,
-                           type,
-                           value,
-                           fee,
-                           status,
-                           error,
-                           cur_price,
-                           op_price,
-                           cl_price
-                         ] ->
+        |> Enum.to_list()
+        |> Enum.map(fn [
+                         hash,
+                         _,
+                         block_number,
+                         _,
+                         timestamp,
+                         _,
+                         from_address,
+                         _,
+                         to_address,
+                         _,
+                         created_address,
+                         _,
+                         type,
+                         _,
+                         value,
+                         _,
+                         fee,
+                         _,
+                         status,
+                         _,
+                         error,
+                         _,
+                         cur_price,
+                         _,
+                         op_price,
+                         _,
+                         cl_price,
+                         _
+                       ] ->
           %{
             hash: hash,
             block_number: block_number,
@@ -51,7 +64,6 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
             closing_price: cl_price
           }
         end)
-        |> Enum.to_list()
 
       assert result.block_number == to_string(transaction.block_number)
       assert result.timestamp
@@ -83,8 +95,6 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       result =
         address
         |> AddressTransactionCsvExporter.export()
-        |> File.stream!()
-        |> NimbleCSV.RFC4180.parse_stream()
         |> Enum.to_list()
 
       assert Enum.count(result) == 200

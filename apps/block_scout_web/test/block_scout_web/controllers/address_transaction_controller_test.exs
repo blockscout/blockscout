@@ -132,4 +132,22 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
              end)
     end
   end
+
+  describe "GET transactions_csv/2" do
+    test "download csv file with transactions", %{conn: conn} do
+      address = insert(:address)
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block()
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block()
+
+      conn = get(conn, "/transactions_csv", %{"address_id" => to_string(address.hash)})
+
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 3
+    end
+  end
 end

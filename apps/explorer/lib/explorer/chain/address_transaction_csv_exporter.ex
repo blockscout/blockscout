@@ -31,14 +31,14 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
 
   @paging_options %PagingOptions{page_size: @page_size + 1}
 
-  @spec export(Address.t()) :: String.t()
+  @spec export(Address.t()) :: Enumerable.t()
   def export(address) do
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
     address
     |> fetch_all_transactions(@paging_options)
     |> to_csv_format(address, exchange_rate)
-    |> dump_data_to_csv()
+    |> dump_to_stream()
   end
 
   defp fetch_all_transactions(address, paging_options, acc \\ []) do
@@ -58,61 +58,53 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
     end
   end
 
-  defp dump_data_to_csv(transactions) do
-    {:ok, path} = Briefly.create()
-
-    _ =
-      transactions
-      |> RFC4180.dump_to_stream()
-      |> Stream.into(File.stream!(path))
-      |> Enum.to_list()
-
-    path
+  defp dump_to_stream(transactions) do
+    transactions
+    |> RFC4180.dump_to_stream()
   end
 
   defp to_csv_format(transactions, address, exchange_rate) do
-    # , "ETHCurrentPrice", "ETHPriceAtTxDate", "TxFee", "Status", "ErrCode"]
-    row_names = [
-      "TxHash",
-      "BlockNumber",
-      "UnixTimestamp",
-      "FromAddress",
-      "ToAddress",
-      "ContractAddress",
-      "Type",
-      "Value",
-      "Fee",
-      "Status",
-      "ErrCode",
-      "CurrentPrice",
-      "TxDateOpeningPrice",
-      "TxDateClosingPrice"
-    ]
+    # row_names = [
+    #   "TxHash",
+    #   "BlockNumber",
+    #   "UnixTimestamp",
+    #   "FromAddress",
+    #   "ToAddress",
+    #   "ContractAddress",
+    #   "Type",
+    #   "Value",
+    #   "Fee",
+    #   "Status",
+    #   "ErrCode",
+    #   "CurrentPrice",
+    #   "TxDateOpeningPrice",
+    #   "TxDateClosingPrice"
+    # ]
 
-    transaction_lists =
-      transactions
-      |> Stream.map(fn transaction ->
-        {opening_price, closing_price} = price_at_date(transaction.block.timestamp)
+    # transaction_lists =
+    transactions
+    |> Stream.map(fn transaction ->
+      {opening_price, closing_price} = price_at_date(transaction.block.timestamp)
 
-        [
-          to_string(transaction.hash),
-          transaction.block_number,
-          transaction.block.timestamp,
-          to_string(transaction.from_address),
-          to_string(transaction.to_address),
-          to_string(transaction.created_contract_address),
-          type(transaction, address),
-          Wei.to(transaction.value, :wei),
-          fee(transaction),
-          transaction.status,
-          transaction.error,
-          exchange_rate.usd_value,
-          opening_price,
-          closing_price
-        ]
-      end)
+      [
+        to_string(transaction.hash),
+        transaction.block_number,
+        transaction.block.timestamp,
+        to_string(transaction.from_address),
+        to_string(transaction.to_address),
+        to_string(transaction.created_contract_address),
+        type(transaction, address),
+        Wei.to(transaction.value, :wei),
+        fee(transaction),
+        transaction.status,
+        transaction.error,
+        exchange_rate.usd_value,
+        opening_price,
+        closing_price
+      ]
+    end)
 
-    Stream.concat([row_names], transaction_lists)
+    # Stream.concat([row_names], transaction_lists)
   end
 
   defp type(%Transaction{from_address_hash: from_address}, %Address{hash: from_address}), do: "OUT"
