@@ -240,6 +240,8 @@ defmodule BlockScoutWeb.Router do
 
     get("/search_logs", AddressLogsController, :search_logs)
 
+    get("/transactions_csv", AddressTransactionController, :transactions_csv)
+
     get("/token_autocomplete", ChainController, :token_autocomplete)
 
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
