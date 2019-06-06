@@ -38,6 +38,16 @@ defmodule Explorer.Chain.BlocksCacheTest do
       assert Enum.map(BlocksCache.blocks(), & &1.number) == new_blocks
     end
 
+    test "does not add too old blocks" do
+      block = insert(:block, number: 100_000) |> Repo.preload([:transactions, [miner: :names], :rewards])
+      old_block = insert(:block, number: 1_000)
+
+      BlocksCache.update(block)
+      BlocksCache.update(old_block)
+
+      assert BlocksCache.blocks() == [block]
+    end
+
     test "adds missing element" do
       block1 = insert(:block, number: 10)
       block2 = insert(:block, number: 4)
