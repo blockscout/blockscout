@@ -176,10 +176,10 @@ $card-tab-icon-color-active: #20b760 !default;
   height: 70px;
   padding: 0 25px;
   text-align: center;
-  transition: $transition-base;
+  transition: $transition-cont;
 
   &:hover {
-    background-color: rgba($card-tab-active, .1);
+    background-color: rgba($card-tab-active, .15);
     color: $card-tab-active;
     text-decoration: none;
   }

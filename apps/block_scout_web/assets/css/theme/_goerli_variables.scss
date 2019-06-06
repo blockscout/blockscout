@@ -12,11 +12,14 @@ $footer-item-disc-color: $secondary;
 .footer-logo { filter: brightness(0) invert(1); }
 
 // dashboard
-$dashboard-line-color-price: $tertiary; // price left border
+$dashboard-line-color-price: $secondary;
 
-$dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
+$dashboard-line-color-market: $tertiary;
 
-$dashboard-stats-item-value-color: $additional-font; // stat values
+$dashboard-banner-chart-legend-label-color: $tertiary;
+$dashboard-stats-item-label-color: $tertiary;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
 
 $dashboard-stats-item-border-color: $secondary; // stat border
 
@@ -29,22 +32,39 @@ $dashboard-banner-network-plain-container-background-color: #424242; // stats bg
 
 // navigation
 .navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
-$header-icon-border-color-hover: $secondary; // top border on hover
-$header-icon-color-hover: $secondary; // nav icon on hover
-.dropdown-item:hover, .dropdown-item:focus { background-color: $secondary !important; } // dropdown item on hover
 
 // buttons
 $btn-line-bg: #fff; // button bg
-$btn-line-color: #424242; // button border and font color && hover bg color
-$btn-copy-color: #424242; // btn copy
-$btn-qr-color: #424242; // btn qr-code
+$btn-line-color: #a46f30; // button border and font color && hover bg color
+$btn-copy-color: #a46f30; // btn copy
+$btn-qr-color: #a46f30; // btn qr-code
 
 //links & tile
-.tile a { color: #a46f30 !important; } // links color for badges
-.tile-type-block {
-    border-left: 4px solid $secondary;
-} // tab active bg
+$tile-body-a-color: #a46f30;
+$tile-type-block-color: #a46f30;
+$tile-type-progress-bar-color: #a46f30;
+a.tile-title { color: #a46f30 !important; }
 
 // card
-$card-background-1: $secondary;
-$card-tab-active: $secondary;
+$card-background-1: #a46f30;
+$card-tab-active: #a46f30;
+
+// dropdown
+.dropdown-item {
+    &:hover,
+    &:active,
+    &.active {
+      background-color: rgba(#a46f30, .1) !important;
+      color: #a46f30 !important;
+    }
+}
+
+.layout-container {
+	.dashboard-banner-container {
+	  background-image: linear-gradient(
+	    to bottom,
+	    $dashboard-banner-gradient-start,
+	    $dashboard-banner-gradient-end
+	  );
+	}
+}

@@ -1,5 +1,7 @@
 import $ from 'jquery'
 
 $(function () {
-  $('[data-toggle="tooltip"]').tooltip()
+  $('[data-toggle="tooltip"]').tooltip({
+  	animation: true
+  })
 })

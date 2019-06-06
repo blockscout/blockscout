@@ -1,5 +1,5 @@
 @import "theme/base_variables";
-@import "neutral_variables";
+// @import "neutral_variables";
 // @import "dai_variables";
 // @import "ethereum_classic_variables";
 // @import "ethereum_variables";
@@ -19,6 +19,7 @@
 // @import "sokol_variables";
 // @import "tobalaba_variables";
 // @import "tomochain_variables";
+@import "rsk_variables";
 
 // responsive breakpoints
 $breakpoint-xs: 320px;
