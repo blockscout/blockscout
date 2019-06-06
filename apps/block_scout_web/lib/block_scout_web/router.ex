@@ -32,6 +32,8 @@ defmodule BlockScoutWeb.Router do
 
     alias BlockScoutWeb.API.RPC
 
+    post("/eth_rpc", EthController, :eth_request)
+
     forward("/", RPCTranslator, %{
       "block" => RPC.BlockController,
       "account" => RPC.AddressController,
