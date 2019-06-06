@@ -6,6 +6,7 @@
     <div class="card">
       <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div class="card-body" data-async-listing="<%= @current_path %>">
+        <a type="button" href=<%= address_transaction_path(@conn, :transactions_csv, %{"address_id" => to_string(@address.hash)}) %>><%= gettext("Download all transactions as csv") %></a>
         <div data-selector="channel-disconnected-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
