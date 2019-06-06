@@ -88,7 +88,7 @@
   outline: none;
   padding: 0 15px;
   text-decoration: none;
-  transition: all 0.15s;
+  transition: $transition-cont;
   white-space: nowrap;
   width: fit-content;
 
@@ -137,9 +137,10 @@
   outline: none;
   padding: 0 15px;
   text-decoration: none;
-  transition: all 0.15s;
+  transition: $transition-cont;
   white-space: nowrap;
   width: fit-content;
+  font-weight: 400;
 
   &:hover {
     background-color: $text-color;
@@ -182,7 +183,7 @@
   display: flex;
   height: $dimensions;
   justify-content: center;
-  transition: all 0.15s;
+  transition: $transition-cont;
   width: $dimensions;
 
   svg {
@@ -193,6 +194,7 @@
 
   path {
     fill: $color;
+    transition: $transition-cont;
   }
 
   &:hover {

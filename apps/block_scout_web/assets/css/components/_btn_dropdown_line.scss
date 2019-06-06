@@ -1,5 +1,6 @@
 $btn-dropdown-line-bg: #fff !default;
 $btn-dropdown-line-color: #e2e5ec !default;
+$btn-dropdown-line-color-hover: #f5f6fa !default;
 $btn-dropdown-line-font: #333;
 
 .btn-dropdown-line {
@@ -9,8 +10,8 @@ $btn-dropdown-line-font: #333;
   outline: none !important;
 
   &:hover {
-    background-color: $btn-dropdown-line-color;
-    border-color: $btn-dropdown-line-color;
+    background-color: $btn-dropdown-line-color-hover;
+    border-color: $btn-dropdown-line-color-hover;
     color: $btn-dropdown-line-font;
   }
 }
