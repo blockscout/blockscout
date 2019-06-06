@@ -72,6 +72,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
       "ContractAddress",
       "Type",
       "Value",
+      "Fee",
       "Status",
       "ErrCode"
     ]
@@ -88,6 +89,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
           to_string(transaction.created_contract_address),
           type(transaction, address),
           Wei.to(transaction.value, :wei),
+          fee(transaction),
           transaction.status,
           transaction.error
         ]
@@ -101,4 +103,13 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
   defp type(%Transaction{to_address_hash: to_address}, %Address{hash: to_address}), do: "IN"
 
   defp type(_, _), do: ""
+
+  defp fee(transaction) do
+    transaction
+    |> Chain.fee(:wei)
+    |> case do
+      {:actual, value} -> value
+      {:maximum, value} -> "Max of #{value}"
+    end
+  end
 end

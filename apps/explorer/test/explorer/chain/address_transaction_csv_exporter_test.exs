@@ -27,6 +27,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
                            created_address,
                            type,
                            value,
+                           fee,
                            status,
                            error
                          ] ->
@@ -39,6 +40,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
             created_address: created_address,
             type: type,
             value: value,
+            fee: fee,
             status: status,
             error: error
           }
@@ -52,6 +54,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       assert result.hash == to_string(transaction.hash)
       assert result.type == "OUT"
       assert result.value == transaction.value |> Wei.to(:wei) |> to_string()
+      assert result.fee
       assert result.status == to_string(transaction.status)
       assert result.error == to_string(transaction.error)
     end
