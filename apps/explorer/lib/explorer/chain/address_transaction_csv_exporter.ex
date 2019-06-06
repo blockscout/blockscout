@@ -3,8 +3,9 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
   Exports transactions to a csv file.
   """
 
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, Market, PagingOptions}
   alias Explorer.Chain.{Address, Transaction, Wei}
+  alias Explorer.ExchangeRates.Token
   alias NimbleCSV.RFC4180
 
   @necessity_by_association [
@@ -26,9 +27,11 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
 
   @spec export(Address.t()) :: String.t()
   def export(address) do
+    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+
     address
     |> fetch_all_transactions(@paging_options)
-    |> to_csv_format(address)
+    |> to_csv_format(address, exchange_rate)
     |> dump_data_to_csv()
   end
 
@@ -61,7 +64,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
     path
   end
 
-  defp to_csv_format(transactions, address) do
+  defp to_csv_format(transactions, address, exchange_rate) do
     # , "ETHCurrentPrice", "ETHPriceAtTxDate", "TxFee", "Status", "ErrCode"]
     row_names = [
       "TxHash",
@@ -74,7 +77,8 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
       "Value",
       "Fee",
       "Status",
-      "ErrCode"
+      "ErrCode",
+      "CurrentPrice"
     ]
 
     transaction_lists =
@@ -91,7 +95,8 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
           Wei.to(transaction.value, :wei),
           fee(transaction),
           transaction.status,
-          transaction.error
+          transaction.error,
+          exchange_rate.usd_value
         ]
       end)
 

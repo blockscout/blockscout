@@ -29,7 +29,8 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
                            value,
                            fee,
                            status,
-                           error
+                           error,
+                           cur_price
                          ] ->
           %{
             hash: hash,
@@ -42,7 +43,8 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
             value: value,
             fee: fee,
             status: status,
-            error: error
+            error: error,
+            current_price: cur_price
           }
         end)
         |> Enum.to_list()
@@ -57,6 +59,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporterTest do
       assert result.fee
       assert result.status == to_string(transaction.status)
       assert result.error == to_string(transaction.error)
+      assert result.current_price
     end
 
     test "fetches all transactions" do
