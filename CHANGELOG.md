@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2109](https://github.com/poanetwork/blockscout/pull/2109) - use bigger updates instead of `Multi` transactions in BlocksTransactionsMismatch
 
 ### Fixes
 - [#2103](https://github.com/poanetwork/blockscout/pull/2103) - ui issues for all themes
