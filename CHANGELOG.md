@@ -10,7 +10,10 @@
 - [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
 - [#2096](https://github.com/poanetwork/blockscout/pull/2096) - RSK theme fixes
 - [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
-- [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fixe uncle fetching without full transactions
+- [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fix uncle fetching without full transactions
+
+### Chore
+- [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
 
 ### Chore
 
