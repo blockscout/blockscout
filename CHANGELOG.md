@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2112](https://github.com/poanetwork/blockscout/pull/2112) - themes color improvements, dropdown color issue
 - [#2110](https://github.com/poanetwork/blockscout/pull/2110) - themes colors issues, ui issues
 - [#2103](https://github.com/poanetwork/blockscout/pull/2103) - ui issues for all themes
 - [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
