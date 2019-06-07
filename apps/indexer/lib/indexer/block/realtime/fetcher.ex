@@ -68,7 +68,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @impl GenServer
   def handle_continue({:init, subscribe_named_arguments}, %__MODULE__{subscription: nil} = state) do
     timer = schedule_polling()
-
     {:noreply, %__MODULE__{state | timer: timer} |> subscribe_to_new_heads(subscribe_named_arguments)}
   end
 
