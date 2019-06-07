@@ -1,5 +1,5 @@
 # TODO: Consider using distillery for smaller, self contained binaries
-FROM bitwalker/alpine-elixir:1.7 as build
+FROM bitwalker/alpine-elixir:1.8.1 as build
 RUN apk add --update --no-cache alpine-sdk gmp-dev make automake autoconf libtool gcc git nodejs nodejs-npm python
 
 WORKDIR /build
