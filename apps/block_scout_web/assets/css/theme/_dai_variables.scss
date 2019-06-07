@@ -1,13 +1,13 @@
 // general
 $primary: #17314f;
-$secondary: #69b9d7;
-$tertiary: #15bba6;
+$secondary: #15bba6;
+$tertiary: #93d7ff;
 $additional-font: #fff;
 
 // footer
 $footer-background-color: $primary;
 $footer-title-color: #fff;
-$footer-text-color: #fff;
+$footer-text-color: #96bde8;
 $footer-item-disc-color: $secondary;
 .footer-logo { filter: brightness(0) invert(1); }
 
@@ -16,8 +16,8 @@ $dashboard-line-color-price: $tertiary; // price left border
 
 $dashboard-line-color-market: $secondary;
 
-$dashboard-banner-chart-legend-label-color: $tertiary;
-$dashboard-stats-item-label-color: $tertiary;
+$dashboard-banner-chart-legend-label-color: $footer-text-color;
+$dashboard-stats-item-label-color: $footer-text-color;
 $dashboard-banner-chart-legend-value-color: #fff; // chart labels
 $dashboard-stats-item-value-color: #fff; // stat values
 
@@ -35,15 +35,15 @@ $dashboard-banner-network-plain-container-background-color: #20446e; // stats bg
 
 // buttons
 $btn-line-bg: #fff; // button bg
-$btn-line-color: $tertiary; // button border and font color && hover bg color
-$btn-copy-color: $tertiary; // btn copy
-$btn-qr-color: $tertiary; // btn qr-code
+$btn-line-color: $secondary; // button border and font color && hover bg color
+$btn-copy-color: $secondary; // btn copy
+$btn-qr-color: $secondary; // btn qr-code
 
 //links & tile
-$tile-body-a-color: $tertiary;
-$tile-type-block-color: $tertiary;
-$tile-type-progress-bar-color: $tertiary;
-a.tile-title { color: $tertiary !important; }
+$tile-body-a-color: $secondary;
+$tile-type-block-color: $secondary;
+$tile-type-progress-bar-color: $secondary;
+a.tile-title { color: $secondary !important; }
 
 // card
 $card-background-1: $secondary;

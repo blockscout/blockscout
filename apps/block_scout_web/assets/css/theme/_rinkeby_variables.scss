@@ -1,21 +1,22 @@
 // general
-$primary: #193653;
-$secondary: #49a2ee;
-$tertiary: #41c3a9;
-$additional-font: #a3ceff;
+$primary: #153550;
+$secondary: #38a9f5;
+$tertiary: #76f1ff;
+$additional-font: #89cae6;
 
 // footer
 $footer-background-color: $primary;
 $footer-title-color: #fff;
-$footer-text-color: $additional-font;
-$footer-item-disc-color: $additional-font;
+$footer-text-color: #89cae6;
+$footer-item-disc-color: $secondary;
 .footer-logo { filter: brightness(0) invert(1); }
+.footer-social-icons .footer-social-icon { color: $secondary; }
 
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
 
-$dashboard-banner-chart-legend-label-color: $additional-font;
-$dashboard-stats-item-label-color: $additional-font;
+$dashboard-banner-chart-legend-label-color: #89cae6;
+$dashboard-stats-item-label-color: #89cae6;
 $dashboard-banner-chart-legend-value-color: #fff; // chart labels
 $dashboard-stats-item-value-color: #fff; // stat values
 
@@ -25,7 +26,7 @@ $dashboard-banner-gradient-start: $primary; // gradient begin
 
 $dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
 
-$dashboard-banner-network-plain-container-background-color: #244468; // stats bg
+$dashboard-banner-network-plain-container-background-color: #1c476c; // stats bg
 
 
 // navigation
@@ -33,15 +34,15 @@ $dashboard-banner-network-plain-container-background-color: #244468; // stats bg
 
 // buttons
 $btn-line-bg: #fff; // button bg
-$btn-line-color: $tertiary; // button border and font color && hover bg color
-$btn-copy-color: $tertiary; // btn copy
-$btn-qr-color: $tertiary; // btn qr-code
+$btn-line-color: $secondary; // button border and font color && hover bg color
+$btn-copy-color: $secondary; // btn copy
+$btn-qr-color: $secondary; // btn qr-code
 
 //links & tile
-$tile-body-a-color: $tertiary;
-$tile-type-block-color: $tertiary;
-$tile-type-progress-bar-color: $tertiary;
-a.tile-title { color: $tertiary !important; }
+$tile-body-a-color: $secondary;
+$tile-type-block-color: $secondary;
+$tile-type-progress-bar-color: $secondary;
+a.tile-title { color: $secondary !important; }
 
 // card
 $card-background-1: $secondary;
