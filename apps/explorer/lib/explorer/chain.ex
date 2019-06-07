@@ -1155,9 +1155,7 @@ defmodule Explorer.Chain do
 
     if block_type == "Block" && !paging_options.key do
       if BlocksCache.enough_elements?(paging_options.page_size) do
-        cached_blocks = BlocksCache.blocks()
-
-        Enum.slice(cached_blocks, 0, paging_options.page_size)
+        BlocksCache.blocks(paging_options.page_size)
       else
         elements = fetch_blocks(block_type, paging_options, necessity_by_association)
 

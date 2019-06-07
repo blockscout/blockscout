@@ -56,12 +56,15 @@ defmodule Explorer.Chain.BlocksCache do
     end)
   end
 
-  def blocks do
+  def blocks(number \\ nil) do
     numbers = block_numbers()
+
+    number = if is_nil(number), do: Enum.count(numbers), else: number
 
     numbers
     |> Enum.sort()
     |> Enum.reverse()
+    |> Enum.slice(0, number)
     |> Enum.map(fn number ->
       ConCache.get(@cache_name, number)
     end)
