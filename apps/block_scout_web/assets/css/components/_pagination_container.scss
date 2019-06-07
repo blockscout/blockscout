@@ -17,6 +17,10 @@ $pagination-page-link-color-active: #fff !default;
   display: flex;
   justify-content: space-between;
 
+  &[disabled] {
+    display: none;
+  }
+
   @include media-breakpoint-down(sm) {
     flex-direction: column;
   }
@@ -109,5 +113,10 @@ $pagination-page-link-color-active: #fff !default;
       }
     }
   }
+}
 
+.logs-topbar .pagination-container {
+  @media (min-width: 600px) {
+    margin-left: 80px;
+  }
 }
