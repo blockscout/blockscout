@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2113](https://github.com/poanetwork/blockscout/pull/2113) - renewed logos for rsk, dai, blockscout; themes color changes for lukso; error images for lukso
 - [#2112](https://github.com/poanetwork/blockscout/pull/2112) - themes color improvements, dropdown color issue
 - [#2110](https://github.com/poanetwork/blockscout/pull/2110) - themes colors issues, ui issues
 - [#2103](https://github.com/poanetwork/blockscout/pull/2103) - ui issues for all themes
