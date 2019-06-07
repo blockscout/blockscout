@@ -68,6 +68,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @impl GenServer
   def handle_continue({:init, subscribe_named_arguments}, %__MODULE__{subscription: nil} = state) do
     timer = schedule_polling()
+
     {:noreply, %__MODULE__{state | timer: timer} |> subscribe_to_new_heads(subscribe_named_arguments)}
   end
 
@@ -140,7 +141,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         %__MODULE__{state | subscription: subscription}
 
       {:error, reason} ->
-        Logger.debug(fn -> ["Could not connect to websocket: ", reason, ". Continuing with polling."] end)
+        Logger.debug(fn -> ["Could not connect to websocket: #{inspect(reason)}. Continuing with polling."] end)
         state
     end
   end
