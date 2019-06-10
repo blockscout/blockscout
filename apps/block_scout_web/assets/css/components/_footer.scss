@@ -52,6 +52,10 @@ $footer-logo-width: auto !default;
     color: #fff;
   }
 
+  &:focus {
+    color: darken($footer-text-color, 5);
+  }
+
   &:last-child {
     margin-right: 0;
   }
@@ -97,6 +101,9 @@ $footer-logo-width: auto !default;
         &:hover {
           text-decoration: none;
           color: #fff;
+        }
+        &:focus {
+          color: darken($footer-text-color, 5);
         }
       }
 

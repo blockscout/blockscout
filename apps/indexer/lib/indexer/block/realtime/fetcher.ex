@@ -140,7 +140,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         %__MODULE__{state | subscription: subscription}
 
       {:error, reason} ->
-        Logger.debug(fn -> ["Could not connect to websocket: ", reason, ". Continuing with polling."] end)
+        Logger.debug(fn -> ["Could not connect to websocket: #{inspect(reason)}. Continuing with polling."] end)
         state
     end
   end
