@@ -2,12 +2,18 @@
 
 ### Features
 - [#2109](https://github.com/poanetwork/blockscout/pull/2109) - use bigger updates instead of `Multi` transactions in BlocksTransactionsMismatch
+- [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
 
 ### Fixes
+- [#2120](https://github.com/poanetwork/blockscout/pull/2120) - footer links and socials focus color issue
+- [#2113](https://github.com/poanetwork/blockscout/pull/2113) - renewed logos for rsk, dai, blockscout; themes color changes for lukso; error images for lukso
+- [#2112](https://github.com/poanetwork/blockscout/pull/2112) - themes color improvements, dropdown color issue
+- [#2110](https://github.com/poanetwork/blockscout/pull/2110) - themes colors issues, ui issues
 - [#2103](https://github.com/poanetwork/blockscout/pull/2103) - ui issues for all themes
 - [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
 - [#2096](https://github.com/poanetwork/blockscout/pull/2096) - RSK theme fixes
 - [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
+- [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fixe uncle fetching without full transactions
 
 ### Chore
 

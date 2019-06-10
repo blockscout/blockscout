@@ -108,7 +108,7 @@
             <dl class="row">
               <dt class="col-sm-3 text-muted"><%= gettext "Raw Input" %></dt>
               <dd class="col-sm-9">
-                <div class="d-flex mb-1 justify-content-between">
+                <div class="d-flex mb-3 justify-content-between">
                   <!-- Dropdown -->
                   <div class="dropdown">
                     <button class="btn-dropdown-line dropdown-toggle" type="button" id="tx-input-decoding-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
