@@ -235,9 +235,17 @@ defmodule Indexer.Fetcher.UncleBlock do
     Enum.map(errors, &error_to_entry/1)
   end
 
-  defp error_to_entry(%{data: %{hash: hash}}) when is_binary(hash), do: hash
+  defp error_to_entry(%{data: %{hash: hash, index: index}}) when is_binary(hash) do
+    {:ok, %Hash{bytes: nephew_hash_bytes}} = Hash.Full.cast(hash)
 
-  defp error_to_entry(%{data: %{nephew_hash: hash}}) when is_binary(hash), do: hash
+    {nephew_hash_bytes, index}
+  end
+
+  defp error_to_entry(%{data: %{nephew_hash: hash}, index: index}) when is_binary(hash) do
+    {:ok, %Hash{bytes: nephew_hash_bytes}} = Hash.Full.cast(hash)
+
+    {nephew_hash_bytes, index}
+  end
 
   defp errors_to_iodata(errors) when is_list(errors) do
     errors_to_iodata(errors, [])

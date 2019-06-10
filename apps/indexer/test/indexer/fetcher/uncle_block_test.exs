@@ -7,6 +7,7 @@ defmodule Indexer.Fetcher.UncleBlockTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain
+  alias Explorer.Chain.Hash
   alias Indexer.Block
   alias Indexer.Fetcher.UncleBlock
 
@@ -135,6 +136,37 @@ defmodule Indexer.Fetcher.UncleBlockTest do
 
       refute is_nil(Repo.get(Chain.Block, uncle_hash))
       assert Repo.aggregate(Chain.Transaction.Fork, :count, :hash) == 1
+    end
+  end
+
+  describe "run/2" do
+    test "retries failed request", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      %Hash{bytes: block_hash_bytes} = block_hash()
+      entries = [{block_hash_bytes, 0}]
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  method: "eth_getUncleByBlockHashAndIndex"
+                                }
+                              ],
+                              _ ->
+        {:ok,
+         [
+           %{
+             id: id,
+             error: %{
+               code: 404,
+               data: %{index: 0, nephew_hash: "0xa0814f0478fe90c82852f812fd74c96df148654c326d2600d836e6908ebb62b4"},
+               message: "Not Found"
+             }
+           }
+         ]}
+      end)
+
+      assert {:retry, ^entries} =
+               UncleBlock.run(entries, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments})
     end
   end
 
