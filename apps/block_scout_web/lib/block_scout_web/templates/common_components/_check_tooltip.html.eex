@@ -1,0 +1,14 @@
+<div
+    class="check-tooltip"
+    data-boundary="window"
+    data-container="body"
+    data-html="true"
+    data-placement="top"
+    data-toggle="tooltip"
+    title="<%= @text %>"
+>
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+        <path class="check-tooltip-circle" fill-rule="evenodd" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0z"/>
+        <path class="check-tooltip-check" fill-rule="evenodd" d="M11.714 6.657l-2 2-1.887 1.888c-.037.057-.063.119-.113.169a.963.963 0 0 1-.714.279.963.963 0 0 1-.714-.279c-.05-.05-.076-.112-.113-.17L4.286 8.657a.969.969 0 1 1 1.371-1.371L7 8.629l1.286-1.286 2.057-2.057a.969.969 0 1 1 1.371 1.371z"/>
+    </svg>
+</div>

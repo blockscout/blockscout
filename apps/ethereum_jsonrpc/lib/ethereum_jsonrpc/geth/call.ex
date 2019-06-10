@@ -328,41 +328,6 @@ defmodule EthereumJSONRPC.Geth.Call do
          "from" => from_address_hash,
          "to" => to_address_hash,
          "gas" => gas,
-         "gasUsed" => gas_used,
-         "input" => input,
-         "output" => output,
-         "value" => value
-       })
-       when call_type in ~w(call callcode delegatecall) do
-    %{
-      block_number: block_number,
-      transaction_index: transaction_index,
-      transaction_hash: transaction_hash,
-      index: index,
-      trace_address: trace_address,
-      type: type,
-      call_type: call_type,
-      from_address_hash: from_address_hash,
-      to_address_hash: to_address_hash,
-      gas: gas,
-      gas_used: gas_used,
-      input: input,
-      output: output,
-      value: value
-    }
-  end
-
-  defp elixir_to_internal_transaction_params(%{
-         "blockNumber" => block_number,
-         "transactionIndex" => transaction_index,
-         "transactionHash" => transaction_hash,
-         "index" => index,
-         "traceAddress" => trace_address,
-         "type" => "call" = type,
-         "callType" => call_type,
-         "from" => from_address_hash,
-         "to" => to_address_hash,
-         "gas" => gas,
          "input" => input,
          "error" => error,
          "value" => value
@@ -392,15 +357,16 @@ defmodule EthereumJSONRPC.Geth.Call do
          "index" => index,
          "traceAddress" => trace_address,
          "type" => "call" = type,
-         "callType" => "staticcall" = call_type,
+         "callType" => call_type,
          "from" => from_address_hash,
          "to" => to_address_hash,
-         "input" => input,
-         "output" => output,
          "gas" => gas,
          "gasUsed" => gas_used,
-         "value" => 0 = value
-       }) do
+         "input" => input,
+         "output" => output,
+         "value" => value
+       })
+       when call_type in ~w(call callcode delegatecall) do
     %{
       block_number: block_number,
       transaction_index: transaction_index,
@@ -415,6 +381,69 @@ defmodule EthereumJSONRPC.Geth.Call do
       gas_used: gas_used,
       input: input,
       output: output,
+      value: value
+    }
+  end
+
+  defp elixir_to_internal_transaction_params(
+         %{
+           "blockNumber" => block_number,
+           "transactionIndex" => transaction_index,
+           "transactionHash" => transaction_hash,
+           "index" => index,
+           "traceAddress" => trace_address,
+           "type" => "call" = type,
+           "callType" => "staticcall" = call_type,
+           "from" => from_address_hash,
+           "to" => to_address_hash,
+           "input" => input,
+           "gas" => gas,
+           "gasUsed" => gas_used,
+           "value" => 0 = value
+         } = params
+       ) do
+    %{
+      block_number: block_number,
+      transaction_index: transaction_index,
+      transaction_hash: transaction_hash,
+      index: index,
+      trace_address: trace_address,
+      type: type,
+      call_type: call_type,
+      from_address_hash: from_address_hash,
+      to_address_hash: to_address_hash,
+      gas: gas,
+      gas_used: gas_used,
+      input: input,
+      output: params["output"],
+      value: value
+    }
+  end
+
+  defp elixir_to_internal_transaction_params(%{
+         "blockNumber" => block_number,
+         "transactionIndex" => transaction_index,
+         "transactionHash" => transaction_hash,
+         "index" => index,
+         "traceAddress" => trace_address,
+         "type" => "create" = type,
+         "from" => from_address_hash,
+         "error" => error,
+         "gas" => gas,
+         "init" => init,
+         "value" => value
+       }) do
+    %{
+      block_number: block_number,
+      transaction_index: transaction_index,
+      transaction_hash: transaction_hash,
+      index: index,
+      trace_address: trace_address,
+      type: type,
+      from_address_hash: from_address_hash,
+      gas: gas,
+      error: error,
+      init: init,
       value: value
     }
   end
@@ -447,34 +476,6 @@ defmodule EthereumJSONRPC.Geth.Call do
       created_contract_address_hash: created_contract_address_hash,
       init: init,
       created_contract_code: created_contract_code,
-      value: value
-    }
-  end
-
-  defp elixir_to_internal_transaction_params(%{
-         "blockNumber" => block_number,
-         "transactionIndex" => transaction_index,
-         "transactionHash" => transaction_hash,
-         "index" => index,
-         "traceAddress" => trace_address,
-         "type" => "create" = type,
-         "from" => from_address_hash,
-         "error" => error,
-         "gas" => gas,
-         "init" => init,
-         "value" => value
-       }) do
-    %{
-      block_number: block_number,
-      transaction_index: transaction_index,
-      transaction_hash: transaction_hash,
-      index: index,
-      trace_address: trace_address,
-      type: type,
-      from_address_hash: from_address_hash,
-      gas: gas,
-      error: error,
-      init: init,
       value: value
     }
   end

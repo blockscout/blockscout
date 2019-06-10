@@ -1,0 +1,15 @@
+<%= if @type=="address" do %>
+  <a href="<%= address_link_to_other_explorer(@address_link, @hash ,true) %>" class="verify-other-explorers-elem">
+<% else %>
+  <a href="<%= address_link_to_other_explorer(@tx_link, @hash ,true) %>" class="verify-other-explorers-elem">
+<% end %>
+  <div class="exp-logo <%= @class %>"></div>
+  <div class="exp-content">
+    <h3><%= @header %></h3>
+    <%= if @type=="address" do %>
+      <div><%= address_link_to_other_explorer(@address_link, @hash ,true) %></div>
+    <% else %>
+      <div><%= address_link_to_other_explorer(@tx_link, @hash ,true) %></div>
+    <% end %>
+  </div>
+</a>
