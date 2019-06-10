@@ -19,9 +19,6 @@
             <%= link to: block_path(@conn, :index), class: "dropdown-item #{tab_status("blocks", @conn.request_path)}" do %>
               <%= gettext("Blocks") %>
             <% end %>
-            <%= link to: uncle_path(@conn, :uncle), class: "dropdown-item #{tab_status("uncles", @conn.request_path)}" do %>
-              <%= gettext("Uncles") %>
-            <% end %>
             <%= link to: reorg_path(@conn, :reorg), class: "dropdown-item #{tab_status("reorgs", @conn.request_path)}" do %>
               <%= gettext("Forked Blocks (Reorgs)") %>
             <% end %>

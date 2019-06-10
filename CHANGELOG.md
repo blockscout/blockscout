@@ -1,5 +1,7 @@
 ## Current
 
+## 2.0.0-beta
+
 ### Features
 - [#2109](https://github.com/poanetwork/blockscout/pull/2109) - use bigger updates instead of `Multi` transactions in BlocksTransactionsMismatch
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
