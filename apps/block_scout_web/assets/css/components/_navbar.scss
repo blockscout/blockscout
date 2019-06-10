@@ -1,16 +1,16 @@
 // Default variables
 $header-background-color: #fff !default;
-$header-links-color: #a3a9b5 !default;
+$header-links-color: #828ba0 !default;
 $header-links-color-active: #333 !default;
 $header-icon-color: $header-links-color !default;
-$header-icon-color-hover: #333 !default;
-$header-icon-border-color-hover: $primary !default;
+$header-icon-color-hover: $secondary !default;
+$header-icon-border-color-hover: $secondary !default;
 $header-toggler-icon: "data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='#{transparentize($primary, 0.5)}' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E" !default;
 $header-textfield-text-color: $header-links-color !default;
 $header-textfield-background-color: #f5f6fa !default;
 $header-textfield-magnifier-color: $header-links-color !default;
 $header-link-horizontal-padding: 0.71rem;
-$navbar-logo-height: 18px !default;
+$navbar-logo-height: 28px !default;
 $navbar-logo-width: auto !default;
 
 .navbar.navbar-primary {
@@ -30,6 +30,7 @@ $navbar-logo-width: auto !default;
       display: flex;
       font-size: 14px;
       position: relative;
+      transition: $transition-cont;
 
       &:before {
         background-color: $header-icon-border-color-hover;
@@ -42,7 +43,7 @@ $navbar-logo-width: auto !default;
         position: absolute;
         top: -10px;
         transform: translateX(-50%);
-        transition: all 0.2s ease;
+        transition: $transition-cont;
         width: calc(
           100% - #{$header-link-horizontal-padding} - #{$header-link-horizontal-padding}
         );
@@ -77,12 +78,16 @@ $navbar-logo-width: auto !default;
 
         path {
           fill: $header-icon-color;
+          transition: $transition-cont;
         }
       }
     }
 
     .nav-item-networks {
       margin-left: auto;
+      .nav-link:before {
+        display: none;
+      }
     }
   }
 

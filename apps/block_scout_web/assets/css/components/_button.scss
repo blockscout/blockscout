@@ -10,7 +10,7 @@ $button-secondary-color: $secondary !default;
   padding: 10px 16px;
   text-align: center;
   text-decoration: none;
-  transition: all 0.25s;
+  transition: $transition-cont;
   white-space: nowrap;
 
   &-primary {
