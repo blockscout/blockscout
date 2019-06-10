@@ -20,7 +20,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_tokens: 1,
       async_import_token_balances: 1,
       async_import_uncles: 1,
-      fetch_and_import_range: 2
+      fetch_and_import_range: 2,
+      async_import_staking_pools: 0
     ]
 
   alias Ecto.Changeset
@@ -139,7 +140,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         %__MODULE__{state | subscription: subscription}
 
       {:error, reason} ->
-        Logger.debug(fn -> ["Could not connect to websocket: ", reason, ". Continuing with polling."] end)
+        Logger.debug(fn -> ["Could not connect to websocket: #{inspect(reason)}. Continuing with polling."] end)
         state
     end
   end
@@ -350,6 +351,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_token_balances(imported)
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
+    async_import_staking_pools()
   end
 
   defp balances(

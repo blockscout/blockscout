@@ -1,0 +1,11 @@
+$btn-address-card-icon-color: $primary !default;
+$btn-address-card-icon-dimensions: 31px !default;
+
+.btn-address-card-icon {
+  @include square-icon-button($btn-address-card-icon-color, $btn-address-card-icon-dimensions);
+
+  svg {
+    height: 10px;
+    width: 20px;
+  }
+}
