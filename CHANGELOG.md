@@ -5,6 +5,7 @@
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
 
 ### Fixes
+- [#2121](https://github.com/poanetwork/blockscout/pull/2121) - Binding of 404 page
 - [#2120](https://github.com/poanetwork/blockscout/pull/2120) - footer links and socials focus color issue
 - [#2113](https://github.com/poanetwork/blockscout/pull/2113) - renewed logos for rsk, dai, blockscout; themes color changes for lukso; error images for lukso
 - [#2112](https://github.com/poanetwork/blockscout/pull/2112) - themes color improvements, dropdown color issue
