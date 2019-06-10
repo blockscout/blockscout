@@ -24,7 +24,7 @@ defmodule Explorer.Etherscan.LogsTest do
 
       %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       filter = %{
@@ -42,7 +42,7 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       log = insert(:log, address: contract_address, transaction: transaction)
@@ -76,7 +76,7 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       insert_list(2, :log, address: contract_address, transaction: transaction)
@@ -101,13 +101,13 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction_block1 =
         %Transaction{} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block(first_block)
 
       transaction_block2 =
         %Transaction{} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block(second_block)
 
       insert(:log, address: contract_address, transaction: transaction_block1)
@@ -134,13 +134,13 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction_block1 =
         %Transaction{} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block(first_block)
 
       transaction_block2 =
         %Transaction{} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block(second_block)
 
       insert(:log, address: contract_address, transaction: transaction_block1)
@@ -164,7 +164,7 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       log1_details = [
@@ -200,7 +200,7 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       log1_details = [
@@ -241,7 +241,7 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       log1_details = [
@@ -280,7 +280,7 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       log1_details = [
@@ -317,7 +317,7 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       log1_details = [
@@ -358,7 +358,7 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       log1_details = [
@@ -415,7 +415,7 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       log1_details = [
@@ -472,7 +472,7 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       log1_details = [
@@ -529,7 +529,7 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction =
         %Transaction{block: block} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
       log1_details = [
@@ -595,19 +595,19 @@ defmodule Explorer.Etherscan.LogsTest do
       transaction_block1 =
         %Transaction{} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block(first_block)
 
       transaction_block2 =
         %Transaction{} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block(second_block)
 
       transaction_block3 =
         %Transaction{} =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block(third_block)
 
       insert(:log, address: contract_address, transaction: transaction_block3)
