@@ -237,6 +237,8 @@ defmodule Indexer.Fetcher.UncleBlock do
 
   defp error_to_entry(%{data: %{hash: hash}}) when is_binary(hash), do: hash
 
+  defp error_to_entry(%{data: %{nephew_hash: hash}}) when is_binary(hash), do: hash
+
   defp errors_to_iodata(errors) when is_list(errors) do
     errors_to_iodata(errors, [])
   end
