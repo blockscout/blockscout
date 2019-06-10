@@ -1,3 +1,7 @@
+$common-link-color: $primary !default;
+$blue: #4b89fb !default;
+$success: #34c0ad !default;
+
 body {
   font-family: $font-family-sans-serif;
   font-size: 12px;
@@ -20,10 +24,10 @@ h3 {
 }
 
 h4 {
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 300;
   color: $gray-600;
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 24px;
   margin-top: 4px;
 
   &.underline {
@@ -40,16 +44,16 @@ p {
 
   @media screen and (max-width: 768px) {
     font-size: 14px;
-   }
+  }
 }
 
 a {
+  color: $common-link-color;
   text-decoration: none;
-  color: $tertiary;
 
   &:hover,
   &:focus {
-    color: darken($tertiary, 20%);
+    color: darken($common-link-color, 20%);
     text-decoration: underline;
   }
 
@@ -59,7 +63,8 @@ a {
   }
 }
 
-label, textarea.form-control {
+label,
+textarea.form-control {
   font-size: 13px;
 }
 
@@ -72,31 +77,30 @@ label, textarea.form-control {
   display: inline-block;
 }
 
-
 .text {
-    &-transaction {
-      color: $blue;
-    }
+  &-transaction {
+    color: $blue;
+  }
 
-    &-contract-call {
-      color: $green;
-    }
+  &-contract-call {
+    color: $green;
+  }
 
-    &-contract-creation {
-      color: $pink;
-    }
+  &-contract-creation {
+    color: $pink;
+  }
 
-    &-token {
-      color: $orange;
-    }
+  &-token {
+    color: $orange;
+  }
 
-    &-internal-transaction {
-      color: $teal;
-    }
+  &-internal-transaction {
+    color: $teal;
+  }
 
-    &-faded {
-      opacity: 0.7;
-    }
+  &-faded {
+    opacity: 0.7;
+  }
 }
 
 [data-transaction-status="Success"],
