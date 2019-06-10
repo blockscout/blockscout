@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.Controller do
     conn
     |> put_status(:not_found)
     |> put_view(BlockScoutWeb.PageNotFoundView)
-    |> Phoenix.Controller.render(:index)
+    |> render(:index)
     |> halt()
   end
 

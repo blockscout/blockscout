@@ -5,6 +5,7 @@
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
 
 ### Fixes
+- [#2129](https://github.com/poanetwork/blockscout/pull/2129) - Fix for width of explorer elements
 - [#2121](https://github.com/poanetwork/blockscout/pull/2121) - Binding of 404 page
 - [#2120](https://github.com/poanetwork/blockscout/pull/2120) - footer links and socials focus color issue
 - [#2113](https://github.com/poanetwork/blockscout/pull/2113) - renewed logos for rsk, dai, blockscout; themes color changes for lukso; error images for lukso
@@ -17,6 +18,7 @@
 - [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fix uncle fetching without full transactions
 - [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
 - [#2119](https://github.com/poanetwork/blockscout/pull/2119) - fix map logging
+- [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
