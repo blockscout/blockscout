@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "ABI" => Jason.encode!(contract.abi),
                  "Address" => to_string(contract.address_hash),
                  "CompilerVersion" => contract.compiler_version,
-                 "ContractName" => contract.name,r
+                 "ContractName" => contract.name,
                  "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
                }
              ]
