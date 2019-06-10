@@ -16,6 +16,9 @@
 - [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fixe uncle fetching without full transactions
 
 ### Chore
+- [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
+
+### Chore
 
 ## 2.0.0-beta
 
