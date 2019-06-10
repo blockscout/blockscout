@@ -251,4 +251,9 @@ defmodule Indexer.Fetcher.UncleBlock do
        when is_integer(code) and is_binary(message) and is_binary(hash) do
     [hash, ": (", to_string(code), ") ", message, ?\n]
   end
+
+  defp error_to_iodata(%{code: code, message: message, data: %{nephew_hash: hash}})
+       when is_integer(code) and is_binary(message) and is_binary(hash) do
+    [hash, ": (", to_string(code), ") ", message, ?\n]
+  end
 end
