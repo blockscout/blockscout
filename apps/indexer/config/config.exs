@@ -36,8 +36,9 @@ config :indexer,
   memory_limit: 8 <<< 30,
   first_block: System.get_env("FIRST_BLOCK") || "0"
 
-config :indexer, Indexer.ReplacedTransaction.Supervisor, disabled?: true
-# config :indexer, Indexer.Block.Reward.Supervisor, disabled?: true 
+config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
+# config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
+config :indexer, Indexer.Fetcher.StakingPools.Supervisor, disabled?: true
 
 config :indexer, Indexer.Tracer,
   service: :indexer,

@@ -7,30 +7,17 @@
         </div>
       </div>
 
-      <h1><%= gettext("%{block_type}s", block_type: @block_type) %></h1>
+      <h1 class="card-title"><%= gettext("%{block_type}s", block_type: @block_type) %></h1>
 
-      <div data-loading-message class="tile tile-muted text-center mt-3">
-        <span class="loading-spinner-small mr-2">
-          <span class="loading-spinner-block-1"></span>
-          <span class="loading-spinner-block-2"></span>
-        </span>
-        <%= gettext("Loading") %>...
-      </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
       <div data-items></div>
       <div data-empty-response-message style="display: none;">
           <span><%= gettext "There are no blocks." %></span>
       </div>
-      </span>
-        <a href="#" class="button button-secondary button-small float-right mt-4" data-next-page-button style="display: none;">
-          <%= gettext("Older") %>
-        </a>
-      <div class="button button-secondary button-small float-right mt-4" data-loading-button style="display: none;">
-        <span class="loading-spinner-small mr-2">
-          <span class="loading-spinner-block-1"></span>
-          <span class="loading-spinner-block-2"></span>
-        </span>
-        <%= gettext("Loading") %>...
-      </div>
+
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
     </div>
   </div>
 </section>
