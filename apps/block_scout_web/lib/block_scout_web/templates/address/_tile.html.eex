@@ -39,7 +39,7 @@
             </span>
             <!-- percentage of coins from total supply -->
             <span class="ml-0 ml-md-2">
-              <% if @total_supply do %>
+              <%= if @total_supply do %>
                 (<%= balance_percentage(@address, @total_supply) %>)
               <% end %>
             </span>
