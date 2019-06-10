@@ -16,30 +16,15 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
 
 .dashboard-banner-container {
   @include gradient-container();
-
+  margin-bottom: 3rem;
+  overflow: hidden;
   padding: 0;
   position: relative;
-
-  &::after {
-    background-color: $dashboard-banner-network-plain-container-background-color;
-    bottom: 0;
-    content: "";
-    display: block;
-    height: $dashboard-banner-network-plain-container-height;
-    left: 70%;
-    position: absolute;
-    right: 0;
-
-    @include media-breakpoint-down(md) {
-      display: none;
-    }
-  }
 }
 
 .dashboard-banner {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 3rem;
   position: relative;
   z-index: 9;
 
@@ -148,6 +133,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   max-width: 100%;
   padding: 30px 0 30px 60px;
   width: 750px;
+  position: relative;
 
   @include media-breakpoint-down(md) {
     border-top-right-radius: 10px;
@@ -158,10 +144,29 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     max-width: 100%;
     padding: 20px 0 20px 20px;
     width: 250px;
+    box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
   }
 
   @include media-breakpoint-down(sm) {
     width: 100%;
+  }
+
+  &::after {
+    background-color: $dashboard-banner-network-plain-container-background-color;
+    bottom: 0;
+    content: "";
+    display: block;
+    height: $dashboard-banner-network-plain-container-height;
+    left: 0;
+    position: absolute;
+    width: 9999px;
+    z-index: -1;
+    box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
+    border-top-left-radius: 10px;
+
+    @include media-breakpoint-down(md) {
+      display: none;
+    }
   }
 }
 

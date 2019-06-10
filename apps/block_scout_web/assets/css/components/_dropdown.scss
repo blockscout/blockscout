@@ -1,14 +1,14 @@
 $dropdown-menu-item-color: #333 !default;
-$dropdown-menu-item-hover-color: #fff !default;
-$dropdown-menu-item-hover-background: $secondary !default;
+$dropdown-menu-item-hover-color: $secondary !default;
+$dropdown-menu-item-hover-background: rgba($secondary, .1) !default;
 
 // These styles extend the default Bootstrap styles
 .dropdown-menu {
   border-bottom: 1px solid #e2e5ec;
   border-left: 1px solid #e2e5ec;
-  border-radius: 0 0 8px 8px !important;
+  border-radius: 0 0 2px 2px !important;
   border-right: 1px solid #e2e5ec;
-  border: none;
+  border-top: none;
   box-shadow: $box-shadow;
   padding: 0;
   width: 100%;
@@ -34,6 +34,7 @@ $dropdown-menu-item-hover-background: $secondary !default;
   color: $dropdown-menu-item-color;
   font-size: 12px;
   padding: 10px 20px;
+  transition: $transition-cont;
 
   & {
     &.active,
@@ -50,8 +51,8 @@ $dropdown-menu-item-hover-background: $secondary !default;
   }
 
   &:last-child {
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
   }
 
   &.header {
@@ -69,6 +70,10 @@ $dropdown-menu-item-hover-background: $secondary !default;
   &.division {
     border-top: 1px solid $base-border-color;
   }
+}
+
+.navbar .dropdown-menu {
+  border: none;
 }
 
 .dropdown-search-icon {
