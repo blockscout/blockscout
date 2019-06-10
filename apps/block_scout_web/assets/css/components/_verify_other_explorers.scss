@@ -18,9 +18,13 @@
 		line-height: 1.25;
 		display: inline-flex;
 		margin-bottom: 12px;
-		@media (min-width: 1200px) {
+		width: 100%;
+		@media (min-width: 768px) {
 			margin-right: 10px;
+		}
+		@media (min-width: 1200px) {
 			margin-bottom: 0;
+			width: auto;
 		}
 	}
 }
@@ -31,6 +35,8 @@
 	flex-grow: 2;
 	@media (min-width: 768px) {
 		flex-direction: row;
+		position: relative;
+		padding-right: 44px;
 	}
 }
 
@@ -41,6 +47,7 @@
 	flex-grow: 2;
 	@media (min-width: 768px) {
 		margin-top: 0;
+		max-width: 188px;
 	}
 	@media (min-width: 1200px) {
 		min-width: 145px;
@@ -76,7 +83,7 @@
 	}
 	
 	.exp-content {
-		padding: 6px 9px 4px 9px;
+		padding: 6px 9px 5px 9px;
 		h3, div {
 			font-size: 10px;
 			line-height: 1;
@@ -117,7 +124,7 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	border: 1px solid $secondary;
+	border: 1px solid $btn-line-color;
 	border-radius: 2px;
 	margin-top: 10px;
 	transition: .1s ease-in;
@@ -125,12 +132,15 @@
 	@media (min-width: 768px) {
 		margin-left: 10px;
 		margin-top: 0;
+		position: absolute;
+		top: 0;
+		right: 0;
 	}
 	svg path {
-		fill: $secondary;
+		fill: $btn-line-color;
 	}
 	&:hover {
-		background-color: $secondary;
+		background-color: $btn-line-color;
 		svg path {
 			fill: #fff;
 		}

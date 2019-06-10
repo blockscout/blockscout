@@ -57,7 +57,7 @@
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Difficulty" %></dt>
             <dd class="col-sm-9">
-              <span class="font-weight-bold"><%= @block.difficulty |> Cldr.Number.to_string! %></span>
+              <span><%= @block.difficulty |> Cldr.Number.to_string! %></span>
             </dd>
           </dl>
 
@@ -65,13 +65,13 @@
             <!-- Total Difficulty -->
             <dl class="row">
               <dt class="col-sm-3 text-muted"><%= gettext "Total Difficulty" %></dt>
-              <dd class="col-sm-9"><span class="font-weight-bold"><%= @block.total_difficulty |> Cldr.Number.to_string! %></span></dd>
+              <dd class="col-sm-9"><span><%= @block.total_difficulty |> Cldr.Number.to_string! %></span></dd>
             </dl>
 
             <!-- Nonce -->
             <dl class="row">
               <dt class="col-sm-3 text-muted"><%= gettext "Nonce" %></dt>
-              <dd class="col-sm-9"><span class="font-weight-bold"><%= to_string(@block.nonce) %></span></dd>
+              <dd class="col-sm-9"><span><%= to_string(@block.nonce) %></span></dd>
             </dl>
 
             <%= if length(@block.uncle_relations) > 0 do %>
@@ -97,14 +97,14 @@
               <dl class="row">
                 <dt class="col-sm-3 text-muted"><%= gettext "Gas Used" %></dt>
                 <dd class="col-sm-9">
-                  <span class="font-weight-bold"><%= @block.gas_used |> Cldr.Number.to_string! %></span>
+                  <span><%= @block.gas_used |> Cldr.Number.to_string! %></span>
                   <span class="text-muted">(<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> Cldr.Number.to_string!(format: "#.#%") %>)</span>
                 </dt>
               </dl>
               <dl class="row mb-0">
                 <dt class="col-sm-3 text-muted"><%= gettext "Gas Limit" %></dt>
                 <dd class="col-sm-9">
-                  <span class="font-weight-bold"><%= Cldr.Number.to_string!(@block.gas_limit) %></span>
+                  <span><%= Cldr.Number.to_string!(@block.gas_limit) %></span>
                 </dd>
               </dl>
             <% end %>
