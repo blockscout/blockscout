@@ -1,4 +1,4 @@
-<div class='pagination-container <%= if assigns[:position] == "top" do %>position-top<% end %> <%= if assigns[:position] == "bottom" do %>position-bottom<% end %>' <%= if !assigns[:next_page_path] do %>disabled<% end %>>
+<div class='pagination-container <%= if assigns[:position] == "top" do %>position-top<% end %> <%= if assigns[:position] == "bottom" do %>position-bottom<% end %>'>
     <%= if false do %>
     <!-- Pagination limit -->
     <div class="pagination-limit">
