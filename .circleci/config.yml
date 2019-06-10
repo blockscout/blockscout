@@ -480,7 +480,7 @@ jobs:
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
       - run:
-          name: mix test --exclude no_geth
+          name: mix test --exclude no_parity
           command: |
             # Don't submit coverage report for forks, but let the build succeed
             if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
@@ -534,7 +534,7 @@ jobs:
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
       - run:
-          name: mix test --exclude no_geth
+          name: mix test --exclude no_parity
           command: |
             # Don't submit coverage report for forks, but let the build succeed
             if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then

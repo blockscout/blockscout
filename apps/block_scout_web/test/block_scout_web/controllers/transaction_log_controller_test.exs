@@ -31,11 +31,12 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
       address = insert(:address)
       insert(:log, address: address, transaction: transaction)
 
-      conn = get(conn, transaction_log_path(conn, :index, transaction))
+      conn = get(conn, transaction_log_path(conn, :index, transaction), %{type: "JSON"})
 
-      first_log = List.first(conn.assigns.logs)
+      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
+      first_log = List.first(items)
 
-      assert first_log.transaction_hash == transaction.hash
+      assert String.contains?(first_log, to_string(address.hash))
     end
 
     test "returns logs for the transaction with nil to_address", %{conn: conn} do
@@ -47,20 +48,23 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
       address = insert(:address)
       insert(:log, address: address, transaction: transaction)
 
-      conn = get(conn, transaction_log_path(conn, :index, transaction))
+      conn = get(conn, transaction_log_path(conn, :index, transaction), %{type: "JSON"})
 
-      first_log = List.first(conn.assigns.logs)
+      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
+      first_log = List.first(items)
 
-      assert first_log.transaction_hash == transaction.hash
+      assert String.contains?(first_log, to_string(address.hash))
     end
 
     test "assigns no logs when there are none", %{conn: conn} do
       transaction = insert(:transaction)
       path = transaction_log_path(conn, :index, transaction)
 
-      conn = get(conn, path)
+      conn = get(conn, path, %{type: "JSON"})
 
-      assert Enum.count(conn.assigns.logs) == 0
+      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
+
+      assert Enum.empty?(items)
     end
 
     test "returns next page of results based on last seen transaction log", %{conn: conn} do
@@ -78,15 +82,16 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
 
       conn =
         get(conn, transaction_log_path(conn, :index, transaction), %{
-          "index" => Integer.to_string(log.index)
+          "index" => Integer.to_string(log.index),
+          "type" => "JSON"
         })
 
-      actual_indexes = Enum.map(conn.assigns.logs, & &1.index)
+      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
 
-      assert second_page_indexes == actual_indexes
+      assert Enum.count(items) == Enum.count(second_page_indexes)
     end
 
-    test "next_page_params exist if not on last page", %{conn: conn} do
+    test "next_page_path exists if not on last page", %{conn: conn} do
       transaction =
         :transaction
         |> insert()
@@ -95,20 +100,24 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
       1..60
       |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index) end)
 
-      conn = get(conn, transaction_log_path(conn, :index, transaction))
+      conn = get(conn, transaction_log_path(conn, :index, transaction), %{type: "JSON"})
 
-      assert %{"index" => 50} = conn.assigns.next_page_params
+      {:ok, %{"next_page_path" => path}} = conn.resp_body |> Poison.decode()
+
+      assert path
     end
 
-    test "next_page_params are empty if on last page", %{conn: conn} do
+    test "next_page_path is empty if on last page", %{conn: conn} do
       transaction =
         :transaction
         |> insert()
         |> with_block()
 
-      conn = get(conn, transaction_log_path(conn, :index, transaction))
+      conn = get(conn, transaction_log_path(conn, :index, transaction), %{type: "JSON"})
 
-      refute conn.assigns.next_page_params
+      {:ok, %{"next_page_path" => path}} = conn.resp_body |> Poison.decode()
+
+      refute path
     end
   end
 

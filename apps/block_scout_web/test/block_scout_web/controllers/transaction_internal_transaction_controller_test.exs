@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
 
   import BlockScoutWeb.Router.Helpers, only: [transaction_internal_transaction_path: 3]
 
-  alias Explorer.Chain.{Block, InternalTransaction, Transaction}
+  alias Explorer.Chain.InternalTransaction
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/3" do
@@ -40,13 +40,12 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
         |> insert()
         |> with_block(insert(:block, number: 1))
 
-      expected_internal_transaction =
-        insert(:internal_transaction,
-          transaction: transaction,
-          index: 0,
-          block_number: transaction.block_number,
-          transaction_index: transaction.index
-        )
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 0,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
+      )
 
       insert(:internal_transaction,
         transaction: transaction,
@@ -57,14 +56,15 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
 
       path = transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction.hash)
 
-      conn = get(conn, path)
+      conn = get(conn, path, %{type: "JSON"})
 
-      actual_internal_transaction_primary_keys =
-        Enum.map(conn.assigns.internal_transactions, &{&1.transaction_hash, &1.index})
+      {:ok, %{"items" => items}} =
+        conn.resp_body
+        |> Poison.decode()
 
-      assert html_response(conn, 200)
+      assert json_response(conn, 200)
 
-      assert {expected_internal_transaction.transaction_hash, expected_internal_transaction.index} in actual_internal_transaction_primary_keys
+      assert Enum.count(items) == 2
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
@@ -135,21 +135,21 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
 
       conn =
         get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction.hash), %{
-          "index" => Integer.to_string(index)
+          "index" => Integer.to_string(index),
+          "type" => "JSON"
         })
 
-      actual_indexes =
-        conn.assigns.internal_transactions
-        |> Enum.map(& &1.index)
+      {:ok, %{"items" => items}} =
+        conn.resp_body
+        |> Poison.decode()
 
-      assert second_page_indexes == actual_indexes
+      assert Enum.count(items) == Enum.count(second_page_indexes)
     end
 
-    test "next_page_params exist if not on last page", %{conn: conn} do
-      block = %Block{number: number} = insert(:block, number: 7000)
+    test "next_page_path exists if not on last page", %{conn: conn} do
+      block = insert(:block, number: 7000)
 
       transaction =
-        %Transaction{index: transaction_index} =
         :transaction
         |> insert()
         |> with_block(block)
@@ -165,13 +165,19 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
         )
       end)
 
-      conn = get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
+      conn =
+        get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction.hash), %{
+          type: "JSON"
+        })
 
-      assert %{"block_number" => ^number, "index" => 50, "transaction_index" => ^transaction_index} =
-               conn.assigns.next_page_params
+      {:ok, %{"next_page_path" => next_page_path}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      assert next_page_path
     end
 
-    test "next_page_params are empty if on last page", %{conn: conn} do
+    test "next_page_path is empty if on last page", %{conn: conn} do
       transaction =
         :transaction
         |> insert()
@@ -188,9 +194,16 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
         )
       end)
 
-      conn = get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
+      conn =
+        get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction.hash), %{
+          type: "JSON"
+        })
 
-      refute conn.assigns.next_page_params
+      {:ok, %{"next_page_path" => next_page_path}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      refute next_page_path
     end
   end
 end
