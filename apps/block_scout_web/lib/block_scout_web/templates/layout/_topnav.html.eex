@@ -77,13 +77,13 @@
           </div>
         </li>
         <li class="nav-item dropdown nav-item-networks">
-          <a class="nav-link topnav-nav-link dropdown-toggle active-icon" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <a class="nav-link topnav-nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
             </span>
             <%= subnetwork_title() %>
           </a>
-          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
             <a class="dropdown-item header division">Mainnets</a>
             <%= for %{url: url, title: title} <- dropdown_head_main_nets() do %>
               <a class="dropdown-item" href="<%= url%>"><%= title %></a>
