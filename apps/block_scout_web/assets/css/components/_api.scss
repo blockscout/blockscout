@@ -1,7 +1,7 @@
-$api-text-monospace-color: $primary !default;
+$api-text-monospace-color: $secondary !default;
 $api-text-monospace-background: rgba($api-text-monospace-color, 0.1) !default;
 $api-anchors-list-background-color: #f6f7f9 !default;
-$api-doc-list-item-title-color: $primary !default;
+$api-doc-list-item-title-color: #333 !default;
 $api-doc-list-item-view-more-color: $api-doc-list-item-title-color !default;
 
 .api-text-monospace {
@@ -89,8 +89,8 @@ $api-doc-list-item-view-more-color: $api-doc-list-item-title-color !default;
 
 .api-doc-list-item-title {
   color: $api-doc-list-item-title-color;
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 400;
   line-height: 1.2;
   margin: 0 0 15px;
 }
