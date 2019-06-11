@@ -244,6 +244,8 @@ defmodule BlockScoutWeb.Router do
 
     get("/token_autocomplete", ChainController, :token_autocomplete)
 
+    get("/token_transfers_csv", AddressTransactionController, :token_transfers_csv)
+
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
     get("/api_docs", APIDocsController, :index)
