@@ -4,7 +4,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
   """
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, Transaction, TokenTransfer}
+  alias Explorer.Chain.{Address, TokenTransfer, Transaction}
   alias NimbleCSV.RFC4180
 
   @necessity_by_association [
