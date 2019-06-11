@@ -33,6 +33,7 @@ defmodule Explorer.Chain do
     Block,
     BlockCountCache,
     BlockNumberCache,
+    BlocksCache,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -823,6 +824,86 @@ defmodule Explorer.Chain do
     Repo.all(query)
   end
 
+  @doc """
+  Returns the balance of the given address and block combination.
+
+  Returns `{:error, :not_found}` if there is no address by that hash present.
+  Returns `{:error, :no_balance}` if there is no balance for that address at that block.
+  """
+  @spec get_balance_as_of_block(Hash.Address.t(), integer | :earliest | :latest | :pending) ::
+          {:ok, Wei.t()} | {:error, :no_balance} | {:error, :not_found}
+  def get_balance_as_of_block(address, block) when is_integer(block) do
+    coin_balance_query =
+      from(coin_balance in CoinBalance,
+        where: coin_balance.address_hash == ^address,
+        where: not is_nil(coin_balance.value),
+        where: coin_balance.block_number <= ^block,
+        order_by: [desc: coin_balance.block_number],
+        limit: 1,
+        select: coin_balance.value
+      )
+
+    case Repo.one(coin_balance_query) do
+      nil -> {:error, :not_found}
+      coin_balance -> {:ok, coin_balance}
+    end
+  end
+
+  def get_balance_as_of_block(address, :latest) do
+    case max_consensus_block_number() do
+      {:ok, latest_block_number} ->
+        get_balance_as_of_block(address, latest_block_number)
+
+      {:error, :not_found} ->
+        {:error, :not_found}
+    end
+  end
+
+  def get_balance_as_of_block(address, :earliest) do
+    query =
+      from(coin_balance in CoinBalance,
+        where: coin_balance.address_hash == ^address,
+        where: not is_nil(coin_balance.value),
+        where: coin_balance.block_number == 0,
+        limit: 1,
+        select: coin_balance.value
+      )
+
+    case Repo.one(query) do
+      nil -> {:error, :not_found}
+      coin_balance -> {:ok, coin_balance}
+    end
+  end
+
+  def get_balance_as_of_block(address, :pending) do
+    query =
+      case max_consensus_block_number() do
+        {:ok, latest_block_number} ->
+          from(coin_balance in CoinBalance,
+            where: coin_balance.address_hash == ^address,
+            where: not is_nil(coin_balance.value),
+            where: coin_balance.block_number > ^latest_block_number,
+            order_by: [desc: coin_balance.block_number],
+            limit: 1,
+            select: coin_balance.value
+          )
+
+        {:error, :not_found} ->
+          from(coin_balance in CoinBalance,
+            where: coin_balance.address_hash == ^address,
+            where: not is_nil(coin_balance.value),
+            order_by: [desc: coin_balance.block_number],
+            limit: 1,
+            select: coin_balance.value
+          )
+      end
+
+    case Repo.one(query) do
+      nil -> {:error, :not_found}
+      coin_balance -> {:ok, coin_balance}
+    end
+  end
+
   @spec list_ordered_addresses(non_neg_integer(), non_neg_integer()) :: [Address.t()]
   def list_ordered_addresses(offset, limit) do
     query =
@@ -1149,9 +1230,25 @@ defmodule Explorer.Chain do
   @spec list_blocks([paging_options | necessity_by_association_option]) :: [Block.t()]
   def list_blocks(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    paging_options = Keyword.get(options, :paging_options) || @default_paging_options
     block_type = Keyword.get(options, :block_type, "Block")
 
+    if block_type == "Block" && !paging_options.key do
+      if BlocksCache.enough_elements?(paging_options.page_size) do
+        BlocksCache.blocks(paging_options.page_size)
+      else
+        elements = fetch_blocks(block_type, paging_options, necessity_by_association)
+
+        BlocksCache.rewrite_cache(elements)
+
+        elements
+      end
+    else
+      fetch_blocks(block_type, paging_options, necessity_by_association)
+    end
+  end
+
+  defp fetch_blocks(block_type, paging_options, necessity_by_association) do
     Block
     |> Block.block_type_filter(block_type)
     |> page_blocks(paging_options)
