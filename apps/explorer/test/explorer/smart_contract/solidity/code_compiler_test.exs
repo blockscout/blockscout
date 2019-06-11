@@ -310,6 +310,34 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
     end
   end
 
+  # describe "allowed_evm_versions/0" do
+  #   test "returns allowed evm versions defined by ALLOWED_EVM_VERSIONS env var" do
+  #     Application.put_env(:explorer, :allowed_evm_versions, "CustomEVM1,CustomEVM2,CustomEVM3")
+  #     response = CodeCompiler.allowed_evm_versions()
+
+  #     assert ["CustomEVM1", "CustomEVM2", "CustomEVM3"] = response
+  #   end
+
+  #   test "returns allowed evm versions defined by not trimmed ALLOWED_EVM_VERSIONS env var" do
+  #     Application.put_env(:explorer, :allowed_evm_versions, "CustomEVM1,  CustomEVM2, CustomEVM3")
+  #     response = CodeCompiler.allowed_evm_versions()
+
+  #     assert ["CustomEVM1", "CustomEVM2", "CustomEVM3"] = response
+  #   end
+
+  #   test "returns default_allowed_evm_versions" do
+  #     Application.put_env(
+  #       :explorer,
+  #       :allowed_evm_versions,
+  #       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg"
+  #     )
+
+  #     response = CodeCompiler.allowed_evm_versions()
+
+  #     assert ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople", "petersburg"] = response
+  #   end
+  # end
+
   defp remove_init_data_and_whisper_data(code) do
     {res, _} =
       code
