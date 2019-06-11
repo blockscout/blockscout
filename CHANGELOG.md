@@ -5,6 +5,7 @@
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
 
 ### Fixes
+- [#2138](https://github.com/poanetwork/blockscout/pull/2138) - badge colors issue, api titles issue
 - [#2129](https://github.com/poanetwork/blockscout/pull/2129) - Fix for width of explorer elements
 - [#2121](https://github.com/poanetwork/blockscout/pull/2121) - Binding of 404 page
 - [#2120](https://github.com/poanetwork/blockscout/pull/2120) - footer links and socials focus color issue

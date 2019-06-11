@@ -61,3 +61,7 @@ $card-tab-active: $secondary;
       filter: brightness(0) invert(1);
     }
 }
+
+// Badges
+$badge-neutral-color: #1a323b;
+$badge-neutral-background-color: rgba(#1a323b, .1);
