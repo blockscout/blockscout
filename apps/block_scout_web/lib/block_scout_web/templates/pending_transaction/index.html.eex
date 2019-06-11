@@ -1,13 +1,9 @@
 <section class="container" data-page="transaction-pending-list">
   <div class="card">
     <div class="card-body" data-async-listing="<%= @current_path %>">
+      <h1 class="card-title"><%= gettext "Pending Transactions" %></h1>
 
-      <h1><%= gettext "Pending Transactions" %></h1>
-      <p>
-        <%= gettext("Showing") %>
-        <span data-selector="transaction-pending-count"><%= Cldr.Number.to_string!(@pending_transaction_count, format: "#,###") %></span>
-        <%= gettext("Pending Transactions") %>
-      </p>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
       <div data-selector="channel-batching-message" style="display:none;">
         <div data-selector="reload-button" class="alert alert-info">
@@ -35,17 +31,9 @@
         </span>
         <%= gettext("Loading") %>...
       </div>
-      <a href="#" class="button button-secondary button-small float-right mt-4" data-next-page-button style="display: none;">
-        <%= gettext("Older") %>
-      </a>
-      <div class="button button-secondary button-small float-right mt-4" data-loading-button style="display: none;">
-        <span class="loading-spinner-small mr-2">
-          <span class="loading-spinner-block-1"></span>
-          <span class="loading-spinner-block-2"></span>
-        </span>
-        <%= gettext("Loading") %>...
-      </div>
-    </div>
 
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
+    </div>
   </div>
 </section>

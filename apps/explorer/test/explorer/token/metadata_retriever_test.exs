@@ -426,4 +426,51 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       on_exit(fn -> Application.put_env(:explorer, :token_functions_reader_max_retries, original) end)
     end
   end
+
+  test "returns name and symbol when they are bytes32" do
+    token = insert(:token, contract_address: build(:contract_address))
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      1,
+      fn requests, _opts ->
+        {:ok,
+         Enum.map(requests, fn
+           %{id: id, method: "eth_call", params: [%{data: "0x313ce567", to: _}, "latest"]} ->
+             %{
+               id: id,
+               result: "0x0000000000000000000000000000000000000000000000000000000000000012"
+             }
+
+           %{id: id, method: "eth_call", params: [%{data: "0x06fdde03", to: _}, "latest"]} ->
+             %{
+               id: id,
+               result: "0x4d616b6572000000000000000000000000000000000000000000000000000000"
+             }
+
+           %{id: id, method: "eth_call", params: [%{data: "0x95d89b41", to: _}, "latest"]} ->
+             %{
+               id: id,
+               result: "0x4d4b520000000000000000000000000000000000000000000000000000000000"
+             }
+
+           %{id: id, method: "eth_call", params: [%{data: "0x18160ddd", to: _}, "latest"]} ->
+             %{
+               id: id,
+               result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
+             }
+         end)}
+      end
+    )
+
+    expected = %{
+      decimals: 18,
+      name: "Maker",
+      symbol: "MKR",
+      total_supply: 1_000_000_000_000_000_000_000_000
+    }
+
+    assert MetadataRetriever.get_functions_of(token.contract_address_hash) == expected
+  end
 end
