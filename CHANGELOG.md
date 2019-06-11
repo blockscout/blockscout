@@ -18,6 +18,7 @@
 - [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fix uncle fetching without full transactions
 - [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
 - [#2119](https://github.com/poanetwork/blockscout/pull/2119) - fix map logging
+- [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
@@ -49,6 +50,7 @@
 - [#2037](https://github.com/poanetwork/blockscout/pull/2037) - add address logs search functionality
 - [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
 - [#2064](https://github.com/poanetwork/blockscout/pull/2064) - feat: add fields to tx apis, small cleanups
+- [#2100](https://github.com/poanetwork/blockscout/pull/2100) - feat: eth_get_balance rpc endpoint
 
 ### Fixes
 - [#2099](https://github.com/poanetwork/blockscout/pull/2099) - logs search input width
