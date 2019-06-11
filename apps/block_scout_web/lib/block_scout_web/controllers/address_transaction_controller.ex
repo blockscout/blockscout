@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
       |> Enum.into(
         conn
         |> put_resp_content_type("application/csv")
-        |> put_resp_header("content-disposition", "attachment; filename=transactions.csv")
+        |> put_resp_header("content-disposition", "attachment; filename=token_transfers.csv")
         |> send_chunked(200)
       )
     else

@@ -5,6 +5,7 @@
     <div class="card">
       <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+        <a type="button" href=<%= address_transaction_path(@conn, :token_transfers_csv, %{"address_id" => to_string(@address.hash)}) %>><%= gettext("Download all token transfers as csv") %></a>
         <h2 class="card-title"><%= gettext "Tokens" %></h2>
 
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
