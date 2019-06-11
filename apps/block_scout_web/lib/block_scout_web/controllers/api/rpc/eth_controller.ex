@@ -106,7 +106,11 @@ defmodule BlockScoutWeb.API.RPC.EthController do
   end
 
   defp render_log(log) do
-    topics = Enum.reject([log.first_topic, log.second_topic, log.third_topic, log.fourth_topic], &is_nil/1)
+    topics =
+      Enum.reject(
+        [log.first_topic, log.second_topic, log.third_topic, log.fourth_topic],
+        &is_nil/1
+      )
 
     %{
       "address" => to_string(log.address_hash),
@@ -166,7 +170,8 @@ defmodule BlockScoutWeb.API.RPC.EthController do
     |> Enum.reduce({:ok, %{}}, fn {topic, index}, {:ok, acc} ->
       case cast_topics(topic) do
         {:ok, data} ->
-          with_filter = Map.put(acc, String.to_existing_atom("#{@index_to_word[index]}_topic"), data)
+          with_filter =
+            Map.put(acc, String.to_existing_atom("#{@index_to_word[index]}_topic"), data)
 
           {:ok, add_operator(with_filter, index)}
 
@@ -245,7 +250,8 @@ defmodule BlockScoutWeb.API.RPC.EthController do
   defp to_block_numbers(from_block, to_block, max_block_number, pending_block_number) do
     actual_pending_block_number = pending_block_number || max_block_number
 
-    with {:ok, from} <- to_block_number(from_block, max_block_number, actual_pending_block_number),
+    with {:ok, from} <-
+           to_block_number(from_block, max_block_number, actual_pending_block_number),
          {:ok, to} <- to_block_number(to_block, max_block_number, actual_pending_block_number) do
       {:ok, from, to}
     end
