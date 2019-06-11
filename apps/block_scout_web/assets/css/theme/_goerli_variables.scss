@@ -73,3 +73,8 @@ $card-tab-active: $sub-accent-color;
 	  );
 	}
 }
+
+// Badges
+$badge-neutral-color: $sub-accent-color;
+$badge-neutral-background-color: rgba($sub-accent-color, .1);
+$api-text-monospace-color: $sub-accent-color;
