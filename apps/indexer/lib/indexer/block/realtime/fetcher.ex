@@ -201,6 +201,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
+  def import(_, _) do
+    Logger.warn("Empty parameters were provided for realtime fetcher")
+
+    {:ok, []}
+  end
+
   defp start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen) do
     start_at = determine_start_at(number, previous_number, max_number_seen)
 
