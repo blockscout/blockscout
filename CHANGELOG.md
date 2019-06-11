@@ -39,6 +39,8 @@ Reverting of synchronous block counter, implemented in #1848
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
 
 ### Fixes
+- [#2142](https://github.com/poanetwork/blockscout/pull/2142) - Removed posdao theme and logo, added 'page not found' image for goerli
+- [#2138](https://github.com/poanetwork/blockscout/pull/2138) - badge colors issue, api titles issue
 - [#2129](https://github.com/poanetwork/blockscout/pull/2129) - Fix for width of explorer elements
 - [#2121](https://github.com/poanetwork/blockscout/pull/2121) - Binding of 404 page
 - [#2120](https://github.com/poanetwork/blockscout/pull/2120) - footer links and socials focus color issue
@@ -52,6 +54,7 @@ Reverting of synchronous block counter, implemented in #1848
 - [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fix uncle fetching without full transactions
 - [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
 - [#2119](https://github.com/poanetwork/blockscout/pull/2119) - fix map logging
+- [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
