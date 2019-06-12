@@ -86,17 +86,17 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
                      "type" => "mined"
                    },
                    %{
-                    "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415c",
-                    "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-                    "blockNumber" => "0x25",
-                    "data" => "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
-                    "logIndex" => "0x1",
-                    "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
-                    "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-                    "transactionIndex" => "0x0",
-                    "transactionLogIndex" => "0x0",
-                    "type" => "pending"
-                  }
+                     "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415c",
+                     "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+                     "blockNumber" => "0x25",
+                     "data" => "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+                     "logIndex" => "0x1",
+                     "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
+                     "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+                     "transactionIndex" => "0x0",
+                     "transactionLogIndex" => "0x0",
+                     "type" => "pending"
+                   }
                  ],
                  "logsBloom" =>
                    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000200000000000000000000020000000000000000200000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
