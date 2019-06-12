@@ -18,6 +18,7 @@
 - [#2096](https://github.com/poanetwork/blockscout/pull/2096) - RSK theme fixes
 - [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
 - [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fix uncle fetching without full transactions
+- [#2128](https://github.com/poanetwork/blockscout/pull/2128) - add new function clause for uncle errors
 - [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
 - [#2119](https://github.com/poanetwork/blockscout/pull/2119) - fix map logging
 - [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
