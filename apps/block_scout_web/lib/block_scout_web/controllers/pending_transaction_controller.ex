@@ -52,8 +52,7 @@ defmodule BlockScoutWeb.PendingTransactionController do
 
   def index(conn, _params) do
     render(conn, "index.html",
-      current_path: current_path(conn),
-      pending_transaction_count: Chain.pending_transaction_count()
+      current_path: current_path(conn)
     )
   end
 
