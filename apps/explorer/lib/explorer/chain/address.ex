@@ -15,6 +15,7 @@ defmodule Explorer.Chain.Address do
     Data,
     DecompiledSmartContract,
     Hash,
+    NetVersionCache,
     InternalTransaction,
     SmartContract,
     Token,
@@ -167,7 +168,7 @@ defmodule Explorer.Chain.Address do
   end
 
   def rsk_checksum(hash) do
-    chain_id = Application.get_env(:explorer, :chain_id)
+    chain_id = NetVersionCache.version()
 
     string_hash =
       hash

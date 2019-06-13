@@ -81,7 +81,6 @@ end
 
 config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org",
-  chain_id: System.get_env("CHAIN_ID"),
   checksum_function: System.get_env("CHECKSUM_FUNCTION") && String.to_atom(System.get_env("CHECKSUM_FUNCTION"))
 
 config :logger, :explorer,

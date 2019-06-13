@@ -1,6 +1,8 @@
 defmodule Explorer.Chain.AddressTest do
   use Explorer.DataCase
 
+  import Mox
+
   alias Explorer.Chain.Address
   alias Explorer.Repo
 
@@ -47,7 +49,10 @@ defmodule Explorer.Chain.AddressTest do
     end
 
     test "returns the checksum rsk formatted address" do
-      Application.put_env(:explorer, :chain_id, 30)
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        {:ok, "30"}
+      end)
+
       Application.put_env(:explorer, :checksum_function, :rsk)
 
       assert str("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed") == "0x5aaEB6053f3e94c9b9a09f33669435E7ef1bEAeD"
