@@ -42,5 +42,21 @@ defmodule Explorer.Counters.AverageBlockTimeTest do
 
       assert AverageBlockTime.average_block_time() == Timex.Duration.parse!("PT3S")
     end
+
+    test "when there are no uncles sorts by block number" do
+      block_number = 99_999_999
+
+      first_timestamp = Timex.now()
+
+      insert(:block, number: block_number, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 3))
+      insert(:block, number: block_number + 2, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 9))
+      insert(:block, number: block_number + 1, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 6))
+
+      assert Repo.aggregate(Block, :count, :hash) == 3
+
+      AverageBlockTime.refresh()
+
+      assert AverageBlockTime.average_block_time() == Timex.Duration.parse!("PT3S")
+    end
   end
 end
