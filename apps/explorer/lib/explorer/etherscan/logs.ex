@@ -5,9 +5,9 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [from: 2, where: 3]
+  import Ecto.Query, only: [from: 2, where: 3, subquery: 1]
 
-  alias Explorer.Chain.Log
+  alias Explorer.Chain.{Block, InternalTransaction, Log, Transaction}
   alias Explorer.Repo
 
   @base_filter %{
@@ -67,32 +67,101 @@ defmodule Explorer.Etherscan.Logs do
 
   """
   @spec list_logs(map()) :: [map()]
-  def list_logs(filter) do
+  def list_logs(%{address_hash: address_hash} = filter) when not is_nil(address_hash) do
     prepared_filter = Map.merge(@base_filter, filter)
 
-    query =
-      from(
-        l in Log,
-        inner_join: t in assoc(l, :transaction),
-        inner_join: b in assoc(t, :block),
-        where: b.number >= ^prepared_filter.from_block,
-        where: b.number <= ^prepared_filter.to_block,
-        order_by: b.number,
-        limit: 1_000,
+    logs_query = where_topic_match(Log, prepared_filter)
+
+    internal_transaction_log_query =
+      from(internal_transaction in InternalTransaction,
+        join: transaction in assoc(internal_transaction, :transaction),
+        join: log in ^logs_query,
+        on: log.transaction_hash == internal_transaction.transaction_hash,
+        where: internal_transaction.block_number >= ^prepared_filter.from_block,
+        where: internal_transaction.block_number <= ^prepared_filter.to_block,
+        where:
+          internal_transaction.to_address_hash == ^address_hash or
+            internal_transaction.from_address_hash == ^address_hash or
+            internal_transaction.created_contract_address_hash == ^address_hash,
         select:
-          merge(map(l, ^@log_fields), %{
-            gas_price: t.gas_price,
-            gas_used: t.gas_used,
-            transaction_index: t.index,
-            block_number: b.number,
-            block_timestamp: b.timestamp
+          merge(map(log, ^@log_fields), %{
+            gas_price: transaction.gas_price,
+            gas_used: transaction.gas_used,
+            transaction_index: transaction.index,
+            block_number: transaction.block_number
           })
       )
 
-    query
-    |> where_address_match(prepared_filter)
-    |> where_topic_match(prepared_filter)
-    |> Repo.all()
+    all_transaction_logs_query =
+      from(transaction in Transaction,
+        join: log in ^logs_query,
+        on: log.transaction_hash == transaction.hash,
+        where: transaction.block_number >= ^prepared_filter.from_block,
+        where: transaction.block_number <= ^prepared_filter.to_block,
+        where:
+          transaction.to_address_hash == ^address_hash or
+            transaction.from_address_hash == ^address_hash or
+            transaction.created_contract_address_hash == ^address_hash,
+        select: map(log, ^@log_fields),
+        select_merge: map(transaction, [:gas_price, :gas_used, :block_number]),
+        select_merge: %{
+          transaction_index: transaction.index
+        },
+        union: ^internal_transaction_log_query
+      )
+
+    query_with_blocks =
+      from(log_transaction_data in subquery(all_transaction_logs_query),
+        join: block in Block,
+        on: block.number == log_transaction_data.block_number,
+        where: block.consensus == true,
+        where: log_transaction_data.address_hash == ^address_hash,
+        order_by: block.number,
+        limit: 1000,
+        select_merge: %{
+          block_timestamp: block.timestamp
+        }
+      )
+
+    Repo.all(query_with_blocks)
+  end
+
+  # Since address_hash was not present, we know that a
+  # topic filter has been applied, so we use a different
+  # query that is optimized for a logs filter over an
+  # address_hash
+  def list_logs(filter) do
+    prepared_filter = Map.merge(@base_filter, filter)
+
+    logs_query = where_topic_match(Log, prepared_filter)
+
+    block_transaction_query =
+      from(transaction in Transaction,
+        join: block in assoc(transaction, :block),
+        where: block.number >= ^prepared_filter.from_block,
+        where: block.number <= ^prepared_filter.to_block,
+        where: block.consensus == true,
+        select: %{
+          transaction_hash: transaction.hash,
+          gas_price: transaction.gas_price,
+          gas_used: transaction.gas_used,
+          transaction_index: transaction.index,
+          block_number: block.number,
+          block_timestamp: block.timestamp
+        }
+      )
+
+    query_with_block_transaction_data =
+      from(log in logs_query,
+        join: block_transaction_data in subquery(block_transaction_query),
+        on: block_transaction_data.transaction_hash == log.transaction_hash,
+        order_by: block_transaction_data.block_number,
+        limit: 1000,
+        select: block_transaction_data,
+        select_merge: map(log, ^@log_fields)
+      )
+
+    Repo.all(query_with_block_transaction_data)
   end
 
   @topics [
@@ -110,12 +179,6 @@ defmodule Explorer.Etherscan.Logs do
     topic1_3_opr: {:second_topic, :fourth_topic},
     topic2_3_opr: {:third_topic, :fourth_topic}
   }
-
-  defp where_address_match(query, %{address_hash: address_hash}) when not is_nil(address_hash) do
-    where(query, [l], l.address_hash == ^address_hash)
-  end
-
-  defp where_address_match(query, _), do: query
 
   defp where_topic_match(query, filter) do
     case Enum.filter(@topics, &filter[&1]) do
