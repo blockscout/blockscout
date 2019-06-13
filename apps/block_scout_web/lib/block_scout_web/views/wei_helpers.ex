@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.WeiHelpers do
       |> Wei.to(unit)
 
     formatted_value =
-      if converted_value > 1_000_000_000_000 do
+      if Decimal.cmp(converted_value, 1_000_000_000_000) == :gt do
         Cldr.Number.to_string!(converted_value, format: "0.###E+0")
       else
         Cldr.Number.to_string!(converted_value, format: "#,##0.##################")
