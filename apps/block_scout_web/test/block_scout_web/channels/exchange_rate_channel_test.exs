@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
     configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
     Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
     Application.put_env(:explorer, Explorer.ExchangeRates, table_name: :rates)
+    Application.put_env(:explorer, Explorer.ExchangeRates, enabled: true)
 
     ExchangeRates.init([])
 

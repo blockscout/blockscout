@@ -1,7 +1,6 @@
 defmodule BlockScoutWeb.BlockTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.Chain.Block
   import BlockScoutWeb.Router.Helpers, only: [block_transaction_path: 3]
 
   describe "GET index/2" do
@@ -39,10 +38,15 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       |> with_block(block)
       |> with_contract_creation(insert(:contract_address))
 
-      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block.number))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block), %{type: "JSON"})
 
-      assert html_response(conn, 200)
-      assert 2 == Enum.count(conn.assigns.transactions)
+      assert json_response(conn, 200)
+
+      {:ok, %{"items" => items}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      assert Enum.count(items) == 2
     end
 
     test "non-consensus block number without consensus blocks is treated as consensus number above tip", %{conn: conn} do
@@ -77,10 +81,15 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       |> insert()
       |> with_block(block)
 
-      conn = get(conn, block_transaction_path(conn, :index, block.hash))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block), %{type: "JSON"})
 
-      assert html_response(conn, 200)
-      assert Enum.count(conn.assigns.transactions) == 1
+      assert json_response(conn, 200)
+
+      {:ok, %{"items" => items}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      assert Enum.count(items) == 1
     end
 
     test "does not return transactions for non-consensus block hash", %{conn: conn} do
@@ -89,10 +98,15 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       transaction = insert(:transaction)
       insert(:transaction_fork, hash: transaction.hash, uncle_hash: block.hash)
 
-      conn = get(conn, block_transaction_path(conn, :index, block.hash))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block), %{type: "JSON"})
 
-      assert html_response(conn, 200)
-      assert Enum.count(conn.assigns.transactions) == 0
+      assert json_response(conn, 200)
+
+      {:ok, %{"items" => items}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      assert Enum.empty?(items)
     end
 
     test "does not return transactions for invalid block hash", %{conn: conn} do
@@ -111,44 +125,62 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       insert(:transaction)
       block = insert(:block)
 
-      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block), %{type: "JSON"})
 
-      assert html_response(conn, 200)
-      assert Enum.empty?(conn.assigns.transactions)
+      assert json_response(conn, 200)
+
+      {:ok, %{"items" => items}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      assert Enum.empty?(items)
     end
 
     test "does not return related transactions without a block", %{conn: conn} do
       block = insert(:block)
       insert(:transaction)
 
-      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block), %{type: "JSON"})
 
-      assert html_response(conn, 200)
-      assert Enum.empty?(conn.assigns.transactions)
+      assert json_response(conn, 200)
+
+      {:ok, %{"items" => items}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      assert Enum.empty?(items)
     end
 
-    test "next_page_params exist if not on last page", %{conn: conn} do
-      block = %Block{number: number} = insert(:block)
+    test "next_page_path exists if not on last page", %{conn: conn} do
+      block = insert(:block)
 
       60
       |> insert_list(:transaction)
       |> with_block(block)
 
-      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block), %{type: "JSON"})
 
-      assert %{"block_number" => ^number, "index" => 10} = conn.assigns.next_page_params
+      {:ok, %{"next_page_path" => next_page_path}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      assert next_page_path
     end
 
-    test "next_page_params are empty if on last page", %{conn: conn} do
+    test "next_page_path is empty if on last page", %{conn: conn} do
       block = insert(:block)
 
       :transaction
       |> insert()
       |> with_block(block)
 
-      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block), %{type: "JSON"})
 
-      refute conn.assigns.next_page_params
+      {:ok, %{"next_page_path" => next_page_path}} =
+        conn.resp_body
+        |> Poison.decode()
+
+      refute next_page_path
     end
 
     test "displays miner primary address name", %{conn: conn} do
@@ -165,7 +197,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
   defp assert_block_above_tip(conn) do
     assert conn
            |> html_response(404)
-           |> Floki.find(~S|[data-selector="block-not-found-message"|)
+           |> Floki.find(~S|.error-descr|)
            |> Floki.text()
            |> String.trim() == "Easy Cowboy! This block does not exist yet!"
   end
