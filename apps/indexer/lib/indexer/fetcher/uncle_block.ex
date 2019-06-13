@@ -104,18 +104,18 @@ defmodule Indexer.Fetcher.UncleBlock do
     {nephew_hash_bytes, index}
   end
 
-  defp run_blocks(%Blocks{blocks_params: []}, _, original_entries), do: {:retry, original_entries}
+  def run_blocks(%Blocks{blocks_params: []}, _, original_entries), do: {:retry, original_entries}
 
-  defp run_blocks(
-         %Blocks{
-           blocks_params: blocks_params,
-           transactions_params: transactions_params,
-           block_second_degree_relations_params: block_second_degree_relations_params,
-           errors: errors
-         },
-         block_fetcher,
-         original_entries
-       ) do
+  def run_blocks(
+        %Blocks{
+          blocks_params: blocks_params,
+          transactions_params: transactions_params,
+          block_second_degree_relations_params: block_second_degree_relations_params,
+          errors: errors
+        },
+        block_fetcher,
+        original_entries
+      ) do
     addresses_params = Addresses.extract_addresses(%{blocks: blocks_params, transactions: transactions_params})
 
     case Block.Fetcher.import(block_fetcher, %{
@@ -235,7 +235,17 @@ defmodule Indexer.Fetcher.UncleBlock do
     Enum.map(errors, &error_to_entry/1)
   end
 
-  defp error_to_entry(%{data: %{hash: hash}}) when is_binary(hash), do: hash
+  defp error_to_entry(%{data: %{hash: hash, index: index}}) when is_binary(hash) do
+    {:ok, %Hash{bytes: nephew_hash_bytes}} = Hash.Full.cast(hash)
+
+    {nephew_hash_bytes, index}
+  end
+
+  defp error_to_entry(%{data: %{nephew_hash: hash, index: index}}) when is_binary(hash) do
+    {:ok, %Hash{bytes: nephew_hash_bytes}} = Hash.Full.cast(hash)
+
+    {nephew_hash_bytes, index}
+  end
 
   defp errors_to_iodata(errors) when is_list(errors) do
     errors_to_iodata(errors, [])
@@ -248,6 +258,11 @@ defmodule Indexer.Fetcher.UncleBlock do
   end
 
   defp error_to_iodata(%{code: code, message: message, data: %{hash: hash}})
+       when is_integer(code) and is_binary(message) and is_binary(hash) do
+    [hash, ": (", to_string(code), ") ", message, ?\n]
+  end
+
+  defp error_to_iodata(%{code: code, message: message, data: %{nephew_hash: hash}})
        when is_integer(code) and is_binary(message) and is_binary(hash) do
     [hash, ": (", to_string(code), ") ", message, ?\n]
   end

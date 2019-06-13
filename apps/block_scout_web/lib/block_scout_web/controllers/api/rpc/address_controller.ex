@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, Wei}
+  alias Indexer.Fetcher.CoinBalanceOnDemand
 
   def listaccounts(conn, params) do
     options =
@@ -17,6 +18,35 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     conn
     |> put_status(200)
     |> render(:listaccounts, %{accounts: accounts})
+  end
+
+  def eth_get_balance(conn, params) do
+    with {:address_param, {:ok, address_param}} <- fetch_address(params),
+         {:block_param, {:ok, block}} <- {:block_param, fetch_block_param(params)},
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:balance, {:ok, balance}} <- {:balance, Chain.get_balance_as_of_block(address_hash, block)} do
+      render(conn, :eth_get_balance, %{balance: Wei.hex_format(balance)})
+    else
+      {:address_param, :error} ->
+        conn
+        |> put_status(400)
+        |> render(:eth_get_balance_error, %{message: "Query parameter 'address' is required"})
+
+      {:format, :error} ->
+        conn
+        |> put_status(400)
+        |> render(:eth_get_balance_error, %{error: "Invalid address hash"})
+
+      {:block_param, :error} ->
+        conn
+        |> put_status(400)
+        |> render(:eth_get_balance_error, %{error: "Invalid block"})
+
+      {:balance, {:error, :not_found}} ->
+        conn
+        |> put_status(404)
+        |> render(:eth_get_balance_error, %{error: "Balance not found"})
+    end
   end
 
   def balance(conn, params, template \\ :balance) do
@@ -216,6 +246,20 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     {:required_params, result}
   end
 
+  defp fetch_block_param(%{"block" => "latest"}), do: {:ok, :latest}
+  defp fetch_block_param(%{"block" => "earliest"}), do: {:ok, :earliest}
+  defp fetch_block_param(%{"block" => "pending"}), do: {:ok, :pending}
+
+  defp fetch_block_param(%{"block" => string_integer}) when is_bitstring(string_integer) do
+    case Integer.parse(string_integer) do
+      {integer, ""} -> {:ok, integer}
+      _ -> :error
+    end
+  end
+
+  defp fetch_block_param(%{"block" => _block}), do: :error
+  defp fetch_block_param(_), do: {:ok, :latest}
+
   defp to_valid_format(params, :tokenbalance) do
     result =
       with {:ok, contract_address_hash} <- to_address_hash(params, "contractaddress"),
@@ -279,12 +323,15 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     offset = (max(page_number, 1) - 1) * page_size
 
     # limit is just page_size
-    Chain.list_ordered_addresses(offset, page_size)
+    offset
+    |> Chain.list_ordered_addresses(page_size)
+    |> trigger_balances_and_add_status()
   end
 
   defp hashes_to_addresses(address_hashes) do
     address_hashes
     |> Chain.hashes_to_addresses()
+    |> trigger_balances_and_add_status()
     |> add_not_found_addresses(address_hashes)
   end
 
@@ -304,6 +351,18 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         hash: hash,
         fetched_coin_balance: %Wei{value: 0}
       }
+    end)
+  end
+
+  defp trigger_balances_and_add_status(addresses) do
+    Enum.map(addresses, fn address ->
+      case CoinBalanceOnDemand.trigger_fetch(address) do
+        :current ->
+          %{address | stale?: false}
+
+        _ ->
+          %{address | stale?: true}
+      end
     end)
   end
 
