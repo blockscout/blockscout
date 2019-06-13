@@ -4,53 +4,55 @@
 
   <section data-page="address-transactions">
     <div class="card">
-      <div class="card-header">
-        <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-      </div>
-
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div class="card-body" data-async-listing="<%= @current_path %>">
         <div data-selector="channel-disconnected-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
           </div>
         </div>
-        <div class="dropdown float-right u-push-sm">
-          <button data-test="filter_dropdown" class="button button-secondary button-xs dropdown-toggle" type="button"
-            id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Filter: <%= format_current_filter(@filter) %>
-          </button>
-          <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
-            <%= link(
-              gettext("All"),
-              to: address_transaction_path(@conn, :index, @address.hash),
-              class: "address__link address__link--active dropdown-item",
-              "data-test": "filter_option"
-            ) %>
-            <%= link(
-              gettext("To"),
-              to: address_transaction_path(
-                @conn,
-                :index,
-                @address.hash,
-                filter: "to"
-              ),
-              class: "address__link address__link--active dropdown-item",
-              "data-test": "filter_option"
-            ) %>
-            <%= link(
-              gettext("From"),
-              to: address_transaction_path(
-                @conn,
-                :index,
-                @address.hash,
-                filter: "from"
-              ),
-              class: "address__link address__link--active dropdown-item",
-              "data-test": "filter_option"
-            ) %>
+        <div class="clearfix">
+          <h2 class="card-title float-left"><%= gettext "Transactions" %></h2>
+          <div class="dropdown float-right u-push-sm">
+            <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
+              id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Filter: <%= format_current_filter(@filter) %>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
+              <%= link(
+                gettext("All"),
+                to: address_transaction_path(@conn, :index, @address.hash),
+                class: "address__link address__link--active dropdown-item",
+                "data-test": "filter_option"
+              ) %>
+              <%= link(
+                gettext("To"),
+                to: address_transaction_path(
+                  @conn,
+                  :index,
+                  @address.hash,
+                  filter: "to"
+                ),
+                class: "address__link address__link--active dropdown-item",
+                "data-test": "filter_option"
+              ) %>
+              <%= link(
+                gettext("From"),
+                to: address_transaction_path(
+                  @conn,
+                  :index,
+                  @address.hash,
+                  filter: "from"
+                ),
+                class: "address__link address__link--active dropdown-item",
+                "data-test": "filter_option"
+              ) %>
+            </div>
           </div>
         </div>
-        <h2 class="card-title"><%= gettext "Transactions" %></h2>
+
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
         </button>
@@ -61,27 +63,10 @@
           </div>
         </div>
 
-        <div data-loading-message class="tile tile-muted text-center mt-3">
-          <span class="loading-spinner-small mr-2">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </span>
-          <%= gettext("Loading") %>...
-        </div>
-
         <div data-items></div>
 
-        <a href="#" class="button button-secondary button-small float-right mt-4" data-next-page-button style="display: none;">
-          <%= gettext("Older") %>
-        </a>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
-        <div class="button button-secondary button-small float-right mt-4" data-loading-button style="display: none;">
-          <span class="loading-spinner-small mr-2">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </span>
-          <%= gettext("Loading") %>...
-        </div>
       </div>
     </div>
   </section>

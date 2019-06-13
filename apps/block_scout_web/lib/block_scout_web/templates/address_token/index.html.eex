@@ -3,36 +3,25 @@
 
   <section>
     <div class="card">
-      <div class="card-header">
-        <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-      </div>
-
-      <div class="card-body">
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
         <h2 class="card-title"><%= gettext "Tokens" %></h2>
-        <%= if Enum.any?(@tokens) do %>
-          <%= for token <- @tokens do %>
-            <%= render "_tokens.html", conn: @conn, token: token, address: @address %>
-          <% end %>
-        <% else %>
-          <div class="tile tile-muted text-center">
-            <span><%= gettext "There are no tokens for this address." %></span>
-          </div>
-        <% end %>
 
-        <div>
-          <%= if @next_page_params do %>
-            <%= link(
-              gettext("Next"),
-              class: "button button-secondary button-sm float-right mt-3",
-              to: address_token_path(
-                @conn,
-                :index,
-                @address,
-                @next_page_params
-              )
-            ) %>
-          <% end %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+          <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+        </button>
+
+        <div data-empty-response-message style="display: none;">
+          <div class="tile tile-muted text-center" data-selector="empty-token-list">
+            <%= gettext "There are no tokens for this address." %>
+          </div>
         </div>
+
+        <div data-items></div>
+
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
       </div>
     </div>
   </section>

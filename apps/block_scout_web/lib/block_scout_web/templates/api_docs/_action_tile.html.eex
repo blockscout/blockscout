@@ -1,209 +1,259 @@
-
-
-  <div>
-    <button class="nounderline tile tile-type-api-documentation" data-toggle="collapse" href="#<%= action_tile_id(@module_name, @action.name) %>" role="button" aria-expanded="false" aria-controls="<%= action_tile_id(@module_name, @action.name) %>">
-      <h3>
-        <span class="badge badge-primary tile-badge float-right"><%= gettext "POST" %></span>
-        <span class="badge badge-dark tile-badge float-right mr-1"><%= gettext "GET" %></span>
-        <strong class="tile-label"><%= @action.name %></strong>
-      </h3>
-      <h4 class="text-dark"><span data-selector="stop-propagation"><%= raw @action.description %></span></h4>
-      <code><%= raw query_params(@module_name, @action) %></code>
-    </button>
+<div
+  class="api-doc-list-item"
+>
+  <div
+    aria-controls="<%= action_tile_id(@module_name, @action.name) %>"
+    aria-expanded="false"
+    class="api-doc-list-item-contents"
+    data-toggle="collapse"
+    href="#<%= action_tile_id(@module_name, @action.name) %>"
+  >
+    <div data-selector="stop-propagation" class="api-doc-list-item-description">
+      <h3 class="api-doc-list-item-title"><%= raw @action.description %></h3>
+      <p class="api-doc-list-item-query api-text-monospace api-text-monospace-background"><%= raw query_params(@module_name, @action) %></p>
+      <p class="api-doc-list-item-text"><%= @action.name %></p>
+    </div>
+    <div class="api-doc-list-item-controls">
+      <div class="api-doc-list-item-controls-badges">
+        <span class="badge badge-success api-badge"><%= gettext "GET" %></span>
+        <span class="badge badge-neutral api-badge"><%= gettext "POST" %></span>
+      </div>
+      <span class="api-doc-list-item-controls-view-more">
+        <span class="api-doc-list-item-controls-view-more-open">More Details <span class="fa fa-chevron-down"></span></span>
+        <span class="api-doc-list-item-controls-view-more-close">Hide Details <span class="fa fa-chevron-up"></span></span>
+      </span>
+    </div>
   </div>
-
-
-<div class="row mb-3">
-  <div class="col">
-    <div class="collapse multi-collapse" id="<%= action_tile_id(@module_name, @action.name) %>">
-      <div class="pt-3">
-
-
-        <h4 class="text-primary my-4"><%= gettext "Parameters" %>
-          <button data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api" %>" role="button" class="button button-xs button-primary float-right" style="width: 8rem" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Try it out" %></button>
-          <button data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-cancel" %>" role="button" class="collapse button button-xs button-secondary float-right" style="width: 8rem" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Cancel" %></button>
-        </h4>
-
+  <!-- Parameters -->
+  <div
+    class="collapse multi-collapse api-doc-parameters-container"
+    id="<%= action_tile_id(@module_name, @action.name) %>"
+  >
+    <h3 class="card-title margin-bottom-md">
+      <%= gettext "Parameters" %>
+      <button
+        class="btn-full-primary float-right"
+        data-action="<%= @action.name %>"
+        data-module="<%= @module_name %>"
+        data-selector='<%= "#{@module_name}-#{@action.name}-btn-try-api" %>'
+        role="button"
+      ><%= gettext "Try it out" %></button>
+      <button
+        class="collapse btn-line float-right"
+        data-action="<%= @action.name %>"
+        data-module="<%= @module_name %>"
+        data-selector='<%= "#{@module_name}-#{@action.name}-btn-try-api-cancel" %>'
+        role="button"
+      ><%= gettext "Cancel" %></button>
+    </h3>
+    <!-- Parameters description list -->
+    <div class="api-doc-parameters-list">
+      <div class="row d-none d-md-flex">
+        <h4 class="col-2 api-doc-parameters-list-title"><%= gettext "Name" %></h4>
+        <h3 class="col-10 api-doc-parameters-list-title"><%= gettext "Description" %></h3>
+      </div>
+      <!-- Module -->
+      <div class="row api-doc-parameters-list-item">
+        <div class="col-sm-4 col-md-2">
+          <h5 class="api-doc-parameters-list-item-title"><%= gettext "Module" %> <span class="text-danger">*<small><%= gettext "required" %></small></span></h5>
+          <p class="api-doc-parameters-list-item-subtitle"><%= gettext "string" %> <em><%= gettext "(query)" %></em></p>
+        </div>
+        <div class="col-sm-8 col-md-10">
+          <p  class="api-doc-parameters-list-item-description"><%= gettext "A string with the name of the module to be invoked." %></p>
+          <p class="api-doc-parameters-list-item-description"><strong><%= gettext "Must be set to:" %></strong> <em><%= @module_name %></em>
+        </div>
+      </div>
+      <!-- Action -->
+      <div class="row api-doc-parameters-list-item">
+        <div class="col-sm-4 col-md-2">
+          <h5 class="api-doc-parameters-list-item-title"><%= gettext "Action" %> <span class="text-danger">*<small><%= gettext "required" %></small></span></h5>
+          <p class="api-doc-parameters-list-item-subtitle"><%= gettext "string" %> <em><%= gettext "(query)" %></em></p>
+        </div>
+        <div class="col-sm-8 col-md-10">
+          <p  class="api-doc-parameters-list-item-description"><%= gettext "A string with the name of the action to be invoked." %></p>
+          <p  class="api-doc-parameters-list-item-description"><strong><%= gettext "Must be set to:" %></strong> <em><%= @action.name %></em></p>
+        </div>
+      </div>
+      <!-- Other -->
+      <%= for required_param <- @action.required_params do %>
+      <div class="row api-doc-parameters-list-item">
+        <div class="col-sm-4 col-md-2">
+          <h5 class="api-doc-parameters-list-item-title"><%= required_param.key %> <span class="align-text-bottom text-danger">*<small><%= gettext "required" %></small></span></h5>
+          <p class="api-doc-parameters-list-item-subtitle"><%= required_param.type %> <em><%= gettext "(query)" %></em></p>
+        </div>
+        <div class="col-sm-8 col-md-10">
+          <p  class="api-doc-parameters-list-item-description"><%= required_param.description %></p>
+          <div class="form-group has-danger mb-0">
+            <input
+              data-selector='<%= "#{@module_name}-#{@action.name}-try-api-ui" %>'
+              data-required="true"
+              type="text"
+              class="collapse form-control form-control-danger is-invalid"
+              placeholder="<%= input_placeholder(required_param) %>"
+              data-parameter-key="<%= required_param.key %>"
+            />
+          </div>
+        </div>
+      </div>
+      <% end %>
+      <!-- Other / Extra -->
+      <%= for optional_param <- @action.optional_params do %>
+      <div class="row api-doc-parameters-list-item">
+        <div class="col-sm-4 col-md-2">
+          <h5 class="api-doc-parameters-list-item-title"><%= optional_param.key %></h2>
+          <p class="api-doc-parameters-list-item-subtitle"><%= optional_param.type %> <em><%= gettext "(query)" %></em></p>
+        </div>
+        <div class="col-sm-8 col-md-10">
+          <p class="api-doc-parameters-list-item-description"><%= optional_param.description %></p>
+          <input
+            class="collapse form-control"
+            data-parameter-key="<%= optional_param.key %>"
+            data-selector='<%= "#{@module_name}-#{@action.name}-try-api-ui" %>'
+            placeholder="<%= input_placeholder(optional_param) %>"
+            type="text"
+          />
+        </div>
+      </div>
+      <% end %>
+      <!-- Buttons for Other / Extra -->
+      <div class="row">
+        <div class="col-sm-2 offset-sm-4 col-md-2 offset-md-2">
+          <button
+            class="collapse button button-primary w-100"
+            data-action="<%= @action.name %>"
+            data-module="<%= @module_name %>"
+            data-selector='<%= "#{@module_name}-#{@action.name}-try-api-ui" %>'
+            data-try-api-ui-button-type="execute"
+            role="button"
+          ><%= gettext "Execute" %></button>
+        </div>
+        <div class="col-sm-2 col-md-2 mt-2 mt-md-0">
+          <button
+            class="collapse button button-secondary w-100"
+            data-action="<%= @action.name %>"
+            data-module="<%= @module_name %>"
+            data-selector='<%= "#{@module_name}-#{@action.name}-btn-try-api-clear" %>'
+            role="button"
+          ><%= gettext "Clear" %></button>
+        </div>
+      </div>
+      <!-- CURL / Request URL / Server Response -->
+      <div
+        class="tile text-dark mt-5 collapse"
+        data-selector='<%= "#{@module_name}-#{@action.name}-try-api-ui-result" %>'
+      >
+        <div class="mb-3">
+          <h5 class="api-doc-parameters-list-item-title"><%= gettext "Curl" %></h5>
+          <div class="tile tile-muted p-1">
+            <pre
+              class="m-2"
+              data-selector='<%= "#{@module_name}-#{@action.name}-curl" %>'
+            ></pre>
+          </div>
+        </div>
         <div class="mb-4">
-          <dl class="row">
-            <dt class="col-2 text-muted d-none d-md-block"><%= gettext "Name" %></dt>
-            <dt class="col-10 text-muted d-none d-md-block"><%= gettext "Description" %></dt>
-          </dl>
-          <dl class="row">
-            <dd class="col-sm-4 col-md-2">
-              <div class="">
-                <%= gettext "Module" %>
-                <span class="text-danger">
-                  * <small><%= gettext "required" %></small>
-                </span>
-              </div>
-              <span class="text-muted"><%= gettext "string" %> <em><%= gettext "(query)" %></em></span>
-            </dd>
-            <dd class="col-sm-8 col-md-10">
-              <%= gettext "A string with the name of the module to be invoked." %>
-              <em><%= gettext "Must be set to:" %></em> <%= @module_name %>
-            </dd>
-          </dl>
-          <dl class="row">
-            <dd class="col-sm-4 col-md-2">
-              <div class="">
-               <%= gettext "Action" %>
-               <span class="text-danger">
-                 * <small><%= gettext "required" %></small>
-               </span>
-             </div>
-              <span class="text-muted"><%= gettext "string" %><em><%= gettext "(query)" %></em></span>
-            </dd>
-            <dd class="col-sm-8 col-md-10">
-              <%= gettext "A string with the name of the action to be invoked." %>
-              <em><%= gettext "Must be set to:" %></em> <%= @action.name %>
-            </dd>
-          </dl>
-            <%= for required_param <- @action.required_params do %>
-            <dl class="row">
-              <dd class="col-sm-4 col-md-2">
-                  <%= required_param.key %>
-                  <span class="align-text-bottom text-danger">
-                    * <small><%= gettext "required" %></small>
-                  </span>
-                <div class="text-muted"><%= required_param.type %> <em><%= gettext "(query)" %></em></div>
-              </dd>
-              <dd class="col-sm-8 col-md-10">
-                <%= required_param.description %>
-                <div class="form-group has-danger">
-                  <input data-selector="<%= "#{@module_name}-#{@action.name}-try-api-ui" %>" data-required="true" type="text" class="collapse form-control form-control-danger is-invalid" placeholder="<%= input_placeholder(required_param) %>" data-parameter-key="<%= required_param.key %>">
-                </div>
-              </dd>
-            </dl>
-          <% end %>
-        <%= for optional_param <- @action.optional_params do %>
-        <dl class="row">
-          <dd class="col-sm-4 col-md-2">
-            <div><%= optional_param.key %></div>
-            <span class="text-muted"><%= optional_param.type %> <em><%= gettext "(query)" %></em></span>
-
-          </dd>
-          <dd class="col-sm-8 col-md-10">
-            <%= optional_param.description %>
-            <input data-selector="<%= "#{@module_name}-#{@action.name}-try-api-ui" %>" type="text" class="collapse form-control" placeholder="<%= input_placeholder(optional_param) %>" data-parameter-key="<%= optional_param.key %>">
-          </dd>
-        </dl>
-        <% end %>
+          <h5 class="api-doc-parameters-list-item-title"><%= gettext "Request URL" %></h5>
+          <div class="tile tile-muted p-1">
+            <pre
+              class="m-2"
+              data-selector='<%= "#{@module_name}-#{@action.name}-request-url" %>'
+            ></pre>
+          </div>
+        </div>
+        <h5 class="api-doc-parameters-list-item-title"><%= gettext "Server Response" %></h5>
         <div class="row">
-          <div class="col-sm-2 offset-sm-4 col-md-2 offset-md-2">
-            <button data-selector="<%= "#{@module_name}-#{@action.name}-try-api-ui" %>" data-try-api-ui-button-type="execute" role="button" class="collapse button button-primary w-100" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Execute" %></button>
-          </div>
-          <div class="col-sm-2 col-md-2 mt-2 mt-md-0">
-            <button role="button" class="collapse button button-secondary w-100" data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-clear" %>" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Clear" %></button>
-          </div>
+          <h4 class="col-2 api-doc-parameters-list-title"><%= gettext "Code" %></h4>
+          <h4 class="col-10 api-doc-parameters-list-title"><%= gettext "Details" %></h4>
         </div>
- <!-- /btn-group -->
-
-        <div class="tile text-dark mt-5 collapse" data-selector="<%= "#{@module_name}-#{@action.name}-try-api-ui-result" %>">
-          <div class="mb-3">
-            <h5 class=""><%= gettext "Curl" %></h5>
-            <div class="tile tile-muted p-1">
-              <pre data-selector="<%= "#{@module_name}-#{@action.name}-curl" %>" class="m-2"></pre>
+        <div class="row">
+          <div
+            class="col-2 pr-0 pr-md-2 col-md-2"
+          ><strong data-selector='<%= "#{@module_name}-#{@action.name}-server-response-code" %>'></strong></div>
+          <div class="col-10 col-md-10">
+            <p class="api-doc-parameters-list-item-description"><%= gettext "Response Body" %></p>
+              <div class="tile tile-muted p-1 card-server-response-body">
+                <pre
+                  class="m-2"
+                  data-selector='<%= "#{@module_name}-#{@action.name}-server-response-body" %>'
+                ></pre>
             </div>
           </div>
-
-          <div class="mb-4">
-            <h5><%= gettext "Request URL" %></h5>
-            <div class="tile tile-muted p-1">
-              <pre data-selector="<%= "#{@module_name}-#{@action.name}-request-url" %>" class="m-2"></pre>
-            </div>
-          </div>
-          <div>
-            <h5><%= gettext "Server Response" %></h5>
-              <dl class="row">
-                <dt class="col-2 pr-0 pr-md-2 text-muted"><%= gettext "Code" %></dt>
-                <dt class="col-10 text-muted"><%= gettext "Details" %></dt>
-              </dl>
-              <dl class="row">
-                <dd class="col-2 pr-0 pr-md-2 col-md-2" data-selector="<%= "#{@module_name}-#{@action.name}-server-response-code" %>">
-                </dd>
-                <dd class="col-10 col-md-10">
-                  <%= gettext "Response Body" %>
-                  <div class="tile tile-muted p-1 card-server-response-body">
-                    <pre data-selector="<%= "#{@module_name}-#{@action.name}-server-response-body" %>" class="m-2"></pre>
-                  </div>
-                </dd>
-              </dl>
-          </div>
-        </div> <!-- /*-try-api-ui-result -->
-
-        <hr/>
-        </div> <!-- /Descriptor container -->
-
-        <h4 class="text-primary my-4"><%= gettext "Responses" %></h4>
-        <div>
-          <dl class="row">
-            <dt class="col-2 pr-0 pr-md-2 text-muted"><%= gettext "Code" %></dt>
-            <dt class="col-10 text-muted"><%= gettext "Description" %></dt>
-          </dl>
-            <%= for {response, index} <- Enum.with_index(@action.responses) do %>
-            <dl class="row">
-              <dd class="col-2 pr-0 pr-md-2">
-                  <%= response.code %>
-              </dd>
-              <dd class="col-10">
-                <div class="tile tile-muted p-1 mb-3">
-                  <pre class="m-2"><strong><%= response.description %></strong></pre>
-                </div>
-
-                <ul class="nav nav-pills mb-3" role="tablist">
-                  <li class="nav-item">
-                    <a class="nav-link api-doc-tab active"
-                       id="<%= "#{@module_name}-#{@action.name}-example-value-tab" %>"
-                       data-toggle="pill"
-                       href="#<%= "#{@module_name}-#{@action.name}-example-value" %>"
-                       role="tab"
-                       aria-controls="<%= "#{@module_name}-#{@action.name}-example-value" %>"
-                       aria-selected="true">
-                       <%= gettext "Example Value" %>
-                    </a>
-                  </li>
-
-                  <%= if index == 0 do %>
-                    <li class="nav-item">
-                      <a class="nav-link api-doc-tab"
-                         id="<%= "#{@module_name}-#{@action.name}-model-tab" %>"
-                         data-toggle="pill"
-                         href="#<%= "#{@module_name}-#{@action.name}-model" %>"
-                         role="tab"
-                         aria-controls="<%= "#{@module_name}-#{@action.name}-model" %>"
-                         aria-selected="false">
-                        <%= gettext "Model" %>
-                      </a>
-                    </li>
-                  <% end %>
-                </ul>
-                <div class="tab-content">
-                  <div class="tab-pane fade show active"
-                       id="<%= "#{@module_name}-#{@action.name}-example-value" %>"
-                       role="tabpanel"
-                       aria-labelledby="<%= "#{@module_name}-#{@action.name}-example-value-tab" %>">
-                       <div class="tile tile-muted p-1">
-                         <pre class="m-2" data-json='<%= response.example_value %>'></pre>
-                       </div>
-                  </div> <!-- /tab-pane -->
-
-                  <%= if index == 0 do %>
-                    <div class="tab-pane fade"
-                         id="<%= "#{@module_name}-#{@action.name}-model" %>"
-                         role="tabpanel"
-                         aria-labelledby="<%= "#{@module_name}-#{@action.name}-model-tab" %>">
-                         <%= render "_model_table.html", model: response.model %>
-                    </div> <!-- /tab-pane -->
-                  <% end %>
-                </div> <!-- /tab-content -->
-              </dd>
-            </dl>
-          <% end %>
-
         </div>
-
       </div>
     </div>
+    <!-- Responses -->
+    <h3 class="card-title margin-bottom-md"><%= gettext "Responses" %></h3>
+    <div class="row api-doc-parameters-list-item mb-0">
+      <h4 class="col-2 api-doc-parameters-list-title"><%= gettext "Code" %></h4>
+      <h5 class="col-10 api-doc-parameters-list-title"><%= gettext "Description" %></h5>
+    </div>
+    <%= for {response, index} <- Enum.with_index(@action.responses) do %>
+    <div class="row api-doc-parameters-list-item">
+      <div class="col-2 pr-0 pr-md-2"><strong><%= response.code %></strong></div>
+      <div class="col-10">
+        <div class="tile tile-muted p-1 mb-3">
+          <pre class="m-2"><strong><%= response.description %></strong></pre>
+        </div>
+        <!-- Tabs -->
+        <ul
+          class="nav nav-pills mb-3"
+          role="tablist"
+        >
+          <li class="nav-item">
+            <a
+              aria-controls='<%= "#{@module_name}-#{@action.name}-example-value" %>'
+              aria-selected="true"
+              class="nav-link api-doc-tab active"
+              data-toggle="pill"
+              href='#<%= "#{@module_name}-#{@action.name}-example-value" %>'
+              id='<%= "#{@module_name}-#{@action.name}-example-value-tab" %>'
+              role="tab"
+            ><%= gettext "Example Value" %></a>
+          </li>
+          <%= if index == 0 do %>
+          <li class="nav-item">
+            <a
+              aria-controls='<%= "#{@module_name}-#{@action.name}-model" %>'
+              aria-selected="false"
+              class="nav-link api-doc-tab"
+              data-toggle="pill"
+              href='#<%= "#{@module_name}-#{@action.name}-model" %>'
+              id='<%= "#{@module_name}-#{@action.name}-model-tab" %>'
+              role="tab"
+            ><%= gettext "Model" %></a>
+          </li>
+          <% end %>
+        </ul>
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <!-- Example Value Tab -->
+          <div
+            aria-labelledby='<%= "#{@module_name}-#{@action.name}-example-value-tab" %>'
+            class="tab-pane fade show active"
+            id='<%= "#{@module_name}-#{@action.name}-example-value" %>'
+            role="tabpanel"
+          >
+            <div class="tile tile-muted p-1">
+              <pre
+                class="m-2"
+                data-json='<%= response.example_value %>'
+              ></pre>
+            </div>
+          </div>
+          <%= if index == 0 do %>
+          <!-- Model Tab -->
+          <div
+            aria-labelledby='<%= "#{@module_name}-#{@action.name}-model-tab" %>'
+            class="tab-pane fade"
+            id='<%= "#{@module_name}-#{@action.name}-model" %>'
+            role="tabpanel"
+          >
+            <%= render "_model_table.html", model: response.model %>
+          </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <% end %>
   </div>
 </div>
