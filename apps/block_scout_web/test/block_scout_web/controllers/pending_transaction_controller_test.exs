@@ -37,15 +37,6 @@ defmodule BlockScoutWeb.PendingTransactionControllerTest do
       refute hd(json_response(conn, 200)["items"]) =~ to_string(dropped_replaced.hash)
     end
 
-    test "returns a count of pending transactions", %{conn: conn} do
-      insert(:transaction)
-
-      conn = get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index))
-
-      assert html_response(conn, 200)
-      assert 1 == conn.assigns.pending_transaction_count
-    end
-
     test "works when there are no transactions", %{conn: conn} do
       conn = get(conn, pending_transaction_path(conn, :index))
 
