@@ -37,7 +37,7 @@
           <li><a href="https://forum.poa.network/c/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Support") %></a></li>
         </ul>
       </div>
-      <% main_nets = main_nets() %>
+      <% main_nets = main_nets(other_networks()) %>
 
       <%= unless Enum.empty?(main_nets) do %>
         <div class="col-md-<%= col_size %> footer-list">
@@ -50,7 +50,7 @@
         </div>
       <% end %>
 
-      <% test_nets = test_nets() %>
+      <% test_nets = test_nets(other_networks()) %>
 
       <%= unless Enum.empty?(test_nets) do %>
         <div class="col-md-<%= col_size %> footer-list">

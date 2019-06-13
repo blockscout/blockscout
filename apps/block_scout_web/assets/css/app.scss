@@ -69,7 +69,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/panels";
 @import "components/nav_tabs";
 @import "components/dot";
-@import "components/pagination";
+@import "components/pagination_container";
 @import "components/address_link";
 @import "components/footer";
 @import "components/filter";
@@ -120,11 +120,19 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/transaction";
 @import "components/api";
 @import "components/alerts";
+@import "components/verify_other_explorers";
+@import "components/errors";
+@import "components/log-search";
+
+
+@import "components/new_smart_contract";
+@import "components/radio_big";
+@import "components/btn_no_border";
 
 :export {
-  primary: $primary;
-  secondary: $secondary;
+  dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;
   dashboardLineColorMarket: $dashboard-line-color-market;
   dashboardLineColorPrice: $dashboard-line-color-price;
-  dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;
+  primary: $primary;
+  secondary: $secondary;
 }

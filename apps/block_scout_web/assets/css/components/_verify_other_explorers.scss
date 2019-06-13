@@ -1,0 +1,216 @@
+.verify-other-explorers {
+	display: flex;
+	margin-top: 26px;
+	flex-direction: column;
+	flex-wrap: wrap;
+	@media (min-width: 768px) {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+	}
+	@media (min-width: 1200px) {
+		flex-wrap: nowrap;
+	}
+	h2 {
+		color: #a3a9b5;
+		font-size: 12px;
+		font-weight: 400;
+		line-height: 1.25;
+		display: inline-flex;
+		margin-bottom: 12px;
+		width: 100%;
+		@media (min-width: 768px) {
+			margin-right: 10px;
+		}
+		@media (min-width: 1200px) {
+			margin-bottom: 0;
+			width: auto;
+		}
+	}
+}
+
+.verify-other-explorers-row {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 2;
+	@media (min-width: 768px) {
+		flex-direction: row;
+		position: relative;
+		padding-right: 44px;
+	}
+}
+
+.verify-other-explorers-elem {
+	display: inline-flex;
+	border: 1px solid #e2e5ec;
+	border-radius: 2px;
+	flex-grow: 2;
+	@media (min-width: 768px) {
+		margin-top: 0;
+		max-width: 188px;
+	}
+	@media (min-width: 1200px) {
+		min-width: 145px;
+	}
+	& + .verify-other-explorers-elem {
+		margin-top: 10px;
+		@media (min-width: 768px) {
+			margin-top: 0;
+			margin-left: 10px;
+		}
+	}
+
+	.exp-logo {
+		min-width: 34px;
+		border-right: 1px solid #e2e5ec;
+		background-repeat: no-repeat;
+		background-position: center;
+		&.etherscan {
+			@include image-2x('/images/icons/etherscan@2x.png', 15px, 16px);
+			background-image: url("/images/icons/etherscan.png");
+			background-size: 15px 16px;
+		}
+		&.blockchair {
+			@include image-2x('/images/icons/blockchair@2x.png', 10px, 16px);
+			background-image: url("/images/icons/blockchair.png");
+			background-size: 10px 16px;
+		}
+		&.etherchain {
+			@include image-2x('/images/icons/etherchain@2x.png', 16px, 16px);
+			background-image: url("/images/icons/etherchain.png");
+			background-size: 16px 16px;
+		}
+	}
+	
+	.exp-content {
+		padding: 6px 9px 5px 9px;
+		h3, div {
+			font-size: 10px;
+			line-height: 1;
+		}
+		h3 {
+			color: #333;
+			font-weight: 400;
+			margin-bottom: 0;
+			margin-bottom: 1px;
+		}
+		div {
+			color: #49a2ee;
+			display: block;
+			line-height: 1;
+			text-overflow: ellipsis;
+			overflow: hidden;
+			width: 170px;
+			white-space: nowrap;
+			@media (min-width: 576px) {
+				width: 398px;
+			}
+			@media (min-width: 768px) {
+				width: 130px;
+			}
+			@media (min-width: 992px) {
+				width: 90px;
+			}
+			@media (min-width: 1200px) {
+				width: 93px;
+			}
+		}
+	}
+}
+
+.verify-other-explorers-more {
+	min-width: 34px;
+	height: 34px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid $btn-line-color;
+	border-radius: 2px;
+	margin-top: 10px;
+	transition: .1s ease-in;
+	position: relative;
+	@media (min-width: 768px) {
+		margin-left: 10px;
+		margin-top: 0;
+		position: absolute;
+		top: 0;
+		right: 0;
+	}
+	svg path {
+		fill: $btn-line-color;
+	}
+	&:hover {
+		background-color: $btn-line-color;
+		svg path {
+			fill: #fff;
+		}
+	}
+	span {
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+	}
+}
+
+.verify-other-explorers-dialog {
+	max-width: 330px;
+}
+
+.verify-other-explorers-table {
+	display: table;
+}
+
+.verify-other-explorers-modal-row {
+	display: table-row;
+	height: 29px;
+	&:first-child {
+		.verify-other-explorers-cell.left {
+			.exp-logo {
+				@include image-2x('/images/icons/etherscan@2x.png', 15px, 16px);
+				background-image: url("/images/icons/etherscan.png");
+				background-repeat: no-repeat;
+				padding-left: 25px;
+				background-size: 15px 16px;
+			}
+		}
+	}
+	&:nth-child(2) {
+		.verify-other-explorers-cell.left {
+			.exp-logo {
+				@include image-2x('/images/icons/blockchair@2x.png', 10px, 16px);
+				background-image: url("/images/icons/blockchair.png");
+				background-repeat: no-repeat;
+				padding-left: 25px;
+				background-size: 10px 16px;
+				background-position: left 3px center;
+			}
+		}
+	}
+	&:nth-child(3) {
+		.verify-other-explorers-cell.left {
+			.exp-logo {
+				@include image-2x('/images/icons/etherchain@2x.png', 16px, 16px);
+				background-image: url("/images/icons/etherchain.png");
+				background-repeat: no-repeat;
+				padding-left: 25px;
+				background-size: 16px 16px;
+			}
+		}
+	}
+}
+
+.verify-other-explorers-cell {
+	display: table-cell;
+	&.left {
+		min-width: 120px;
+	}
+}
+
+.link {
+	background-image: url("/images/icons/link.svg");
+	background-repeat: no-repeat;
+	padding-left: 15px;
+	background-size: 12px 12px;
+}

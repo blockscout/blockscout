@@ -2,6 +2,13 @@ defmodule BlockScoutWeb.BlockControllerTest do
   use BlockScoutWeb.ConnCase
   alias Explorer.Chain.Block
 
+  setup do
+    Supervisor.terminate_child(Explorer.Supervisor, ConCache)
+    Supervisor.restart_child(Explorer.Supervisor, ConCache)
+
+    :ok
+  end
+
   describe "GET show/2" do
     test "with block redirects to block transactions route", %{conn: conn} do
       insert(:block, number: 3)
@@ -91,7 +98,8 @@ defmodule BlockScoutWeb.BlockControllerTest do
 
       expected_path =
         block_path(conn, :index, %{
-          block_number: number
+          block_number: number,
+          block_type: "Block"
         })
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path

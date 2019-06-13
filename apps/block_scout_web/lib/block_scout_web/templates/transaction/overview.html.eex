@@ -50,6 +50,8 @@
               <% end %>
             </span>
           </div>
+          <!-- Verify in other explorers -->
+          <!-- <%= render BlockScoutWeb.AddressView, "_verify_other_explorers.html", hash: hash(@transaction), type: "tx" %> -->
           <hr>
           <!-- Block Hash -->
           <dl class="row">
@@ -69,22 +71,22 @@
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Block Confirmations" %></dt>
             <dd class="col-sm-9">
-              <span data-selector="block-confirmations" class="font-weight-bold"><%= confirmations(@transaction, block_height: @block_height) %></span>
+              <span data-selector="block-confirmations"><%= confirmations(@transaction, block_height: @block_height) %></span>
           </dd>
           </dl>
           <!-- Nonce -->
           <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "Nonce" %> </dt>
-            <dd class="col-sm-9 font-weight-bold"> <%= @transaction.nonce %> </dd>
+            <dd class="col-sm-9"> <%= @transaction.nonce %> </dd>
           </dl>
           <!-- TX Fee -->
           <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "TX Fee" %> </dt>
-            <dd class="col-sm-9 font-weight-bold">
+            <dd class="col-sm-9">
               <%= formatted_fee(@transaction, denomination: :ether) %>
 
               <%= if !empty_exchange_rate?(@exchange_rate) do %>
-              (<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
+                (<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
               <% end %>
             </dd>
           </dl>
@@ -106,7 +108,7 @@
             <dl class="row">
               <dt class="col-sm-3 text-muted"><%= gettext "Raw Input" %></dt>
               <dd class="col-sm-9">
-                <div class="d-flex mb-1 justify-content-between">
+                <div class="d-flex mb-3 justify-content-between">
                   <!-- Dropdown -->
                   <div class="dropdown">
                     <button class="btn-dropdown-line dropdown-toggle" type="button" id="tx-input-decoding-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -167,39 +169,22 @@
       </div>
     </div>
 
-    <%= cond do %>
-      <% erc20_token_transfer = assigns[:token_transfers] && erc20_token_transfer(@transaction, @token_transfers) -> %>
-
+    <%= case token_transfer_type(@transaction) do %>
+      <% {type, token_transfer} -> %>
         <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0">
         <!-- Value -->
         <div class="card card-background-1 flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
-            <h2 class="card-title balance-card-title"><%= gettext "ERC-20" %> <%= gettext "Token Transfer" %></h2>
+            <h2 class="card-title balance-card-title"><%= if type == :erc20, do: gettext("ERC-20"), else: gettext("ERC-721")%><%= gettext " Token Transfer" %></h2>
             <div class="text-right">
               <h3 class="address-balance-text">
-                  <%= token_transfer_amount(erc20_token_transfer) %>
-                  <%= link(token_symbol(erc20_token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, erc20_token_transfer.token.contract_address_hash)) %>
+                  <%= token_transfer_amount(token_transfer) %>
+                  <%= link(token_symbol(token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, token_transfer.token.contract_address_hash)) %>
               </h3>
             </div>
           </div>
         </div>
-      <% erc721_token_transfer = assigns[:token_transfers] && erc721_token_transfer(@transaction, @token_transfers) -> %>
-        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
-        <!-- Value -->
-        <div class="card card-primary flex-grow-1">
-          <div class="card-body">
-            <h2 class="card-title text-white"><%= gettext "ERC-721" %> <%= gettext "Token Transfer" %></h2>
-            <div class="text-right">
-              <h3 class="text-white">
-                <span class="col-12 col-md-7 ml-3 ml-sm-0">
-                  <%= token_transfer_amount(erc721_token_transfer) %>
-                  <%= link(token_symbol(erc721_token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, erc721_token_transfer.token.contract_address_hash)) %>
-                </span>
-              </h3>
-            </div>
-          </div>
-        </div>
-      <% true -> %>
+      <% _ -> %>
         <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md">
         <!-- Value -->
         <div class="card card-background-1 flex-grow-1">
@@ -209,7 +194,12 @@
               <h3 class="address-balance-text">
                 <%= value(@transaction) %>
               </h3>
-              <p class="address-current-balance" data-wei-value=<%= @transaction.value.value %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></p>
+              <%= if !empty_exchange_rate?(@exchange_rate) do %>
+                <p class="address-current-balance"
+                  data-wei-value=<%= @transaction.value.value %>
+                  data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
+                </p>
+              <% end %>
             </div>
           </div>
       </div>
