@@ -1,0 +1,31 @@
+.pr-0-md {
+  padding-right: 0 !important;
+
+  @include media-breakpoint-down(md) {
+    padding-right: 15px !important;
+  }
+}
+
+.pl-0-md {
+  padding-left: 0 !important;
+
+  @include media-breakpoint-down(md) {
+    padding-left: 15px !important;
+  }
+}
+
+.card-mr-50-md {
+  margin-right: $common-container-margin;
+
+  @include media-breakpoint-down(md) {
+    margin-right: 0;
+  }
+}
+
+.clearfix:after {
+  clear: both;
+  content: " "; /* Older browser do not support empty content */
+  display: block;
+  height: 0;
+  visibility: hidden;
+}

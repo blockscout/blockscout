@@ -2,149 +2,27 @@
   <%= render BlockScoutWeb.TransactionView, "overview.html", assigns %>
 
   <div class="card">
-    <div class="card-header">
-      <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
-    </div>
+    <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
 
-    <div class="card-body">
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
       <h2 class="card-title"><%= gettext "Logs" %></h2>
-      <%= if Enum.count(@logs) > 0 do %>
-        <%= for log <- @logs do %>
-          <div data-test="transaction_log" class="tile tile-muted">
-            <dl class="row">
-              <dt class="col-md-1"> <%= gettext "Address" %> </dt>
-              <dd class="col-md-11">
-                <h3 class="">
-                  <%= link(
-                      log.address,
-                      to: address_path(@conn, :show, log.address),
-                      "data-test": "log_address_link",
-                      "data-address-hash": log.address
-                    ) %>
-                </h3>
-              </dd>
-              <dt class="col-md-1"><%= gettext "Decoded" %></dt>
-              <dd class="col-md-11">
-                <%= case decode(log, @transaction) do %>
-                  <% {:error, :contract_not_verified} -> %>
-                    <div class="alert alert-info">
-                      <%= gettext "To see decoded input data, the contract must be verified." %>
-                      <%= case @transaction do %>
-                        <% %{to_address: %{hash: hash}} -> %>
-                          <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
-                        <% _ -> %>
-                          <%= nil %>
-                      <% end %>
-                    </div>
-                  <% {:error, :could_not_decode} -> %>
-                    <div class="alert alert-danger">
-                      <%= gettext "Failed to decode log data." %>
-                    </div>
-                  <% {:ok, method_id, text, mapping} -> %>
-                    <table summary="Transaction Info" class="table thead-light table-bordered transaction-input-table">
-                      <tr>
-                        <td>Method Id</td>
-                        <td colspan="3"><code>0x<%= method_id %></code></td>
-                      </tr>
-                      <tr>
-                        <td>Call</td>
-                        <td colspan="3"><code><%= text %></code></td>
-                      </tr>
-                    </table>
-                    <table style="color: black;" summary="<%= gettext "Log Data" %>" class="table thead-light table-bordered table-responsive">
-                      <tr>
-                        <th scope="col"></th>
-                        <th scope="col"><%= gettext "Name" %></th>
-                        <th scope="col"><%= gettext "Type" %></th>
-                        <th scope="col"><%= gettext "Indexed?" %></th>
-                        <th scope="col"><%= gettext "Data" %></th>
-                      <tr>
-                    <%= for {name, type, indexed?, value} <- mapping do %>
-                        <tr>
-                          <th scope="row">
-                            <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
-                              <% :error -> %>
-                                <%= nil %>
-                              <% copy_text -> %>
-                                <button type="button" class="copy icon-link" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= copy_text %>" aria-label="<%= gettext "Copy Value" %>">
-                                  <i class="fas fa-clone"></i>
-                                </button>
-                            <% end %>
-                          </th>
-                          <td><%= name %></td>
-                          <td><%= type %></td>
-                          <td><%= indexed? %></td>
-                          <td>
-                            <pre class="transaction-input-text tile"><code><%= BlockScoutWeb.ABIEncodedValueView.value_html(type, value) %></code></pre>
-                          </td>
-                        </tr>
-                    <% end %>
-                    </table>
-                  <% _ -> %>
-                    <%= nil %>
-                <% end %>
 
-              </dd>
-              <dt class="col-md-1"><%= gettext "Topics" %></dt>
-              <dd class="col-md-11">
-                <div class="raw-transaction-log-topics">
-                  <%= unless is_nil(log.first_topic) do %>
-                    <div class="text-dark">
-                      <span class="text-dark">[0]</span>
-                      <%= log.first_topic %>
-                    </div>
-                  <% end %>
-                  <%= unless is_nil(log.second_topic) do %>
-                    <div class="text-dark">
-                      <span class="">[1] </span>
-                      <%= log.second_topic %>
-                    </div>
-                  <% end %>
-                  <%= unless is_nil(log.third_topic) do %>
-                    <div class="text-dark">
-                      <span>[2]</span>
-                      <%= log.third_topic %>
-                    </div>
-                  <% end %>
-                  <%= unless is_nil(log.fourth_topic) do %>
-                    <div class="text-dark">
-                      <span>[3]</span>
-                      <%= log.fourth_topic %>
-                    </div>
-                  <% end %>
-                </div>
-              </dd>
-              <dt class="col-md-1">
-                <%= gettext "Data" %>
-              </dt>
-              <dd class="col-md-11">
-                <%= unless is_nil(log.data) do %>
-                  <div class="text-dark raw-transaction-log-data">
-                    <%= log.data %>
-                  </div>
-                <% end %>
-              </dd>
-            </dl>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+          <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+        </button>
+
+        <div data-empty-response-message style="display: none;">
+          <div class="tile tile-muted text-center" data-selector="empty-logs-list">
+            <%= gettext "There are no logs for this transaction." %>
           </div>
-        <% end %>
-      <% else %>
-      <div class="tile tile-muted text-center">
-        <span><%= gettext "There are no logs for this transaction." %></span>
-      </div>
-      <% end %>
+        </div>
 
-      <%= if @next_page_params do %>
-        <%= link(
-          gettext("Newer"),
-          class: "button button-secondary button-sm u-float-right mt-3",
-          to: transaction_log_path(
-            @conn,
-            :index,
-            @transaction,
-            @next_page_params
-          )
-        ) %>
-      <% end %>
+        <div data-items></div>
+
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
     </div>
   </div>
 </section>
