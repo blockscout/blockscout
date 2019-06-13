@@ -328,6 +328,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       {:error, :queue_unavailable}
     end
   end
+
   defp last_block do
     string_value = Application.get_env(:indexer, :first_block)
 

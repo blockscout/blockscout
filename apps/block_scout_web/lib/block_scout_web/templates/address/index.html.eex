@@ -1,21 +1,13 @@
 <section class="container">
   <div class="card">
-    <div class="card-body">
-      <h1><%= gettext "Addresses" %></h1>
-      <p>
-        <%= gettext "Showing 250 addresses of" %>
-        <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
-        <%= gettext "total addresses with a balance" %>
-      </p>
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+      <h1 class="card-title"><%= gettext "Addresses" %></h1>
 
-      <span data-selector="top-addresses-list">
-        <%= for {{address, tx_count}, index} <- Enum.with_index(@address_tx_count_pairs, 1) do %>
-          <%= render "_tile.html",
-            address: address, index: index, exchange_rate: @exchange_rate,
-            total_supply: @total_supply, tx_count: tx_count,
-            validation_count: validation_count(address) %>
-        <% end %>
-      </span>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
+      <div data-items data-selector="top-addresses-list"></div>
+
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
     </div>
   </div>
 </section>

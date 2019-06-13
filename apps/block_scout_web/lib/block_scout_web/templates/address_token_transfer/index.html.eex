@@ -3,40 +3,28 @@
 
   <section>
     <div class="card">
-      <div class="card-header">
-        <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
-      </div>
-
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div data-async-load data-async-listing="<%= @current_path %>" class="card-body">
         <h2 class="card-title">
           <span class="text-muted"><%= gettext "Tokens" %></span> / <%= token_name(@token) %>
         </h2>
-        <div data-loading-message class="tile tile-muted text-center mt-3">
-          <span class="loading-spinner-small mr-2">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </span>
-          <%= gettext("Loading...") %>
-        </div>
+
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
         <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
           <span><%= gettext "There are no token transfers for this address." %></span>
         </div>
+
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span class="alert-link">
             <%= gettext "Something went wrong, click to reload." %>
           </span>
         </button>
+
         <div data-items></div>
-        <a data-next-page-button href="#" class="button button-secondary button-small float-right mt-4" style="display: none;">
-          <%= gettext("Older") %>
-        </a>
-        <div data-loading-button class="button button-secondary button-small float-right mt-4" style="display: none;">
-          <span class="loading-spinner-small mr-2">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </span>
-          <%= gettext("Loading") %>...
-        </div>
+
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
       </div>
     </div>
   </section>
