@@ -175,7 +175,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.to_address_hash == ^address_hash,
-        select: tt.transaction_hash
+        select: type(tt.transaction_hash, :binary)
       )
 
     query
@@ -189,7 +189,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.from_address_hash == ^address_hash,
-        select: tt.transaction_hash
+        select: type(tt.transaction_hash, :binary)
       )
 
     query
@@ -204,59 +204,17 @@ defmodule Explorer.Chain.TokenTransfer do
     transaction_hashes_from_token_transfers_sql(address_bytes, paging_options)
   end
 
-  defp transaction_hashes_from_token_transfers_sql(address_bytes, %PagingOptions{key: nil, page_size: page_size}) do
-    {:ok, %Postgrex.Result{rows: transaction_hashes_from_token_transfers}} =
-      Repo.query(
-        """
-          SELECT transaction_hash
-          FROM
-          (
-          SELECT transaction_hash
-          FROM token_transfers
-          WHERE from_address_hash = $1
-
-          UNION
-
-          SELECT transaction_hash
-          FROM token_transfers
-          WHERE to_address_hash = $1
-          ) as token_transfers_transaction_hashes
-          LIMIT $2
-        """,
-        [address_bytes, page_size]
+  defp transaction_hashes_from_token_transfers_sql(address_bytes, %PagingOptions{page_size: page_size} = paging_options) do
+    query =
+      from(token_transfer in TokenTransfer,
+        where: token_transfer.to_address_hash == ^address_bytes or token_transfer.from_address_hash == ^address_bytes,
+        select: type(token_transfer.transaction_hash, :binary),
+        limit: ^page_size
       )
 
-    List.flatten(transaction_hashes_from_token_transfers)
-  end
-
-  defp transaction_hashes_from_token_transfers_sql(address_bytes, %PagingOptions{
-         key: {block_number, _index},
-         page_size: page_size
-       }) do
-    {:ok, %Postgrex.Result{rows: transaction_hashes_from_token_transfers}} =
-      Repo.query(
-        """
-          SELECT transaction_hash
-          FROM
-          (
-          SELECT transaction_hash
-          FROM token_transfers
-          WHERE from_address_hash = $1
-          AND block_number < $2
-
-          UNION
-
-          SELECT transaction_hash
-          FROM token_transfers
-          WHERE to_address_hash = $1
-          AND block_number < $2
-          ) as token_transfers_transaction_hashes
-          LIMIT $3
-        """,
-        [address_bytes, block_number, page_size]
-      )
-
-    List.flatten(transaction_hashes_from_token_transfers)
+    query
+    |> page_transaction_hashes_from_token_transfers(paging_options)
+    |> Repo.all()
   end
 
   defp page_transaction_hashes_from_token_transfers(query, %PagingOptions{key: nil}), do: query
