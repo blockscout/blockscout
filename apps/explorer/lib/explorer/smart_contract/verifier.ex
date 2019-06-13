@@ -17,13 +17,29 @@ defmodule Explorer.SmartContract.Verifier do
     do: {:error, :contract_source_code}
 
   def evaluate_authenticity(address_hash, params) do
+    latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
+    evm_version = Map.get(params, "evm_version", latest_evm_version)
+
+    Enum.reduce([evm_version | previous_evm_versions(evm_version)], false, fn version, acc ->
+      case acc do
+        {:ok, _} = result ->
+          result
+
+        _ ->
+          cur_params = Map.put(params, "evm_version", version)
+          verify(address_hash, cur_params)
+      end
+    end)
+  end
+
+  defp verify(address_hash, params) do
     name = Map.fetch!(params, "name")
     contract_source_code = Map.fetch!(params, "contract_source_code")
     optimization = Map.fetch!(params, "optimization")
     compiler_version = Map.fetch!(params, "compiler_version")
     external_libraries = Map.get(params, "external_libraries", %{})
     constructor_arguments = Map.get(params, "constructor_arguments", "")
-    evm_version = Map.get(params, "evm_version", "byzantium")
+    evm_version = Map.get(params, "evm_version")
     optimization_runs = Map.get(params, "optimization_runs", 200)
 
     solc_output =
@@ -37,25 +53,7 @@ defmodule Explorer.SmartContract.Verifier do
         external_libs: external_libraries
       )
 
-    case compare_bytecodes(solc_output, address_hash, constructor_arguments) do
-      {:error, :generated_bytecode} ->
-        next_evm_version = next_evm_version(evm_version)
-
-        second_solc_output =
-          CodeCompiler.run(
-            name: name,
-            compiler_version: compiler_version,
-            code: contract_source_code,
-            optimize: optimization,
-            evm_version: next_evm_version,
-            external_libs: external_libraries
-          )
-
-        compare_bytecodes(second_solc_output, address_hash, constructor_arguments)
-
-      result ->
-        result
-    end
+    compare_bytecodes(solc_output, address_hash, constructor_arguments)
   end
 
   defp compare_bytecodes({:error, :name}, _, _), do: {:error, :name}
@@ -114,16 +112,21 @@ defmodule Explorer.SmartContract.Verifier do
     end
   end
 
-  def next_evm_version(current_evm_version) do
-    [prev_version, last_version] =
-      CodeCompiler.allowed_evm_versions()
-      |> Enum.reverse()
-      |> Enum.take(2)
+  def previous_evm_versions(current_evm_version) do
+    index = Enum.find_index(CodeCompiler.allowed_evm_versions(), fn el -> el == current_evm_version end)
 
-    if current_evm_version != last_version do
-      last_version
-    else
-      prev_version
+    cond do
+      index == 0 ->
+        []
+
+      index == 1 ->
+        [List.first(CodeCompiler.allowed_evm_versions())]
+
+      true ->
+        [
+          Enum.at(CodeCompiler.allowed_evm_versions(), index - 1),
+          Enum.at(CodeCompiler.allowed_evm_versions(), index - 2)
+        ]
     end
   end
 

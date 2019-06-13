@@ -1,0 +1,137 @@
+$error-tablet-breakpoint: 768px;
+
+// Block Not Found
+
+.block-not-found {
+	display: flex;
+	flex-direction: column;
+	padding-bottom: 50px;
+	@media (min-width: $error-tablet-breakpoint) {
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		padding-top: 52px;
+	}
+}
+
+.block-not-found-img {
+	margin-bottom: 40px;
+	text-align: center;
+	@media (min-width: $error-tablet-breakpoint) {
+		margin-bottom: 0;
+		text-align: left;
+	}
+	img {
+		max-width: 100%;
+		height: auto;
+	}
+}
+
+.block-not-found-content {
+	text-align: center;
+	@media (min-width: $error-tablet-breakpoint) {
+		text-align: left;
+		padding-left: 52px;
+		max-width: 396px;
+	}
+}
+
+.error-title {
+	margin-bottom: 20px !important;
+}
+
+.error-descr {
+	display: block;
+	font-size: 14px;
+	color: #a3a9b5;
+	line-height: 1.714;
+	margin-bottom: 22px;
+	word-wrap: break-word;
+}
+
+.error-btn {
+	background: transparent;
+	display: inline-flex !important;
+}
+
+// TX Not Found
+.tx-nf {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	padding-bottom: 50px;
+	@media (min-width: $error-tablet-breakpoint) {
+		flex-direction: row;
+		padding-top: 52px;
+	}
+}
+
+.tx-nf-content {
+	margin-top: 52px;
+	max-width: 700px;
+	@media (min-width: $error-tablet-breakpoint) {
+		margin-left: 90px;
+		margin-top: 0;
+	}
+}
+
+.tx-nf-blocks {
+	margin-bottom: 40px;
+	margin-top: 40px;
+}
+
+.tx-nf-block {
+	background-color: #fff;
+	box-shadow: 0px 0px 30px 0px rgba(202, 199, 226, 0.5);
+	padding: 17px 40px 17px 20px;
+	position: relative;
+	border-radius: 6px;
+	@media (min-width: $error-tablet-breakpoint) {
+		width: calc(50% - 20px);
+	}
+}
+
+.tx-nf-block {
+	.error-descr {
+		margin-bottom: 0;
+	}
+	& + .tx-nf-block {
+		margin-top: 30px;
+		@media (min-width: $error-tablet-breakpoint) {
+			margin-top: 0;
+		}
+	}
+}
+
+.tx-nf-blocks-row {
+	display: flex;
+	justify-content: space-between;
+	flex-direction: column;
+	@media (min-width: $error-tablet-breakpoint) {
+		flex-direction: row;
+	}
+	& + .tx-nf-blocks-row {
+		margin-top: 30px;
+		@media (min-width: $error-tablet-breakpoint) {
+			margin-top: 40px;
+		}
+	}
+}
+
+.tx-nf-number {
+	display: inline-block;
+	position: absolute;
+	top: -15px;
+	left: -15px;
+	width: 30px;
+	height: 30px;
+	border-radius: 15px;
+	background-color: $secondary;
+	box-shadow: 0px 3px 5px 0px rgba($secondary, 0.25);
+	color: #fff;
+	font-weight: 700;
+	font-size: 14px;
+	text-align: center;
+	line-height: 32px;
+}

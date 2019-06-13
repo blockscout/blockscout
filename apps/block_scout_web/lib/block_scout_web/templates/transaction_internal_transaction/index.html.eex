@@ -1,35 +1,24 @@
 <section class="container">
   <%= render BlockScoutWeb.TransactionView, "overview.html", assigns %>
-
   <div class="card">
-    <div class="card-header">
-      <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
-    </div>
+    <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+      <h1 class="card-title"><%= gettext "Internal Transactions" %></h1>
 
-    <div class="card-body">
-      <h2 class="card-title"><%= gettext "Internal Transactions" %></h2>
-      <%= if Enum.count(@internal_transactions) > 0 do %>
-        <%= for internal_transaction <- @internal_transactions do %>
-          <%= render BlockScoutWeb.InternalTransactionView, "_tile.html", internal_transaction: internal_transaction %>
-        <% end %>
-      <% else %>
-        <div class="tile tile-muted text-center">
-          <span><%= gettext "There are no internal transactions for this transaction." %></span>
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
+      <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+        <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+      </button>
+      <div data-empty-response-message style="display: none;">
+        <div class="tile tile-muted text-center" data-selector="empty-logs-list">
+          <%= gettext "There are no internal transactions for this transaction." %>
         </div>
-      <% end %>
+      </div>
 
-      <%= if @next_page_params do %>
-        <%= link(
-          gettext("Newer"),
-          class: "button button-secondary button-sm float-right mt-3",
-          to: transaction_internal_transaction_path(
-            @conn,
-            :index,
-            @transaction,
-            @next_page_params
-          )
-        ) %>
-      <% end %>
+      <div data-items></div>
+
+      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
     </div>
   </div>
 </section>

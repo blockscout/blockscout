@@ -21,6 +21,7 @@ defmodule Explorer.KnownTokensTest do
 
     Application.put_env(:explorer, Explorer.KnownTokens.Source, source: TestSource)
     Application.put_env(:explorer, Explorer.KnownTokens, table_name: :known_tokens)
+    Application.put_env(:explorer, Explorer.KnownTokens, enabled: true)
 
     on_exit(fn ->
       Application.put_env(:explorer, Explorer.KnownTokens.Source, source_configuration)
@@ -127,5 +128,11 @@ defmodule Explorer.KnownTokensTest do
 
     assert Hash.Address.cast("0x0000000000000000000000000000000000000001") == KnownTokens.lookup("TEST1")
     assert nil == KnownTokens.lookup("nope")
+  end
+
+  test "lookup when disabled" do
+    Application.put_env(:explorer, Explorer.KnownTokens, enabled: false)
+
+    assert nil == KnownTokens.lookup("z")
   end
 end

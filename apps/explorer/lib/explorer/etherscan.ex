@@ -56,6 +56,8 @@ defmodule Explorer.Etherscan do
   @internal_transaction_fields ~w(
     from_address_hash
     to_address_hash
+    transaction_hash
+    index
     value
     created_contract_address_hash
     input
@@ -348,7 +350,8 @@ defmodule Explorer.Etherscan do
             token_name: tkn.name,
             token_symbol: tkn.symbol,
             token_decimals: tkn.decimals,
-            token_type: tkn.type
+            token_type: tkn.type,
+            token_log_index: tt.log_index
           })
       )
 
