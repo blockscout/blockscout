@@ -96,15 +96,15 @@ defmodule BlockScoutWeb.AddressDecompiledContractViewTest do
     end
   end
 
-  describe "sort_contracts_by_version/1" do
-    test "sorts contracts in lexicographical order" do
+  describe "last_decompiled_contract_version/1" do
+    test "returns last version" do
       contract2 = insert(:decompiled_smart_contract, decompiler_version: "v2")
       contract1 = insert(:decompiled_smart_contract, decompiler_version: "v1")
       contract3 = insert(:decompiled_smart_contract, decompiler_version: "v3")
 
-      result = AddressDecompiledContractView.sort_contracts_by_version([contract2, contract1, contract3])
+      result = AddressDecompiledContractView.last_decompiled_contract_version([contract2, contract1, contract3])
 
-      assert result == [contract3, contract2, contract1]
+      assert result == contract3
     end
   end
 end

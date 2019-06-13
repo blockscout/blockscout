@@ -70,3 +70,8 @@ $card-tab-active: $tertiary;
     filter: brightness(0) invert(1);
   }
 }
+
+// Badges
+$badge-neutral-color: $tertiary;
+$badge-neutral-background-color: rgba($tertiary, .1);
+$api-text-monospace-color: $tertiary;
