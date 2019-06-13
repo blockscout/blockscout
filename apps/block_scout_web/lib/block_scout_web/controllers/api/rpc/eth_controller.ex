@@ -29,6 +29,8 @@ defmodule BlockScoutWeb.API.RPC.EthController do
     3 => "fourth"
   }
 
+  def methods, do: @methods
+
   def eth_request(%{body_params: %{"_json" => requests}} = conn, _) when is_list(requests) do
     responses = responses(requests)
 
@@ -170,8 +172,7 @@ defmodule BlockScoutWeb.API.RPC.EthController do
     |> Enum.reduce({:ok, %{}}, fn {topic, index}, {:ok, acc} ->
       case cast_topics(topic) do
         {:ok, data} ->
-          with_filter =
-            Map.put(acc, String.to_existing_atom("#{@index_to_word[index]}_topic"), data)
+          with_filter = Map.put(acc, String.to_existing_atom("#{@index_to_word[index]}_topic"), data)
 
           {:ok, add_operator(with_filter, index)}
 

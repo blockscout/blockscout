@@ -74,6 +74,11 @@
                   class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
                   to: api_docs_path(@conn, :index)
                 ) %>
+            <%= link(
+                  gettext("Eth RPC"),
+                  class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
+                  to: api_docs_path(@conn, :eth_rpc)
+                ) %>
           </div>
         </li>
         <li class="nav-item dropdown nav-item-networks">
