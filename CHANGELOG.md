@@ -5,6 +5,7 @@
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
 
 ### Fixes
+- [#2162](https://github.com/poanetwork/blockscout/pull/2162) - contract creation tile color changed
 - [#2144](https://github.com/poanetwork/blockscout/pull/2144) - 'page not found' images path fixed for goerli
 - [#2142](https://github.com/poanetwork/blockscout/pull/2142) - Removed posdao theme and logo, added 'page not found' image for goerli
 - [#2138](https://github.com/poanetwork/blockscout/pull/2138) - badge colors issue, api titles issue
