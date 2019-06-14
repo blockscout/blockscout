@@ -3,8 +3,10 @@
 ### Features
 - [#2109](https://github.com/poanetwork/blockscout/pull/2109) - use bigger updates instead of `Multi` transactions in BlocksTransactionsMismatch
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
+- [#2151](https://github.com/poanetwork/blockscout/pull/2151) - hide dropdown menu then other networks list is empty
 
 ### Fixes
+- [#2162](https://github.com/poanetwork/blockscout/pull/2162) - contract creation tile color changed
 - [#2144](https://github.com/poanetwork/blockscout/pull/2144) - 'page not found' images path fixed for goerli
 - [#2142](https://github.com/poanetwork/blockscout/pull/2142) - Removed posdao theme and logo, added 'page not found' image for goerli
 - [#2138](https://github.com/poanetwork/blockscout/pull/2138) - badge colors issue, api titles issue
@@ -18,14 +20,17 @@
 - [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
 - [#2096](https://github.com/poanetwork/blockscout/pull/2096) - RSK theme fixes
 - [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
+- [#2111](https://github.com/poanetwork/blockscout/pull/2111) - improve address transaction controller
 - [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fix uncle fetching without full transactions
 - [#2128](https://github.com/poanetwork/blockscout/pull/2128) - add new function clause for uncle errors
 - [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
 - [#2119](https://github.com/poanetwork/blockscout/pull/2119) - fix map logging
 - [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
+- [#2149](https://github.com/poanetwork/blockscout/pull/2149) - remove pending transaction count
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
+- [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
 
 ### Chore
 
