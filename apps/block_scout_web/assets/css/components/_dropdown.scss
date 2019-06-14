@@ -1,7 +1,14 @@
+$dropdown-menu-item-color: #333 !default;
+$dropdown-menu-item-hover-color: $secondary !default;
+$dropdown-menu-item-hover-background: rgba($secondary, .1) !default;
+
 // These styles extend the default Bootstrap styles
 .dropdown-menu {
-  border-radius: 8px !important;
-  border: none;
+  border-bottom: 1px solid #e2e5ec;
+  border-left: 1px solid #e2e5ec;
+  border-radius: 0 0 2px 2px !important;
+  border-right: 1px solid #e2e5ec;
+  border-top: none;
   box-shadow: $box-shadow;
   padding: 0;
   width: 100%;
@@ -24,28 +31,36 @@
 }
 
 .dropdown-item {
+  color: $dropdown-menu-item-color;
   font-size: 12px;
   padding: 10px 20px;
+  transition: $transition-cont;
 
-  &:hover {
-    color: #fff;
+  & {
+    &.active,
+    &:hover,
+    &:focus {
+      background-color: $dropdown-menu-item-hover-background;
+      color: $dropdown-menu-item-hover-color;
+    }
   }
 
   &:first-child {
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
   }
 
   &:last-child {
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
+    border-bottom-left-radius: 2px;
+    border-bottom-right-radius: 2px;
   }
 
   &.header {
     &,
     &:hover,
     &:active {
-      background-color: transparent;
+      padding-left: 10px;
+      background-color: #fff !important;
       cursor: default;
       color: #333;
       font-weight: 700;
@@ -53,15 +68,19 @@
   }
 
   &.division {
-    border-color: $base-border-color;
+    border-top: 1px solid $base-border-color;
   }
+}
+
+.navbar .dropdown-menu {
+  border: none;
 }
 
 .dropdown-search-icon {
   color: $gray-300;
-  left: 0.625rem;
+  left: 8px;
   pointer-events: none;
-  top: 0.5rem;
+  top: 5px;
 }
 
 .dropdown-search-field {

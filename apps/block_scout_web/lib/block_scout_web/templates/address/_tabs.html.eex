@@ -1,4 +1,4 @@
-<div class="card-tabs">
+<div class="card-tabs js-card-tabs">
   <%= link(
         gettext("Transactions"),
         class: "card-tab #{tab_status("transactions", @conn.request_path)}",
@@ -22,6 +22,11 @@
         "data-test": "coin_balance_tab_link",
         to: address_coin_balance_path(@conn, :index, @address.hash)
       ) %>
+  <%= link(
+      gettext("Logs"),
+      class: "card-tab #{tab_status("logs", @conn.request_path)}",
+      to: address_logs_path(@conn, :index, @address.hash)
+      ) %>
   <%= if BlockScoutWeb.AddressView.validator?(@validation_count) do %>
     <%= link(
       gettext("Blocks Validated"),
@@ -36,7 +41,7 @@
         class: "card-tab #{tab_status("contracts", @conn.request_path)}") do %>
         <%= gettext("Code") %>
       <%= if smart_contract_verified?(@address) do %>
-        <i class="far fa-check-circle text-success"></i>
+        <i class="far fa-check-circle"></i>
       <% end %>
     <% end %>
   <% end %>
@@ -45,7 +50,7 @@
         to: address_decompiled_contract_path(@conn, :index, @address.hash),
         class: "card-tab #{tab_status("decompiled_contracts", @conn.request_path)}") do %>
         <%= gettext("Decompiled code") %>
-        <i class="far fa-check-circle text-success"></i>
+        <i class="far fa-check-circle"></i>
     <% end %>
   <% end %>
   <%= if smart_contract_with_read_only_functions?(@address) do %>

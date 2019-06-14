@@ -5,6 +5,10 @@ $form-control-border-color: #e2e5ec !default;
   border-radius: 0;
   font-size: 14px;
 
+  &.border-rounded {
+    border-radius: 4px;
+  }
+
   &.n-b-r {
     border-right: none;
   }

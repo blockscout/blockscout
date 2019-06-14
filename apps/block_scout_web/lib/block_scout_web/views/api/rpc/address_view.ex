@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.AddressView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.API.RPC.RPCView
+  alias BlockScoutWeb.API.RPC.{EthRPCView, RPCView}
 
   def render("listaccounts.json", %{accounts: accounts}) do
     accounts = Enum.map(accounts, &prepare_account/1)
@@ -17,13 +17,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   end
 
   def render("balancemulti.json", %{addresses: addresses}) do
-    data =
-      Enum.map(addresses, fn address ->
-        %{
-          "account" => "#{address.hash}",
-          "balance" => balance(address)
-        }
-      end)
+    data = Enum.map(addresses, &render_address/1)
 
     RPCView.render("show.json", data: data)
   end
@@ -57,14 +51,27 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("eth_get_balance_error.json", %{error: message}) do
+    EthRPCView.render("error.json", %{error: message, id: 0})
+  end
+
   def render("error.json", assigns) do
     RPCView.render("error.json", assigns)
   end
 
+  defp render_address(address) do
+    %{
+      "account" => "#{address.hash}",
+      "balance" => balance(address),
+      "stale" => address.stale? || false
+    }
+  end
+
   defp prepare_account(address) do
     %{
-      "balance" => to_string(address.fetched_coin_balance.value),
-      "address" => to_string(address.hash)
+      "balance" => to_string(address.fetched_coin_balance && address.fetched_coin_balance.value),
+      "address" => to_string(address.hash),
+      "stale" => address.stale? || false
     }
   end
 
@@ -99,6 +106,8 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "to" => "#{internal_transaction.to_address_hash}",
       "value" => "#{internal_transaction.value.value}",
       "contractAddress" => "#{internal_transaction.created_contract_address_hash}",
+      "transactionHash" => to_string(internal_transaction.transaction_hash),
+      "index" => to_string(internal_transaction.index),
       "input" => "#{internal_transaction.input}",
       "type" => "#{internal_transaction.type}",
       "gas" => "#{internal_transaction.gas}",
@@ -118,6 +127,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "from" => to_string(token_transfer.from_address_hash),
       "contractAddress" => to_string(token_transfer.token_contract_address_hash),
       "to" => to_string(token_transfer.to_address_hash),
+      "logIndex" => to_string(token_transfer.token_log_index),
       "value" => get_token_value(token_transfer),
       "tokenName" => token_transfer.token_name,
       "tokenSymbol" => token_transfer.token_symbol,
