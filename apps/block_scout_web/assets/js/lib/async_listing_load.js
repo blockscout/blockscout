@@ -48,10 +48,16 @@ export const asyncInitialState = {
   loading: false,
   /* if there was an error fetching items */
   requestError: false,
+  /* if response has no items */
+  emptyResponse: false,
   /* if it is loading the first page */
   loadingFirstPage: true,
   /* link to the next page */
-  nextPagePath: null
+  nextPagePath: null,
+  /* link to the previous page */
+  prevPagePath: null,
+  /* visited pages */
+  pagesStack: []
 }
 
 export function asyncReducer (state = asyncInitialState, action) {
@@ -78,14 +84,37 @@ export function asyncReducer (state = asyncInitialState, action) {
       })
     }
     case 'ITEMS_FETCHED': {
+      var prevPagePath = null
+
+      if (state.pagesStack.length >= 2) {
+        prevPagePath = state.pagesStack[state.pagesStack.length - 2]
+      }
+
       return Object.assign({}, state, {
         requestError: false,
+        emptyResponse: action.items.length === 0,
         items: action.items,
-        nextPagePath: action.nextPagePath
+        nextPagePath: action.nextPagePath,
+        prevPagePath: prevPagePath
       })
     }
     case 'NAVIGATE_TO_OLDER': {
       history.replaceState({}, null, state.nextPagePath)
+
+      if (state.pagesStack.length === 0) {
+        state.pagesStack.push(window.location.href.split('?')[0])
+      }
+
+      if (state.pagesStack[state.pagesStack.length - 1] !== state.nextPagePath) {
+        state.pagesStack.push(state.nextPagePath)
+      }
+
+      return Object.assign({}, state, { beyondPageOne: true })
+    }
+    case 'NAVIGATE_TO_NEWER': {
+      history.replaceState({}, null, state.prevPagePath)
+
+      state.pagesStack.pop()
 
       return Object.assign({}, state, { beyondPageOne: true })
     }
@@ -145,12 +174,43 @@ export const elements = {
   },
   '[data-async-listing] [data-next-page-button]': {
     render ($el, state) {
-      if (state.requestError) return $el.hide()
-      if (!state.nextPagePath) return $el.hide()
-      if (state.loading) return $el.hide()
+      if (state.emptyResponse) {
+        return $el.hide()
+      }
 
-      $el.show()
+      if (state.requestError || !state.nextPagePath || state.loading) {
+        return $el.attr('disabled', 'disabled')
+      }
+
+      $el.attr('disabled', false)
       $el.attr('href', state.nextPagePath)
+    }
+  },
+  '[data-async-listing] [data-prev-page-button]': {
+    render ($el, state) {
+      if (state.emptyResponse) {
+        return $el.hide()
+      }
+
+      if (state.requestError || !state.prevPagePath || state.loading) {
+        return $el.attr('disabled', 'disabled')
+      }
+
+      $el.attr('disabled', false)
+      $el.attr('href', state.prevPagePath)
+    }
+  },
+  '[data-async-listing] [data-page-number]': {
+    render ($el, state) {
+      if (state.emptyResponse) {
+        return $el.hide()
+      }
+
+      if (state.pagesStack.length === 0) {
+        return $el.text('Page 1')
+      }
+
+      $el.text('Page ' + state.pagesStack.length)
     }
   },
   '[data-async-listing] [data-loading-button]': {
@@ -193,7 +253,7 @@ export function createAsyncLoadStore (reducer, initialState, itemKey) {
 
 function firstPageLoad (store) {
   const $element = $('[data-async-listing]')
-  function loadItems () {
+  function loadItemsNext () {
     const path = store.getState().nextPagePath
     store.dispatch({type: 'START_REQUEST'})
     $.getJSON(path, {type: 'JSON'})
@@ -201,17 +261,34 @@ function firstPageLoad (store) {
       .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
       .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
   }
-  loadItems()
+
+  function loadItemsPrev () {
+    const path = store.getState().prevPagePath
+    store.dispatch({type: 'START_REQUEST'})
+    $.getJSON(path, {type: 'JSON'})
+      .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
+      .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
+      .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+  }
+  loadItemsNext()
 
   $element.on('click', '[data-error-message]', (event) => {
     event.preventDefault()
-    loadItems()
+    loadItemsNext()
   })
 
   $element.on('click', '[data-next-page-button]', (event) => {
     event.preventDefault()
-    loadItems()
+    loadItemsNext()
     store.dispatch({type: 'NAVIGATE_TO_OLDER'})
+    event.stopImmediatePropagation()
+  })
+
+  $element.on('click', '[data-prev-page-button]', (event) => {
+    event.preventDefault()
+    loadItemsPrev()
+    store.dispatch({type: 'NAVIGATE_TO_NEWER'})
+    event.stopImmediatePropagation()
   })
 }
 

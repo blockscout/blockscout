@@ -57,6 +57,7 @@ The following async fetchers are launched for importing missing data:
 - `token_balance`
 - `token`
 - `contract_code`
+- `staking_pools`
 
 ### Async fetchers
 
@@ -78,6 +79,7 @@ Most of them are based off `BufferedTask`, and the basic algorithm goes like thi
 - `token_balance`: for `address_token_balances` with null `value_fetched_at`. Also upserts `address_current_token_balances`
 - `token`: for `tokens` with `cataloged == false`
 - `contract_code`: for `transactions` with non-null `created_contract_address_hash` and null `created_contract_code_indexed_at`
+- `staking_pools`: for fetching staking pools
 
 Additionally:
 - `token_updater` is run every 2 days to update token metadata
@@ -89,9 +91,8 @@ These workers are created for fetching information, which previously wasn't fetc
 After all deployed instances get all needed data, these fetchers should be deprecated and removed.
 
 - `uncataloged_token_transfers`: extracts token transfers from logs, which previously weren't parsed due to unknown format
-- `addresses_without_codes`: forces complete refetch of blocks, which have created contract addresses without contract code
-- `failed_created_addresses`: forces refetch of contract code for failed transactions, which previously got incorrectly overwritten
 - `uncles_without_index`: adds previously unfetched `index` field for unfetched blocks in `block_second_degree_relations`
+- `blocks_transactions_mismatch`: refetches each block once and revokes consensus to those whose transaction number mismatches with the number currently stored. This is meant to force the correction of a race condition that caused successfully fetched transactions to be overwritten by a following non-consensus block: [#1911](https://github.com/poanetwork/blockscout/issues/1911).
 
 ## Memory Usage
 
@@ -154,4 +155,3 @@ mix test --exclude no_geth
 |:----------|:--------------------------------------------------|
 | HTTP      | `https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY`  |
 | WebSocket | `wss://mainnet.infura.io/ws/8lTvJTKmHPCHazkneJsY` |
-

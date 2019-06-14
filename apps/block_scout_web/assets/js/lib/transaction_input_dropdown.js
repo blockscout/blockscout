@@ -1,6 +1,8 @@
 import $ from 'jquery'
 
 $('.tx-input-dropdown').click(function (e) {
+  e.preventDefault()
+
   var el = $(e.currentTarget)
   var target = $(el.attr('data-target'))
 
