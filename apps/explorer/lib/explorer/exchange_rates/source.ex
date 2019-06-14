@@ -64,11 +64,9 @@ defmodule Explorer.ExchangeRates.Source do
   end
 
   def decode_json(data) do
-    try do
-      Jason.decode!(data)
-    rescue
-      _ -> data
-    end
+    Jason.decode!(data)
+  rescue
+    _ -> data
   end
 
   def to_decimal(nil), do: nil
