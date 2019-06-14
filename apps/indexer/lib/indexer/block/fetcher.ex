@@ -11,7 +11,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, BlockNumberCache, Hash, Import, Transaction}
+  alias Explorer.Chain.{Address, Block, BlockNumberCache, BlocksCache, Hash, Import, Transaction}
   alias Indexer.Block.Fetcher.Receipts
 
   alias Indexer.Fetcher.{
@@ -20,6 +20,7 @@ defmodule Indexer.Block.Fetcher do
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
+    StakingPools,
     Token,
     TokenBalance,
     UncleBlock
@@ -185,6 +186,7 @@ defmodule Indexer.Block.Fetcher do
 
     BlockNumberCache.update(max_block.number)
     BlockNumberCache.update(min_block.number)
+    BlocksCache.update_blocks(blocks)
   end
 
   def import(
@@ -289,6 +291,10 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_token_balances(_), do: :ok
+
+  def async_import_staking_pools do
+    StakingPools.async_fetch()
+  end
 
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}) do
     UncleBlock.async_fetch_blocks(block_second_degree_relations)
