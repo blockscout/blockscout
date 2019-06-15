@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Transaction do
 
   require Logger
 
-  import Ecto.Query, only: [from: 2, order_by: 3, preload: 3, subquery: 1, where: 3]
+  import Ecto.Query, only: [from: 2, preload: 3, subquery: 1, where: 3]
 
   alias ABI.FunctionSelector
 
@@ -204,6 +204,11 @@ defmodule Explorer.Chain.Transaction do
     field(:status, Status)
     field(:v, :decimal)
     field(:value, Wei)
+
+    # A transient field for deriving old block hash during transaction upserts.
+    # Used to force refetch of a block in case a transaction is re-collated
+    # in a different block. See: https://github.com/poanetwork/blockscout/issues/1911
+    field(:old_block_hash, Hash.Full)
 
     timestamps()
 
@@ -544,15 +549,40 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Builds a query that will check for transactions within the hashes params.
+  Modifies a query to filter for transactions whose hash is in a list or that are
+  linked to the given address_hash through a direction.
 
   Be careful to not pass a large list, because this will lead to performance
   problems.
   """
-  def where_transaction_hashes_match(transaction_hashes) do
-    Transaction
-    |> where([t], t.hash == fragment("ANY (?)", ^transaction_hashes))
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+  def where_transaction_matches(query, transaction_hashes, :from, address_hash) do
+    where(
+      query,
+      [t],
+      t.hash in ^transaction_hashes or
+        t.from_address_hash == ^address_hash
+    )
+  end
+
+  def where_transaction_matches(query, transaction_hashes, :to, address_hash) do
+    where(
+      query,
+      [t],
+      t.hash in ^transaction_hashes or
+        t.to_address_hash == ^address_hash or
+        t.created_contract_address_hash == ^address_hash
+    )
+  end
+
+  def where_transaction_matches(query, transaction_hashes, _direction, address_hash) do
+    where(
+      query,
+      [t],
+      t.hash in ^transaction_hashes or
+        t.from_address_hash == ^address_hash or
+        t.to_address_hash == ^address_hash or
+        t.created_contract_address_hash == ^address_hash
+    )
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a

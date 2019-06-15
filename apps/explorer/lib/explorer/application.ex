@@ -6,7 +6,7 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
-  alias Explorer.Chain.{BlockNumberCache, TransactionCountCache}
+  alias Explorer.Chain.{BlockCountCache, BlockNumberCache, BlocksCache, TransactionCountCache}
   alias Explorer.Repo.PrometheusLogger
 
   @impl Application
@@ -26,9 +26,12 @@ defmodule Explorer.Application do
       Supervisor.Spec.worker(SpandexDatadog.ApiServer, [datadog_opts()]),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
+      Explorer.SmartContract.SolcDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
-      {TransactionCountCache, [[], []]}
+      {TransactionCountCache, [[], []]},
+      {BlockCountCache, []},
+      {ConCache, [name: BlocksCache.cache_name(), ttl_check_interval: false]}
     ]
 
     children = base_children ++ configurable_children()
@@ -49,15 +52,14 @@ defmodule Explorer.Application do
       configure(Explorer.Market.History.Cataloger),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
       configure(Explorer.Counters.AverageBlockTime),
-      configure(Explorer.Validator.MetadataProcessor)
+      configure(Explorer.Validator.MetadataProcessor),
+      configure(Explorer.Staking.EpochCounter)
     ]
     |> List.flatten()
   end
 
   defp should_start?(process) do
-    :explorer
-    |> Application.fetch_env!(process)
-    |> Keyword.fetch!(:enabled)
+    Application.get_env(:explorer, process, [])[:enabled] == true
   end
 
   defp configure(process) do

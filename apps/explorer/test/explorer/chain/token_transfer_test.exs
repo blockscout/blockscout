@@ -247,9 +247,11 @@ defmodule Explorer.Chain.TokenTransferTest do
         amount: 1
       )
 
+      {:ok, transaction_bytes} = Explorer.Chain.Hash.Full.dump(transaction.hash)
+
       transactions_hashes = TokenTransfer.where_any_address_fields_match(:to, paul.hash, %PagingOptions{page_size: 1})
 
-      assert Enum.member?(transactions_hashes, transaction.hash) == true
+      assert Enum.member?(transactions_hashes, transaction_bytes) == true
     end
 
     test "when from_address_hash match returns transactions hashes list" do
@@ -283,9 +285,11 @@ defmodule Explorer.Chain.TokenTransferTest do
         amount: 1
       )
 
+      {:ok, transaction_bytes} = Explorer.Chain.Hash.Full.dump(transaction.hash)
+
       transactions_hashes = TokenTransfer.where_any_address_fields_match(:from, john.hash, %PagingOptions{page_size: 1})
 
-      assert Enum.member?(transactions_hashes, transaction.hash) == true
+      assert Enum.member?(transactions_hashes, transaction_bytes) == true
     end
 
     test "when to_from_address_hash or from_address_hash match returns transactions hashes list" do

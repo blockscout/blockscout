@@ -1,0 +1,12 @@
+$btn-no-border-bg: #fff !default;
+$btn-no-border-color: $primary !default;
+
+.btn-no-border {
+  @include btn-line($btn-no-border-bg, $btn-no-border-color);
+
+  border-color: $btn-no-border-bg;
+
+  &:hover {
+    border-color: $btn-no-border-color;
+  }
+}

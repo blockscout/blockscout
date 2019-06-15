@@ -39,7 +39,9 @@ defmodule Explorer.DataCase do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
     end
 
-    Explorer.Chain.BlockNumberCache.setup(cache_period: 0)
+    Explorer.Chain.BlockNumberCache.setup()
+    Supervisor.terminate_child(Explorer.Supervisor, ConCache)
+    Supervisor.restart_child(Explorer.Supervisor, ConCache)
 
     :ok
   end

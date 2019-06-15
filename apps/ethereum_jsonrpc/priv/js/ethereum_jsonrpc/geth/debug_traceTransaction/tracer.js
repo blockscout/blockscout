@@ -73,6 +73,15 @@
         topCall.calls.push(childCall);
     },
 
+    pushGasToTopCall(log) {
+        const topCall = this.topCall();
+
+        if (topCall.gasBigInt === undefined) {
+            topCall.gasBigInt = log.getGas();
+        }
+        topCall.gasUsedBigInt = topCall.gasBigInt - log.getGas() - log.getCost();
+    },
+
     success(log, db) {
         const op = log.op.toString();
 
@@ -115,8 +124,6 @@
             // Pop off the last call and get the execution results
             const call = this.callStack.pop();
 
-            call.gasUsedBigInt = call.gasBigInt.subtract(log.getGas());
-
             const ret = log.stack.peek(0);
 
             if (!ret.equals(0)) {
@@ -124,7 +131,7 @@
                     call.createdContractAddressHash = toHex(toAddress(ret.toString(16)));
                     call.createdContractCode = toHex(db.getCode(toAddress(ret.toString(16))));
                 } else {
-                    call.output = toHex(log.memory.slice(call.outOff, call.outOff + call.outLen));
+                    call.output = toHex(log.memory.slice(call.outputOffset, call.outputOffset + call.outputLength));
                 }
             } else if (call.error === undefined) {
                 call.error = 'internal failure';
@@ -134,6 +141,9 @@
             delete call.outputLength;
 
             this.pushChildCall(call);
+        }
+        else {
+            this.pushGasToTopCall(log);
         }
     },
 
@@ -147,7 +157,6 @@
             type: 'create',
             from: toHex(log.contract.getAddress()),
             init: toHex(log.memory.slice(inputOffset, inputEnd)),
-            gasBigInt: bigInt(log.getGas()),
             valueBigInt: bigInt(stackValue.toString(10))
         };
         this.callStack.push(call);
@@ -160,7 +169,8 @@
             type: 'selfdestruct',
             from: toHex(contractAddress),
             to: toHex(toAddress(log.stack.peek(0).toString(16))),
-            gasBigInt: bigInt(log.getGas()),
+            gasBigInt: log.getGas(),
+            gasUsedBigInt: log.getCost(),
             valueBigInt: db.getBalance(contractAddress)
         });
     },
@@ -186,7 +196,6 @@
             callType: op.toLowerCase(),
             from: toHex(log.contract.getAddress()),
             to: toHex(to),
-            gasBigInt: bigInt(log.getGas()),
             input: toHex(log.memory.slice(inputOffset, inputEnd)),
             outputOffset: log.stack.peek(4 + stackOffset).valueOf(),
             outputLength: log.stack.peek(5 + stackOffset).valueOf()
@@ -220,7 +229,7 @@
     result(ctx, db) {
         const result = this.ctxToResult(ctx, db);
         const filtered = this.filterNotUndefined(result);
-        const callSequence = this.sequence(filtered, [], filtered.valueBigInt, filtered.gasUsedBigInt, []).callSequence;
+        const callSequence = this.sequence(filtered, [], filtered.valueBigInt, []).callSequence;
         return this.encodeCallSequence(callSequence);
     },
 
@@ -339,7 +348,7 @@
     },
 
     // sequence converts the finalized calls from a call tree to a call sequence
-    sequence(call, callSequence, availableValueBigInt, availableGasBigInt, traceAddress) {
+    sequence(call, callSequence, availableValueBigInt, traceAddress) {
         const subcalls = call.calls;
         delete call.calls;
 
@@ -347,38 +356,24 @@
 
         if (call.type === 'call' && call.callType === 'delegatecall') {
             call.valueBigInt = availableValueBigInt;
-        } else if (call.type === 'selfdestruct') {
-            call.gasUsedBigInt = availableGasBigInt
         }
 
         var newCallSequence = callSequence.concat([call]);
 
         if (subcalls !== undefined) {
-            var nestedAvailableValueBigInt = availableValueBigInt;
-            var nestedAvailableGasBigInt = availableGasBigInt;
-
             for (var i = 0; i < subcalls.length; i++) {
                 const nestedSequenced = this.sequence(
                     subcalls[i],
                     newCallSequence,
-                    nestedAvailableValueBigInt,
-                    availableGasBigInt,
+                    call.valueBigInt,
                     traceAddress.concat([i])
                 );
                 newCallSequence = nestedSequenced.callSequence;
-                nestedAvailableValueBigInt = nestedSequenced.availableValueBigInt;
-                nestedAvailableGasBigInt = nestedSequenced.availableGasBigInt;
             }
         }
 
-        const newAvailableValueBigInt = availableValueBigInt.subtract(call.valueBigInt);
-
-        const newAvailableGasUsedBigInt = availableGasBigInt.subtract(call.gasUsedBigInt);
-
         return {
-            callSequence: newCallSequence,
-            availableValueBigInt: newAvailableValueBigInt,
-            availableGasBigInt: newAvailableGasUsedBigInt
+            callSequence: newCallSequence
         };
     },
 
@@ -410,7 +405,7 @@
         delete call.gasBigInt;
 
         if (gasBigInt === undefined) {
-            throw "gasBigInt undefined in " + JSON.stringify(call);
+            gasBigInt = bigInt.zero;
         }
 
         call.gas = '0x' + gasBigInt.toString(16);
@@ -421,7 +416,7 @@
         delete call.gasUsedBigInt;
 
         if (gasUsedBigInt === undefined) {
-            throw "gasUsedBigInt undefined in " + JSON.stringify(call);
+            gasUsedBigInt = bigInt.zero;
         }
 
         call.gasUsed = '0x' + gasUsedBigInt.toString(16);

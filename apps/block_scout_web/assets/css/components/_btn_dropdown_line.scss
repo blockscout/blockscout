@@ -1,0 +1,17 @@
+$btn-dropdown-line-bg: #fff !default;
+$btn-dropdown-line-color: #e2e5ec !default;
+$btn-dropdown-line-color-hover: #f5f6fa !default;
+$btn-dropdown-line-font: #333;
+
+.btn-dropdown-line {
+  @include btn-line($btn-dropdown-line-bg, $btn-dropdown-line-color);
+  border-color: $btn-dropdown-line-color;
+  color: $btn-dropdown-line-font;
+  outline: none !important;
+
+  &:hover {
+    background-color: $btn-dropdown-line-color-hover;
+    border-color: $btn-dropdown-line-color;
+    color: $btn-dropdown-line-font;
+  }
+}
