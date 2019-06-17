@@ -888,13 +888,19 @@ defmodule EthereumJSONRPCTest do
 
   describe "fetch_net_version/1" do
     test "fetches net version", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      expected_version =
+        case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+          EthereumJSONRPC.Parity -> 77
+          _variant -> 1
+        end
+
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, "1"}
+          {:ok, "#{expected_version}"}
         end)
       end
 
-      assert {:ok, 1} = EthereumJSONRPC.fetch_net_version(json_rpc_named_arguments)
+      assert {:ok, ^expected_version} = EthereumJSONRPC.fetch_net_version(json_rpc_named_arguments)
     end
   end
 
