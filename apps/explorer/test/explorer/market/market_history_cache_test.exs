@@ -4,6 +4,12 @@ defmodule Explorer.Market.MarketHistoryCacheTest do
   alias Explorer.Market
   alias Explorer.Market.MarketHistoryCache
 
+  setup do
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, MarketHistoryCache.cache_name()})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, MarketHistoryCache.cache_name()})
+    :ok
+  end
+
   describe "fetch/1" do
     test "caches data on the first call" do
       today = Date.utc_today()
@@ -25,6 +31,37 @@ defmodule Explorer.Market.MarketHistoryCacheTest do
 
       assert fetch_data() == records
     end
+
+    test "updates cache if cache is stale" do
+      today = Date.utc_today()
+
+      stale_records =
+        for i <- 0..29 do
+          %{
+            date: Timex.shift(today, days: i * -1),
+            closing_price: Decimal.new(1),
+            opening_price: Decimal.new(1)
+          }
+        end
+
+      Market.bulk_insert_history(stale_records)
+
+      MarketHistoryCache.fetch()
+
+      stale_updated_at = fetch_updated_at()
+
+      assert fetch_data() == stale_records
+
+      ConCache.put(MarketHistoryCache.cache_name(), MarketHistoryCache.updated_at_key(), Timex.shift(today, days: -35))
+
+      fetch_data()
+
+      assert stale_updated_at != fetch_updated_at()
+    end
+  end
+
+  defp fetch_updated_at do
+    ConCache.get(MarketHistoryCache.cache_name(), MarketHistoryCache.updated_at_key())
   end
 
   defp fetch_data do

@@ -27,6 +27,10 @@ defmodule Explorer.Market.MarketHistoryCache do
 
   def data_key, do: @history_key
 
+  def updated_at_key, do: @last_update_key
+
+  def recent_days_count, do: @recent_days
+
   defp cache_expired? do
     updated_at = fetch_from_cache(@last_update_key)
 
