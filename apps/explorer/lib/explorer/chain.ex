@@ -1991,7 +1991,6 @@ defmodule Explorer.Chain do
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> pending_transactions_query()
-    |> where([transaction], is_nil(transaction.error) or transaction.error != "dropped/replaced")
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
@@ -2000,7 +1999,7 @@ defmodule Explorer.Chain do
 
   defp pending_transactions_query(query) do
     from(transaction in query,
-      where: is_nil(transaction.block_hash)
+      where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
     )
   end
 
