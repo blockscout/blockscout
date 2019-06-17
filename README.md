@@ -54,6 +54,8 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 | [xDai Chain](https://blockscout.com/poa/dai) |  | [SafeChain](https://explorer.safechain.io) |
 |  |  | [SpringChain](https://explorer.springrole.com/) |
 |  |  | [Kotti Testnet](https://kottiexplorer.ethernode.io/) |
+|  |  | [Loom](http://plasma-blockexplorer.dappchains.com/) |
+|  |  | [Tenda](https://tenda.network) |
 
 
 ### Visual Interface
