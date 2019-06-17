@@ -20,6 +20,7 @@
 - [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
 - [#2096](https://github.com/poanetwork/blockscout/pull/2096) - RSK theme fixes
 - [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
+- [#2111](https://github.com/poanetwork/blockscout/pull/2111) - improve address transaction controller
 - [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fix uncle fetching without full transactions
 - [#2128](https://github.com/poanetwork/blockscout/pull/2128) - add new function clause for uncle errors
 - [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
