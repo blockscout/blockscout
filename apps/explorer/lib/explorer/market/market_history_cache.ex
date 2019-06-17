@@ -3,8 +3,9 @@ defmodule Explorer.Market.MarketHistoryCache do
   Caches recent market history.
   """
 
-  import Ecto.Query, only: [:from]
+  import Ecto.Query, only: [from: 2]
 
+  alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
   @cache_name :market_history
@@ -15,16 +16,26 @@ defmodule Explorer.Market.MarketHistoryCache do
   @recent_days 30
 
   def fetch do
-    if current_time() - fetch_from_cache(@last_update_key) > @cache_period do
-      fetch_from_cache(@history_key)
-    else
+    if cache_expired?() do
       update_cache()
+    else
+      fetch_from_cache(@history_key)
     end
   end
 
   def cache_name, do: @cache_name
 
   def data_key, do: @history_key
+
+  defp cache_expired? do
+    updated_at = fetch_from_cache(@last_update_key)
+
+    cond do
+      is_nil(updated_at) -> true
+      current_time() - updated_at > @cache_period -> true
+      true -> false
+    end
+  end
 
   defp update_cache do
     new_data = fetch_from_db()
