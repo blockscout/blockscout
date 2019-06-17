@@ -886,6 +886,18 @@ defmodule EthereumJSONRPCTest do
     end
   end
 
+  describe "fetch_net_version/1" do
+    test "fetches net version", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+          {:ok, "1"}
+        end)
+      end
+
+      assert {:ok, 1} = EthereumJSONRPC.fetch_net_version(json_rpc_named_arguments)
+    end
+  end
+
   defp clear_mailbox do
     receive do
       _ -> clear_mailbox()
