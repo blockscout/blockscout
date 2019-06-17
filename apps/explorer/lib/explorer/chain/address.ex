@@ -144,6 +144,7 @@ defmodule Explorer.Chain.Address do
     end
   end
 
+  # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
   def eth_checksum(hash) do
     string_hash =
       hash
