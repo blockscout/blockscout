@@ -20,9 +20,6 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
 
     ExchangeRates.init([])
 
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
-
     token = %Token{
       available_supply: Decimal.new("1000000.0"),
       total_supply: Decimal.new("1000000.0"),
