@@ -7,6 +7,7 @@
 
 ### Fixes
 - [#2155](https://github.com/poanetwork/blockscout/pull/2155) - fix pending transaction query
+- [#2183](https://github.com/poanetwork/blockscout/pull/2183) - tile content aligning for mobile resolution fix, dai logo fix
 - [#2162](https://github.com/poanetwork/blockscout/pull/2162) - contract creation tile color changed
 - [#2144](https://github.com/poanetwork/blockscout/pull/2144) - 'page not found' images path fixed for goerli
 - [#2142](https://github.com/poanetwork/blockscout/pull/2142) - Removed posdao theme and logo, added 'page not found' image for goerli
@@ -21,14 +22,19 @@
 - [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
 - [#2096](https://github.com/poanetwork/blockscout/pull/2096) - RSK theme fixes
 - [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
+- [#2111](https://github.com/poanetwork/blockscout/pull/2111) - improve address transaction controller
 - [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fix uncle fetching without full transactions
 - [#2128](https://github.com/poanetwork/blockscout/pull/2128) - add new function clause for uncle errors
 - [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
 - [#2119](https://github.com/poanetwork/blockscout/pull/2119) - fix map logging
 - [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
+- [#2147](https://github.com/poanetwork/blockscout/pull/2147) - add rsk format of checksum
+- [#2149](https://github.com/poanetwork/blockscout/pull/2149) - remove pending transaction count
+- [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
+- [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
 
 ### Chore
 
