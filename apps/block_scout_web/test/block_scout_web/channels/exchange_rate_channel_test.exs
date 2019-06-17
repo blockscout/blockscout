@@ -20,6 +20,9 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
 
     ExchangeRates.init([])
 
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
+
     token = %Token{
       available_supply: Decimal.new("1000000.0"),
       total_supply: Decimal.new("1000000.0"),
@@ -75,6 +78,8 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
       records = [%{date: today, closing_price: token.usd_value} | old_records]
 
       Market.bulk_insert_history(records)
+
+      Market.fetch_recent_history()
 
       topic = "exchange_rate:new_rate"
       @endpoint.subscribe(topic)
