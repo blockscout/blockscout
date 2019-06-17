@@ -19,16 +19,9 @@ defmodule Explorer.MarketTest do
 
     Market.bulk_insert_history(records)
 
-    history = Market.fetch_recent_history(1)
-    assert length(history) == 1
+    history = Market.fetch_recent_history()
+    assert length(history) == 6
     assert Enum.at(history, 0).date == Enum.at(records, 0).date
-
-    more_history = Market.fetch_recent_history(5)
-    assert length(more_history) == 5
-
-    for {history_record, index} <- Enum.with_index(more_history) do
-      assert history_record.date == Enum.at(records, index).date
-    end
   end
 
   describe "bulk_insert_history/1" do

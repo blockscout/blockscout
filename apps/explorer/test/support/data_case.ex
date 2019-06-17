@@ -40,8 +40,11 @@ defmodule Explorer.DataCase do
     end
 
     Explorer.Chain.BlockNumberCache.setup()
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, :blocks})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, :blocks})
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
+
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
 
     :ok
   end
