@@ -6,6 +6,7 @@
 - [#2151](https://github.com/poanetwork/blockscout/pull/2151) - hide dropdown menu then other networks list is empty
 
 ### Fixes
+- [#2179](https://github.com/poanetwork/blockscout/pull/2179) - fix docker build error
 - [#2165](https://github.com/poanetwork/blockscout/pull/2165) - sort blocks by timestamp when calculating average block time
 - [#2175](https://github.com/poanetwork/blockscout/pull/2175) - fix coinmarketcap response errors
 - [#2164](https://github.com/poanetwork/blockscout/pull/2164) - fix large numbers in balance view card
