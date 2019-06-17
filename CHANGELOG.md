@@ -6,6 +6,7 @@
 - [#2151](https://github.com/poanetwork/blockscout/pull/2151) - hide dropdown menu then other networks list is empty
 
 ### Fixes
+- [#2175](https://github.com/poanetwork/blockscout/pull/2175) - fix coinmarketcap response errors
 - [#2164](https://github.com/poanetwork/blockscout/pull/2164) - fix large numbers in balance view card
 - [#2155](https://github.com/poanetwork/blockscout/pull/2155) - fix pending transaction query
 - [#2183](https://github.com/poanetwork/blockscout/pull/2183) - tile content aligning for mobile resolution fix, dai logo fix
