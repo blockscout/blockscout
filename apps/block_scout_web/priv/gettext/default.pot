@@ -378,7 +378,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:30
 #: lib/block_scout_web/templates/transaction/overview.html.eex:192
-#: lib/block_scout_web/views/wei_helpers.ex:72
+#: lib/block_scout_web/views/wei_helpers.ex:78
 msgid "Ether"
 msgstr ""
 
@@ -436,7 +436,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/views/block_view.ex:20
-#: lib/block_scout_web/views/wei_helpers.ex:71
+#: lib/block_scout_web/views/wei_helpers.ex:77
 msgid "Gwei"
 msgstr ""
 
@@ -982,7 +982,7 @@ msgid "Wallet addresses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/wei_helpers.ex:70
+#: lib/block_scout_web/views/wei_helpers.ex:76
 msgid "Wei"
 msgstr ""
 
@@ -1490,7 +1490,7 @@ msgid "EVM Version"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:16
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:17
 msgid "Copy Decompiled Contract Code"
 msgstr ""
 
@@ -1505,12 +1505,12 @@ msgid "Decompiled code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:14
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:15
 msgid "Decompiled contract code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:7
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:8
 msgid "Decompiler version"
 msgstr ""
 
@@ -1696,4 +1696,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:178
 msgid " Token Transfer"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:27
+msgid "There is no decompilded contracts for this address."
 msgstr ""
