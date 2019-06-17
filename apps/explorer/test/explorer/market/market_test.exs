@@ -5,6 +5,13 @@ defmodule Explorer.MarketTest do
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
+  setup do
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
+
+    :ok
+  end
+
   test "fetch_recent_history/1" do
     today = Date.utc_today()
 
