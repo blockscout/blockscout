@@ -32,6 +32,7 @@
 - [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
 - [#2147](https://github.com/poanetwork/blockscout/pull/2147) - add rsk format of checksum
 - [#2149](https://github.com/poanetwork/blockscout/pull/2149) - remove pending transaction count
+- [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
 - [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
 - [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
 
