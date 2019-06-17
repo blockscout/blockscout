@@ -28,6 +28,7 @@
 - [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
 - [#2147](https://github.com/poanetwork/blockscout/pull/2147) - add rsk format of checksum
 - [#2149](https://github.com/poanetwork/blockscout/pull/2149) - remove pending transaction count
+- [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
