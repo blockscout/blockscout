@@ -6,6 +6,11 @@
 - [#2151](https://github.com/poanetwork/blockscout/pull/2151) - hide dropdown menu then other networks list is empty
 
 ### Fixes
+- [#2179](https://github.com/poanetwork/blockscout/pull/2179) - fix docker build error
+- [#2165](https://github.com/poanetwork/blockscout/pull/2165) - sort blocks by timestamp when calculating average block time
+- [#2175](https://github.com/poanetwork/blockscout/pull/2175) - fix coinmarketcap response errors
+- [#2164](https://github.com/poanetwork/blockscout/pull/2164) - fix large numbers in balance view card
+- [#2155](https://github.com/poanetwork/blockscout/pull/2155) - fix pending transaction query
 - [#2183](https://github.com/poanetwork/blockscout/pull/2183) - tile content aligning for mobile resolution fix, dai logo fix
 - [#2162](https://github.com/poanetwork/blockscout/pull/2162) - contract creation tile color changed
 - [#2144](https://github.com/poanetwork/blockscout/pull/2144) - 'page not found' images path fixed for goerli
@@ -29,6 +34,9 @@
 - [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
 - [#2147](https://github.com/poanetwork/blockscout/pull/2147) - add rsk format of checksum
 - [#2149](https://github.com/poanetwork/blockscout/pull/2149) - remove pending transaction count
+- [#2169](https://github.com/poanetwork/blockscout/pull/2169) - add more validator reward types for xDai
+- [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
+- [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
 - [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
 
 ### Chore
