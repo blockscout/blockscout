@@ -5,6 +5,7 @@
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
 - [#2151](https://github.com/poanetwork/blockscout/pull/2151) - hide dropdown menu then other networks list is empty
 - [#2146](https://github.com/poanetwork/blockscout/pull/2146) - feat: add eth_getLogs rpc endpoint
+- [#2193](https://github.com/poanetwork/blockscout/pull/2193) - feat: add BLOCKSCOUT_HOST, and use it in API docs
 
 ### Fixes
 - [#2201](https://github.com/poanetwork/blockscout/pull/2201) - footer columns fix
