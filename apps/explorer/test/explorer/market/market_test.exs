@@ -1,5 +1,5 @@
 defmodule Explorer.MarketTest do
-  use Explorer.DataCase
+  use Explorer.DataCase, async: false
 
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
