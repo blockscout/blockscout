@@ -2896,7 +2896,7 @@ defmodule Explorer.Chain do
   end
 
   @spec transaction_token_transfer_type(Transaction.t()) ::
-          {:erc20, TokenTransfer.t()} | {:erc721, TokenTransfer.t()} | nil
+          :erc20 | :erc721 | :token_transfer | nil
   def transaction_token_transfer_type(
         %Transaction{
           status: :ok,
