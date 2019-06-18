@@ -2907,8 +2907,6 @@ defmodule Explorer.Chain do
       ) do
     zero_wei = %Wei{value: Decimal.new(0)}
 
-    transaction = Repo.preload(transaction, token_transfers: :token)
-
     # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721.sol#L35
     case {to_string(input), value} do
       # transferFrom(address,address,uint256)
@@ -2931,6 +2929,9 @@ defmodule Explorer.Chain do
         [from_address, to_address, _value, _data] = decode_params(params, types)
 
         find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
+
+      {"0xf907fc5b" <> _params, ^zero_wei} ->
+        :erc20
 
       # check for ERC 20 or for old ERC 721 token versions
       {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
@@ -2957,22 +2958,23 @@ defmodule Explorer.Chain do
         token_transfer.from_address_hash.bytes == from_address && token_transfer.to_address_hash.bytes == to_address
       end)
 
-    if token_transfer, do: {:erc721, token_transfer}
+    if token_transfer, do: :erc721
   end
 
   defp find_erc721_or_erc20_token_transfer(token_transfers, {address, decimal_value}) do
     token_transfer =
       Enum.find(token_transfers, fn token_transfer ->
-        token_transfer.to_address_hash.bytes == address &&
-          (token_transfer.amount == decimal_value || token_transfer.token_id)
+        token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value
       end)
 
     if token_transfer do
       case token_transfer.token do
-        %Token{type: "ERC-20"} -> {:erc20, token_transfer}
-        %Token{type: "ERC-721"} -> {:erc721, token_transfer}
+        %Token{type: "ERC-20"} -> :erc20
+        %Token{type: "ERC-721"} -> :erc721
         _ -> nil
       end
+    else
+      :erc20
     end
   end
 
