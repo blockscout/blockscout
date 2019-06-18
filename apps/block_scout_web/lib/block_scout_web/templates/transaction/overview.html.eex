@@ -175,7 +175,7 @@
         <!-- Value -->
         <div class="card card-background-1 flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
-            <h2 class="card-title balance-card-title"><%= if type == :erc20, do: gettext("ERC-20"), else: gettext("ERC-721")%><%= gettext " Token Transfer" %></h2>
+            <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Transfer" %></h2>
             <%= for transfer  <- transaction_with_transfers.token_transfers do %>
             <div class="text-right">
               <h3 class="address-balance-text">

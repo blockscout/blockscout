@@ -2943,6 +2943,9 @@ defmodule Explorer.Chain do
 
         find_erc721_or_erc20_token_transfer(transaction.token_transfers, {address, decimal_value})
 
+      {_params, ^zero_wei} ->
+        if Enum.count(transaction.token_transfers) > 0, do: :token_transfer
+
       _ ->
         nil
     end

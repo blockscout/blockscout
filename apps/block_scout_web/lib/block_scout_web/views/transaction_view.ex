@@ -35,7 +35,16 @@ defmodule BlockScoutWeb.TransactionView do
   def token_transfer_type(transaction) do
     transaction_with_transfers = Repo.preload(transaction, token_transfers: :token)
 
-    {Chain.transaction_token_transfer_type(transaction), transaction_with_transfers}
+    type = Chain.transaction_token_transfer_type(transaction)
+    if type, do: {type, transaction_with_transfers}
+  end
+
+  def token_type_name(type) do
+    case type do
+      :erc20 -> gettext("ERC-20 ")
+      :erc721 -> gettext("ERC-721 ")
+      :token_transfer -> ""
+    end
   end
 
   def processing_time_duration(%Transaction{block: nil}) do
