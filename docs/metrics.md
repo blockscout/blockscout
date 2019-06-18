@@ -3,6 +3,8 @@
 ## Metrics
 
 BlockScout is setup to export [Prometheus](https://prometheus.io/) metrics at `/metrics`.
+ 
+[Wobserver](https://github.com/shinyscorpion/) is available for metrics display at `/wobserver`. For example, `https://blockscout.com/eth/mainnet/wobserver/`
 
 ### Prometheus
 
@@ -11,6 +13,8 @@ BlockScout is setup to export [Prometheus](https://prometheus.io/) metrics at `/
 3. Start prometheus: `prometheus --config.file=prometheus.yml`
 
 ### Grafana
+
+Grafana dashboards may also be used for metrics display.
 
 1. Install grafana: `brew install grafana`
 2. Install Pie Chart panel plugin: `grafana-cli plugins install grafana-piechart-panel`
