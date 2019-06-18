@@ -54,7 +54,6 @@ defmodule Explorer.Market.MarketHistoryCacheTest do
 
       ConCache.put(MarketHistoryCache.cache_name(), MarketHistoryCache.updated_at_key(), 1)
 
-
       fetch_data()
 
       assert stale_updated_at != fetch_updated_at()
