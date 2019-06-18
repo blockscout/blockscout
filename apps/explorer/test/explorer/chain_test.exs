@@ -3954,7 +3954,7 @@ defmodule Explorer.ChainTest do
 
       insert(:token_transfer, from_address: from_address, to_address: to_address, transaction: transaction)
 
-      assert :erc721 = Chain.transaction_token_transfer_type(Repo.preload(transaction, :token_transfers))
+      assert :erc721 = Chain.transaction_token_transfer_type(Repo.preload(transaction, token_transfers: :token))
     end
 
     test "detects erc20 token transfer" do
@@ -3980,7 +3980,7 @@ defmodule Explorer.ChainTest do
         amount: 8_025_000_000_000_000_000_000
       )
 
-      assert :erc20 = Chain.transaction_token_transfer_type(Repo.preload(transaction, :token_transfers))
+      assert :erc20 = Chain.transaction_token_transfer_type(Repo.preload(transaction, token_transfers: :token))
     end
   end
 
