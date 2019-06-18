@@ -21,7 +21,7 @@ defmodule Explorer.MarketTest do
     today = Date.utc_today()
 
     records =
-      for i <- 0..5 do
+      for i <- 0..29 do
         %{
           date: Timex.shift(today, days: i * -1),
           closing_price: Decimal.new(1),
@@ -32,7 +32,7 @@ defmodule Explorer.MarketTest do
     Market.bulk_insert_history(records)
 
     history = Market.fetch_recent_history()
-    assert length(history) == 6
+    assert length(history) == 30
     assert Enum.at(history, 0).date == Enum.at(records, 0).date
   end
 
