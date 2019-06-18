@@ -7,6 +7,12 @@ defmodule Explorer.Market.MarketHistoryCacheTest do
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, {ConCache, MarketHistoryCache.cache_name()})
     Supervisor.restart_child(Explorer.Supervisor, {ConCache, MarketHistoryCache.cache_name()})
+
+    on_exit(fn ->
+      Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
+      Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
+    end)
+
     :ok
   end
 
