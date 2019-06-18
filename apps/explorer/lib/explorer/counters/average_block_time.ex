@@ -66,7 +66,7 @@ defmodule Explorer.Counters.AverageBlockTime do
       from(block in Block,
         limit: 100,
         offset: 0,
-        order_by: [desc: block.number],
+        order_by: [desc: block.number, desc: block.timestamp],
         select: {block.number, block.timestamp}
       )
 
