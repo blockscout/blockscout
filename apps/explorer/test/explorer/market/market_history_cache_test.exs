@@ -52,7 +52,8 @@ defmodule Explorer.Market.MarketHistoryCacheTest do
 
       assert fetch_data() == stale_records
 
-      ConCache.put(MarketHistoryCache.cache_name(), MarketHistoryCache.updated_at_key(), Timex.shift(today, days: -35))
+      ConCache.put(MarketHistoryCache.cache_name(), MarketHistoryCache.updated_at_key(), 1)
+
 
       fetch_data()
 
