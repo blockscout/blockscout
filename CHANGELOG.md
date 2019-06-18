@@ -1,9 +1,23 @@
 ## Current
 
 ### Features
+- [#2109](https://github.com/poanetwork/blockscout/pull/2109) - use bigger updates instead of `Multi` transactions in BlocksTransactionsMismatch
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
+- [#2151](https://github.com/poanetwork/blockscout/pull/2151) - hide dropdown menu then other networks list is empty
 
 ### Fixes
+- [#2179](https://github.com/poanetwork/blockscout/pull/2179) - fix docker build error
+- [#2165](https://github.com/poanetwork/blockscout/pull/2165) - sort blocks by timestamp when calculating average block time
+- [#2175](https://github.com/poanetwork/blockscout/pull/2175) - fix coinmarketcap response errors
+- [#2164](https://github.com/poanetwork/blockscout/pull/2164) - fix large numbers in balance view card
+- [#2155](https://github.com/poanetwork/blockscout/pull/2155) - fix pending transaction query
+- [#2183](https://github.com/poanetwork/blockscout/pull/2183) - tile content aligning for mobile resolution fix, dai logo fix
+- [#2162](https://github.com/poanetwork/blockscout/pull/2162) - contract creation tile color changed
+- [#2144](https://github.com/poanetwork/blockscout/pull/2144) - 'page not found' images path fixed for goerli
+- [#2142](https://github.com/poanetwork/blockscout/pull/2142) - Removed posdao theme and logo, added 'page not found' image for goerli
+- [#2138](https://github.com/poanetwork/blockscout/pull/2138) - badge colors issue, api titles issue
+- [#2129](https://github.com/poanetwork/blockscout/pull/2129) - Fix for width of explorer elements
+- [#2121](https://github.com/poanetwork/blockscout/pull/2121) - Binding of 404 page
 - [#2120](https://github.com/poanetwork/blockscout/pull/2120) - footer links and socials focus color issue
 - [#2113](https://github.com/poanetwork/blockscout/pull/2113) - renewed logos for rsk, dai, blockscout; themes color changes for lukso; error images for lukso
 - [#2112](https://github.com/poanetwork/blockscout/pull/2112) - themes color improvements, dropdown color issue
@@ -12,7 +26,22 @@
 - [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
 - [#2096](https://github.com/poanetwork/blockscout/pull/2096) - RSK theme fixes
 - [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
-- [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fixe uncle fetching without full transactions
+- [#2111](https://github.com/poanetwork/blockscout/pull/2111) - improve address transaction controller
+- [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fix uncle fetching without full transactions
+- [#2128](https://github.com/poanetwork/blockscout/pull/2128) - add new function clause for uncle errors
+- [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
+- [#2119](https://github.com/poanetwork/blockscout/pull/2119) - fix map logging
+- [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
+- [#2147](https://github.com/poanetwork/blockscout/pull/2147) - add rsk format of checksum
+- [#2149](https://github.com/poanetwork/blockscout/pull/2149) - remove pending transaction count
+- [#2169](https://github.com/poanetwork/blockscout/pull/2169) - add more validator reward types for xDai
+- [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
+- [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
+- [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
+
+### Chore
+- [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
+- [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
 
 ### Chore
 
@@ -41,6 +70,7 @@
 - [#2037](https://github.com/poanetwork/blockscout/pull/2037) - add address logs search functionality
 - [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
 - [#2064](https://github.com/poanetwork/blockscout/pull/2064) - feat: add fields to tx apis, small cleanups
+- [#2100](https://github.com/poanetwork/blockscout/pull/2100) - feat: eth_get_balance rpc endpoint
 
 ### Fixes
 - [#2099](https://github.com/poanetwork/blockscout/pull/2099) - logs search input width
