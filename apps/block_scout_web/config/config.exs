@@ -37,6 +37,16 @@ config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: t
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
   instrumenters: [BlockScoutWeb.Prometheus.Instrumenter, SpandexPhoenix.Instrumenter],
+  http: [
+    protocol_options: [
+      idle_timeout: 90_000
+    ]
+  ],
+  https: [
+    protocol_options: [
+      idle_timeout: 90_000
+    ]
+  ],
   url: [
     host: "localhost",
     path: System.get_env("NETWORK_PATH") || "/"
