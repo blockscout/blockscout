@@ -75,9 +75,13 @@ defmodule EthereumJSONRPC.Block do
   end
 
   def from_response(%{id: id, result: block}, id_to_params) when is_map(id_to_params) do
-    true = Map.has_key?(id_to_params, id)
+    if Map.has_key?(id_to_params, id) do
+      {:ok, block}
+    else
+      Logger.warn(["id #{id} not found in #{inspect(id_to_params)}"])
 
-    {:ok, block}
+      {:error, %{code: 404, message: "id #{id} not found in result", result: id_to_params}}
+    end
   end
 
   def from_response(%{id: id, error: error}, id_to_params) when is_map(id_to_params) do
