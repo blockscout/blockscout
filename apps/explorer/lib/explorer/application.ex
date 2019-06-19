@@ -6,7 +6,7 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
-  alias Explorer.Chain.{BlockCountCache, BlockNumberCache, BlocksCache, TransactionCountCache}
+  alias Explorer.Chain.{BlockCountCache, BlockNumberCache, BlocksCache, NetVersionCache, TransactionCountCache}
   alias Explorer.Repo.PrometheusLogger
 
   @impl Application
@@ -31,7 +31,8 @@ defmodule Explorer.Application do
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
       {TransactionCountCache, [[], []]},
       {BlockCountCache, []},
-      {ConCache, [name: BlocksCache.cache_name(), ttl_check_interval: false]}
+      con_cache_child_spec(BlocksCache.cache_name()),
+      con_cache_child_spec(NetVersionCache.cache_name())
     ]
 
     children = base_children ++ configurable_children()
@@ -78,5 +79,18 @@ defmodule Explorer.Application do
       sync_threshold: System.get_env("SPANDEX_SYNC_THRESHOLD") || 100,
       http: HTTPoison
     ]
+  end
+
+  defp con_cache_child_spec(name) do
+    Supervisor.child_spec(
+      {
+        ConCache,
+        [
+          name: name,
+          ttl_check_interval: false
+        ]
+      },
+      id: {ConCache, name}
+    )
   end
 end
