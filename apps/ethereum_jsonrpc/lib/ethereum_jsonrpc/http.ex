@@ -7,6 +7,8 @@ defmodule EthereumJSONRPC.HTTP do
 
   require Logger
 
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+
   @behaviour Transport
 
   @doc """
@@ -131,6 +133,14 @@ defmodule EthereumJSONRPC.HTTP do
   # restrict response to only those fields supported by the JSON-RPC 2.0 standard, which means that level of keys is
   # validated, so we can indicate that with switch to atom keys.
   defp standardize_response(%{"jsonrpc" => "2.0" = jsonrpc, "id" => id} = unstandardized) do
+    # Nethermind return string ids
+    id =
+      if is_binary(id) do
+        quantity_to_integer(id)
+      else
+        id
+      end
+
     standardized = %{jsonrpc: jsonrpc, id: id}
 
     case unstandardized do

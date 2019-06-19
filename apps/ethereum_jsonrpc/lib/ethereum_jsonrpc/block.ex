@@ -75,13 +75,6 @@ defmodule EthereumJSONRPC.Block do
   end
 
   def from_response(%{id: id, result: block}, id_to_params) when is_map(id_to_params) do
-    id =
-      if is_binary(id) do
-        quantity_to_integer(id)
-      else
-        id
-      end
-
     true = Map.has_key?(id_to_params, id)
 
     {:ok, block}
