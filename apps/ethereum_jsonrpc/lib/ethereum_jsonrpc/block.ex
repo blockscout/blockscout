@@ -4,8 +4,6 @@ defmodule EthereumJSONRPC.Block do
   and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber).
   """
 
-  require Logger
-
   import EthereumJSONRPC, only: [quantity_to_integer: 1, timestamp_to_datetime: 1]
 
   alias EthereumJSONRPC.{Transactions, Uncles}
@@ -77,13 +75,16 @@ defmodule EthereumJSONRPC.Block do
   end
 
   def from_response(%{id: id, result: block}, id_to_params) when is_map(id_to_params) do
-    if Map.has_key?(id_to_params, id) do
-      {:ok, block}
-    else
-      Logger.warn(["id #{id} not found in #{inspect(id_to_params)}"])
+    id =
+      if is_binary(id) do
+        quantity_to_integer(id)
+      else
+        id
+      end
 
-      {:error, %{code: 404, message: "id #{id} not found in result", result: id_to_params}}
-    end
+    true = Map.has_key?(id_to_params, id)
+
+    {:ok, block}
   end
 
   def from_response(%{id: id, error: error}, id_to_params) when is_map(id_to_params) do
@@ -446,6 +447,9 @@ defmodule EthereumJSONRPC.Block do
        when key in ~w(difficulty gasLimit gasUsed minimumGasPrice number size totalDifficulty) and not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
   end
+
+  # we don't need transaction hashes because we fetch full transactions
+  defp entry_to_elixir({"transactionHashes" = key, _}), do: {key, nil}
 
   # Size and totalDifficulty may be `nil` for uncle blocks
   defp entry_to_elixir({key, nil}) when key in ~w(size totalDifficulty) do
