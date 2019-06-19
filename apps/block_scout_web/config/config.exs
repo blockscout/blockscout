@@ -45,7 +45,10 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   https: [
     protocol_options: [
       idle_timeout: 90_000
-    ]
+    ],
+    cipher_suite: :strong,
+    certfile: System.get_env("CERTFILE") || "priv/cert/selfsigned.pem",
+    keyfile: System.get_env("KEYFILE") || "priv/cert/selfsigned_key.pem"
   ],
   url: [
     host: "localhost",
