@@ -55,6 +55,7 @@ defmodule Explorer.Chain.StakingPool do
     field(:was_validator_count, :integer)
     field(:is_deleted, :boolean, default: false)
     has_many(:delegators, StakingPoolsDelegator, foreign_key: :pool_address_hash)
+    field(:position, :integer, virtual: true)
 
     belongs_to(
       :staking_address,
