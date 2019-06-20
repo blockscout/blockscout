@@ -1,7 +1,7 @@
 import $ from 'jquery'
 
 var networkSearchInput = $('.network-selector-search-input')
-var networkSearchInputVal = ""
+var networkSearchInputVal = ''
 
 $(networkSearchInput).on('input', function () {
   networkSearchInputVal = $(this).val()

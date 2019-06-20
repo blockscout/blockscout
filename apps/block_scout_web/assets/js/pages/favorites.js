@@ -11,9 +11,9 @@ if (localStorage.getItem('favoritesNetworksUrls') === null) {
 
 $(document).on('change', ".network-selector-item-favorite input[type='checkbox']", function () {
   var networkUrl = $(this).attr('data-url')
-  var thisStatus = $(this).is(':checked');
-  var parent = $(".network-selector-item[data-url='" + networkUrl + "'").clone();
-  var workWith = $(".network-selector-item[data-url='" + networkUrl + "'");
+  var thisStatus = $(this).is(':checked')
+  var parent = $(".network-selector-item[data-url='" + networkUrl + "'").clone()
+  var workWith = $(".network-selector-item[data-url='" + networkUrl + "'")
 
   // Add new checkbox status to same network in another tabs
   $(".network-selector-item-favorite input[data-url='" + networkUrl + "']").prop('checked', thisStatus)
