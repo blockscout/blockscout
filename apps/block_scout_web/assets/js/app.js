@@ -31,6 +31,7 @@ import './pages/chain'
 import './pages/pending_transactions'
 import './pages/transaction'
 import './pages/transactions'
+import './pages/stakes'
 
 import './pages/admin/tasks.js'
 
