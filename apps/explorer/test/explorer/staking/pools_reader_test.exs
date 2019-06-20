@@ -24,6 +24,23 @@ defmodule Explorer.Token.PoolsReaderTest do
         PoolsReader.get_active_pools()
       end
     end
+
+    test "get_inactive_pools success" do
+      get_pools_from_blockchain()
+
+      result = PoolsReader.get_inactive_pools()
+
+      assert Enum.count(result) == 3
+    end
+
+    test "get_pools success" do
+      get_pools_from_blockchain()
+      get_pools_from_blockchain()
+
+      result = PoolsReader.get_pools()
+
+      assert Enum.count(result) == 6
+    end
   end
 
   describe "get_pools_data" do
@@ -51,7 +68,8 @@ defmodule Explorer.Token.PoolsReaderTest do
                ordered_withdraw_epoch: 0,
                pool_address_hash:
                  <<219, 156, 178, 71, 141, 145, 119, 25, 197, 56, 98, 0, 134, 114, 22, 104, 8, 37, 133, 119>>,
-               stake_amount: 1_000_000_000_000_000_000
+               stake_amount: 1_000_000_000_000_000_000,
+               is_active: true
              }
            ],
            delegators_count: 1,
@@ -159,6 +177,21 @@ defmodule Explorer.Token.PoolsReaderTest do
                id: id,
                result:
                  "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000f3e77c4af5eb2f33afff7619d8d1e751d718a491"
+             }
+
+           # poolDelegatorsInactive
+           %{
+             id: id,
+             method: "eth_call",
+             params: [
+               %{data: "0x73c21803000000000000000000000000db9cb2478d917719c53862008672166808258577", to: _},
+               "latest"
+             ]
+           } ->
+             %{
+               id: id,
+               result:
+                 "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
              }
 
            # stakeAmountTotalMinusOrderedWithdraw

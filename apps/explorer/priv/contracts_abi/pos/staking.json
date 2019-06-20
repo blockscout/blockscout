@@ -95,19 +95,38 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_stakingAddress",
+        "name": "_toPoolStakingAddress",
         "type": "address"
       }
     ],
-    "name": "removePool",
+    "name": "stakeNative",
     "outputs": [],
+    "payable": true,
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "isInitialized",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "payable": false,
-    "stateMutability": "nonpayable",
+    "stateMutability": "view",
     "type": "function"
   },
   {
     "constant": false,
-    "inputs": [],
+    "inputs": [
+      {
+        "name": "_stakingAddress",
+        "type": "address"
+      }
+    ],
     "name": "removePool",
     "outputs": [],
     "payable": false,
@@ -220,6 +239,25 @@
       {
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_poolStakingAddress",
+        "type": "address"
+      }
+    ],
+    "name": "poolDelegatorsInactive",
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]"
       }
     ],
     "payable": false,
@@ -578,6 +616,20 @@
     "type": "function"
   },
   {
+    "constant": true,
+    "inputs": [],
+    "name": "erc20Restricted",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "constant": false,
     "inputs": [
       {
@@ -687,6 +739,15 @@
     ],
     "payable": false,
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [],
+    "name": "removeMyPool",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -930,11 +991,21 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_validatorSetContract",
+        "name": "_miningAddress",
         "type": "address"
-      },
+      }
+    ],
+    "name": "addPoolNative",
+    "outputs": [],
+    "payable": true,
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
       {
-        "name": "_erc20TokenContract",
+        "name": "_validatorSetContract",
         "type": "address"
       },
       {
@@ -954,8 +1025,16 @@
         "type": "uint256"
       },
       {
+        "name": "_stakingEpochStartBlock",
+        "type": "uint256"
+      },
+      {
         "name": "_stakeWithdrawDisallowPeriod",
         "type": "uint256"
+      },
+      {
+        "name": "_erc20Restricted",
+        "type": "bool"
       }
     ],
     "name": "initialize",
