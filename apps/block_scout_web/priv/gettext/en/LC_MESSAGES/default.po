@@ -124,7 +124,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:3
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:15
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:17
 msgid "Balance"
 msgstr ""
 
@@ -1215,6 +1215,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/chain/show.html.eex:91
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:19
+#: lib/block_scout_web/templates/pools/_table.html.eex:22
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:20
@@ -1554,6 +1555,8 @@ msgstr ""
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:11
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:20
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move_selected.html.eex:23
 #: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:13
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:13
 msgid "Amount"
@@ -1562,8 +1565,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_empty_content.html.eex:14
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:5
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:20
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:10
 msgid "Become Candidate"
 msgstr ""
 
@@ -1573,7 +1574,7 @@ msgid "Block number"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:26
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:30
 msgid "Delegators"
 msgstr ""
 
@@ -1599,12 +1600,12 @@ msgid "Order Withdrawal"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:14
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:18
 msgid "Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:11
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:14
 msgid "Remove My Pool"
 msgstr ""
 
@@ -1614,12 +1615,12 @@ msgid "Stake"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:21
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:22
 msgid "Stake More"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:23
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:25
 msgid "Staked"
 msgstr ""
 
@@ -1629,7 +1630,7 @@ msgid "Stakes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:20
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:24
 msgid "Stakes Ratio"
 msgstr ""
 
@@ -1805,6 +1806,36 @@ msgid "New Smart Contract Verification"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:31
+msgid "Choose Pool"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:8
+msgid "Claim Ordered Withdraw"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:16
+msgid "Claim the Amount"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:15
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:39
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move_selected.html.eex:16
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move_selected.html.eex:43
+msgid "Move Stake"
+msgstr ""
+
+#, elixir-format, fuzzy
 #: lib/block_scout_web/templates/transaction/overview.html.eex:178
 msgid " Token Transfer"
+msgstr ""
+
+#, elixir-format, fuzzy
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:20
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:11
+msgid "Become a Candidate"
 msgstr ""
