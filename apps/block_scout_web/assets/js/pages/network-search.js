@@ -1,15 +1,15 @@
 import $ from 'jquery'
 
-var networkSearchInput = $('.network-selector-search-input'),
-  networkSearchInputVal = ''
+var networkSearchInput = $('.network-selector-search-input')
+var networkSearchInputVal = ""
 
 $(networkSearchInput).on('input', function () {
   networkSearchInputVal = $(this).val()
 
   $.expr[':'].Contains = $.expr.createPseudo(function (arg) {
-      return function (elem) {
-          return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0
-      }
+    return function (elem) {
+      return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0
+    }
   })
 
   if (networkSearchInputVal === '') {
