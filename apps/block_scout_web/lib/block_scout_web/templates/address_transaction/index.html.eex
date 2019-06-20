@@ -6,7 +6,6 @@
     <div class="card">
       <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div class="card-body" data-async-listing="<%= @current_path %>">
-        <a type="button" href=<%= address_transaction_path(@conn, :transactions_csv, %{"address_id" => to_string(@address.hash)}) %>><%= gettext("Download all transactions as csv") %></a>
         <div data-selector="channel-disconnected-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
@@ -51,8 +50,10 @@
             </div>
           </div>
         </div>
-
-        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+        <div class="transaction-top-panel">
+          <a class="download-csv" href=<%= address_transaction_path(@conn, :transactions_csv, %{"address_id" => to_string(@address.hash)}) %>><%= gettext("Download All Transactions as CSV") %></a>
+          <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+        </div>
 
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
@@ -65,8 +66,11 @@
         </div>
 
         <div data-items></div>
-
-        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+  
+        <div class="transaction-bottom-panel">
+          <a class="download-csv" href=<%= address_transaction_path(@conn, :transactions_csv, %{"address_id" => to_string(@address.hash)}) %>><%= gettext("Download All Transactions as CSV") %></a>
+          <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+        </div>
 
       </div>
     </div>
