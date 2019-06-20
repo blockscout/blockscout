@@ -4048,6 +4048,18 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "staking_pools_with_staker/3" do
+    test "active pools with staker" do
+      inserted_pool = insert(:staking_pool, is_active: true)
+      inserted_delegator = insert(:staking_pools_delegator, pool_address_hash: inserted_pool.staking_address_hash)
+
+      options = %PagingOptions{page_size: 20, page_number: 1}
+
+      assert [{_pool, _delegator}] =
+               Chain.staking_pools_with_staker(:active, inserted_delegator.delegator_address_hash, options)
+    end
+  end
+
   describe "staking_pools/3" do
     test "validators staking pools" do
       inserted_validator = insert(:staking_pool, is_active: true, is_validator: true)
@@ -4100,6 +4112,68 @@ defmodule Explorer.ChainTest do
       insert(:staking_pool, is_active: false)
 
       assert Chain.staking_pools_count(:inactive) == 1
+    end
+  end
+
+  describe "staking_pool/1" do
+    test "get pool" do
+      inserted_pool = insert(:staking_pool, is_active: true)
+
+      assert pool = Chain.staking_pool(inserted_pool.staking_address_hash)
+      assert pool.staking_address_hash == inserted_pool.staking_address_hash
+    end
+
+    test "not found pool" do
+      pool = params_for(:staking_pool)
+      assert nil == Chain.staking_pool(pool.staking_address_hash)
+    end
+  end
+
+  describe "staking_delegator/2" do
+    test "get staking delegator" do
+      inserted_pool = insert(:staking_pool, is_active: true)
+      inserted_delegator = insert(:staking_pools_delegator, pool_address_hash: inserted_pool.staking_address_hash)
+
+      assert delegator =
+               Chain.staking_delegator(inserted_delegator.delegator_address_hash, inserted_pool.staking_address_hash)
+
+      assert delegator.delegator_address_hash == inserted_delegator.delegator_address_hash
+    end
+
+    test "not found delegator" do
+      pool = params_for(:staking_pool)
+      assert nil == Chain.staking_delegator(pool.staking_address_hash, pool.mining_address_hash)
+    end
+  end
+
+  describe "delegator_info/1" do
+    test "get delegator" do
+      inserted_address = insert(:address)
+      inserted_pool1 = insert(:staking_pool, is_active: true)
+      inserted_pool2 = insert(:staking_pool, is_active: true)
+
+      inserted_delegator =
+        insert(:staking_pools_delegator,
+          pool_address_hash: inserted_pool1.staking_address_hash,
+          delegator_address_hash: inserted_address.hash,
+          stake_amount: 2,
+          is_active: true
+        )
+
+      insert(:staking_pools_delegator,
+        pool_address_hash: inserted_pool2.staking_address_hash,
+        delegator_address_hash: inserted_address.hash,
+        stake_amount: 2,
+        is_active: true
+      )
+
+      assert delegator = Chain.delegator_info(inserted_address.hash)
+      assert [_, _, false] = delegator
+    end
+
+    test "not found delegator" do
+      pool = params_for(:staking_pool)
+      assert nil == Chain.delegator_info(pool.staking_address_hash)
     end
   end
 end
