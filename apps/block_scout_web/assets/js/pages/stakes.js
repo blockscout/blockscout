@@ -9,35 +9,43 @@ export const initialState = {
 export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'WEB3_DETECTED': {
-      const $el = $('[data-page="stakes"]')
-      const validatorsContract = new action.web3.eth.Contract($el.data('validators-abi'), $el.data('validators-address'))
-      const stakingContract = new action.web3.eth.Contract($el.data('staking-abi'), $el.data('staking-address'))
-      return Object.assign({}, state, {
-        web3: action.web3,
-        validatorsContract: validatorsContract,
-        stakingContract: stakingContract
-      })
+      $.getJSON("/staking_contract")
+        .done(response => {
+          store.dispatch({
+            type: "UPDATE_CONTRACT",
+            abi: response.abi,
+            address: response.address
+          })
+        })
+
+      return Object.assign({}, state, { web3: action.web3 })
     }
     case 'AUTHORIZED': {
-      var sessionUserAddress = $('[data-page="stakes"]').data('user-address') || null
-      console.log(state.account, action.account)
-      if ((state.account !== action.account)) {
-        $.getJSON(state.accountPath, {command: 'set_session', address: action.account})
+      const a = state.account || null
+      if ((a !== action.account)) {
+        $.getJSON("/set_session", {address: action.account})
           .done(response => {
-            if (response.reload === true) {
-              store.dispatch({ type: "UPDATE_TOP" })
+            if (response.success === true) {
+              store.dispatch({ type: "GET_USER" })
             }
           })
       }
       return Object.assign({}, state, { account: action.account })
     }
-    case 'UPDATE_TOP': {
-      $.getJSON(state.accountPath, {template: 'stakes_top'})
+    case 'UPDATE_CONTRACT': {
+      const stakingContract = new state.web3.eth.Contract(action.abi, action.address)
+      return Object.assign({}, state, { stakingContract: stakingContract })
+    }
+    case 'GET_USER': {
+      $.getJSON('/delegator', {address: state.account})
         .done(response => {
-          $('[data-selector="stakes-top"]').html(response.content)
+          store.dispatch({ type: "UPDATE_USER", user: response.delegator })
         })
 
       return state
+    }
+    case 'UPDATE_USER': {
+      return Object.assign({}, state, { user: action.user })
     }
     default:
       return state
@@ -53,18 +61,7 @@ const elements = {
       if (oldState.web3 === state.web3) return
       if (state.web3) {
         $el[0].removeEventListener('click', redirectToMetamask)
-        $el[0].addEventListener('click', async () => {
-          try {
-            await window.ethereum.enable()
-            const accounts = await state.web3.eth.getAccounts()
-
-            const defaultAccount = accounts[0] || null
-            store.dispatch({ type: 'AUTHORIZED', account: defaultAccount })
-          } catch (e) {
-            console.log(e)
-            console.error('User denied account access')
-          }
-        })
+        $el[0].addEventListener('click', loginByMetamask)
       }
     }
   },
@@ -75,11 +72,21 @@ const elements = {
       }
     }
   },
-  '[data-page="stakes"]': {
-    load ($el) {
-      return {
-        account: $el.data('user-address') || null
-      }
+  '[data-selector="stakes-top"]': {
+    render ($el, state, oldState) {
+      if (state.user === oldState.user) return
+      $.getJSON(state.accountPath, {type: 'JSON', template: 'top'})
+        .done(response => {
+          $el.html(response.content)
+          $('.js-become-candidate').on('click', window.openBecomeCandidateModal)
+          $('.js-remove-pool').on('click', window.openRemovePoolModal)
+          if (!state.user && state.web3) {
+            $('[data-selector="login-button"]').on('click', loginByMetamask)
+          } 
+          if (!state.web3) {
+            $('[data-selector="login-button"]').on('click', redirectToMetamask)
+          }
+        })
     }
   }
 }
@@ -108,10 +115,28 @@ function getWeb3 () {
         })
     }, 100)
     store.dispatch({ type: 'WEB3_DETECTED', web3: web3 })
+    
+    const sessionAcc = $('[data-page="stakes"]').data('user-address')
+    if (sessionAcc) {
+      store.dispatch({ type: 'AUTHORIZED', account: sessionAcc })
+    }
   }
 }
 
 function redirectToMetamask () {
   var win = window.open('https://metamask.io', '_blank')
   win.focus()
+}
+
+async function loginByMetamask () {
+  try {
+    await window.ethereum.enable()
+    const accounts = await store.getState().web3.eth.getAccounts()
+
+    const defaultAccount = accounts[0] || null
+    store.dispatch({ type: 'AUTHORIZED', account: defaultAccount })
+  } catch (e) {
+    console.log(e)
+    console.error('User denied account access')
+  }
 }

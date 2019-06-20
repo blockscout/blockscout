@@ -2,136 +2,52 @@ import $ from 'jquery'
 import Chart from 'chart.js'
 import {store} from '../pages/stakes.js'
 
-$(function () {
-  $('.js-become-candidate').on('click', function () {
-    const el = '#becomeCandidateModal'
-    if ($(el).length) {
-      $(`${el} form`).unbind('submit')
-      $(`${el} form`).submit(() => {
-        becomeCandidate(el)
-        return false
-      })
-      $(el).modal()
-    } else {
-      const modal = '#warningStatusModal'
-      $(`${modal} .modal-status-title`).text('Unauthorized')
-      $(`${modal} .modal-status-text`).text('Please login with MetaMask')
-      $(modal).modal()
-    }
-  })
-
-  $('.js-remove-pool').on('click', function () {
-    const modal = '#questionStatusModal'
-    $(`${modal} .btn-line.accept`).unbind('click')
-    $(`${modal} .btn-line.accept`).click(() => {
-      const contract = store.getState().stakingContract
-      const account = store.getState().account
-      contract.methods.removeMyPool().send({
-        from: account,
-        gas: 400000,
-        gasPrice: 1000000000
-      })
+window.openBecomeCandidateModal = function () {
+  const el = '#becomeCandidateModal'
+  if ($(el).length) {
+    $(`${el} form`).unbind('submit')
+    $(`${el} form`).submit(() => {
+      becomeCandidate(el)
+      return false
     })
-    $(`${modal} .btn-line.except`).unbind('click')
-    $(`${modal} .btn-line.except`).click(() => {
-      $(modal).modal('hide')
-    })
+    $(el).modal()
+  } else {
+    const modal = '#warningStatusModal'
+    $(`${modal} .modal-status-title`).text('Unauthorized')
+    $(`${modal} .modal-status-text`).text('Please login with MetaMask')
     $(modal).modal()
+  }
+}
+
+window.openRemovePoolModal = function () {
+  const modal = '#questionStatusModal'
+  $(`${modal} .btn-line.accept`).unbind('click')
+  $(`${modal} .btn-line.accept`).click(() => {
+    const contract = store.getState().stakingContract
+    const account = store.getState().account
+    contract.methods.removeMyPool().send({
+      from: account,
+      gas: 400000,
+      gasPrice: 1000000000
+    })
   })
-})
+  $(`${modal} .btn-line.except`).unbind('click')
+  $(`${modal} .btn-line.except`).click(() => {
+    $(modal).modal('hide')
+  })
+  $(modal).modal()
+}
 
 window.openValidatorInfoModal = function (id) {
-  const el = $('#stakesModalWindows')
-  const path = el.attr('current_path')
-
-  $.getJSON(path, {modal_window: 'info', pool_hash: id})
-    .done(function (response) {
-      el.html(response.window)
-      $('#validatorInfoModal').modal()
-    })
+  return
 }
 
 window.openStakeModal = function (id) {
-  const el = $('#stakesModalWindows')
-  const path = el.attr('current_path')
-  $('.modal').modal('hide')
-  $('.modal-backdrop').remove()
-
-  $.getJSON(path, {modal_window: 'make_stake', pool_hash: id})
-    .done(function (response) {
-      el.html(response.window)
-
-      const modal = '#stakeModal'
-      const progress = parseInt($(`${modal} .js-stakes-progress-data-progress`).text())
-      const total = parseInt($(`${modal} .js-stakes-progress-data-total`).text())
-
-      $(`${modal} form`).unbind('submit')
-      $(`${modal} form`).submit(() => {
-        const stake = $(`${modal} [name="amount"]`).val()
-        const poolAddress = $(`${modal} [name="pool_address"]`).val()
-        const contract = store.getState().stakingContract
-        const account = store.getState().account
-        contract.methods.stake(poolAddress, stake * Math.pow(10, 18)).send({
-          from: account,
-          gas: 400000,
-          gasPrice: 1000000000
-        })
-        $(modal).modal('hide')
-        return false
-      })
-      $(modal).modal()
-
-      setupStakesProgress(progress, total, $(`${modal} .js-stakes-progress`))
-    })
+  return
 }
 
 window.openWithdrawModal = function (id) {
-  const el = $('#stakesModalWindows')
-  const path = el.attr('current_path')
-  $('.modal').modal('hide')
-  $('.modal-backdrop').remove()
-
-  $.getJSON(path, {modal_window: 'withdraw', pool_hash: id})
-    .done(function (response) {
-      el.html(response.window)
-
-      const modal = '#withdrawModal'
-      const progress = parseInt($(`${modal} .js-stakes-progress-data-progress`).text())
-      const total = parseInt($(`${modal} .js-stakes-progress-data-total`).text())
-
-      $(`${modal} form`).unbind('submit')
-      $(`${modal} form`).submit(() => { return false })
-
-      $(`${modal} .withdraw`).click(() => {
-        const stake = $(`${modal} [name="amount"]`).val()
-        const poolAddress = $(`${modal} [name="pool_address"]`).val()
-        const contract = store.getState().stakingContract
-        const account = store.getState().account
-        contract.methods.withdraw(poolAddress, stake * Math.pow(10, 18)).send({
-          from: account,
-          gas: 400000,
-          gasPrice: 1000000000
-        })
-        $(modal).modal('hide')
-      })
-
-      $(`${modal} .order_withdraw`).click(() => {
-        const stake = $(`${modal} [name="amount"]`).val()
-        const poolAddress = $(`${modal} [name="pool_address"]`).val()
-        const contract = store.getState().stakingContract
-        const account = store.getState().account
-        contract.methods.orderWithdraw(poolAddress, stake * Math.pow(10, 18)).send({
-          from: account,
-          gas: 400000,
-          gasPrice: 1000000000
-        })
-        $(modal).modal('hide')
-      })
-
-      $(modal).modal()
-
-      setupStakesProgress(progress, total, $(`${modal} .js-stakes-progress`))
-    })
+  return
 }
 
 window.openQuestionModal = function (id) {
@@ -144,93 +60,15 @@ window.openQuestionModal = function (id) {
 }
 
 window.openClaimModal = function (id) {
-  const el = $('#stakesModalWindows')
-  const path = el.attr('current_path')
-  $('.modal').modal('hide')
-  $('.modal-backdrop').remove()
-
-  $.getJSON(path, {modal_window: 'claim', pool_hash: id})
-    .done(function (response) {
-      el.html(response.window)
-
-      const modal = '#claimModal'
-      const progress = parseInt($(`${modal} .js-stakes-progress-data-progress`).text())
-      const total = parseInt($(`${modal} .js-stakes-progress-data-total`).text())
-
-      $(`${modal} form`).unbind('submit')
-      $(`${modal} form`).submit(() => {
-        const poolAddress = $(`${modal} [name="pool_address"]`).val()
-        const contract = store.getState().stakingContract
-        const account = store.getState().account
-        contract.methods.claimOrderedWithdraw(poolAddress).send({
-          from: account,
-          gas: 400000,
-          gasPrice: 1000000000
-        })
-        $(modal).modal('hide')
-        return false
-      })
-      $(modal).modal()
-
-      setupStakesProgress(progress, total, $(`${modal} .js-stakes-progress`))
-    })
+  return
 }
 
 window.openMoveStakeModal = function (id) {
-  const el = $('#stakesModalWindows')
-  const path = el.attr('current_path')
-
-  $.getJSON(path, {modal_window: 'move_stake', pool_hash: id})
-    .done(function (response) {
-      el.html(response.window)
-
-      const modal = '#moveStakeModal'
-      const progress = parseInt($(`${modal} .js-stakes-progress-data-progress`).text())
-      const total = parseInt($(`${modal} .js-stakes-progress-data-total`).text())
-
-      $(modal).modal()
-
-      setupStakesProgress(progress, total, $(`${modal} .js-stakes-progress`))
-    })
+  return
 }
 
 window.selectedStakeMovePool = function (fromHash, toHash) {
-  const el = $('#stakesModalWindows')
-  const path = el.attr('current_path')
-  $('.modal').modal('hide')
-  $('.modal-backdrop').remove()
-
-  $.getJSON(path, {modal_window: 'move_selected', pool_hash: fromHash, pool_to: toHash})
-    .done(function (response) {
-      el.html(response.window)
-
-      const modal = '#moveStakeModalSelected'
-      var progressFrom = parseInt($(`${modal} .js-stakes-progress-data-progress.js-pool-from-progress`).text())
-      var totalFrom = parseInt($(`${modal} .js-stakes-progress-data-total.js-pool-from-progress`).text())
-
-      var progressTo = parseInt($(`${modal} .js-stakes-progress-data-progress.js-pool-to-progress`).text())
-      var totalTo = parseInt($(`${modal} .js-stakes-progress-data-total.js-pool-to-progress`).text())
-
-      $(`${modal} form`).unbind('submit')
-      $(`${modal} form`).submit(() => {
-        const poolFrom = $(`${modal} [name="pool_from"]`).val()
-        const poolTo = $(`${modal} [name="pool_to"]`).val()
-        const stake = $(`${modal} [name="amount"]`).val()
-        const contract = store.getState().stakingContract
-        const account = store.getState().account
-        contract.methods.moveStake(poolFrom, poolTo, stake * Math.pow(10, 18)).send({
-          from: account,
-          gas: 400000,
-          gasPrice: 1000000000
-        })
-        $(modal).modal('hide')
-        return false
-      })
-      $(modal).modal()
-
-      setupStakesProgress(progressFrom, totalFrom, $(`${modal} .js-pool-from-progress`))
-      setupStakesProgress(progressTo, totalTo, $(`${modal} .js-pool-to-progress`))
-    })
+  return
 }
 
 function setupStakesProgress (progress, total, progressElement) {
@@ -271,7 +109,6 @@ function setupStakesProgress (progress, total, progressElement) {
   })
 }
 
-
 function lockModal (el) {
   var $submitButton = $(`${el} .btn-add-full`)
   $(`${el} .close-modal`).attr('disabled', true)
@@ -291,6 +128,18 @@ function unlockAndHideModal (el) {
   $submitButton.attr('disabled', false)
 }
 
+function openErrorModal (title, text) {
+  $(`#errorStatusModal .modal-status-title`).text(title)
+  $(`#errorStatusModal .modal-status-text`).text(text)
+  $('#errorStatusModal').modal('show')
+}
+
+function openSuccessModal (title, text) {
+  $(`#successStatusModal .modal-status-title`).text(title)
+  $(`#successStatusModal .modal-status-text`).text(text)
+  $('#successStatusModal').modal('show')
+}
+
 async function becomeCandidate (el) {
   const web3 = store.getState().web3
   var $submitButton = $(`${el} .btn-add-full`)
@@ -306,18 +155,14 @@ async function becomeCandidate (el) {
     var min = $(el).data('min-stake')
     unlockAndHideModal(el)
     $submitButton.html(buttonText)
-    $(`#errorStatusModal .modal-status-title`).text('Error')
-    $(`#errorStatusModal .modal-status-text`).text(`You cannot stake less than ${min} POA20`)
-    $('#errorStatusModal').modal('show')
+    openErrorModal('Error', `You cannot stake less than ${min} POA20`)
     return false
   }
 
   if (account === address || !web3.utils.isAddress(address)) {
     unlockAndHideModal(el)
     $submitButton.html(buttonText)
-    $(`#errorStatusModal .modal-status-title`).text('Error')
-    $(`#errorStatusModal .modal-status-text`).text('Invalid Mining Address')
-    $('#errorStatusModal').modal('show')
+    openErrorModal('Error', 'Invalid Mining Address')
     return false
   }
 
@@ -345,17 +190,13 @@ async function becomeCandidate (el) {
       )
       var isSnapshotting = await blockContract.methods.isSnapshotting().call()
       if (isSnapshotting) {
-        $(`#errorStatusModal .modal-status-title`).text('Error')
-        $(`#errorStatusModal .modal-status-text`).text('Stakes are not allowed at the moment. Please try again in a few blocks')
-        $('#errorStatusModal').modal('show')
+        openErrorModal('Error', 'Stakes are not allowed at the moment. Please try again in a few blocks')
       } else {
         const epochEndSec = $('[data-page="stakes"]').data('epoch-end-sec')
         const hours = Math.trunc(epochEndSec / 3600)
         const minutes = Math.trunc((epochEndSec % 3600) / 60)
 
-        $(`#errorStatusModal .modal-status-title`).text('Error')
-        $(`#errorStatusModal .modal-status-text`).text(`Since the current staking epoch is finishing now, you will be able to place a stake during the next staking epoch. Please try again in ${hours} hours ${minutes} minutes`)
-        $('#errorStatusModal').modal('show')
+        openErrorModal('Error', `Since the current staking epoch is finishing now, you will be able to place a stake during the next staking epoch. Please try again in ${hours} hours ${minutes} minutes`)
       }
     } else {
       contract.methods.addPool(stake * Math.pow(10, 18), address).send({
@@ -366,25 +207,20 @@ async function becomeCandidate (el) {
       .on('receipt', _receipt => {
         unlockAndHideModal(el)
         $submitButton.html(buttonText)
-        $(`#successStatusModal .modal-status-title`).text('Success')
-        $(`#successStatusModal .modal-status-text`).text('The transaction is created')
-        $('#successStatusModal').modal('show')
+        store.dispatch({ type: 'GET_USER' })
+        openSuccessModal('Success', 'The transaction is created')
       })
       .catch(_err => {
         unlockAndHideModal(el)
         $submitButton.html(buttonText)
-        $(`#errorStatusModal .modal-status-title`).text('Error')
-        $(`#errorStatusModal .modal-status-text`).text('Something is wrong')
-        $('#errorStatusModal').modal('show')
+        openErrorModal('Error', 'Something is wrong')
       })
     }
   } catch (err) {
     console.log(err)
     unlockAndHideModal(el)
     $submitButton.html(buttonText)
-    $(`#errorStatusModal .modal-status-title`).text('Error')
-    $(`#errorStatusModal .modal-status-text`).text('Something is wrong')
-    $('#errorStatusModal').modal('show')
+    openErrorModal('Error', 'Something is wrong')
   }
   
   return false

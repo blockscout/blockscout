@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.PoolsController do
   alias Explorer.Chain
   alias Explorer.Chain.{BlockNumberCache, Wei}
   alias Explorer.Counters.AverageBlockTime
-  alias BlockScoutWeb.{CommonComponentsView, PoolsView, StakesView}
+  alias BlockScoutWeb.{PoolsView, StakesView}
   alias Explorer.Staking.{EpochCounter, PoolsReader}
   alias Phoenix.View
 
@@ -24,31 +24,79 @@ defmodule BlockScoutWeb.PoolsController do
     render_template(:inactive, conn, params)
   end
 
-  defp render_template(_, conn, %{"modal_window" => window_name, "pool_hash" => pool_hash} = params) do
-    window =
-      pool_hash
-      |> Chain.staking_pool()
-      |> render_modal(window_name, params, conn)
+  def set_session(conn, %{"address" => address}) do
+    case Chain.string_to_address_hash(address) do
+      {:ok, _address} ->
+        conn
+        |> put_session(:address_hash, address)
+        |> json(%{success: true})
 
-    json(conn, %{window: window})
+      _ ->
+        conn
+        |> delete_session(:address_hash)
+        |> json(%{success: true})
+    end
   end
 
-  defp render_template(_, conn, %{"command" => "set_session", "address" => address}) do
-    if get_session(conn, :address_hash) == address do
-      json(conn, %{reload: false})
-    else
-      case Chain.string_to_address_hash(address) do
-        {:ok, _address} ->
-          conn
-          |> put_session(:address_hash, address)
-          |> json(%{reload: true})
+  def pool(conn, %{"pool_hash" => pool_hash}) do
+    case Chain.staking_pool(pool_hash) do
+      nil ->
+        conn
+        |> put_status(404)
+        |> json(%{success: false})
 
-        _ ->
-          conn
-          |> delete_session(:address_hash)
-          |> json(%{reload: true})
-      end
+      pool ->
+        user_address = get_session(conn, :address_hash)
+        if user_address do
+          relation = Chain.staking_delegator(user_address, pool.staking_address_hash)
+          json(conn, %{pool: pool, relation: relation})
+        end
+        json(conn, %{pool: pool})
     end
+  end
+
+  def delegator(conn, %{"address" => address}) do
+    with {:ok, hash} <- Chain.string_to_address_hash(address),
+      delegator when is_map(delegator) <- delegator_info(hash)
+    do
+      json(conn, %{delegator: delegator})
+    else
+      _ ->
+        json(conn, %{delegator: nil})
+    end
+  end
+
+  def staking_contract(conn, _) do
+    staking_address = PoolsReader.get_staking_address()
+    staking_abi = PoolsReader.get_staking_abi()
+
+    json(conn, %{abi: staking_abi, address: staking_address})
+  end
+
+  defp render_template(_, conn, %{"type" => "JSON", "template" => "top"}) do
+    epoch_number = EpochCounter.epoch_number() || 0
+    epoch_end_block = EpochCounter.epoch_end_block() || 0
+    block_number = BlockNumberCache.max_number()
+    stakes_setting = Application.get_env(:block_scout_web, :stakes)
+    user = conn |> get_session(:address_hash) |> delegator_info()
+
+    options = [
+      epoch_number: epoch_number,
+      epoch_end_in: epoch_end_block - block_number,
+      block_number: block_number,
+      user: user,
+      logged_in: user != nil,
+      min_candidate_stake: stakes_setting[:min_candidate_stake]
+    ]
+
+    content =
+      View.render_to_string(
+        StakesView,
+        "_stakes_top.html",
+        options
+      )
+
+    json(conn, %{content: content})
   end
 
   defp render_template(filter, conn, %{"type" => "JSON"} = params) do
@@ -114,54 +162,20 @@ defmodule BlockScoutWeb.PoolsController do
     )
   end
 
-  defp render_template(filter, conn, %{"template" => "stakes_top"}) do
-    epoch_number = EpochCounter.epoch_number() || 0
-    epoch_end_block = EpochCounter.epoch_end_block() || 0
-    block_number = BlockNumberCache.max_number()
-    user = gelegator_info(conn)
-    stakes_setting = Application.get_env(:block_scout_web, :stakes)
-    staking_address = PoolsReader.get_staking_address()
-    staking_abi = PoolsReader.get_staking_abi()
-    validators_address = PoolsReader.get_validators_address()
-    validators_abi = PoolsReader.get_validators_abi()
-    average_block_time = AverageBlockTime.average_block_time()
-
-    options = [
-      pools_type: filter,
-      epoch_number: epoch_number,
-      epoch_end_in: epoch_end_block - block_number,
-      block_number: block_number,
-      current_path: current_path(conn),
-      user: user,
-      logged_in: user != nil,
-      min_candidate_stake: stakes_setting[:min_candidate_stake],
-      staking_address: staking_address,
-      staking_abi: Poison.encode!(staking_abi),
-      validators_address: validators_address,
-      validators_abi: Poison.encode!(validators_abi),
-      average_block_time: average_block_time
-    ]
-
-    content = View.render_to_string(
-      StakesView,
-      "_stakes_top.html",
-      options
-    )
-
-    json(conn, %{content: content})
-  end
-
   defp render_template(filter, conn, _) do
     epoch_number = EpochCounter.epoch_number() || 0
     epoch_end_block = EpochCounter.epoch_end_block() || 0
     block_number = BlockNumberCache.max_number()
-    user = gelegator_info(conn)
     stakes_setting = Application.get_env(:block_scout_web, :stakes)
     staking_address = PoolsReader.get_staking_address()
     staking_abi = PoolsReader.get_staking_abi()
     validators_address = PoolsReader.get_validators_address()
     validators_abi = PoolsReader.get_validators_abi()
     average_block_time = AverageBlockTime.average_block_time()
+    user =
+      conn
+      |> get_session(:address_hash)
+      |> delegator_info()
 
     options = [
       pools_type: filter,
@@ -182,37 +196,35 @@ defmodule BlockScoutWeb.PoolsController do
     render(conn, "index.html", options)
   end
 
-  defp gelegator_info(conn) do
-    address = get_session(conn, :address_hash)
+  defp delegator_info(address) when not is_nil(address) do
+    case Chain.delegator_info(address) do
+      [staked, self_staked, has_pool] ->
+        {:ok, staked_wei} = Wei.cast(staked || 0)
+        {:ok, self_staked_wei} = Wei.cast(self_staked || 0)
 
-    if address do
-      case Chain.delegator_info(address) do
-        [staked, self_staked, has_pool] ->
-          {:ok, staked_wei} = Wei.cast(staked || 0)
-          {:ok, self_staked_wei} = Wei.cast(self_staked || 0)
+        staked_sum = Wei.sum(staked_wei, self_staked_wei)
+        stakes_token_name = System.get_env("STAKES_TOKEN_NAME") || "POSDAO"
 
-          staked_sum = Wei.sum(staked_wei, self_staked_wei)
-          stakes_token_name = System.get_env("STAKES_TOKEN_NAME") || "POSDAO"
+        %{
+          address: address,
+          balance: get_token_balance(address, stakes_token_name),
+          staked: staked_sum,
+          has_pool: has_pool
+        }
 
-          %{
-            address: address,
-            balance: get_token_balance(address, stakes_token_name),
-            staked: staked_sum,
-            has_pool: has_pool
-          }
+      _ ->
+        {:ok, zero_wei} = Wei.cast(0)
 
-        _ ->
-          {:ok, zero_wei} = Wei.cast(0)
-
-          %{
-            address: address,
-            balance: zero_wei,
-            staked: zero_wei,
-            has_pool: false
-          }
-      end
+        %{
+          address: address,
+          balance: zero_wei,
+          staked: zero_wei,
+          has_pool: false
+        }
     end
   end
+
+  defp delegator_info(_), do: nil
 
   defp get_token_balance(address, token_name) do
     {:ok, balance} =
@@ -265,151 +277,4 @@ defmodule BlockScoutWeb.PoolsController do
     inactive_pools_path(conn, :inactive_pools, params)
   end
 
-  defp render_modal(pool, "info", _params, _conn) do
-    average_block_time = AverageBlockTime.average_block_time()
-
-    View.render_to_string(
-      StakesView,
-      "_stakes_modal_validator_info.html",
-      validator: pool,
-      average_block_time: average_block_time
-    )
-  end
-
-  defp render_modal(pool, "make_stake", _params, conn) do
-    delegator = gelegator_info(conn)
-    stakes_setting = Application.get_env(:block_scout_web, :stakes)
-
-    if delegator do
-      View.render_to_string(
-        StakesView,
-        "_stakes_modal_stake.html",
-        pool: pool,
-        balance: delegator[:balance],
-        min_stake: stakes_setting[:min_delegator_stake]
-      )
-    else
-      View.render_to_string(
-        CommonComponentsView,
-        "_modal_status.html",
-        status: "error",
-        title: "Unauthorized"
-      )
-    end
-  end
-
-  defp render_modal(pool, "withdraw", _params, conn) do
-    with address when is_binary(address) <- get_session(conn, :address_hash),
-         delegator when is_map(delegator) <- Chain.staking_delegator(address, pool.staking_address_hash) do
-      View.render_to_string(
-        StakesView,
-        "_stakes_modal_withdraw.html",
-        pool: pool,
-        accesses: get_accesses(delegator),
-        staked: delegator.stake_amount
-      )
-    else
-      _ ->
-        View.render_to_string(
-          CommonComponentsView,
-          "_modal_status.html",
-          status: "error",
-          title: "Unauthorized"
-        )
-    end
-  end
-
-  defp render_modal(pool, "claim", _params, conn) do
-    with address when is_binary(address) <- get_session(conn, :address_hash),
-         delegator when is_map(delegator) <- Chain.staking_delegator(address, pool.staking_address_hash) do
-      View.render_to_string(
-        StakesView,
-        "_stakes_modal_claim.html",
-        pool: pool,
-        ordered_amount: delegator.ordered_withdraw
-      )
-    else
-      _ ->
-        View.render_to_string(
-          CommonComponentsView,
-          "_modal_status.html",
-          status: "error",
-          title: "Unauthorized"
-        )
-    end
-  end
-
-  defp render_modal(%{staking_address_hash: pool_address} = pool, "move_stake", _params, conn) do
-    with address when is_binary(address) <- get_session(conn, :address_hash),
-         delegator when is_map(delegator) <- Chain.staking_delegator(address, pool_address) do
-      pools =
-        :active
-        |> Chain.staking_pools()
-        |> Enum.filter(&(&1.staking_address_hash != pool_address))
-        |> Enum.map(fn %{staking_address_hash: hash} ->
-          string_hash = to_string(hash)
-
-          [
-            key: binary_part(string_hash, 0, 13),
-            value: string_hash
-          ]
-        end)
-
-      View.render_to_string(
-        StakesView,
-        "_stakes_modal_move.html",
-        pool: pool,
-        pools: pools,
-        staked: delegator.stake_amount
-      )
-    else
-      _ ->
-        View.render_to_string(
-          CommonComponentsView,
-          "_modal_status.html",
-          status: "error",
-          title: "Unauthorized"
-        )
-    end
-  end
-
-  defp render_modal(%{staking_address_hash: pool_address} = pool, "move_selected", params, conn) do
-    with address when is_binary(address) <- get_session(conn, :address_hash),
-         delegator when is_map(delegator) <- Chain.staking_delegator(address, pool_address) do
-      pools =
-        :active
-        |> Chain.staking_pools()
-        |> Enum.filter(&(&1.staking_address_hash != pool_address))
-        |> Enum.map(fn %{staking_address_hash: hash} ->
-          string_hash = to_string(hash)
-
-          [
-            key: binary_part(string_hash, 0, 13),
-            value: string_hash
-          ]
-        end)
-
-      pool_to =
-        params
-        |> Map.get("pool_to")
-        |> Chain.staking_pool()
-
-      View.render_to_string(
-        StakesView,
-        "_stakes_modal_move_selected.html",
-        pool_from: pool,
-        pool_to: pool_to,
-        pools: pools,
-        staked: delegator.stake_amount
-      )
-    else
-      _ ->
-        View.render_to_string(
-          CommonComponentsView,
-          "_modal_status.html",
-          status: "error",
-          title: "Unauthorized"
-        )
-    end
-  end
 end
