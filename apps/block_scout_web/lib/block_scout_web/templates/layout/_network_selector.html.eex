@@ -43,12 +43,9 @@
                         <%= render BlockScoutWeb.LayoutView, "_network_selector_item.html", title: title, url: url, tab_type: "Testnet" %>
                     <% end %>
                 </div>
-                <div class="network-selector-tab-content js-network-selector-tab-content" network-selector-tab="favorites">
+                <div class="network-selector-tab-content js-network-selector-tab-content js-favorites-tab" network-selector-tab="favorites">
                     <div class="network-selector-tab-content-empty">No content.</div>
                 </div>
-            </div>
-            <div class="network-selector-load-more-container">
-                <button class="btn-network-selector-load-more"><%= gettext("Show More Networks") %></button>
             </div>
         </div>
     </div>

@@ -41,7 +41,7 @@ $network-selector-item-icon-dimensions: 30px !default;
   margin-left: auto;
   max-width: 398px;
   min-width: 0;
-  padding: 28px 0 35px;
+  padding-top: 28px;
   position: relative;
   transition: right 0.25s ease-out;
 }
@@ -266,7 +266,6 @@ $network-selector-item-icon-dimensions: 30px !default;
 .network-selector-networks-container {
   flex-grow: 1;
   flex-shrink: 1;
-  margin: 0 0 30px;
   min-height: 100px;
   overflow: auto;
   padding: 0 $network-selector-horizontal-padding;

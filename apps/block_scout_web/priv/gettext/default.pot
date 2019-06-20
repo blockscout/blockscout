@@ -1722,11 +1722,6 @@ msgid "Search network"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:51
-msgid "Show More Networks"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:22
 msgid "Testnet"
 msgstr ""

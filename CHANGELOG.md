@@ -17,6 +17,7 @@
 - [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
 - [#1940](https://github.com/poanetwork/blockscout/pull/1940) - qr modal button and background issue
 - [#1907](https://github.com/poanetwork/blockscout/pull/1907) - dropdown color bug fix (lukso theme) and tooltip color bug fix
+- [#2197](https://github.com/poanetwork/blockscout/pull/2197) - search network input functionality, add to favorites functionality, removed 'Show More Networks' button
 - [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
 - [#1941](https://github.com/poanetwork/blockscout/pull/1941) - feat: add on demand fetching and stale attr to rpc
 - [#1957](https://github.com/poanetwork/blockscout/pull/1957) - Calculate stakes ratio before insert pools
