@@ -2,7 +2,13 @@
   <div class="modal-dialog modal-dialog-centered modal-validator-info" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">0x18Bea833D503341C529a788c82909337e552a44e</h5>
+        <div>
+          <h5 class="modal-title"><%= to_string(@validator.staking_address_hash) %></h5>
+          <div>
+            <span class="modal-validator-info-item-title">Mining address:</span>
+            <span class="modal-validator-info-item-value"><%= to_string(@validator.mining_address_hash) %></span>
+          </div>
+        </div>
       </div>
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-validator-info-content">
@@ -10,19 +16,23 @@
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "Candidate’s Staked Amount",
-          value: "8800"
+          value: format_wei_value(@validator.self_staked_amount, :ether, include_unit_label: false)
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "Delegors Staked Amount",
-          value: "3200"
+          value: format_wei_value(
+            minus_wei(@validator.staked_amount, @validator.self_staked_amount), 
+            :ether, 
+            include_unit_label: false
+          )
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "Stakes Ratio",
-          value: "3.2%"
+          value: "#{@validator.staked_ratio}%"
         %>
         <%=
           render BlockScoutWeb.StakesView,
@@ -34,30 +44,32 @@
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "How Many Times the Address was a Validator",
-          value: "108"
+          value: @validator.was_validator_count
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "How Many Times the Address was Banned",
-          value: "0"
+          value: @validator.was_banned_count
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
-          title: "The Block Number and Approximate Date When the  Address Will be Unbanned"
+          title: "The Block Number and Approximate Date When the  Address Will be Unbanned",
+          value: if @validator.is_banned, do:
+            "Banned until block ##{@validator.banned_until} (#{estimated_unban_day(@validator.banned_until, @average_block_time)})"
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "Likelihood of Becoming a Validator on the Next Epoch",
-          value: "30%"
+          value: "#{@validator.likelihood}%"
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "The Number of Delegators In the Pool",
-          value: "103"
+          value: @validator.delegators_count
         %>
       </div>
     </div>

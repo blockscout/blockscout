@@ -1,25 +1,19 @@
-<div class="modal fade" id="stakeModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="claimModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-stake" role="document">
     <div class="modal-content">
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-stake-two-cols">
         <div>
           <div class="modal-header">
-            <h5 class="modal-title"><%= gettext("Stake") %></h5>
+            <h5 class="modal-title"><%= gettext("Claim Ordered Withdraw") %></h5>
           </div>
           <div class="modal-body">
             <form>
-              <div class="input-group form-group">
-                <input name="amount" class="form-control n-b-r" placeholder='<%= gettext("Amount") %>'>
-                <div class="input-group-prepend last">
-                  <div class="input-group-text">POA20</div>
-                </div>
-              </div>
-              <p class="form-p m-b-0">Minimum Stake: <span class="text-dark"><%= @min_stake %> POA20</span></p>
-              <p class="form-p">Your Balance: <span class="text-dark"><%= format_wei_value(@balance, :ether) %></span></p>
+              <p class="form-p">Your ordered amount</p>
+              <p class="form-p"><span class="text-dark"><%= format_wei_value(@ordered_amount, :ether) %></span></p>
               <input name="pool_address" hidden value=<%= to_string(@pool.staking_address_hash) %>>
               <div class="form-buttons">
-                <%= render BlockScoutWeb.StakesView, "_stakes_btn_stake.html", text: gettext("Stake More"), extra_class: "full-width" %>
+                <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Claim the Amount"), extra_class: "full-width" %>
               </div>
             </form>
           </div>

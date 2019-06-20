@@ -88,17 +88,17 @@
             <%= link(
                   gettext("Validators"),
                   class: "dropdown-item #{tab_status("validators", @conn.request_path)}",
-                  to: validators_path(@conn, :index)
+                  to: validators_path(@conn, :validators)
                 ) %>
             <%= link(
                   gettext("Active Pools"),
                   class: "dropdown-item #{tab_status("active_pools", @conn.request_path)}",
-                  to: active_pools_path(@conn, :index)
+                  to: active_pools_path(@conn, :active_pools)
                 ) %>
             <%= link(
                   gettext("Inactive Pools"),
                   class: "dropdown-item #{tab_status("inactive_pools", @conn.request_path)}",
-                  to: inactive_pools_path(@conn, :index)
+                  to: inactive_pools_path(@conn, :inactive_pools)
                 ) %>
           </div>
         </li>

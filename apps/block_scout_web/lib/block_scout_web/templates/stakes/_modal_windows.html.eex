@@ -1,0 +1,11 @@
+<div id="stakesModalWindows" current_path=<%= @current_path %>></div>
+<%=
+  render BlockScoutWeb.CommonComponentsView,
+  "_modal_status.html",
+  id: "claimQuestion",
+  status: "question",
+  title: "Claim or order",
+  text: "Do you want withdraw or claim ordered withdraw?",
+  positive: "Withdraw",
+  negative: "Claim"
+ %>

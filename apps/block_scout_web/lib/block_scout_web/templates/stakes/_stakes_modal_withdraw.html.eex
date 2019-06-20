@@ -3,23 +3,23 @@
     <div class="modal-content">
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-stake-two-cols">
-        <div class="modal-stake-left">
+        <div>
           <div class="modal-header">
             <h5 class="modal-title"><%= gettext("Withdraw") %></h5>
           </div>
           <div class="modal-body">
             <form>
               <div class="input-group form-group">
-                <input type="text" class="form-control n-b-r" placeholder='<%= gettext("Amount") %>'>
+                <input name="amount" type="text" class="form-control n-b-r" placeholder='<%= gettext("Amount") %>'>
                 <div class="input-group-prepend last">
                   <div class="input-group-text">POA20</div>
                 </div>
+                <input name="pool_address" hidden value=<%= to_string(@pool.staking_address_hash) %>>
               </div>
-              <p class="form-p m-b-0">Your Balance: <span class="text-dark">2000 POA20</span></p>
-              <p class="form-p">Your Staked: <span class="text-dark">600 POA20</span></p>
+              <p class="form-p">Your Staked: <span class="text-dark"><%= format_wei_value(@staked, :ether) %></span></p>
               <div class="form-buttons">
-                <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Withdraw Now"), extra_class: "full-width" %>
-                <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Order Withdrawal"), extra_class: "full-width", disabled: true %>
+                <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Withdraw Now"), extra_class: "full-width withdraw", disabled: :withdraw not in @accesses %>
+                <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Order Withdrawal"), extra_class: "full-width order_withdraw", disabled: :order_withdraw not in @accesses %>
               </div>
             </form>
           </div>
@@ -29,11 +29,7 @@
           <%=
             render BlockScoutWeb.StakesView,
             "_stakes_progress.html",
-            progress: "1250",
-            total: "3000",
-            pool: "0x7130-95a480",
-            stakes_ratio: "1.095%",
-            delegators: "3200"
+            pool: @pool
           %>
         </div>
       </div>

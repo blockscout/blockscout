@@ -1,4 +1,8 @@
 <div class="stakes-address-container">
-    <span class="stakes-address js-validator-info-modal"><%= @address %></span>
-    <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: @tooltip %>
+    <span onclick="openValidatorInfoModal('<%= to_string(@address) %>')" class="stakes-address">
+        <%= binary_part(to_string(@address), 0, 13) %>
+    </span>
+    <%= if @tooltip do %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: @tooltip %>
+    <% end %>
 </div>

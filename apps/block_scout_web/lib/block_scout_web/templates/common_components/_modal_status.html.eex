@@ -1,4 +1,4 @@
-<div class="modal fade" id="<%= if assigns[:status] do @status end %>StatusModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="<%= if assigns[:id], do: @id, else: @status <> "StatusModal" %>" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-status" role="document">
     <div class="modal-content">
       <div class="modal-status-graph modal-status-graph-<%= if assigns[:status] do @status end %>">
@@ -38,10 +38,10 @@
             </button>
           <% else %>
             <button class="btn-line except" type="button" data-dismiss="modal">
-              <span class="btn-line-text">No</span>
+              <span class="btn-line-text"><%= if assigns[:negative], do: @negative, else: "No" %></span>
             </button>
             <button class="btn-line accept" type="button" data-dismiss="modal">
-              <span class="btn-line-text">Yes</span>
+              <span class="btn-line-text"><%= if assigns[:positive], do: @positive, else: "Yes" %></span>
             </button>
           <% end %>
         </div>
