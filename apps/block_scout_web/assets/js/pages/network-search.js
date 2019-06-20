@@ -7,12 +7,12 @@ $(networkSearchInput).on('input', function () {
   networkSearchInputVal = $(this).val()
 
   $.expr[':'].Contains = $.expr.createPseudo(function (arg) {
-	    return function (elem) {
-	        return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0
-	    }
+      return function (elem) {
+          return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0
+      }
   })
 
-  if (networkSearchInputVal == '') {
+  if (networkSearchInputVal === '') {
     $('.network-selector-item').show()
   } else {
     $('.network-selector-item').hide()

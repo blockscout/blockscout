@@ -1,8 +1,7 @@
 import $ from 'jquery'
 
-var favoritesQuantity = 0,
-  favoritesContainer = $('.js-favorites-tab'),
-  favoritesNetworksUrls = []
+var favoritesContainer = $('.js-favorites-tab');
+var favoritesNetworksUrls = [];
 
 if (localStorage.getItem('favoritesNetworksUrls') === null) {
   localStorage.setItem('favoritesNetworksUrls', JSON.stringify(favoritesNetworksUrls))
@@ -21,23 +20,23 @@ $(document).on('change', ".network-selector-item-favorite input[type='checkbox']
 
   // Push or remove favorite networks to array
   var found = $.inArray(networkUrl, favoritesNetworksUrls)
-  if (found < 0 && thisStatus == true) {
+  if (found < 0 && thisStatus === true) {
     favoritesNetworksUrls.push(networkUrl)
   } else {
     var index = favoritesNetworksUrls.indexOf(networkUrl)
-    if (index != -1) {
+    if (index !== -1) {
       favoritesNetworksUrls.splice(index, 1)
     }
   }
 
   // Append or remove item from 'favorites' tab
-  if (thisStatus == true) {
+  if (thisStatus === true) {
     favoritesContainer.append(parent[0])
     $('.js-favorites-tab .network-selector-tab-content-empty').hide()
   } else {
     var willRemoved = favoritesContainer.find(workWith)
     willRemoved.remove()
-    if (favoritesNetworksUrls.length == 0) {
+    if (favoritesNetworksUrls.length === 0) {
       $('.js-favorites-tab .network-selector-tab-content-empty').show()
     }
   }
