@@ -32,8 +32,10 @@
 - [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
 - [#2119](https://github.com/poanetwork/blockscout/pull/2119) - fix map logging
 - [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
+- [#2148](https://github.com/poanetwork/blockscout/pull/2148) - filter pending logs
 - [#2147](https://github.com/poanetwork/blockscout/pull/2147) - add rsk format of checksum
 - [#2149](https://github.com/poanetwork/blockscout/pull/2149) - remove pending transaction count
+- [#2177](https://github.com/poanetwork/blockscout/pull/2177) - remove duplicate entries from UncleBlock's Fetcher
 - [#2169](https://github.com/poanetwork/blockscout/pull/2169) - add more validator reward types for xDai
 - [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
 - [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
