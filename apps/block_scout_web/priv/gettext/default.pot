@@ -1696,7 +1696,6 @@ msgid "New Smart Contract Verification"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:54
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:71
-msgid "Download All Transactions as CSV"
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:74
+msgid "CSV"
 msgstr ""

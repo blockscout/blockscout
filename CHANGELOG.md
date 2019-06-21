@@ -35,6 +35,7 @@
 - [#2064](https://github.com/poanetwork/blockscout/pull/2064) - feat: add fields to tx apis, small cleanups
 
 ### Fixes
+- [#2207](https://github.com/poanetwork/blockscout/pull/2207) - new 'download csv' button design
 - [#2206](https://github.com/poanetwork/blockscout/pull/2206) - added styles for 'Download All Transactions as CSV' button
 - [#2099](https://github.com/poanetwork/blockscout/pull/2099) - logs search input width
 - [#2098](https://github.com/poanetwork/blockscout/pull/2098) - nav dropdown issue, logo size issue
