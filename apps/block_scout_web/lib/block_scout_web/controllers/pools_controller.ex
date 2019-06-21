@@ -1,10 +1,10 @@
 defmodule BlockScoutWeb.PoolsController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.PoolsView
   alias Explorer.Chain
   alias Explorer.Chain.BlockNumberCache
   alias Explorer.Counters.AverageBlockTime
-  alias BlockScoutWeb.PoolsView
   alias Explorer.Staking.EpochCounter
   alias Phoenix.View
 
