@@ -37,6 +37,8 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
 
   )a
 
+  @derive {Poison.Encoder, only: @attrs}
+
   schema "staking_pools_delegators" do
     field(:max_ordered_withdraw_allowed, Wei)
     field(:max_withdraw_allowed, Wei)

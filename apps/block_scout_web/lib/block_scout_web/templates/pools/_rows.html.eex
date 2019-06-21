@@ -34,9 +34,20 @@
       </span>
     <% else %>
       <div class="stakes-controls">
-        <%= render BlockScoutWeb.StakesView, "_stakes_control_move.html", address: @pool.staking_address_hash %>
-        <%= render BlockScoutWeb.StakesView, "_stakes_control_withdraw.html", address: @pool.staking_address_hash %>
-        <%= render BlockScoutWeb.StakesView, "_stakes_control_stake.html", address: @pool.staking_address_hash %>
+        <%= if :withdraw in @accesses do %>
+          <%= render BlockScoutWeb.StakesView, "_stakes_control_move.html", address: @pool.staking_address_hash %>
+        <% end %>
+        <%= if :withdraw in @accesses || :order_withdraw in @accesses || :claim in @accesses do %>
+          <%= 
+            render BlockScoutWeb.StakesView, 
+            "_stakes_control_withdraw.html", 
+            address: @pool.staking_address_hash, 
+            claim: :claim in @accesses
+          %>
+        <% end %>
+        <%= if :stake in @accesses do %>
+          <%= render BlockScoutWeb.StakesView, "_stakes_control_stake.html", address: @pool.staking_address_hash %>
+        <% end %>
       </div>
     <% end %>
   </td>

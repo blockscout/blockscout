@@ -1568,7 +1568,7 @@ msgid "Block number"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:26
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:30
 msgid "Delegators"
 msgstr ""
 
@@ -1594,7 +1594,7 @@ msgid "Order Withdrawal"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:14
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:18
 msgid "Pool"
 msgstr ""
 
@@ -1609,7 +1609,7 @@ msgid "Stake"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:21
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:29
 msgid "Stake More"
 msgstr ""
 
@@ -1624,7 +1624,7 @@ msgid "Stakes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:20
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:24
 msgid "Stakes Ratio"
 msgstr ""
 

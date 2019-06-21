@@ -1,4 +1,6 @@
 import $ from 'jquery'
+import humps from 'humps'
+import Chart from 'chart.js'
 import {store} from '../pages/stakes.js'
 
 window.openBecomeCandidateModal = function () {
@@ -33,6 +35,32 @@ window.openRemovePoolModal = function () {
     $(modal).modal('hide')
   })
   $(modal).modal()
+}
+
+window.openMakeStakeModal = function (poolAddress) {
+  const modal = '#stakeModal'
+  $.getJSON('/staking_pool', { 'pool_hash': poolAddress })
+    .done(response => {
+      const pool = humps.camelizeKeys(response.pool)
+      const selfAmount = parseFloat(pool.selfStakedAmount)
+      const amount = parseFloat(pool.stakedAmount)
+      const ratio = parseFloat(pool.stakedRatio)
+      $('[stakes-progress]').text(selfAmount)
+      $('[stakes-total').text(amount)
+      $('[stakes-address]').text(pool.stakingAddressHash.slice(0, 13))
+      $('[stakes-ratio]').text(`${ratio} %`)
+      $('[stakes-delegators]').text(pool.delegatorsCount)
+
+      setupStakesProgress(selfAmount, amount, $(`${modal} .js-stakes-progress`))
+
+      $(`${modal} form`).on('submit', (e) => makeStake(e, modal, poolAddress))
+
+      $(modal).modal()
+    })
+    .fail(() => {
+      $(modal).modal()
+      openErrorModal('Error', 'Something went wrong')
+    })
 }
 
 function lockModal (el) {
@@ -192,4 +220,79 @@ async function removeMyPool (el) {
       unlockModal()
       openErrorModal('Error', 'Something went wrong')
     })
+}
+
+function makeStake (event, modal, poolAddress) {
+  const amount = parseInt(event.target[0].value)
+  const minStake = parseInt($(modal).data('min-stake'))
+  if (amount < minStake) {
+    $(modal).modal('hide')
+    openErrorModal('Error', `You cannot stake less than ${minStake} POA20`)
+    return false
+  }
+
+  const contract = store.getState().stakingContract
+  const account = store.getState().account
+  var $submitButton = $(`${modal} .btn-add-full`)
+  const buttonText = $submitButton.html()
+  lockModal(modal)
+
+  contract.methods.stake(poolAddress, amount * Math.pow(10, 18)).send({
+    from: account,
+    gas: 400000,
+    gasPrice: 1000000000
+  })
+    .on('receipt', _receipt => {
+      unlockAndHideModal(modal)
+      $submitButton.html(buttonText)
+      store.dispatch({ type: 'START_REQUEST' })
+      store.dispatch({ type: 'GET_USER' })
+      store.dispatch({ type: 'RELOAD_POOLS_LIST' })
+      openSuccessModal('Success', 'The transaction is created')
+    })
+    .catch(_err => {
+      unlockAndHideModal(modal)
+      $submitButton.html(buttonText)
+      openErrorModal('Error', 'Something went wrong')
+    })
+
+  return false
+}
+
+function setupStakesProgress (progress, total, progressElement) {
+  const stakeProgress = progressElement
+  const primaryColor = $('.btn-full-primary').css('background-color')
+  const backgroundColors = [
+    primaryColor,
+    'rgba(202, 199, 226, 0.5)'
+  ]
+  const progressBackground = total - progress
+  var data
+  if (total > 0) {
+    data = [progress, progressBackground]
+  } else {
+    data = [0, 1]
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  let myChart = new Chart(stakeProgress, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: data,
+        backgroundColor: backgroundColors,
+        hoverBackgroundColor: backgroundColors,
+        borderWidth: 0
+      }]
+    },
+    options: {
+      cutoutPercentage: 80,
+      legend: {
+        display: false
+      },
+      tooltips: {
+        enabled: false
+      }
+    }
+  })
 }

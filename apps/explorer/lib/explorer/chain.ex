@@ -3115,6 +3115,29 @@ defmodule Explorer.Chain do
     value
   end
 
+  @doc "Get staking pools from the DB with user's stake information"
+  @spec staking_pools_with_staker(
+          filter :: :validator | :active | :inactive,
+          user_address :: String.t(),
+          options :: PagingOptions.t()
+        ) :: [{map(), map() | nil}]
+  def staking_pools_with_staker(filter, user_address, paging_options \\ @default_paging_options) do
+    base_query = staking_pools_query(filter, paging_options)
+
+    query =
+      from(
+        pool in base_query,
+        left_join: d in StakingPoolsDelegator,
+        on:
+          d.pool_address_hash == pool.staking_address_hash and
+            d.delegator_address_hash == ^user_address and
+            d.is_deleted == false,
+        select: {pool, d}
+      )
+
+    Repo.all(query)
+  end
+
   @doc "Get staking pools from the DB"
   @spec staking_pools(filter :: :validator | :active | :inactive, options :: PagingOptions.t()) :: [map()]
   def staking_pools(filter, paging_options \\ @default_paging_options) do
@@ -3183,6 +3206,27 @@ defmodule Explorer.Chain do
   end
 
   defp staking_pool_filter(query, _), do: query
+
+  def staking_pool(hash) do
+    query =
+      from(
+        pool in StakingPool,
+        where: pool.staking_address_hash == ^hash
+      )
+
+    Repo.one(query)
+  end
+
+  def staking_delegator(delegator_address, pool_address) do
+    query =
+      from(
+        pd in StakingPoolsDelegator,
+        where: pd.pool_address_hash == ^pool_address,
+        where: pd.delegator_address_hash == ^delegator_address
+      )
+
+    Repo.one(query)
+  end
 
   def delegator_info(address) do
     query =
