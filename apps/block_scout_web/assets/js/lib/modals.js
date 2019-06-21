@@ -13,10 +13,7 @@ window.openBecomeCandidateModal = function () {
     })
     $(el).modal()
   } else {
-    const modal = '#warningStatusModal'
-    $(`${modal} .modal-status-title`).text('Unauthorized')
-    $(`${modal} .modal-status-text`).text('Please login with MetaMask')
-    $(modal).modal()
+    openWarningModal('Unauthorized', 'Please login with MetaMask')
   }
 }
 
@@ -63,6 +60,100 @@ window.openMakeStakeModal = function (poolAddress) {
     })
 }
 
+window.openMoveStakeModal = async function (poolAddress) {
+  const modal = '#moveStakeModal'
+
+  try {
+    let response = await $.getJSON('/staking_pool', { 'pool_hash': poolAddress })
+    const pool = humps.camelizeKeys(response.pool)
+    const relation = humps.camelizeKeys(response.relation)
+    response = await $.getJSON('/staking_pools')
+    let pools = []
+    $.each(response.pools, (_key, pool) => {
+      let p = humps.camelizeKeys(pool)
+      if (p.stakingAddressHash !== poolAddress) {
+        pools.push(p)
+      }
+    })
+
+    setProgressInfo(modal, pool)
+    $(`${modal} [user-staked]`).text(`${relation.stakeAmount} POA`)
+    $(`${modal} [max-allowed]`).text(`${relation.maxWithdrawAllowed} POA`)
+
+    $.each($(`${modal} [pool-select] option:not(:first-child)`), (_, opt) => {
+      opt.remove()
+    })
+    $.each(pools, (_key, pool) => {
+      var $option = $('<option/>', {
+        value: pool.stakingAddressHash,
+        text: pool.stakingAddressHash.slice(0, 13)
+      })
+      $(`${modal} [pool-select]`).append($option)
+    })
+    $(`${modal} [pool-select]`).on('change', e => {
+      const selectedAddress = e.currentTarget.value
+      const amount = $(`${modal} [move-amount]`).val()
+      window.openMoveStakeSelectedModal(poolAddress, selectedAddress, amount, pools)
+      $(modal).modal('hide')
+    })
+
+    $(modal).modal('show')
+  } catch (err) {
+    console.log(err)
+    $(modal).modal('hide')
+    openErrorModal('Error', 'Something went wrong')
+  }
+}
+
+window.openMoveStakeSelectedModal = async function (fromAddress, toAddress, amount = null, pools = []) {
+  const modal = '#moveStakeModalSelected'
+  let response = await $.getJSON('/staking_pool', { 'pool_hash': fromAddress })
+  const fromPool = humps.camelizeKeys(response.pool)
+  const relation = humps.camelizeKeys(response.relation)
+
+  setProgressInfo(modal, fromPool, '.js-pool-from-progress')
+  $(`${modal} [user-staked]`).text(`${relation.stakeAmount} POA`)
+  $(`${modal} [max-allowed]`).text(`${relation.maxWithdrawAllowed} POA`)
+  $(`${modal} [move-amount]`).val(amount)
+
+  response = await $.getJSON('/staking_pool', { 'pool_hash': toAddress })
+  const toPool = humps.camelizeKeys(response.pool)
+  setProgressInfo(modal, toPool, '.js-pool-to-progress')
+
+  $.each(pools, (_key, pool) => {
+    var $option = $('<option/>', {
+      value: pool.stakingAddressHash,
+      text: pool.stakingAddressHash.slice(0, 13),
+      selected: pool.stakingAddressHash === toAddress
+    })
+    $(`${modal} [pool-select]`).append($option)
+  })
+  $(`${modal} [pool-select]`).unbind('change')
+  $(`${modal} [pool-select]`).on('change', e => {
+    const selectedAddress = e.currentTarget.value
+    const amount = $(`${modal} [move-amount]`).val()
+    window.openMoveStakeSelectedModal(fromAddress, selectedAddress, amount)
+  })
+
+  $(`${modal} form`).unbind('submit')
+  $(`${modal} form`).on('submit', e => moveStake(e, modal, fromAddress, toAddress))
+
+  $(modal).modal('show')
+}
+
+function setProgressInfo (modal, pool, elClass = '') {
+  const selfAmount = parseFloat(pool.selfStakedAmount)
+  const amount = parseFloat(pool.stakedAmount)
+  const ratio = parseFloat(pool.stakedRatio)
+  $(`[stakes-progress]${elClass}`).text(selfAmount)
+  $(`[stakes-total]${elClass}`).text(amount)
+  $(`[stakes-address]${elClass}`).text(pool.stakingAddressHash.slice(0, 13))
+  $(`[stakes-ratio]${elClass}`).text(`${ratio} %`)
+  $(`[stakes-delegators]${elClass}`).text(pool.delegatorsCount)
+
+  setupStakesProgress(selfAmount, amount, $(`${modal} .js-stakes-progress${elClass}`))
+}
+
 function lockModal (el) {
   var $submitButton = $(`${el} .btn-add-full`)
   $(`${el} .close-modal`).attr('disabled', true)
@@ -96,6 +187,13 @@ function openSuccessModal (title, text) {
   $(`#successStatusModal .modal-status-title`).text(title)
   $(`#successStatusModal .modal-status-text`).text(text)
   $('#successStatusModal').modal('show')
+}
+
+function openWarningModal (title, text) {
+  const modal = '#warningStatusModal'
+  $(`${modal} .modal-status-title`).text(title)
+  $(`${modal} .modal-status-text`).text(text)
+  $(modal).modal('show')
 }
 
 async function becomeCandidate (el) {
@@ -223,8 +321,8 @@ async function removeMyPool (el) {
 }
 
 function makeStake (event, modal, poolAddress) {
-  const amount = parseInt(event.target[0].value)
-  const minStake = parseInt($(modal).data('min-stake'))
+  const amount = parseFloat(event.target[0].value)
+  const minStake = parseFloat($(modal).data('min-stake'))
   if (amount < minStake) {
     $(modal).modal('hide')
     openErrorModal('Error', `You cannot stake less than ${minStake} POA20`)
@@ -259,8 +357,46 @@ function makeStake (event, modal, poolAddress) {
   return false
 }
 
-function setupStakesProgress (progress, total, progressElement) {
-  const stakeProgress = progressElement
+function moveStake (e, modal, fromAddress, toAddress) {
+  const amount = parseFloat(e.target[0].value)
+  const allowed = parseFloat($(`${modal} [max-allowed]`).text())
+  const minStake = parseInt($(modal).data('min-stake'))
+
+  if (amount < minStake || amount > allowed) {
+    $(modal).modal('hide')
+    openErrorModal('Error', `You cannot stake less than ${minStake} POA20 and more than ${allowed} POA20`)
+    return false
+  }
+
+  const contract = store.getState().stakingContract
+  const account = store.getState().account
+  var $submitButton = $(`${modal} .btn-add-full`)
+  const buttonText = $submitButton.html()
+  lockModal(modal)
+
+  contract.methods.moveStake(fromAddress, toAddress, amount * Math.pow(10, 18)).send({
+    from: account,
+    gas: 400000,
+    gasPrice: 1000000000
+  })
+    .on('receipt', _receipt => {
+      unlockAndHideModal(modal)
+      $submitButton.html(buttonText)
+      store.dispatch({ type: 'START_REQUEST' })
+      store.dispatch({ type: 'GET_USER' })
+      store.dispatch({ type: 'RELOAD_POOLS_LIST' })
+      openSuccessModal('Success', 'The transaction is created')
+    })
+    .catch(_err => {
+      unlockAndHideModal(modal)
+      $submitButton.html(buttonText)
+      openErrorModal('Error', 'Something went wrong')
+    })
+
+  return false
+}
+
+function setupStakesProgress (progress, total, stakeProgress) {
   const primaryColor = $('.btn-full-primary').css('background-color')
   const backgroundColors = [
     primaryColor,

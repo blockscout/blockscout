@@ -94,6 +94,7 @@ defmodule BlockScoutWeb.Router do
     get("/delegator", PoolsController, :delegator)
     get("/staking_contract", PoolsController, :staking_contract)
     get("/staking_pool", PoolsController, :staking_pool)
+    get("/staking_pools", PoolsController, :staking_pools)
 
     resources("/pending_transactions", PendingTransactionController, only: [:index])
 

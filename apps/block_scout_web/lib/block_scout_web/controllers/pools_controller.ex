@@ -66,11 +66,27 @@ defmodule BlockScoutWeb.PoolsController do
         if user_address do
           relation = Chain.staking_delegator(user_address, pool.staking_address_hash)
 
-          json(conn, %{pool: pool, relation: relation})
+          if relation do
+            prepared_relation =
+              relation
+              |> Map.update!(:stake_amount, &Wei.to(&1, :ether))
+              |> Map.update!(:ordered_withdraw, &Wei.to(&1, :ether))
+              |> Map.update!(:max_withdraw_allowed, &Wei.to(&1, :ether))
+              |> Map.update!(:max_ordered_withdraw_allowed, &Wei.to(&1, :ether))
+
+            json(conn, %{pool: pool, relation: prepared_relation})
+          else
+            json(conn, %{pool: pool})
+          end
         else
           json(conn, %{pool: pool})
         end
     end
+  end
+
+  def staking_pools(conn, _) do
+    active_pools = Chain.staking_pools(:active)
+    json(conn, %{pools: active_pools})
   end
 
   defp render_template(_, conn, %{"type" => "JSON", "template" => "top"}) do

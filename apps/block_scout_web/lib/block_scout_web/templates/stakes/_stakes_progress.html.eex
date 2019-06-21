@@ -1,34 +1,34 @@
 <div class="stakes-progress">
   <div class="stakes-progress-graph">
     <canvas
-      class="stakes-progress-graph-canvas js-stakes-progress"
+      class="stakes-progress-graph-canvas js-stakes-progress <%= if assigns[:extra_class], do: @extra_class %>"
       height="125"
       width="125"
     ></canvas>
     <div class="stakes-progress-data">
-      <div class="stakes-progress-data-progress js-stakes-progress-data-progress" stakes-progress>
+      <div class="stakes-progress-data-progress js-stakes-progress-data-progress <%= if assigns[:extra_class], do: @extra_class %>" stakes-progress>
         <%= if assigns[:progress] do @progress end %>
       </div>
-      <div class="stakes-progress-data-total js-stakes-progress-data-total" stakes-total>
+      <div class="stakes-progress-data-total js-stakes-progress-data-total <%= if assigns[:extra_class], do: @extra_class %>" stakes-total>
         <%= if assigns[:total] do @total end %>
       </div>
     </div>
   </div>
   <div class="stakes-progress-info">
     <h2 class="stakes-progress-info-title"><%= gettext("Pool") %></h2>
-    <p class="stakes-progress-info-value link-color" stakes-address>
+    <p class="stakes-progress-info-value link-color <%= if assigns[:extra_class], do: @extra_class %>" stakes-address>
       <%= if assigns[:pool] do @pool end %>
     </p>
   </div>
   <div class="stakes-progress-info">
     <h2 class="stakes-progress-info-title"><%= gettext("Stakes Ratio") %></h2>
-    <p class="stakes-progress-info-value" stakes-ratio>
+    <p class="stakes-progress-info-value <%= if assigns[:extra_class], do: @extra_class %>" stakes-ratio>
       <%= if assigns[:stakes_ratio] do @stakes_ratio end %>
     </p>
   </div>
   <div class="stakes-progress-info">
     <h2 class="stakes-progress-info-title"><%= gettext("Delegators") %></h2>
-    <p class="stakes-progress-info-value link-color" stakes-delegators>
+    <p class="stakes-progress-info-value link-color <%= if assigns[:extra_class], do: @extra_class %>" stakes-delegators>
       <%= if assigns[:delegators] do @delegators end %>
     </p>
   </div>
