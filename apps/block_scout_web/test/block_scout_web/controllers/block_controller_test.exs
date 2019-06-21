@@ -3,8 +3,8 @@ defmodule BlockScoutWeb.BlockControllerTest do
   alias Explorer.Chain.Block
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, ConCache)
-    Supervisor.restart_child(Explorer.Supervisor, ConCache)
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, :blocks})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, :blocks})
 
     :ok
   end

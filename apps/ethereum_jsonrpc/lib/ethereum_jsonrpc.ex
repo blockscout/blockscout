@@ -249,6 +249,19 @@ defmodule EthereumJSONRPC do
     |> fetch_blocks_by_params(&Block.ByNephew.request/1, json_rpc_named_arguments)
   end
 
+  @spec fetch_net_version(json_rpc_named_arguments) :: {:ok, non_neg_integer()} | {:error, reason :: term}
+  def fetch_net_version(json_rpc_named_arguments) do
+    result =
+      %{id: 0, method: "net_version", params: []}
+      |> request()
+      |> json_rpc(json_rpc_named_arguments)
+
+    case result do
+      {:ok, bin_number} -> {:ok, String.to_integer(bin_number)}
+      other -> other
+    end
+  end
+
   @doc """
   Fetches block number by `t:tag/0`.
 

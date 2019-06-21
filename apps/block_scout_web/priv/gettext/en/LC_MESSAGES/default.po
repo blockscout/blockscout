@@ -129,6 +129,7 @@ msgid "Balance"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:5
 #: lib/block_scout_web/templates/api_docs/index.html.eex:5
 msgid "Base URL:"
 msgstr ""
@@ -379,7 +380,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:30
 #: lib/block_scout_web/templates/transaction/overview.html.eex:192
-#: lib/block_scout_web/views/wei_helpers.ex:72
+#: lib/block_scout_web/views/wei_helpers.ex:78
 msgid "Ether"
 msgstr "POA"
 
@@ -437,7 +438,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/views/block_view.ex:20
-#: lib/block_scout_web/views/wei_helpers.ex:71
+#: lib/block_scout_web/views/wei_helpers.ex:77
 msgid "Gwei"
 msgstr ""
 
@@ -666,8 +667,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:138
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:155
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:143
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:160
 msgid "Search"
 msgstr ""
 
@@ -983,7 +984,7 @@ msgid "Wallet addresses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/wei_helpers.ex:70
+#: lib/block_scout_web/views/wei_helpers.ex:76
 msgid "Wei"
 msgstr ""
 
@@ -1480,8 +1481,8 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:132
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:136
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:137
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:141
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1491,7 +1492,7 @@ msgid "EVM Version"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:16
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:17
 msgid "Copy Decompiled Contract Code"
 msgstr ""
 
@@ -1506,12 +1507,12 @@ msgid "Decompiled code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:14
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:15
 msgid "Decompiled contract code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:7
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:8
 msgid "Decompiler version"
 msgstr ""
 
@@ -1546,7 +1547,7 @@ msgid "View All Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:94
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:99
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:11
 msgid "Active Pools"
 msgstr ""
@@ -1583,7 +1584,7 @@ msgid "Epoch number"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:99
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:104
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:18
 msgid "Inactive Pools"
 msgstr ""
@@ -1624,7 +1625,7 @@ msgid "Staked"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:85
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:90
 msgid "Stakes"
 msgstr ""
 
@@ -1634,7 +1635,7 @@ msgid "Stakes Ratio"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:89
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:94
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:4
 msgid "Validators"
 msgstr ""
@@ -1807,4 +1808,54 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:178
 msgid " Token Transfer"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:27
+msgid "There is no decompilded contracts for this address."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:14
+msgid " is recommended."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:15
+msgid "Anything not in this list is not supported. Click on the method to be taken to the documentation for that method, and check the notes section for any potential differences."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:4
+msgid "ETH RPC API Documentation"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:78
+msgid "Eth RPC"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:11
+msgid "However, in general, the"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
+msgid "This API is provided to support some rpc methods in the exact format specified for ethereum nodes, which can be found "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:10
+msgid "This is useful to allow sending requests to blockscout without having to change anything about the request."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:12
+msgid "custom RPC"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:9
+msgid "here."
 msgstr ""
