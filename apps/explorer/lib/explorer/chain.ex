@@ -41,6 +41,7 @@ defmodule Explorer.Chain do
     Log,
     SmartContract,
     StakingPool,
+    StakingPoolsDelegator,
     Token,
     TokenTransfer,
     Transaction,
@@ -3182,6 +3183,22 @@ defmodule Explorer.Chain do
   end
 
   defp staking_pool_filter(query, _), do: query
+
+  def delegator_info(address) do
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^address,
+        left_join: delegator in StakingPoolsDelegator,
+        on: delegator.delegator_address_hash == address.hash and delegator.is_active,
+        left_join: pool in StakingPool,
+        on: pool.staking_address_hash == address.hash and pool.is_active,
+        group_by: address.hash,
+        select: [sum(delegator.stake_amount), sum(pool.self_staked_amount), count(pool) > 0]
+      )
+
+    Repo.one(query)
+  end
 
   defp with_decompiled_code_flag(query, hash, use_option \\ true)
 
