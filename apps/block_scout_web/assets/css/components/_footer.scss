@@ -4,7 +4,7 @@ $footer-text-color: rgba(#fff, 0.7) !default;
 $footer-link-color: $footer-text-color !default;
 $footer-item-disc-color: $primary !default;
 $footer-social-icon-color: $footer-text-color !default;
-$footer-logo-height: 2rem !default;
+$footer-logo-height: 28px !default;
 $footer-logo-width: auto !default;
 
 .footer {
@@ -26,7 +26,7 @@ $footer-logo-width: auto !default;
 }
 
 .footer-logo {
-  height: $footer-logo-height;
+  max-height: $footer-logo-height;
   width: $footer-logo-width;
 }
 
@@ -46,9 +46,14 @@ $footer-logo-width: auto !default;
   font-size: 22px;
   margin-right: 15px;
   text-decoration: none;
+  transition: $transition-cont;
 
   &:hover {
-    color: $footer-social-icon-color;
+    color: #fff;
+  }
+
+  &:focus {
+    color: darken($footer-text-color, 5);
   }
 
   &:last-child {
@@ -90,6 +95,17 @@ $footer-logo-width: auto !default;
       display: flex;
       line-height: 2.5;
       padding: 0;
+
+      a {
+        transition: $transition-cont;
+        &:hover {
+          text-decoration: none;
+          color: #fff;
+        }
+        &:focus {
+          color: darken($footer-text-color, 5);
+        }
+      }
 
       &::before {
         background-color: $footer-item-disc-color;
