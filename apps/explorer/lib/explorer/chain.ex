@@ -10,7 +10,6 @@ defmodule Explorer.Chain do
       limit: 2,
       order_by: 2,
       order_by: 3,
-      offset: 2,
       preload: 2,
       select: 2,
       subquery: 1,
