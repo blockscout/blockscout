@@ -105,5 +105,5 @@
 %>
 <%=
     render BlockScoutWeb.CommonComponentsView,
-    "_pagination.html"
+    "_pagination_container.html"
 %>
