@@ -6,10 +6,13 @@
     epoch_number: @epoch_number,
     epoch_end_in: @epoch_end_in,
     block_number: @block_number,
-    logged_in: false
+    user: @user,
+    logged_in: @logged_in
   %>
 </div>
-<section data-page="stakes" class="container">
+<section data-page="stakes" class="container" 
+  data-user-address="<%= if @user, do: @user.address %>"
+>
   <div class="card" data-async-load data-async-listing="<%= @current_path %>">
     <%= render BlockScoutWeb.StakesView, "_stakes_tabs.html", conn: @conn %>
 
@@ -48,6 +51,6 @@
         data_prev_page_button: true 
       %>
     </div>
-    
+
   </div>
 </section>
