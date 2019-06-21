@@ -4,7 +4,7 @@ $tile-type-reorg-color: $purple !default;
 $tile-type-emission-reward-color: $lilac !default;
 $tile-type-transaction-color: $blue !default;
 $tile-type-contract-call-color: $green !default;
-$tile-type-contract-creation-color: $pink !default;
+$tile-type-contract-creation-color: $dark-purple !default;
 $tile-type-token-transfer-color: $orange !default;
 $tile-type-unique-token-color: $orange !default;
 $tile-type-unique-token-image-color: $orange !default;
@@ -102,6 +102,18 @@ $tile-body-a-color: #5959d8 !default;
   line-height: 1.2;
   text-align: center;
   padding: 0 5px;
+}
+
+.tile-transaction-type-block {
+  .tile-status-label {
+    padding: 0;
+  }
+}
+
+.tile-bottom {
+  @media (max-width: 767px) {
+    justify-content: flex-start !important;
+  }
 }
 
 .tile-bottom-contents {

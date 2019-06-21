@@ -146,3 +146,8 @@ $dashboard-banner-network-plain-container-height: 150px;
     }
   }
 }
+
+// Badges
+$badge-neutral-color: $tertiary;
+$badge-neutral-background-color: rgba($tertiary, .1);
+$api-text-monospace-color: $tertiary;
