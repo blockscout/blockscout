@@ -102,5 +102,4 @@ defmodule BlockScoutWeb.PoolsController do
   defp next_page_path(:inactive, conn, params) do
     inactive_pools_path(conn, :inactive_pools, params)
   end
-
 end
