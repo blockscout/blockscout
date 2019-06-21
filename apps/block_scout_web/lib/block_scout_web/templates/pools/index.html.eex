@@ -59,3 +59,5 @@
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_stake.html", user: @user, min_delegator_stake: @min_delegator_stake %>
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_move.html" %>
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_move_selected.html", min_delegator_stake: @min_delegator_stake %>
+<%= render BlockScoutWeb.StakesView, "_stakes_modal_withdraw.html" %>
+<%= render BlockScoutWeb.StakesView, "_stakes_modal_claim.html" %>

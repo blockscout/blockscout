@@ -19,9 +19,7 @@ window.openBecomeCandidateModal = function () {
 
 window.openRemovePoolModal = function () {
   const modal = '#questionStatusModal'
-  $(`${modal} .modal-status-title`).text('Remove my Pool')
-  $(`${modal} .modal-status-text`).text('Do you really want to remove your pool?')
-  $(`${modal} .btn-line.accept`).unbind('click')
+  openQuestionModal('Remove my Pool', 'Do you really want to remove your pool?')
   $(`${modal} .btn-line.accept`).click(() => {
     removeMyPool(modal)
     return false
@@ -39,17 +37,8 @@ window.openMakeStakeModal = function (poolAddress) {
   $.getJSON('/staking_pool', { 'pool_hash': poolAddress })
     .done(response => {
       const pool = humps.camelizeKeys(response.pool)
-      const selfAmount = parseFloat(pool.selfStakedAmount)
-      const amount = parseFloat(pool.stakedAmount)
-      const ratio = parseFloat(pool.stakedRatio)
-      $('[stakes-progress]').text(selfAmount)
-      $('[stakes-total').text(amount)
-      $('[stakes-address]').text(pool.stakingAddressHash.slice(0, 13))
-      $('[stakes-ratio]').text(`${ratio} %`)
-      $('[stakes-delegators]').text(pool.delegatorsCount)
-
-      setupStakesProgress(selfAmount, amount, $(`${modal} .js-stakes-progress`))
-
+      setProgressInfo(modal, pool)
+      $(`${modal} form`).unbind('submit')
       $(`${modal} form`).on('submit', (e) => makeStake(e, modal, poolAddress))
 
       $(modal).modal()
@@ -141,15 +130,90 @@ window.openMoveStakeSelectedModal = async function (fromAddress, toAddress, amou
   $(modal).modal('show')
 }
 
+window.openClaimQuestionModal = function (poolAddress) {
+  const modal = '#questionStatusModal'
+
+  openQuestionModal('Claim or order', 'Do you want withdraw or claim ordered withdraw?', 'Claim', 'Withdraw')
+
+  $(`${modal} .btn-line.accept`).click(() => {
+    window.openClaimModal(poolAddress)
+    $(modal).modal('hide')
+    return false
+  })
+
+  $(`${modal} .btn-line.except`).click(() => {
+    window.openWithdrawModal(poolAddress)
+    $(modal).modal('hide')
+    return false
+  })
+}
+
+window.openClaimModal = function (poolAddress) {
+  const modal = '#claimModal'
+  $.getJSON('/staking_pool', { 'pool_hash': poolAddress })
+    .done(response => {
+      const pool = humps.camelizeKeys(response.pool)
+      setProgressInfo(modal, pool)
+      const relation = humps.camelizeKeys(response.relation)
+
+      $(`${modal} [ordered-amount]`).text(`${relation.orderedWithdraw} POA`)
+
+      $(`${modal} form`).unbind('submit')
+      $(`${modal} form`).on('submit', _ => claimWithdraw(modal, poolAddress))
+
+      $(modal).modal()
+    })
+    .fail(() => {
+      $(modal).modal()
+      openErrorModal('Error', 'Something went wrong')
+    })
+}
+
+window.openWithdrawModal = function (poolAddress) {
+  const modal = '#withdrawModal'
+  $.getJSON('/staking_pool', { 'pool_hash': poolAddress })
+    .done(response => {
+      const pool = humps.camelizeKeys(response.pool)
+      setProgressInfo(modal, pool)
+      const relation = humps.camelizeKeys(response.relation)
+
+      $(`${modal} [user-staked]`).text(`${relation.stakeAmount} POA`)
+
+      const $withdraw = $(`${modal} .btn-full-primary.withdraw`)
+      const $order = $(`${modal} .btn-full-primary.order_withdraw`)
+
+      $withdraw.attr('disabled', true)
+      $order.attr('disabled', true)
+      if (relation.maxWithdrawAllowed > 0) {
+        $withdraw.attr('disabled', false)
+      }
+      if (relation.maxOrderedWithdrawAllowed > 0) {
+        $order.attr('disabled', false)
+      }
+
+      $withdraw.unbind('click')
+      $withdraw.on('click', e => withdrawOrOrderStake(e, modal, poolAddress, 'withdraw'))
+
+      $order.unbind('click')
+      $order.on('click', e => withdrawOrOrderStake(e, modal, poolAddress, 'order'))
+
+      $(modal).modal()
+    })
+    .fail(() => {
+      $(modal).modal()
+      openErrorModal('Error', 'Something went wrong')
+    })
+}
+
 function setProgressInfo (modal, pool, elClass = '') {
   const selfAmount = parseFloat(pool.selfStakedAmount)
   const amount = parseFloat(pool.stakedAmount)
   const ratio = parseFloat(pool.stakedRatio)
-  $(`[stakes-progress]${elClass}`).text(selfAmount)
-  $(`[stakes-total]${elClass}`).text(amount)
-  $(`[stakes-address]${elClass}`).text(pool.stakingAddressHash.slice(0, 13))
-  $(`[stakes-ratio]${elClass}`).text(`${ratio} %`)
-  $(`[stakes-delegators]${elClass}`).text(pool.delegatorsCount)
+  $(`${modal} [stakes-progress]${elClass}`).text(selfAmount)
+  $(`${modal} [stakes-total]${elClass}`).text(amount)
+  $(`${modal} [stakes-address]${elClass}`).text(pool.stakingAddressHash.slice(0, 13))
+  $(`${modal} [stakes-ratio]${elClass}`).text(`${ratio} %`)
+  $(`${modal} [stakes-delegators]${elClass}`).text(pool.delegatorsCount)
 
   setupStakesProgress(selfAmount, amount, $(`${modal} .js-stakes-progress${elClass}`))
 }
@@ -194,6 +258,21 @@ function openWarningModal (title, text) {
   $(`${modal} .modal-status-title`).text(title)
   $(`${modal} .modal-status-text`).text(text)
   $(modal).modal('show')
+}
+
+function openQuestionModal (title, text, accept_text = 'Yes', except_text = 'No') {
+  const modal = '#questionStatusModal'
+
+  $(`${modal} .modal-status-title`).text(title)
+  $(`${modal} .modal-status-text`).text(text)
+
+  $(`${modal} .btn-line.accept .btn-line-text`).text(accept_text)
+  $(`${modal} .btn-line.accept`).unbind('click')
+
+  $(`${modal} .btn-line.except .btn-line-text`).text(except_text)
+  $(`${modal} .btn-line.except`).unbind('click')
+
+  $(modal).modal()
 }
 
 async function becomeCandidate (el) {
@@ -375,6 +454,80 @@ function moveStake (e, modal, fromAddress, toAddress) {
   lockModal(modal)
 
   contract.methods.moveStake(fromAddress, toAddress, amount * Math.pow(10, 18)).send({
+    from: account,
+    gas: 400000,
+    gasPrice: 1000000000
+  })
+    .on('receipt', _receipt => {
+      unlockAndHideModal(modal)
+      $submitButton.html(buttonText)
+      store.dispatch({ type: 'START_REQUEST' })
+      store.dispatch({ type: 'GET_USER' })
+      store.dispatch({ type: 'RELOAD_POOLS_LIST' })
+      openSuccessModal('Success', 'The transaction is created')
+    })
+    .catch(_err => {
+      unlockAndHideModal(modal)
+      $submitButton.html(buttonText)
+      openErrorModal('Error', 'Something went wrong')
+    })
+
+  return false
+}
+
+function withdrawOrOrderStake (e, modal, poolAddress, method) {
+  e.preventDefault()
+  e.stopPropagation()
+  const amount = parseFloat($(`${modal} [amount]`).val())
+
+  const contract = store.getState().stakingContract
+  const account = store.getState().account
+  const $withdraw = $(`${modal} .btn-full-primary.withdraw`)
+  const withdrawText = $withdraw.text()
+  const $order = $(`${modal} .btn-full-primary.order_withdraw`)
+  const orderText = $order.text()
+
+  lockModal(modal)
+
+  const weiVal = amount * Math.pow(10, 18)
+
+  var contractMethod
+  if (method === 'withdraw') {
+    contractMethod = contract.methods.withdraw(poolAddress, weiVal)
+  } else {
+    contractMethod = contract.methods.orderWithdraw(poolAddress, weiVal)
+  }
+
+  contractMethod.send({
+    from: account,
+    gas: 400000,
+    gasPrice: 1000000000
+  })
+    .on('receipt', _receipt => {
+      unlockAndHideModal(modal)
+      $withdraw.html(withdrawText)
+      $order.html(orderText)
+      store.dispatch({ type: 'START_REQUEST' })
+      store.dispatch({ type: 'GET_USER' })
+      store.dispatch({ type: 'RELOAD_POOLS_LIST' })
+      openSuccessModal('Success', 'The transaction is created')
+    })
+    .catch(_err => {
+      unlockAndHideModal(modal)
+      $withdraw.html(withdrawText)
+      $order.html(orderText)
+      openErrorModal('Error', 'Something went wrong')
+    })
+}
+
+function claimWithdraw (modal, poolAddress) {
+  const contract = store.getState().stakingContract
+  const account = store.getState().account
+  var $submitButton = $(`${modal} .btn-add-full`)
+  const buttonText = $submitButton.html()
+  lockModal(modal)
+
+  contract.methods.claimOrderedWithdraw(poolAddress).send({
     from: account,
     gas: 400000,
     gasPrice: 1000000000
