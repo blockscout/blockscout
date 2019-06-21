@@ -9,57 +9,60 @@ $footer-background-color: $primary;
 $footer-title-color: #fff;
 $footer-text-color: #96bde8;
 $footer-item-disc-color: $secondary;
-.footer-logo { filter: brightness(0) invert(1); }
+.footer-logo {
+  filter: brightness(0) invert(1);
+}
 
 // dashboard
-$dashboard-line-color-price: $tertiary; // price left border
+$dashboard-line-color-price: $secondary;
+$dashboard-line-color-market: $tertiary;
 
-$dashboard-line-color-market: $secondary;
+$dashboard-banner-chart-legend-label-color: #fff;
+$dashboard-stats-item-label-color: #fff;
+$dashboard-banner-chart-legend-value-color: #fff;
+$dashboard-stats-item-value-color: #fff;
 
-$dashboard-banner-chart-legend-label-color: $footer-text-color;
-$dashboard-stats-item-label-color: $footer-text-color;
-$dashboard-banner-chart-legend-value-color: #fff; // chart labels
-$dashboard-stats-item-value-color: #fff; // stat values
-
-$dashboard-stats-item-border-color: $secondary; // stat border
+$dashboard-stats-item-border-color: $tertiary;
 
 $dashboard-banner-gradient-start: $primary; // gradient begin
-
 $dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
-
 $dashboard-banner-network-plain-container-background-color: #20446e; // stats bg
 
-
 // navigation
-.navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
+.navbar {
+  box-shadow: 0 0 30px 0 rgba(21, 53, 80, 0.12);
+}
 
 // buttons
-$btn-line-bg: #fff; // button bg
-$btn-line-color: $secondary; // button border and font color && hover bg color
-$btn-copy-color: $secondary; // btn copy
-$btn-qr-color: $secondary; // btn qr-code
+$btn-line-bg: #fff;
+$btn-line-color: $primary;
+$btn-copy-color: $primary;
+$btn-qr-color: $primary;
 
-//links & tile
+// links & tile
 $tile-body-a-color: $secondary;
-$tile-type-block-color: $secondary;
+$tile-type-block-color: $primary;
 $tile-type-progress-bar-color: $secondary;
-a.tile-title { color: $secondary !important; }
+
+a.tile-title {
+  color: $secondary !important;
+}
 
 // card
 $card-background-1: $secondary;
 $card-tab-active: $secondary;
 
 .layout-container {
-	.dashboard-banner-container {
-	  background-image: linear-gradient(
-	    to bottom,
-	    $dashboard-banner-gradient-start,
-	    $dashboard-banner-gradient-end
-	  );
-	}
+  .dashboard-banner-container {
+    background-image: linear-gradient(
+      to bottom,
+      $dashboard-banner-gradient-start,
+      $dashboard-banner-gradient-end
+    );
+  }
 }
 
 // Badges
 $badge-neutral-color: #20446e;
-$badge-neutral-background-color: rgba(#20446e, .1);
+$badge-neutral-background-color: rgba(#20446e, 0.1);
 $api-text-monospace-color: #20446e;
