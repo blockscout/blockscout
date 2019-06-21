@@ -1,5 +1,5 @@
 <div class="stakes-address-container">
-    <span class="stakes-address js-validator-info-modal">
+    <span onclick="openPoolInfoModal('<%= to_string(@address) %>')" class="stakes-address">
         <%= binary_part(to_string(@address), 0, 13) %>
     </span>
     <%= if @tooltip do %>

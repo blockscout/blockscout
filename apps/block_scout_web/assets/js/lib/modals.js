@@ -1,5 +1,6 @@
 import $ from 'jquery'
 import humps from 'humps'
+import moment from 'moment'
 import Chart from 'chart.js'
 import {store} from '../pages/stakes.js'
 
@@ -41,10 +42,10 @@ window.openMakeStakeModal = function (poolAddress) {
       $(`${modal} form`).unbind('submit')
       $(`${modal} form`).on('submit', (e) => makeStake(e, modal, poolAddress))
 
-      $(modal).modal()
+      $(modal).modal('show')
     })
     .fail(() => {
-      $(modal).modal()
+      $(modal).modal('hide')
       openErrorModal('Error', 'Something went wrong')
     })
 }
@@ -205,6 +206,43 @@ window.openWithdrawModal = function (poolAddress) {
     })
 }
 
+window.openPoolInfoModal = function (poolAddress) {
+  const modal = '#poolInfoModal'
+  $.getJSON('/staking_pool', { 'pool_hash': poolAddress })
+    .done(response => {
+      const pool = humps.camelizeKeys(response.pool)
+
+      $(`${modal} [staking-address]`).text(pool.stakingAddressHash)
+      $(`${modal} [mining-address]`).text(pool.miningAddressHash)
+      $(`${modal} [self-staked]`).text(pool.selfStakedAmount)
+      $(`${modal} [delegators-staked]`).text(pool.stakedAmount)
+      $(`${modal} [stakes-ratio]`).text(`${pool.stakedRatio || 0} %`)
+      $(`${modal} [reward-percent]`).text(`${pool.stakedRatio || 0} %`)
+      $(`${modal} [was-validator]`).text(pool.wasValidatorCount)
+      $(`${modal} [was-banned]`).text(pool.wasBannedCount)
+      $(`${modal} [reward-percent]`).text(`${pool.stakedRatio || 0} %`)
+      if (pool.isBanned) {
+        const currentBlock = store.getState().blocksCount
+        const blocksLen = pool.bannedUntil - currentBlock
+        const blockTime = $('[data-page="stakes"]').data('average-block-time')
+        const banDuring = blockTime * blocksLen
+        var dt = moment().add(banDuring, 'seconds').format('D MMM Y')
+
+        $(`${modal} [unban-date]`).text(`Banned until block #${pool.bannedUntil} (${dt})`)
+      } else {
+        $(`${modal} [unban-date]`).text('-')
+      }
+      $(`${modal} [likelihood]`).text(`${pool.stakedRatio || 0} %`)
+      $(`${modal} [delegators-count]`).text(pool.delegatorsCount)
+
+      $(modal).modal()
+    })
+    .fail(() => {
+      $(modal).modal()
+      openErrorModal('Error', 'Something went wrong')
+    })
+}
+
 function setProgressInfo (modal, pool, elClass = '') {
   const selfAmount = parseFloat(pool.selfStakedAmount)
   const amount = parseFloat(pool.stakedAmount)
@@ -212,7 +250,8 @@ function setProgressInfo (modal, pool, elClass = '') {
   $(`${modal} [stakes-progress]${elClass}`).text(selfAmount)
   $(`${modal} [stakes-total]${elClass}`).text(amount)
   $(`${modal} [stakes-address]${elClass}`).text(pool.stakingAddressHash.slice(0, 13))
-  $(`${modal} [stakes-ratio]${elClass}`).text(`${ratio} %`)
+  $(`${modal} [stakes-address]${elClass}`).on('click', _ => window.openPoolInfoModal(pool.stakingAddressHash))
+  $(`${modal} [stakes-ratio]${elClass}`).text(`${ratio || 0} %`)
   $(`${modal} [stakes-delegators]${elClass}`).text(pool.delegatorsCount)
 
   setupStakesProgress(selfAmount, amount, $(`${modal} .js-stakes-progress${elClass}`))
