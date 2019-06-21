@@ -1701,6 +1701,32 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec max_non_consensus_block_number(integer | nil) :: {:ok, Block.block_number()} | {:error, :not_found}
+  def max_non_consensus_block_number(max_consensus_block_number \\ nil) do
+    max =
+      if max_consensus_block_number do
+        {:ok, max_consensus_block_number}
+      else
+        max_consensus_block_number()
+      end
+
+    case max do
+      {:ok, number} ->
+        query =
+          from(block in Block,
+            where: block.consensus == false,
+            where: block.number > ^number
+          )
+
+        query
+        |> Repo.aggregate(:max, :number)
+        |> case do
+          nil -> {:error, :not_found}
+          number -> {:ok, number}
+        end
+    end
+  end
+
   @doc """
   The height of the chain.
 
