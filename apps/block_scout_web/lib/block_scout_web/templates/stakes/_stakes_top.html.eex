@@ -2,7 +2,7 @@
   <div class="container">
     <div class="stakes-top-stats">
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Epoch number"), value: @epoch_number %>
-      <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Block number"), value: @block_number %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Block number"), value: @block_number, name: "block-number" %>
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Next epoch in"), value: "#{@epoch_end_in} blocks" %>
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item_account.html", logged_in: @logged_in, user: @user %>
       <!-- Buttons -->
