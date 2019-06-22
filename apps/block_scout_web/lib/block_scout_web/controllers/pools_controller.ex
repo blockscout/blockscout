@@ -38,8 +38,7 @@ defmodule BlockScoutWeb.PoolsController do
 
   def delegator(conn, %{"address" => address}) do
     with {:ok, hash} <- Chain.string_to_address_hash(address),
-      delegator when is_map(delegator) <- delegator_info(hash)
-    do
+         delegator when is_map(delegator) <- delegator_info(hash) do
       json(conn, %{delegator: delegator})
     else
       _ ->
@@ -51,6 +50,7 @@ defmodule BlockScoutWeb.PoolsController do
     epoch_number = EpochCounter.epoch_number() || 0
     epoch_end_block = EpochCounter.epoch_end_block() || 0
     block_number = BlockNumberCache.max_number()
+
     user =
       conn
       |> get_session(:address_hash)
@@ -130,6 +130,7 @@ defmodule BlockScoutWeb.PoolsController do
     epoch_end_block = EpochCounter.epoch_end_block() || 0
     block_number = BlockNumberCache.max_number()
     average_block_time = AverageBlockTime.average_block_time()
+
     user =
       conn
       |> get_session(:address_hash)
@@ -203,5 +204,4 @@ defmodule BlockScoutWeb.PoolsController do
   defp next_page_path(:inactive, conn, params) do
     inactive_pools_path(conn, :inactive_pools, params)
   end
-
 end

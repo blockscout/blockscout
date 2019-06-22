@@ -14,10 +14,10 @@ export function reducer (state = initialState, action) {
     case 'AUTHORIZED': {
       const a = state.account || null
       if ((a !== action.account)) {
-        $.getJSON("/set_session", {address: action.account})
+        $.getJSON('/set_session', { address: action.account })
           .done(response => {
             if (response.success === true) {
-              store.dispatch({ type: "GET_USER" })
+              store.dispatch({ type: 'GET_USER' })
             }
           })
       }
@@ -26,7 +26,7 @@ export function reducer (state = initialState, action) {
     case 'GET_USER': {
       $.getJSON('/delegator', {address: state.account})
         .done(response => {
-          store.dispatch({ type: "UPDATE_USER", user: response.delegator })
+          store.dispatch({ type: 'UPDATE_USER', user: response.delegator })
         })
 
       return state
@@ -70,7 +70,7 @@ const elements = {
           $el.html(response.content)
           if (!state.user && state.web3) {
             $('[data-selector="login-button"]').on('click', loginByMetamask)
-          } 
+          }
           if (!state.web3) {
             $('[data-selector="login-button"]').on('click', redirectToMetamask)
           }
@@ -105,7 +105,7 @@ function getWeb3 () {
     }, 100)
 
     store.dispatch({ type: 'WEB3_DETECTED', web3: web3 })
-    
+
     const sessionAcc = $('[data-page="stakes"]').data('user-address')
     if (sessionAcc) {
       store.dispatch({ type: 'AUTHORIZED', account: sessionAcc })
