@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
+  alias Explorer.Staking.EpochCounter
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
     Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.count_addresses_with_balance_from_cache()})
@@ -45,6 +46,16 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("exchange_rate:new_rate", "new_rate", %{
       exchange_rate: exchange_rate,
       market_history_data: Enum.map(market_history_data, fn day -> Map.take(day, [:closing_price, :date]) end)
+    })
+  end
+
+  def handle_event({:chain_event, :staking_epoch}) do
+    epoch_number = EpochCounter.epoch_number() || 0
+    epoch_end_block = EpochCounter.epoch_end_block() || 0
+
+    Endpoint.broadcast("staking_epoch:new_epoch", "new_epoch", %{
+      epoch_number: epoch_number,
+      epoch_end_block: epoch_end_block
     })
   end
 

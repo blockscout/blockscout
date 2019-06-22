@@ -6,7 +6,7 @@ defmodule Explorer.Staking.EpochCounter do
 
   use GenServer
 
-  alias Explorer.Chain.Events.Subscriber
+  alias Explorer.Chain.Events.{Publisher, Subscriber}
   alias Explorer.SmartContract.Reader
 
   @table_name __MODULE__
@@ -72,6 +72,7 @@ defmodule Explorer.Staking.EpochCounter do
         fetch_epoch_info()
 
       [{_, epoch_end_block}] when epoch_end_block < new_block_number ->
+        Publisher.broadcast(:staking_epoch)
         fetch_epoch_info()
 
       _ ->
