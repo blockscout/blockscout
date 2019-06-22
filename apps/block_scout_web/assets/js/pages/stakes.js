@@ -18,9 +18,33 @@ export function reducer (state = initialState, action) {
     case 'UPDATE_USER': {
       return Object.assign({}, state, { user: action.user })
     }
+    case 'INIT_COUNTERS': {
+      const epochNumber = parseInt($('[data-selector="epoch-number"]').text())
+      const epochEndIn = parseInt($('[data-selector="epoch-end-in"]').text())
+      const blocksCount = parseInt($('[data-selector="block-number"]').text())
+      return Object.assign({}, state, {
+        epochNumber: epochNumber,
+        epochEndIn: epochEndIn,
+        blocksCount: blocksCount
+      })
+    }
     case 'RECEIVED_NEW_BLOCK': {
       const blocksCount = action.msg.blockNumber
-      return Object.assign({}, state, { blocksCount: blocksCount })
+      const epochEndBlock = state.blocksCount + state.epochEndIn
+      const newEpochEndIn = epochEndBlock - blocksCount
+      return Object.assign({}, state, {
+        blocksCount: blocksCount,
+        epochEndIn: newEpochEndIn
+      })
+    }
+    case 'RECEIVED_NEW_EPOCH': {
+      const epochNumber = action.msg.epochNumber
+      const epochEndBlock = action.msg.epochEndBlock
+      const epochEndIn = epochEndBlock - state.blocksCount
+      return Object.assign({}, state, {
+        epochNumber: epochNumber,
+        epochEndIn: epochEndIn
+      })
     }
     default:
       return state
@@ -39,6 +63,9 @@ const elements = {
     }
   },
   '[data-selector="stakes-top"]': {
+    load(_el) {
+      store.dispatch({ type: 'INIT_COUNTERS' })
+    },
     render ($el, state, oldState) {
       if (state.user === oldState.user) return
 
@@ -50,6 +77,7 @@ const elements = {
             $('[data-selector="login-button"]')
               .on('click', state.web3 ? loginByMetamask : redirectToMetamask)
           }
+          store.dispatch({ type: 'INIT_COUNTERS' })
         })
     }
   },
@@ -57,6 +85,18 @@ const elements = {
     render ($el, state, oldState) {
       if (state.blocksCount === oldState.blocksCount) return
       $el.text(state.blocksCount)
+    }
+  },
+  '[data-selector="epoch-number"]': {
+    render ($el, state, oldState) {
+      if (state.epochNumber === oldState.epochNumber) return
+      $el.text(state.epochNumber)
+    }
+  },
+  '[data-selector="epoch-end-in"]': {
+    render ($el, state, oldState) {
+      if (state.epochEndIn === oldState.epochEndIn) return
+      $el.text(`${state.epochEndIn} blocks`)
     }
   }
 }
@@ -76,6 +116,16 @@ if ($stakesPage.length) {
       msg: humps.camelizeKeys(msg)
     })
   })
+
+  const epochChannel = socket.channel(`staking_epoch:new_epoch`)
+  epochChannel.join()
+  epochChannel.on('new_epoch', msg => {
+    store.dispatch({ 
+      type: 'RECEIVED_NEW_EPOCH',
+      msg: humps.camelizeKeys(msg)
+    })
+  })
+
 
   initializeWeb3()
 }
