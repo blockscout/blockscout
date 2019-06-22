@@ -124,7 +124,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:3
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:15
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:17
 msgid "Balance"
 msgstr ""
 
@@ -1566,7 +1566,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_empty_content.html.eex:14
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:5
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:10
 msgid "Become Candidate"
 msgstr ""
 
@@ -1607,7 +1606,7 @@ msgid "Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:11
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:14
 msgid "Remove My Pool"
 msgstr ""
 
@@ -1622,7 +1621,7 @@ msgid "Stake More"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:23
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:26
 msgid "Staked"
 msgstr ""
 
@@ -1864,6 +1863,7 @@ msgstr ""
 
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:20
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:11
 msgid "Become a Candidate"
 msgstr ""
 
