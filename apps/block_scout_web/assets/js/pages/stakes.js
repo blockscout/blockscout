@@ -1,10 +1,13 @@
 import $ from 'jquery'
+import humps from 'humps'
+import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import Web3 from 'web3'
 
 export const initialState = {
   web3: null,
-  user: null
+  user: null,
+  blocksCount: null
 }
 
 export function reducer (state = initialState, action) {
@@ -14,6 +17,10 @@ export function reducer (state = initialState, action) {
     }
     case 'UPDATE_USER': {
       return Object.assign({}, state, { user: action.user })
+    }
+    case 'RECEIVED_NEW_BLOCK': {
+      const blocksCount = action.msg.blockNumber
+      return Object.assign({}, state, { blocksCount: blocksCount })
     }
     default:
       return state
@@ -45,6 +52,12 @@ const elements = {
           }
         })
     }
+  },
+  '[data-selector="block-number"]': {
+    render ($el, state, oldState) {
+      if (state.blocksCount === oldState.blocksCount) return
+      $el.text(state.blocksCount)
+    }
   }
 }
 
@@ -54,6 +67,15 @@ const $stakesPage = $('[data-page="stakes"]')
 if ($stakesPage.length) {
   store = createStore(reducer)
   connectElements({ store, elements })
+
+  const blocksChannel = socket.channel(`blocks:new_block`)
+  blocksChannel.join()
+  blocksChannel.on('new_block', msg => {
+    store.dispatch({ 
+      type: 'RECEIVED_NEW_BLOCK',
+      msg: humps.camelizeKeys(msg)
+    })
+  })
 
   initializeWeb3()
 }
