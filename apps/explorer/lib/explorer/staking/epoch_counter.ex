@@ -72,8 +72,8 @@ defmodule Explorer.Staking.EpochCounter do
         fetch_epoch_info()
 
       [{_, epoch_end_block}] when epoch_end_block < new_block_number ->
-        Publisher.broadcast(:staking_epoch)
         fetch_epoch_info()
+        Publisher.broadcast(:staking_epoch)
 
       _ ->
         :ok
