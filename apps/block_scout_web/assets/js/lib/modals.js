@@ -18,6 +18,23 @@ window.openBecomeCandidateModal = function () {
   }
 }
 
+window.openRemovePoolModal = function () {
+  const modal = '#questionStatusModal'
+  $(`${modal} .modal-status-title`).text('Remove my Pool')
+  $(`${modal} .modal-status-text`).text('Do you really want to remove your pool?')
+  $(`${modal} .btn-line.accept`).unbind('click')
+  $(`${modal} .btn-line.accept`).click(() => {
+    removeMyPool(modal)
+    return false
+  })
+
+  $(`${modal} .btn-line.except`).unbind('click')
+  $(`${modal} .btn-line.except`).click(() => {
+    $(modal).modal('hide')
+  })
+  $(modal).modal()
+}
+
 function lockModal (el) {
   var $submitButton = $(`${el} .btn-add-full`)
   $(`${el} .close-modal`).attr('disabled', true)
@@ -139,4 +156,40 @@ async function becomeCandidate (el) {
   }
 
   return false
+}
+
+async function removeMyPool (el) {
+  $(`${el} .close-modal`).attr('disabled', true)
+  $(el).on('hide.bs.modal', e => {
+    e.preventDefault()
+    e.stopPropagation()
+  })
+  $(el).find('.btn-line').attr('disabled', true)
+
+  const contract = store.getState().stakingContract
+  const account = store.getState().account
+
+  const unlockModal = function () {
+    $(el).unbind()
+    $(el).modal('hide')
+    $(`${el} .close-modal`).attr('disabled', false)
+    $(el).find('.btn-line').attr('disabled', false)
+  }
+
+  contract.methods.removeMyPool().send({
+    from: account,
+    gas: 400000,
+    gasPrice: 1000000000
+  })
+    .on('receipt', _receipt => {
+      unlockModal()
+      store.dispatch({ type: 'START_REQUEST' })
+      store.dispatch({ type: 'GET_USER' })
+      store.dispatch({ type: 'RELOAD_POOLS_LIST' })
+      openSuccessModal('Success', 'The transaction is created')
+    })
+    .catch(_err => {
+      unlockModal()
+      openErrorModal('Error', 'Something went wrong')
+    })
 }

@@ -130,6 +130,7 @@ const elements = {
         .done(response => {
           $el.html(response.content)
           $('.js-become-candidate').on('click', window.openBecomeCandidateModal)
+          $('.js-remove-pool').on('click', window.openRemovePoolModal)
           if (!state.user && state.web3) {
             $('[data-selector="login-button"]').on('click', loginByMetamask)
           }
