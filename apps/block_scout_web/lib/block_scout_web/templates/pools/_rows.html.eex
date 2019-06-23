@@ -1,4 +1,4 @@
-<tr class=<%= if @pool.is_banned, do:  "stakes-tr-banned" %>>
+<tr data-identifier-pool="<%= @pool.position %>" class=<%= if @pool.is_banned, do:  "stakes-tr-banned" %>>
   <td class="stakes-td"><div class="stakes-td-order"><%= @pool.position %></div></td>
   <td class="stakes-td">
     <%=
