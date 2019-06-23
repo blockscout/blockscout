@@ -94,7 +94,7 @@ const elements = {
     }
   },
   '[data-selector="stakes-top"]': {
-    load(_el) {
+    load (_el) {
       store.dispatch({ type: 'INIT_COUNTERS' })
     },
     render ($el, state, oldState) {
@@ -142,7 +142,7 @@ if ($stakesPage.length) {
   const blocksChannel = socket.channel(`blocks:new_block`)
   blocksChannel.join()
   blocksChannel.on('new_block', msg => {
-    store.dispatch({ 
+    store.dispatch({
       type: 'RECEIVED_NEW_BLOCK',
       msg: humps.camelizeKeys(msg)
     })
@@ -151,12 +151,11 @@ if ($stakesPage.length) {
   const epochChannel = socket.channel(`staking_epoch:new_epoch`)
   epochChannel.join()
   epochChannel.on('new_epoch', msg => {
-    store.dispatch({ 
+    store.dispatch({
       type: 'RECEIVED_NEW_EPOCH',
       msg: humps.camelizeKeys(msg)
     })
   })
-
 
   getWeb3()
 }
