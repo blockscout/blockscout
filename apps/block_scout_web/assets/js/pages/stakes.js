@@ -1,7 +1,9 @@
 import $ from 'jquery'
+import _ from 'lodash'
 import humps from 'humps'
 import socket from '../socket'
-import { createStore, connectElements } from '../lib/redux_helpers.js'
+import { connectElements } from '../lib/redux_helpers.js'
+import { createAsyncLoadStore } from '../lib/async_listing_load'
 import Web3 from 'web3'
 
 export const initialState = {
@@ -11,8 +13,25 @@ export const initialState = {
 
 export function reducer (state = initialState, action) {
   switch (action.type) {
+    case 'PAGE_LOAD':
+    case 'ELEMENTS_LOAD': {
+      return Object.assign({}, state, _.omit(action, 'type'))
+    }
     case 'WEB3_DETECTED': {
+      $.getJSON('/staking_contract')
+        .done(response => {
+          store.dispatch({
+            type: 'UPDATE_CONTRACT',
+            abi: response.abi,
+            address: response.address
+          })
+        })
+
       return Object.assign({}, state, { web3: action.web3 })
+    }
+    case 'UPDATE_CONTRACT': {
+      const stakingContract = new state.web3.eth.Contract(action.abi, action.address)
+      return Object.assign({}, state, { stakingContract: stakingContract })
     }
     case 'AUTHORIZED': {
       const a = state.account || null
@@ -65,6 +84,14 @@ export function reducer (state = initialState, action) {
         epochEndIn: epochEndIn
       })
     }
+    case 'RELOAD_POOLS_LIST': {
+      $.getJSON(state.path, {type: 'JSON'})
+        .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
+        .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
+        .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+
+      return state
+    }
     default:
       return state
   }
@@ -89,7 +116,7 @@ const elements = {
   '[data-async-load]': {
     load ($el) {
       return {
-        accountPath: $el.data('async-listing')
+        path: $el.data('async-listing')
       }
     }
   },
@@ -99,9 +126,10 @@ const elements = {
     },
     render ($el, state, oldState) {
       if (state.user === oldState.user) return
-      $.getJSON(state.accountPath, {type: 'JSON', template: 'top'})
+      $.getJSON(state.path, {type: 'JSON', template: 'top'})
         .done(response => {
           $el.html(response.content)
+          $('.js-become-candidate').on('click', window.openBecomeCandidateModal)
           if (!state.user && state.web3) {
             $('[data-selector="login-button"]').on('click', loginByMetamask)
           }
@@ -136,8 +164,10 @@ export var store
 
 const $stakesPage = $('[data-page="stakes"]')
 if ($stakesPage.length) {
-  store = createStore(reducer)
+  store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierPool')
   connectElements({ store, elements })
+
+  store.dispatch({ type: 'PAGE_LOAD' })
 
   const blocksChannel = socket.channel(`blocks:new_block`)
   blocksChannel.join()

@@ -4,6 +4,10 @@ defmodule Explorer.Staking.PoolsReader do
   """
   alias Explorer.SmartContract.Reader
 
+  def get_staking_abi, do: abi("staking.json")
+
+  def get_staking_address, do: contract(:staking)
+
   @spec get_pools() :: [String.t()]
   def get_pools do
     get_active_pools() ++ get_inactive_pools()

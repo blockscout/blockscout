@@ -11,6 +11,6 @@
         <h1 class="stakes-empty-content-title">Lorem Ipsum</h1>
         <p class="stakes-empty-content-text">Lorem ipsum dolor sit amet, consect adipiscing elit, sed do
 eiusmod temp incididunt ut labore et dolore magna.</p>
-        <%= render BlockScoutWeb.CommonComponentsView, "_btn_add_line.html", text: gettext("Become Candidate"), extra_class: "js-become-candidate" %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_btn_add_line.html", text: gettext("Become a Candidate"), extra_class: "js-become-candidate" %>
     </div>
 </div>

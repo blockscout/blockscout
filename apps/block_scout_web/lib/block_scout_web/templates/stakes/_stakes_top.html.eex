@@ -17,5 +17,5 @@
   </div>
 </div>
 <%= if @logged_in do %>
-  <%= render BlockScoutWeb.StakesView, "_stakes_modal_become_candidate.html" %>
+  <%= render BlockScoutWeb.StakesView, "_stakes_modal_become_candidate.html", min_candidate_stake: @min_candidate_stake %>
 <% end %>

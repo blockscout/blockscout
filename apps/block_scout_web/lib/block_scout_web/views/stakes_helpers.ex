@@ -34,6 +34,11 @@ defmodule BlockScoutWeb.StakesHelpers do
     end
   end
 
+  def epoch_end_sec(epoch_end, average_block_time) do
+    block_time = Duration.to_seconds(average_block_time)
+    block_time * epoch_end
+  end
+
   def list_title(:validator), do: "Validators"
   def list_title(:active), do: "Active Pools"
   def list_title(:inactive), do: "Inactive Pools"
