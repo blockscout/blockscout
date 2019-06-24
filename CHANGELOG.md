@@ -34,6 +34,7 @@
 - [#2064](https://github.com/poanetwork/blockscout/pull/2064) - feat: add fields to tx apis, small cleanups
 
 ### Fixes
+- [#2228](https://github.com/poanetwork/blockscout/pull/2228) - favorites duplication issues, active radio issue
 - [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix, 404 page added
 - [#2077](https://github.com/poanetwork/blockscout/pull/2077) - ui issues
 - [#2072](https://github.com/poanetwork/blockscout/pull/2072) - Fixed checkmarks not showing correctly in tabs.
