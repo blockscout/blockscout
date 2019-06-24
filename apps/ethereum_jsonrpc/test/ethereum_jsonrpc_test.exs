@@ -57,7 +57,7 @@ defmodule EthereumJSONRPCTest do
             "invalid argument 0: json: cannot unmarshal hex string of odd length into Go value of type common.Address"
 
           EthereumJSONRPC.Parity ->
-            "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
+            "Invalid params: invalid length 1, expected a 0x-prefixed hex string with length of 40."
 
           _ ->
             raise ArgumentError, "Unsupported variant (#{variant}})"

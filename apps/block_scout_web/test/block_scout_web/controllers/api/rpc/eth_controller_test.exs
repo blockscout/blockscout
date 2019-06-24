@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
   use BlockScoutWeb.ConnCase, async: false
 
   alias Explorer.Counters.{AddressesWithBalanceCounter, AverageBlockTime}
+  alias Explorer.Repo
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
   setup do
@@ -25,6 +26,291 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
   end
 
   defp params(api_params, params), do: Map.put(api_params, "params", params)
+
+  describe "eth_get_logs" do
+    setup do
+      %{
+        api_params: %{
+          "method" => "eth_getLogs",
+          "jsonrpc" => "2.0",
+          "id" => 0
+        }
+      }
+    end
+
+    test "with an invalid address", %{conn: conn, api_params: api_params} do
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params(api_params, [%{"address" => "badhash"}]))
+               |> json_response(200)
+
+      assert %{"error" => "invalid address"} = response
+    end
+
+    test "address with no logs", %{conn: conn, api_params: api_params} do
+      insert(:block)
+      address = insert(:address)
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params(api_params, [%{"address" => to_string(address.hash)}]))
+               |> json_response(200)
+
+      assert %{"result" => []} = response
+    end
+
+    test "address but no logs and no toBlock provided", %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params(api_params, [%{"address" => to_string(address.hash)}]))
+               |> json_response(200)
+
+      assert %{"result" => []} = response
+    end
+
+    test "with a matching address", %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+
+      block = insert(:block, number: 0)
+
+      transaction = insert(:transaction, from_address: address) |> with_block(block)
+      insert(:log, address: address, transaction: transaction, data: "0x010101")
+
+      params = params(api_params, [%{"address" => to_string(address.hash)}])
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params)
+               |> json_response(200)
+
+      assert %{"result" => [%{"data" => "0x010101"}]} = response
+    end
+
+    test "with a matching address and matching topic", %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+
+      block = insert(:block, number: 0)
+
+      transaction = insert(:transaction, from_address: address) |> with_block(block)
+      insert(:log, address: address, transaction: transaction, data: "0x010101", first_topic: "0x01")
+
+      params = params(api_params, [%{"address" => to_string(address.hash), "topics" => ["0x01"]}])
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params)
+               |> json_response(200)
+
+      assert %{"result" => [%{"data" => "0x010101"}]} = response
+    end
+
+    test "with a matching address and multiple topic matches", %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+
+      block = insert(:block, number: 0)
+
+      transaction = insert(:transaction, from_address: address) |> with_block(block)
+      insert(:log, address: address, transaction: transaction, data: "0x010101", first_topic: "0x01")
+      insert(:log, address: address, transaction: transaction, data: "0x020202", first_topic: "0x00")
+
+      params = params(api_params, [%{"address" => to_string(address.hash), "topics" => [["0x01", "0x00"]]}])
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params)
+               |> json_response(200)
+
+      assert [%{"data" => "0x010101"}, %{"data" => "0x020202"}] = Enum.sort_by(response["result"], &Map.get(&1, "data"))
+    end
+
+    test "with a matching address and multiple topic matches in different positions", %{
+      conn: conn,
+      api_params: api_params
+    } do
+      address = insert(:address)
+
+      block = insert(:block, number: 0)
+
+      transaction = insert(:transaction, from_address: address) |> with_block(block)
+
+      insert(:log,
+        address: address,
+        transaction: transaction,
+        data: "0x010101",
+        first_topic: "0x01",
+        second_topic: "0x02"
+      )
+
+      insert(:log, address: address, transaction: transaction, data: "0x020202", first_topic: "0x01")
+
+      params = params(api_params, [%{"address" => to_string(address.hash), "topics" => ["0x01", "0x02"]}])
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params)
+               |> json_response(200)
+
+      assert [%{"data" => "0x010101"}] = response["result"]
+    end
+
+    test "with a matching address and multiple topic matches in different positions and multiple matches in the second position",
+         %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+
+      block = insert(:block, number: 0)
+
+      transaction = insert(:transaction, from_address: address) |> with_block(block)
+
+      insert(:log,
+        address: address,
+        transaction: transaction,
+        data: "0x010101",
+        first_topic: "0x01",
+        second_topic: "0x02"
+      )
+
+      insert(:log,
+        address: address,
+        transaction: transaction,
+        data: "0x020202",
+        first_topic: "0x01",
+        second_topic: "0x03"
+      )
+
+      params = params(api_params, [%{"address" => to_string(address.hash), "topics" => ["0x01", ["0x02", "0x03"]]}])
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params)
+               |> json_response(200)
+
+      assert [%{"data" => "0x010101"}, %{"data" => "0x020202"}] = Enum.sort_by(response["result"], &Map.get(&1, "data"))
+    end
+
+    test "with a block range filter",
+         %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+
+      block1 = insert(:block, number: 0)
+      block2 = insert(:block, number: 1)
+      block3 = insert(:block, number: 2)
+      block4 = insert(:block, number: 3)
+
+      transaction1 = insert(:transaction, from_address: address) |> with_block(block1)
+      transaction2 = insert(:transaction, from_address: address) |> with_block(block2)
+      transaction3 = insert(:transaction, from_address: address) |> with_block(block3)
+      transaction4 = insert(:transaction, from_address: address) |> with_block(block4)
+
+      insert(:log, address: address, transaction: transaction1, data: "0x010101")
+
+      insert(:log, address: address, transaction: transaction2, data: "0x020202")
+
+      insert(:log, address: address, transaction: transaction3, data: "0x030303")
+
+      insert(:log, address: address, transaction: transaction4, data: "0x040404")
+
+      params = params(api_params, [%{"address" => to_string(address.hash), "fromBlock" => 1, "toBlock" => 2}])
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params)
+               |> json_response(200)
+
+      assert [%{"data" => "0x020202"}, %{"data" => "0x030303"}] = Enum.sort_by(response["result"], &Map.get(&1, "data"))
+    end
+
+    test "with a block hash filter",
+         %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+
+      block1 = insert(:block, number: 0)
+      block2 = insert(:block, number: 1)
+      block3 = insert(:block, number: 2)
+
+      transaction1 = insert(:transaction, from_address: address) |> with_block(block1)
+      transaction2 = insert(:transaction, from_address: address) |> with_block(block2)
+      transaction3 = insert(:transaction, from_address: address) |> with_block(block3)
+
+      insert(:log, address: address, transaction: transaction1, data: "0x010101")
+
+      insert(:log, address: address, transaction: transaction2, data: "0x020202")
+
+      insert(:log, address: address, transaction: transaction3, data: "0x030303")
+
+      params = params(api_params, [%{"address" => to_string(address.hash), "blockHash" => to_string(block2.hash)}])
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params)
+               |> json_response(200)
+
+      assert [%{"data" => "0x020202"}] = response["result"]
+    end
+
+    test "with an earliest block filter",
+         %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+
+      block1 = insert(:block, number: 0)
+      block2 = insert(:block, number: 1)
+      block3 = insert(:block, number: 2)
+
+      transaction1 = insert(:transaction, from_address: address) |> with_block(block1)
+      transaction2 = insert(:transaction, from_address: address) |> with_block(block2)
+      transaction3 = insert(:transaction, from_address: address) |> with_block(block3)
+
+      insert(:log, address: address, transaction: transaction1, data: "0x010101")
+
+      insert(:log, address: address, transaction: transaction2, data: "0x020202")
+
+      insert(:log, address: address, transaction: transaction3, data: "0x030303")
+
+      params =
+        params(api_params, [%{"address" => to_string(address.hash), "fromBlock" => "earliest", "toBlock" => "earliest"}])
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params)
+               |> json_response(200)
+
+      assert [%{"data" => "0x010101"}] = response["result"]
+    end
+
+    test "with a pending block filter",
+         %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+
+      block1 = insert(:block, number: 0)
+      block2 = insert(:block, number: 1)
+      block3 = insert(:block, number: 2)
+
+      transaction1 = insert(:transaction, from_address: address) |> with_block(block1)
+      transaction2 = insert(:transaction, from_address: address) |> with_block(block2)
+      transaction3 = insert(:transaction, from_address: address) |> with_block(block3)
+
+      insert(:log, address: address, transaction: transaction1, data: "0x010101")
+
+      insert(:log, address: address, transaction: transaction2, data: "0x020202")
+
+      insert(:log, address: address, transaction: transaction3, data: "0x030303")
+
+      changeset = Ecto.Changeset.change(block3, %{consensus: false})
+
+      Repo.update!(changeset)
+
+      params =
+        params(api_params, [%{"address" => to_string(address.hash), "fromBlock" => "pending", "toBlock" => "pending"}])
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params)
+               |> json_response(200)
+
+      assert [%{"data" => "0x030303"}] = response["result"]
+    end
+  end
 
   describe "eth_get_balance" do
     setup do
