@@ -42,7 +42,8 @@
 - [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
 - [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
 - [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
-- [#2167](https://github.com/poanetwork/blockscout/pull/2168) - feat: document eth rpc api mimicking endpoints 
+- [#2167](https://github.com/poanetwork/blockscout/pull/2168) - feat: document eth rpc api mimicking endpoints
+- [#2225](https://github.com/poanetwork/blockscout/pull/2225) - fix metadata decoding in Solidity 0.5.9 smart contract verification
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
