@@ -1,22 +1,24 @@
 // general
-$primary: #193653;
-$secondary: #49a2ee;
-$tertiary: #41c3a9;
-$additional-font: #a3ceff;
+$primary: #153550;
+$secondary: #38a9f5;
+$tertiary: #76f1ff;
+$additional-font: #89cae6;
 
 // footer
 $footer-background-color: $primary;
 $footer-title-color: #fff;
-$footer-text-color: $additional-font;
-$footer-item-disc-color: $additional-font;
+$footer-text-color: #89cae6;
+$footer-item-disc-color: $secondary;
 .footer-logo { filter: brightness(0) invert(1); }
+.footer-social-icons .footer-social-icon { color: $secondary; }
 
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
 
-$dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
-
-$dashboard-stats-item-value-color: $additional-font; // stat values
+$dashboard-banner-chart-legend-label-color: #89cae6;
+$dashboard-stats-item-label-color: #89cae6;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
 
 $dashboard-stats-item-border-color: $tertiary; // stat border
 
@@ -24,27 +26,34 @@ $dashboard-banner-gradient-start: $primary; // gradient begin
 
 $dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
 
-$dashboard-banner-network-plain-container-background-color: #244468; // stats bg
+$dashboard-banner-network-plain-container-background-color: #1c476c; // stats bg
 
 
 // navigation
 .navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
-$header-icon-border-color-hover: $tertiary; // top border on hover
-$header-icon-color-hover: $tertiary; // nav icon on hover
-.dropdown-item:hover, .dropdown-item:focus { background-color: $tertiary !important; } // dropdown item on hover
 
 // buttons
 $btn-line-bg: #fff; // button bg
-$btn-line-color: $tertiary; // button border and font color && hover bg color
-$btn-copy-color: $tertiary; // btn copy
-$btn-qr-color: $tertiary; // btn qr-code
+$btn-line-color: $secondary; // button border and font color && hover bg color
+$btn-copy-color: $secondary; // btn copy
+$btn-qr-color: $secondary; // btn qr-code
 
 //links & tile
-.tile a { color: $tertiary !important; } // links color for badges
-.tile-type-block {
-    border-left: 4px solid $tertiary;
-} // tab active bg
+$tile-body-a-color: $secondary;
+$tile-type-block-color: $secondary;
+$tile-type-progress-bar-color: $secondary;
+a.tile-title { color: $secondary !important; }
 
 // card
 $card-background-1: $secondary;
 $card-tab-active: $secondary;
+
+.layout-container {
+	.dashboard-banner-container {
+	  background-image: linear-gradient(
+	    to bottom,
+	    $dashboard-banner-gradient-start,
+	    $dashboard-banner-gradient-end
+	  );
+	}
+}

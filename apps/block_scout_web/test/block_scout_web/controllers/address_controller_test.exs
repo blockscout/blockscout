@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
 
     test "returns an address's primary name when present", %{conn: conn} do
       address = insert(:address, fetched_coin_balance: 1)
-      address_name = insert(:address_name, address: address, primary: true, name: "POA Wallet")
+      insert(:address_name, address: address, primary: true, name: "POA Wallet")
 
       start_supervised!(AddressesWithBalanceCounter)
       AddressesWithBalanceCounter.consolidate()

@@ -10,6 +10,9 @@ defmodule BlockScoutWeb.ViewingChainTest do
   alias Explorer.Counters.AddressesWithBalanceCounter
 
   setup do
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, :blocks})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, :blocks})
+
     Enum.map(401..404, &insert(:block, number: &1))
 
     block = insert(:block, number: 405)

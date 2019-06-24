@@ -57,7 +57,7 @@ defmodule EthereumJSONRPCTest do
             "invalid argument 0: json: cannot unmarshal hex string of odd length into Go value of type common.Address"
 
           EthereumJSONRPC.Parity ->
-            "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
+            "Invalid params: invalid length 1, expected a 0x-prefixed hex string with length of 40."
 
           _ ->
             raise ArgumentError, "Unsupported variant (#{variant}})"
@@ -883,6 +883,24 @@ defmodule EthereumJSONRPCTest do
   describe "unique_request_id" do
     test "returns integer" do
       assert is_integer(EthereumJSONRPC.unique_request_id())
+    end
+  end
+
+  describe "fetch_net_version/1" do
+    test "fetches net version", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      expected_version =
+        case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+          EthereumJSONRPC.Parity -> 77
+          _variant -> 1
+        end
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+          {:ok, "#{expected_version}"}
+        end)
+      end
+
+      assert {:ok, ^expected_version} = EthereumJSONRPC.fetch_net_version(json_rpc_named_arguments)
     end
   end
 

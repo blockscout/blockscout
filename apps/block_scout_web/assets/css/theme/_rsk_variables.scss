@@ -4,34 +4,34 @@ $secondary: #27ac8d;
 $tertiary: #e39a54;
 $additional-font: #a1ded1;
 
+$tile-body-a-color: $secondary;
+$tile-type-block-color: $secondary;
+$tile-type-progress-bar-color: $secondary;
+a.tile-title { color: $secondary !important; }
+
 // footer
 $footer-background-color: $primary;
 $footer-title-color: #fff;
 $footer-text-color: $additional-font;
 $footer-item-disc-color: $secondary;
-.footer-logo { filter: brightness(0) invert(1); }
+$footer-social-icon-color: $secondary;
 
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
 
-$dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
-
-$dashboard-stats-item-value-color: $additional-font; // stat values
+$dashboard-banner-chart-legend-label-color: $additional-font;
+$dashboard-stats-item-label-color: $additional-font;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
 
 $dashboard-stats-item-border-color: $secondary; // stat border
-
 $dashboard-banner-gradient-start: $primary; // gradient begin
-
-$dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
-
+$dashboard-banner-gradient-end: #193039; // gradient end
 $dashboard-banner-network-plain-container-background-color: #1a323b; // stats bg
 
-
 // navigation
-.navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
 $header-icon-border-color-hover: $secondary; // top border on hover
 $header-icon-color-hover: $secondary; // nav icon on hover
-.dropdown-item:hover, .dropdown-item:focus { background-color: $secondary !important; } // dropdown item on hover
 
 // buttons
 $btn-line-bg: #fff; // button bg
@@ -39,12 +39,29 @@ $btn-line-color: $secondary; // button border and font color && hover bg color
 $btn-copy-color: $secondary; // btn copy
 $btn-qr-color: $secondary; // btn qr-code
 
-//links & tile
-.tile a { color: $secondary !important; } // links color for badges
-.tile-type-block {
-    border-left: 4px solid $secondary;
-} // tab active bg
-
 // card
 $card-background-1: $secondary;
 $card-tab-active: $secondary;
+
+// ETC theme's idiosyncrasies
+.layout-container {
+    .navbar {
+      box-shadow: 0 0 30px 0 rgba(21, 53, 80, 0.12);
+    }
+
+    .dashboard-banner-container {
+      background-image: linear-gradient(
+        to bottom,
+        $dashboard-banner-gradient-start,
+        $dashboard-banner-gradient-end
+      );
+    }
+
+    .footer-logo {
+      filter: brightness(0) invert(1);
+    }
+}
+
+// Badges
+$badge-neutral-color: #1a323b;
+$badge-neutral-background-color: rgba(#1a323b, .1);

@@ -1,22 +1,25 @@
 // general
 $primary: #17314f;
-$secondary: #69b9d7;
-$tertiary: #15bba6;
-$additional-font: #ffffff;
+$secondary: #15bba6;
+$tertiary: #93d7ff;
+$additional-font: #fff;
 
 // footer
 $footer-background-color: $primary;
 $footer-title-color: #fff;
-$footer-text-color: #909dab;
-$footer-item-disc-color: $tertiary;
+$footer-text-color: #96bde8;
+$footer-item-disc-color: $secondary;
 .footer-logo { filter: brightness(0) invert(1); }
 
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
 
-$dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
+$dashboard-line-color-market: $secondary;
 
-$dashboard-stats-item-value-color: $additional-font; // stat values
+$dashboard-banner-chart-legend-label-color: $footer-text-color;
+$dashboard-stats-item-label-color: $footer-text-color;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
 
 $dashboard-stats-item-border-color: $secondary; // stat border
 
@@ -29,22 +32,34 @@ $dashboard-banner-network-plain-container-background-color: #20446e; // stats bg
 
 // navigation
 .navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
-$header-icon-border-color-hover: $secondary; // top border on hover
-$header-icon-color-hover: $secondary; // nav icon on hover
-.dropdown-item:hover, .dropdown-item:focus { background-color: $secondary !important; } // dropdown item on hover
 
 // buttons
 $btn-line-bg: #fff; // button bg
-$btn-line-color: $primary; // button border and font color && hover bg color
-$btn-copy-color: $primary; // btn copy
-$btn-qr-color: $primary; // btn qr-code
+$btn-line-color: $secondary; // button border and font color && hover bg color
+$btn-copy-color: $secondary; // btn copy
+$btn-qr-color: $secondary; // btn qr-code
 
 //links & tile
-.tile a { color: $tertiary !important; } // links color for badges
-.tile-type-block {
-    border-left: 4px solid $primary;
-} // tab active bg
+$tile-body-a-color: $secondary;
+$tile-type-block-color: $secondary;
+$tile-type-progress-bar-color: $secondary;
+a.tile-title { color: $secondary !important; }
 
 // card
-$card-background-1: #1b395c;
-$card-tab-active: $tertiary;
+$card-background-1: $secondary;
+$card-tab-active: $secondary;
+
+.layout-container {
+	.dashboard-banner-container {
+	  background-image: linear-gradient(
+	    to bottom,
+	    $dashboard-banner-gradient-start,
+	    $dashboard-banner-gradient-end
+	  );
+	}
+}
+
+// Badges
+$badge-neutral-color: #20446e;
+$badge-neutral-background-color: rgba(#20446e, .1);
+$api-text-monospace-color: #20446e;

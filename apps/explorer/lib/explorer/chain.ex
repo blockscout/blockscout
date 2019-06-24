@@ -21,6 +21,7 @@ defmodule Explorer.Chain do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
+  alias ABI.TypeDecoder
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
@@ -32,6 +33,7 @@ defmodule Explorer.Chain do
     Block,
     BlockCountCache,
     BlockNumberCache,
+    BlocksCache,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -39,6 +41,7 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     SmartContract,
+    StakingPool,
     Token,
     TokenTransfer,
     Transaction,
@@ -49,6 +52,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Block.{EmissionReward, Reward}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Counters.AddressesWithBalanceCounter
+  alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -224,63 +228,34 @@ defmodule Explorer.Chain do
     transaction_hashes_from_token_transfers =
       TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
 
-    token_transfers_query =
-      transaction_hashes_from_token_transfers
-      |> Transaction.where_transaction_hashes_match()
-      |> join_associations(necessity_by_association)
-      |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
-      |> Transaction.preload_token_transfers(address_hash)
-
-    base_query =
+    transactions_list =
       paging_options
       |> fetch_transactions()
+      |> Transaction.where_transaction_matches(transaction_hashes_from_token_transfers, direction, address_hash)
       |> join_associations(necessity_by_association)
       |> Transaction.preload_token_transfers(address_hash)
+      |> Repo.all()
 
-    from_address_query =
-      base_query
-      |> where([t], t.from_address_hash == ^address_hash)
+    if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
+      address_hash
+      |> Reward.fetch_emission_rewards_tuples(paging_options)
+      |> Enum.concat(transactions_list)
+      |> Enum.sort_by(fn item ->
+        case item do
+          {%Reward{} = emission_reward, _} ->
+            {-emission_reward.block.number, 1}
 
-    to_address_query =
-      base_query
-      |> where([t], t.to_address_hash == ^address_hash)
-
-    created_contract_query =
-      base_query
-      |> where([t], t.created_contract_address_hash == ^address_hash)
-
-    queries =
-      [token_transfers_query] ++
-        case direction do
-          :from -> [from_address_query]
-          :to -> [to_address_query, created_contract_query]
-          _ -> [from_address_query, to_address_query, created_contract_query]
+          item ->
+            {-item.block_number, -item.index}
         end
-
-    rewards_list =
-      if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
-        Reward.fetch_emission_rewards_tuples(address_hash, paging_options)
-      else
-        []
-      end
-
-    queries
-    |> Stream.flat_map(&Repo.all/1)
-    |> Stream.uniq()
-    |> Stream.concat(rewards_list)
-    |> Enum.sort_by(fn item ->
-      case item do
-        {%Reward{} = emission_reward, _} ->
-          {-emission_reward.block.number, 1}
-
-        item ->
-          {-item.block_number, -item.index}
-      end
-    end)
-    |> Enum.take(paging_options.page_size)
+      end)
+      |> Enum.take(paging_options.page_size)
+    else
+      transactions_list
+    end
   end
 
-  @spec address_to_logs(Address.t(), [paging_options]) :: [
+  @spec address_to_logs(Address.t(), Keyword.t()) :: [
           Log.t()
         ]
   def address_to_logs(
@@ -292,7 +267,7 @@ defmodule Explorer.Chain do
 
     {block_number, transaction_index, log_index} = paging_options.key || {BlockNumberCache.max_number(), 0, 0}
 
-    query =
+    base_query =
       from(log in Log,
         inner_join: transaction in assoc(log, :transaction),
         order_by: [desc: transaction.block_number, desc: transaction.index],
@@ -307,10 +282,21 @@ defmodule Explorer.Chain do
         select: log
       )
 
-    query
+    base_query
+    |> filter_topic(options)
     |> Repo.all()
     |> Enum.take(paging_options.page_size)
   end
+
+  defp filter_topic(base_query, topic: topic) do
+    from(log in base_query,
+      where:
+        log.first_topic == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
+          log.fourth_topic == ^topic
+    )
+  end
+
+  defp filter_topic(base_query, _), do: base_query
 
   @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0`s given the address_hash and the token contract
@@ -689,25 +675,32 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.hash_to_address(hash)
       {:error, :not_found}
 
+  Optionally accepts:
+    - a list of bindings to preload, just like `Ecto.Query.preload/3`
+    - a boolean to also fetch the `has_decompiled_code?` virtual field or not
+
   """
-  @spec hash_to_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
-  def hash_to_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
-    query =
-      from(
-        address in Address,
-        preload: [
+  @spec hash_to_address(Hash.Address.t(), [Macro.t()], boolean()) :: {:ok, Address.t()} | {:error, :not_found}
+  def hash_to_address(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
+        preloads \\ [
           :contracts_creation_internal_transaction,
           :names,
           :smart_contract,
           :token,
           :contracts_creation_transaction
         ],
+        query_decompiled_code_flag \\ true
+      ) do
+    query =
+      from(
+        address in Address,
+        preload: ^preloads,
         where: address.hash == ^hash
       )
 
-    query_with_decompiled_flag = with_decompiled_code_flag(query, hash)
-
-    query_with_decompiled_flag
+    query
+    |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -808,6 +801,86 @@ defmodule Explorer.Chain do
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+  Returns the balance of the given address and block combination.
+
+  Returns `{:error, :not_found}` if there is no address by that hash present.
+  Returns `{:error, :no_balance}` if there is no balance for that address at that block.
+  """
+  @spec get_balance_as_of_block(Hash.Address.t(), integer | :earliest | :latest | :pending) ::
+          {:ok, Wei.t()} | {:error, :no_balance} | {:error, :not_found}
+  def get_balance_as_of_block(address, block) when is_integer(block) do
+    coin_balance_query =
+      from(coin_balance in CoinBalance,
+        where: coin_balance.address_hash == ^address,
+        where: not is_nil(coin_balance.value),
+        where: coin_balance.block_number <= ^block,
+        order_by: [desc: coin_balance.block_number],
+        limit: 1,
+        select: coin_balance.value
+      )
+
+    case Repo.one(coin_balance_query) do
+      nil -> {:error, :not_found}
+      coin_balance -> {:ok, coin_balance}
+    end
+  end
+
+  def get_balance_as_of_block(address, :latest) do
+    case max_consensus_block_number() do
+      {:ok, latest_block_number} ->
+        get_balance_as_of_block(address, latest_block_number)
+
+      {:error, :not_found} ->
+        {:error, :not_found}
+    end
+  end
+
+  def get_balance_as_of_block(address, :earliest) do
+    query =
+      from(coin_balance in CoinBalance,
+        where: coin_balance.address_hash == ^address,
+        where: not is_nil(coin_balance.value),
+        where: coin_balance.block_number == 0,
+        limit: 1,
+        select: coin_balance.value
+      )
+
+    case Repo.one(query) do
+      nil -> {:error, :not_found}
+      coin_balance -> {:ok, coin_balance}
+    end
+  end
+
+  def get_balance_as_of_block(address, :pending) do
+    query =
+      case max_consensus_block_number() do
+        {:ok, latest_block_number} ->
+          from(coin_balance in CoinBalance,
+            where: coin_balance.address_hash == ^address,
+            where: not is_nil(coin_balance.value),
+            where: coin_balance.block_number > ^latest_block_number,
+            order_by: [desc: coin_balance.block_number],
+            limit: 1,
+            select: coin_balance.value
+          )
+
+        {:error, :not_found} ->
+          from(coin_balance in CoinBalance,
+            where: coin_balance.address_hash == ^address,
+            where: not is_nil(coin_balance.value),
+            order_by: [desc: coin_balance.block_number],
+            limit: 1,
+            select: coin_balance.value
+          )
+      end
+
+    case Repo.one(query) do
+      nil -> {:error, :not_found}
+      coin_balance -> {:ok, coin_balance}
+    end
   end
 
   @spec list_ordered_addresses(non_neg_integer(), non_neg_integer()) :: [Address.t()]
@@ -1136,9 +1209,25 @@ defmodule Explorer.Chain do
   @spec list_blocks([paging_options | necessity_by_association_option]) :: [Block.t()]
   def list_blocks(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    paging_options = Keyword.get(options, :paging_options) || @default_paging_options
     block_type = Keyword.get(options, :block_type, "Block")
 
+    if block_type == "Block" && !paging_options.key do
+      if BlocksCache.enough_elements?(paging_options.page_size) do
+        BlocksCache.blocks(paging_options.page_size)
+      else
+        elements = fetch_blocks(block_type, paging_options, necessity_by_association)
+
+        BlocksCache.rewrite_cache(elements)
+
+        elements
+      end
+    else
+      fetch_blocks(block_type, paging_options, necessity_by_association)
+    end
+  end
+
+  defp fetch_blocks(block_type, paging_options, necessity_by_association) do
     Block
     |> Block.block_type_filter(block_type)
     |> page_blocks(paging_options)
@@ -1612,6 +1701,32 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec max_non_consensus_block_number(integer | nil) :: {:ok, Block.block_number()} | {:error, :not_found}
+  def max_non_consensus_block_number(max_consensus_block_number \\ nil) do
+    max =
+      if max_consensus_block_number do
+        {:ok, max_consensus_block_number}
+      else
+        max_consensus_block_number()
+      end
+
+    case max do
+      {:ok, number} ->
+        query =
+          from(block in Block,
+            where: block.consensus == false,
+            where: block.number > ^number
+          )
+
+        query
+        |> Repo.aggregate(:max, :number)
+        |> case do
+          nil -> {:error, :not_found}
+          number -> {:ok, number}
+        end
+    end
+  end
+
   @doc """
   The height of the chain.
 
@@ -1877,7 +1992,6 @@ defmodule Explorer.Chain do
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> pending_transactions_query()
-    |> where([transaction], is_nil(transaction.error) or transaction.error != "dropped/replaced")
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
@@ -1886,7 +2000,7 @@ defmodule Explorer.Chain do
 
   defp pending_transactions_query(query) do
     from(transaction in query,
-      where: is_nil(transaction.block_hash)
+      where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
     )
   end
 
@@ -2500,7 +2614,7 @@ defmodule Explorer.Chain do
   @doc """
   Calls supply_for_days from the configured supply_module
   """
-  def supply_for_days(days_count), do: supply_module().supply_for_days(days_count)
+  def supply_for_days, do: supply_module().supply_for_days(MarketHistoryCache.recent_days_count())
 
   @doc """
   Streams a lists token contract addresses that haven't been cataloged.
@@ -2808,6 +2922,87 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  @spec transaction_token_transfer_type(Transaction.t()) ::
+          {:erc20, TokenTransfer.t()} | {:erc721, TokenTransfer.t()} | nil
+  def transaction_token_transfer_type(
+        %Transaction{
+          status: :ok,
+          created_contract_address_hash: nil,
+          input: input,
+          value: value
+        } = transaction
+      ) do
+    zero_wei = %Wei{value: Decimal.new(0)}
+
+    transaction = Repo.preload(transaction, token_transfers: :token)
+
+    # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721.sol#L35
+    case {to_string(input), value} do
+      # transferFrom(address,address,uint256)
+      {"0x23b872dd" <> params, ^zero_wei} ->
+        types = [:address, :address, {:uint, 256}]
+        [from_address, to_address, _value] = decode_params(params, types)
+
+        find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
+
+      # safeTransferFrom(address,address,uint256)
+      {"0x42842e0e" <> params, ^zero_wei} ->
+        types = [:address, :address, {:uint, 256}]
+        [from_address, to_address, _value] = decode_params(params, types)
+
+        find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
+
+      # safeTransferFrom(address,address,uint256,bytes)
+      {"0xb88d4fde" <> params, ^zero_wei} ->
+        types = [:address, :address, {:uint, 256}, :bytes]
+        [from_address, to_address, _value, _data] = decode_params(params, types)
+
+        find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
+
+      # check for ERC 20 or for old ERC 721 token versions
+      {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
+        types = [:address, {:uint, 256}]
+
+        [address, value] = decode_params(params, types)
+
+        decimal_value = Decimal.new(value)
+
+        find_erc721_or_erc20_token_transfer(transaction.token_transfers, {address, decimal_value})
+
+      _ ->
+        nil
+    end
+  rescue
+    _ -> nil
+  end
+
+  def transaction_token_transfer_type(_), do: nil
+
+  defp find_erc721_token_transfer(token_transfers, {from_address, to_address}) do
+    token_transfer =
+      Enum.find(token_transfers, fn token_transfer ->
+        token_transfer.from_address_hash.bytes == from_address && token_transfer.to_address_hash.bytes == to_address
+      end)
+
+    if token_transfer, do: {:erc721, token_transfer}
+  end
+
+  defp find_erc721_or_erc20_token_transfer(token_transfers, {address, decimal_value}) do
+    token_transfer =
+      Enum.find(token_transfers, fn token_transfer ->
+        token_transfer.to_address_hash.bytes == address &&
+          (token_transfer.amount == decimal_value || token_transfer.token_id)
+      end)
+
+    if token_transfer do
+      case token_transfer.token do
+        %Token{type: "ERC-20"} -> {:erc20, token_transfer}
+        %Token{type: "ERC-721"} -> {:erc721, token_transfer}
+        _ -> nil
+      end
+    end
+  end
+
   defp reject_decompiled_with_version(query, nil), do: query
 
   defp reject_decompiled_with_version(query, reject_version) do
@@ -2925,7 +3120,7 @@ defmodule Explorer.Chain do
   def staking_pools(filter, %PagingOptions{page_size: page_size, page_number: page_number} \\ @default_paging_options) do
     off = page_size * (page_number - 1)
 
-    Address.Name
+    StakingPool
     |> staking_pool_filter(filter)
     |> limit(^page_size)
     |> offset(^off)
@@ -2935,61 +3130,46 @@ defmodule Explorer.Chain do
   @doc "Get count of staking pools from the DB"
   @spec staking_pools_count(filter :: :validator | :active | :inactive) :: integer
   def staking_pools_count(filter) do
-    Address.Name
+    StakingPool
     |> staking_pool_filter(filter)
-    |> Repo.aggregate(:count, :address_hash)
+    |> Repo.aggregate(:count, :staking_address_hash)
   end
 
   defp staking_pool_filter(query, :validator) do
     where(
       query,
-      [address],
-      fragment(
-        """
-        (?->>'is_active')::boolean = true and
-        (?->>'deleted')::boolean is not true and
-        (?->>'is_validator')::boolean = true
-        """,
-        address.metadata,
-        address.metadata,
-        address.metadata
-      )
+      [pool],
+      pool.is_active == true and
+        pool.is_deleted == false and
+        pool.is_validator == true
     )
   end
 
   defp staking_pool_filter(query, :active) do
     where(
       query,
-      [address],
-      fragment(
-        """
-        (?->>'is_active')::boolean = true and
-        (?->>'deleted')::boolean is not true
-        """,
-        address.metadata,
-        address.metadata
-      )
+      [pool],
+      pool.is_active == true and
+        pool.is_deleted == false
     )
   end
 
   defp staking_pool_filter(query, :inactive) do
     where(
       query,
-      [address],
-      fragment(
-        """
-        (?->>'is_active')::boolean = false and
-        (?->>'deleted')::boolean is not true
-        """,
-        address.metadata,
-        address.metadata
-      )
+      [pool],
+      pool.is_active == false and
+        pool.is_deleted == false
     )
   end
 
   defp staking_pool_filter(query, _), do: query
 
-  defp with_decompiled_code_flag(query, hash) do
+  defp with_decompiled_code_flag(query, hash, use_option \\ true)
+
+  defp with_decompiled_code_flag(query, _hash, false), do: query
+
+  defp with_decompiled_code_flag(query, hash, true) do
     has_decompiled_code_query =
       from(decompiled_contract in DecompiledSmartContract,
         where: decompiled_contract.address_hash == ^hash,
@@ -3002,5 +3182,11 @@ defmodule Explorer.Chain do
       left_join: decompiled_code in subquery(has_decompiled_code_query),
       select_merge: %{has_decompiled_code?: decompiled_code.has_decompiled_code?}
     )
+  end
+
+  defp decode_params(params, types) do
+    params
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw(types)
   end
 end

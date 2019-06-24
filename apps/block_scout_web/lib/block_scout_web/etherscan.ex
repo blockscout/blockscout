@@ -82,6 +82,8 @@ defmodule BlockScoutWeb.Etherscan do
         "to" => "",
         "value" => "5488334153118633",
         "contractAddress" => "0x883103875d905c11f9ac7dacbfc16deb39655361",
+        "transactionHash" => "0xd65b788c610949704a5f9aac2228c7c777434dfe11c863a12306f57fcbd8cdbb",
+        "index" => "0",
         "input" => "",
         "type" => "create",
         "gas" => "814937",
@@ -98,6 +100,12 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => []
   }
 
+  @account_eth_get_balance_example_value %{
+    "jsonrpc" => "2.0",
+    "result" => "0x0234c8a3397aab58",
+    "id" => 1
+  }
+
   @account_tokentx_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -110,6 +118,7 @@ defmodule BlockScoutWeb.Etherscan do
         "blockHash" => "0x6169c5dc05d0051564ba3eae8ebfbdefda640c5f5ffc095846b8aed0b44f64ea",
         "from" => "0x4e83362442b8d1bec281594cea3050c8eb01311c",
         "contractAddress" => "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+        "logIndex" => "0",
         "to" => "0x21e21ba085289f81a86921de890eed30f1ad2375",
         "value" => "10000000000000000000",
         "tokenName" => "Maker",
@@ -1023,6 +1032,49 @@ defmodule BlockScoutWeb.Etherscan do
         example: ~s("1537234460")
       }
     }
+  }
+
+  @account_eth_get_balance_action %{
+    name: "eth_get_balance",
+    description:
+      "Mimics Ethereum JSON RPC's eth_getBalance. Returns the balance as of the provided block (defaults to latest)",
+    required_params: [
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "The address of the account."
+      }
+    ],
+    optional_params: [
+      %{
+        key: "block",
+        placeholder: "block",
+        type: "string",
+        description: """
+        Either the block number as a string, or one of latest, earliest or pending
+
+        latest will be the latest balance in a *consensus* block.
+        earliest will be the first recorded balance for the address.
+        pending will be the latest balance in consensus *or* nonconcensus blocks.
+        """
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_eth_get_balance_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            jsonrpc: @jsonrpc_version_type,
+            id: @id_type,
+            result: @hex_number_type
+          }
+        }
+      }
+    ]
   }
 
   @account_balance_action %{
@@ -2200,6 +2252,7 @@ defmodule BlockScoutWeb.Etherscan do
   @account_module %{
     name: "account",
     actions: [
+      @account_eth_get_balance_action,
       @account_balance_action,
       @account_balancemulti_action,
       @account_txlist_action,

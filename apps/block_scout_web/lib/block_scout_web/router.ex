@@ -32,6 +32,8 @@ defmodule BlockScoutWeb.Router do
 
     alias BlockScoutWeb.API.RPC
 
+    post("/eth_rpc", EthController, :eth_request)
+
     forward("/", RPCTranslator, %{
       "block" => RPC.BlockController,
       "account" => RPC.AddressController,
@@ -238,10 +240,15 @@ defmodule BlockScoutWeb.Router do
 
     get("/search", ChainController, :search)
 
+    get("/search_logs", AddressLogsController, :search_logs)
+
     get("/token_autocomplete", ChainController, :token_autocomplete)
 
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
     get("/api_docs", APIDocsController, :index)
+    get("/eth_rpc_api_docs", APIDocsController, :eth_rpc)
+
+    get("/:page", PageNotFoundController, :index)
   end
 end
