@@ -46,7 +46,6 @@ $(document).on('change', ".network-selector-item-favorite input[type='checkbox']
       $('.js-favorites-tab .network-selector-tab-content-empty').show()
     }
   }
-
 })
 
 if (favoritesNetworksUrls.length > 0) {
