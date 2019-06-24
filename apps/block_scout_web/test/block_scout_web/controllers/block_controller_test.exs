@@ -2,6 +2,13 @@ defmodule BlockScoutWeb.BlockControllerTest do
   use BlockScoutWeb.ConnCase
   alias Explorer.Chain.Block
 
+  setup do
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, :blocks})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, :blocks})
+
+    :ok
+  end
+
   describe "GET show/2" do
     test "with block redirects to block transactions route", %{conn: conn} do
       insert(:block, number: 3)

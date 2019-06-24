@@ -7,16 +7,17 @@ $additional-font: #99fff9;
 // footer
 $footer-background-color: $primary;
 $footer-title-color: #fff;
-$footer-text-color: $secondary;
-$footer-item-disc-color: $secondary;
+$footer-text-color: $additional-font;
+$footer-item-disc-color: $additional-font;
 .footer-logo { filter: brightness(0) invert(1); }
 
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
 
-$dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
-
-$dashboard-stats-item-value-color: $additional-font; // stat values
+$dashboard-banner-chart-legend-label-color: $additional-font;
+$dashboard-stats-item-label-color: $additional-font;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
 
 $dashboard-stats-item-border-color: $secondary; // stat border
 
@@ -29,9 +30,8 @@ $dashboard-banner-network-plain-container-background-color: #1a323b; // stats bg
 
 // navigation
 .navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
-$header-icon-border-color-hover: $tertiary; // top border on hover
-$header-icon-color-hover: $tertiary; // nav icon on hover
-.dropdown-item:hover, .dropdown-item:focus { background-color: $tertiary !important; } // dropdown item on hover
+$header-icon-border-color-hover: $tertiary;
+$header-icon-color-hover: $tertiary;
 
 // buttons
 $btn-line-bg: #fff; // button bg
@@ -40,11 +40,38 @@ $btn-copy-color: $tertiary; // btn copy
 $btn-qr-color: $tertiary; // btn qr-code
 
 //links & tile
-.tile a { color: $tertiary !important; } // links color for badges
-.tile-type-block {
-    border-left: 4px solid $tertiary;
-} // tab active bg
+$tile-body-a-color: $tertiary;
+$tile-type-block-color: $tertiary;
+$tile-type-progress-bar-color: $tertiary;
+a.tile-title { color: $tertiary !important; }
 
 // card
-$card-background-1: $primary;
-$card-tab-active: $primary;
+$card-background-1: $tertiary;
+$card-tab-active: $tertiary;
+
+// dropdown
+.dropdown-item {
+    &:hover,
+    &:active,
+    &.active {
+      background-color: rgba($tertiary, .1) !important;
+      color: $tertiary !important;
+    }
+}
+
+.layout-container {
+	.dashboard-banner-container {
+	  background-image: linear-gradient(
+	    to bottom,
+	    $dashboard-banner-gradient-start,
+	    $dashboard-banner-gradient-end
+	  );
+	}
+}
+
+// Badges
+$badge-success-color: #15bba6;
+$badge-success-background-color: rgba(#15bba6, .1);
+$badge-neutral-color: $tertiary;
+$badge-neutral-background-color: rgba($tertiary, .1);
+$api-text-monospace-color: $tertiary;

@@ -1,8 +1,52 @@
 ## Current
-
 ### Features
+- [#2182](https://github.com/poanetwork/blockscout/pull/2182) - add market history cache
+- [#2109](https://github.com/poanetwork/blockscout/pull/2109) - use bigger updates instead of `Multi` transactions in BlocksTransactionsMismatch
+- [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
+- [#2151](https://github.com/poanetwork/blockscout/pull/2151) - hide dropdown menu then other networks list is empty
+- [#2146](https://github.com/poanetwork/blockscout/pull/2146) - feat: add eth_getLogs rpc endpoint
 
 ### Fixes
+- [#2201](https://github.com/poanetwork/blockscout/pull/2201) - footer columns fix
+- [#2179](https://github.com/poanetwork/blockscout/pull/2179) - fix docker build error
+- [#2165](https://github.com/poanetwork/blockscout/pull/2165) - sort blocks by timestamp when calculating average block time
+- [#2175](https://github.com/poanetwork/blockscout/pull/2175) - fix coinmarketcap response errors
+- [#2164](https://github.com/poanetwork/blockscout/pull/2164) - fix large numbers in balance view card
+- [#2155](https://github.com/poanetwork/blockscout/pull/2155) - fix pending transaction query
+- [#2183](https://github.com/poanetwork/blockscout/pull/2183) - tile content aligning for mobile resolution fix, dai logo fix
+- [#2162](https://github.com/poanetwork/blockscout/pull/2162) - contract creation tile color changed
+- [#2144](https://github.com/poanetwork/blockscout/pull/2144) - 'page not found' images path fixed for goerli
+- [#2142](https://github.com/poanetwork/blockscout/pull/2142) - Removed posdao theme and logo, added 'page not found' image for goerli
+- [#2138](https://github.com/poanetwork/blockscout/pull/2138) - badge colors issue, api titles issue
+- [#2129](https://github.com/poanetwork/blockscout/pull/2129) - Fix for width of explorer elements
+- [#2121](https://github.com/poanetwork/blockscout/pull/2121) - Binding of 404 page
+- [#2120](https://github.com/poanetwork/blockscout/pull/2120) - footer links and socials focus color issue
+- [#2113](https://github.com/poanetwork/blockscout/pull/2113) - renewed logos for rsk, dai, blockscout; themes color changes for lukso; error images for lukso
+- [#2112](https://github.com/poanetwork/blockscout/pull/2112) - themes color improvements, dropdown color issue
+- [#2110](https://github.com/poanetwork/blockscout/pull/2110) - themes colors issues, ui issues
+- [#2103](https://github.com/poanetwork/blockscout/pull/2103) - ui issues for all themes
+- [#2090](https://github.com/poanetwork/blockscout/pull/2090) - updated some ETC theme colors
+- [#2096](https://github.com/poanetwork/blockscout/pull/2096) - RSK theme fixes
+- [#2093](https://github.com/poanetwork/blockscout/pull/2093) - detect token transfer type for deprecated erc721 spec
+- [#2111](https://github.com/poanetwork/blockscout/pull/2111) - improve address transaction controller
+- [#2108](https://github.com/poanetwork/blockscout/pull/2108) - fix uncle fetching without full transactions
+- [#2128](https://github.com/poanetwork/blockscout/pull/2128) - add new function clause for uncle errors
+- [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
+- [#2119](https://github.com/poanetwork/blockscout/pull/2119) - fix map logging
+- [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
+- [#2148](https://github.com/poanetwork/blockscout/pull/2148) - filter pending logs
+- [#2147](https://github.com/poanetwork/blockscout/pull/2147) - add rsk format of checksum
+- [#2149](https://github.com/poanetwork/blockscout/pull/2149) - remove pending transaction count
+- [#2177](https://github.com/poanetwork/blockscout/pull/2177) - remove duplicate entries from UncleBlock's Fetcher
+- [#2169](https://github.com/poanetwork/blockscout/pull/2169) - add more validator reward types for xDai
+- [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
+- [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
+- [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
+- [#2167](https://github.com/poanetwork/blockscout/pull/2168) - feat: document eth rpc api mimicking endpoints
+
+### Chore
+- [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
+- [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
 
 ### Chore
 
@@ -10,6 +54,7 @@
 
 ### Features
 - [#2044](https://github.com/poanetwork/blockscout/pull/2044) - New network selector.
+- [#2091](https://github.com/poanetwork/blockscout/pull/2091) - Added "Question" modal.
 - [#1963](https://github.com/poanetwork/blockscout/pull/1963), [#1959](https://github.com/poanetwork/blockscout/pull/1959), [#1948](https://github.com/poanetwork/blockscout/pull/1948), [#1936](https://github.com/poanetwork/blockscout/pull/1936), [#1925](https://github.com/poanetwork/blockscout/pull/1925), [#1922](https://github.com/poanetwork/blockscout/pull/1922), [#1903](https://github.com/poanetwork/blockscout/pull/1903), [#1874](https://github.com/poanetwork/blockscout/pull/1874), [#1895](https://github.com/poanetwork/blockscout/pull/1895), [#2031](https://github.com/poanetwork/blockscout/pull/2031), [#2073](https://github.com/poanetwork/blockscout/pull/2073), [#2074](https://github.com/poanetwork/blockscout/pull/2074),  - added new themes and logos for poa, eth, rinkeby, goerli, ropsten, kovan, sokol, xdai, etc, rsk and default theme
 - [#1726](https://github.com/poanetwork/blockscout/pull/2071) - Updated styles for the new smart contract page.
 - [#2081](https://github.com/poanetwork/blockscout/pull/2081) - Tooltip for 'more' button, explorers logos added
@@ -17,7 +62,6 @@
 - [#1928](https://github.com/poanetwork/blockscout/pull/1928) - pagination styles were updated
 - [#1940](https://github.com/poanetwork/blockscout/pull/1940) - qr modal button and background issue
 - [#1907](https://github.com/poanetwork/blockscout/pull/1907) - dropdown color bug fix (lukso theme) and tooltip color bug fix
-- [#2197](https://github.com/poanetwork/blockscout/pull/2197) - search network input functionality, add to favorites functionality, removed 'Show More Networks' button
 - [#1859](https://github.com/poanetwork/blockscout/pull/1859) - feat: show raw transaction traces
 - [#1941](https://github.com/poanetwork/blockscout/pull/1941) - feat: add on demand fetching and stale attr to rpc
 - [#1957](https://github.com/poanetwork/blockscout/pull/1957) - Calculate stakes ratio before insert pools
@@ -32,9 +76,12 @@
 - [#2037](https://github.com/poanetwork/blockscout/pull/2037) - add address logs search functionality
 - [#2012](https://github.com/poanetwork/blockscout/pull/2012) - make all pages pagination async
 - [#2064](https://github.com/poanetwork/blockscout/pull/2064) - feat: add fields to tx apis, small cleanups
+- [#2100](https://github.com/poanetwork/blockscout/pull/2100) - feat: eth_get_balance rpc endpoint
 
 ### Fixes
 - [#2228](https://github.com/poanetwork/blockscout/pull/2228) - favorites duplication issues, active radio issue
+- [#2099](https://github.com/poanetwork/blockscout/pull/2099) - logs search input width
+- [#2098](https://github.com/poanetwork/blockscout/pull/2098) - nav dropdown issue, logo size issue
 - [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix, 404 page added
 - [#2077](https://github.com/poanetwork/blockscout/pull/2077) - ui issues
 - [#2072](https://github.com/poanetwork/blockscout/pull/2072) - Fixed checkmarks not showing correctly in tabs.
@@ -68,6 +115,8 @@
 - [#2014](https://github.com/poanetwork/blockscout/pull/2014) - fix: use better queries for listLogs endpoint
 - [#2027](https://github.com/poanetwork/blockscout/pull/2027) - fix: `BlocksTransactionsMismatch` ignoring blocks without transactions
 - [#2070](https://github.com/poanetwork/blockscout/pull/2070) - reduce `max_concurrency` of `BlocksTransactionsMismatch` fetcher
+- [#2083](https://github.com/poanetwork/blockscout/pull/2083) - allow total_difficuly to be nil
+- [#2086](https://github.com/poanetwork/blockscout/pull/2086) - fix geth's staticcall without output
 
 ### Chore
 

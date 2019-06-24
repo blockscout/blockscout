@@ -74,10 +74,15 @@
                   class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
                   to: api_docs_path(@conn, :index)
                 ) %>
+            <%= link(
+                  gettext("Eth RPC"),
+                  class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
+                  to: api_docs_path(@conn, :eth_rpc)
+                ) %>
           </div>
         </li>
         <li class="nav-item dropdown nav-item-networks">
-          <a class="nav-link topnav-nav-link dropdown-toggle active-icon js-show-network-selector" href="#">
+          <a class="nav-link topnav-nav-link dropdown-toggle active-icon js-show-network-selector <%= if dropdown_nets() == [], do: "disabled" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
             </span>
