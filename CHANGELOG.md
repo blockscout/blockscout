@@ -79,6 +79,7 @@
 - [#2100](https://github.com/poanetwork/blockscout/pull/2100) - feat: eth_get_balance rpc endpoint
 
 ### Fixes
+- [#2228](https://github.com/poanetwork/blockscout/pull/2228) - favorites duplication issues, active radio issue
 - [#2099](https://github.com/poanetwork/blockscout/pull/2099) - logs search input width
 - [#2098](https://github.com/poanetwork/blockscout/pull/2098) - nav dropdown issue, logo size issue
 - [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix, 404 page added
