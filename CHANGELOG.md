@@ -1,12 +1,14 @@
 ## Current
-
 ### Features
+- [#2182](https://github.com/poanetwork/blockscout/pull/2182) - add market history cache
 - [#2109](https://github.com/poanetwork/blockscout/pull/2109) - use bigger updates instead of `Multi` transactions in BlocksTransactionsMismatch
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
 - [#2151](https://github.com/poanetwork/blockscout/pull/2151) - hide dropdown menu then other networks list is empty
 - [#2191](https://github.com/poanetwork/blockscout/pull/2191) - allow to configure token metadata update interval
+- [#2146](https://github.com/poanetwork/blockscout/pull/2146) - feat: add eth_getLogs rpc endpoint
 
 ### Fixes
+- [#2201](https://github.com/poanetwork/blockscout/pull/2201) - footer columns fix
 - [#2179](https://github.com/poanetwork/blockscout/pull/2179) - fix docker build error
 - [#2165](https://github.com/poanetwork/blockscout/pull/2165) - sort blocks by timestamp when calculating average block time
 - [#2175](https://github.com/poanetwork/blockscout/pull/2175) - fix coinmarketcap response errors
@@ -33,12 +35,15 @@
 - [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
 - [#2119](https://github.com/poanetwork/blockscout/pull/2119) - fix map logging
 - [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
+- [#2148](https://github.com/poanetwork/blockscout/pull/2148) - filter pending logs
 - [#2147](https://github.com/poanetwork/blockscout/pull/2147) - add rsk format of checksum
 - [#2149](https://github.com/poanetwork/blockscout/pull/2149) - remove pending transaction count
+- [#2177](https://github.com/poanetwork/blockscout/pull/2177) - remove duplicate entries from UncleBlock's Fetcher
 - [#2169](https://github.com/poanetwork/blockscout/pull/2169) - add more validator reward types for xDai
 - [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
 - [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
 - [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
+- [#2167](https://github.com/poanetwork/blockscout/pull/2168) - feat: document eth rpc api mimicking endpoints 
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
