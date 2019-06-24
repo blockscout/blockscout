@@ -12,11 +12,13 @@ if (localStorage.getItem('favoritesNetworksUrls') === null) {
 $(document).on('change', ".network-selector-item-favorite input[type='checkbox']", function () {
   var networkUrl = $(this).attr('data-url')
   var thisStatus = $(this).is(':checked')
-  var parent = $(".network-selector-item[data-url='" + networkUrl + "'").clone()
   var workWith = $(".network-selector-item[data-url='" + networkUrl + "'")
 
   // Add new checkbox status to same network in another tabs
   $(".network-selector-item-favorite input[data-url='" + networkUrl + "']").prop('checked', thisStatus)
+
+  // Clone
+  var parent = $(".network-selector-item[data-url='" + networkUrl + "'").clone()
 
   // Push or remove favorite networks to array
   var found = $.inArray(networkUrl, favoritesNetworksUrls)
@@ -28,6 +30,10 @@ $(document).on('change', ".network-selector-item-favorite input[type='checkbox']
       favoritesNetworksUrls.splice(index, 1)
     }
   }
+
+  // Push to localstorage
+  var willBePushed = JSON.stringify(favoritesNetworksUrls)
+  localStorage.setItem('favoritesNetworksUrls', willBePushed)
 
   // Append or remove item from 'favorites' tab
   if (thisStatus === true) {
@@ -41,15 +47,12 @@ $(document).on('change', ".network-selector-item-favorite input[type='checkbox']
     }
   }
 
-  // Push to localstorage
-  var willBePushed = JSON.stringify(favoritesNetworksUrls)
-  localStorage.setItem('favoritesNetworksUrls', willBePushed)
 })
 
 if (favoritesNetworksUrls.length > 0) {
   $('.js-favorites-tab .network-selector-tab-content-empty').hide()
   for (var i = 0; i < favoritesNetworksUrls.length + 1; i++) {
-    $(".network-selector-item[data-url='" + favoritesNetworksUrls[i] + "'").find('input').prop('checked', true)
+    $(".network-selector-item[data-url='" + favoritesNetworksUrls[i] + "'").find('input[data-url]').prop('checked', true)
     var parent = $(".network-selector-item[data-url='" + favoritesNetworksUrls[i] + "'").clone()
     favoritesContainer.append(parent[0])
   }
