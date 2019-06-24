@@ -21,7 +21,8 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
           ordered_withdraw: Wei.t(),
           stake_amount: Wei.t(),
           ordered_withdraw_epoch: integer(),
-          is_active: boolean()
+          is_active: boolean(),
+          is_deleted: boolean()
         }
 
   @attrs ~w(
