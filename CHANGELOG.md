@@ -8,6 +8,7 @@
 - [#2146](https://github.com/poanetwork/blockscout/pull/2146) - feat: add eth_getLogs rpc endpoint
 
 ### Fixes
+- [#2238](https://github.com/poanetwork/blockscout/pull/2238) - header content alignment issue, hide navbar on outside click
 - [#2229](https://github.com/poanetwork/blockscout/pull/2229) - gap issue between qr and copy button in token transfers, top cards width and height issue
 - [#2201](https://github.com/poanetwork/blockscout/pull/2201) - footer columns fix
 - [#2179](https://github.com/poanetwork/blockscout/pull/2179) - fix docker build error
