@@ -4,7 +4,7 @@
 
 We use [Ansible](https://docs.ansible.com/ansible/latest/index.html) & [Terraform](https://www.terraform.io/intro/getting-started/install.html) to build the correct infrastructure to run BlockScout. 
 
-The playbook repository is located at [https://github.com/poanetwork/blockscout-terraform](https://github.com/poanetwork/blockscout-terraform). Currently it only supports [AWS](#AWS) as a cloud provider. 
+The playbook repository is located at [https://github.com/poanetwork/blockscout-terraform](https://github.com/poanetwork/blockscout-terraform). Currently it only supports [AWS](#AWS-permissions) as a cloud provider. 
 
 In the root folder you will find Ansible Playbooks to create all necessary infrastructure to deploy BlockScout. The `lambda` folder also contains a set of scripts that may be useful in your BlockScout infrastructure.
 

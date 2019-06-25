@@ -52,6 +52,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Block.{EmissionReward, Reward}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Counters.AddressesWithBalanceCounter
+  alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -1700,6 +1701,32 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec max_non_consensus_block_number(integer | nil) :: {:ok, Block.block_number()} | {:error, :not_found}
+  def max_non_consensus_block_number(max_consensus_block_number \\ nil) do
+    max =
+      if max_consensus_block_number do
+        {:ok, max_consensus_block_number}
+      else
+        max_consensus_block_number()
+      end
+
+    case max do
+      {:ok, number} ->
+        query =
+          from(block in Block,
+            where: block.consensus == false,
+            where: block.number > ^number
+          )
+
+        query
+        |> Repo.aggregate(:max, :number)
+        |> case do
+          nil -> {:error, :not_found}
+          number -> {:ok, number}
+        end
+    end
+  end
+
   @doc """
   The height of the chain.
 
@@ -2587,7 +2614,7 @@ defmodule Explorer.Chain do
   @doc """
   Calls supply_for_days from the configured supply_module
   """
-  def supply_for_days(days_count), do: supply_module().supply_for_days(days_count)
+  def supply_for_days, do: supply_module().supply_for_days(MarketHistoryCache.recent_days_count())
 
   @doc """
   Streams a lists token contract addresses that haven't been cataloged.

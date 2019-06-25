@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.Notifier do
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
     market_history_data =
-      case Market.fetch_recent_history(30) do
+      case Market.fetch_recent_history() do
         [today | the_rest] -> [%{today | closing_price: exchange_rate.usd_value} | the_rest]
         data -> data
       end
