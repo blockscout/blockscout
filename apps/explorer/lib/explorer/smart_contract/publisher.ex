@@ -73,6 +73,7 @@ defmodule Explorer.SmartContract.Publisher do
       optimization: params["optimization"],
       contract_source_code: params["contract_source_code"],
       constructor_arguments: clean_constructor_arguments,
+      external_libaries: params["external_libraries"],
       abi: abi
     }
   end

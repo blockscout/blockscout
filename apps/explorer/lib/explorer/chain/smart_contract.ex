@@ -212,6 +212,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:constructor_arguments, :string)
     field(:evm_version, :string)
     field(:optimization_runs, :integer)
+    field(:external_libraries, :map)
     field(:abi, {:array, :map})
 
     has_many(
@@ -246,7 +247,8 @@ defmodule Explorer.Chain.SmartContract do
       :abi,
       :constructor_arguments,
       :evm_version,
-      :optimization_runs
+      :optimization_runs,
+      :external_libraries
     ])
     |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
