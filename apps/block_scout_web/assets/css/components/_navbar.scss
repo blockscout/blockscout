@@ -1,16 +1,16 @@
 // Default variables
 $header-background-color: #fff !default;
-$header-links-color: #a3a9b5 !default;
+$header-links-color: #828ba0 !default;
 $header-links-color-active: #333 !default;
 $header-icon-color: $header-links-color !default;
-$header-icon-color-hover: #333 !default;
-$header-icon-border-color-hover: $primary !default;
+$header-icon-color-hover: $secondary !default;
+$header-icon-border-color-hover: $secondary !default;
 $header-toggler-icon: "data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='#{transparentize($primary, 0.5)}' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E" !default;
 $header-textfield-text-color: $header-links-color !default;
 $header-textfield-background-color: #f5f6fa !default;
 $header-textfield-magnifier-color: $header-links-color !default;
 $header-link-horizontal-padding: 0.71rem;
-$navbar-logo-height: 18px !default;
+$navbar-logo-height: 28px !default;
 $navbar-logo-width: auto !default;
 
 .navbar.navbar-primary {
@@ -21,15 +21,16 @@ $navbar-logo-width: auto !default;
   .nav-item {
     font-size: 14px;
   }
-  .navbar-nav {
-    flex-grow: 1;
 
+  .navbar-nav {
+    
     .nav-link {
       align-items: center;
       color: $header-links-color;
       display: flex;
       font-size: 14px;
       position: relative;
+      transition: $transition-cont;
 
       &:before {
         background-color: $header-icon-border-color-hover;
@@ -42,7 +43,7 @@ $navbar-logo-width: auto !default;
         position: absolute;
         top: -10px;
         transform: translateX(-50%);
-        transition: all 0.2s ease;
+        transition: $transition-cont;
         width: calc(
           100% - #{$header-link-horizontal-padding} - #{$header-link-horizontal-padding}
         );
@@ -77,12 +78,16 @@ $navbar-logo-width: auto !default;
 
         path {
           fill: $header-icon-color;
+          transition: $transition-cont;
         }
       }
     }
 
     .nav-item-networks {
       margin-left: auto;
+      .nav-link:before {
+        display: none;
+      }
     }
   }
 
@@ -148,6 +153,18 @@ $navbar-logo-width: auto !default;
     @include media-breakpoint-up(xl) {
       width: 280px;
     }
+    @media (min-width: 1366px) {
+      width: 330px;
+    }
+    @media (min-width: 1440px) {
+      width: 380px;
+    }
+    @media (min-width: 1580px) {
+      width: 430px;
+    }
+    @media (min-width: 1800px) {
+      width: 520px;
+    }
   }
   .input-group-append {
     height: 38px;
@@ -193,7 +210,7 @@ $navbar-logo-width: auto !default;
     width: 100%;
 
     .awesomplete {
-      @include media-breakpoint-down(sm) {
+      @include media-breakpoint-down(lg) {
         width: 100%;
       }
     }
@@ -205,6 +222,10 @@ $navbar-logo-width: auto !default;
 
 .navbar-brand {
   margin-left: 0;
+  flex-shrink: 1;
+  .navbar-logo {
+    max-width: 100%;
+  }
 }
 
 .navbar-logo {
@@ -221,4 +242,19 @@ $navbar-logo-width: auto !default;
 
 .add-border {
   border: 1px solid transparentize($white, 0.30);
+}
+
+.navbar-collapse {
+  justify-content: flex-end;
+  align-items: flex-start;
+  flex-shrink: 0;
+  @media (min-width: 992px) {
+    align-items: center;
+  }
+}
+
+.navbar-container, .navbar-primary {
+  @include media-breakpoint-up(xl) {
+    padding-right: 0;
+  }
 }

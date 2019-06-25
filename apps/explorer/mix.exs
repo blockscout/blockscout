@@ -66,6 +66,7 @@ defmodule Explorer.Mixfile do
       # CSV output for benchee
       {:benchee_csv, "~> 0.8.0", only: :test},
       {:bypass, "~> 1.0", only: :test},
+      {:briefly, "~> 0.4", github: "CargoSense/briefly"},
       {:comeonin, "~> 4.0"},
       {:credo, "1.0.0", only: :test, runtime: false},
       # For Absinthe to load data in batches
@@ -115,7 +116,8 @@ defmodule Explorer.Mixfile do
       # Attach `:prometheus_ecto` to `:ecto`
       {:telemetry, "~> 0.3.0"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
-      {:timex, "~> 3.4"}
+      {:timex, "~> 3.4"},
+      {:con_cache, "~> 0.13"}
     ]
   end
 

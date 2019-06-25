@@ -6,8 +6,8 @@ $additional-font: #a1ded1;
 
 $tile-body-a-color: $secondary;
 $tile-type-block-color: $secondary;
-
 $tile-type-progress-bar-color: $secondary;
+a.tile-title { color: $secondary !important; }
 
 // footer
 $footer-background-color: $primary;
@@ -18,8 +18,12 @@ $footer-social-icon-color: $secondary;
 
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
-$dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
-$dashboard-stats-item-value-color: $additional-font; // stat values
+
+$dashboard-banner-chart-legend-label-color: $additional-font;
+$dashboard-stats-item-label-color: $additional-font;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
+
 $dashboard-stats-item-border-color: $secondary; // stat border
 $dashboard-banner-gradient-start: $primary; // gradient begin
 $dashboard-banner-gradient-end: #193039; // gradient end
@@ -34,7 +38,6 @@ $btn-line-bg: #fff; // button bg
 $btn-line-color: $secondary; // button border and font color && hover bg color
 $btn-copy-color: $secondary; // btn copy
 $btn-qr-color: $secondary; // btn qr-code
-$btn-dropdown-line-color: $secondary;
 
 // card
 $card-background-1: $secondary;
@@ -57,4 +60,8 @@ $card-tab-active: $secondary;
     .footer-logo {
       filter: brightness(0) invert(1);
     }
-  }
+}
+
+// Badges
+$badge-neutral-color: #1a323b;
+$badge-neutral-background-color: rgba(#1a323b, .1);

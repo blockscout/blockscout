@@ -14,9 +14,10 @@ $footer-item-disc-color: $secondary;
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
 
-$dashboard-banner-chart-legend-value-color: $additional-font; // chart labels
-
-$dashboard-stats-item-value-color: $additional-font; // stat values
+$dashboard-banner-chart-legend-label-color: #dcc8ff;
+$dashboard-stats-item-label-color: $dashboard-banner-chart-legend-label-color;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
 
 $dashboard-stats-item-border-color: $secondary; // stat border
 
@@ -24,14 +25,15 @@ $dashboard-banner-gradient-start: $primary; // gradient begin
 
 $dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
 
-$dashboard-banner-network-plain-container-background-color: #865bd4; // stats bg
+$dashboard-banner-network-plain-container-background-color: #8258cd; // stats bg
 
 
 // navigation
 .navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
-$header-icon-border-color-hover: $primary; // top border on hover
-$header-icon-color-hover: $primary; // nav icon on hover
-.dropdown-item:hover, .dropdown-item:focus { background-color: $primary !important; } // dropdown item on hover
+$dropdown-menu-item-hover-color: $primary !default;
+$dropdown-menu-item-hover-background: rgba($primary, .1) !default;
+$header-icon-color-hover: $primary;
+$header-icon-border-color-hover: $primary;
 
 // buttons
 $btn-line-bg: #fff; // button bg
@@ -40,23 +42,26 @@ $btn-copy-color: $primary; // btn copy
 $btn-qr-color: $primary; // btn qr-code
 
 //links & tile
-.tile a { color: $primary !important; } // links color for badges
-.tile-type-block {
-    border-left: 4px solid $primary;
-} // tab active bg
+$tile-body-a-color: $primary;
+$tile-type-block-color: $primary;
+$tile-type-progress-bar-color: $primary;
+a.tile-title { color: $primary !important; }
 
 // card
 $card-background-1: $primary;
 $card-tab-active: $primary;
 
-.footer {
-  .tooltip {
-    .tooltip-inner  {
-      background-color: darken($footer-background-color, 10) !important;
-    }
-    .arrow::before {
-      border-top-color: darken($footer-background-color, 10) !important;
-      border-bottom-color: darken($footer-background-color, 10) !important;
-    }
-  }
+.layout-container {
+	.dashboard-banner-container {
+	  background-image: linear-gradient(
+	    to bottom,
+	    $dashboard-banner-gradient-start,
+	    $dashboard-banner-gradient-end
+	  );
+	}
 }
+
+// Badges
+$badge-neutral-color: $primary;
+$badge-neutral-background-color: rgba($primary, .1);
+$api-text-monospace-color: $primary;
