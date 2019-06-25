@@ -5,6 +5,7 @@
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
 
 ### Fixes
+- [#2242](https://github.com/poanetwork/blockscout/pull/2242) - added styles for 'download csv' button
 - [#2142](https://github.com/poanetwork/blockscout/pull/2142) - Removed posdao theme and logo, added 'page not found' image for goerli
 - [#2138](https://github.com/poanetwork/blockscout/pull/2138) - badge colors issue, api titles issue
 - [#2129](https://github.com/poanetwork/blockscout/pull/2129) - Fix for width of explorer elements
