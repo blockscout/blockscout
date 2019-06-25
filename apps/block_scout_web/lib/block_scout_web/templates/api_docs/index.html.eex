@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-body">
       <h1 class="card-title margin-bottom-sm"><%= gettext("API Documentation") %></h2>
-      <p class="api-text-monospace" data-endpoint-url="<%= BlockScoutWeb.Endpoint.url() %>/api">[ <%= gettext "Base URL:" %> <%= BlockScoutWeb.Endpoint.url() %>/api ]</p>
+      <p class="api-text-monospace" data-endpoint-url="<%= BlockScoutWeb.Endpoint.url() %>/api">[ <%= gettext "Base URL:" %> <%= url() %>/api ]</p>
       <p class="card-subtitle margin-bottom-0"><%= gettext "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests." %></p>
     </div>
     <div class="api-anchors-list">
