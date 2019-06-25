@@ -44,7 +44,8 @@
 - [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
 - [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
 - [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
-- [#2167](https://github.com/poanetwork/blockscout/pull/2168) - feat: document eth rpc api mimicking endpoints 
+- [#2167](https://github.com/poanetwork/blockscout/pull/2168) - feat: document eth rpc api mimicking endpoints
+- [#2237](https://github.com/poanetwork/blockscout/pull/2237) - fix rsk total_supply
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
