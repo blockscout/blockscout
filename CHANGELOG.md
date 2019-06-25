@@ -6,6 +6,7 @@
 - [#2151](https://github.com/poanetwork/blockscout/pull/2151) - hide dropdown menu then other networks list is empty
 - [#2191](https://github.com/poanetwork/blockscout/pull/2191) - allow to configure token metadata update interval
 - [#2146](https://github.com/poanetwork/blockscout/pull/2146) - feat: add eth_getLogs rpc endpoint
+- [#2235](https://github.com/poanetwork/blockscout/pull/2235) - save and show additional validation fields to smart contract
 
 ### Fixes
 - [#2229](https://github.com/poanetwork/blockscout/pull/2229) - gap issue between qr and copy button in token transfers, top cards width and height issue
@@ -44,7 +45,7 @@
 - [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
 - [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
 - [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
-- [#2167](https://github.com/poanetwork/blockscout/pull/2168) - feat: document eth rpc api mimicking endpoints 
+- [#2167](https://github.com/poanetwork/blockscout/pull/2168) - feat: document eth rpc api mimicking endpoints
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
