@@ -262,7 +262,8 @@ defmodule Explorer.Chain.SmartContract do
       :contract_source_code,
       :address_hash,
       :evm_version,
-      :optimization_runs
+      :optimization_runs,
+      :constructor_arguments
     ])
     |> validate_required([:name, :compiler_version, :optimization, :address_hash])
     |> add_error(:contract_source_code, error_message(error))
