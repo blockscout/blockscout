@@ -2933,57 +2933,60 @@ defmodule Explorer.Chain do
         } = transaction
       ) do
     zero_wei = %Wei{value: Decimal.new(0)}
+    result = find_token_transfer_type(transaction, input, value)
 
-    # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721.sol#L35
-    result =
-      case {to_string(input), value} do
-        # transferFrom(address,address,uint256)
-        {"0x23b872dd" <> params, ^zero_wei} ->
-          types = [:address, :address, {:uint, 256}]
-          [from_address, to_address, _value] = decode_params(params, types)
-
-          find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
-
-        # safeTransferFrom(address,address,uint256)
-        {"0x42842e0e" <> params, ^zero_wei} ->
-          types = [:address, :address, {:uint, 256}]
-          [from_address, to_address, _value] = decode_params(params, types)
-
-          find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
-
-        # safeTransferFrom(address,address,uint256,bytes)
-        {"0xb88d4fde" <> params, ^zero_wei} ->
-          types = [:address, :address, {:uint, 256}, :bytes]
-          [from_address, to_address, _value, _data] = decode_params(params, types)
-
-          find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
-
-        {"0xf907fc5b" <> _params, ^zero_wei} ->
-          :erc20
-
-        # check for ERC 20 or for old ERC 721 token versions
-        {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
-          types = [:address, {:uint, 256}]
-
-          [address, value] = decode_params(params, types)
-
-          decimal_value = Decimal.new(value)
-
-          find_erc721_or_erc20_token_transfer(transaction.token_transfers, {address, decimal_value})
-
-        {_params, ^zero_wei} ->
-          if Enum.count(transaction.token_transfers) > 0, do: :token_transfer
-
-        _ ->
-          nil
-      end
-
-    if is_nil(result) && Enum.count(transaction.token_transfers) > 0, do: :token_transfer, else: result
+    if is_nil(result) && Enum.count(transaction.token_transfers) > 0 && value == zero_wei,
+      do: :token_transfer,
+      else: result
   rescue
     _ -> nil
   end
 
   def transaction_token_transfer_type(_), do: nil
+
+  defp find_token_transfer_type(transaction, input, value) do
+    zero_wei = %Wei{value: Decimal.new(0)}
+
+    # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721.sol#L35
+    case {to_string(input), value} do
+      # transferFrom(address,address,uint256)
+      {"0x23b872dd" <> params, ^zero_wei} ->
+        types = [:address, :address, {:uint, 256}]
+        [from_address, to_address, _value] = decode_params(params, types)
+
+        find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
+
+      # safeTransferFrom(address,address,uint256)
+      {"0x42842e0e" <> params, ^zero_wei} ->
+        types = [:address, :address, {:uint, 256}]
+        [from_address, to_address, _value] = decode_params(params, types)
+
+        find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
+
+      # safeTransferFrom(address,address,uint256,bytes)
+      {"0xb88d4fde" <> params, ^zero_wei} ->
+        types = [:address, :address, {:uint, 256}, :bytes]
+        [from_address, to_address, _value, _data] = decode_params(params, types)
+
+        find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
+
+      {"0xf907fc5b" <> _params, ^zero_wei} ->
+        :erc20
+
+      # check for ERC 20 or for old ERC 721 token versions
+      {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
+        types = [:address, {:uint, 256}]
+
+        [address, value] = decode_params(params, types)
+
+        decimal_value = Decimal.new(value)
+
+        find_erc721_or_erc20_token_transfer(transaction.token_transfers, {address, decimal_value})
+
+      _ ->
+        nil
+    end
+  end
 
   defp find_erc721_token_transfer(token_transfers, {from_address, to_address}) do
     token_transfer =
