@@ -1,3 +1,9 @@
+<div class="staking-pg-container">
+    <%=
+        render BlockScoutWeb.CommonComponentsView,
+        "_pagination_container.html"
+    %>
+</div>
 <div class="stakes-table-container">
     <table class="stakes-table">
         <thead>
@@ -103,7 +109,9 @@
     title: "Lorem Ipsum",
     text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor."
 %>
-<%=
-    render BlockScoutWeb.CommonComponentsView,
-    "_pagination_container.html"
-%>
+<div class="staking-pg-container at-bottom">
+    <%=
+        render BlockScoutWeb.CommonComponentsView,
+        "_pagination_container.html"
+    %>
+</div>
