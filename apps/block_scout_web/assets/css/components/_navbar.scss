@@ -22,7 +22,7 @@ $navbar-logo-width: auto !default;
     font-size: 14px;
   }
   .navbar-nav {
-    flex-grow: 1;
+    // flex-grow: 1;
 
     .nav-link {
       align-items: center;
@@ -153,6 +153,18 @@ $navbar-logo-width: auto !default;
     @include media-breakpoint-up(xl) {
       width: 280px;
     }
+    @media (min-width: 1366px) {
+      width: 330px;
+    }
+    @media (min-width: 1440px) {
+      width: 380px;
+    }
+    @media (min-width: 1580px) {
+      width: 430px;
+    }
+    @media (min-width: 1800px) {
+      width: 520px;
+    }
   }
   .input-group-append {
     height: 38px;
@@ -198,7 +210,7 @@ $navbar-logo-width: auto !default;
     width: 100%;
 
     .awesomplete {
-      @include media-breakpoint-down(sm) {
+      @include media-breakpoint-down(lg) {
         width: 100%;
       }
     }
@@ -210,6 +222,10 @@ $navbar-logo-width: auto !default;
 
 .navbar-brand {
   margin-left: 0;
+  flex-shrink: 1;
+  .navbar-logo {
+    max-width: 100%;
+  }
 }
 
 .navbar-logo {
@@ -226,4 +242,19 @@ $navbar-logo-width: auto !default;
 
 .add-border {
   border: 1px solid transparentize($white, 0.30);
+}
+
+.navbar-collapse {
+  justify-content: flex-end;
+  align-items: flex-start;
+  flex-shrink: 0;
+  @media (min-width: 992px) {
+    align-items: center;
+  }
+}
+
+.navbar-container, .navbar-primary {
+  @include media-breakpoint-up(xl) {
+    padding-right: 0;
+  }
 }
