@@ -9,11 +9,12 @@ defmodule Explorer.Chain.Supply.RSK do
 
   alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.{Block, Wei}
-  alias Explorer.ExchangeRates.Token
-  alias Explorer.{Market, Repo}
+  alias Explorer.Repo
 
   def market_cap(exchange_rate) do
-    circulating() * exchange_rate.usd_value
+    ether = Wei.to(circulating(), :ether)
+
+    Decimal.mult(ether, exchange_rate.usd_value)
   end
 
   @doc "Equivalent to getting the circulating value "
@@ -95,9 +96,5 @@ defmodule Explorer.Chain.Supply.RSK do
 
   def total do
     21_000_000
-  end
-
-  def exchange_rate do
-    Market.get_exchange_rate(Explorer.coin()) || Token.null()
   end
 end

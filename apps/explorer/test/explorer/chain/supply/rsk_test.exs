@@ -3,6 +3,7 @@ defmodule Explorer.Chain.Supply.RSKTest do
 
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Wei
+  alias Explorer.ExchangeRates.Token
 
   @coin_address "0x0000000000000000000000000000000001000006"
 
@@ -13,6 +14,18 @@ defmodule Explorer.Chain.Supply.RSKTest do
 
   test "total is 21_000_000" do
     assert RSK.total() == 21_000_000
+  end
+
+  describe "market_cap/1" do
+    test "calculates market_cap" do
+      address = insert(:address, hash: @coin_address)
+      insert(:block, number: 0)
+      insert(:fetched_balance, value: 10_000_000_000_000_000_000, address_hash: address.hash, block_number: 0)
+
+      exchange_rate = %{Token.null() | usd_value: Decimal.new(10)}
+
+      assert RSK.market_cap(exchange_rate) == Decimal.new(100)
+    end
   end
 
   describe "circulating/0" do
