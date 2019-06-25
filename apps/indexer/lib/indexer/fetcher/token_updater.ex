@@ -29,7 +29,7 @@ defmodule Indexer.Fetcher.TokenUpdater do
     |> Enum.reverse()
     |> update_metadata()
 
-    Process.send_after(self(), :update_tokens, :timer.hours(state.update_interval) * 24)
+    Process.send_after(self(), :update_tokens, :timer.seconds(state.update_interval))
 
     {:noreply, state}
   end
