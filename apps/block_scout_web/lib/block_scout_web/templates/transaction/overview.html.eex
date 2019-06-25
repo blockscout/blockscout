@@ -176,14 +176,16 @@
         <div class="card card-background-1 flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
             <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Transfer" %></h2>
-            <%= for transfer  <- transaction_with_transfers.token_transfers do %>
             <div class="text-right">
+            <%= for transfer  <- transaction_with_transfers.token_transfers do %>
+
               <h3 class="address-balance-text">
                   <%= token_transfer_amount(transfer) %>
                   <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
               </h3>
-            </div>
+
             <% end %>
+            </div>
           </div>
         </div>
       <% _ -> %>
