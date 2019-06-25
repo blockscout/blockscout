@@ -30,10 +30,28 @@
             <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Compiler version" %></dt>
             <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.compiler_version %></dd>
           </dl>
+          <%= if @address.smart_contract.evm_version do %>
+            <dl class="row">
+              <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "EVM Version" %></dt>
+              <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.evm_version %></dd>
+            </dl>
+          <% end %>
           <dl class="row">
             <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
             <dd class="col-sm-8 col-md-10"><%= format_optimization_text(@address.smart_contract.optimization) %></dd>
           </dl>
+          <%= if @address.smart_contract.optimization && @address.smart_contract.optimization_runs do %>
+            <dl class="row">
+              <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Optimization runs" %></dt>
+              <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.optimization_runs %></dd>
+            </dl>
+          <% end %>
+          <%= if @address.smart_contract.constructor_arguments do %>
+            <dl class="row">
+              <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Constructor arguments" %></dt>
+              <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.constructor_arguments %></dd>
+            </dl>
+          <% end %>
         </div>
         <hr/>
         <section>
@@ -64,7 +82,7 @@
       <% end %>
       <section>
         <%= case contract_creation_code do %>
-          <% {:selfdestructed, transaction_init} -> %> 
+          <% {:selfdestructed, transaction_init} -> %>
             <div class="d-flex justify-content-between align-items-baseline">
               <h3><%= gettext "Contract Creation Code" %></h3>
               <button type="button" class="button button-secondary button-sm" id="button" data-clipboard-text="<%= transaction_init %>" aria-label="copy contract creation code">

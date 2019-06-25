@@ -70,7 +70,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     compiler_version = Keyword.fetch!(params, :compiler_version)
     code = Keyword.fetch!(params, :code)
     optimize = Keyword.fetch!(params, :optimize)
-    optimization_runs = params |> Keyword.get(:optimization_runs, 200) |> Integer.to_string()
+    optimization_runs = params |> Keyword.get(:optimization_runs, "200")
     evm_version = Keyword.get(params, :evm_version, List.last(allowed_evm_versions()))
     external_libs = Keyword.get(params, :external_libs, %{})
 
