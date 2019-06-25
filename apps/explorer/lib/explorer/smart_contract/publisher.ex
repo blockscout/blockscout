@@ -68,6 +68,8 @@ defmodule Explorer.SmartContract.Publisher do
       address_hash: address_hash,
       name: params["name"],
       compiler_version: params["compiler_version"],
+      evm_version: params["evm_version"],
+      optimization_runs: params["optimization_runs"],
       optimization: params["optimization"],
       contract_source_code: params["contract_source_code"],
       constructor_arguments: clean_constructor_arguments,
