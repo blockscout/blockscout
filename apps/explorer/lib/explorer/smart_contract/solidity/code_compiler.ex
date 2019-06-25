@@ -70,7 +70,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     compiler_version = Keyword.fetch!(params, :compiler_version)
     code = Keyword.fetch!(params, :code)
     optimize = Keyword.fetch!(params, :optimize)
-    optimization_runs = params |> Keyword.get(:optimization_runs, "200")
+    optimization_runs = optimization_runs(params)
     evm_version = Keyword.get(params, :evm_version, List.last(allowed_evm_versions()))
     external_libs = Keyword.get(params, :external_libs, %{})
 
@@ -162,4 +162,14 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
   defp optimize_value(true), do: "1"
   defp optimize_value("true"), do: "1"
+
+  defp optimization_runs(params) do
+    value = params |> Keyword.get(:optimization_runs, "200")
+
+    if is_binary(value) do
+      value
+    else
+      "#{value}"
+    end
+  end
 end
