@@ -71,17 +71,19 @@ defmodule Indexer.Fetcher.UncleBlock do
   @impl BufferedTask
   @decorate trace(name: "fetch", resource: "Indexer.Fetcher.UncleBlock.run/2", service: :indexer, tracer: Tracer)
   def run(entries, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher) do
-    entry_count = Enum.count(entries)
+    unique_entries = Enum.uniq(entries)
+
+    entry_count = Enum.count(unique_entries)
     Logger.metadata(count: entry_count)
 
     Logger.debug("fetching")
 
-    entries
+    unique_entries
     |> Enum.map(&entry_to_params/1)
     |> EthereumJSONRPC.fetch_uncle_blocks(json_rpc_named_arguments)
     |> case do
       {:ok, blocks} ->
-        run_blocks(blocks, block_fetcher, entries)
+        run_blocks(blocks, block_fetcher, unique_entries)
 
       {:error, reason} ->
         Logger.error(
@@ -91,7 +93,7 @@ defmodule Indexer.Fetcher.UncleBlock do
           error_count: entry_count
         )
 
-        {:retry, entries}
+        {:retry, unique_entries}
     end
   end
 

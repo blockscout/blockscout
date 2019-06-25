@@ -71,8 +71,15 @@ else
   config :explorer, Explorer.Staking.EpochCounter, enabled: false
 end
 
-if System.get_env("SUPPLY_MODULE") == "TokenBridge" do
-  config :explorer, supply: Explorer.Chain.Supply.TokenBridge
+case System.get_env("SUPPLY_MODULE") do
+  "TokenBridge" ->
+    config :explorer, supply: Explorer.Chain.Supply.TokenBridge
+
+  "rsk" ->
+    config :explorer, supply: Explorer.Chain.Supply.RSK
+
+  _ ->
+    :ok
 end
 
 if System.get_env("SOURCE_MODULE") == "TransactionAndLog" do

@@ -105,7 +105,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/index.html.eex:4
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:59
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:60
 msgid "Addresses"
 msgstr ""
 
@@ -128,6 +128,7 @@ msgid "Balance"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:5
 #: lib/block_scout_web/templates/api_docs/index.html.eex:5
 msgid "Base URL:"
 msgstr ""
@@ -209,8 +210,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
 #: lib/block_scout_web/templates/address/overview.html.eex:144
 #: lib/block_scout_web/templates/address/overview.html.eex:152
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:106
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:114
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:107
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:115
 msgid "Close"
 msgstr ""
 
@@ -625,8 +626,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:33
 #: lib/block_scout_web/templates/address/overview.html.eex:143
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:35
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:105
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:106
 msgid "QR Code"
 msgstr ""
 
@@ -665,8 +666,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:111
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:128
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:116
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:133
 msgid "Search"
 msgstr ""
 
@@ -683,7 +684,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:34
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:37
 msgid "Show QR Code"
 msgstr ""
 
@@ -833,7 +834,7 @@ msgid "Total Difficulty"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:74
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:75
 msgid "Total Supply"
 msgstr ""
 
@@ -880,7 +881,7 @@ msgid "Transactions sent"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:60
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:61
 msgid "Transfers"
 msgstr ""
 
@@ -942,7 +943,7 @@ msgid "Verify & publish"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:54
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:55
 msgid "View Contract"
 msgstr ""
 
@@ -1047,7 +1048,7 @@ msgid "Self-Destruct"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:62
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:63
 msgid "Decimals"
 msgstr ""
 
@@ -1479,8 +1480,8 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:105
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:109
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:110
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:114
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1691,14 +1692,4 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:27
 msgid "There is no decompilded contracts for this address."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:44
-msgid "ERC-20 "
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:45
-msgid "ERC-721 "
 msgstr ""
