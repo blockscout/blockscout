@@ -11,6 +11,8 @@ defmodule Explorer.Counters.AverageBlockTime do
   alias Explorer.Repo
   alias Timex.Duration
 
+  @query_timeout :infinity
+
   @refresh_period 30 * 60 * 1_000
 
   @doc """
@@ -72,7 +74,7 @@ defmodule Explorer.Counters.AverageBlockTime do
 
     timestamps =
       timestamps_query
-      |> Repo.all()
+      |> Repo.all(timeout: @query_timeout)
       |> Enum.map(fn {number, timestamp} ->
         {number, DateTime.to_unix(timestamp, :millisecond)}
       end)
