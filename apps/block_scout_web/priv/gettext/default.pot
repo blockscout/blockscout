@@ -1700,8 +1700,6 @@ msgid " Token Transfer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_token/index.html.eex:27
-msgid "CSV"
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:14
 msgid " is recommended."
 msgstr ""
@@ -1709,11 +1707,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:15
 msgid "Anything not in this list is not supported. Click on the method to be taken to the documentation for that method, and check the notes section for any potential differences."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_token/index.html.eex:8
-msgid "Download all token transfers as csv"
 msgstr ""
 
 #, elixir-format
@@ -1754,4 +1747,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:9
 msgid "here."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_token/index.html.eex:26
+msgid "CSV"
 msgstr ""
