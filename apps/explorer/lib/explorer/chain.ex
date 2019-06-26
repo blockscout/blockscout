@@ -1052,7 +1052,7 @@ defmodule Explorer.Chain do
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    fetch_transactions()
+    Transaction
     |> where(hash: ^hash)
     |> join_associations(necessity_by_association)
     |> Repo.one()
@@ -1953,7 +1953,6 @@ defmodule Explorer.Chain do
     |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
@@ -2146,7 +2145,7 @@ defmodule Explorer.Chain do
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
-    |> preload(transaction: :block)
+    |> preload(:transaction)
     |> Repo.all()
   end
 
@@ -2702,9 +2701,9 @@ defmodule Explorer.Chain do
 
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
   def transaction_has_token_transfers?(transaction_hash) do
-    query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash, limit: 1, select: 1)
+    query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash)
 
-    Repo.one(query) != nil
+    Repo.exists?(query)
   end
 
   @spec address_tokens_with_balance(Hash.Address.t(), [any()]) :: []

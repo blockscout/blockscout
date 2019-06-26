@@ -2110,11 +2110,14 @@ defmodule Explorer.ChainTest do
                  ])
              )
 
-      assert internal_transaction.transaction.block.number == block.number
+      assert internal_transaction.transaction.block_number == block.number
     end
 
     test "with transaction with internal transactions loads associations with in necessity_by_association" do
-      transaction = insert(:transaction)
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
 
       insert(:internal_transaction_create,
         transaction: transaction,
@@ -2127,7 +2130,7 @@ defmodule Explorer.ChainTest do
                %InternalTransaction{
                  from_address: %Ecto.Association.NotLoaded{},
                  to_address: %Ecto.Association.NotLoaded{},
-                 transaction: %Transaction{}
+                 transaction: %Transaction{block: %Ecto.Association.NotLoaded{}}
                }
              ] = Chain.transaction_to_internal_transactions(transaction)
 
@@ -2135,15 +2138,15 @@ defmodule Explorer.ChainTest do
                %InternalTransaction{
                  from_address: %Address{},
                  to_address: nil,
-                 transaction: %Transaction{}
+                 transaction: %Transaction{block: %Block{}}
                }
              ] =
                Chain.transaction_to_internal_transactions(
                  transaction,
                  necessity_by_association: %{
-                   from_address: :optional,
-                   to_address: :optional,
-                   transaction: :optional
+                   :from_address => :optional,
+                   :to_address => :optional,
+                   [transaction: :block] => :optional
                  }
                )
     end

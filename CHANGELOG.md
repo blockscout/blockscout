@@ -57,6 +57,7 @@
 - [#2204](https://github.com/poanetwork/blockscout/pull/2204) - fix large contract verification
 - [#2247](https://github.com/poanetwork/blockscout/pull/2247) - hide logs search if there are no logs
 - [#2248](https://github.com/poanetwork/blockscout/pull/2248) - sort block after query execution for average block time
+- [#2249](https://github.com/poanetwork/blockscout/pull/2249) - More transaction controllers improvements
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
