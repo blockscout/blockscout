@@ -1,6 +1,17 @@
 defmodule BlockScoutWeb.PoolsControllerTest do
   use BlockScoutWeb.ConnCase
 
+  alias Explorer.Counters.AverageBlockTime
+
+  setup do
+    start_supervised!(AverageBlockTime)
+    Application.put_env(:explorer, AverageBlockTime, enabled: true)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, AverageBlockTime, enabled: false)
+    end)
+  end
+
   describe "GET validators/2" do
     test "returns page", %{conn: conn} do
       conn = get(conn, validators_path(conn, :validators))
