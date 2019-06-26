@@ -151,19 +151,13 @@ $navbar-logo-width: auto !default;
     }
 
     @include media-breakpoint-up(xl) {
-      width: 280px;
+      width: 340px;
     }
     @media (min-width: 1366px) {
-      width: 330px;
+      width: 500px;
     }
     @media (min-width: 1440px) {
-      width: 380px;
-    }
-    @media (min-width: 1580px) {
-      width: 430px;
-    }
-    @media (min-width: 1800px) {
-      width: 520px;
+      width: 580px;
     }
   }
   .input-group-append {

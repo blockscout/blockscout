@@ -9,6 +9,7 @@
 - [#2193](https://github.com/poanetwork/blockscout/pull/2193) - feat: add BLOCKSCOUT_HOST, and use it in API docs
 
 ### Fixes
+- [#2254](https://github.com/poanetwork/blockscout/pull/2254) - search length issue, tile link wrapping issue
 - [#2238](https://github.com/poanetwork/blockscout/pull/2238) - header content alignment issue, hide navbar on outside click
 - [#2229](https://github.com/poanetwork/blockscout/pull/2229) - gap issue between qr and copy button in token transfers, top cards width and height issue
 - [#2201](https://github.com/poanetwork/blockscout/pull/2201) - footer columns fix
