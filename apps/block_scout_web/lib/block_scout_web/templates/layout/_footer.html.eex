@@ -2,7 +2,7 @@
   <div class="footer-body container">
     <!-- Logo -->
     <div class="row footer-logo-row">
-      <div class="col-md-12">
+      <div class="col-md-2">
         <%= link to: chain_path(@conn, :show), class: "footer-brand" do %>
           <img class="footer-logo" src="<%= logo_footer() %>" alt="<%= subnetwork_title() %>" />
         <% end %>
@@ -14,30 +14,17 @@
 
     <div class="row">
       <div class="col-md-<%= col_size %>">
-        <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
+        <p class="footer-info-text"><%= gettext("Matic Network is a Layer2 scaling solution.") %></p>
         <div class="footer-social-icons">
-          <a href="https://github.com/poanetwork/blockscout" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
+          <a href="https://github.com/maticnetwork" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
             <i class="fab fa-github"></i>
           </a>
-          <a href="https://www.twitter.com/_blockscout/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
+          <a href="https://www.twitter.com/maticnetwork/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <i class="fab fa-twitter"></i>
-          </a>
-          <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
-            <i class="fab fa-telegram-plane"></i>
           </a>
         </div>
       </div>
-
-      <div class="col-md-<%= col_size %> footer-list">
-        <h3>BlockScout</h3>
-        <ul>
-          <li><a href="<%= issue_link(@conn) %>" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
-          <li><a href="https://github.com/poanetwork/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
-          <li><a href="https://gitter.im/poanetwork/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Chat") %></a></li>
-          <li><a href="https://forum.poa.network/c/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Support") %></a></li>
-        </ul>
-      </div>
-      <% main_nets = main_nets(other_networks()) %>
+      <!-- <% main_nets = main_nets(other_networks()) %>
 
       <%= unless Enum.empty?(main_nets) do %>
         <div class="col-md-<%= col_size %> footer-list">
@@ -61,9 +48,9 @@
             <% end %>
           </ul>
         </div>
-      <% end %>
+      <% end %> -->
 
-      <%= unless Enum.empty?(other_explorers) do %>
+      <!-- <%= unless Enum.empty?(other_explorers) do %>
         <div class="col-md-<%= col_size %> footer-list">
           <h3><%= gettext("Other Explorers") %></h3>
           <ul>
@@ -82,6 +69,6 @@
       <div>
         <%= gettext("Version") %>: <%= release_link %>
       </div>
-    <% end %>
+    <% end %> -->
   </div>
 </footer>
