@@ -4,6 +4,14 @@ defmodule BlockScoutWeb.StakesHelpersTest do
   alias BlockScoutWeb.StakesHelpers
   alias Timex.Duration
 
+  setup do
+    Application.put_env(:explorer, Explorer.Chain.BlockNumberCache, enabled: true)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.Chain.BlockNumberCache, enabled: false)
+    end)
+  end
+
   test "estimated_unban_day/2" do
     block_average = Duration.from_seconds(5)
 
