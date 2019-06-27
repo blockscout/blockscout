@@ -72,3 +72,31 @@ $stakes-address-color: $secondary;
 $stakes-control-color: $secondary;
 $progress-from-to-progress-background: $secondary;
 $stakes-stats-item-border-color: rgba(#fff, .5);
+$check-color: $secondary;
+$modal-status-graph-success: $secondary;
+.modal-content {
+	.form-control {
+		box-shadow: none !important;
+		outline: none !important;
+		border-color: #e2e5ec !important;
+	}
+	.btn-line {
+		border-color: $primary;
+		color: $primary;
+		&:hover {
+			background-color: $primary
+		}
+	}
+}
+.stakes-table-th-content {
+	.i-tooltip {
+		position: relative;
+		top: -2px;
+	}
+}
+.stakes-address-container {
+	.check-tooltip {
+		position: relative;
+		top: -1px;
+	}
+}
