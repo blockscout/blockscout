@@ -24,8 +24,8 @@
                 <div class="network-selector-tab js-network-selector-tab" network-selector-tab-filter="favorites"><%= gettext("Favorites") %></div>
             </div>
             <div class="network-selector-networks-container">
-                <% main_nets = main_nets(other_networks()) %>
-                <% test_nets = test_nets(other_networks()) %>
+                <% main_nets = dropdown_main_nets() %>
+                <% test_nets = dropdown_test_nets() %>
                 <div class="network-selector-tab-content js-network-selector-tab-content active" network-selector-tab="all">
                     <%= for %{url: url, title: title} <- main_nets do %>
                         <%= render BlockScoutWeb.LayoutView, "_network_selector_item.html", title: title, url: url, tab_type: "Mainnet" %>
