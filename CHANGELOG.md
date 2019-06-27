@@ -58,6 +58,7 @@
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
 - [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
+- [#2256](https://github.com/poanetwork/blockscout/pull/2256) - use the latest version of chromedriver
 
 ### Chore
 
