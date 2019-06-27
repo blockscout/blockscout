@@ -20,7 +20,7 @@ defmodule Explorer.Chain.Supply.RSKTest do
     test "calculates market_cap" do
       address = insert(:address, hash: @coin_address)
       insert(:block, number: 0)
-      insert(:fetched_balance, value: 10_000_000_000_000_000_000, address_hash: address.hash, block_number: 0)
+      insert(:fetched_balance, value: 10_000_000_000_000_000_000_000, address_hash: address.hash, block_number: 0)
 
       exchange_rate = %{Token.null() | usd_value: Decimal.new(10)}
 

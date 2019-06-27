@@ -12,7 +12,10 @@ defmodule Explorer.Chain.Supply.RSK do
   alias Explorer.Repo
 
   def market_cap(exchange_rate) do
-    ether = Wei.to(circulating(), :ether)
+    ether =
+      circulating()
+      |> Wei.to(:ether)
+      |> Decimal.div(Decimal.new(1_000))
 
     Decimal.mult(ether, exchange_rate.usd_value)
   end
