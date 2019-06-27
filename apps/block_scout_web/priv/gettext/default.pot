@@ -1750,6 +1750,9 @@ msgid "here."
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:73
 #: lib/block_scout_web/templates/address_token/index.html.eex:26
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:70
+#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:33
 msgid "CSV"
 msgstr ""

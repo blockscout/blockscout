@@ -10,6 +10,7 @@
 - [#2193](https://github.com/poanetwork/blockscout/pull/2193) - feat: add BLOCKSCOUT_HOST, and use it in API docs
 
 ### Fixes
+- [#2257](https://github.com/poanetwork/blockscout/pull/2257) - 'download csv' button added to different tabs
 - [#2242](https://github.com/poanetwork/blockscout/pull/2242) - added styles for 'download csv' button
 - [#2254](https://github.com/poanetwork/blockscout/pull/2254) - search length issue, tile link wrapping issue
 - [#2238](https://github.com/poanetwork/blockscout/pull/2238) - header content alignment issue, hide navbar on outside click
