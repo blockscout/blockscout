@@ -10,8 +10,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias BlockScoutWeb.TransactionView
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.AddressTokenTransferCsvExporter
-  alias Explorer.Chain.AddressTransactionCsvExporter
+  alias Explorer.Chain.{AddressTokenTransferCsvExporter, AddressTransactionCsvExporter}
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
