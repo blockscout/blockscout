@@ -3229,17 +3229,33 @@ defmodule Explorer.Chain do
   end
 
   def delegator_info(address) do
+    pool_exist? =
+      StakingPool
+      |> where([a], a.staking_address_hash == ^address)
+      |> Repo.one()
+
     query =
-      from(
-        address in Address,
-        where: address.hash == ^address,
-        left_join: delegator in StakingPoolsDelegator,
-        on: delegator.delegator_address_hash == address.hash and delegator.is_active,
-        left_join: pool in StakingPool,
-        on: pool.staking_address_hash == address.hash and pool.is_active,
-        group_by: address.hash,
-        select: [sum(delegator.stake_amount), sum(pool.self_staked_amount), count(pool) > 0]
-      )
+      if pool_exist? do
+        from(
+          pool in StakingPool,
+          where: pool.staking_address_hash == ^address,
+          left_join: delegator in StakingPoolsDelegator,
+          on: delegator.delegator_address_hash == pool.staking_address_hash and delegator.is_active,
+          group_by: pool.staking_address_hash,
+          select: [sum(delegator.stake_amount), sum(pool.self_staked_amount), true]
+        )
+      else
+        from(
+          address in Address,
+          where: address.hash == ^address,
+          left_join: delegator in StakingPoolsDelegator,
+          on: delegator.delegator_address_hash == address.hash and delegator.is_active,
+          left_join: pool in StakingPool,
+          on: pool.staking_address_hash == address.hash and pool.is_active,
+          group_by: address.hash,
+          select: [sum(delegator.stake_amount), sum(pool.self_staked_amount), count(pool) > 0]
+        )
+      end
 
     Repo.one(query)
   end
