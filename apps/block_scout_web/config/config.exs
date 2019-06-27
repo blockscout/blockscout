@@ -41,7 +41,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     ]
   ],
   url: [
-    host: "localhost",
+    host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
     path: System.get_env("NETWORK_PATH") || "/"
   ],
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],

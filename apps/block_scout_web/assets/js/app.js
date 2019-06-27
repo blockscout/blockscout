@@ -33,6 +33,7 @@ import './pages/transaction'
 import './pages/transactions'
 import './pages/favorites'
 import './pages/network-search'
+import './pages/layout'
 
 import './pages/admin/tasks.js'
 

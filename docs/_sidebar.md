@@ -23,6 +23,7 @@
       - [Tracing](tracing.md)
       - [Memory Usage](memory-usage.md)
       - [API Docs](api.md)
+  - [Upgrading](upgrading.md)
   
 - User Guide
 
