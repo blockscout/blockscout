@@ -87,6 +87,8 @@
 - [#2100](https://github.com/poanetwork/blockscout/pull/2100) - feat: eth_get_balance rpc endpoint
 
 ### Fixes
+- [#2207](https://github.com/poanetwork/blockscout/pull/2207) - new 'download csv' button design
+- [#2206](https://github.com/poanetwork/blockscout/pull/2206) - added styles for 'Download All Transactions as CSV' button
 - [#2099](https://github.com/poanetwork/blockscout/pull/2099) - logs search input width
 - [#2098](https://github.com/poanetwork/blockscout/pull/2098) - nav dropdown issue, logo size issue
 - [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix, 404 page added
