@@ -50,8 +50,8 @@
             </div>
           </div>
         </div>
-        
-        
+
+
 
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
@@ -66,9 +66,9 @@
         </div>
 
         <div data-items></div>
-        
+
         <div class="transaction-bottom-panel">
-          <div class="download-all-transactions">
+          <div csv-download class="download-all-transactions">
             Download&nbsp;
             <a class="download-all-transactions-link" href=<%= address_transaction_path(@conn, :transactions_csv, %{"address_id" => to_string(@address.hash)}) %>>
               <span><%= gettext("CSV") %></span>
