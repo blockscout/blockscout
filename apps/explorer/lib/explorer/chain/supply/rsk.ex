@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Supply.RSK do
     ether =
       circulating()
       |> Wei.to(:ether)
-      |> Decimal.div(Decimal.new(1_000))
+      |> Decimal.div(Decimal.new(100_000))
 
     Decimal.mult(ether, exchange_rate.usd_value)
   end
