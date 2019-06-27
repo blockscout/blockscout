@@ -1,5 +1,5 @@
 version: 2
-ojobs:
+jobs:
   build:
     docker:
       # Ensure .tool-versions matches
