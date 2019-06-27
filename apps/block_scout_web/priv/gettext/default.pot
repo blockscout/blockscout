@@ -112,6 +112,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:27
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:23
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:21
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:8
 #: lib/block_scout_web/views/address_transaction_view.ex:8
 msgid "All"
@@ -666,8 +667,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:116
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:133
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:102
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:119
 msgid "Search"
 msgstr ""
 
@@ -743,7 +744,7 @@ msgid "There are no tokens."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:62
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:64
 msgid "There are no transactions for this address."
 msgstr ""
 
@@ -1210,7 +1211,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/index.html.eex:21
 #: lib/block_scout_web/templates/address_token/index.html.eex:13
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:20
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:57
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:59
 #: lib/block_scout_web/templates/address_validation/index.html.eex:22
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/chain/show.html.eex:91
@@ -1480,8 +1481,8 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:110
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:114
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:96
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:100
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1690,11 +1691,6 @@ msgid " Token Transfer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:27
-msgid "There is no decompilded contracts for this address."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:14
 msgid " is recommended."
 msgstr ""
@@ -1702,16 +1698,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:15
 msgid "Anything not in this list is not supported. Click on the method to be taken to the documentation for that method, and check the notes section for any potential differences."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:44
-msgid "ERC-20 "
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:45
-msgid "ERC-721 "
 msgstr ""
 
 #, elixir-format
@@ -1727,6 +1713,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:11
 msgid "However, in general, the"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:27
+msgid "There is no decompilded contracts for this address."
 msgstr ""
 
 #, elixir-format
@@ -1747,4 +1738,52 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:9
 msgid "here."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:11
+msgid "Change Network"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:24
+msgid "Favorites"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:12
+msgid "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:22
+msgid "Mainnet"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:18
+msgid "Search network"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:23
+msgid "Testnet"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:73
+#: lib/block_scout_web/templates/address_token/index.html.eex:26
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:72
+#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:33
+msgid "CSV"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:44
+msgid "ERC-20 "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:45
+msgid "ERC-721 "
 msgstr ""
