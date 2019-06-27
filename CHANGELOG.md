@@ -11,6 +11,8 @@
 
 ### Fixes
 - [#2263](https://github.com/poanetwork/blockscout/pull/2263) - added an ability to close network selector on outside click
+- [#2257](https://github.com/poanetwork/blockscout/pull/2257) - 'download csv' button added to different tabs
+- [#2242](https://github.com/poanetwork/blockscout/pull/2242) - added styles for 'download csv' button
 - [#2261](https://github.com/poanetwork/blockscout/pull/2261) - header logo aligned to the center properly
 - [#2254](https://github.com/poanetwork/blockscout/pull/2254) - search length issue, tile link wrapping issue
 - [#2238](https://github.com/poanetwork/blockscout/pull/2238) - header content alignment issue, hide navbar on outside click
@@ -90,6 +92,8 @@
 
 ### Fixes
 - [#2228](https://github.com/poanetwork/blockscout/pull/2228) - favorites duplication issues, active radio issue
+- [#2207](https://github.com/poanetwork/blockscout/pull/2207) - new 'download csv' button design
+- [#2206](https://github.com/poanetwork/blockscout/pull/2206) - added styles for 'Download All Transactions as CSV' button
 - [#2099](https://github.com/poanetwork/blockscout/pull/2099) - logs search input width
 - [#2098](https://github.com/poanetwork/blockscout/pull/2098) - nav dropdown issue, logo size issue
 - [#2082](https://github.com/poanetwork/blockscout/pull/2082) - dropdown styles, tooltip gap fix, 404 page added
