@@ -743,7 +743,7 @@ msgid "There are no tokens."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:62
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:64
 msgid "There are no transactions for this address."
 msgstr ""
 
@@ -1210,7 +1210,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/index.html.eex:21
 #: lib/block_scout_web/templates/address_token/index.html.eex:13
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:20
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:57
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:59
 #: lib/block_scout_web/templates/address_validation/index.html.eex:22
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/chain/show.html.eex:91
@@ -1700,16 +1700,6 @@ msgid "Anything not in this list is not supported. Click on the method to be tak
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:44
-msgid "ERC-20 "
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:45
-msgid "ERC-721 "
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:4
 msgid "ETH RPC API Documentation"
 msgstr ""
@@ -1755,4 +1745,19 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:70
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:33
 msgid "CSV"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:74
+msgid "CSV"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:44
+msgid "ERC-20 "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:45
+msgid "ERC-721 "
 msgstr ""

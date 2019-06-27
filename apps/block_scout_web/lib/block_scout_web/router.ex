@@ -242,6 +242,8 @@ defmodule BlockScoutWeb.Router do
 
     get("/search_logs", AddressLogsController, :search_logs)
 
+    get("/transactions_csv", AddressTransactionController, :transactions_csv)
+
     get("/token_autocomplete", ChainController, :token_autocomplete)
 
     get("/token_transfers_csv", AddressTransactionController, :token_transfers_csv)

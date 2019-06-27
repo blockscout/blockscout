@@ -1,8 +1,11 @@
-.transaction-details-address {
-  font-size: 12px;
-  font-weight: bold;
-  line-height: 1.2;
-  margin: 0 0 12px;
+.transaction-bottom-panel {
+	display: flex;
+	flex-direction: column;
+	@media (min-width: 768px) {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: flex-end;
+	}
 }
 
 .transaction-bottom-panel {
