@@ -54,6 +54,7 @@
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
 - [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
+- [#2255](https://github.com/poanetwork/blockscout/pull/2255) - upgrade elixir version to 1.9.0
 
 ### Chore
 
