@@ -1,4 +1,5 @@
 <div class="network-selector-overlay js-network-selector-overlay">
+    <div class="network-selector-overlay-close js-network-selector-overlay-close"></div>
     <div class="network-selector-wrapper">
         <div class="network-selector js-network-selector">
             <div class="network-selector-close js-network-selector-close">

@@ -4,6 +4,7 @@ $(function () {
   const mainBody = $('body')
   const showNetworkSelector = $('.js-show-network-selector')
   const hideNetworkSelector = $('.js-network-selector-close')
+  const hideNetworkSelectorOverlay = $('.js-network-selector-overlay-close')
   const networkSelector = $('.js-network-selector')
   const networkSelectorOverlay = $('.js-network-selector-overlay')
   const networkSelectorTab = $('.js-network-selector-tab')
@@ -17,6 +18,11 @@ $(function () {
   })
 
   hideNetworkSelector.on('click', (e) => {
+    e.preventDefault()
+    closeNetworkSelector()
+  })
+
+  hideNetworkSelectorOverlay.on('click', (e) => {
     e.preventDefault()
     closeNetworkSelector()
   })

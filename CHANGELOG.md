@@ -7,6 +7,7 @@
 - [#2146](https://github.com/poanetwork/blockscout/pull/2146) - feat: add eth_getLogs rpc endpoint
 
 ### Fixes
+- [#2263](https://github.com/poanetwork/blockscout/pull/2263) - added an ability to close network selector on outside click
 - [#2201](https://github.com/poanetwork/blockscout/pull/2201) - footer columns fix
 - [#2179](https://github.com/poanetwork/blockscout/pull/2179) - fix docker build error
 - [#2165](https://github.com/poanetwork/blockscout/pull/2165) - sort blocks by timestamp when calculating average block time

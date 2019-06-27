@@ -26,6 +26,14 @@ $network-selector-item-icon-dimensions: 30px !default;
   z-index: 123;
 }
 
+.network-selector-overlay-close {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
 .network-selector-wrapper {
   display: flex;
   height: 100%;
@@ -44,6 +52,7 @@ $network-selector-item-icon-dimensions: 30px !default;
   padding-top: 28px;
   position: relative;
   transition: right 0.25s ease-out;
+  z-index: 2;
 }
 
 .network-selector-close {
