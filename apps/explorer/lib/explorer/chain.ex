@@ -2580,14 +2580,14 @@ defmodule Explorer.Chain do
       internal_transaction.type != ^:call or
         fragment(
           """
-          (SELECT COUNT(sibling.*)
+          EXISTS (SELECT sibling.*
           FROM internal_transactions AS sibling
-          WHERE sibling.transaction_hash = ?
-          LIMIT 2
+          WHERE sibling.transaction_hash = ? AND sibling.index != ?
           )
           """,
-          transaction.hash
-        ) > 1
+          transaction.hash,
+          internal_transaction.index
+        )
     )
   end
 
