@@ -11,6 +11,8 @@ defmodule Explorer.Counters.AverageBlockTimeTest do
     start_supervised!(AverageBlockTime)
     Application.put_env(:explorer, AverageBlockTime, enabled: true)
 
+    Application.put_env(:explorer, :include_uncles_in_average_block_time, true)
+
     on_exit(fn ->
       Application.put_env(:explorer, AverageBlockTime, enabled: false)
     end)
@@ -41,6 +43,36 @@ defmodule Explorer.Counters.AverageBlockTimeTest do
       AverageBlockTime.refresh()
 
       assert AverageBlockTime.average_block_time() == Timex.Duration.parse!("PT3S")
+    end
+
+    test "excludes uncles if include_uncles_in_average_block_time is set to false" do
+      block_number = 99_999_999
+      Application.put_env(:explorer, :include_uncles_in_average_block_time, false)
+
+      first_timestamp = Timex.now()
+
+      insert(:block, number: block_number, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 3))
+      insert(:block, number: block_number, consensus: false, timestamp: Timex.shift(first_timestamp, seconds: 4))
+      insert(:block, number: block_number + 1, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 5))
+
+      AverageBlockTime.refresh()
+
+      assert AverageBlockTime.average_block_time() == Timex.Duration.parse!("PT2S")
+    end
+
+    test "excludes uncles if include_uncles_in_average_block_time is set to true" do
+      block_number = 99_999_999
+      Application.put_env(:explorer, :include_uncles_in_average_block_time, true)
+
+      first_timestamp = Timex.now()
+
+      insert(:block, number: block_number, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 3))
+      insert(:block, number: block_number, consensus: false, timestamp: Timex.shift(first_timestamp, seconds: 4))
+      insert(:block, number: block_number + 1, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 5))
+
+      AverageBlockTime.refresh()
+
+      assert AverageBlockTime.average_block_time() == Timex.Duration.parse!("PT1S")
     end
 
     test "when there are no uncles sorts by block number" do
