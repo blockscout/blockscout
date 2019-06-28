@@ -171,9 +171,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     else
       "#{value}"
     end
-  
   end
-  
+
   defp create_source_file(source) do
     {:ok, path} = Briefly.create()
 
