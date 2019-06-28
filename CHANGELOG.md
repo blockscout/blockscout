@@ -10,6 +10,7 @@
 - [#2193](https://github.com/poanetwork/blockscout/pull/2193) - feat: add BLOCKSCOUT_HOST, and use it in API docs
 
 ### Fixes
+- [#2269](https://github.com/poanetwork/blockscout/pull/2269) - typo issues, dropdown issues
 - [#2263](https://github.com/poanetwork/blockscout/pull/2263) - added an ability to close network selector on outside click
 - [#2257](https://github.com/poanetwork/blockscout/pull/2257) - 'download csv' button added to different tabs
 - [#2242](https://github.com/poanetwork/blockscout/pull/2242) - added styles for 'download csv' button
