@@ -112,7 +112,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:27
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:23
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:20
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:21
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:8
 #: lib/block_scout_web/views/address_transaction_view.ex:8
 msgid "All"
@@ -734,7 +734,7 @@ msgid "There are no token transfers for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_token/index.html.eex:19
+#: lib/block_scout_web/templates/address_token/index.html.eex:18
 msgid "There are no tokens for this address."
 msgstr ""
 
@@ -812,7 +812,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:8
-#: lib/block_scout_web/templates/address_token/index.html.eex:9
+#: lib/block_scout_web/templates/address_token/index.html.eex:8
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:9
 #: lib/block_scout_web/views/address_view.ex:304
 msgid "Tokens"
@@ -1209,7 +1209,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_coin_balance/index.html.eex:34
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:61
 #: lib/block_scout_web/templates/address_logs/index.html.eex:21
-#: lib/block_scout_web/templates/address_token/index.html.eex:14
+#: lib/block_scout_web/templates/address_token/index.html.eex:13
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:20
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:59
 #: lib/block_scout_web/templates/address_validation/index.html.eex:22
@@ -1715,7 +1715,7 @@ msgstr ""
 msgid "However, in general, the"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:27
 msgid "There is no decompilded contracts for this address."
 msgstr ""
@@ -1741,37 +1741,38 @@ msgid "here."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:10
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:11
 msgid "Change Network"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:23
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:24
 msgid "Favorites"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:11
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:12
 msgid "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:21
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:22
 msgid "Mainnet"
 msgstr ""
 
-#, elixir-format, fuzzy
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:17
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:18
 msgid "Search network"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:22
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:23
 msgid "Testnet"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:74
+#: lib/block_scout_web/templates/address_token/index.html.eex:26
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:72
 msgid "CSV"
 msgstr ""
 
