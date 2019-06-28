@@ -65,3 +65,10 @@ $card-tab-active: $primary;
 $badge-neutral-color: $primary;
 $badge-neutral-background-color: rgba($primary, .1);
 $api-text-monospace-color: $primary;
+
+// Tokens dropdown
+.token-balance-dropdown[aria-labelledby="dropdown-tokens"] {
+  .dropdown-items .dropdown-item:hover {
+    color: $primary !important;
+  }
+}
