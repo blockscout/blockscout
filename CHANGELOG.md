@@ -9,6 +9,7 @@
 - [#2235](https://github.com/poanetwork/blockscout/pull/2235) - save and show additional validation fields to smart contract
 - [#2190](https://github.com/poanetwork/blockscout/pull/2190) - show all token transfers
 - [#2193](https://github.com/poanetwork/blockscout/pull/2193) - feat: add BLOCKSCOUT_HOST, and use it in API docs
+- [#2266](https://github.com/poanetwork/blockscout/pull/2266) - allow excluding uncles from average block time calculation
 
 ### Fixes
 - [#2263](https://github.com/poanetwork/blockscout/pull/2263) - added an ability to close network selector on outside click
@@ -56,6 +57,10 @@
 - [#2167](https://github.com/poanetwork/blockscout/pull/2167) - feat: document eth rpc api mimicking endpoints
 - [#2225](https://github.com/poanetwork/blockscout/pull/2225) - fix metadata decoding in Solidity 0.5.9 smart contract verification
 - [#2204](https://github.com/poanetwork/blockscout/pull/2204) - fix large contract verification
+- [#2247](https://github.com/poanetwork/blockscout/pull/2247) - hide logs search if there are no logs
+- [#2248](https://github.com/poanetwork/blockscout/pull/2248) - sort block after query execution for average block time
+- [#2270](https://github.com/poanetwork/blockscout/pull/2270) - Remove duplicate params in `Indexer.Fetcher.TokenBalance`
+- [#2268](https://github.com/poanetwork/blockscout/pull/2268) - remove not existing assigns in html code
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version

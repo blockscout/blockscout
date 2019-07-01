@@ -1742,60 +1742,6 @@ msgstr ""
 msgid "here."
 msgstr ""
 
-#, elixir-format
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:73
-#: lib/block_scout_web/templates/address_token/index.html.eex:26
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:72
-#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:33
-msgid "CSV"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:11
 msgid "Change Network"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:51
-msgid "Constructor arguments"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:44
-msgid "ERC-20 "
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:45
-msgid "ERC-721 "
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:58
-msgid "External libraries"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:24
-msgid "Favorites"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:12
-msgid "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:22
-msgid "Mainnet"
-msgstr ""
-
-#, elixir-format, fuzzy
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:18
-msgid "Search network"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:23
-msgid "Testnet"
 msgstr ""
