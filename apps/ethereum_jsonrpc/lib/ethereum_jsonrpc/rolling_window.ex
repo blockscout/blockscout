@@ -211,12 +211,16 @@ defmodule EthereumJSONRPC.RollingWindow do
   """
   @spec inspect(table :: atom, key :: term()) :: nonempty_list(non_neg_integer)
   def inspect(table, key) do
-    case :ets.lookup(table, key) do
-      [{_, current_window, windows}] ->
-        [current_window | windows]
+    if :ets.whereis(table) == :undefined do
+      []
+    else
+      case :ets.lookup(table, key) do
+        [{_, current_window, windows}] ->
+          [current_window | windows]
 
-      _ ->
-        []
+        _ ->
+          []
+      end
     end
   end
 end
