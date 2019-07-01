@@ -298,7 +298,7 @@ jobs:
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - run: mix release --verbose --env prod
+      - run: MIX_ENV=prod mix release
       - run:
           name: Collecting artifacts
           command: |
