@@ -8,6 +8,7 @@
 - [#2146](https://github.com/poanetwork/blockscout/pull/2146) - feat: add eth_getLogs rpc endpoint
 - [#2190](https://github.com/poanetwork/blockscout/pull/2190) - show all token transfers
 - [#2193](https://github.com/poanetwork/blockscout/pull/2193) - feat: add BLOCKSCOUT_HOST, and use it in API docs
+- [#2266](https://github.com/poanetwork/blockscout/pull/2266) - allow excluding uncles from average block time calculation
 
 ### Fixes
 - [#2269](https://github.com/poanetwork/blockscout/pull/2269) - typo issues, dropdown issues
