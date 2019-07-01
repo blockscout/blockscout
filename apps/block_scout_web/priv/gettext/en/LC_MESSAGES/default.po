@@ -1779,16 +1779,11 @@ msgid "Favorites"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_network_selector.html.eex:12
-msgid "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:22
 msgid "Mainnet"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:18
 msgid "Search network"
 msgstr ""
@@ -1796,4 +1791,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:23
 msgid "Testnet"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_network_selector.html.eex:12
+msgid "Use the search box to find a hosted network, or select from the list of available networks below."
 msgstr ""
