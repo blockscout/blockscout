@@ -107,6 +107,13 @@ defmodule Explorer.SmartContract.Verifier do
         |> Enum.reverse()
         |> :binary.list_to_bin()
 
+      # Solidity >= 0.5.9; https://github.com/ethereum/solidity/blob/aa4ee3a1559ebc0354926af962efb3fcc7dc15bd/docs/metadata.rst
+      "a265627a7a72305820" <>
+          <<_::binary-size(64)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0032" <> _constructor_arguments ->
+        extracted
+        |> Enum.reverse()
+        |> :binary.list_to_bin()
+
       <<next::binary-size(2)>> <> rest ->
         do_extract_bytecode([next | extracted], rest)
     end

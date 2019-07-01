@@ -3,7 +3,6 @@
 - About BlockScout
 
   - [About](about.md)
-  - [Projects Using BlockScout](projects.md)
   - [Umbrella Project Organization](umbrella.md)
 
 - Installation & Configuration
@@ -23,6 +22,7 @@
       - [Tracing](tracing.md)
       - [Memory Usage](memory-usage.md)
       - [API Docs](api.md)
+  - [Upgrading](upgrading.md)
   
 - User Guide
 

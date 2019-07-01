@@ -198,6 +198,16 @@ defmodule BlockScoutWeb.LayoutView do
     |> Enum.reject(&Map.get(&1, :hide_in_dropdown?))
   end
 
+  def dropdown_main_nets do
+    dropdown_nets()
+    |> main_nets()
+  end
+
+  def dropdown_test_nets do
+    dropdown_nets()
+    |> test_nets()
+  end
+
   def dropdown_head_main_nets do
     dropdown_nets()
     |> main_nets()

@@ -91,7 +91,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           "node",
           [
             Application.app_dir(:explorer, "priv/compile_solc.js"),
-            code,
+            create_source_file(code),
             compiler_version,
             optimize_value(optimize),
             optimization_runs,
@@ -162,4 +162,12 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
   defp optimize_value(true), do: "1"
   defp optimize_value("true"), do: "1"
+
+  defp create_source_file(source) do
+    {:ok, path} = Briefly.create()
+
+    File.write!(path, source)
+
+    path
+  end
 end
