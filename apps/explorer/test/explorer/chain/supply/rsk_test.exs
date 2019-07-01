@@ -1,45 +1,30 @@
 defmodule Explorer.Chain.Supply.RSKTest do
   use Explorer.DataCase
 
+  import Mox
+
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Wei
   alias Explorer.ExchangeRates.Token
 
   @coin_address "0x0000000000000000000000000000000001000006"
 
-  defp wei!(value) do
-    {:ok, wei} = Wei.cast(value)
-    wei
-  end
-
   test "total is 21_000_000" do
-    assert RSK.total() == 21_000_000
+    assert Decimal.equal?(RSK.total(), Decimal.new(21_000_000))
   end
 
   describe "market_cap/1" do
+    @tag :no_parity
+    @tag :no_geth
     test "calculates market_cap" do
-      address = insert(:address, hash: @coin_address)
-      insert(:block, number: 0)
-      insert(:fetched_balance, value: 1_000_000_000_000_000_000_000_000, address_hash: address.hash, block_number: 0)
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance"}], _options ->
+        {:ok, [%{id: id, result: "20999999999900000000000000"}]}
+      end)
 
-      exchange_rate = %{Token.null() | usd_value: Decimal.new(10)}
+      exchange_rate = %{Token.null() | usd_value: Decimal.new(1_000_000)}
 
-      assert RSK.market_cap(exchange_rate) == Decimal.new(100)
-    end
-  end
-
-  describe "circulating/0" do
-    test "with no balance" do
-      assert RSK.circulating() == wei!(0)
-    end
-
-    test "with a balance" do
-      address = insert(:address, hash: @coin_address)
-      insert(:block, number: 0)
-
-      insert(:fetched_balance, value: 10, address_hash: address.hash, block_number: 0)
-
-      assert RSK.circulating() == wei!(10)
+      assert Decimal.equal?(RSK.market_cap(exchange_rate), Decimal.new(100.0000))
     end
   end
 

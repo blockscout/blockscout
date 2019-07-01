@@ -6,18 +6,20 @@ defmodule Explorer.Chain.Supply.RSK do
   use Explorer.Chain.Supply
 
   import Ecto.Query, only: [from: 2]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
+  alias EthereumJSONRPC.FetchedBalances
   alias Explorer.Chain.Address.CoinBalance
-  alias Explorer.Chain.{Block, Wei}
+  alias Explorer.Chain.{Block, BlockNumberCache, Wei}
   alias Explorer.Repo
 
-  def market_cap(exchange_rate) do
-    ether =
-      circulating()
-      |> Wei.to(:ether)
-      |> Decimal.div(Decimal.new(100_000))
+  @cache_name :rsk_balance
+  @balance_key :balance
 
-    Decimal.mult(ether, exchange_rate.usd_value)
+  def market_cap(exchange_rate) do
+    btc = circulating()
+
+    Decimal.mult(btc, exchange_rate.usd_value)
   end
 
   @doc "Equivalent to getting the circulating value "
@@ -78,18 +80,51 @@ defmodule Explorer.Chain.Supply.RSK do
   end
 
   def circulating do
-    query =
-      from(balance in CoinBalance,
-        join: block in Block,
-        on: block.number == balance.block_number,
-        where: block.consensus == true,
-        where: balance.address_hash == ^"0x0000000000000000000000000000000001000006",
-        order_by: [desc: block.timestamp],
-        limit: 1,
-        select: balance.value
-      )
+    value = ConCache.get(@cache_name, @balance_key)
 
-    Repo.one(query) || wei!(0)
+    if is_nil(value) do
+      updated_value = fetch_circulating_value()
+
+      ConCache.put(@cache_name, @balance_key, updated_value)
+
+      updated_value
+    else
+      value
+    end
+  end
+
+  def cache_name, do: @cache_name
+
+  defp fetch_circulating_value do
+    max_number = BlockNumberCache.max_number()
+
+    params = [
+      %{block_quantity: integer_to_quantity(max_number), hash_data: "0x0000000000000000000000000000000001000006"}
+    ]
+
+    json_rpc_named_argumens = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    case EthereumJSONRPC.fetch_balances(params, json_rpc_named_argumens) do
+      {:ok,
+       %FetchedBalances{
+         errors: [],
+         params_list: [
+           %{
+             address_hash: "0x0000000000000000000000000000000001000006",
+             value: value
+           }
+         ]
+       }} ->
+        sub =
+          value
+          |> Decimal.new()
+          |> Decimal.div(Decimal.new(1_000_000_000_000_000_000))
+
+        Decimal.sub(total(), sub)
+
+      _ ->
+        Decimal.new(0)
+    end
   end
 
   defp wei!(value) do
@@ -98,6 +133,6 @@ defmodule Explorer.Chain.Supply.RSK do
   end
 
   def total do
-    21_000_000
+    Decimal.new(21_000_000)
   end
 end
