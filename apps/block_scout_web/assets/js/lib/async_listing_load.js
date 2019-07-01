@@ -219,6 +219,14 @@ export const elements = {
 
       $el.hide()
     }
+  },
+  '[csv-download]': {
+    render ($el, state) {
+      if (state.emptyResponse) {
+        return $el.hide()
+      }
+      return $el.show()
+    }
   }
 }
 
