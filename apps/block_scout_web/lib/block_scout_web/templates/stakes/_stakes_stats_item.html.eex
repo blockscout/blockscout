@@ -2,7 +2,12 @@
   <span class="stakes-top-stats-label">
     <%= @title %>
   </span>
-  <span class="stakes-top-stats-value" data-selector="<%= if assigns[:name], do: @name %>">
-    <%= @value %>
+  <span class="stakes-top-stats-value" >
+    <span data-selector="<%= if assigns[:name], do: @name %>">
+      <%= @value %>
+    </span>
+    <span class="stakes-top-stats-unit">
+      <%= if assigns[:unit], do: @unit %>
+    </span>
   </span>
 </div>

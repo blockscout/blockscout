@@ -127,7 +127,7 @@ const elements = {
   '[data-selector="epoch-end-in"]': {
     render ($el, state, oldState) {
       if (state.epochEndIn === oldState.epochEndIn) return
-      $el.text(`${state.epochEndIn} blocks`)
+      $el.text(`${state.epochEndIn}`)
     }
   }
 }

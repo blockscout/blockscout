@@ -68,6 +68,10 @@ $stakes-stats-item-border-color: #fff !default;
   }
 }
 
+.stakes-top-stats-unit {
+  padding-left: 5px;
+}
+
 .stakes-top-stats-login {
   color: $secondary;
   cursor: pointer;
