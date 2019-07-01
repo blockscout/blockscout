@@ -66,13 +66,14 @@ defmodule Explorer.Counters.AverageBlockTime do
       from(block in Block,
         limit: 100,
         offset: 0,
-        order_by: [desc: block.number, desc: block.timestamp],
+        order_by: [desc: block.number],
         select: {block.number, block.timestamp}
       )
 
     timestamps =
       timestamps_query
       |> Repo.all()
+      |> Enum.sort_by(fn {_, timestamp} -> timestamp end, &>=/2)
       |> Enum.map(fn {number, timestamp} ->
         {number, DateTime.to_unix(timestamp, :millisecond)}
       end)

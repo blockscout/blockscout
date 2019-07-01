@@ -49,7 +49,7 @@ defmodule Indexer.MixProject do
       # JSONRPC access to Parity for `Explorer.Indexer`
       {:ethereum_jsonrpc, in_umbrella: true},
       # RLP encoding
-      {:ex_rlp, "~> 0.3"},
+      {:ex_rlp, "~> 0.5.2"},
       # Code coverage
       {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       # Importing to database

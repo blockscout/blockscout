@@ -1,6 +1,6 @@
 # BlockScout Env Variables
 
-Below is a table outlining the environment variables utilized by BlockScout. 
+Below is a table outlining the environment variables utilized by BlockScout.
 
 
 | Variable | Required | Description | Default | Version |
