@@ -2671,14 +2671,19 @@ defmodule Explorer.Chain do
 
   @doc """
   Fetches a `t:Token.t/0` by an address hash.
+
+  Optionally accepts a list of bindings to preload, just like `Ecto.Query.preload/3`
   """
-  @spec token_from_address_hash(Hash.Address.t()) :: {:ok, Token.t()} | {:error, :not_found}
-  def token_from_address_hash(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
+  @spec token_from_address_hash(Hash.Address.t(), [Macro.t()]) :: {:ok, Token.t()} | {:error, :not_found}
+  def token_from_address_hash(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
+        preloads \\ []
+      ) do
     query =
       from(
         token in Token,
         where: token.contract_address_hash == ^hash,
-        preload: [{:contract_address, :smart_contract}]
+        preload: ^preloads
       )
 
     case Repo.one(query) do

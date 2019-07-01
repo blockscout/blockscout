@@ -6,6 +6,8 @@
 - [#2151](https://github.com/poanetwork/blockscout/pull/2151) - hide dropdown menu then other networks list is empty
 - [#2191](https://github.com/poanetwork/blockscout/pull/2191) - allow to configure token metadata update interval
 - [#2146](https://github.com/poanetwork/blockscout/pull/2146) - feat: add eth_getLogs rpc endpoint
+- [#2216](https://github.com/poanetwork/blockscout/pull/2216) - Improve token's controllers by avoiding unnecessary preloads
+- [#2235](https://github.com/poanetwork/blockscout/pull/2235) - save and show additional validation fields to smart contract
 - [#2190](https://github.com/poanetwork/blockscout/pull/2190) - show all token transfers
 - [#2193](https://github.com/poanetwork/blockscout/pull/2193) - feat: add BLOCKSCOUT_HOST, and use it in API docs
 - [#2266](https://github.com/poanetwork/blockscout/pull/2266) - allow excluding uncles from average block time calculation
@@ -53,6 +55,7 @@
 - [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
 - [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
 - [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
+- [#2198](https://github.com/poanetwork/blockscout/pull/2198) - reduce transaction status and error constraint
 - [#2167](https://github.com/poanetwork/blockscout/pull/2167) - feat: document eth rpc api mimicking endpoints
 - [#2225](https://github.com/poanetwork/blockscout/pull/2225) - fix metadata decoding in Solidity 0.5.9 smart contract verification
 - [#2204](https://github.com/poanetwork/blockscout/pull/2204) - fix large contract verification
