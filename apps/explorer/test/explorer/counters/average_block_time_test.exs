@@ -62,7 +62,6 @@ defmodule Explorer.Counters.AverageBlockTimeTest do
 
     test "excludes uncles if include_uncles_in_average_block_time is set to true" do
       block_number = 99_999_999
-      Application.put_env(:explorer, :include_uncles_in_average_block_time, true)
 
       first_timestamp = Timex.now()
 
