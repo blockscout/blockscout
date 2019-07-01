@@ -125,6 +125,8 @@ defmodule Explorer.Chain.Supply.RSK do
       _ ->
         Decimal.new(0)
     end
+  rescue
+    _ -> Decimal.new(0)
   end
 
   defp wei!(value) do
