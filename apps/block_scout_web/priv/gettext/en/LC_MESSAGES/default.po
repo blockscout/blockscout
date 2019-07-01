@@ -258,7 +258,7 @@ msgid "Connection Lost, click to load newer validations"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:53
+#: lib/block_scout_web/templates/address_contract/index.html.eex:82
 msgid "Contract ABI"
 msgstr ""
 
@@ -296,7 +296,7 @@ msgid "Contract name:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:41
+#: lib/block_scout_web/templates/address_contract/index.html.eex:70
 msgid "Contract source code"
 msgstr ""
 
@@ -577,7 +577,7 @@ msgid "OUT"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:34
+#: lib/block_scout_web/templates/address_contract/index.html.eex:40
 msgid "Optimization enabled"
 msgstr ""
 
@@ -1405,17 +1405,17 @@ msgid "Support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:55
+#: lib/block_scout_web/templates/address_contract/index.html.eex:84
 msgid "Copy ABI"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:71
+#: lib/block_scout_web/templates/address_contract/index.html.eex:100
 msgid "Copy Contract Creation Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:43
+#: lib/block_scout_web/templates/address_contract/index.html.eex:72
 msgid "Copy Source Code"
 msgstr ""
 
@@ -1487,6 +1487,7 @@ msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:35
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:45
 msgid "EVM Version"
 msgstr ""
@@ -1517,6 +1518,7 @@ msgid "Decompiler version"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:45
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:77
 msgid "Optimization runs"
 msgstr ""
@@ -1583,27 +1585,27 @@ msgid "Block Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:83
+#: lib/block_scout_web/templates/address_contract/index.html.eex:112
 msgid "Contract Byte Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:69
+#: lib/block_scout_web/templates/address_contract/index.html.eex:98
 msgid "Contract Creation Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:75
+#: lib/block_scout_web/templates/address_contract/index.html.eex:104
 msgid "Contracts that self destruct in their constructors have no contract code published and cannot be verified."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:85
+#: lib/block_scout_web/templates/address_contract/index.html.eex:114
 msgid "Copy Contract Byte Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:76
+#: lib/block_scout_web/templates/address_contract/index.html.eex:105
 msgid "Displaying the init data provided of the creating transaction."
 msgstr ""
 
@@ -1741,8 +1743,34 @@ msgid "here."
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address_token/index.html.eex:26
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:72
+msgid "CSV"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:11
 msgid "Change Network"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:51
+msgid "Constructor arguments"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:44
+msgid "ERC-20 "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:45
+msgid "ERC-721 "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:58
+msgid "External libraries"
 msgstr ""
 
 #, elixir-format
@@ -1760,7 +1788,7 @@ msgstr ""
 msgid "Mainnet"
 msgstr ""
 
-#, elixir-format
+#, elixir-format, fuzzy
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:18
 msgid "Search network"
 msgstr ""
@@ -1768,20 +1796,4 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:23
 msgid "Testnet"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_token/index.html.eex:26
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:72
-msgid "CSV"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:44
-msgid "ERC-20 "
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:45
-msgid "ERC-721 "
 msgstr ""
