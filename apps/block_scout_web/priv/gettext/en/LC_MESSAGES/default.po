@@ -180,6 +180,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:87
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:16
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:20
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:6
 msgid "Blocks"
 msgstr ""
 
