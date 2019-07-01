@@ -17,20 +17,20 @@
     <span class="stakes-top-stats-label-item"><%= gettext "Balance" %>:
       <%=
         if @user[:balance] do
-          format_wei_value(@user.balance, :ether)
+          format_wei_value(@user.balance, :ether, include_unit_label: false)
         else
           "-"
         end
-      %>
+      %> <%= @token_symbol %>
     </span>
     <span class="stakes-top-stats-label-item"><%= gettext "Staked" %>:
       <%=
         if @user[:staked] do
-          format_wei_value(@user.staked, :ether)
+          format_wei_value(@user.staked, :ether, include_unit_label: false)
         else
           "-"
         end
-      %>
+      %>  <%= @token_symbol %>
     </span>
   </span>
 </div>

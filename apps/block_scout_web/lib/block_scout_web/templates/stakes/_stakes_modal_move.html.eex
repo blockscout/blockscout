@@ -15,7 +15,7 @@
               <div class="input-group form-group">
                 <input type="text" class="form-control n-b-r" placeholder='<%= gettext("Amount") %>' move-amount>
                 <div class="input-group-prepend last">
-                  <div class="input-group-text">POA20</div>
+                  <div class="input-group-text"><%= @token_symbol %></div>
                 </div>
               </div>
               <p class="form-p m-b-0">You Staked: <span class="text-dark" user-staked></span></p>

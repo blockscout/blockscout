@@ -8,7 +8,8 @@ import Web3 from 'web3'
 
 export const initialState = {
   web3: null,
-  blocksCount: null
+  blocksCount: null,
+  tokenSymbol: null
 }
 
 export function reducer (state = initialState, action) {
@@ -157,6 +158,11 @@ const elements = {
     render ($el, state, oldState) {
       if (state.epochEndIn === oldState.epochEndIn) return
       $el.text(`${state.epochEndIn}`)
+    }
+  },
+  '[data-page="stakes"]': {
+    load ($el) {
+      return { tokenSymbol: $el.data('token-symbol') }
     }
   }
 }

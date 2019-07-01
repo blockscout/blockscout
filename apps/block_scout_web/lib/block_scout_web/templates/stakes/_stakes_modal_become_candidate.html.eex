@@ -10,13 +10,13 @@
           <div class="input-group form-group">
             <input candidate-stake type="text" class="form-control n-b-r" placeholder='<%= gettext("Amount") %>'>
             <div class="input-group-prepend last">
-              <div class="input-group-text">POA20</div>
+              <div class="input-group-text"><%= @token_symbol %></div>
             </div>
           </div>
           <div class="form-group">
             <input mining-address type="text" class="form-control" placeholder='<%= gettext("Your Mining Address") %>'>
           </div>
-          <p class="form-p">Minimum possible stake: <span class="text-dark"><%= @min_candidate_stake %> POA20</span></p>
+          <p class="form-p">Minimum possible stake: <span class="text-dark"><%= @min_candidate_stake %> <%= @token_symbol %></span></p>
           <div class="form-buttons"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become a Candidate"), extra_class: "full-width" %></div>
         </form>
       </div>

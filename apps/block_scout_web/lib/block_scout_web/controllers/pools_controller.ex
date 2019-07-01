@@ -94,6 +94,7 @@ defmodule BlockScoutWeb.PoolsController do
     epoch_end_block = EpochCounter.epoch_end_block() || 0
     block_number = BlockNumberCache.max_number()
     stakes_setting = Application.get_env(:block_scout_web, :stakes)
+    token_symbol = get_token_symbol()
 
     user =
       conn
@@ -106,7 +107,8 @@ defmodule BlockScoutWeb.PoolsController do
       block_number: block_number,
       user: user,
       logged_in: user != nil,
-      min_candidate_stake: stakes_setting[:min_candidate_stake]
+      min_candidate_stake: stakes_setting[:min_candidate_stake],
+      token_symbol: token_symbol
     ]
 
     content =
@@ -188,6 +190,7 @@ defmodule BlockScoutWeb.PoolsController do
     block_number = BlockNumberCache.max_number()
     average_block_time = AverageBlockTime.average_block_time()
     stakes_setting = Application.get_env(:block_scout_web, :stakes)
+    token_symbol = get_token_symbol()
 
     user =
       conn
@@ -204,7 +207,8 @@ defmodule BlockScoutWeb.PoolsController do
       logged_in: user != nil,
       average_block_time: average_block_time,
       min_candidate_stake: stakes_setting[:min_candidate_stake],
-      min_delegator_stake: stakes_setting[:min_delegator_stake]
+      min_delegator_stake: stakes_setting[:min_delegator_stake],
+      token_symbol: token_symbol
     ]
 
     render(conn, "index.html", options)
@@ -290,4 +294,16 @@ defmodule BlockScoutWeb.PoolsController do
   defp check_access(_, :stake), do: true
 
   defp check_access(_, _), do: false
+
+  defp get_token_symbol do
+    stakes_token_name = System.get_env("STAKES_TOKEN_NAME") || "POSDAO"
+
+    case Chain.search_token(stakes_token_name) do
+      [token | _] ->
+        token.symbol
+
+      _ ->
+        "POA"
+    end
+  end
 end

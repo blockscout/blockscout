@@ -12,17 +12,17 @@
               <div class="input-group form-group">
                 <input type="text" class="form-control n-b-r" placeholder='<%= gettext("Amount") %>'>
                 <div class="input-group-prepend last">
-                  <div class="input-group-text">POA20</div>
+                  <div class="input-group-text"><%= @token_symbol %></div>
                 </div>
               </div>
               <p class="form-p m-b-0">Minimum Stake: 
                 <span class="text-dark">
-                  <%= @min_delegator_stake %> POA
+                  <%= @min_delegator_stake %> <%= @token_symbol %>
                 </span>
               </p>
               <p class="form-p">Your Balance: 
                 <span class="text-dark">
-                  <%= if @user, do: format_wei_value(@user.balance, :ether) %>
+                  <%= if @user, do: format_wei_value(@user.balance, :ether, include_unit_label: false) %> <%= @token_symbol %>
                 </span>
               </p>
               <div class="form-buttons">

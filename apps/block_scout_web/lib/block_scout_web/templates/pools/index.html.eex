@@ -8,13 +8,15 @@
     block_number: @block_number,
     user: @user,
     logged_in: @logged_in,
-    min_candidate_stake: @min_candidate_stake
+    min_candidate_stake: @min_candidate_stake,
+    token_symbol: @token_symbol
   %>
 </div>
 <section data-page="stakes" class="container" 
   data-user-address="<%= if @user, do: @user.address %>"
   data-epoch-end-sec="<%= epoch_end_sec(@epoch_end_in, @average_block_time) %>"
   data-average-block-time=<%= Timex.Duration.to_seconds(@average_block_time) %>
+  data-token-symbol="<%= @token_symbol %>"
 >
   <div class="card" data-async-load data-async-listing="<%= @current_path %>">
     <%= render BlockScoutWeb.StakesView, "_stakes_tabs.html", conn: @conn %>
@@ -57,9 +59,15 @@
 
   </div>
 </section>
-<%= render BlockScoutWeb.StakesView, "_stakes_modal_stake.html", user: @user, min_delegator_stake: @min_delegator_stake %>
-<%= render BlockScoutWeb.StakesView, "_stakes_modal_move.html" %>
-<%= render BlockScoutWeb.StakesView, "_stakes_modal_move_selected.html", min_delegator_stake: @min_delegator_stake %>
-<%= render BlockScoutWeb.StakesView, "_stakes_modal_withdraw.html" %>
+<%= 
+  render BlockScoutWeb.StakesView, 
+  "_stakes_modal_stake.html", 
+  user: @user, 
+  min_delegator_stake: @min_delegator_stake,
+  token_symbol: @token_symbol
+%>
+<%= render BlockScoutWeb.StakesView, "_stakes_modal_move.html", token_symbol: @token_symbol %>
+<%= render BlockScoutWeb.StakesView, "_stakes_modal_move_selected.html", min_delegator_stake: @min_delegator_stake, token_symbol: @token_symbol %>
+<%= render BlockScoutWeb.StakesView, "_stakes_modal_withdraw.html", token_symbol: @token_symbol %>
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_claim.html" %>
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_pool_info.html" %>

@@ -4,7 +4,7 @@
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Epoch number"), value: @epoch_number, name: "epoch-number"  %>
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Block number"), value: @block_number, name: "block-number" %>
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Next epoch in"), value: @epoch_end_in, name: "epoch-end-in", unit: gettext("Blocks") %>
-      <%= render BlockScoutWeb.StakesView, "_stakes_stats_item_account.html", logged_in: @logged_in, user: @user %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_stats_item_account.html", logged_in: @logged_in, user: @user, token_symbol: @token_symbol %>
       <!-- Buttons -->
       <div class="stakes-top-buttons">
         <%= if @logged_in and @user.has_pool do %>
@@ -17,5 +17,5 @@
   </div>
 </div>
 <%= if @logged_in do %>
-  <%= render BlockScoutWeb.StakesView, "_stakes_modal_become_candidate.html", min_candidate_stake: @min_candidate_stake %>
+  <%= render BlockScoutWeb.StakesView, "_stakes_modal_become_candidate.html", min_candidate_stake: @min_candidate_stake, token_symbol: @token_symbol %>
 <% end %>

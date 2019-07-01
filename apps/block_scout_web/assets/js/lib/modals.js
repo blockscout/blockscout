@@ -67,8 +67,9 @@ window.openMoveStakeModal = async function (poolAddress) {
     })
 
     setProgressInfo(modal, pool)
-    $(`${modal} [user-staked]`).text(`${relation.stakeAmount} POA`)
-    $(`${modal} [max-allowed]`).text(`${relation.maxWithdrawAllowed} POA`)
+    const tokenSymbol = store.getState().tokenSymbol
+    $(`${modal} [user-staked]`).text(`${relation.stakeAmount} ${tokenSymbol}`)
+    $(`${modal} [max-allowed]`).text(`${relation.maxWithdrawAllowed} ${tokenSymbol}`)
 
     $.each($(`${modal} [pool-select] option:not(:first-child)`), (_, opt) => {
       opt.remove()
@@ -102,8 +103,9 @@ window.openMoveStakeSelectedModal = async function (fromAddress, toAddress, amou
   const relation = humps.camelizeKeys(response.relation)
 
   setProgressInfo(modal, fromPool, '.js-pool-from-progress')
-  $(`${modal} [user-staked]`).text(`${relation.stakeAmount} POA`)
-  $(`${modal} [max-allowed]`).text(`${relation.maxWithdrawAllowed} POA`)
+  const tokenSymbol = store.getState().tokenSymbol
+  $(`${modal} [user-staked]`).text(`${relation.stakeAmount} ${tokenSymbol}`)
+  $(`${modal} [max-allowed]`).text(`${relation.maxWithdrawAllowed} ${tokenSymbol}`)
   $(`${modal} [move-amount]`).val(amount)
 
   response = await $.getJSON('/staking_pool', { 'pool_hash': toAddress })
@@ -157,7 +159,8 @@ window.openClaimModal = function (poolAddress) {
       setProgressInfo(modal, pool)
       const relation = humps.camelizeKeys(response.relation)
 
-      $(`${modal} [ordered-amount]`).text(`${relation.orderedWithdraw} POA`)
+      const tokenSymbol = store.getState().tokenSymbol
+      $(`${modal} [ordered-amount]`).text(`${relation.orderedWithdraw} ${tokenSymbol}`)
 
       $(`${modal} form`).unbind('submit')
       $(`${modal} form`).on('submit', _ => claimWithdraw(modal, poolAddress))
@@ -178,7 +181,8 @@ window.openWithdrawModal = function (poolAddress) {
       setProgressInfo(modal, pool)
       const relation = humps.camelizeKeys(response.relation)
 
-      $(`${modal} [user-staked]`).text(`${relation.stakeAmount} POA`)
+      const tokenSymbol = store.getState().tokenSymbol
+      $(`${modal} [user-staked]`).text(`${relation.stakeAmount} ${tokenSymbol}`)
 
       const $withdraw = $(`${modal} .btn-full-primary.withdraw`)
       const $order = $(`${modal} .btn-full-primary.order_withdraw`)
@@ -329,7 +333,8 @@ async function becomeCandidate (el) {
     var min = $(el).data('min-stake')
     unlockAndHideModal(el)
     $submitButton.html(buttonText)
-    openErrorModal('Error', `You cannot stake less than ${min} POA20`)
+    const tokenSymbol = store.getState().tokenSymbol
+    openErrorModal('Error', `You cannot stake less than ${min} ${tokenSymbol}`)
     return false
   }
 
@@ -441,9 +446,10 @@ async function removeMyPool (el) {
 function makeStake (event, modal, poolAddress) {
   const amount = parseFloat(event.target[0].value)
   const minStake = parseFloat($(modal).data('min-stake'))
+  const tokenSymbol = store.getState().tokenSymbol
   if (amount < minStake) {
     $(modal).modal('hide')
-    openErrorModal('Error', `You cannot stake less than ${minStake} POA20`)
+    openErrorModal('Error', `You cannot stake less than ${minStake} ${tokenSymbol}`)
     return false
   }
 
@@ -479,10 +485,11 @@ function moveStake (e, modal, fromAddress, toAddress) {
   const amount = parseFloat(e.target[0].value)
   const allowed = parseFloat($(`${modal} [max-allowed]`).text())
   const minStake = parseInt($(modal).data('min-stake'))
+  const tokenSymbol = store.getState().tokenSymbol
 
   if (amount < minStake || amount > allowed) {
     $(modal).modal('hide')
-    openErrorModal('Error', `You cannot stake less than ${minStake} POA20 and more than ${allowed} POA20`)
+    openErrorModal('Error', `You cannot stake less than ${minStake} ${tokenSymbol} and more than ${allowed} ${tokenSymbol}`)
     return false
   }
 
