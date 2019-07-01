@@ -4,7 +4,6 @@ defmodule Explorer.Chain.Supply.RSKTest do
   import Mox
 
   alias Explorer.Chain.Supply.RSK
-  alias Explorer.Chain.Wei
   alias Explorer.ExchangeRates.Token
 
   @coin_address "0x0000000000000000000000000000000001000006"
@@ -45,9 +44,9 @@ defmodule Explorer.Chain.Supply.RSKTest do
       assert RSK.supply_for_days(2) ==
                {:ok,
                 %{
-                  date(now, days: -2) => dec(0),
-                  date(now, days: -1) => dec(0),
-                  date(now) => dec(0)
+                  date(now, days: -2) => dec(21_000_000),
+                  date(now, days: -1) => dec(21_000_000),
+                  date(now) => dec(21_000_000)
                 }}
     end
 
@@ -62,9 +61,9 @@ defmodule Explorer.Chain.Supply.RSKTest do
       assert RSK.supply_for_days(2) ==
                {:ok,
                 %{
-                  date(now, days: -2) => dec(10),
-                  date(now, days: -1) => dec(10),
-                  date(now) => dec(10)
+                  date(now, days: -2) => dec(20_999_990),
+                  date(now, days: -1) => dec(20_999_990),
+                  date(now) => dec(20_999_990)
                 }}
     end
 
@@ -82,9 +81,9 @@ defmodule Explorer.Chain.Supply.RSKTest do
       assert RSK.supply_for_days(2) ==
                {:ok,
                 %{
-                  date(now, days: -2) => dec(10),
-                  date(now, days: -1) => dec(20),
-                  date(now) => dec(20)
+                  date(now, days: -2) => dec(20_999_990),
+                  date(now, days: -1) => dec(20_999_980),
+                  date(now) => dec(20_999_980)
                 }}
     end
 
@@ -105,9 +104,9 @@ defmodule Explorer.Chain.Supply.RSKTest do
       assert RSK.supply_for_days(2) ==
                {:ok,
                 %{
-                  date(now, days: -2) => dec(10),
-                  date(now, days: -1) => dec(20),
-                  date(now) => dec(20)
+                  date(now, days: -2) => dec(20_999_990),
+                  date(now, days: -1) => dec(20_999_980),
+                  date(now) => dec(20_999_980)
                 }}
     end
 
@@ -128,9 +127,9 @@ defmodule Explorer.Chain.Supply.RSKTest do
       assert RSK.supply_for_days(2) ==
                {:ok,
                 %{
-                  date(now, days: -2) => dec(10),
-                  date(now, days: -1) => dec(20),
-                  date(now) => dec(30)
+                  date(now, days: -2) => dec(20_999_990),
+                  date(now, days: -1) => dec(20_999_980),
+                  date(now) => dec(20_999_970)
                 }}
     end
   end

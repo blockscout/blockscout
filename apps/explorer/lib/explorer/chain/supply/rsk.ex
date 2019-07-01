@@ -68,10 +68,10 @@ defmodule Explorer.Chain.Supply.RSK do
 
         case Map.get(by_day, date) do
           nil ->
-            {Map.put(days, date, last), last}
+            {Map.put(days, date, Decimal.sub(total(), last)), last}
 
           value ->
-            {Map.put(days, date, value.value), value.value}
+            {Map.put(days, date, Decimal.sub(total(), value.value)), value.value}
         end
       end)
       |> elem(0)
