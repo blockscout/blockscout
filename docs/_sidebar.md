@@ -3,7 +3,6 @@
 - About BlockScout
 
   - [About](about.md)
-  - [Projects Using BlockScout](projects.md)
   - [Umbrella Project Organization](umbrella.md)
 
 - Installation & Configuration

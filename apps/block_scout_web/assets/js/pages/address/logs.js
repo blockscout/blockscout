@@ -42,6 +42,15 @@ const elements = {
 
       return $el.show()
     }
+  },
+  '[data-search]': {
+    render ($el, state) {
+      if (state.emptyResponse) {
+        return $el.hide()
+      }
+
+      return $el.show()
+    }
   }
 }
 
