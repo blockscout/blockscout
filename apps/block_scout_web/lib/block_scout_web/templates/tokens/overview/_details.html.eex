@@ -1,6 +1,6 @@
-<section>
+<section class="address-overview">
   <div class="row">
-    <div class="col-md-12 col-lg-8">
+    <div class="card-section col-md-12 col-lg-8 pr-0-md">
       <div class="card">
         <div class="card-body">
           <h1 class="card-title">
@@ -11,7 +11,7 @@
             <% end %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
-              <span data-clipboard-text="<%= @token.contract_address_hash %>">
+              <span class="overview-title-item" data-clipboard-text="<%= @token.contract_address_hash %>">
                 <span
                   aria-label='<%= gettext("Copy Address") %>'
                   class="btn-copy-icon"
@@ -25,6 +25,7 @@
                 </span>
               </span>
               <span
+                class="overview-title-item"
                 data-target="#qrModal"
                 data-toggle="modal"
               >
@@ -68,7 +69,7 @@
     </div>
 
     <%= if total_supply?(@token) do %>
-      <div class="col-md-6 col-lg-4">
+      <div class="card-section col-md-12 col-lg-4 pl-0-md">
         <div class="card card-background-1">
           <div class="card-body">
             <h2 class="card-title balance-card-title"><%= gettext "Total Supply" %></h2>
