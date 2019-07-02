@@ -1,5 +1,9 @@
 defmodule Explorer.SmartContract.PublisherWorker do
-  use Que.Worker
+  @moduledoc """
+  Background smart contract verification worker.
+  """
+
+  use Que.Worker, concurrency: 5
 
   alias Explorer.SmartContract.Publisher
 
