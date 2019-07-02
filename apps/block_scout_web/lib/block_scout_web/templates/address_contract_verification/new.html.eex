@@ -1,4 +1,4 @@
-<section class="container new-smart-contract-container">
+<section data-page="contract-verification" class="container new-smart-contract-container">
   <div class="new-smart-contract-form">
       <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
 

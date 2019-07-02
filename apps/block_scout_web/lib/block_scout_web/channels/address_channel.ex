@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.AddressChannel do
     end
   end
 
-  def handle_out("verification_result", %{result: result}, socket) do
+  def handle_out("verification_result", result, socket) do
     case result do
       {:ok, _contract} ->
         push(socket, "verification", %{verification_result: :ok})
@@ -68,7 +68,6 @@ defmodule BlockScoutWeb.AddressChannel do
         push(socket, "verification", %{verification_result: :error})
         {:noreply, socket}
     end
-    |> IO.inspect()
   end
 
   def handle_out("count", %{count: count}, socket) do

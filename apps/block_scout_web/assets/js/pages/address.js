@@ -40,6 +40,9 @@ export function reducer (state = initialState, action) {
       const validationCount = state.validationCount + 1
       return Object.assign({}, state, { validationCount })
     }
+    case 'RECEIVED_VERIFICATION_RESULT': {
+      console.log('verified')
+    }
     case 'RECEIVED_NEW_TRANSACTION': {
       if (state.channelDisconnected) return state
 
@@ -125,6 +128,10 @@ if ($addressDetailsPage.length) {
   }))
   addressChannel.on('balance', (msg) => store.dispatch({
     type: 'RECEIVED_UPDATED_BALANCE',
+    msg: humps.camelizeKeys(msg)
+  }))
+  addressChannel.on("verification", (msg) => store.dispatch({
+    type: 'RECEIVED_VERIFICATION_RESULT',
     msg: humps.camelizeKeys(msg)
   }))
   addressChannel.on('transaction', (msg) => {
