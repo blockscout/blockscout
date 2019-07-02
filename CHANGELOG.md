@@ -64,6 +64,7 @@
 - [#2248](https://github.com/poanetwork/blockscout/pull/2248) - sort block after query execution for average block time
 - [#2270](https://github.com/poanetwork/blockscout/pull/2270) - Remove duplicate params in `Indexer.Fetcher.TokenBalance`
 - [#2268](https://github.com/poanetwork/blockscout/pull/2268) - remove not existing assigns in html code
+- [#2278](https://github.com/poanetwork/blockscout/pull/2278) - increase threshold for scientific notation
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
