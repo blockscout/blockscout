@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Supply.RSKTest do
   alias Explorer.ExchangeRates.Token
 
   @coin_address "0x0000000000000000000000000000000001000006"
+  @mult 1_000_000_000_000_000_000
 
   test "total is 21_000_000" do
     assert Decimal.equal?(RSK.total(), Decimal.new(21_000_000))
@@ -56,7 +57,7 @@ defmodule Explorer.Chain.Supply.RSKTest do
 
       insert(:block, number: 0, timestamp: Timex.shift(now, days: -10))
 
-      insert(:fetched_balance, value: 10, address_hash: address.hash, block_number: 0)
+      insert(:fetched_balance, value: 10 * @mult, address_hash: address.hash, block_number: 0)
 
       assert RSK.supply_for_days(2) ==
                {:ok,
@@ -74,9 +75,9 @@ defmodule Explorer.Chain.Supply.RSKTest do
       insert(:block, number: 0, timestamp: Timex.shift(now, days: -10))
       insert(:block, number: 1, timestamp: Timex.shift(now, days: -1))
 
-      insert(:fetched_balance, value: 10, address_hash: address.hash, block_number: 0)
+      insert(:fetched_balance, value: 10 * @mult, address_hash: address.hash, block_number: 0)
 
-      insert(:fetched_balance, value: 20, address_hash: address.hash, block_number: 1)
+      insert(:fetched_balance, value: 20 * @mult, address_hash: address.hash, block_number: 1)
 
       assert RSK.supply_for_days(2) ==
                {:ok,
@@ -95,11 +96,11 @@ defmodule Explorer.Chain.Supply.RSKTest do
       insert(:block, number: 1, timestamp: Timex.shift(now, days: -2))
       insert(:block, number: 2, timestamp: Timex.shift(now, days: -1))
 
-      insert(:fetched_balance, value: 5, address_hash: address.hash, block_number: 0)
+      insert(:fetched_balance, value: 5 * @mult, address_hash: address.hash, block_number: 0)
 
-      insert(:fetched_balance, value: 10, address_hash: address.hash, block_number: 1)
+      insert(:fetched_balance, value: 10 * @mult, address_hash: address.hash, block_number: 1)
 
-      insert(:fetched_balance, value: 20, address_hash: address.hash, block_number: 2)
+      insert(:fetched_balance, value: 20 * @mult, address_hash: address.hash, block_number: 2)
 
       assert RSK.supply_for_days(2) ==
                {:ok,
@@ -119,10 +120,10 @@ defmodule Explorer.Chain.Supply.RSKTest do
       insert(:block, number: 2, timestamp: Timex.shift(now, days: -1))
       insert(:block, number: 3, timestamp: now)
 
-      insert(:fetched_balance, value: 5, address_hash: address.hash, block_number: 0)
-      insert(:fetched_balance, value: 10, address_hash: address.hash, block_number: 1)
-      insert(:fetched_balance, value: 20, address_hash: address.hash, block_number: 2)
-      insert(:fetched_balance, value: 30, address_hash: address.hash, block_number: 3)
+      insert(:fetched_balance, value: 5 * @mult, address_hash: address.hash, block_number: 0)
+      insert(:fetched_balance, value: 10 * @mult, address_hash: address.hash, block_number: 1)
+      insert(:fetched_balance, value: 20 * @mult, address_hash: address.hash, block_number: 2)
+      insert(:fetched_balance, value: 30 * @mult, address_hash: address.hash, block_number: 3)
 
       assert RSK.supply_for_days(2) ==
                {:ok,

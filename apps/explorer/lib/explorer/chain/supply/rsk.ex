@@ -66,13 +66,16 @@ defmodule Explorer.Chain.Supply.RSK do
           |> Timex.shift(days: i)
           |> Timex.to_date()
 
-        case Map.get(by_day, date) do
-          nil ->
-            {Map.put(days, date, Decimal.sub(total(), last)), last}
+        cur_value =
+          case Map.get(by_day, date) do
+            nil ->
+              last
 
-          value ->
-            {Map.put(days, date, Decimal.sub(total(), value.value)), value.value}
-        end
+            value ->
+              value.value
+          end
+
+        {Map.put(days, date, calculate_value(cur_value)), cur_value}
       end)
       |> elem(0)
 
@@ -115,12 +118,7 @@ defmodule Explorer.Chain.Supply.RSK do
            }
          ]
        }} ->
-        sub =
-          value
-          |> Decimal.new()
-          |> Decimal.div(Decimal.new(1_000_000_000_000_000_000))
-
-        Decimal.sub(total(), sub)
+        calculate_value(value)
 
       _ ->
         Decimal.new(0)
@@ -136,5 +134,14 @@ defmodule Explorer.Chain.Supply.RSK do
 
   def total do
     Decimal.new(21_000_000)
+  end
+
+  defp calculate_value(val) do
+    sub =
+      val
+      |> Decimal.new()
+      |> Decimal.div(Decimal.new(1_000_000_000_000_000_000))
+
+    Decimal.sub(total(), sub)
   end
 end
