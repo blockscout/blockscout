@@ -13,6 +13,7 @@
 - [#2266](https://github.com/poanetwork/blockscout/pull/2266) - allow excluding uncles from average block time calculation
 
 ### Fixes
+- [#2278](https://github.com/poanetwork/blockscout/pull/2278) - increase threshold for scientific notation
 - [#2275](https://github.com/poanetwork/blockscout/pull/2275) - Description for networks selector
 - [#2263](https://github.com/poanetwork/blockscout/pull/2263) - added an ability to close network selector on outside click
 - [#2257](https://github.com/poanetwork/blockscout/pull/2257) - 'download csv' button added to different tabs
@@ -64,7 +65,6 @@
 - [#2248](https://github.com/poanetwork/blockscout/pull/2248) - sort block after query execution for average block time
 - [#2270](https://github.com/poanetwork/blockscout/pull/2270) - Remove duplicate params in `Indexer.Fetcher.TokenBalance`
 - [#2268](https://github.com/poanetwork/blockscout/pull/2268) - remove not existing assigns in html code
-- [#2278](https://github.com/poanetwork/blockscout/pull/2278) - increase threshold for scientific notation
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
