@@ -221,10 +221,9 @@ window.openPoolInfoModal = function (poolAddress) {
       $(`${modal} [self-staked]`).text(pool.selfStakedAmount)
       $(`${modal} [delegators-staked]`).text(pool.stakedAmount)
       $(`${modal} [stakes-ratio]`).text(`${pool.stakedRatio || 0.00} %`)
-      $(`${modal} [reward-percent]`).text(`${pool.stakedRatio || 0.00} %`)
+      $(`${modal} [reward-percent]`).text(`${pool.blockReward || 0.00} %`)
       $(`${modal} [was-validator]`).text(pool.wasValidatorCount)
       $(`${modal} [was-banned]`).text(pool.wasBannedCount)
-      $(`${modal} [reward-percent]`).text(`${pool.stakedRatio || 0.00} %`)
       if (pool.isBanned) {
         const currentBlock = store.getState().blocksCount
         const blocksLen = pool.bannedUntil - currentBlock

@@ -44,24 +44,23 @@ defmodule Explorer.Staking.PoolsReader do
          {:ok, [was_banned_count]} <- data["banCounter"],
          {:ok, [likelihood_index]} <- data["poolToBeElectedIndex"],
          {:ok, [likelihood_array, likelihood_amount]} <- data["getPoolsLikelihood"] do
-      {
-        :ok,
-        %{
-          staking_address_hash: staking_address,
-          mining_address_hash: mining_address,
-          is_active: is_active,
-          delegators_count: delegators_count,
-          staked_amount: staked_amount,
-          self_staked_amount: self_staked_amount,
-          is_validator: is_validator,
-          was_validator_count: was_validator_count,
-          is_banned: is_banned,
-          banned_until: banned_until,
-          was_banned_count: was_banned_count,
-          delegators: active_delegators_data ++ inactive_delegators_data,
-          likelihood: (Enum.at(likelihood_array, likelihood_index, 0) / likelihood_amount) * 100
-        }
+      pool = %{
+        staking_address_hash: staking_address,
+        mining_address_hash: mining_address,
+        is_active: is_active,
+        delegators_count: delegators_count,
+        staked_amount: staked_amount,
+        self_staked_amount: self_staked_amount,
+        is_validator: is_validator,
+        was_validator_count: was_validator_count,
+        is_banned: is_banned,
+        banned_until: banned_until,
+        was_banned_count: was_banned_count,
+        delegators: active_delegators_data ++ inactive_delegators_data,
+        likelihood: Enum.at(likelihood_array, likelihood_index, 0) / likelihood_amount * 100
       }
+
+      {:ok, reward_percent(pool)}
     else
       _ ->
         :error
@@ -116,6 +115,15 @@ defmodule Explorer.Staking.PoolsReader do
     resp
   end
 
+  defp call_reward_method(method, params) do
+    %{^method => resp} =
+      Reader.query_contract(config(:reward_contract_address), abi("block_reward.json"), %{
+        method => params
+      })
+
+    resp
+  end
+
   defp fetch_pool_data(staking_address, mining_address) do
     call_methods([
       {:staking, "isPoolActive", [staking_address]},
@@ -131,6 +139,24 @@ defmodule Explorer.Staking.PoolsReader do
       {:validators, "bannedUntil", [mining_address]},
       {:validators, "banCounter", [mining_address]}
     ])
+  end
+
+  defp reward_percent(%{staking_address_hash: address, is_validator: true} = pool) do
+    case call_reward_method("snapshotRewardPercents", [address]) do
+      {:ok, [[reward | _]]} ->
+        Map.put(pool, :block_reward, reward / 1_000_000)
+
+      _ ->
+        Map.put(pool, :block_reward, 30)
+    end
+  end
+
+  defp reward_percent(%{self_staked_amount: self_staked, staked_amount: staked} = pool) do
+    if self_staked * 7 > (staked - self_staked) * 3 do
+      Map.put(pool, :block_reward, self_staked / staked * 100)
+    else
+      Map.put(pool, :block_reward, 30)
+    end
   end
 
   defp call_methods(methods) do

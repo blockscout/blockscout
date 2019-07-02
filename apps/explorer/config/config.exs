@@ -61,7 +61,8 @@ end
 
 config :explorer, Explorer.Staking.PoolsReader,
   validators_contract_address: System.get_env("POS_VALIDATORS_CONTRACT"),
-  staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
+  staking_contract_address: System.get_env("POS_STAKING_CONTRACT"),
+  reward_contract_address: System.get_env("POS_REWARD_CONTRACT")
 
 if System.get_env("POS_STAKING_CONTRACT") do
   config :explorer, Explorer.Staking.EpochCounter,

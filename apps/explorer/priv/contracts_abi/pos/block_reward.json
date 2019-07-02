@@ -1,0 +1,21 @@
+[
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_validatorStakingAddress",
+        "type": "address"
+      }
+    ],
+    "name": "snapshotRewardPercents",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

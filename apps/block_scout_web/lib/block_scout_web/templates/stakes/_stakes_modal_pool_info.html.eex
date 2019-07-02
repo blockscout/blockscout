@@ -38,7 +38,7 @@
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
-          title: "Reward Percent of the Pool",
+          title: "Reward Percent",
           value: "15%",
           name: "reward-percent"
         %>
