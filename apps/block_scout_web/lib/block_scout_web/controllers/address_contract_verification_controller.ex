@@ -25,17 +25,10 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
         %{
           "address_id" => address_hash_string,
           "smart_contract" => smart_contract,
-          "external_libraries" => external_libraries,
-          "evm_version" => evm_version,
-          "optimization" => optimization
+          "external_libraries" => external_libraries
         }
       ) do
-    smart_sontact_with_evm_version =
-      smart_contract
-      |> Map.put("evm_version", evm_version["evm_version"])
-      |> Map.put("optimization_runs", parse_optimization_runs(optimization))
-
-    case Publisher.publish(address_hash_string, smart_sontact_with_evm_version, external_libraries) do
+    case Publisher.publish(address_hash_string, smart_contract, external_libraries) do
       {:ok, _smart_contract} ->
         redirect(conn, to: address_contract_path(conn, :index, address_hash_string))
 
