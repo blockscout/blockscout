@@ -6,20 +6,24 @@ defmodule Explorer.SmartContract.PublisherWorker do
   use Que.Worker, concurrency: 5
 
   alias Explorer.SmartContract.Publisher
+  alias Explorer.Chain.Events.Publisher, as: EventsPublisher
 
   def perform({address_hash, params, external_libraries}) do
-    case Publisher.publish(address_hash, params, external_libraries) do
-      {:ok, _} ->
-        :ok
+    result =
+      case Publisher.publish(address_hash, params, external_libraries) do
+        {:ok, _contract} = result ->
+          result
 
-      {:error, changeset} ->
-        errors =
-          changeset.errors
-          |> Enum.into(%{}, fn {field, {message, _}} ->
-            {field, message}
-          end)
+        {:error, changeset} ->
+          errors =
+            changeset.errors
+            |> Enum.into(%{}, fn {field, {message, _}} ->
+              {field, message}
+            end)
 
-        {:error, errors}
-    end
+          {:error, errors}
+      end
+
+    EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result}}], :on_demand)
   end
 end

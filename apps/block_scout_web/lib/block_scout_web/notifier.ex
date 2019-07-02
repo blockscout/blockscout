@@ -23,6 +23,16 @@ defmodule BlockScoutWeb.Notifier do
     Enum.each(address_coin_balances, &broadcast_address_coin_balance/1)
   end
 
+  def handle_event(
+        {:chain_event, :contract_verification_result, :on_demand, {address_hash, _contract_verification_result}}
+      ) do
+    Endpoint.broadcast(
+      "addresses:#{address_hash}",
+      "verification_result",
+      %{}
+    )
+  end
+
   def handle_event({:chain_event, :block_rewards, :realtime, rewards}) do
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
       broadcast_rewards(rewards)
