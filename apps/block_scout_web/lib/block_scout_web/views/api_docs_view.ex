@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.APIDocsView do
     end)
   end
 
-  defp url do
+  def blockscout_url do
     if System.get_env("BLOCKSCOUT_HOST") do
       "http://" <> System.get_env("BLOCKSCOUT_HOST")
     else
