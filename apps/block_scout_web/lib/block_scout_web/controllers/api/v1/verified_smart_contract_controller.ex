@@ -3,17 +3,40 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
 
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address
-  alias Explorer.SmartContract.PublisherWorker
+  alias Explorer.SmartContract.Publisher
 
   def create(conn, params) do
     with {:ok, hash} <- validate_address_hash(params["address_hash"]),
          :ok <- smart_contract_exists?(hash),
          :ok <- verified_smart_contract_exists?(hash) do
-      external_libraries = fetch_external_libraries(params) || %{}
+      external_libraries = fetch_external_libraries(params)
 
-      PublisherWorker.perform({hash, params, external_libraries})
+      case Publisher.publish(hash, params, external_libraries) do
+        {:ok, _} ->
+          send_resp(conn, :created, Jason.encode!(%{status: :success}))
 
-      send_resp(conn, :created, Jason.encode!(%{status: :started_processing}))
+        {:error, changeset} ->
+          errors =
+            changeset.errors
+            |> Enum.into(%{}, fn {field, {message, _}} ->
+              {field, message}
+            end)
+
+          send_resp(conn, :unprocessable_entity, encode(errors))
+      end
+    else
+      :invalid_address ->
+        send_resp(conn, :unprocessable_entity, encode(%{error: "address_hash is invalid"}))
+
+      :not_found ->
+        send_resp(conn, :unprocessable_entity, encode(%{error: "address is not found"}))
+
+      :contract_exists ->
+        send_resp(
+          conn,
+          :unprocessable_entity,
+          encode(%{error: "verified code already exists for this address"})
+        )
     end
   end
 
@@ -37,6 +60,10 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
     else
       :ok
     end
+  end
+
+  defp encode(data) do
+    Jason.encode!(data)
   end
 
   defp fetch_external_libraries(params) do
