@@ -41,7 +41,9 @@ defmodule Explorer.Staking.PoolsReader do
          {:ok, [was_validator_count]} <- data["validatorCounter"],
          {:ok, [is_banned]} <- data["isValidatorBanned"],
          {:ok, [banned_until]} <- data["bannedUntil"],
-         {:ok, [was_banned_count]} <- data["banCounter"] do
+         {:ok, [was_banned_count]} <- data["banCounter"],
+         {:ok, [likelihood_index]} <- data["poolToBeElectedIndex"],
+         {:ok, [likelihood_array, likelihood_amount]} <- data["getPoolsLikelihood"] do
       {
         :ok,
         %{
@@ -56,7 +58,8 @@ defmodule Explorer.Staking.PoolsReader do
           is_banned: is_banned,
           banned_until: banned_until,
           was_banned_count: was_banned_count,
-          delegators: active_delegators_data ++ inactive_delegators_data
+          delegators: active_delegators_data ++ inactive_delegators_data,
+          likelihood: (Enum.at(likelihood_array, likelihood_index, 0) / likelihood_amount) * 100
         }
       }
     else
@@ -120,6 +123,8 @@ defmodule Explorer.Staking.PoolsReader do
       {:staking, "poolDelegatorsInactive", [staking_address]},
       {:staking, "stakeAmountTotalMinusOrderedWithdraw", [staking_address]},
       {:staking, "stakeAmountMinusOrderedWithdraw", [staking_address, staking_address]},
+      {:staking, "poolToBeElectedIndex", [staking_address]},
+      {:staking, "getPoolsLikelihood", []},
       {:validators, "isValidator", [mining_address]},
       {:validators, "validatorCounter", [mining_address]},
       {:validators, "isValidatorBanned", [mining_address]},

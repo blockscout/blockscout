@@ -145,8 +145,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           where: p.is_active == true,
           update: [
             set: [
-              staked_ratio: p.staked_amount / ^total * 100,
-              likelihood: p.staked_amount / ^total * 100
+              staked_ratio: p.staked_amount / ^total * 100
             ]
           ]
         )

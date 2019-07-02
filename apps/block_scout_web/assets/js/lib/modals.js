@@ -220,11 +220,11 @@ window.openPoolInfoModal = function (poolAddress) {
       $(`${modal} [mining-address]`).text(pool.miningAddressHash)
       $(`${modal} [self-staked]`).text(pool.selfStakedAmount)
       $(`${modal} [delegators-staked]`).text(pool.stakedAmount)
-      $(`${modal} [stakes-ratio]`).text(`${pool.stakedRatio || 0} %`)
-      $(`${modal} [reward-percent]`).text(`${pool.stakedRatio || 0} %`)
+      $(`${modal} [stakes-ratio]`).text(`${pool.stakedRatio || 0.00} %`)
+      $(`${modal} [reward-percent]`).text(`${pool.stakedRatio || 0.00} %`)
       $(`${modal} [was-validator]`).text(pool.wasValidatorCount)
       $(`${modal} [was-banned]`).text(pool.wasBannedCount)
-      $(`${modal} [reward-percent]`).text(`${pool.stakedRatio || 0} %`)
+      $(`${modal} [reward-percent]`).text(`${pool.stakedRatio || 0.00} %`)
       if (pool.isBanned) {
         const currentBlock = store.getState().blocksCount
         const blocksLen = pool.bannedUntil - currentBlock
@@ -236,7 +236,7 @@ window.openPoolInfoModal = function (poolAddress) {
       } else {
         $(`${modal} [unban-date]`).text('-')
       }
-      $(`${modal} [likelihood]`).text(`${pool.stakedRatio || 0} %`)
+      $(`${modal} [likelihood]`).text(`${pool.likelihood || 0.00} %`)
       $(`${modal} [delegators-count]`).text(pool.delegatorsCount)
 
       $(modal).modal()
