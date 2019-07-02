@@ -14,6 +14,7 @@
 
 ### Fixes
 - [#2284](https://github.com/poanetwork/blockscout/pull/2284) - add 404 status for not existing pages
+- [#2244](https://github.com/poanetwork/blockscout/pull/2244) - fix internal transactions failing to be indexed because of constraint
 - [#2281](https://github.com/poanetwork/blockscout/pull/2281) - typo issues, dropdown issues
 - [#2278](https://github.com/poanetwork/blockscout/pull/2278) - increase threshold for scientific notation
 - [#2275](https://github.com/poanetwork/blockscout/pull/2275) - Description for networks selector
