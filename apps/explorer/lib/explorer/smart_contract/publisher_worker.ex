@@ -15,13 +15,7 @@ defmodule Explorer.SmartContract.PublisherWorker do
           result
 
         {:error, changeset} ->
-          errors =
-            changeset.errors
-            |> Enum.into(%{}, fn {field, {message, _}} ->
-              {field, message}
-            end)
-
-          {:error, errors}
+          {:error, changeset}
       end
 
     EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result}}], :on_demand)

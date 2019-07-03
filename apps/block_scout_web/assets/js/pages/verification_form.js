@@ -8,15 +8,8 @@ import { createStore, connectElements } from '../lib/redux_helpers.js'
 
 export const initialState = {
   channelDisconnected: false,
-
   addressHash: null,
-  filter: null,
-
-  balance: null,
-  balanceCard: null,
-  fetchedCoinBalanceBlockNumber: null,
-  transactionCount: null,
-  validationCount: null
+  newForm: null
 }
 
 export function reducer (state = initialState, action) {
@@ -32,9 +25,14 @@ export function reducer (state = initialState, action) {
         channelDisconnected: true
       })
     }
-    case 'RECEIVED_VERIFICATION_RESULT': {
+  case 'RECEIVED_VERIFICATION_RESULT': {
+      console.log(action.msg)
       if (action.msg.verificationResult === "ok") {
-          window.location.replace(window.location.href.split('/contract_verifications')[0] + '/contracts')
+          return window.location.replace(window.location.href.split('/contract_verifications')[0] + '/contracts')
+      } else {
+        return Object.assign({}, state, {
+        newForm: action.msg.verificationResult
+      })
       }
     }
     default:
@@ -48,42 +46,11 @@ const elements = {
       if (state.channelDisconnected) $el.show()
     }
   },
-  '[data-selector="balance-card"]': {
-    load ($el) {
-      return { balanceCard: $el.html(), balance: parseFloat($el.find('.current-balance-in-wei').attr('data-wei-value')) }
-    },
-    render ($el, state, oldState) {
-      if (oldState.balance === state.balance) return
-      $el.empty().append(state.balanceCard)
-      loadTokenBalanceDropdown()
-      updateAllCalculatedUsdValues()
-    }
-  },
-  '[data-selector="transaction-count"]': {
-    load ($el) {
-      return { transactionCount: numeral($el.text()).value() }
-    },
-    render ($el, state, oldState) {
-      if (oldState.transactionCount === state.transactionCount) return
-      $el.empty().append(numeral(state.transactionCount).format())
-    }
-  },
-  '[data-selector="fetched-coin-balance-block-number"]': {
-    load ($el) {
-      return {fetchedCoinBalanceBlockNumber: numeral($el.text()).value()}
-    },
-    render ($el, state, oldState) {
-      if (oldState.fetchedCoinBalanceBlockNumber === state.fetchedCoinBalanceBlockNumber) return
-      $el.empty().append(numeral(state.fetchedCoinBalanceBlockNumber).format())
-    }
-  },
-  '[data-selector="validation-count"]': {
-    load ($el) {
-      return { validationCount: numeral($el.text()).value() }
-    },
-    render ($el, state, oldState) {
-      if (oldState.validationCount === state.validationCount) return
-      $el.empty().append(numeral(state.validationCount).format())
+  '[data-page="contract-verification"]': {
+    render ($el, state) {
+        if (state.newForm) {
+         return  $el.replaceWith(state.newForm)
+      }
     }
   }
 }

@@ -16,7 +16,8 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     render(conn, "new.html",
       changeset: changeset,
       compiler_versions: compiler_versions,
-      evm_versions: CodeCompiler.allowed_evm_versions()
+      evm_versions: CodeCompiler.allowed_evm_versions(),
+      address_hash: address_hash_string
     )
   end
 
