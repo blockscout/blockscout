@@ -674,7 +674,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:28
+#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:30
 msgid "Search tokens"
 msgstr ""
 

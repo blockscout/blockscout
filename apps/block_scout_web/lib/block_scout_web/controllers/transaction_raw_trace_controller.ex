@@ -19,15 +19,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
                :token_transfers => :optional
              }
            ) do
-      options = [
-        necessity_by_association: %{
-          [created_contract_address: :names] => :optional,
-          [from_address: :names] => :optional,
-          [to_address: :names] => :optional
-        }
-      ]
-
-      internal_transactions = Chain.transaction_to_internal_transactions(transaction, options)
+      internal_transactions = Chain.transaction_to_internal_transactions(transaction)
 
       render(
         conn,
