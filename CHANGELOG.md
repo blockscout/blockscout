@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#2289](https://github.com/poanetwork/blockscout/pull/2289) - Optional websockets for dev environment
 
 
 ## 2.0.1-beta
