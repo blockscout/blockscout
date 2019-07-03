@@ -1,5 +1,5 @@
 <tr class=<%= if @pool.is_banned, do:  "stakes-tr-banned" %>>
-  <td class="stakes-td"><div class="stakes-td-order"><%= @pool.position %></div></td>
+  <td class="stakes-td"><div class="stakes-td-order"><%= @index %></div></td>
   <td class="stakes-td">
     <%=
     tooltip = if @pool.is_validator, do: "This is a validator", else: false
@@ -7,7 +7,7 @@
     "_stakes_address.html",
     address: @pool.staking_address_hash,
     tooltip: tooltip,
-    index: @pool.position
+    index: @index
     %>
   </td>
   <td class="stakes-td">

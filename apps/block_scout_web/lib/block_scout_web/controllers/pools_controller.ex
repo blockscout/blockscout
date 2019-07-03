@@ -24,14 +24,7 @@ defmodule BlockScoutWeb.PoolsController do
 
     pools_plus_one = Chain.staking_pools(filter, options)
 
-    pools_with_index =
-      pools_plus_one
-      |> Enum.with_index(last_index + 1)
-      |> Enum.map(fn {pool, index} ->
-        Map.put(pool, :position, index)
-      end)
-
-    {pools, next_page} = split_list_by_page(pools_with_index)
+    {pools, next_page} = split_list_by_page(pools_plus_one)
 
     next_page_path =
       case next_page_params(next_page, pools, params) do
@@ -39,18 +32,25 @@ defmodule BlockScoutWeb.PoolsController do
           nil
 
         next_page_params ->
-          next_page_path(filter, conn, Map.delete(next_page_params, "type"))
+          updated_page_params =
+            next_page_params
+            |> Map.delete("type")
+            |> Map.put("position", last_index + 1)
+
+          next_page_path(filter, conn, updated_page_params)
       end
 
     average_block_time = AverageBlockTime.average_block_time()
 
     items =
       pools
-      |> Enum.map(fn pool ->
+      |> Enum.with_index(last_index + 1)
+      |> Enum.map(fn {pool, index} ->
         View.render_to_string(
           PoolsView,
           "_rows.html",
           pool: pool,
+          index: index,
           average_block_time: average_block_time,
           pools_type: filter
         )
