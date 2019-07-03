@@ -15,8 +15,8 @@ defmodule Explorer.Application do
     TransactionCountCache,
     TransactionsCache
   }
-  alias Explorer.Chain.Supply.RSK
 
+  alias Explorer.Chain.Supply.RSK
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.Repo.PrometheusLogger
