@@ -3433,6 +3433,17 @@ defmodule Explorer.ChainTest do
       token = build(:token)
       assert {:error, :not_found} = Chain.token_from_address_hash(token.contract_address.hash)
     end
+
+    test "with contract_address' smart_contract preloaded" do
+      smart_contract = build(:smart_contract)
+      address = insert(:address, smart_contract: smart_contract)
+      token = insert(:token, contract_address: address)
+
+      assert {:ok, result} =
+               Chain.token_from_address_hash(token.contract_address_hash, [{:contract_address, :smart_contract}])
+
+      assert smart_contract = result.contract_address.smart_contract
+    end
   end
 
   test "stream_uncataloged_token_contract_address_hashes/2 reduces with given reducer and accumulator" do
