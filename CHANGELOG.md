@@ -1,4 +1,14 @@
 ## Current
+
+### Features
+
+### Fixes
+
+### Chore
+
+
+## 2.0.1-beta
+
 ### Features
 - [#2283](https://github.com/poanetwork/blockscout/pull/2283) - Add transactions cache
 - [#2182](https://github.com/poanetwork/blockscout/pull/2182) - add market history cache
@@ -62,6 +72,7 @@
 - [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
 - [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
 - [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
+- [#2237](https://github.com/poanetwork/blockscout/pull/2237) - fix rsk total_supply
 - [#2198](https://github.com/poanetwork/blockscout/pull/2198) - reduce transaction status and error constraint
 - [#2167](https://github.com/poanetwork/blockscout/pull/2167) - feat: document eth rpc api mimicking endpoints
 - [#2225](https://github.com/poanetwork/blockscout/pull/2225) - fix metadata decoding in Solidity 0.5.9 smart contract verification
@@ -79,8 +90,6 @@
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
 - [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
 - [#2256](https://github.com/poanetwork/blockscout/pull/2256) - use the latest version of chromedriver
-
-### Chore
 
 ## 2.0.0-beta
 
