@@ -64,6 +64,7 @@
 - [#2167](https://github.com/poanetwork/blockscout/pull/2167) - feat: document eth rpc api mimicking endpoints
 - [#2225](https://github.com/poanetwork/blockscout/pull/2225) - fix metadata decoding in Solidity 0.5.9 smart contract verification
 - [#2204](https://github.com/poanetwork/blockscout/pull/2204) - fix large contract verification
+- [#2258](https://github.com/poanetwork/blockscout/pull/2258) - reduce BlocksTransactionsMismatch memory footprint
 - [#2247](https://github.com/poanetwork/blockscout/pull/2247) - hide logs search if there are no logs
 - [#2248](https://github.com/poanetwork/blockscout/pull/2248) - sort block after query execution for average block time
 - [#2249](https://github.com/poanetwork/blockscout/pull/2249) - More transaction controllers improvements
