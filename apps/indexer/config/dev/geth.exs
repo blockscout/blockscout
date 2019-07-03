@@ -14,7 +14,7 @@ config :indexer,
   subscribe_named_arguments: [
     transport: EthereumJSONRPC.WebSocket,
     transport_options: [
-      web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
+      web_socket: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || EthereumJSONRPC.WebSocket.WebSocketClient,
       url: System.get_env("ETHEREUM_JSONRPC_WS_URL") || "wss://mainnet.infura.io/ws/8lTvJTKmHPCHazkneJsY"
     ]
   ]

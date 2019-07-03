@@ -6,7 +6,7 @@ config :indexer,
     transport: EthereumJSONRPC.HTTP,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
-      url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || "https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY",
+      url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL"),
       http_options: [recv_timeout: :timer.minutes(10), timeout: :timer.minutes(10), hackney: [pool: :ethereum_jsonrpc]]
     ],
     variant: EthereumJSONRPC.Geth
@@ -14,7 +14,7 @@ config :indexer,
   subscribe_named_arguments: [
     transport: EthereumJSONRPC.WebSocket,
     transport_options: [
-      web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
-      url: System.get_env("ETHEREUM_JSONRPC_WS_URL") || "wss://mainnet.infura.io/ws/8lTvJTKmHPCHazkneJsY"
+      web_socket: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || EthereumJSONRPC.WebSocket.WebSocketClient,
+      url: System.get_env("ETHEREUM_JSONRPC_WS_URL")
     ]
   ]
