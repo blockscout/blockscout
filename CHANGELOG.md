@@ -1,5 +1,6 @@
 ## Current
 ### Features
+- [#2283](https://github.com/poanetwork/blockscout/pull/2283) - Add transactions cache
 - [#2182](https://github.com/poanetwork/blockscout/pull/2182) - add market history cache
 - [#2109](https://github.com/poanetwork/blockscout/pull/2109) - use bigger updates instead of `Multi` transactions in BlocksTransactionsMismatch
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
@@ -13,6 +14,11 @@
 - [#2266](https://github.com/poanetwork/blockscout/pull/2266) - allow excluding uncles from average block time calculation
 
 ### Fixes
+- [#2284](https://github.com/poanetwork/blockscout/pull/2284) - add 404 status for not existing pages
+- [#2244](https://github.com/poanetwork/blockscout/pull/2244) - fix internal transactions failing to be indexed because of constraint
+- [#2281](https://github.com/poanetwork/blockscout/pull/2281) - typo issues, dropdown issues
+- [#2278](https://github.com/poanetwork/blockscout/pull/2278) - increase threshold for scientific notation
+- [#2275](https://github.com/poanetwork/blockscout/pull/2275) - Description for networks selector
 - [#2263](https://github.com/poanetwork/blockscout/pull/2263) - added an ability to close network selector on outside click
 - [#2257](https://github.com/poanetwork/blockscout/pull/2257) - 'download csv' button added to different tabs
 - [#2242](https://github.com/poanetwork/blockscout/pull/2242) - added styles for 'download csv' button
@@ -60,10 +66,14 @@
 - [#2167](https://github.com/poanetwork/blockscout/pull/2167) - feat: document eth rpc api mimicking endpoints
 - [#2225](https://github.com/poanetwork/blockscout/pull/2225) - fix metadata decoding in Solidity 0.5.9 smart contract verification
 - [#2204](https://github.com/poanetwork/blockscout/pull/2204) - fix large contract verification
+- [#2258](https://github.com/poanetwork/blockscout/pull/2258) - reduce BlocksTransactionsMismatch memory footprint
 - [#2247](https://github.com/poanetwork/blockscout/pull/2247) - hide logs search if there are no logs
 - [#2248](https://github.com/poanetwork/blockscout/pull/2248) - sort block after query execution for average block time
+- [#2249](https://github.com/poanetwork/blockscout/pull/2249) - More transaction controllers improvements
+- [#2267](https://github.com/poanetwork/blockscout/pull/2267) - Modify implementation of `where_transaction_has_multiple_internal_transactions`
 - [#2270](https://github.com/poanetwork/blockscout/pull/2270) - Remove duplicate params in `Indexer.Fetcher.TokenBalance`
 - [#2268](https://github.com/poanetwork/blockscout/pull/2268) - remove not existing assigns in html code
+- [#2276](https://github.com/poanetwork/blockscout/pull/2276) - remove port in docs
 
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
