@@ -159,9 +159,11 @@ defmodule BlockScoutWeb.Router do
       resources(
         "/contract_verifications",
         AddressContractVerificationController,
-        only: [:new, :create],
+        only: [:new],
         as: :verify_contract
       )
+
+      get("/contract_verifications", AddressContractVerificationController, :create)
 
       resources(
         "/read_contract",

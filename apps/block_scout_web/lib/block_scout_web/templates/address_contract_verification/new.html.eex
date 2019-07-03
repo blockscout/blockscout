@@ -10,7 +10,7 @@
 
       <%= form_for @changeset,
           "/address/#{@address_hash}/contract_verifications",
-          [],
+          [method: :get],
           fn f -> %>
 
         <div class="smart-contract-form-group">
