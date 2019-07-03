@@ -198,6 +198,9 @@ defmodule Explorer.Chain.SmartContract do
           compiler_version: String.t(),
           optimization: boolean,
           contract_source_code: String.t(),
+          constructor_arguments: String.t() | nil,
+          evm_version: String.t() | nil,
+          optimization_runs: non_neg_integer() | nil,
           abi: [function_description]
         }
 
@@ -207,6 +210,9 @@ defmodule Explorer.Chain.SmartContract do
     field(:optimization, :boolean)
     field(:contract_source_code, :string)
     field(:constructor_arguments, :string)
+    field(:evm_version, :string)
+    field(:optimization_runs, :integer)
+    field(:external_libraries, :map)
     field(:abi, {:array, :map})
 
     has_many(
@@ -239,7 +245,10 @@ defmodule Explorer.Chain.SmartContract do
       :contract_source_code,
       :address_hash,
       :abi,
-      :constructor_arguments
+      :constructor_arguments,
+      :evm_version,
+      :optimization_runs,
+      :external_libraries
     ])
     |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
@@ -248,7 +257,16 @@ defmodule Explorer.Chain.SmartContract do
 
   def invalid_contract_changeset(%__MODULE__{} = smart_contract, attrs, error) do
     smart_contract
-    |> cast(attrs, [:name, :compiler_version, :optimization, :contract_source_code, :address_hash])
+    |> cast(attrs, [
+      :name,
+      :compiler_version,
+      :optimization,
+      :contract_source_code,
+      :address_hash,
+      :evm_version,
+      :optimization_runs,
+      :constructor_arguments
+    ])
     |> validate_required([:name, :compiler_version, :optimization, :address_hash])
     |> add_error(:contract_source_code, error_message(error))
   end

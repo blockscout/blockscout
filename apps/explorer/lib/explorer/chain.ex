@@ -1052,7 +1052,7 @@ defmodule Explorer.Chain do
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    fetch_transactions()
+    Transaction
     |> where(hash: ^hash)
     |> join_associations(necessity_by_association)
     |> Repo.one()
@@ -1953,7 +1953,6 @@ defmodule Explorer.Chain do
     |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
@@ -2146,7 +2145,7 @@ defmodule Explorer.Chain do
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
-    |> preload(transaction: :block)
+    |> preload(:transaction)
     |> Repo.all()
   end
 
@@ -2580,14 +2579,14 @@ defmodule Explorer.Chain do
       internal_transaction.type != ^:call or
         fragment(
           """
-          (SELECT COUNT(sibling.*)
+          EXISTS (SELECT sibling.*
           FROM internal_transactions AS sibling
-          WHERE sibling.transaction_hash = ?
-          LIMIT 2
+          WHERE sibling.transaction_hash = ? AND sibling.index != ?
           )
           """,
-          transaction.hash
-        ) > 1
+          transaction.hash,
+          internal_transaction.index
+        )
     )
   end
 
@@ -2671,14 +2670,19 @@ defmodule Explorer.Chain do
 
   @doc """
   Fetches a `t:Token.t/0` by an address hash.
+
+  Optionally accepts a list of bindings to preload, just like `Ecto.Query.preload/3`
   """
-  @spec token_from_address_hash(Hash.Address.t()) :: {:ok, Token.t()} | {:error, :not_found}
-  def token_from_address_hash(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
+  @spec token_from_address_hash(Hash.Address.t(), [Macro.t()]) :: {:ok, Token.t()} | {:error, :not_found}
+  def token_from_address_hash(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
+        preloads \\ []
+      ) do
     query =
       from(
         token in Token,
         where: token.contract_address_hash == ^hash,
-        preload: [{:contract_address, :smart_contract}]
+        preload: ^preloads
       )
 
     case Repo.one(query) do
@@ -2702,9 +2706,9 @@ defmodule Explorer.Chain do
 
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
   def transaction_has_token_transfers?(transaction_hash) do
-    query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash, limit: 1, select: 1)
+    query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash)
 
-    Repo.one(query) != nil
+    Repo.exists?(query)
   end
 
   @spec address_tokens_with_balance(Hash.Address.t(), [any()]) :: []
@@ -2923,7 +2927,7 @@ defmodule Explorer.Chain do
   end
 
   @spec transaction_token_transfer_type(Transaction.t()) ::
-          {:erc20, TokenTransfer.t()} | {:erc721, TokenTransfer.t()} | nil
+          :erc20 | :erc721 | :token_transfer | nil
   def transaction_token_transfer_type(
         %Transaction{
           status: :ok,
@@ -2933,8 +2937,19 @@ defmodule Explorer.Chain do
         } = transaction
       ) do
     zero_wei = %Wei{value: Decimal.new(0)}
+    result = find_token_transfer_type(transaction, input, value)
 
-    transaction = Repo.preload(transaction, token_transfers: :token)
+    if is_nil(result) && Enum.count(transaction.token_transfers) > 0 && value == zero_wei,
+      do: :token_transfer,
+      else: result
+  rescue
+    _ -> nil
+  end
+
+  def transaction_token_transfer_type(_), do: nil
+
+  defp find_token_transfer_type(transaction, input, value) do
+    zero_wei = %Wei{value: Decimal.new(0)}
 
     # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721.sol#L35
     case {to_string(input), value} do
@@ -2959,6 +2974,9 @@ defmodule Explorer.Chain do
 
         find_erc721_token_transfer(transaction.token_transfers, {from_address, to_address})
 
+      {"0xf907fc5b" <> _params, ^zero_wei} ->
+        :erc20
+
       # check for ERC 20 or for old ERC 721 token versions
       {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
         types = [:address, {:uint, 256}]
@@ -2972,11 +2990,7 @@ defmodule Explorer.Chain do
       _ ->
         nil
     end
-  rescue
-    _ -> nil
   end
-
-  def transaction_token_transfer_type(_), do: nil
 
   defp find_erc721_token_transfer(token_transfers, {from_address, to_address}) do
     token_transfer =
@@ -2984,22 +2998,23 @@ defmodule Explorer.Chain do
         token_transfer.from_address_hash.bytes == from_address && token_transfer.to_address_hash.bytes == to_address
       end)
 
-    if token_transfer, do: {:erc721, token_transfer}
+    if token_transfer, do: :erc721
   end
 
   defp find_erc721_or_erc20_token_transfer(token_transfers, {address, decimal_value}) do
     token_transfer =
       Enum.find(token_transfers, fn token_transfer ->
-        token_transfer.to_address_hash.bytes == address &&
-          (token_transfer.amount == decimal_value || token_transfer.token_id)
+        token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value
       end)
 
     if token_transfer do
       case token_transfer.token do
-        %Token{type: "ERC-20"} -> {:erc20, token_transfer}
-        %Token{type: "ERC-721"} -> {:erc721, token_transfer}
+        %Token{type: "ERC-20"} -> :erc20
+        %Token{type: "ERC-721"} -> :erc721
         _ -> nil
       end
+    else
+      :erc20
     end
   end
 

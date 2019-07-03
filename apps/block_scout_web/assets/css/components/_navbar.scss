@@ -217,6 +217,7 @@ $navbar-logo-width: auto !default;
 .navbar-brand {
   margin-left: 0;
   flex-shrink: 1;
+  display: inline-flex;
   .navbar-logo {
     max-width: 100%;
   }
