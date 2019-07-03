@@ -2,8 +2,7 @@ import $ from 'jquery'
 import _ from 'lodash'
 import URI from 'urijs'
 import humps from 'humps'
-import numeral from 'numeral'
-import socket, { subscribeChannel } from '../socket'
+import { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 
 export const initialState = {
@@ -25,14 +24,13 @@ export function reducer (state = initialState, action) {
         channelDisconnected: true
       })
     }
-  case 'RECEIVED_VERIFICATION_RESULT': {
-      console.log(action.msg)
-      if (action.msg.verificationResult === "ok") {
-          return window.location.replace(window.location.href.split('/contract_verifications')[0] + '/contracts')
+    case 'RECEIVED_VERIFICATION_RESULT': {
+      if (action.msg.verificationResult === 'ok') {
+        return window.location.replace(window.location.href.split('/contract_verifications')[0] + '/contracts')
       } else {
         return Object.assign({}, state, {
-        newForm: action.msg.verificationResult
-      })
+          newForm: action.msg.verificationResult
+        })
       }
     }
     default:
@@ -48,8 +46,8 @@ const elements = {
   },
   '[data-page="contract-verification"]': {
     render ($el, state) {
-        if (state.newForm) {
-         return  $el.replaceWith(state.newForm)
+      if (state.newForm) {
+        return $el.replaceWith(state.newForm)
       }
     }
   }
@@ -74,7 +72,7 @@ if ($contractVerificationPage.length) {
   addressChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'
   }))
-  addressChannel.on("verification", (msg) => store.dispatch({
+  addressChannel.on('verification', (msg) => store.dispatch({
     type: 'RECEIVED_VERIFICATION_RESULT',
     msg: humps.camelizeKeys(msg)
   }))
