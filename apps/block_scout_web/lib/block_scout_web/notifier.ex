@@ -24,12 +24,15 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event(
-        {:chain_event, :contract_verification_result, :on_demand, {address_hash, _contract_verification_result}}
+        {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result}}
       ) do
     Endpoint.broadcast(
       "addresses:#{address_hash}",
       "verification_result",
-      %{}
+      %{
+        address_hash: address_hash,
+        result: contract_verification_result
+      }
     )
   end
 

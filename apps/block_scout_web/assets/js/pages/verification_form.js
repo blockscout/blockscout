@@ -5,8 +5,6 @@ import humps from 'humps'
 import numeral from 'numeral'
 import socket, { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { updateAllCalculatedUsdValues } from '../lib/currency.js'
-import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 
 export const initialState = {
   channelDisconnected: false,
@@ -34,25 +32,10 @@ export function reducer (state = initialState, action) {
         channelDisconnected: true
       })
     }
-    case 'RECEIVED_NEW_BLOCK': {
-      if (state.channelDisconnected) return state
-
-      const validationCount = state.validationCount + 1
-      return Object.assign({}, state, { validationCount })
-    }
-    case 'RECEIVED_NEW_TRANSACTION': {
-      if (state.channelDisconnected) return state
-
-      const transactionCount = (action.msg.fromAddressHash === state.addressHash) ? state.transactionCount + 1 : state.transactionCount
-
-      return Object.assign({}, state, { transactionCount })
-    }
-    case 'RECEIVED_UPDATED_BALANCE': {
-      return Object.assign({}, state, {
-        balanceCard: action.msg.balanceCard,
-        balance: parseFloat(action.msg.balance),
-        fetchedCoinBalanceBlockNumber: action.msg.fetchedCoinBalanceBlockNumber
-      })
+    case 'RECEIVED_VERIFICATION_RESULT': {
+      if (action.msg.verificationResult === "ok") {
+          window.location.replace(window.location.href.split('/contract_verifications')[0] + '/contracts')
+      }
     }
     default:
       return state
@@ -105,10 +88,11 @@ const elements = {
   }
 }
 
-const $addressDetailsPage = $('[data-page="address-details"]')
-if ($addressDetailsPage.length) {
+const $contractVerificationPage = $('[data-page="contract-verification"]')
+
+if ($contractVerificationPage.length) {
   const store = createStore(reducer)
-  const addressHash = $addressDetailsPage[0].dataset.pageAddressHash
+  const addressHash = $('#smart_contract_address_hash').val()
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
   store.dispatch({
     type: 'PAGE_LOAD',
@@ -123,30 +107,8 @@ if ($addressDetailsPage.length) {
   addressChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'
   }))
-  addressChannel.on('balance', (msg) => store.dispatch({
-    type: 'RECEIVED_UPDATED_BALANCE',
+  addressChannel.on("verification", (msg) => store.dispatch({
+    type: 'RECEIVED_VERIFICATION_RESULT',
     msg: humps.camelizeKeys(msg)
   }))
-  addressChannel.on('transaction', (msg) => {
-    store.dispatch({
-      type: 'RECEIVED_NEW_TRANSACTION',
-      msg: humps.camelizeKeys(msg)
-    })
-  })
-
-  const blocksChannel = socket.channel(`blocks:${addressHash}`, {})
-  blocksChannel.join()
-  blocksChannel.onError(() => store.dispatch({
-    type: 'CHANNEL_DISCONNECTED'
-  }))
-  blocksChannel.on('new_block', (msg) => store.dispatch({
-    type: 'RECEIVED_NEW_BLOCK',
-    msg: humps.camelizeKeys(msg)
-  }))
-
-  addressChannel.push('get_balance', {})
-    .receive('ok', (msg) => store.dispatch({
-      type: 'RECEIVED_UPDATED_BALANCE',
-      msg: humps.camelizeKeys(msg)
-    }))
 }

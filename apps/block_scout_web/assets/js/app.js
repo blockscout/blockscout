@@ -34,6 +34,7 @@ import './pages/transactions'
 import './pages/favorites'
 import './pages/network-search'
 import './pages/layout'
+import './pages/verification_form'
 
 import './pages/admin/tasks.js'
 
