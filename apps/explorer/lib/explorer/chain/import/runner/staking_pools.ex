@@ -119,6 +119,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           staked_amount: fragment("EXCLUDED.staked_amount"),
           was_banned_count: fragment("EXCLUDED.was_banned_count"),
           was_validator_count: fragment("EXCLUDED.was_validator_count"),
+          is_deleted: fragment("EXCLUDED.is_deleted"),
           banned_until: fragment("EXCLUDED.banned_until"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", pool.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", pool.updated_at)
