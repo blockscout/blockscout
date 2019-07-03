@@ -171,8 +171,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
               ),
             status:
               fragment(
-                "COALESCE(?, CASE WHEN (SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index ASC LIMIT 1) IS NULL THEN ? ELSE ? END)",
-                t.status,
+                "CASE WHEN (SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index ASC LIMIT 1) IS NULL THEN ? ELSE ? END",
                 t.hash,
                 type(^:ok, t.status),
                 type(^:error, t.status)

@@ -9,7 +9,7 @@
             </div>
             <div class="network-selector-text-container">
                 <h1 class="network-selector-title"><%= gettext("Change Network") %></h1>
-                <p class="network-selector-text"><%= gettext("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore.") %></p>
+                <p class="network-selector-text"><%= gettext("Use the search box to find a hosted network, or select from the list of available networks below.") %></p>
             </div>
             <form class="network-selector-search-container">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="17">

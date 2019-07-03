@@ -37,7 +37,7 @@ defmodule Indexer.Fetcher.TokenUpdater do
   @doc false
   def update_metadata(token_addresses) when is_list(token_addresses) do
     Enum.each(token_addresses, fn address ->
-      case Chain.token_from_address_hash(address) do
+      case Chain.token_from_address_hash(address, [{:contract_address, :smart_contract}]) do
         {:ok, %Token{cataloged: true} = token} ->
           update_metadata(token)
       end
