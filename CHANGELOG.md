@@ -66,6 +66,7 @@
 - [#2204](https://github.com/poanetwork/blockscout/pull/2204) - fix large contract verification
 - [#2247](https://github.com/poanetwork/blockscout/pull/2247) - hide logs search if there are no logs
 - [#2248](https://github.com/poanetwork/blockscout/pull/2248) - sort block after query execution for average block time
+- [#2249](https://github.com/poanetwork/blockscout/pull/2249) - More transaction controllers improvements
 - [#2267](https://github.com/poanetwork/blockscout/pull/2267) - Modify implementation of `where_transaction_has_multiple_internal_transactions`
 - [#2270](https://github.com/poanetwork/blockscout/pull/2270) - Remove duplicate params in `Indexer.Fetcher.TokenBalance`
 - [#2268](https://github.com/poanetwork/blockscout/pull/2268) - remove not existing assigns in html code
