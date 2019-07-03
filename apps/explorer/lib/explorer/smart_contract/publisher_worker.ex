@@ -5,8 +5,8 @@ defmodule Explorer.SmartContract.PublisherWorker do
 
   use Que.Worker, concurrency: 5
 
-  alias Explorer.SmartContract.Publisher
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
+  alias Explorer.SmartContract.Publisher
 
   def perform({address_hash, params, external_libraries}) do
     result =

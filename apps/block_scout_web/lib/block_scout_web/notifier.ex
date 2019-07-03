@@ -8,8 +8,8 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.Counters.AverageBlockTime
-  alias Explorer.SmartContract.{Solidity.CodeCompiler, Solidity.CompilerVersion}
   alias Explorer.ExchangeRates.Token
+  alias Explorer.SmartContract.{Solidity.CodeCompiler, Solidity.CompilerVersion}
   alias Phoenix.View
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
