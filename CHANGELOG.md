@@ -1,4 +1,14 @@
 ## Current
+
+### Features
+
+### Fixes
+
+### Chore
+
+
+## 2.0.1-beta
+
 ### Features
 - [#2283](https://github.com/poanetwork/blockscout/pull/2283) - Add transactions cache
 - [#2182](https://github.com/poanetwork/blockscout/pull/2182) - add market history cache
@@ -80,8 +90,6 @@
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
 - [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
 - [#2256](https://github.com/poanetwork/blockscout/pull/2256) - use the latest version of chromedriver
-
-### Chore
 
 ## 2.0.0-beta
 
