@@ -6,7 +6,16 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
-  alias Explorer.Chain.{BlockCountCache, BlockNumberCache, BlocksCache, NetVersionCache, TransactionCountCache}
+
+  alias Explorer.Chain.{
+    BlockCountCache,
+    BlockNumberCache,
+    BlocksCache,
+    NetVersionCache,
+    TransactionCountCache,
+    TransactionsCache
+  }
+
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.Repo.PrometheusLogger
 
@@ -34,7 +43,8 @@ defmodule Explorer.Application do
       {BlockCountCache, []},
       con_cache_child_spec(BlocksCache.cache_name()),
       con_cache_child_spec(NetVersionCache.cache_name()),
-      con_cache_child_spec(MarketHistoryCache.cache_name())
+      con_cache_child_spec(MarketHistoryCache.cache_name()),
+      con_cache_child_spec(TransactionsCache.cache_name())
     ]
 
     children = base_children ++ configurable_children()
