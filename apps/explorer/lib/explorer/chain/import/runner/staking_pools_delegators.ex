@@ -53,9 +53,15 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
   def timeout, do: @timeout
 
   defp mark_as_deleted(repo, changes_list, %{timeout: timeout}) when is_list(changes_list) do
+    pool_hashes =
+      changes_list
+      |> Enum.map(& &1.pool_address_hash)
+      |> Enum.uniq()
+
     query =
       from(
         d in StakingPoolsDelegator,
+        where: d.pool_address_hash in ^pool_hashes,
         update: [
           set: [
             is_active: false,
