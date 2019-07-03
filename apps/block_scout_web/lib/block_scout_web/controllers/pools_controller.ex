@@ -10,16 +10,8 @@ defmodule BlockScoutWeb.PoolsController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  def validators(conn, params) do
-    render_template(:validator, conn, params)
-  end
-
-  def active_pools(conn, params) do
-    render_template(:active, conn, params)
-  end
-
-  def inactive_pools(conn, params) do
-    render_template(:inactive, conn, params)
+  def index(%{assigns: assigns} = conn, params) do
+    render_template(assigns.filter, conn, params)
   end
 
   defp render_template(filter, conn, %{"type" => "JSON"} = params) do
@@ -92,14 +84,14 @@ defmodule BlockScoutWeb.PoolsController do
   end
 
   defp next_page_path(:validator, conn, params) do
-    validators_path(conn, :validators, params)
+    validators_path(conn, :index, params)
   end
 
   defp next_page_path(:active, conn, params) do
-    active_pools_path(conn, :active_pools, params)
+    active_pools_path(conn, :index, params)
   end
 
   defp next_page_path(:inactive, conn, params) do
-    inactive_pools_path(conn, :inactive_pools, params)
+    inactive_pools_path(conn, :index, params)
   end
 end

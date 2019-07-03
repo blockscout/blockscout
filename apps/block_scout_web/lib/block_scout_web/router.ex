@@ -87,9 +87,9 @@ defmodule BlockScoutWeb.Router do
 
     get("/uncles", BlockController, :uncle, as: :uncle)
 
-    get("/validators", PoolsController, :validators, as: :validators)
-    get("/active_pools", PoolsController, :active_pools, as: :active_pools)
-    get("/inactive_pools", PoolsController, :inactive_pools, as: :inactive_pools)
+    get("/validators", PoolsController, :index, as: :validators, assigns: %{filter: :validator})
+    get("/active_pools", PoolsController, :index, as: :active_pools, assigns: %{filter: :active})
+    get("/inactive_pools", PoolsController, :index, as: :inactive_pools, assigns: %{filter: :inactive})
 
     resources("/pending_transactions", PendingTransactionController, only: [:index])
 
