@@ -26,9 +26,11 @@ defmodule Explorer.Staking.PoolsReader do
     with {:ok, [mining_address]} <- call_validators_method("miningByStakingAddress", [staking_address]),
          data = fetch_pool_data(staking_address, mining_address),
          {:ok, [is_active]} <- data["isPoolActive"],
-         {:ok, [delegator_addresses]} <- data["poolDelegators"],
-         delegators_count = Enum.count(delegator_addresses),
-         delegators = delegators_data(delegator_addresses, staking_address),
+         {:ok, [active_delegators]} <- data["poolDelegators"],
+         {:ok, [inactive_delegators]} <- data["poolDelegatorsInactive"],
+         delegators_count = Enum.count(active_delegators),
+         active_delegators_data = delegators_data(active_delegators, staking_address, true),
+         inactive_delegators_data = delegators_data(inactive_delegators, staking_address, false),
          {:ok, [staked_amount]} <- data["stakeAmountTotalMinusOrderedWithdraw"],
          {:ok, [self_staked_amount]} <- data["stakeAmountMinusOrderedWithdraw"],
          {:ok, [is_validator]} <- data["isValidator"],
@@ -50,7 +52,7 @@ defmodule Explorer.Staking.PoolsReader do
           is_banned: is_banned,
           banned_until: banned_until,
           was_banned_count: was_banned_count,
-          delegators: delegators
+          delegators: active_delegators_data ++ inactive_delegators_data
         }
       }
     else
@@ -59,7 +61,7 @@ defmodule Explorer.Staking.PoolsReader do
     end
   end
 
-  defp delegators_data(delegators, pool_address) do
+  defp delegators_data(delegators, pool_address, active) do
     Enum.map(delegators, fn address ->
       data =
         call_methods([
@@ -83,7 +85,8 @@ defmodule Explorer.Staking.PoolsReader do
         ordered_withdraw: ordered_withdraw,
         max_withdraw_allowed: max_withdraw_allowed,
         max_ordered_withdraw_allowed: max_ordered_withdraw_allowed,
-        ordered_withdraw_epoch: ordered_withdraw_epoch
+        ordered_withdraw_epoch: ordered_withdraw_epoch,
+        is_active: active
       }
     end)
   end
@@ -110,6 +113,7 @@ defmodule Explorer.Staking.PoolsReader do
     call_methods([
       {:staking, "isPoolActive", [staking_address]},
       {:staking, "poolDelegators", [staking_address]},
+      {:staking, "poolDelegatorsInactive", [staking_address]},
       {:staking, "stakeAmountTotalMinusOrderedWithdraw", [staking_address]},
       {:staking, "stakeAmountMinusOrderedWithdraw", [staking_address, staking_address]},
       {:validators, "isValidator", [mining_address]},
