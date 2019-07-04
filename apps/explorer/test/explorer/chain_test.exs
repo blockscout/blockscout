@@ -58,13 +58,13 @@ defmodule Explorer.ChainTest do
     test "returns {:ok, last_block_period} if block is in healthy period" do
       insert(:block, consensus: true)
 
-      assert {:ok, _} = Chain.last_block_status()
+      assert {:ok, _, _} = Chain.last_block_status()
     end
 
     test "return {:ok, last_block_period} if block is not in healthy period" do
       insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
 
-      assert {:error, _} = Chain.last_block_status()
+      assert {:error, _, _} = Chain.last_block_status()
     end
   end
 

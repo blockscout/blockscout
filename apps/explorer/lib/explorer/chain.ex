@@ -1783,14 +1783,14 @@ defmodule Explorer.Chain do
       nil ->
         {:error, :no_blocks}
 
-      {_number, timestamp} ->
+      {number, timestamp} ->
         now = DateTime.utc_now()
         last_block_period = DateTime.diff(now, timestamp, :millisecond)
 
         if last_block_period > Application.get_env(:explorer, :healthy_blocks_period) do
-          {:error, last_block_period}
+          {:error, number, timestamp}
         else
-          {:ok, last_block_period}
+          {:ok, number, timestamp}
         end
     end
   end
