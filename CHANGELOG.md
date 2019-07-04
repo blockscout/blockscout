@@ -24,7 +24,7 @@
 - [#2266](https://github.com/poanetwork/blockscout/pull/2266) - allow excluding uncles from average block time calculation
 
 ### Fixes
-- [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix
+- [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix, block info row fix
 - [#2286](https://github.com/poanetwork/blockscout/pull/2286) - banner stats issues on sm resolutions, transactions title issue
 - [#2284](https://github.com/poanetwork/blockscout/pull/2284) - add 404 status for not existing pages
 - [#2244](https://github.com/poanetwork/blockscout/pull/2244) - fix internal transactions failing to be indexed because of constraint
