@@ -7,8 +7,8 @@
     <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
       <h2 class="card-title"><%= gettext "Logs" %></h2>
       <div class="logs-topbar">
-        
-        <div class="logs-search">
+
+        <div data-search class="logs-search">
           <input data-search-field class="logs-search-input" type='text' placeholder=<%= gettext("Topic") %> id='search-text-input' />
           <button data-cancel-search-button class="logs-search-btn-cancel" type="button">x</button>
           <button data-search-button class="logs-search-btn" type="button"><%= gettext("Search") %></button>

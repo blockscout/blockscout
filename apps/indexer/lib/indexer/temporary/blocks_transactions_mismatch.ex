@@ -54,7 +54,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
         left_join: transactions in assoc(block, :transactions),
         where: block.consensus and block.refetch_needed,
         group_by: block.hash,
-        select: {block, count(transactions.hash)}
+        select: {block.hash, count(transactions.hash)}
       )
 
     {:ok, final} = Repo.stream_reduce(query, initial, &reducer.(&1, &2))
@@ -64,7 +64,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
 
   @impl BufferedTask
   def run(blocks_data, json_rpc_named_arguments) do
-    hashes = Enum.map(blocks_data, fn {block, _trans_num} -> block.hash end)
+    hashes = Enum.map(blocks_data, fn {hash, _trans_num} -> hash end)
 
     Logger.debug("fetching")
 
@@ -95,17 +95,17 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
       |> Map.merge(blocks_with_transactions_map)
 
     {found_blocks_data, missing_blocks_data} =
-      Enum.split_with(blocks_data, fn {block, _trans_num} ->
-        Map.has_key?(found_blocks_map, to_string(block.hash))
+      Enum.split_with(blocks_data, fn {hash, _trans_num} ->
+        Map.has_key?(found_blocks_map, to_string(hash))
       end)
 
     {matching_blocks_data, unmatching_blocks_data} =
-      Enum.split_with(found_blocks_data, fn {block, trans_num} ->
-        found_blocks_map[to_string(block.hash)] == trans_num
+      Enum.split_with(found_blocks_data, fn {hash, trans_num} ->
+        found_blocks_map[to_string(hash)] == trans_num
       end)
 
     unless Enum.empty?(matching_blocks_data) do
-      hashes = Enum.map(matching_blocks_data, fn {block, _trans_num} -> block.hash end)
+      hashes = Enum.map(matching_blocks_data, fn {hash, _trans_num} -> hash end)
 
       Block
       |> where([block], block.hash in ^hashes)
@@ -113,7 +113,7 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
     end
 
     unless Enum.empty?(unmatching_blocks_data) do
-      hashes = Enum.map(unmatching_blocks_data, fn {block, _trans_num} -> block.hash end)
+      hashes = Enum.map(unmatching_blocks_data, fn {hash, _trans_num} -> hash end)
 
       Block
       |> where([block], block.hash in ^hashes)
