@@ -17,7 +17,8 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
             necessity_by_association: %{
               [created_contract_address: :names] => :optional,
               [from_address: :names] => :optional,
-              [to_address: :names] => :optional
+              [to_address: :names] => :optional,
+              [transaction: :block] => :optional
             }
           ],
           paging_options(params)
