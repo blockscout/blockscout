@@ -1769,7 +1769,6 @@ defmodule Explorer.Chain do
     Repo.one!(query)
   end
 
-  @spec last_block_status() :: {:ok, non_neg_integer()} | {:error, non_neg_integer | nil}
   def last_block_status do
     query =
       from(block in Block,

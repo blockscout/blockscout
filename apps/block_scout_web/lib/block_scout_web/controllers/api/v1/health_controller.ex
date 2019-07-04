@@ -8,7 +8,8 @@ defmodule BlockScoutWeb.API.V1.HealthController do
 
     case status do
       {:ok, _, _} -> send_resp(conn, :ok, result(status))
-      _ -> send_resp(conn, :internal_server_error, result(status))
+      {:error, _} -> send_resp(conn, :internal_server_error, result(status))
+      {:error, _, _} -> send_resp(conn, :internal_server_error, result(status))
     end
   end
 
@@ -19,6 +20,16 @@ defmodule BlockScoutWeb.API.V1.HealthController do
         "latest_block_number" => to_string(number),
         "latest_block_inserted_at" => to_string(timestamp)
       }
+    }
+    |> Jason.encode!()
+  end
+
+  def result({:error, :no_blocks}) do
+    %{
+      "healthy" => false,
+      "error_code" => 5002,
+      "error_title" => "no blocks in db",
+      "error_description" => "There are no blocks in the DB"
     }
     |> Jason.encode!()
   end
@@ -34,16 +45,6 @@ defmodule BlockScoutWeb.API.V1.HealthController do
         "latest_block_number" => to_string(number),
         "latest_block_inserted_at" => to_string(timestamp)
       }
-    }
-    |> Jason.encode!()
-  end
-
-  def result({:error, :no_blocks}) do
-    %{
-      "healthy" => false,
-      "error_code" => 5002,
-      "error_title" => "no blocks in db",
-      "error_description" => "There are no blocks in the DB"
     }
     |> Jason.encode!()
   end
