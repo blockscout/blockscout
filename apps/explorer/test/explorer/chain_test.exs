@@ -50,6 +50,24 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "last_block_status/0" do
+    test "return no_blocks errors if db is empty" do
+      assert {:error, :no_blocks} = Chain.last_block_status()
+    end
+
+    test "returns {:ok, last_block_period} if block is in healthy period" do
+      insert(:block, consensus: true)
+
+      assert {:ok, _} = Chain.last_block_status()
+    end
+
+    test "return {:ok, last_block_period} if block is not in healthy period" do
+      insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
+
+      assert {:error, _} = Chain.last_block_status()
+    end
+  end
+
   describe "address_to_logs/2" do
     test "fetches logs" do
       address = insert(:address)

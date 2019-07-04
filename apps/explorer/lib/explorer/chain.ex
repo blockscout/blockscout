@@ -1769,6 +1769,32 @@ defmodule Explorer.Chain do
     Repo.one!(query)
   end
 
+  @spec last_block_status() :: {:ok, non_neg_integer()} | {:error, non_neg_integer | nil}
+  def last_block_status do
+    query =
+      from(block in Block,
+        select: {block.number, block.timestamp},
+        where: block.consensus == true,
+        order_by: [desc: block.number],
+        limit: 1
+      )
+
+    case Repo.one(query) do
+      nil ->
+        {:error, :no_blocks}
+
+      {_number, timestamp} ->
+        now = DateTime.utc_now()
+        last_block_period = DateTime.diff(now, timestamp, :millisecond)
+
+        if last_block_period > Application.get_env(:explorer, :healthy_blocks_period) do
+          {:error, last_block_period}
+        else
+          {:ok, last_block_period}
+        end
+    end
+  end
+
   @doc """
   Calculates the ranges of missing consensus blocks in `range`.
 
