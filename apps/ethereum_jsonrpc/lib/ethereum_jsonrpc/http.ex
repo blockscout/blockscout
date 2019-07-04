@@ -7,6 +7,8 @@ defmodule EthereumJSONRPC.HTTP do
 
   require Logger
 
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+
   @behaviour Transport
 
   @doc """
