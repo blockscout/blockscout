@@ -7,8 +7,6 @@ defmodule EthereumJSONRPC.HTTP do
 
   require Logger
 
-  import EthereumJSONRPC, only: [quantity_to_integer: 1]
-
   @behaviour Transport
 
   @doc """
@@ -134,12 +132,7 @@ defmodule EthereumJSONRPC.HTTP do
   # validated, so we can indicate that with switch to atom keys.
   defp standardize_response(%{"jsonrpc" => "2.0" = jsonrpc, "id" => id} = unstandardized) do
     # Nethermind return string ids
-    id =
-      if is_binary(id) do
-        quantity_to_integer(id)
-      else
-        id
-      end
+    id = quantity_to_integer(id)
 
     standardized = %{jsonrpc: jsonrpc, id: id}
 
