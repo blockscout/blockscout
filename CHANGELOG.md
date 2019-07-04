@@ -1,4 +1,15 @@
 ## Current
+
+### Features
+
+### Fixes
+
+### Chore
+- [#2289](https://github.com/poanetwork/blockscout/pull/2289) - Optional websockets for dev environment
+
+
+## 2.0.1-beta
+
 ### Features
 - [#2283](https://github.com/poanetwork/blockscout/pull/2283) - Add transactions cache
 - [#2182](https://github.com/poanetwork/blockscout/pull/2182) - add market history cache
@@ -15,6 +26,7 @@
 
 ### Fixes
 - [#2290](https://github.com/poanetwork/blockscout/pull/2290) - Add eth_get_balance.json to AddressView's render
+- [#2286](https://github.com/poanetwork/blockscout/pull/2286) - banner stats issues on sm resolutions, transactions title issue
 - [#2284](https://github.com/poanetwork/blockscout/pull/2284) - add 404 status for not existing pages
 - [#2244](https://github.com/poanetwork/blockscout/pull/2244) - fix internal transactions failing to be indexed because of constraint
 - [#2281](https://github.com/poanetwork/blockscout/pull/2281) - typo issues, dropdown issues
@@ -80,8 +92,6 @@
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
 - [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
 - [#2256](https://github.com/poanetwork/blockscout/pull/2256) - use the latest version of chromedriver
-
-### Chore
 
 ## 2.0.0-beta
 
