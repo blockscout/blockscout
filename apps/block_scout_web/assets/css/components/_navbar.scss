@@ -21,9 +21,9 @@ $navbar-logo-width: auto !default;
   .nav-item {
     font-size: 14px;
   }
-  .navbar-nav {
-    flex-grow: 1;
 
+  .navbar-nav {
+    
     .nav-link {
       align-items: center;
       color: $header-links-color;
@@ -151,7 +151,13 @@ $navbar-logo-width: auto !default;
     }
 
     @include media-breakpoint-up(xl) {
-      width: 280px;
+      width: 340px;
+    }
+    @media (min-width: 1366px) {
+      width: 500px;
+    }
+    @media (min-width: 1440px) {
+      width: 580px;
     }
   }
   .input-group-append {
@@ -198,7 +204,7 @@ $navbar-logo-width: auto !default;
     width: 100%;
 
     .awesomplete {
-      @include media-breakpoint-down(sm) {
+      @include media-breakpoint-down(lg) {
         width: 100%;
       }
     }
@@ -210,6 +216,11 @@ $navbar-logo-width: auto !default;
 
 .navbar-brand {
   margin-left: 0;
+  flex-shrink: 1;
+  display: inline-flex;
+  .navbar-logo {
+    max-width: 100%;
+  }
 }
 
 .navbar-logo {
@@ -226,4 +237,19 @@ $navbar-logo-width: auto !default;
 
 .add-border {
   border: 1px solid transparentize($white, 0.30);
+}
+
+.navbar-collapse {
+  justify-content: flex-end;
+  align-items: flex-start;
+  flex-shrink: 0;
+  @media (min-width: 992px) {
+    align-items: center;
+  }
+}
+
+.navbar-container, .navbar-primary {
+  @include media-breakpoint-up(xl) {
+    padding-right: 0;
+  }
 }

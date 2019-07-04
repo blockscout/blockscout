@@ -11,7 +11,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, BlockNumberCache, BlocksCache, Hash, Import, Transaction}
+  alias Explorer.Chain.{Address, Block, BlockNumberCache, BlocksCache, Hash, Import, Transaction, TransactionsCache}
   alias Indexer.Block.Fetcher.Receipts
 
   alias Indexer.Fetcher.{
@@ -173,6 +173,7 @@ defmodule Indexer.Block.Fetcher do
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
+      update_transactions_cache(inserted[:transactions])
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
@@ -187,6 +188,10 @@ defmodule Indexer.Block.Fetcher do
     BlockNumberCache.update(max_block.number)
     BlockNumberCache.update(min_block.number)
     BlocksCache.update_blocks(blocks)
+  end
+
+  defp update_transactions_cache(transactions) do
+    TransactionsCache.update(transactions)
   end
 
   def import(
