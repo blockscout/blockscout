@@ -2,6 +2,8 @@
 
 ### Features
 
+[#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
+
 ### Fixes
 
 ### Chore
