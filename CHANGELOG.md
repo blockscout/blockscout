@@ -6,6 +6,8 @@
 
 ### Chore
 
+- [#2293](https://github.com/poanetwork/blockscout/pull/2293) - remove request idle timeout configuration
+
 
 ## 2.0.1-beta
 
