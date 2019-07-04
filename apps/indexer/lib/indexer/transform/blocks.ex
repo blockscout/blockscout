@@ -65,9 +65,6 @@ defmodule Indexer.Transform.Blocks do
     decode(rest)
   end
 
-  # specific to Nethermind
-  defp decode("0"), do: 0
-
   defp decode(data) do
     Base.decode16!(data, case: :mixed)
   end

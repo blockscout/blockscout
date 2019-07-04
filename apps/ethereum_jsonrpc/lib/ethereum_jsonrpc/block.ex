@@ -441,9 +441,6 @@ defmodule EthereumJSONRPC.Block do
     {key, quantity_to_integer(quantity)}
   end
 
-  # we don't need transaction hashes because we fetch full transactions
-  defp entry_to_elixir({"transactionHashes" = key, _}), do: {key, nil}
-
   # Size and totalDifficulty may be `nil` for uncle blocks
   defp entry_to_elixir({key, nil}) when key in ~w(size totalDifficulty) do
     {key, nil}
