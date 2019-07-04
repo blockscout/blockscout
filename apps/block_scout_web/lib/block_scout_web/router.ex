@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Router do
 
     get("/supply", SupplyController, :supply)
 
-    get("/health/last_block_status", HealthController, :last_block_status)
+    get("/health", HealthController, :health)
 
     resources("/decompiled_smart_contract", DecompiledSmartContractController, only: [:create])
     resources("/verified_smart_contracts", VerifiedSmartContractController, only: [:create])

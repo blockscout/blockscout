@@ -3,17 +3,15 @@ defmodule BlockScoutWeb.API.V1.HealthController do
 
   alias Explorer.Chain
 
-  def last_block_status(conn, _) do
-    status = Chain.last_block_status()
-
-    case status do
-      {:ok, _, _} -> send_resp(conn, :ok, result(status))
-      {:error, _} -> send_resp(conn, :internal_server_error, result(status))
-      {:error, _, _} -> send_resp(conn, :internal_server_error, result(status))
+  def health(conn, _) do
+    with {:ok, number, timestamp} <- Chain.last_block_status() do
+      send_resp(conn, :ok, result(number, timestamp))
+    else
+      status -> send_resp(conn, :internal_server_error, error(status))
     end
   end
 
-  def result({:ok, number, timestamp}) do
+  def result(number, timestamp) do
     %{
       "healthy" => true,
       "data" => %{
@@ -24,7 +22,7 @@ defmodule BlockScoutWeb.API.V1.HealthController do
     |> Jason.encode!()
   end
 
-  def result({:error, :no_blocks}) do
+  def error({:error, :no_blocks}) do
     %{
       "healthy" => false,
       "error_code" => 5002,
@@ -34,7 +32,7 @@ defmodule BlockScoutWeb.API.V1.HealthController do
     |> Jason.encode!()
   end
 
-  def result({:error, number, timestamp}) do
+  def error({:error, number, timestamp}) do
     %{
       "healthy" => false,
       "error_code" => 5001,

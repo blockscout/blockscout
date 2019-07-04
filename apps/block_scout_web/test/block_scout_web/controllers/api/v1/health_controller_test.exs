@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
 
   describe "GET last_block_status/0" do
     test "returns error when there are no blocks in db", %{conn: conn} do
-      request = get(conn, api_v1_health_path(conn, :last_block_status))
+      request = get(conn, api_v1_health_path(conn, :health))
 
       assert request.status == 500
 
@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
     test "returns error when last block is stale", %{conn: conn} do
       insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
 
-      request = get(conn, api_v1_health_path(conn, :last_block_status))
+      request = get(conn, api_v1_health_path(conn, :health))
 
       assert request.status == 500
 
@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
     test "returns ok when last block is not stale", %{conn: conn} do
       insert(:block, consensus: true, timestamp: DateTime.utc_now())
 
-      request = get(conn, api_v1_health_path(conn, :last_block_status))
+      request = get(conn, api_v1_health_path(conn, :health))
 
       assert request.status == 200
 
