@@ -51,7 +51,6 @@ defmodule BlockScoutWeb.Notifier do
       "addresses:#{address_hash}",
       "verification_result",
       %{
-        address_hash: address_hash,
         result: contract_verification_result
       }
     )
