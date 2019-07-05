@@ -1,6 +1,6 @@
-defmodule Explorer.ExchangeRates.Source.TransactionAndLog do
+defmodule Explorer.ExchangeRates.Source.TokenBridge do
   @moduledoc """
-  Adapter for calculating the market cap and total supply from logs and transactions
+  Adapter for calculating the market cap and total supply from token bridge
   while still getting other info like price in dollars and bitcoin from a secondary source
   """
 
