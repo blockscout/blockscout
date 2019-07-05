@@ -268,6 +268,20 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
       assert Enum.any?(abi, fn el -> el["type"] == "constructor" end)
     end
+
+    test "can compile a large file" do
+      path = File.cwd!() <> "/test/support/fixture/smart_contract/large_smart_contract.sol"
+      contract = File.read!(path)
+
+      assert {:ok, %{"abi" => abi}} =
+               CodeCompiler.run(
+                 name: "HomeWorkDeployer",
+                 compiler_version: "v0.5.9+commit.e560f70d",
+                 code: contract,
+                 evm_version: "constantinople",
+                 optimize: true
+               )
+    end
   end
 
   describe "get_contract_info/1" do
