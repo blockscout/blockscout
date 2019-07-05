@@ -84,8 +84,8 @@ case System.get_env("SUPPLY_MODULE") do
     :ok
 end
 
-if System.get_env("SOURCE_MODULE") == "TransactionAndLog" do
-  config :explorer, Explorer.ExchangeRates.Source, source: Explorer.ExchangeRates.Source.TransactionAndLog
+if System.get_env("SOURCE_MODULE") == "TokenBridge" do
+  config :explorer, Explorer.ExchangeRates.Source, source: Explorer.ExchangeRates.Source.TokenBridge
 end
 
 config :explorer,
