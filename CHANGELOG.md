@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2304](https://github.com/poanetwork/blockscout/pull/2304) - footer grid fix for md resolution
 - [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix, block info row fix, addresses page issue, check mark issue
 
 ### Chore
