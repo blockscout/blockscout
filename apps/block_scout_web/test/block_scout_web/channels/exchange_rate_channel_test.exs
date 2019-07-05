@@ -43,6 +43,8 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
   describe "new_rate" do
     test "subscribed user is notified", %{token: token} do
       ExchangeRates.handle_info({nil, {:ok, [token]}}, %{})
+      Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
+      Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
 
       topic = "exchange_rate:new_rate"
       @endpoint.subscribe(topic)
@@ -61,6 +63,8 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
 
     test "subscribed user is notified with market history", %{token: token} do
       ExchangeRates.handle_info({nil, {:ok, [token]}}, %{})
+      Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
+      Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
 
       today = Date.utc_today()
 
@@ -75,6 +79,8 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
       records = [%{date: today, closing_price: token.usd_value} | old_records]
 
       Market.bulk_insert_history(records)
+
+      Market.fetch_recent_history()
 
       topic = "exchange_rate:new_rate"
       @endpoint.subscribe(topic)

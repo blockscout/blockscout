@@ -573,7 +573,7 @@ defmodule Explorer.Chain.ImportTest do
 
       transaction =
         :transaction
-        |> insert(error: nil, internal_transactions_indexed_at: nil, status: nil, from_address: from_address, status: 0)
+        |> insert(error: nil, internal_transactions_indexed_at: nil, status: nil, from_address: from_address)
         |> with_block(block, status: :error)
 
       internal_transacton =
