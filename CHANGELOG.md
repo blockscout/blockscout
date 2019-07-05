@@ -3,8 +3,10 @@
 ### Features
 
 ### Fixes
+- [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix, block info row fix, addresses page issue, check mark issue
 
 ### Chore
+- [#2289](https://github.com/poanetwork/blockscout/pull/2289) - Optional websockets for dev environment
 
 
 ## 2.0.1-beta
@@ -72,6 +74,7 @@
 - [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
 - [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
 - [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
+- [#2196](https://github.com/poanetwork/blockscout/pull/2196) - Nethermind client fixes
 - [#2237](https://github.com/poanetwork/blockscout/pull/2237) - fix rsk total_supply
 - [#2198](https://github.com/poanetwork/blockscout/pull/2198) - reduce transaction status and error constraint
 - [#2167](https://github.com/poanetwork/blockscout/pull/2167) - feat: document eth rpc api mimicking endpoints
