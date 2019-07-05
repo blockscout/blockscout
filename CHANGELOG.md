@@ -9,6 +9,7 @@
 - [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix, block info row fix, addresses page issue, check mark issue
 
 ### Chore
+- [#2305](https://github.com/poanetwork/blockscout/pull/2305) - Improve Address controllers
 - [#2289](https://github.com/poanetwork/blockscout/pull/2289) - Optional websockets for dev environment
 
 
