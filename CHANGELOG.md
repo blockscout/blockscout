@@ -2,6 +2,8 @@
 
 ### Features
 
+[#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
+
 ### Fixes
 - [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix, block info row fix, addresses page issue, check mark issue
 
