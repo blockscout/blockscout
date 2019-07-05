@@ -5,6 +5,7 @@
 [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
 ### Fixes
+- [#2303](https://github.com/poanetwork/blockscout/pull/2303) - fix transaction csv download link
 - [#2304](https://github.com/poanetwork/blockscout/pull/2304) - footer grid fix for md resolution
 - [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix, block info row fix, addresses page issue, check mark issue
 
