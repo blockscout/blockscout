@@ -14,7 +14,8 @@ config :explorer,
     System.get_env("ALLOWED_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg",
   include_uncles_in_average_block_time:
-    if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "false", do: false, else: true)
+    if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "false", do: false, else: true),
+  healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5)
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
