@@ -6,7 +6,7 @@ $card-vertical-padding: 30px;
 $card-background-1: $primary !default;
 $card-background-1-text-color: #fff !default;
 $card-tab-icon-color: #20b760 !default;
-$card-tab-icon-color-active: #20b760 !default;
+$card-tab-icon-color-active: #fff !default;
 
 .card {
   background-color: $card-background-color;
@@ -14,6 +14,21 @@ $card-tab-icon-color-active: #20b760 !default;
   border: none;
   box-shadow: 0 0 30px 0 rgba(202, 199, 226, 0.5);
   margin-bottom: $common-container-margin;
+
+  .block-details-row {
+    flex-direction: row;
+    @include media-breakpoint-down(sm) {
+      flex-direction: column;
+    }
+
+    .block-detail-el {
+      & + .block-detail-el {
+        @include media-breakpoint-down(sm) {
+          margin-top: 6px;
+        }
+      }
+    }
+  }
 }
 
 .card-background-1 {
