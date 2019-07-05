@@ -142,7 +142,7 @@ const elements = {
       chart = createMarketHistoryChart($el[0])
     },
     render ($el, state, oldState) {
-      if (!chart || (oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData)) return
+      if (!chart || (oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) || !state.availableSupply) return
       chart.update(state.availableSupply, state.marketHistoryData)
     }
   },

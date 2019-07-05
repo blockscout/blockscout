@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
   alias Cldr.Number
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
   alias Explorer.ExchangeRates.Token
@@ -33,7 +33,18 @@ defmodule BlockScoutWeb.TransactionView do
   def value_transfer?(_), do: false
 
   def token_transfer_type(transaction) do
-    Chain.transaction_token_transfer_type(transaction)
+    transaction_with_transfers = Repo.preload(transaction, token_transfers: :token)
+
+    type = Chain.transaction_token_transfer_type(transaction)
+    if type, do: {type, transaction_with_transfers}
+  end
+
+  def token_type_name(type) do
+    case type do
+      :erc20 -> gettext("ERC-20 ")
+      :erc721 -> gettext("ERC-721 ")
+      :token_transfer -> ""
+    end
   end
 
   def processing_time_duration(%Transaction{block: nil}) do

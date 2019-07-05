@@ -2110,11 +2110,14 @@ defmodule Explorer.ChainTest do
                  ])
              )
 
-      assert internal_transaction.transaction.block.number == block.number
+      assert internal_transaction.transaction.block_number == block.number
     end
 
     test "with transaction with internal transactions loads associations with in necessity_by_association" do
-      transaction = insert(:transaction)
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
 
       insert(:internal_transaction_create,
         transaction: transaction,
@@ -2127,7 +2130,7 @@ defmodule Explorer.ChainTest do
                %InternalTransaction{
                  from_address: %Ecto.Association.NotLoaded{},
                  to_address: %Ecto.Association.NotLoaded{},
-                 transaction: %Transaction{}
+                 transaction: %Transaction{block: %Ecto.Association.NotLoaded{}}
                }
              ] = Chain.transaction_to_internal_transactions(transaction)
 
@@ -2135,15 +2138,15 @@ defmodule Explorer.ChainTest do
                %InternalTransaction{
                  from_address: %Address{},
                  to_address: nil,
-                 transaction: %Transaction{}
+                 transaction: %Transaction{block: %Block{}}
                }
              ] =
                Chain.transaction_to_internal_transactions(
                  transaction,
                  necessity_by_association: %{
-                   from_address: :optional,
-                   to_address: :optional,
-                   transaction: :optional
+                   :from_address => :optional,
+                   :to_address => :optional,
+                   [transaction: :block] => :optional
                  }
                )
     end
@@ -3430,6 +3433,17 @@ defmodule Explorer.ChainTest do
       token = build(:token)
       assert {:error, :not_found} = Chain.token_from_address_hash(token.contract_address.hash)
     end
+
+    test "with contract_address' smart_contract preloaded" do
+      smart_contract = build(:smart_contract)
+      address = insert(:address, smart_contract: smart_contract)
+      token = insert(:token, contract_address: address)
+
+      assert {:ok, result} =
+               Chain.token_from_address_hash(token.contract_address_hash, [{:contract_address, :smart_contract}])
+
+      assert smart_contract = result.contract_address.smart_contract
+    end
   end
 
   test "stream_uncataloged_token_contract_address_hashes/2 reduces with given reducer and accumulator" do
@@ -3954,7 +3968,7 @@ defmodule Explorer.ChainTest do
 
       insert(:token_transfer, from_address: from_address, to_address: to_address, transaction: transaction)
 
-      assert {:erc721, _found_token_transfer} = Chain.transaction_token_transfer_type(transaction)
+      assert :erc721 = Chain.transaction_token_transfer_type(Repo.preload(transaction, token_transfers: :token))
     end
 
     test "detects erc20 token transfer" do
@@ -3980,7 +3994,7 @@ defmodule Explorer.ChainTest do
         amount: 8_025_000_000_000_000_000_000
       )
 
-      assert {:erc20, _found_token_transfer} = Chain.transaction_token_transfer_type(transaction)
+      assert :erc20 = Chain.transaction_token_transfer_type(Repo.preload(transaction, token_transfers: :token))
     end
   end
 

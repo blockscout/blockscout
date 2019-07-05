@@ -80,6 +80,12 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
       flex-direction: row;
     }
 
+    @media (max-width: 599px) {
+      padding-top: 0;
+      padding-bottom: 0;
+      flex-direction: column;
+    }
+
     &::before {
       border-radius: 2px;
       content: "";
@@ -106,6 +112,11 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     font-weight: 600;
     line-height: 1.2;
     margin: 0 0 5px;
+
+    @media (max-width: 374px) {
+      position: relative;
+      top: -2px;
+    }
 
     @include media-breakpoint-down(md) {
       margin: 0 5px 0 0;
@@ -140,11 +151,14 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     height: auto;
     justify-content: flex-start;
     margin-left: 0;
-    margin-top: 15px;
     max-width: 100%;
     padding: 20px 0 20px 20px;
     width: 250px;
     box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  @include media-breakpoint-down(lg) {
+    margin-top: 15px;
   }
 
   @include media-breakpoint-down(sm) {
@@ -186,4 +200,17 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   }
 
   @include stats-item($dashboard-stats-item-border-color, $dashboard-stats-item-label-color, $dashboard-stats-item-value-color);
+
+  .dashboard-banner-network-stats-item {
+    @media (max-width: 374px) {
+      padding-left: calc(0.6rem + 4px);
+      padding-right: 0.5rem;
+    }
+  }
+
+  .dashboard-banner-network-stats-value {
+    @media (max-width: 374px) {
+      font-size: 0.9rem;
+    }
+  }
 }
