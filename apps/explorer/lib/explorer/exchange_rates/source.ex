@@ -28,7 +28,7 @@ defmodule Explorer.ExchangeRates.Source do
           true -> fetch_exchange_rates_from_paginable_source(source, page + 1)
         end
 
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
+      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..502 ->
         {:error, decode_json(body)["error"]}
 
       {:error, %Error{reason: reason}} ->
@@ -65,6 +65,8 @@ defmodule Explorer.ExchangeRates.Source do
 
   def decode_json(data) do
     Jason.decode!(data)
+  rescue
+    _ -> data
   end
 
   def to_decimal(nil), do: nil

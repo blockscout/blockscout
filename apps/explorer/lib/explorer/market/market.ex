@@ -3,12 +3,10 @@ defmodule Explorer.Market do
   Context for data related to the cryptocurrency market.
   """
 
-  import Ecto.Query
-
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
-  alias Explorer.Market.MarketHistory
+  alias Explorer.Market.{MarketHistory, MarketHistoryCache}
   alias Explorer.{ExchangeRates, KnownTokens, Repo}
 
   @doc """
@@ -35,18 +33,9 @@ defmodule Explorer.Market do
 
   Today's date is include as part of the day count
   """
-  @spec fetch_recent_history(non_neg_integer()) :: [MarketHistory.t()]
-  def fetch_recent_history(days) when days >= 1 do
-    day_diff = days * -1
-
-    query =
-      from(
-        mh in MarketHistory,
-        where: mh.date > date_add(^Date.utc_today(), ^day_diff, "day"),
-        order_by: [desc: mh.date]
-      )
-
-    Repo.all(query)
+  @spec fetch_recent_history() :: [MarketHistory.t()]
+  def fetch_recent_history do
+    MarketHistoryCache.fetch()
   end
 
   @doc false
