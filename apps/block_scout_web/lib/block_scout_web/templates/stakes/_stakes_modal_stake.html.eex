@@ -3,7 +3,7 @@
     <div class="modal-content">
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-stake-two-cols">
-        <div>
+        <div class="modal-stake-left">
           <div class="modal-header">
             <h5 class="modal-title"><%= gettext("Stake") %></h5>
           </div>
@@ -25,7 +25,15 @@
           <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: "Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod temp incididunt ut labore et dolore magna. Sed do eiusmod temp incididunt ut.", extra_class: "b-b-r-0" %>
         </div>
         <div class="modal-stake-right">
-          <%= render BlockScoutWeb.StakesView, "_stakes_progress.html" %>
+          <%=
+            render BlockScoutWeb.StakesView,
+            "_stakes_progress.html",
+            progress: "900",
+            total: "2700",
+            pool: "0x7130-95a480",
+            stakes_ratio: "2.75%",
+            delegators: "1367"
+          %>
         </div>
       </div>
     </div>

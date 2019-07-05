@@ -2,15 +2,7 @@
   <div class="modal-dialog modal-dialog-centered modal-validator-info" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <div>
-          <h5 class="modal-title" staking-address>0x18Bea833D503341C529a788c82909337e552a44e</h5>
-          <div>
-            <span class="modal-validator-info-item-title">Mining address:</span>
-            <span class="modal-validator-info-item-value" mining-address>
-              0x18Bea833D503341C529a788c82909337e552a44e
-            </span>
-          </div>
-        </div>
+        <h5 class="modal-title">0x18Bea833D503341C529a788c82909337e552a44e</h5>
       </div>
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-validator-info-content">
@@ -18,63 +10,54 @@
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "Candidate’s Staked Amount",
-          value: "8800",
-          name: "self-staked"
+          value: "8800"
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
-          title: "Delegators Staked Amount",
-          value: "3200",
-          name: "delegators-staked"
+          title: "Delegors Staked Amount",
+          value: "3200"
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "Stakes Ratio",
-          value: "3.2%",
-          name: "stakes-ratio"
+          value: "3.2%"
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
-          title: "Reward Percent of the Pool",
-          value: "15%",
-          name: "stakes-ratio"
+          title: "Reward Precent of the Pool",
+          value: "15%"
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
-          title: "How Many Times this Address has been a Validator",
-          value: "108",
-          name: "was-validator"
+          title: "How Many Times the Address was a Validator",
+          value: "108"
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
-          title: "How Many Times this Address has been Banned",
-          value: "0",
-          name: "was-banned"
+          title: "How Many Times the Address was Banned",
+          value: "0"
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
-          title: "The Block Number and Approximate Date When the  Address Will be Unbanned",
-          name: "unban-date"
+          title: "The Block Number and Approximate Date When the  Address Will be Unbanned"
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "Likelihood of Becoming a Validator on the Next Epoch",
-          value: "30%",
-          name: "likelihood"
+          value: "30%"
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "The Number of Delegators In the Pool",
-          value: "103",
-          name: "delegators-count"
+          value: "103"
         %>
       </div>
     </div>

@@ -1556,8 +1556,6 @@ msgstr ""
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:11
-#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:16
-#: lib/block_scout_web/templates/stakes/_stakes_modal_move_selected.html.eex:16
 #: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:13
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:13
 msgid "Amount"
@@ -1566,6 +1564,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_empty_content.html.eex:14
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:5
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:20
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:10
 msgid "Become Candidate"
 msgstr ""
@@ -1576,7 +1575,7 @@ msgid "Block number"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:30
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:26
 msgid "Delegators"
 msgstr ""
 
@@ -1597,12 +1596,12 @@ msgid "Next epoch in"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:21
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:22
 msgid "Order Withdrawal"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:18
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:14
 msgid "Pool"
 msgstr ""
 
@@ -1632,7 +1631,7 @@ msgid "Stakes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:24
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:20
 msgid "Stakes Ratio"
 msgstr ""
 
@@ -1648,7 +1647,7 @@ msgid "Withdraw"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:20
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:21
 msgid "Withdraw Now"
 msgstr ""
 
@@ -1860,33 +1859,4 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:9
 msgid "here."
-msgstr ""
-
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:20
-msgid "Become a Candidate"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:24
-#: lib/block_scout_web/templates/stakes/_stakes_modal_move_selected.html.eex:24
-msgid "Choose Pool"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:8
-msgid "Claim Ordered Withdraw"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:15
-msgid "Claim the Amount"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:11
-#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:29
-#: lib/block_scout_web/templates/stakes/_stakes_modal_move_selected.html.eex:11
-#: lib/block_scout_web/templates/stakes/_stakes_modal_move_selected.html.eex:29
-msgid "Move Stake"
 msgstr ""
