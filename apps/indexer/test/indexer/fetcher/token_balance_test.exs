@@ -111,6 +111,41 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
 
       assert TokenBalance.run(token_balances, nil) == :ok
     end
+
+    test "fetches duplicate params only once" do
+      %Address.TokenBalance{
+        address_hash: %Hash{bytes: address_hash_bytes} = address_hash,
+        token_contract_address_hash: %Hash{bytes: token_contract_address_hash_bytes},
+        block_number: block_number
+      } = insert(:token_balance, value_fetched_at: nil, value: nil)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
+             }
+           ]}
+        end
+      )
+
+      assert TokenBalance.run(
+               [
+                 {address_hash_bytes, token_contract_address_hash_bytes, block_number, 0},
+                 {address_hash_bytes, token_contract_address_hash_bytes, block_number, 0}
+               ],
+               nil
+             ) == :ok
+
+      assert 1 =
+               from(tb in Address.TokenBalance, where: tb.address_hash == ^address_hash)
+               |> Explorer.Repo.aggregate(:count, :id)
+    end
   end
 
   describe "import_token_balances/1" do

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var sourceCode = process.argv[2];
+var sourceCodePath = process.argv[2];
 var version = process.argv[3];
 var optimize = process.argv[4];
 var optimizationRuns = parseInt(process.argv[5], 10);
@@ -12,6 +12,9 @@ var compilerVersionPath = process.argv[9];
 var solc = require('solc')
 var compilerSnapshot = require(compilerVersionPath);
 var solc = solc.setupMethods(compilerSnapshot);
+
+var fs = require('fs');
+var sourceCode = fs.readFileSync(sourceCodePath, 'utf8');
 
 const input = {
   language: 'Solidity',

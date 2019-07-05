@@ -169,6 +169,36 @@ defmodule Indexer.Fetcher.UncleBlockTest do
       assert {:retry, ^entries} =
                UncleBlock.run(entries, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments})
     end
+
+    test "retries only unique uncles on failed request", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      %Hash{bytes: block_hash_bytes} = block_hash()
+      entry = {block_hash_bytes, 0}
+      entries = [entry, entry]
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  method: "eth_getUncleByBlockHashAndIndex"
+                                }
+                              ],
+                              _ ->
+        {:ok,
+         [
+           %{
+             id: id,
+             error: %{
+               code: 404,
+               data: %{index: 0, nephew_hash: "0xa0814f0478fe90c82852f812fd74c96df148654c326d2600d836e6908ebb62b4"},
+               message: "Not Found"
+             }
+           }
+         ]}
+      end)
+
+      assert {:retry, [entry]} =
+               UncleBlock.run(entries, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments})
+    end
   end
 
   describe "run_blocks/2" do
