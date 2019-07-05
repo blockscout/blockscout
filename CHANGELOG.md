@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2303](https://github.com/poanetwork/blockscout/pull/2303) - fix transaction csv download link
 - [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix, block info row fix, addresses page issue, check mark issue
 
 ### Chore
