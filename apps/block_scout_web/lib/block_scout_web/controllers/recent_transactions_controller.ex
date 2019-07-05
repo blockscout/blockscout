@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.RecentTransactionsController do
           necessity_by_association: %{
             :block => :required,
             [created_contract_address: :names] => :optional,
-            [from_address: :names] => :required,
+            [from_address: :names] => :optional,
             [to_address: :names] => :optional
           },
           paging_options: %PagingOptions{page_size: 5}
