@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Transaction do
 
   require Logger
 
-  import Ecto.Query, only: [from: 2, order_by: 3, preload: 3, subquery: 1, where: 3]
+  import Ecto.Query, only: [from: 2, preload: 3, subquery: 1, where: 3]
 
   alias ABI.FunctionSelector
 
@@ -247,7 +247,7 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  A pending transaction has neither `block_hash` nor an `index`
+  A pending transaction does not have a `block_hash`
 
       iex> changeset = Explorer.Chain.Transaction.changeset(
       ...>   %Transaction{},
@@ -266,42 +266,6 @@ defmodule Explorer.Chain.Transaction do
       ...> )
       iex> changeset.valid?
       true
-
-  A pending transaction (which is indicated by not having a `block_hash`) can't have `block_number`,
-  `cumulative_gas_used`, `gas_used`, or `index`.
-
-      iex> changeset = Explorer.Chain.Transaction.changeset(
-      ...>   %Transaction{},
-      ...>   %{
-      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-      ...>     block_number: 34,
-      ...>     cumulative_gas_used: 0,
-      ...>     gas: 4700000,
-      ...>     gas_price: 100000000000,
-      ...>     gas_used: 4600000,
-      ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
-      ...>     index: 0,
-      ...>     input: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
-      ...>     nonce: 0,
-      ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
-      ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     status: :ok,
-      ...>     v: 0x8d,
-      ...>     value: 0
-      ...>   }
-      ...> )
-      iex> changeset.valid?
-      false
-      iex> Keyword.get_values(changeset.errors, :block_number)
-      [{"can't be set when the transaction is pending", []}]
-      iex> Keyword.get_values(changeset.errors, :cumulative_gas_used)
-      [{"can't be set when the transaction is pending", []}]
-      iex> Keyword.get_values(changeset.errors, :gas_used)
-      [{"can't be set when the transaction is pending", []}]
-      iex> Keyword.get_values(changeset.errors, :index)
-      [{"can't be set when the transaction is pending", []}]
-      iex> Keyword.get_values(changeset.errors, :status)
-      [{"can't be set when the transaction is pending", []}]
 
   A collated transaction MUST have an `index` so its position in the `block` is known and the `cumulative_gas_used` ane
   `gas_used` to know its fees.
@@ -358,35 +322,6 @@ defmodule Explorer.Chain.Transaction do
       ...> )
       iex> changeset.valid?
       true
-
-  Once the `internal_transactions_indexed_at` is set, both pre- and post-Byzantium transactions will be able to know
-  their status, so if `internal_transaction_indexed_at` is set, `status` is required.
-
-      iex> changeset = Explorer.Chain.Transaction.changeset(
-      ...>   %Transaction{},
-      ...>   %{
-      ...>     block_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
-      ...>     block_number: 34,
-      ...>     cumulative_gas_used: 0,
-      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-      ...>     gas: 4700000,
-      ...>     gas_price: 100000000000,
-      ...>     gas_used: 4600000,
-      ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
-      ...>     index: 0,
-      ...>     input: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
-      ...>     internal_transactions_indexed_at: DateTime.utc_now(),
-      ...>     nonce: 0,
-      ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
-      ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     v: 0x8d,
-      ...>     value: 0
-      ...>   }
-      ...> )
-      iex> changeset.valid?
-      false
-      iex> Keyword.get_values(changeset.errors, :status)
-      [{"can't be blank when the internal transactions have been fetched", []}]
 
   The `error` can only be set with a specific error message when `status` is `:error`
 
@@ -445,10 +380,9 @@ defmodule Explorer.Chain.Transaction do
     transaction
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
-    |> validate_collated_or_pending()
+    |> validate_collated()
     |> validate_error()
     |> validate_status()
-    |> check_pending()
     |> check_collated()
     |> check_error()
     |> check_status()
@@ -549,15 +483,40 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Builds a query that will check for transactions within the hashes params.
+  Modifies a query to filter for transactions whose hash is in a list or that are
+  linked to the given address_hash through a direction.
 
   Be careful to not pass a large list, because this will lead to performance
   problems.
   """
-  def where_transaction_hashes_match(transaction_hashes) do
-    Transaction
-    |> where([t], t.hash == fragment("ANY (?)", ^transaction_hashes))
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+  def where_transaction_matches(query, transaction_hashes, :from, address_hash) do
+    where(
+      query,
+      [t],
+      t.hash in ^transaction_hashes or
+        t.from_address_hash == ^address_hash
+    )
+  end
+
+  def where_transaction_matches(query, transaction_hashes, :to, address_hash) do
+    where(
+      query,
+      [t],
+      t.hash in ^transaction_hashes or
+        t.to_address_hash == ^address_hash or
+        t.created_contract_address_hash == ^address_hash
+    )
+  end
+
+  def where_transaction_matches(query, transaction_hashes, _direction, address_hash) do
+    where(
+      query,
+      [t],
+      t.hash in ^transaction_hashes or
+        t.from_address_hash == ^address_hash or
+        t.to_address_hash == ^address_hash or
+        t.created_contract_address_hash == ^address_hash
+    )
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a
@@ -567,29 +526,17 @@ defmodule Explorer.Chain.Transaction do
                              {collated_field, :"collated_#{collated_field}}"}
                            end)
 
-  @pending_fields_with_check @collated_fields
-  @pending_fields_with_validation @collated_fields ++ ~w(internal_transaction_indexed_at status)a
-  @pending_message "can't be set when the transaction is pending"
-  @pending_field_to_check Enum.into(@pending_fields_with_check, %{}, fn pending_field ->
-                            {pending_field, :"pending_#{pending_field}}"}
-                          end)
-
   defp check_collated(%Changeset{} = changeset) do
     check_constraints(changeset, @collated_field_to_check, @collated_message)
-  end
-
-  defp check_pending(%Changeset{} = changeset) do
-    check_constraints(changeset, @pending_field_to_check, @pending_message)
   end
 
   @error_message "can't be set when status is not :error"
 
   defp check_error(%Changeset{} = changeset) do
     check_constraint(changeset, :error, message: @error_message, name: :error)
-    changeset
   end
 
-  @status_message "can't be blank when the internal transactions have been fetched"
+  @status_message "can't be set when the block_hash is unknown"
 
   defp check_status(%Changeset{} = changeset) do
     check_constraint(changeset, :status, message: @status_message, name: :status)
@@ -607,22 +554,10 @@ defmodule Explorer.Chain.Transaction do
     end)
   end
 
-  defp validate_collated_or_pending(%Changeset{} = changeset) do
+  defp validate_collated(%Changeset{} = changeset) do
     case Changeset.get_field(changeset, :block_hash) do
-      nil -> validate_collated_or_pending(changeset, @pending_fields_with_validation, &validate_pending/2)
-      %Hash{} -> validate_collated_or_pending(changeset, @collated_fields, &validate_collated/2)
-    end
-  end
-
-  defp validate_collated_or_pending(%Changeset{} = changeset, fields, field_validator)
-       when is_list(fields) and is_function(field_validator, 2) do
-    Enum.reduce(fields, changeset, field_validator)
-  end
-
-  defp validate_pending(field, %Changeset{} = changeset) when is_atom(field) do
-    case Changeset.get_field(changeset, field) do
+      %Hash{} -> Enum.reduce(@collated_fields, changeset, &validate_collated/2)
       nil -> changeset
-      _ -> Changeset.add_error(changeset, field, @pending_message)
     end
   end
 
@@ -642,9 +577,8 @@ defmodule Explorer.Chain.Transaction do
   end
 
   defp validate_status(%Changeset{} = changeset) do
-    # all other errors on status are handled by validate_pending
-    if Changeset.get_field(changeset, :internal_transactions_indexed_at) != nil and
-         Changeset.get_field(changeset, :status) == nil do
+    if Changeset.get_field(changeset, :block_hash) == nil and
+         Changeset.get_field(changeset, :status) != nil do
       Changeset.add_error(changeset, :status, @status_message)
     else
       changeset
