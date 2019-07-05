@@ -17,13 +17,21 @@ port =
 config :block_scout_web, BlockScoutWeb.Endpoint,
   http: [
     protocol_options: [
-      idle_timeout: 90_000
+      idle_timeout: 90_000,
+      max_header_name_length: 1_048_576_000,
+      max_header_value_length: 1_048_576_000,
+      max_headers: 10000,
+      max_request_line_length: 1_048_576_000
     ],
     port: port || 4000
   ],
   https: [
     protocol_options: [
-      idle_timeout: 90_000
+      idle_timeout: 90_000,
+      max_header_name_length: 1_048_576_000,
+      max_header_value_length: 1_048_576_000,
+      max_headers: 10000,
+      max_request_line_length: 1_048_576_000
     ],
     port: (port && port + 1) || 4001,
     cipher_suite: :strong,

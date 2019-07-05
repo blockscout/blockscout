@@ -52,7 +52,8 @@ defmodule BlockScoutWeb.Endpoint do
     Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
-    json_decoder: Poison
+    json_decoder: Poison,
+    query_string_length: 1_000_000
   )
 
   plug(Plug.MethodOverride)
