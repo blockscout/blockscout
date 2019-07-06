@@ -39,8 +39,9 @@ config :indexer,
   last_block: System.get_env("LAST_BLOCK") || ""
 
 # config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
-# config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
-config :indexer, Indexer.Fetcher.StakingPools.Supervisor, disabled?: true
+if System.get_env("POS_STAKING_CONTRACT") do
+  config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
+end
 
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
