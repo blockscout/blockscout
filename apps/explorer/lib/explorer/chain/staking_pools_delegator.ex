@@ -20,12 +20,21 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
           max_withdraw_allowed: Wei.t(),
           ordered_withdraw: Wei.t(),
           stake_amount: Wei.t(),
-          ordered_withdraw_epoch: integer()
+          ordered_withdraw_epoch: integer(),
+          is_active: boolean(),
+          is_deleted: boolean()
         }
 
   @attrs ~w(
     pool_address_hash delegator_address_hash max_ordered_withdraw_allowed
     max_withdraw_allowed ordered_withdraw stake_amount ordered_withdraw_epoch
+    is_active is_deleted
+  )a
+
+  @req_attrs ~w(
+    pool_address_hash delegator_address_hash max_ordered_withdraw_allowed
+    max_withdraw_allowed ordered_withdraw stake_amount ordered_withdraw_epoch
+
   )a
 
   schema "staking_pools_delegators" do
@@ -34,6 +43,8 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
     field(:ordered_withdraw, Wei)
     field(:ordered_withdraw_epoch, :integer)
     field(:stake_amount, Wei)
+    field(:is_active, :boolean, default: true)
+    field(:is_deleted, :boolean, default: false)
 
     belongs_to(
       :staking_pool,
@@ -58,7 +69,7 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
   def changeset(staking_pools_delegator, attrs) do
     staking_pools_delegator
     |> cast(attrs, @attrs)
-    |> validate_required(@attrs)
+    |> validate_required(@req_attrs)
     |> unique_constraint(:pool_address_hash, name: :pools_delegator_index)
   end
 end
