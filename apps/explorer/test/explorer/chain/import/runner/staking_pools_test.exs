@@ -19,16 +19,6 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsTest do
 
       assert {:ok, %{insert_staking_pools: list}} = run_changes(pools)
       assert Enum.count(list) == Enum.count(pools)
-
-      saved_list =
-        Explorer.Chain.StakingPool
-        |> Repo.all()
-        |> Enum.reduce(%{}, fn pool, acc ->
-          Map.put(acc, pool.staking_address_hash, pool)
-        end)
-
-      assert saved_list[pool1.staking_address_hash].staked_ratio == Decimal.new("50.00")
-      assert saved_list[pool2.staking_address_hash].staked_ratio == Decimal.new("50.00")
     end
   end
 
