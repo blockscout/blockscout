@@ -75,7 +75,7 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.AddressesCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Validator.MetadataProcessor),
-      configure(Explorer.Staking.EpochCounter)
+      configure(Explorer.Staking.ContractState)
     ]
     |> List.flatten()
   end
