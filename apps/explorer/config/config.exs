@@ -160,11 +160,11 @@ config :explorer, Explorer.Staking.PoolsReader,
   staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
 
 if System.get_env("POS_STAKING_CONTRACT") do
-  config :explorer, Explorer.Staking.EpochCounter,
+  config :explorer, Explorer.Staking.ContractState,
     enabled: true,
     staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
 else
-  config :explorer, Explorer.Staking.EpochCounter, enabled: false
+  config :explorer, Explorer.Staking.ContractState, enabled: false
 end
 
 case System.get_env("SUPPLY_MODULE") do

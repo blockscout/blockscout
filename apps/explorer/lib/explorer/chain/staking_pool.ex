@@ -21,7 +21,8 @@ defmodule Explorer.Chain.StakingPool do
           is_active: boolean,
           is_banned: boolean,
           is_validator: boolean,
-          likelihood: integer,
+          likelihood: Decimal.t(),
+          block_reward_ratio: Decimal.t(),
           staked_ratio: Decimal.t(),
           self_staked_amount: Wei.t(),
           staked_amount: Wei.t(),
@@ -33,7 +34,7 @@ defmodule Explorer.Chain.StakingPool do
   @attrs ~w(
     is_active delegators_count staked_amount self_staked_amount is_validator
     was_validator_count is_banned was_banned_count banned_until likelihood
-    staked_ratio staking_address_hash mining_address_hash
+    staked_ratio staking_address_hash mining_address_hash block_reward_ratio
   )a
   @req_attrs ~w(
     is_active delegators_count staked_amount self_staked_amount is_validator
@@ -48,6 +49,7 @@ defmodule Explorer.Chain.StakingPool do
     field(:is_banned, :boolean, default: false)
     field(:is_validator, :boolean, default: false)
     field(:likelihood, :decimal)
+    field(:block_reward_ratio, :decimal)
     field(:staked_ratio, :decimal)
     field(:self_staked_amount, Wei)
     field(:staked_amount, Wei)
