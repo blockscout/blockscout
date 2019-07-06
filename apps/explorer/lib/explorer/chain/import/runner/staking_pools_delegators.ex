@@ -41,6 +41,9 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
       |> Map.put(:timestamps, timestamps)
 
     multi
+    |> Multi.run(:delete_delegators, fn repo, _ ->
+      mark_as_deleted(repo, insert_options)
+    end)
     |> Multi.run(:insert_staking_pools_delegators, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
@@ -48,6 +51,28 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
 
   @impl Import.Runner
   def timeout, do: @timeout
+
+  defp mark_as_deleted(repo, %{timeout: timeout}) do
+    query =
+      from(
+        d in StakingPoolsDelegator,
+        update: [
+          set: [
+            is_active: false,
+            is_deleted: true
+          ]
+        ]
+      )
+
+    try do
+      {_, result} = repo.update_all(query, [], timeout: timeout)
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error}}
+    end
+  end
 
   @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
@@ -86,7 +111,9 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
           max_ordered_withdraw_allowed: fragment("EXCLUDED.max_ordered_withdraw_allowed"),
           ordered_withdraw_epoch: fragment("EXCLUDED.ordered_withdraw_epoch"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", delegator.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", delegator.updated_at)
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", delegator.updated_at),
+          is_active: fragment("EXCLUDED.is_active"),
+          is_deleted: fragment("EXCLUDED.is_deleted")
         ]
       ]
     )
