@@ -30,7 +30,7 @@
             <span class="dashboard-banner-chart-legend-label">
               <%= gettext "Market Cap" %>
             </span>
-            <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= @exchange_rate.market_cap_usd %>">
+            <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= market_cap(@market_cap_calculation, @exchange_rate) %>">
             </span>
           </div>
         </div>
@@ -105,7 +105,7 @@
   <div class="card card-chain-transactions">
     <div class="card-body">
       <%= link(gettext("View All Transactions"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "btn-line float-right") %>
-      <h2 class="card-title"><%= gettext "Transactions" %></h2>
+      <h2 class="card-title lg-card-title"><%= gettext "Transactions" %></h2>
       <div data-selector="channel-batching-message" style="display: none;">
         <div data-selector="reload-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>

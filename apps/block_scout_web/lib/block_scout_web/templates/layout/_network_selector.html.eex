@@ -1,0 +1,53 @@
+<div class="network-selector-overlay js-network-selector-overlay">
+    <div class="network-selector-overlay-close js-network-selector-overlay-close"></div>
+    <div class="network-selector-wrapper">
+        <div class="network-selector js-network-selector">
+            <div class="network-selector-close js-network-selector-close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13">
+                    <path fill-rule="evenodd" d="M7.881 6.5l4.834 4.834a.977.977 0 0 1-1.381 1.381L6.5 7.881l-4.834 4.834a.977.977 0 0 1-1.381-1.381L5.119 6.5.285 1.666A.977.977 0 0 1 1.666.285L6.5 5.119 11.334.285a.977.977 0 0 1 1.381 1.381L7.881 6.5z"/>
+                </svg>
+            </div>
+            <div class="network-selector-text-container">
+                <h1 class="network-selector-title"><%= gettext("Change Network") %></h1>
+                <p class="network-selector-text"><%= gettext("Use the search box to find a hosted network, or select from the list of available networks below.") %></p>
+            </div>
+            <form class="network-selector-search-container">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="17">
+                    <path fill-rule="evenodd" d="M15.713 15.727a.982.982 0 0 1-1.388 0l-2.289-2.29C10.773 14.403 9.213 15 7.5 15A7.5 7.5 0 1 1 15 7.5c0 1.719-.602 3.285-1.575 4.55l2.288 2.288a.983.983 0 0 1 0 1.389zM7.5 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 1 0 0-11z"/>
+                </svg>
+                <input class="network-selector-search-input" type="text" placeholder='<%= gettext("Search network") %>' />
+            </form>
+            <div class="network-selector-tabs-container">
+                <div class="network-selector-tab js-network-selector-tab active" network-selector-tab-filter="all"><%= gettext("All") %></div>
+                <div class="network-selector-tab js-network-selector-tab" network-selector-tab-filter="mainnet"><%= gettext("Mainnet") %></div>
+                <div class="network-selector-tab js-network-selector-tab" network-selector-tab-filter="testnet"><%= gettext("Testnet") %></div>
+                <div class="network-selector-tab js-network-selector-tab" network-selector-tab-filter="favorites"><%= gettext("Favorites") %></div>
+            </div>
+            <div class="network-selector-networks-container">
+                <% main_nets = dropdown_main_nets() %>
+                <% test_nets = dropdown_test_nets() %>
+                <div class="network-selector-tab-content js-network-selector-tab-content active" network-selector-tab="all">
+                    <%= for %{url: url, title: title} <- main_nets do %>
+                        <%= render BlockScoutWeb.LayoutView, "_network_selector_item.html", title: title, url: url, tab_type: "Mainnet" %>
+                    <% end %>
+                    <%= for %{url: url, title: title} <- test_nets do %>
+                        <%= render BlockScoutWeb.LayoutView, "_network_selector_item.html", title: title, url: url, tab_type: "Testnet" %>
+                    <% end %>
+                </div>
+                <div class="network-selector-tab-content js-network-selector-tab-content" network-selector-tab="mainnet">
+                    <%= for %{url: url, title: title} <- main_nets do %>
+                        <%= render BlockScoutWeb.LayoutView, "_network_selector_item.html", title: title, url: url, tab_type: "Mainnet" %>
+                    <% end %>
+                </div>
+                <div class="network-selector-tab-content js-network-selector-tab-content" network-selector-tab="testnet">
+                    <%= for %{url: url, title: title} <- test_nets do %>
+                        <%= render BlockScoutWeb.LayoutView, "_network_selector_item.html", title: title, url: url, tab_type: "Testnet" %>
+                    <% end %>
+                </div>
+                <div class="network-selector-tab-content js-network-selector-tab-content js-favorites-tab" network-selector-tab="favorites">
+                    <div class="network-selector-tab-content-empty">No content.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
