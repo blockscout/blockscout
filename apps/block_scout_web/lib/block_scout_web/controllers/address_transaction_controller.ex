@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias BlockScoutWeb.TransactionView
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.{AddressTokenTransferCsvExporter, AddressTransactionCsvExporter}
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
@@ -28,7 +29,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash, [:names], false) do
       options =
         @transaction_necessity_by_association
         |> put_in([:necessity_by_association, :block], :required)
@@ -97,6 +98,46 @@ defmodule BlockScoutWeb.AddressTransactionController do
         transaction_count: transaction_count(address),
         validation_count: validation_count(address),
         current_path: current_path(conn)
+      )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
+    end
+  end
+
+  def token_transfers_csv(conn, %{"address_id" => address_hash_string}) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      address
+      |> AddressTokenTransferCsvExporter.export()
+      |> Enum.into(
+        conn
+        |> put_resp_content_type("application/csv")
+        |> put_resp_header("content-disposition", "attachment; filename=token_transfers.csv")
+        |> send_chunked(200)
+      )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
+    end
+  end
+
+  def transactions_csv(conn, %{"address_id" => address_hash_string}) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      address
+      |> AddressTransactionCsvExporter.export()
+      |> Enum.into(
+        conn
+        |> put_resp_content_type("application/csv")
+        |> put_resp_header("content-disposition", "attachment; filename=transactions.csv")
+        |> send_chunked(200)
       )
     else
       :error ->

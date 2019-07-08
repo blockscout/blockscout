@@ -10,9 +10,9 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.{Address, Gas, Hash, Transaction}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
-  @optional_attrs ~w(internal_transactions_indexed_at size refetch_needed)a
+  @optional_attrs ~w(internal_transactions_indexed_at size refetch_needed total_difficulty difficulty)a
 
-  @required_attrs ~w(consensus difficulty gas_limit gas_used hash miner_hash nonce number parent_hash timestamp total_difficulty)a
+  @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW

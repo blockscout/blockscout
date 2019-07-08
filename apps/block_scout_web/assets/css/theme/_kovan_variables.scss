@@ -68,3 +68,10 @@ $card-tab-active: $tertiary;
 	  );
 	}
 }
+
+// Badges
+$badge-success-color: #15bba6;
+$badge-success-background-color: rgba(#15bba6, .1);
+$badge-neutral-color: $tertiary;
+$badge-neutral-background-color: rgba($tertiary, .1);
+$api-text-monospace-color: $tertiary;
