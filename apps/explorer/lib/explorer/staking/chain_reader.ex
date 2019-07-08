@@ -1,4 +1,4 @@
-defmodule Explorer.Staking.EpochCounter do
+defmodule Explorer.Staking.ChainReader do
   @moduledoc """
   Fetches current staking epoch number and the epoch end block number.
   It subscribes to handle new blocks and conclude whether the epoch is over.
@@ -12,31 +12,36 @@ defmodule Explorer.Staking.EpochCounter do
   @table_name __MODULE__
   @epoch_key "epoch_num"
   @epoch_end_key "epoch_end_block"
+  @min_candidate_stake_key "min_candidate_stake"
+  @min_delegator_stake_key "min_delegator_stake"
 
-  @doc "Current staking epoch number"
-  def epoch_number do
+  def get_parameter_or_default(param, default) do
     if :ets.info(@table_name) != :undefined do
-      case :ets.lookup(@table_name, @epoch_key) do
-        [{_, epoch_num}] ->
-          epoch_num
-
-        _ ->
-          0
+      case :ets.lookup(@table_name, param) do
+        [{_, value}] -> value
+        _ -> default
       end
     end
   end
 
-  @doc "Block number on which will start new epoch"
-  def epoch_end_block do
-    if :ets.info(@table_name) != :undefined do
-      case :ets.lookup(@table_name, @epoch_end_key) do
-        [{_, epoch_end}] ->
-          epoch_end
+  @doc "Current staking epoch number"
+  def epoch_number do
+    get_parameter_or_default(@epoch_key, 0)
+  end
 
-        _ ->
-          0
-      end
-    end
+  @doc "Current staking epoch number"
+  def epoch_end_block do
+    get_parameter_or_default(@epoch_end_key, 0)
+  end
+
+  @doc "Minimal candidate stake"
+  def min_candidate_stake do
+    get_parameter_or_default(@min_candidate_stake_key, 1)
+  end
+
+  @doc "Minimal delegator stake"
+  def min_delegator_stake do
+    get_parameter_or_default(@min_delegator_stake_key, 1)
   end
 
   def start_link([]) do
@@ -56,11 +61,11 @@ defmodule Explorer.Staking.EpochCounter do
   end
 
   def handle_continue(:epoch_info, state) do
-    fetch_epoch_info()
+    fetch_chain_info()
     {:noreply, state}
   end
 
-  @doc "Handles new blocks and decides to fetch new epoch info"
+  @doc "Handles new blocks and decides to fetch fresh chain info"
   def handle_info({:chain_event, :blocks, :realtime, blocks}, state) do
     new_block_number =
       blocks
@@ -69,10 +74,10 @@ defmodule Explorer.Staking.EpochCounter do
 
     case :ets.lookup(@table_name, @epoch_end_key) do
       [] ->
-        fetch_epoch_info()
+        fetch_chain_info()
 
       [{_, epoch_end_block}] when epoch_end_block < new_block_number ->
-        fetch_epoch_info()
+        fetch_chain_info()
 
       _ ->
         :ok
@@ -81,19 +86,28 @@ defmodule Explorer.Staking.EpochCounter do
     {:noreply, state}
   end
 
-  defp fetch_epoch_info do
+  defp fetch_chain_info do
     with data <- get_epoch_info(),
          {:ok, [epoch_num]} <- data["stakingEpoch"],
-         {:ok, [epoch_end_block]} <- data["stakingEpochEndBlock"] do
+         {:ok, [epoch_end_block]} <- data["stakingEpochEndBlock"],
+         {:ok, [min_delegator_stake]} <- data["getDelegatorMinStake"],
+         {:ok, [min_candidate_stake]} <- data["getCandidateMinStake"] do
       :ets.insert(@table_name, {@epoch_key, epoch_num})
       :ets.insert(@table_name, {@epoch_end_key, epoch_end_block})
+      :ets.insert(@table_name, {@min_delegator_stake_key, min_delegator_stake})
+      :ets.insert(@table_name, {@min_candidate_stake_key, min_candidate_stake})
     end
   end
 
   defp get_epoch_info do
     contract_abi = abi("staking.json")
 
-    functions = ["stakingEpoch", "stakingEpochEndBlock"]
+    functions = [
+      "stakingEpoch",
+      "stakingEpochEndBlock",
+      "getDelegatorMinStake",
+      "getCandidateMinStake"
+    ]
 
     functions
     |> Enum.map(fn function ->
