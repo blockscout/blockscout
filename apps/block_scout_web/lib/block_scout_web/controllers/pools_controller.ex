@@ -39,29 +39,7 @@ defmodule BlockScoutWeb.PoolsController do
   end
 
   defp render_template(_, conn, %{"type" => "JSON", "template" => "top"}) do
-    epoch_number = EpochCounter.epoch_number() || 0
-    epoch_end_block = EpochCounter.epoch_end_block() || 0
-    block_number = BlockNumberCache.max_number()
-
-    user =
-      conn
-      |> get_session(:address_hash)
-      |> delegator_info()
-
-    options = [
-      epoch_number: epoch_number,
-      epoch_end_in: epoch_end_block - block_number,
-      block_number: block_number,
-      user: user,
-      logged_in: user != nil
-    ]
-
-    content =
-      View.render_to_string(
-        StakesView,
-        "_stakes_top.html",
-        options
-      )
+    content = View.render_to_string(StakesView, "_stakes_top.html", base_options(conn))
 
     json(conn, %{content: content})
   end
@@ -118,26 +96,16 @@ defmodule BlockScoutWeb.PoolsController do
   end
 
   defp render_template(filter, conn, _) do
-    epoch_number = EpochCounter.epoch_number() || 0
-    epoch_end_block = EpochCounter.epoch_end_block() || 0
-    block_number = BlockNumberCache.max_number()
+    base_options = base_options(conn)
     average_block_time = AverageBlockTime.average_block_time()
 
-    user =
-      conn
-      |> get_session(:address_hash)
-      |> delegator_info()
-
-    options = [
-      pools_type: filter,
-      epoch_number: epoch_number,
-      epoch_end_in: epoch_end_block - block_number,
-      block_number: block_number,
-      current_path: current_path(conn),
-      user: user,
-      logged_in: user != nil,
-      average_block_time: average_block_time
-    ]
+    options =
+      base_options
+      |> Keyword.merge(
+        pools_type: filter,
+        current_path: current_path(conn),
+        average_block_time: average_block_time
+      )
 
     render(conn, "index.html", options)
   end
@@ -195,5 +163,24 @@ defmodule BlockScoutWeb.PoolsController do
 
   defp next_page_path(:inactive, conn, params) do
     inactive_pools_path(conn, :index, params)
+  end
+
+  defp base_options(conn) do
+    epoch_number = EpochCounter.epoch_number() || 0
+    epoch_end_block = EpochCounter.epoch_end_block() || 0
+    block_number = BlockNumberCache.max_number()
+
+    user =
+      conn
+      |> get_session(:address_hash)
+      |> delegator_info()
+
+    [
+      epoch_number: epoch_number,
+      epoch_end_in: epoch_end_block - block_number,
+      block_number: block_number,
+      user: user,
+      logged_in: user != nil
+    ]
   end
 end
