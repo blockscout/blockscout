@@ -13,6 +13,7 @@
 ### Chore
 - [#2302](https://github.com/poanetwork/blockscout/pull/2302) - fix names for xDai source
 - [#2289](https://github.com/poanetwork/blockscout/pull/2289) - Optional websockets for dev environment
+- [#2307](https://github.com/poanetwork/blockscout/pull/2307) - add GoJoy to README
 
 
 ## 2.0.1-beta
