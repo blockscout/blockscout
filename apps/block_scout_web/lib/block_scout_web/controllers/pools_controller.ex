@@ -144,7 +144,7 @@ defmodule BlockScoutWeb.PoolsController do
 
   defp delegator_info(address) when not is_nil(address) do
     case Chain.delegator_info(address) do
-      [staked, self_staked, has_pool] ->
+      %{staked: staked, self_staked: self_staked, has_pool: has_pool} ->
         {:ok, staked_wei} = Wei.cast(staked || 0)
         {:ok, self_staked_wei} = Wei.cast(self_staked || 0)
 
