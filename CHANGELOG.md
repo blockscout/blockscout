@@ -1,39 +1,5 @@
 ## Current
 
-## 1.3.14-beta
-
-### Features
-
-- [#1812](https://github.com/poanetwork/blockscout/pull/1812) - add pagination to addresses page
-- [#1920](https://github.com/poanetwork/blockscout/pull/1920) - fix: remove source code fields from list endpoint
-- [#1876](https://github.com/poanetwork/blockscout/pull/1876) - async calculate a count of blocks
-
-### Fixes
-
-- [#1917](https://github.com/poanetwork/blockscout/pull/1917) - Force block refetch if transaction is re-collated in a different block
-
-### Chore
-
-- [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
-
-## 1.3.13-beta
-
-### Features
-
-- [#1933](https://github.com/poanetwork/blockscout/pull/1933) - add eth_BlockNumber json rpc method
-
-### Fixes
-
-- [#1875](https://github.com/poanetwork/blockscout/pull/1875) - fix: resolve false positive constructor arguments
-- [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
-- [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
-
-## 1.3.12-beta
-
-Reverting of synchronous block counter, implemented in #1848
-
-## 1.3.11-beta
-
 ### Features
 
 ### Fixes
