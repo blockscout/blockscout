@@ -21,7 +21,7 @@ Below is a table outlining the environment variables utilized by BlockScout.
 | `METADATA_CONTRACT` | | This environment variable is specifically used by POA Network to obtain Validators information to display in the UI. | (empty) | all |
 | `VALIDATORS_CONTRACT` | | This environment variable is specifically used by POA Network to obtain the Emission Fund contract. | (empty) | all |
 | `SUPPLY_MODULE` | | This environment variable is used by the xDai Chain in order to tell the application how to calculate the total supply of the chain. | false | all |
-| `SOURCE_MODULE` | | This environment variable is used to calculate the total supply and is specifically used by the xDai Chain. | false | all |
+| `SOURCE_MODULE` | | This environment variable is used to calculate the exchange rate and is specifically used by the xDai Chain. | false | all |
 | `DATABASE_URL` | | Production environment variable to define the Database endpoint. | (empty) | all |
 | `POOL_SIZE` | | Production environment variable to define the number of database connections allowed. | 20 | all |
 |  `ECTO_USE_SSL`| | Production environment variable to use SSL on Ecto queries. | true | all |
@@ -33,7 +33,7 @@ Below is a table outlining the environment variables utilized by BlockScout.
 | `HEART_COMMAND` | | Production environment variable to restart the application in the event of a crash. | systemctl restart explorer.service | all |
 | `BLOCKSCOUT_VERSION` | | Added to the footer to signify the current BlockScout version. | (empty) | v1.3.4+ |
 | `RELEASE_LINK` | | The link to Blockscout release notes in the footer. | https://github.com/poanetwork/ <br /> <u>blockscout/releases/</u> <br /> <u>tag/${BLOCKSCOUT_VERSION}</u> | v1.3.5+ |
-| `ELIXIR_VERSION` | | Elixir version to install on the node before Blockscout deploy. | (empty) | all | 
+| `ELIXIR_VERSION` | | Elixir version to install on the node before Blockscout deploy. | (empty) | all |
 | `BLOCK_TRANSFORMER` | | Transformer for blocks: base or clique. | base |  v1.3.4+ |
 | `GRAPHIQL _TRANSACTION` | | Default transaction in query to GraphiQL. | (empty) |  v1.3.4+ |
 | `FIRST_BLOCK` | | The block number, where indexing begins from. | 0 |  v1.3.8+ |
