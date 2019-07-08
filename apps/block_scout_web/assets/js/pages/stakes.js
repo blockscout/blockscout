@@ -28,13 +28,8 @@ const elements = {
     },
     render ($el, state, oldState) {
       if (oldState.web3 === state.web3) return
-      if (state.web3) {
-        $el.unbind('click')
-        $el.on('click', loginByMetamask)
-      } else {
-        $el.unbind('click')
-        $el.on('click', redirectToMetamask)
-      }
+      $el.unbind('click')
+      $el.on('click', state.web3 ? loginByMetamask : redirectToMetamask)
     }
   },
   '[data-async-load]': {
@@ -50,11 +45,9 @@ const elements = {
       $.getJSON(state.accountPath, {type: 'JSON', template: 'top'})
         .done(response => {
           $el.html(response.content)
-          if (!state.user && state.web3) {
-            $('[data-selector="login-button"]').on('click', loginByMetamask)
-          }
-          if (!state.web3) {
-            $('[data-selector="login-button"]').on('click', redirectToMetamask)
+          if (!state.user) {
+            $('[data-selector="login-button"]')
+              .on('click', state.web3 ? loginByMetamask : redirectToMetamask)
           }
         })
     }
