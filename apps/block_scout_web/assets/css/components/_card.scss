@@ -42,6 +42,12 @@ $card-tab-icon-color-active: #20b760 !default;
   line-height: 1.2rem;
   margin-bottom: 2rem;
 
+  &.lg-card-title {
+    @media (max-width: 374px) {
+      font-size: 13px;
+    }
+  }
+
   &.margin-bottom-md {
     margin-bottom: 25px;
   }

@@ -1,6 +1,16 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 2.0.1-beta
+
+### Features
+- [#2283](https://github.com/poanetwork/blockscout/pull/2283) - Add transactions cache
 - [#2182](https://github.com/poanetwork/blockscout/pull/2182) - add market history cache
 - [#2109](https://github.com/poanetwork/blockscout/pull/2109) - use bigger updates instead of `Multi` transactions in BlocksTransactionsMismatch
 - [#2075](https://github.com/poanetwork/blockscout/pull/2075) - add blocks cache
@@ -14,6 +24,7 @@
 - [#2266](https://github.com/poanetwork/blockscout/pull/2266) - allow excluding uncles from average block time calculation
 
 ### Fixes
+- [#2286](https://github.com/poanetwork/blockscout/pull/2286) - banner stats issues on sm resolutions, transactions title issue
 - [#2284](https://github.com/poanetwork/blockscout/pull/2284) - add 404 status for not existing pages
 - [#2244](https://github.com/poanetwork/blockscout/pull/2244) - fix internal transactions failing to be indexed because of constraint
 - [#2281](https://github.com/poanetwork/blockscout/pull/2281) - typo issues, dropdown issues
@@ -61,12 +72,16 @@
 - [#2173](https://github.com/poanetwork/blockscout/pull/2173) - handle correctly empty transactions
 - [#2174](https://github.com/poanetwork/blockscout/pull/2174) - fix reward channel joining
 - [#2186](https://github.com/poanetwork/blockscout/pull/2186) - fix net version test
+- [#2237](https://github.com/poanetwork/blockscout/pull/2237) - fix rsk total_supply
 - [#2198](https://github.com/poanetwork/blockscout/pull/2198) - reduce transaction status and error constraint
 - [#2167](https://github.com/poanetwork/blockscout/pull/2167) - feat: document eth rpc api mimicking endpoints
 - [#2225](https://github.com/poanetwork/blockscout/pull/2225) - fix metadata decoding in Solidity 0.5.9 smart contract verification
 - [#2204](https://github.com/poanetwork/blockscout/pull/2204) - fix large contract verification
+- [#2258](https://github.com/poanetwork/blockscout/pull/2258) - reduce BlocksTransactionsMismatch memory footprint
 - [#2247](https://github.com/poanetwork/blockscout/pull/2247) - hide logs search if there are no logs
 - [#2248](https://github.com/poanetwork/blockscout/pull/2248) - sort block after query execution for average block time
+- [#2249](https://github.com/poanetwork/blockscout/pull/2249) - More transaction controllers improvements
+- [#2267](https://github.com/poanetwork/blockscout/pull/2267) - Modify implementation of `where_transaction_has_multiple_internal_transactions`
 - [#2270](https://github.com/poanetwork/blockscout/pull/2270) - Remove duplicate params in `Indexer.Fetcher.TokenBalance`
 - [#2268](https://github.com/poanetwork/blockscout/pull/2268) - remove not existing assigns in html code
 - [#2276](https://github.com/poanetwork/blockscout/pull/2276) - remove port in docs
@@ -75,8 +90,6 @@
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
 - [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
 - [#2256](https://github.com/poanetwork/blockscout/pull/2256) - use the latest version of chromedriver
-
-### Chore
 
 ## 2.0.0-beta
 

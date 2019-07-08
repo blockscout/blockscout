@@ -46,6 +46,7 @@ defmodule Explorer.Chain do
     TokenTransfer,
     Transaction,
     TransactionCountCache,
+    TransactionsCache,
     Wei
   }
 
@@ -1052,7 +1053,7 @@ defmodule Explorer.Chain do
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    fetch_transactions()
+    Transaction
     |> where(hash: ^hash)
     |> join_associations(necessity_by_association)
     |> Repo.one()
@@ -1948,12 +1949,29 @@ defmodule Explorer.Chain do
   @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def recent_collated_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    options
-    |> Keyword.get(:paging_options, @default_paging_options)
+    if is_nil(paging_options.key) do
+      paging_options.page_size
+      |> TransactionsCache.take_enough()
+      |> case do
+        nil ->
+          transactions = fetch_recent_collated_transactions(paging_options, necessity_by_association)
+          TransactionsCache.update(transactions)
+          transactions
+
+        transactions ->
+          transactions
+      end
+    else
+      fetch_recent_collated_transactions(paging_options, necessity_by_association)
+    end
+  end
+
+  def fetch_recent_collated_transactions(paging_options, necessity_by_association) do
+    paging_options
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
@@ -2146,7 +2164,7 @@ defmodule Explorer.Chain do
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
-    |> preload(transaction: :block)
+    |> preload(:transaction)
     |> Repo.all()
   end
 
@@ -2580,14 +2598,14 @@ defmodule Explorer.Chain do
       internal_transaction.type != ^:call or
         fragment(
           """
-          (SELECT COUNT(sibling.*)
+          EXISTS (SELECT sibling.*
           FROM internal_transactions AS sibling
-          WHERE sibling.transaction_hash = ?
-          LIMIT 2
+          WHERE sibling.transaction_hash = ? AND sibling.index != ?
           )
           """,
-          transaction.hash
-        ) > 1
+          transaction.hash,
+          internal_transaction.index
+        )
     )
   end
 
@@ -2707,9 +2725,9 @@ defmodule Explorer.Chain do
 
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
   def transaction_has_token_transfers?(transaction_hash) do
-    query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash, limit: 1, select: 1)
+    query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash)
 
-    Repo.one(query) != nil
+    Repo.exists?(query)
   end
 
   @spec address_tokens_with_balance(Hash.Address.t(), [any()]) :: []
