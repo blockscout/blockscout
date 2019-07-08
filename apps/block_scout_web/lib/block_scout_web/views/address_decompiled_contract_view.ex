@@ -230,10 +230,8 @@ defmodule BlockScoutWeb.AddressDecompiledContractView do
     end)
   end
 
-  def sort_contracts_by_version(decompiled_contracts) do
-    decompiled_contracts
-    |> Enum.sort_by(& &1.decompiler_version)
-    |> Enum.reverse()
+  def last_decompiled_contract_version(decompiled_contracts) do
+    Enum.max_by(decompiled_contracts, & &1.decompiler_version)
   end
 
   defp add_line_numbers(code) do
