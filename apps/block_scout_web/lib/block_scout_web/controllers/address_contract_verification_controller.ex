@@ -24,12 +24,11 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   def create(
         conn,
         %{
-          "address_id" => address_hash_string,
           "smart_contract" => smart_contract,
           "external_libraries" => external_libraries
         }
       ) do
-    Que.add(PublisherWorker, {address_hash_string, smart_contract, external_libraries})
+    Que.add(PublisherWorker, {smart_contract["address_hash"], smart_contract, external_libraries})
 
     send_resp(conn, 204, "")
   end

@@ -18,6 +18,13 @@ defmodule BlockScoutWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  pipeline :contract_verification do
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_flash)
+    plug(BlockScoutWeb.CSPHeader)
+  end
+
   scope "/api/v1", BlockScoutWeb.API.V1, as: :api_v1 do
     pipe_through(:api)
 
@@ -27,6 +34,12 @@ defmodule BlockScoutWeb.Router do
 
     resources("/decompiled_smart_contract", DecompiledSmartContractController, only: [:create])
     resources("/verified_smart_contracts", VerifiedSmartContractController, only: [:create])
+  end
+
+  scope "/verify_smart_contract" do
+    pipe_through(:contract_verification)
+
+    post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
   end
 
   scope "/api", BlockScoutWeb.API.RPC do
@@ -164,8 +177,6 @@ defmodule BlockScoutWeb.Router do
         only: [:new],
         as: :verify_contract
       )
-
-      get("/contract_verifications", AddressContractVerificationController, :create)
 
       resources(
         "/read_contract",

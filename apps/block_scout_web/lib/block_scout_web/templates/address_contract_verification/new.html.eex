@@ -9,8 +9,8 @@
       <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
 
       <%= form_for @changeset,
-          "/address/#{@address_hash}/contract_verifications",
-          [method: :get],
+          "/verify_smart_contract/contract_verifications",
+          [],
           fn f -> %>
 
         <div class="smart-contract-form-group">
