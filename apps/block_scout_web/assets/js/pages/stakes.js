@@ -106,7 +106,7 @@ function getWeb3 () {
 
     store.dispatch({ type: 'WEB3_DETECTED', web3: web3 })
 
-    const sessionAcc = $('[data-page="stakes"]').data('user-address')
+    const sessionAcc = $('.stakes-top-stats-item-address').data('user-address')
     if (sessionAcc) {
       store.dispatch({ type: 'AUTHORIZED', account: sessionAcc })
     }

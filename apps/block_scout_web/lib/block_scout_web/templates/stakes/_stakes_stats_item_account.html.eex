@@ -1,4 +1,6 @@
-<div class="stakes-top-stats-item stakes-top-stats-item-address">
+<div class="stakes-top-stats-item stakes-top-stats-item-address"
+  data-user-address="<%= if @user, do: @user.address %>"
+>
   <span class="stakes-top-stats-value">
     <%= if assigns[:logged_in] do %>
       <div data-placement="top" data-toggle="tooltip" title=<%= @user.address %>>
