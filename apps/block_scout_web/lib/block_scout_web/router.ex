@@ -18,13 +18,6 @@ defmodule BlockScoutWeb.Router do
     plug(:accepts, ["json"])
   end
 
-  pipeline :contract_verification do
-    plug(:accepts, ["html"])
-    plug(:fetch_session)
-    plug(:fetch_flash)
-    plug(BlockScoutWeb.CSPHeader)
-  end
-
   scope "/api/v1", BlockScoutWeb.API.V1, as: :api_v1 do
     pipe_through(:api)
 
@@ -37,7 +30,7 @@ defmodule BlockScoutWeb.Router do
   end
 
   scope "/verify_smart_contract" do
-    pipe_through(:contract_verification)
+    pipe_through(:api)
 
     post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
   end
