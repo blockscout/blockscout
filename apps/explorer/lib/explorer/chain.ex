@@ -46,6 +46,7 @@ defmodule Explorer.Chain do
     TokenTransfer,
     Transaction,
     TransactionCountCache,
+    TransactionsCache,
     Wei
   }
 
@@ -1768,6 +1769,31 @@ defmodule Explorer.Chain do
     Repo.one!(query)
   end
 
+  def last_block_status do
+    query =
+      from(block in Block,
+        select: {block.number, block.timestamp},
+        where: block.consensus == true,
+        order_by: [desc: block.number],
+        limit: 1
+      )
+
+    case Repo.one(query) do
+      nil ->
+        {:error, :no_blocks}
+
+      {number, timestamp} ->
+        now = DateTime.utc_now()
+        last_block_period = DateTime.diff(now, timestamp, :millisecond)
+
+        if last_block_period > Application.get_env(:explorer, :healthy_blocks_period) do
+          {:error, number, timestamp}
+        else
+          {:ok, number, timestamp}
+        end
+    end
+  end
+
   @doc """
   Calculates the ranges of missing consensus blocks in `range`.
 
@@ -1948,9 +1974,27 @@ defmodule Explorer.Chain do
   @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def recent_collated_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    options
-    |> Keyword.get(:paging_options, @default_paging_options)
+    if is_nil(paging_options.key) do
+      paging_options.page_size
+      |> TransactionsCache.take_enough()
+      |> case do
+        nil ->
+          transactions = fetch_recent_collated_transactions(paging_options, necessity_by_association)
+          TransactionsCache.update(transactions)
+          transactions
+
+        transactions ->
+          transactions
+      end
+    else
+      fetch_recent_collated_transactions(paging_options, necessity_by_association)
+    end
+  end
+
+  def fetch_recent_collated_transactions(paging_options, necessity_by_association) do
+    paging_options
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> join_associations(necessity_by_association)

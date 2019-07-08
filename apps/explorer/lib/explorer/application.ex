@@ -6,7 +6,18 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
-  alias Explorer.Chain.{BlockCountCache, BlockNumberCache, BlocksCache, NetVersionCache, TransactionCountCache}
+
+  alias Explorer.Chain.{
+    BlockCountCache,
+    BlockNumberCache,
+    BlocksCache,
+    NetVersionCache,
+    TransactionCountCache,
+    TransactionsCache
+  }
+
+  alias Explorer.Chain.Supply.RSK
+
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.Repo.PrometheusLogger
 
@@ -34,7 +45,9 @@ defmodule Explorer.Application do
       {BlockCountCache, []},
       con_cache_child_spec(BlocksCache.cache_name()),
       con_cache_child_spec(NetVersionCache.cache_name()),
-      con_cache_child_spec(MarketHistoryCache.cache_name())
+      con_cache_child_spec(MarketHistoryCache.cache_name()),
+      con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
+      con_cache_child_spec(TransactionsCache.cache_name())
     ]
 
     children = base_children ++ configurable_children()
@@ -83,14 +96,13 @@ defmodule Explorer.Application do
     ]
   end
 
-  defp con_cache_child_spec(name) do
+  defp con_cache_child_spec(name, params \\ [ttl_check_interval: false]) do
+    params = Keyword.put(params, :name, name)
+
     Supervisor.child_spec(
       {
         ConCache,
-        [
-          name: name,
-          ttl_check_interval: false
-        ]
+        params
       },
       id: {ConCache, name}
     )
