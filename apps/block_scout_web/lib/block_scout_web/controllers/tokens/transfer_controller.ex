@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
 
   def index(conn, %{"token_id" => address_hash_string}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, token} <- Chain.token_from_address_hash(address_hash) do
+         {:ok, token} <- Chain.token_from_address_hash(address_hash, [{:contract_address, :smart_contract}]) do
       render(
         conn,
         "index.html",
