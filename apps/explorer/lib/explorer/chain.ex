@@ -3193,7 +3193,6 @@ defmodule Explorer.Chain do
         on: delegator.delegator_address_hash == address.hash and delegator.is_active,
         left_join: pool in StakingPool,
         on: pool.staking_address_hash == address.hash and pool.is_active,
-        group_by: address.hash,
         select: [sum(delegator.stake_amount), sum(pool.self_staked_amount), count(pool) > 0]
       )
 
