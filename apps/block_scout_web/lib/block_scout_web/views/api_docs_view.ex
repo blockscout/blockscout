@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.APIDocsView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.LayoutView
+  alias BlockScoutWeb.{Endpoint, LayoutView}
 
   def action_tile_id(module, action) do
     "#{module}-#{action}"
@@ -32,5 +32,13 @@ defmodule BlockScoutWeb.APIDocsView do
     Enum.map(action.required_params, fn param ->
       "&#{param.key}=" <> "{<strong>#{param.placeholder}</strong>}"
     end)
+  end
+
+  def blockscout_url do
+    if System.get_env("BLOCKSCOUT_HOST") do
+      "http://" <> System.get_env("BLOCKSCOUT_HOST")
+    else
+      Endpoint.url()
+    end
   end
 end

@@ -56,4 +56,10 @@ defmodule EthereumJSONRPC.BlockTest do
              }
     end
   end
+
+  describe "elixir_to_transactions/1" do
+    test "converts to empty list if there is not transaction key" do
+      assert Block.elixir_to_transactions(%{}) == []
+    end
+  end
 end
