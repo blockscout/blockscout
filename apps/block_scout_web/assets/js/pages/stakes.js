@@ -3,7 +3,8 @@ import { createStore, connectElements } from '../lib/redux_helpers.js'
 import Web3 from 'web3'
 
 export const initialState = {
-  web3: null
+  web3: null,
+  user: null
 }
 
 export function reducer (state = initialState, action) {
@@ -11,27 +12,8 @@ export function reducer (state = initialState, action) {
     case 'WEB3_DETECTED': {
       return Object.assign({}, state, { web3: action.web3 })
     }
-    case 'AUTHORIZED': {
-      const a = state.account || null
-      if ((a !== action.account)) {
-        $.getJSON('/set_session', { address: action.account })
-          .done(response => {
-            if (response.success === true) {
-              store.dispatch({ type: 'GET_USER' })
-            }
-          })
-      }
-      return Object.assign({}, state, { account: action.account })
-    }
-    case 'GET_USER': {
-      $.getJSON('/delegator', {address: state.account})
-        .done(response => {
-          store.dispatch({ type: 'UPDATE_USER', user: response.delegator })
-        })
-
-      return state
-    }
     case 'UPDATE_USER': {
+      console.log(action.user)
       return Object.assign({}, state, { user: action.user })
     }
     default:
@@ -97,9 +79,10 @@ function getWeb3 () {
     setInterval(function () {
       web3.eth.getAccounts()
         .then(accounts => {
-          var defaultAccount = accounts[0] || null
-          if (defaultAccount !== store.getState().account) {
-            store.dispatch({ type: 'AUTHORIZED', account: defaultAccount })
+          var defaultAccount = accounts[0] || ""
+          var currentUser = store.getState().user ? store.getState().user.address : ""
+          if (defaultAccount.toLowerCase() !== currentUser.toLowerCase()) {
+            login(defaultAccount)
           }
         })
     }, 100)
@@ -108,9 +91,18 @@ function getWeb3 () {
 
     const sessionAcc = $('.stakes-top-stats-item-address').data('user-address')
     if (sessionAcc) {
-      store.dispatch({ type: 'AUTHORIZED', account: sessionAcc })
+      login(sessionAcc)
     }
   }
+}
+
+async function login (address) {
+  await $.getJSON('/set_session', { address: address })
+  let response = await $.getJSON('/delegator', { address: address })
+  store.dispatch({
+    type: 'UPDATE_USER',
+    user: response.delegator
+  })
 }
 
 function redirectToMetamask () {
@@ -124,7 +116,7 @@ async function loginByMetamask () {
     const accounts = await store.getState().web3.eth.getAccounts()
 
     const defaultAccount = accounts[0] || null
-    store.dispatch({ type: 'AUTHORIZED', account: defaultAccount })
+    login(defaultAccount)
   } catch (e) {
     console.log(e)
     console.error('User denied account access')
