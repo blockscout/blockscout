@@ -124,7 +124,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:3
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:17
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:19
 msgid "Balance"
 msgstr ""
 
@@ -1620,7 +1620,7 @@ msgid "Stake More"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:26
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:28
 msgid "Staked"
 msgstr ""
 

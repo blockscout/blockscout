@@ -72,8 +72,8 @@ function getWeb3 () {
     setInterval(function () {
       web3.eth.getAccounts()
         .then(accounts => {
-          var defaultAccount = accounts[0] || ""
-          var currentUser = store.getState().user ? store.getState().user.address : ""
+          var defaultAccount = accounts[0] || ''
+          var currentUser = store.getState().user ? store.getState().user.address : ''
           if (defaultAccount.toLowerCase() !== currentUser.toLowerCase()) {
             login(defaultAccount)
           }
