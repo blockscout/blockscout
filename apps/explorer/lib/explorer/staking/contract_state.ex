@@ -15,33 +15,35 @@ defmodule Explorer.Staking.ContractState do
   @min_candidate_stake_key "min_candidate_stake"
   @min_delegator_stake_key "min_delegator_stake"
 
-  def get_parameter_or_default(param, default) do
-    if :ets.info(@table_name) != :undefined do
-      case :ets.lookup(@table_name, param) do
-        [{_, value}] -> value
-        _ -> default
-      end
+  @doc """
+    Searches for a parameter in the ETS table associated with the module.
+    Returns a `default` value if parameter is not there.
+  """
+  defp get(param, default) do
+    case :ets.lookup(@table_name, param) do
+      [{_, value}] -> value
+      _ -> default
     end
   end
 
   @doc "Current staking epoch number"
   def epoch_number do
-    get_parameter_or_default(@epoch_key, 0)
+    get(@epoch_key, 0)
   end
 
   @doc "Current staking epoch number"
   def epoch_end_block do
-    get_parameter_or_default(@epoch_end_key, 0)
+    get(@epoch_end_key, 0)
   end
 
   @doc "Minimal candidate stake"
   def min_candidate_stake do
-    get_parameter_or_default(@min_candidate_stake_key, 1)
+    get(@min_candidate_stake_key, 1)
   end
 
   @doc "Minimal delegator stake"
   def min_delegator_stake do
-    get_parameter_or_default(@min_delegator_stake_key, 1)
+    get(@min_delegator_stake_key, 1)
   end
 
   def start_link([]) do
