@@ -1,4 +1,4 @@
-defmodule Explorer.Staking.ChainReader do
+defmodule Explorer.Staking.ContractState do
   @moduledoc """
   Fetches current staking epoch number and the epoch end block number.
   It subscribes to handle new blocks and conclude whether the epoch is over.

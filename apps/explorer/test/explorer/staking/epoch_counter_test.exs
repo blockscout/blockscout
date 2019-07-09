@@ -1,39 +1,39 @@
-defmodule Explorer.Staking.ChainReaderTest do
+defmodule Explorer.Staking.ContractStateTest do
   use ExUnit.Case, async: false
 
   import Mox
 
-  alias Explorer.Staking.ChainReader
+  alias Explorer.Staking.ContractState
   alias Explorer.Chain.Events.Publisher
 
   setup :verify_on_exit!
   setup :set_mox_global
 
   test "when disabled, it returns nil" do
-    assert ChainReader.epoch_number() == nil
-    assert ChainReader.epoch_end_block() == nil
+    assert ContractState.epoch_number() == nil
+    assert ContractState.epoch_end_block() == nil
   end
 
   test "fetch epoch data" do
     set_mox(10, 880)
-    Application.put_env(:explorer, ChainReader, enabled: true)
-    start_supervised!(ChainReader)
+    Application.put_env(:explorer, ContractState, enabled: true)
+    start_supervised!(ContractState)
 
     Process.sleep(1_000)
 
-    assert ChainReader.epoch_number() == 10
-    assert ChainReader.epoch_end_block() == 880
+    assert ContractState.epoch_number() == 10
+    assert ContractState.epoch_end_block() == 880
   end
 
   test "fetch new epoch data" do
     set_mox(10, 880)
-    Application.put_env(:explorer, ChainReader, enabled: true)
-    start_supervised!(ChainReader)
+    Application.put_env(:explorer, ContractState, enabled: true)
+    start_supervised!(ContractState)
 
     Process.sleep(1_000)
 
-    assert ChainReader.epoch_number() == 10
-    assert ChainReader.epoch_end_block() == 880
+    assert ContractState.epoch_number() == 10
+    assert ContractState.epoch_end_block() == 880
 
     event_type = :blocks
     broadcast_type = :realtime
@@ -44,8 +44,8 @@ defmodule Explorer.Staking.ChainReaderTest do
 
     Process.sleep(1_000)
 
-    assert ChainReader.epoch_number() == 11
-    assert ChainReader.epoch_end_block() == 960
+    assert ContractState.epoch_number() == 11
+    assert ContractState.epoch_end_block() == 960
   end
 
   defp set_mox(epoch_num, end_block_num) do

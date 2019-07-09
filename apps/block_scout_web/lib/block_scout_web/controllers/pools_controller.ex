@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.PoolsController do
   alias Explorer.Chain
   alias Explorer.Chain.BlockNumberCache
   alias Explorer.Counters.AverageBlockTime
-  alias Explorer.Staking.ChainReader
+  alias Explorer.Staking.ContractState
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
@@ -66,8 +66,8 @@ defmodule BlockScoutWeb.PoolsController do
   end
 
   defp render_template(filter, conn, _) do
-    epoch_number = ChainReader.epoch_number() || 0
-    epoch_end_block = ChainReader.epoch_end_block() || 0
+    epoch_number = ContractState.epoch_number() || 0
+    epoch_end_block = ContractState.epoch_end_block() || 0
     block_number = BlockNumberCache.max_number()
     average_block_time = AverageBlockTime.average_block_time()
 
