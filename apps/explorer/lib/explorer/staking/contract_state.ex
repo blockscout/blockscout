@@ -16,9 +16,11 @@ defmodule Explorer.Staking.ContractState do
   @min_delegator_stake_key "min_delegator_stake"
 
   defp get(param, default) do
-    case :ets.lookup(@table_name, param) do
-      [{_, value}] -> value
-      _ -> default
+    if :ets.info(@table_name) != :undefined do
+      case :ets.lookup(@table_name, param) do
+        [{_, value}] -> value
+        _ -> default
+      end
     end
   end
 
