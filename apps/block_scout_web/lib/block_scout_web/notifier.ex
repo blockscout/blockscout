@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event(
-        {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result}}
+        {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result, conn}}
       ) do
     contract_verification_result =
       case contract_verification_result do
@@ -41,7 +41,8 @@ defmodule BlockScoutWeb.Notifier do
               changeset: changeset,
               compiler_versions: compiler_versions,
               evm_versions: CodeCompiler.allowed_evm_versions(),
-              address_hash: address_hash
+              address_hash: address_hash,
+              conn: conn
             )
 
           {:error, result}
