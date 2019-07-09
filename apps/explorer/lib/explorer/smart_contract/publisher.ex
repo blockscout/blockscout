@@ -28,10 +28,10 @@ defmodule Explorer.SmartContract.Publisher do
 
     case Verifier.evaluate_authenticity(address_hash, params_with_external_libaries) do
       {:ok, %{abi: abi}} ->
-        publish_smart_contract(address_hash, params, abi)
+        publish_smart_contract(address_hash, params_with_external_libaries, abi)
 
       {:error, error} ->
-        {:error, unverified_smart_contract(address_hash, params, error)}
+        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error)}
     end
   end
 
