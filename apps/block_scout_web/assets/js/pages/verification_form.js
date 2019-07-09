@@ -46,14 +46,14 @@ const elements = {
   },
   '[data-page="contract-verification"]': {
     render ($el, state) {
-     if (state.newForm) {
-       $el.replaceWith(state.newForm)
-       $('button[data-button-loading="animation"]').click(event => {
-         $('#loading').removeClass('d-none')
-       })
-       return $el
-     }
-     return $el
+      if (state.newForm) {
+        $el.replaceWith(state.newForm)
+        $('button[data-button-loading="animation"]').click(event => {
+          $('#loading').removeClass('d-none')
+        })
+        return $el
+      }
+      return $el
     }
   }
 }
@@ -83,7 +83,7 @@ if ($contractVerificationPage.length) {
     msg: humps.camelizeKeys(msg)
   }))
 
-    $('button[data-button-loading="animation"]').click(event => {
-        $('#loading').removeClass('d-none')
-    })
+  $('button[data-button-loading="animation"]').click(event => {
+    $('#loading').removeClass('d-none')
+  })
 }
