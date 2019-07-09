@@ -13,6 +13,7 @@ defmodule Explorer.Chain.SmartContract do
   use Explorer.Schema
 
   alias Explorer.Chain.{Address, ContractMethod, DecompiledSmartContract, Hash}
+  alias Explorer.Chain.SmartContract.ExternalLibrary
   alias Explorer.Repo
 
   @typedoc """
@@ -212,7 +213,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:constructor_arguments, :string)
     field(:evm_version, :string)
     field(:optimization_runs, :integer)
-    field(:external_libraries, :map)
+    embeds_many(:external_libraries, ExternalLibrary)
     field(:abi, {:array, :map})
 
     has_many(
@@ -247,8 +248,7 @@ defmodule Explorer.Chain.SmartContract do
       :abi,
       :constructor_arguments,
       :evm_version,
-      :optimization_runs,
-      :external_libraries
+      :optimization_runs
     ])
     |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
