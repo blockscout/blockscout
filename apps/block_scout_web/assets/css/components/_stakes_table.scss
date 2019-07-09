@@ -7,6 +7,25 @@ $stakes-table-cell-separation: 25px !default;
   width: 100%;
 }
 
+.addresses-table-container {
+  margin-left: -30px;
+  margin-right: -30px;
+  .stakes-table-container {
+    table {
+      width: 100%;
+      th:first-child {
+        padding-left: 25px;
+      }
+      td:first-child {
+        padding-left: 25px;
+      }
+    }
+  }
+  .color-lighten {
+    color: #828ba0;
+  }
+}
+
 .stakes-table {
   min-width: fit-content;
   width: 100%;
