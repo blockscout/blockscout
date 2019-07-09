@@ -211,7 +211,7 @@ const elements = {
   '[data-selector="chain-block-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
       if (state.blocksLoading) {
-        setTimeout(function(){
+        setTimeout(function () {
           $el.removeAttr('hidden')
           $el.show()
         }, 1000)
@@ -228,7 +228,7 @@ const elements = {
   '[data-selector="transactions-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
       if (state.transactionsLoading) {
-        setTimeout(function(){
+        setTimeout(function () {
           $el.removeAttr('hidden')
           $el.show()
         }, 1000)
