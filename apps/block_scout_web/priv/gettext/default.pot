@@ -1620,7 +1620,7 @@ msgid "Stake More"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:28
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:22
 msgid "Staked"
 msgstr ""
 

@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.StakesHelpers do
   @moduledoc """
   Helpers for staking templates
   """
+  alias BlockScoutWeb.WeiHelpers
   alias Explorer.Chain.{BlockNumberCache, Wei}
   alias Timex.Duration
 
@@ -43,6 +44,6 @@ defmodule BlockScoutWeb.StakesHelpers do
   def format_wei(value, _, _) when is_nil(value), do: "-"
 
   def format_wei(value, unit, options) do
-    BlockScoutWeb.WeiHelpers.format_wei_value(value, unit, options)
+    WeiHelpers.format_wei_value(value, unit, options)
   end
 end
