@@ -13,7 +13,6 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, { web3: action.web3 })
     }
     case 'UPDATE_USER': {
-      console.log(action.user)
       return Object.assign({}, state, { user: action.user })
     }
     default:
@@ -90,11 +89,10 @@ function getWeb3 () {
 }
 
 async function login (address) {
-  await $.getJSON('/set_session', { address: address })
-  let response = await $.getJSON('/delegator', { address: address })
+  let response = await $.getJSON('/set_session', { address: address })
   store.dispatch({
     type: 'UPDATE_USER',
-    user: response.delegator
+    user: response.user
   })
 }
 

@@ -15,26 +15,16 @@ defmodule BlockScoutWeb.PoolsController do
   end
 
   def set_session(conn, %{"address" => address}) do
-    case Chain.string_to_address_hash(address) do
-      {:ok, _address} ->
-        conn
-        |> put_session(:address_hash, address)
-        |> json(%{success: true})
-
+    with {:ok, hash} <- Chain.string_to_address_hash(address),
+         delegator when is_map(delegator) <- delegator_info(hash) do
+      conn
+      |> put_session(:address_hash, address)
+      |> json(%{user: delegator})
+    else
       _ ->
         conn
         |> delete_session(:address_hash)
-        |> json(%{success: true})
-    end
-  end
-
-  def delegator(conn, %{"address" => address}) do
-    with {:ok, hash} <- Chain.string_to_address_hash(address),
-         delegator when is_map(delegator) <- delegator_info(hash) do
-      json(conn, %{delegator: delegator})
-    else
-      _ ->
-        json(conn, %{delegator: nil})
+        |> json(%{})
     end
   end
 
