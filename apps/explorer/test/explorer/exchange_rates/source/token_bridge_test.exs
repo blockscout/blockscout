@@ -1,6 +1,6 @@
-defmodule Explorer.ExchangeRates.Source.TransactionAndLogTest do
+defmodule Explorer.ExchangeRates.Source.TokenBridgeTest do
   use Explorer.DataCase
-  alias Explorer.ExchangeRates.Source.TransactionAndLog
+  alias Explorer.ExchangeRates.Source.TokenBridge
   alias Explorer.ExchangeRates.Token
 
   @json """
@@ -27,7 +27,7 @@ defmodule Explorer.ExchangeRates.Source.TransactionAndLogTest do
 
   describe "format_data/1" do
     test "bring a list with one %Token{}" do
-      assert [%Token{}] = TransactionAndLog.format_data(@json)
+      assert [%Token{}] = TokenBridge.format_data(@json)
     end
   end
 end
