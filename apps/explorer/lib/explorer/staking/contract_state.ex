@@ -15,10 +15,6 @@ defmodule Explorer.Staking.ContractState do
   @min_candidate_stake_key "min_candidate_stake"
   @min_delegator_stake_key "min_delegator_stake"
 
-  @doc """
-    Searches for a parameter in the ETS table associated with the module.
-    Returns a `default` value if parameter is not there.
-  """
   defp get(param, default) do
     case :ets.lookup(@table_name, param) do
       [{_, value}] -> value
