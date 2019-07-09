@@ -211,7 +211,10 @@ const elements = {
   '[data-selector="chain-block-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
       if (state.blocksLoading) {
-        $el.show()
+        setTimeout(function(){
+          $el.removeAttr('hidden')
+          $el.show()
+        }, 1000)
       } else {
         $el.hide()
       }
@@ -224,7 +227,14 @@ const elements = {
   },
   '[data-selector="transactions-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
-      $el.toggle(state.transactionsLoading)
+      if (state.transactionsLoading) {
+        setTimeout(function(){
+          $el.removeAttr('hidden')
+          $el.show()
+        }, 1000)
+      } else {
+        $el.hide()
+      }
     }
   },
   '[data-selector="transactions-list"]': {

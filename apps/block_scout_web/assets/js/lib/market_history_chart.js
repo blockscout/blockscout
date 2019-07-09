@@ -148,6 +148,7 @@ export function createMarketHistoryChart (el) {
 }
 
 $('[data-chart-error-message]').on('click', _event => {
+  $('[data-chart-loading-message]').removeAttr('hidden')
   $('[data-chart-loading-message]').show()
   $('[data-chart-error-message]').hide()
   createMarketHistoryChart($('[data-chart="marketHistoryChart"]')[0])
