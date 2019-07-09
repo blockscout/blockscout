@@ -3,6 +3,7 @@
 ### Features
 
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
+- [#2324](https://github.com/poanetwork/blockscout/pull/2324) - set timeout for loading message on the main page
 
 ### Fixes
 - [#2310](https://github.com/poanetwork/blockscout/pull/2310) - parse url for api docs
