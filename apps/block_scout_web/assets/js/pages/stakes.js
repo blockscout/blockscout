@@ -4,7 +4,8 @@ import Web3 from 'web3'
 
 export const initialState = {
   web3: null,
-  user: null
+  user: null,
+  controllerPath: null
 }
 
 export function reducer (state = initialState, action) {
@@ -34,14 +35,14 @@ const elements = {
   '[data-async-load]': {
     load ($el) {
       return {
-        accountPath: $el.data('async-listing')
+        controllerPath: $el.data('async-listing')
       }
     }
   },
   '[data-selector="stakes-top"]': {
     render ($el, state, oldState) {
       if (state.user === oldState.user) return
-      $.getJSON(state.accountPath, {type: 'JSON', template: 'top'})
+      $.getJSON(state.controllerPath, {type: 'JSON', template: 'top'})
         .done(response => {
           $el.html(response.content)
           if (!state.user) {
@@ -60,10 +61,10 @@ if ($stakesPage.length) {
   store = createStore(reducer)
   connectElements({ store, elements })
 
-  getWeb3()
+  initializeWeb3()
 }
 
-function getWeb3 () {
+function initializeWeb3 () {
   if (window.ethereum) {
     let web3 = new Web3(window.ethereum)
     console.log('Injected web3 detected.')
