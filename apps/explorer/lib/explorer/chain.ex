@@ -31,9 +31,6 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
-    BlockCountCache,
-    BlockNumberCache,
-    BlocksCache,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -45,12 +42,19 @@ defmodule Explorer.Chain do
     Token,
     TokenTransfer,
     Transaction,
-    TransactionCountCache,
-    TransactionsCache,
     Wei
   }
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
+
+  alias Explorer.Chain.Cache.{
+    BlockCount,
+    BlockNumber,
+    Blocks,
+    TransactionCount,
+    Transactions
+  }
+
   alias Explorer.Chain.Import.Runner
   alias Explorer.Counters.AddressesWithBalanceCounter
   alias Explorer.Market.MarketHistoryCache
@@ -266,7 +270,7 @@ defmodule Explorer.Chain do
       when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
-    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumberCache.max_number(), 0, 0}
+    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.max_number(), 0, 0}
 
     base_query =
       from(log in Log,
@@ -1132,7 +1136,7 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio() :: Decimal.t()
   def indexed_ratio do
-    {min, max} = BlockNumberCache.min_and_max_numbers()
+    {min, max} = BlockNumber.min_and_max_numbers()
 
     case {min, max} do
       {0, 0} ->
@@ -1214,12 +1218,12 @@ defmodule Explorer.Chain do
     block_type = Keyword.get(options, :block_type, "Block")
 
     if block_type == "Block" && !paging_options.key do
-      if BlocksCache.enough_elements?(paging_options.page_size) do
-        BlocksCache.blocks(paging_options.page_size)
+      if Blocks.enough_elements?(paging_options.page_size) do
+        Blocks.blocks(paging_options.page_size)
       else
         elements = fetch_blocks(block_type, paging_options, necessity_by_association)
 
-        BlocksCache.rewrite_cache(elements)
+        Blocks.rewrite_cache(elements)
 
         elements
       end
@@ -1978,11 +1982,11 @@ defmodule Explorer.Chain do
 
     if is_nil(paging_options.key) do
       paging_options.page_size
-      |> TransactionsCache.take_enough()
+      |> Transactions.take_enough()
       |> case do
         nil ->
           transactions = fetch_recent_collated_transactions(paging_options, necessity_by_association)
-          TransactionsCache.update(transactions)
+          Transactions.update(transactions)
           transactions
 
         transactions ->
@@ -2127,7 +2131,7 @@ defmodule Explorer.Chain do
   """
   @spec transaction_estimated_count() :: non_neg_integer()
   def transaction_estimated_count do
-    cached_value = TransactionCountCache.value()
+    cached_value = TransactionCount.value()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[rows]]} =
@@ -2146,7 +2150,7 @@ defmodule Explorer.Chain do
   """
   @spec block_estimated_count() :: non_neg_integer()
   def block_estimated_count do
-    cached_value = BlockCountCache.count()
+    cached_value = BlockCount.count()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
