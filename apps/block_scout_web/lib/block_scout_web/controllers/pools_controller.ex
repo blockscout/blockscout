@@ -96,11 +96,11 @@ defmodule BlockScoutWeb.PoolsController do
   end
 
   defp render_template(filter, conn, _) do
-    base_options = base_options(conn)
     average_block_time = AverageBlockTime.average_block_time()
 
     options =
-      base_options
+      conn
+      |> base_options()
       |> Keyword.merge(
         pools_type: filter,
         current_path: current_path(conn),
