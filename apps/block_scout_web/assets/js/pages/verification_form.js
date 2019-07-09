@@ -46,9 +46,14 @@ const elements = {
   },
   '[data-page="contract-verification"]': {
     render ($el, state) {
-      if (state.newForm) {
-        return $el.replaceWith(state.newForm)
-      }
+     if (state.newForm) {
+       $el.replaceWith(state.newForm)
+       $('button[data-button-loading="animation"]').click(event => {
+         $('#loading').removeClass('d-none')
+       })
+       return $el
+     }
+     return $el
     }
   }
 }
@@ -59,6 +64,7 @@ if ($contractVerificationPage.length) {
   const store = createStore(reducer)
   const addressHash = $('#smart_contract_address_hash').val()
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
+
   store.dispatch({
     type: 'PAGE_LOAD',
     addressHash,
@@ -76,4 +82,8 @@ if ($contractVerificationPage.length) {
     type: 'RECEIVED_VERIFICATION_RESULT',
     msg: humps.camelizeKeys(msg)
   }))
+
+    $('button[data-button-loading="animation"]').click(event => {
+        $('#loading').removeClass('d-none')
+    })
 }
