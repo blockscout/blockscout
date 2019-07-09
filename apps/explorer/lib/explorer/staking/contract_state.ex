@@ -94,10 +94,12 @@ defmodule Explorer.Staking.ContractState do
          {:ok, [epoch_end_block]} <- data["stakingEpochEndBlock"],
          {:ok, [min_delegator_stake]} <- data["getDelegatorMinStake"],
          {:ok, [min_candidate_stake]} <- data["getCandidateMinStake"] do
-      :ets.insert(@table_name, {@epoch_key, epoch_num})
-      :ets.insert(@table_name, {@epoch_end_key, epoch_end_block})
-      :ets.insert(@table_name, {@min_delegator_stake_key, min_delegator_stake})
-      :ets.insert(@table_name, {@min_candidate_stake_key, min_candidate_stake})
+      :ets.insert(@table_name, [
+        {@epoch_key, epoch_num},
+        {@epoch_end_key, epoch_end_block},
+        {@min_delegator_stake_key, min_delegator_stake},
+        {@min_candidate_stake_key, min_candidate_stake}
+      ])
     end
   end
 
