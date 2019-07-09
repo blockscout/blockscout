@@ -41,6 +41,7 @@ Currently available full-featured block explorers (Etherscan, Etherchain, Blockc
 |  |  | [Kotti Testnet](https://kottiexplorer.ethernode.io/) |
 |  |  | [Loom](http://plasma-blockexplorer.dappchains.com/) |
 |  |  | [Tenda](https://tenda.network) |
+|  |  | [GoJoy Chain](https://gojoychain.com/) |
 
 
 Current BlockScout versions for hosted projects are available [on the forum](https://forum.poa.network/t/deployed-instances-on-blockscout-com/1938). 
