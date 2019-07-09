@@ -2394,8 +2394,13 @@ defmodule Explorer.Chain do
   naming the address for reference.
   """
   @spec create_smart_contract(map()) :: {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
-  def create_smart_contract(attrs \\ %{}) do
-    smart_contract_changeset = SmartContract.changeset(%SmartContract{}, attrs)
+  def create_smart_contract(attrs \\ %{}, external_libraries \\ []) do
+    new_contract = %SmartContract{}
+
+    smart_contract_changeset =
+      new_contract
+      |> SmartContract.changeset(attrs)
+      |> Changeset.put_change(:external_libraries, external_libraries)
 
     insert_result =
       Multi.new()
