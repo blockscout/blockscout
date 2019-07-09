@@ -6,8 +6,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
   alias Explorer.Chain
 
   def verify(address_hash, arguments_data) do
-    arguments_data =
-      arguments_data |> String.trim_trailing() |> String.trim_leading() |> String.replace("0x", "")
+    arguments_data = arguments_data |> String.trim_trailing() |> String.trim_leading() |> String.replace("0x", "")
 
     address_hash
     |> Chain.contract_creation_input_data()
