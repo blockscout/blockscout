@@ -8,7 +8,7 @@ defmodule Explorer.SmartContract.PublisherWorker do
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.SmartContract.Publisher
 
-  def perform({address_hash, params, external_libraries}) do
+  def perform({address_hash, params, external_libraries, conn}) do
     result =
       case Publisher.publish(address_hash, params, external_libraries) do
         {:ok, _contract} = result ->
@@ -18,6 +18,6 @@ defmodule Explorer.SmartContract.PublisherWorker do
           {:error, changeset}
       end
 
-    EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result}}], :on_demand)
+    EventsPublisher.broadcast([{:contract_verification_result, {address_hash, result, conn}}], :on_demand)
   end
 end
