@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash, [], false) do
       full_options =
         [
           necessity_by_association: %{
