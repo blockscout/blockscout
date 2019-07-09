@@ -213,7 +213,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:constructor_arguments, :string)
     field(:evm_version, :string)
     field(:optimization_runs, :integer)
-    embeds_many :external_libraries, ExternalLibrary
+    embeds_many(:external_libraries, ExternalLibrary)
     field(:abi, {:array, :map})
 
     has_many(
