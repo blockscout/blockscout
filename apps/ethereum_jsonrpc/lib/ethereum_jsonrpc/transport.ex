@@ -77,10 +77,12 @@ defmodule EthereumJSONRPC.Transport do
   @type options :: term()
 
   @doc """
-  Run a single Remote Procedure Call (RPC) `t:EthereumJSONRPC.EthereumJSONRPC.request/0` with
-  `t:EthereumJSONRPC.EthereumJSONRPC.options/0`.
+  Run a single Remote Procedure Call (RPC) `t:EthereumJSONRPC.EthereumJSONRPC.request/0`
+  or a batch of calls with `t:EthereumJSONRPC.EthereumJSONRPC.options/0`.
 
   ## Returns
+
+  For single RPC call:
 
    * `{:ok, result}` - `result` is the `/result` from JSONRPC response object of format
      `%{"id" => ..., "result" => result}`.
@@ -88,19 +90,13 @@ defmodule EthereumJSONRPC.Transport do
      `%{"id" => ..., "error" => reason}`.  The transport can also give any `term()` for `reason` if a more specific
      reason is possible.
 
-  """
-  @callback json_rpc(request, options) :: {:ok, result} | {:error, reason :: term()}
-
-  @doc """
-  Runs a batch of Remote Procedure Call (RPC) `request`s with `options`.
-
-  ## Returns
+  For batch of RPC calls:
 
    * `{:ok, [response]}` unlike `json_rpc(request, options)`, the individual `t:response.t/0` are not unwrapped and it
      is the callers responsibility to extract the `t:result/0` or error `reason`.
    * `{:error, reason}` an error that affects *all* `t:request/0`s, such as the batch as a whole being rejected.
-
   """
+  @callback json_rpc(request, options) :: {:ok, result} | {:error, reason :: term()}
   @callback json_rpc(batch_request, options) :: {:ok, batch_response} | {:error, reason :: term()}
 
   @doc """
