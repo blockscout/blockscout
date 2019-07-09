@@ -1,4 +1,4 @@
 defmodule BlockScoutWeb.PoolsView do
   use BlockScoutWeb, :view
-  import BlockScoutWeb.{StakesHelpers, WeiHelpers}
+  import BlockScoutWeb.StakesHelpers
 end

@@ -1,4 +1,4 @@
 defmodule BlockScoutWeb.StakesView do
   use BlockScoutWeb, :view
-  import BlockScoutWeb.WeiHelpers
+  import BlockScoutWeb.StakesHelpers
 end
