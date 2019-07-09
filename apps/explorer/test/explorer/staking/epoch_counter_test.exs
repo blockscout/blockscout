@@ -1,39 +1,39 @@
-defmodule Explorer.Staking.EpochCounterTest do
+defmodule Explorer.Staking.ChainReaderTest do
   use ExUnit.Case, async: false
 
   import Mox
 
-  alias Explorer.Staking.EpochCounter
+  alias Explorer.Staking.ChainReader
   alias Explorer.Chain.Events.Publisher
 
   setup :verify_on_exit!
   setup :set_mox_global
 
   test "when disabled, it returns nil" do
-    assert EpochCounter.epoch_number() == nil
-    assert EpochCounter.epoch_end_block() == nil
+    assert ChainReader.epoch_number() == nil
+    assert ChainReader.epoch_end_block() == nil
   end
 
   test "fetch epoch data" do
     set_mox(10, 880)
-    Application.put_env(:explorer, EpochCounter, enabled: true)
-    start_supervised!(EpochCounter)
+    Application.put_env(:explorer, ChainReader, enabled: true)
+    start_supervised!(ChainReader)
 
     Process.sleep(1_000)
 
-    assert EpochCounter.epoch_number() == 10
-    assert EpochCounter.epoch_end_block() == 880
+    assert ChainReader.epoch_number() == 10
+    assert ChainReader.epoch_end_block() == 880
   end
 
   test "fetch new epoch data" do
     set_mox(10, 880)
-    Application.put_env(:explorer, EpochCounter, enabled: true)
-    start_supervised!(EpochCounter)
+    Application.put_env(:explorer, ChainReader, enabled: true)
+    start_supervised!(ChainReader)
 
     Process.sleep(1_000)
 
-    assert EpochCounter.epoch_number() == 10
-    assert EpochCounter.epoch_end_block() == 880
+    assert ChainReader.epoch_number() == 10
+    assert ChainReader.epoch_end_block() == 880
 
     event_type = :blocks
     broadcast_type = :realtime
@@ -44,8 +44,8 @@ defmodule Explorer.Staking.EpochCounterTest do
 
     Process.sleep(1_000)
 
-    assert EpochCounter.epoch_number() == 11
-    assert EpochCounter.epoch_end_block() == 960
+    assert ChainReader.epoch_number() == 11
+    assert ChainReader.epoch_end_block() == 960
   end
 
   defp set_mox(epoch_num, end_block_num) do

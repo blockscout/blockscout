@@ -64,11 +64,11 @@ config :explorer, Explorer.Staking.PoolsReader,
   staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
 
 if System.get_env("POS_STAKING_CONTRACT") do
-  config :explorer, Explorer.Staking.EpochCounter,
+  config :explorer, Explorer.Staking.ChainReader,
     enabled: true,
     staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
 else
-  config :explorer, Explorer.Staking.EpochCounter, enabled: false
+  config :explorer, Explorer.Staking.ChainReader, enabled: false
 end
 
 if System.get_env("SUPPLY_MODULE") == "TokenBridge" do
