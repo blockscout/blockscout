@@ -877,7 +877,7 @@ msgid "Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_tile.html.eex:19
+#: lib/block_scout_web/templates/address/_tile.html.eex:31
 msgid "Transactions sent"
 msgstr ""
 
@@ -923,7 +923,7 @@ msgid "Validated Transactions"
 msgstr "Signed Transactions"
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_tile.html.eex:23
+#: lib/block_scout_web/templates/address/_tile.html.eex:35
 msgid "Validations"
 msgstr "Confirmations"
 

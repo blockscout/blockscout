@@ -16,17 +16,17 @@
               <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
             <% end %>
           </h3>
-          <div class="d-flex flex-row justify-content-start text-muted">
+          <div class="d-flex justify-content-start text-muted block-details-row">
             <!-- # of Transactions -->
-            <span class="mr-4"> <%= gettext "%{count} Transactions", count: @block_transaction_count %> </span>
+            <span class="mr-4 block-detail-el"> <%= gettext "%{count} Transactions", count: @block_transaction_count %> </span>
 
             <%= if @block.size do %>
             <!-- Block Size -->
-              <span class="mr-4"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
+              <span class="mr-4 block-detail-el"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
             <% end %>
 
             <!-- Block Age -->
-            <span class="mr-4" data-from-now="<%= @block.timestamp %>"></span>
+            <span class="mr-4 block-detail-el" data-from-now="<%= @block.timestamp %>"></span>
           </div>
 
           <hr>
