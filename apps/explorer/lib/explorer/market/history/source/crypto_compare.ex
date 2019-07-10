@@ -48,13 +48,18 @@ defmodule Explorer.Market.History.Source.CryptoCompare do
   defp format_data(data) do
     json = Jason.decode!(data)
 
-    for item <- json["Data"] do
-      %{
-        closing_price: Decimal.new(to_string(item["close"])),
-        date: date(item["time"]),
-        opening_price: Decimal.new(to_string(item["open"]))
-      }
-    end
+    items =
+      for item <- json["Data"] do
+        %{
+          closing_price: Decimal.new(to_string(item["close"])),
+          date: date(item["time"]),
+          opening_price: Decimal.new(to_string(item["open"]))
+        }
+      end
+
+    Enum.reject(items, fn item ->
+      Decimal.equal?(item.closing_price, 0) && Decimal.equal?(item.opening_price, 0)
+    end)
   end
 
   @spec history_url(non_neg_integer()) :: String.t()
