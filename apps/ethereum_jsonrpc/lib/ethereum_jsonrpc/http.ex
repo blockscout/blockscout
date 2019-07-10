@@ -7,6 +7,8 @@ defmodule EthereumJSONRPC.HTTP do
 
   require Logger
 
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+
   @behaviour Transport
 
   @doc """
@@ -131,12 +133,17 @@ defmodule EthereumJSONRPC.HTTP do
   # restrict response to only those fields supported by the JSON-RPC 2.0 standard, which means that level of keys is
   # validated, so we can indicate that with switch to atom keys.
   defp standardize_response(%{"jsonrpc" => "2.0" = jsonrpc, "id" => id} = unstandardized) do
+    # Nethermind return string ids
+    id = quantity_to_integer(id)
+
     standardized = %{jsonrpc: jsonrpc, id: id}
 
     case unstandardized do
       %{"result" => _, "error" => _} ->
         raise ArgumentError,
-              "result and error keys are mutually exclusive in JSONRPC 2.0 response objects, but got #{unstandardized}"
+              "result and error keys are mutually exclusive in JSONRPC 2.0 response objects, but got #{
+                inspect(unstandardized)
+              }"
 
       %{"result" => result} ->
         Map.put(standardized, :result, result)
