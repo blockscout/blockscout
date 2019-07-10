@@ -5,6 +5,7 @@
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
 ### Fixes
+- [#2311](https://github.com/poanetwork/blockscout/pull/2311) - fix market history overriding with zeroes
 - [#2310](https://github.com/poanetwork/blockscout/pull/2310) - parse url for api docs
 - [#2299](https://github.com/poanetwork/blockscout/pull/2299) - fix interpolation in error message
 - [#2303](https://github.com/poanetwork/blockscout/pull/2303) - fix transaction csv download link
