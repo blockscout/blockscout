@@ -22,7 +22,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArgumentsTest do
     |> insert(created_contract_address_hash: address.hash, input: input_data)
     |> with_block()
 
-    assert ConstructorArguments.verify(address.hash, constructor_arguments)
+    assert ConstructorArguments.verify(address.hash, "", constructor_arguments)
   end
 
   test "verifies with multiple nested constructor arguments" do
@@ -42,6 +42,27 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArgumentsTest do
     |> insert(created_contract_address_hash: address.hash, input: input_data)
     |> with_block()
 
-    assert ConstructorArguments.verify(address.hash, constructor_arguments)
+    assert ConstructorArguments.verify(address.hash, "", constructor_arguments)
+  end
+
+  test "verifies older version of Solidity where constructor_arguments were directly appended to source code" do
+    address = insert(:address)
+
+    constructor_arguments =
+      "000000000000000000000000314159265dd8dbb310642f98f50c066173c1259b93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae00000000000000000000000000000000000000000000000000000000590b09b0"
+
+    source_code = "0001"
+
+    input = source_code <> constructor_arguments
+
+    input_data = %Data{
+      bytes: Base.decode16!(input, case: :lower)
+    }
+
+    :transaction
+    |> insert(created_contract_address_hash: address.hash, input: input_data)
+    |> with_block()
+
+    assert ConstructorArguments.verify(address.hash, source_code, constructor_arguments)
   end
 end

@@ -5,13 +5,28 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
 
   alias Explorer.Chain
 
-  def verify(address_hash, arguments_data) do
+  def verify(address_hash, contract_code, arguments_data) do
     arguments_data = arguments_data |> String.trim_trailing() |> String.trim_leading() |> String.replace("0x", "")
 
-    address_hash
-    |> Chain.contract_creation_input_data()
-    |> String.replace("0x", "")
-    |> extract_constructor_arguments(arguments_data)
+    creation_code =
+      address_hash
+      |> Chain.contract_creation_input_data()
+      |> String.replace("0x", "")
+
+    if verify_older_version(creation_code, contract_code, arguments_data) do
+      true
+    else
+      extract_constructor_arguments(creation_code, arguments_data)
+    end
+  end
+
+  # Earlier versions of Solidity didn't have whisper code.
+  # constructor argument were directly appended to source code
+  defp verify_older_version(creation_code, contract_code, arguments_data) do
+    creation_code
+    |> String.split(contract_code)
+    |> List.last()
+    |> Kernel.==(arguments_data)
   end
 
   defp extract_constructor_arguments(code, passed_constructor_arguments) do
