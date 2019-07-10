@@ -37,8 +37,9 @@ defmodule BlockScoutWeb.APIDocsView do
   def blockscout_url do
     if System.get_env("BLOCKSCOUT_HOST") do
       %URI{host: host, scheme: scheme} = URI.parse(Endpoint.url())
+      path = System.get_env("NETWORK_PATH") || "/"
 
-      scheme <> "://" <> host
+      scheme <> "://" <> host <> path
     else
       Endpoint.url()
     end

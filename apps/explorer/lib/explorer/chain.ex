@@ -273,12 +273,12 @@ defmodule Explorer.Chain do
         inner_join: transaction in assoc(log, :transaction),
         order_by: [desc: transaction.block_number, desc: transaction.index],
         preload: [:transaction],
-        where:
-          log.address_hash == ^address_hash and
-            (transaction.block_number < ^block_number or
-               (transaction.block_number == ^block_number and transaction.index > ^transaction_index) or
-               (transaction.block_number == ^block_number and transaction.index == ^transaction_index and
-                  log.index > ^log_index)),
+        where: transaction.block_number < ^block_number,
+        or_where: transaction.block_number == ^block_number and transaction.index > ^transaction_index,
+        or_where:
+          transaction.block_number == ^block_number and transaction.index == ^transaction_index and
+            log.index > ^log_index,
+        where: log.address_hash == ^address_hash,
         limit: ^paging_options.page_size,
         select: log
       )
@@ -676,31 +676,40 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.hash_to_address(hash)
       {:error, :not_found}
 
-  Optionally accepts:
-    - a list of bindings to preload, just like `Ecto.Query.preload/3`
-    - a boolean to also fetch the `has_decompiled_code?` virtual field or not
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
+
+  Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
 
   """
-  @spec hash_to_address(Hash.Address.t(), [Macro.t()], boolean()) :: {:ok, Address.t()} | {:error, :not_found}
+  @spec hash_to_address(Hash.Address.t(), [necessity_by_association_option], boolean()) ::
+          {:ok, Address.t()} | {:error, :not_found}
   def hash_to_address(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
-        preloads \\ [
-          :contracts_creation_internal_transaction,
-          :names,
-          :smart_contract,
-          :token,
-          :contracts_creation_transaction
+        options \\ [
+          necessity_by_association: %{
+            :contracts_creation_internal_transaction => :optional,
+            :names => :optional,
+            :smart_contract => :optional,
+            :token => :optional,
+            :contracts_creation_transaction => :optional
+          }
         ],
         query_decompiled_code_flag \\ true
       ) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     query =
       from(
         address in Address,
-        preload: ^preloads,
         where: address.hash == ^hash
       )
 
     query
+    |> join_associations(necessity_by_association)
     |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
     |> Repo.one()
     |> case do
@@ -772,16 +781,39 @@ defmodule Explorer.Chain do
       iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
       iex> found_hash == hash
       true
+
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
+
+  Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
+
   """
-  @spec find_or_insert_address_from_hash(Hash.Address.t()) :: {:ok, Address.t()}
-  def find_or_insert_address_from_hash(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
-    case hash_to_address(hash) do
+  @spec find_or_insert_address_from_hash(Hash.Address.t(), [necessity_by_association_option], boolean()) ::
+          {:ok, Address.t()}
+  def find_or_insert_address_from_hash(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
+        options \\ [
+          necessity_by_association: %{
+            :contracts_creation_internal_transaction => :optional,
+            :names => :optional,
+            :smart_contract => :optional,
+            :token => :optional,
+            :contracts_creation_transaction => :optional
+          }
+        ],
+        query_decompiled_code_flag \\ true
+      ) do
+    case hash_to_address(hash, options, query_decompiled_code_flag) do
       {:ok, address} ->
         {:ok, address}
 
       {:error, :not_found} ->
         create_address(%{hash: to_string(hash)})
-        hash_to_address(hash)
+        hash_to_address(hash, options, query_decompiled_code_flag)
     end
   end
 
@@ -2394,8 +2426,13 @@ defmodule Explorer.Chain do
   naming the address for reference.
   """
   @spec create_smart_contract(map()) :: {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
-  def create_smart_contract(attrs \\ %{}) do
-    smart_contract_changeset = SmartContract.changeset(%SmartContract{}, attrs)
+  def create_smart_contract(attrs \\ %{}, external_libraries \\ []) do
+    new_contract = %SmartContract{}
+
+    smart_contract_changeset =
+      new_contract
+      |> SmartContract.changeset(attrs)
+      |> Changeset.put_change(:external_libraries, external_libraries)
 
     insert_result =
       Multi.new()
@@ -2715,21 +2752,30 @@ defmodule Explorer.Chain do
   @doc """
   Fetches a `t:Token.t/0` by an address hash.
 
-  Optionally accepts a list of bindings to preload, just like `Ecto.Query.preload/3`
+  ## Options
+
+      * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Token.t/0` has no associated record for that association,
+      then the `t:Token.t/0` will not be included in the list.
   """
-  @spec token_from_address_hash(Hash.Address.t(), [Macro.t()]) :: {:ok, Token.t()} | {:error, :not_found}
+  @spec token_from_address_hash(Hash.Address.t(), [necessity_by_association_option]) ::
+          {:ok, Token.t()} | {:error, :not_found}
   def token_from_address_hash(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
-        preloads \\ []
+        options \\ []
       ) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     query =
       from(
         token in Token,
-        where: token.contract_address_hash == ^hash,
-        preload: ^preloads
+        where: token.contract_address_hash == ^hash
       )
 
-    case Repo.one(query) do
+    query
+    |> join_associations(necessity_by_association)
+    |> Repo.one()
+    |> case do
       nil ->
         {:error, :not_found}
 
