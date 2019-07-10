@@ -17,10 +17,10 @@
   </span>
   <span class="stakes-top-stats-label">
     <span class="stakes-top-stats-label-item"><%= gettext "Balance" %>:
-      <%= format_wei(@user[:balance], :ether) %>
+      <%= format_wei_value(@user[:balance], :ether) %>
     </span>
     <span class="stakes-top-stats-label-item"><%= gettext "Staked" %>:
-      <%= format_wei(@user[:staked], :ether) %>
+      <%= format_wei_value(@user[:staked], :ether) %>
     </span>
   </span>
 </div>

@@ -14,8 +14,8 @@
     <%=
     render BlockScoutWeb.CommonComponentsView,
     "_progress_from_to.html",
-    from: format_wei(@pool.self_staked_amount, :ether, include_unit_label: false),
-    to: format_wei(@pool.staked_amount, :ether, include_unit_label: false),
+    from: format_wei_value(@pool.self_staked_amount, :ether, include_unit_label: false),
+    to: format_wei_value(@pool.staked_amount, :ether, include_unit_label: false),
     progress: amount_ratio(@pool)
     %>
   </td>

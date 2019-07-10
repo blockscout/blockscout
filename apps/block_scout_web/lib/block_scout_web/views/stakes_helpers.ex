@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.StakesHelpers do
   @moduledoc """
   Helpers for staking templates
   """
-  alias BlockScoutWeb.WeiHelpers
   alias Explorer.Chain.{BlockNumberCache, Wei}
   alias Timex.Duration
 
@@ -38,12 +37,4 @@ defmodule BlockScoutWeb.StakesHelpers do
   def list_title(:validator), do: "Validators"
   def list_title(:active), do: "Active Pools"
   def list_title(:inactive), do: "Inactive Pools"
-
-  def format_wei(value, unit \\ :ether, options \\ [])
-
-  def format_wei(value, _, _) when is_nil(value), do: "-"
-
-  def format_wei(value, unit, options) do
-    WeiHelpers.format_wei_value(value, unit, options)
-  end
 end

@@ -380,7 +380,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:30
 #: lib/block_scout_web/templates/transaction/overview.html.eex:192
-#: lib/block_scout_web/views/wei_helpers.ex:78
+#: lib/block_scout_web/views/wei_helpers.ex:82
 msgid "Ether"
 msgstr "POA"
 
@@ -438,7 +438,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/views/block_view.ex:20
-#: lib/block_scout_web/views/wei_helpers.ex:77
+#: lib/block_scout_web/views/wei_helpers.ex:81
 msgid "Gwei"
 msgstr ""
 
@@ -984,7 +984,7 @@ msgid "Wallet addresses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/wei_helpers.ex:76
+#: lib/block_scout_web/views/wei_helpers.ex:80
 msgid "Wei"
 msgstr ""
 
