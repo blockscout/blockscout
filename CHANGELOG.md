@@ -1,7 +1,6 @@
 ## Current
 
 ### Features
-
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
 ### Fixes
@@ -13,6 +12,7 @@
 - [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix, block info row fix, addresses page issue, check mark issue
 
 ### Chore
+- [#2325](https://github.com/poanetwork/blockscout/pull/2325) - Reduce function input to address' hash only where possible
 - [#2323](https://github.com/poanetwork/blockscout/pull/2323) - Group Explorer caches
 - [#2305](https://github.com/poanetwork/blockscout/pull/2305) - Improve Address controllers
 - [#2302](https://github.com/poanetwork/blockscout/pull/2302) - fix names for xDai source
