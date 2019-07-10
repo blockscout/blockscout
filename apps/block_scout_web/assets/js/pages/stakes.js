@@ -18,15 +18,8 @@ export function reducer (state = initialState, action) {
     case 'UPDATE_USER': {
       return Object.assign({}, state, { user: action.user })
     }
-    case 'INIT_COUNTERS': {
-      const epochNumber = parseInt($('[data-selector="epoch-number"]').text())
-      const epochEndIn = parseInt($('[data-selector="epoch-end-in"]').text())
-      const blocksCount = parseInt($('[data-selector="block-number"]').text())
-      return Object.assign({}, state, {
-        epochNumber: epochNumber,
-        epochEndIn: epochEndIn,
-        blocksCount: blocksCount
-      })
+    case 'UPDATE_COUNTERS': {
+      return Object.assign({}, state, action.msg)
     }
     case 'RECEIVED_NEW_BLOCK': {
       const blocksCount = action.msg.blockNumber
@@ -64,7 +57,7 @@ const elements = {
   },
   '[data-selector="stakes-top"]': {
     load (_el) {
-      store.dispatch({ type: 'INIT_COUNTERS' })
+      updateEpochStats()
     },
     render ($el, state, oldState) {
       if (state.user === oldState.user) return
@@ -77,7 +70,7 @@ const elements = {
             $('[data-selector="login-button"]')
               .on('click', state.web3 ? loginByMetamask : redirectToMetamask)
           }
-          store.dispatch({ type: 'INIT_COUNTERS' })
+          updateEpochStats()
         })
     }
   },
@@ -182,4 +175,9 @@ async function loginByMetamask () {
     console.log(e)
     console.error('User denied account access')
   }
+}
+
+function updateEpochStats () {
+  let stats = JSON.parse($('[epoch-stats]')[0].textContent)
+  store.dispatch({ type: 'UPDATE_COUNTERS', msg: stats })
 }

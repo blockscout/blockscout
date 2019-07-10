@@ -1,6 +1,9 @@
 <div class="stakes-top">
   <div class="container">
     <div class="stakes-top-stats">
+      <script type="application/json" epoch-stats>
+        { "epochNumber": <%= @epoch_number %>, "epochEndIn": <%= @epoch_end_in %>, "blocksCount": <%= @block_number %> }
+      </script>
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Epoch number"), value: @epoch_number, name: "epoch-number"  %>
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Block number"), value: @block_number, name: "block-number" %>
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Next epoch in"), value: @epoch_end_in, name: "epoch-end-in", unit: gettext("Blocks") %>

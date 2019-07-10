@@ -180,7 +180,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:87
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:16
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:20
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:6
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:9
 msgid "Blocks"
 msgstr ""
 
@@ -1570,7 +1570,7 @@ msgid "Become Candidate"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:5
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:8
 msgid "Block number"
 msgstr ""
 
@@ -1580,7 +1580,7 @@ msgid "Delegators"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:4
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:7
 msgid "Epoch number"
 msgstr ""
 
@@ -1591,7 +1591,7 @@ msgid "Inactive Pools"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:6
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:9
 msgid "Next epoch in"
 msgstr ""
 
@@ -1606,7 +1606,7 @@ msgid "Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:11
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:14
 msgid "Remove My Pool"
 msgstr ""
 
@@ -1862,6 +1862,6 @@ msgid "here."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:13
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:16
 msgid "Become a Candidate"
 msgstr ""
