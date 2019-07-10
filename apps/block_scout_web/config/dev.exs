@@ -21,6 +21,11 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     ],
     port: port || 4000
   ],
+  url: [
+    scheme: "http",
+    host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
+    path: System.get_env("NETWORK_PATH") || "/"
+  ],
   https: [
     protocol_options: [
       idle_timeout: 90_000
