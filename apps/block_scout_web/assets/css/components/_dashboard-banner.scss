@@ -146,6 +146,11 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   width: 750px;
   position: relative;
 
+  @include media-breakpoint-down(lg) {
+    margin-top: 15px;
+    width: 550px;
+  }
+
   @include media-breakpoint-down(md) {
     border-top-right-radius: 10px;
     height: auto;
@@ -155,10 +160,6 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     padding: 20px 0 20px 20px;
     width: 250px;
     box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
-  }
-
-  @include media-breakpoint-down(lg) {
-    margin-top: 15px;
   }
 
   @include media-breakpoint-down(sm) {
@@ -188,6 +189,11 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   column-gap: 25px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
+
+  @include media-breakpoint-down(lg) {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 20px;
+  }
 
   @include media-breakpoint-down(md) {
     grid-template-columns: 1fr;

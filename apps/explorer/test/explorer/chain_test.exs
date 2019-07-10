@@ -50,6 +50,24 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "last_block_status/0" do
+    test "return no_blocks errors if db is empty" do
+      assert {:error, :no_blocks} = Chain.last_block_status()
+    end
+
+    test "returns {:ok, last_block_period} if block is in healthy period" do
+      insert(:block, consensus: true)
+
+      assert {:ok, _, _} = Chain.last_block_status()
+    end
+
+    test "return {:ok, last_block_period} if block is not in healthy period" do
+      insert(:block, consensus: true, timestamp: Timex.shift(DateTime.utc_now(), hours: -50))
+
+      assert {:error, _, _} = Chain.last_block_status()
+    end
+  end
+
   describe "address_to_logs/2" do
     test "fetches logs" do
       address = insert(:address)
@@ -3438,9 +3456,9 @@ defmodule Explorer.ChainTest do
       smart_contract = build(:smart_contract)
       address = insert(:address, smart_contract: smart_contract)
       token = insert(:token, contract_address: address)
+      options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
 
-      assert {:ok, result} =
-               Chain.token_from_address_hash(token.contract_address_hash, [{:contract_address, :smart_contract}])
+      assert {:ok, result} = Chain.token_from_address_hash(token.contract_address_hash, options)
 
       assert smart_contract = result.contract_address.smart_contract
     end
