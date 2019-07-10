@@ -6,7 +6,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
   alias Explorer.Chain
 
   def verify(address_hash, arguments_data) do
-    arguments_data = arguments_data |> String.trim_trailing() |> String.trim_leading() |> String.replace("0x", "")
+    arguments_data = arguments_data |> String.trim_trailing() |> String.trim_leading() |> String.replace("0x", "") |> IO.inspect
 
     address_hash
     |> Chain.contract_creation_input_data()
@@ -32,7 +32,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
         end
 
       <<>> ->
-        false
+        passed_constructor_arguments == ""
 
       <<_::binary-size(2)>> <> rest ->
         extract_constructor_arguments(rest, passed_constructor_arguments)
