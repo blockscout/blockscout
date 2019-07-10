@@ -2,11 +2,20 @@
 
 ### Features
 
+- [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
+
 ### Fixes
+- [#2310](https://github.com/poanetwork/blockscout/pull/2310) - parse url for api docs
+- [#2299](https://github.com/poanetwork/blockscout/pull/2299) - fix interpolation in error message
+- [#2303](https://github.com/poanetwork/blockscout/pull/2303) - fix transaction csv download link
+- [#2304](https://github.com/poanetwork/blockscout/pull/2304) - footer grid fix for md resolution
 - [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix, block info row fix, addresses page issue, check mark issue
 
 ### Chore
+- [#2305](https://github.com/poanetwork/blockscout/pull/2305) - Improve Address controllers
+- [#2302](https://github.com/poanetwork/blockscout/pull/2302) - fix names for xDai source
 - [#2289](https://github.com/poanetwork/blockscout/pull/2289) - Optional websockets for dev environment
+- [#2307](https://github.com/poanetwork/blockscout/pull/2307) - add GoJoy to README
 
 
 ## 2.0.1-beta
@@ -26,6 +35,7 @@
 - [#2266](https://github.com/poanetwork/blockscout/pull/2266) - allow excluding uncles from average block time calculation
 
 ### Fixes
+- [#2290](https://github.com/poanetwork/blockscout/pull/2290) - Add eth_get_balance.json to AddressView's render
 - [#2286](https://github.com/poanetwork/blockscout/pull/2286) - banner stats issues on sm resolutions, transactions title issue
 - [#2284](https://github.com/poanetwork/blockscout/pull/2284) - add 404 status for not existing pages
 - [#2244](https://github.com/poanetwork/blockscout/pull/2244) - fix internal transactions failing to be indexed because of constraint
