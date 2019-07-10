@@ -4,7 +4,7 @@
     <div class="card-section col-md-12 col-lg-8 pr-0-md">
       <div class="card">
         <div class="card-body">
-          <h1 class="card-title">
+          <h1 class="card-title lg-card-title">
             <%= address_title(@address) %> <%= gettext "Details" %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">

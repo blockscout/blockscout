@@ -28,8 +28,10 @@ defmodule BlockScoutWeb.AddressTransactionController do
   ]
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
+    address_options = [necessity_by_association: %{:names => :optional}]
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, [:names], false) do
+         {:ok, address} <- Chain.hash_to_address(address_hash, address_options, false) do
       options =
         @transaction_necessity_by_association
         |> put_in([:necessity_by_association, :block], :required)
