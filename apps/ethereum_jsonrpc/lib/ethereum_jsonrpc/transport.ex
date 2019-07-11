@@ -103,19 +103,19 @@ defmodule EthereumJSONRPC.Transport do
   """
   @callback json_rpc(batch_request, options) :: {:ok, batch_response} | {:error, reason :: term()}
 
-  @doc """
-  Subscribes to event in `request`.
+  # @doc """
+  # Subscribes to event in `request`.
 
-  Events **MUST** be delivered in a tuple tagged with the `t:EthereumJSONRPC.Subscription.t/0` and containing the same
-  output as the single-request form of `json_rpc/2`.
+  # Events **MUST** be delivered in a tuple tagged with the `t:EthereumJSONRPC.Subscription.t/0` and containing the same
+  # output as the single-request form of `json_rpc/2`.
 
-  | Message                                                                           | Description                            |
-  |-----------------------------------------------------------------------------------|----------------------------------------|
-  | `{EthereumJSONRPC.Subscription.t(), {:ok, EthereumJSONRPC.Transport.result.t()}}` | New result in subscription             |
-  | `{EthereumJSONRPC.Subscription.t(), {:error, reason :: term()}}`                  | There was an error in the subscription |
+  # | Message                                                                           | Description                            |
+  # |-----------------------------------------------------------------------------------|----------------------------------------|
+  # | `{EthereumJSONRPC.Subscription.t(), {:ok, EthereumJSONRPC.Transport.result.t()}}` | New result in subscription             |
+  # | `{EthereumJSONRPC.Subscription.t(), {:error, reason :: term()}}`                  | There was an error in the subscription |
 
-  `t:EthereumJSONRPC.Subscription.t/0` must be cancellable by passing it to `c:unsubscribe/1`
-  """
+  # `t:EthereumJSONRPC.Subscription.t/0` must be cancellable by passing it to `c:unsubscribe/1`
+  # """
   @callback subscribe(Subscription.event(), Subscription.params(), options) ::
               {:ok, Subscription.t()} | {:error, reason :: term()}
 
