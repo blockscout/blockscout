@@ -4,6 +4,7 @@
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
 ### Fixes
+- [#2350](https://github.com/poanetwork/blockscout/pull/2350) - fix invalid User agent headers
 - [#2345](https://github.com/poanetwork/blockscout/pull/2345) - do not override existing market records
 - [#2337](https://github.com/poanetwork/blockscout/pull/2337) - set url params for prod explicitly
 - [#2341](https://github.com/poanetwork/blockscout/pull/2341) - fix transaction input json encoding
