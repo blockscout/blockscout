@@ -6,7 +6,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
   alias Explorer.Chain
 
   def verify(address_hash, contract_code, arguments_data) do
-    arguments_data = arguments_data |> String.trim_trailing() |> String.trim_leading() |> String.replace("0x", "")
+    arguments_data = arguments_data |> String.trim_trailing() |> String.trim_leading("0x")
 
     creation_code =
       address_hash
@@ -31,6 +31,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
 
   defp extract_constructor_arguments(code, passed_constructor_arguments) do
     case code do
+      # Solidity ~ 4.23 # https://solidity.readthedocs.io/en/v0.4.23/metadata.html
       "a165627a7a72305820" <> <<_::binary-size(64)>> <> "0029" <> constructor_arguments ->
         if passed_constructor_arguments == constructor_arguments do
           true
@@ -38,6 +39,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
           extract_constructor_arguments(constructor_arguments, passed_constructor_arguments)
         end
 
+      # Solidity >= 0.5.10 https://solidity.readthedocs.io/en/v0.5.10/metadata.html
       "a265627a7a72305820" <>
           <<_::binary-size(64)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
         if passed_constructor_arguments == constructor_arguments do
