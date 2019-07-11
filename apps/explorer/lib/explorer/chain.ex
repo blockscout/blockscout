@@ -1444,6 +1444,7 @@ defmodule Explorer.Chain do
       iex> non_consensus = insert(:block, consensus: false)
       iex> unfetched = insert(:block)
       iex> fetched = insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
+      iex> to_be_refetched = insert(:block, refetch_needed: true)
       iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
       ...>   [:number],
       ...>   MapSet.new(),
@@ -1456,6 +1457,8 @@ defmodule Explorer.Chain do
       iex> unfetched.number in number_set
       true
       iex> fetched.hash in number_set
+      false
+      iex> to_be_refetched.number in number_set
       false
 
   """
@@ -1485,7 +1488,9 @@ defmodule Explorer.Chain do
     query =
       from(
         b in Block,
-        where: b.consensus and is_nil(b.internal_transactions_indexed_at),
+        where: b.consensus,
+        where: is_nil(b.internal_transactions_indexed_at),
+        where: not b.refetch_needed,
         select: ^fields
       )
 
