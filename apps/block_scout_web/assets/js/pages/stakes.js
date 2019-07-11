@@ -4,8 +4,7 @@ import Web3 from 'web3'
 
 export const initialState = {
   web3: null,
-  user: null,
-  controllerPath: null
+  user: null
 }
 
 export function reducer (state = initialState, action) {
@@ -32,17 +31,12 @@ const elements = {
       $el.on('click', state.web3 ? loginByMetamask : redirectToMetamask)
     }
   },
-  '[data-async-load]': {
-    load ($el) {
-      return {
-        controllerPath: $el.data('async-listing')
-      }
-    }
-  },
   '[data-selector="stakes-top"]': {
     render ($el, state, oldState) {
       if (state.user === oldState.user) return
-      $.getJSON(state.controllerPath, {type: 'JSON', template: 'top'})
+
+      let controllerPath = $('[data-async-load]').data('async-listing')
+      $.getJSON(controllerPath, {type: 'JSON', template: 'top'})
         .done(response => {
           $el.html(response.content)
           if (!state.user) {
