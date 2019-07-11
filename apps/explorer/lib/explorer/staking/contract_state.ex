@@ -14,6 +14,7 @@ defmodule Explorer.Staking.ContractState do
   @epoch_end_key :epoch_end_block
   @min_candidate_stake_key :min_candidate_stake
   @min_delegator_stake_key :min_delegator_stake
+  @token_contract_address :token_contract_address
 
   defp get(param, default) do
     if :ets.info(@table_name) != :undefined do
@@ -42,6 +43,11 @@ defmodule Explorer.Staking.ContractState do
   @doc "Minimal delegator stake"
   def min_delegator_stake do
     get(@min_delegator_stake_key, 1)
+  end
+
+  @doc "Current staking epoch number"
+  def token_contract_address do
+    get(@token_contract_address, nil)
   end
 
   def start_link([]) do
@@ -91,12 +97,14 @@ defmodule Explorer.Staking.ContractState do
          {:ok, [epoch_num]} <- data["stakingEpoch"],
          {:ok, [epoch_end_block]} <- data["stakingEpochEndBlock"],
          {:ok, [min_delegator_stake]} <- data["getDelegatorMinStake"],
-         {:ok, [min_candidate_stake]} <- data["getCandidateMinStake"] do
+         {:ok, [min_candidate_stake]} <- data["getCandidateMinStake"],
+         {:ok, [token_contract_address]} <- data["erc20TokenContract"] do
       :ets.insert(@table_name, [
         {@epoch_key, epoch_num},
         {@epoch_end_key, epoch_end_block},
         {@min_delegator_stake_key, min_delegator_stake},
-        {@min_candidate_stake_key, min_candidate_stake}
+        {@min_candidate_stake_key, min_candidate_stake},
+        {@token_contract_address, token_contract_address}
       ])
     end
   end
@@ -108,13 +116,14 @@ defmodule Explorer.Staking.ContractState do
       "stakingEpoch",
       "stakingEpochEndBlock",
       "getDelegatorMinStake",
-      "getCandidateMinStake"
+      "getCandidateMinStake",
+      "erc20TokenContract"
     ]
 
     functions
     |> Enum.map(fn function ->
       %{
-        contract_address: staking_address(contract_abi),
+        contract_address: staking_address(),
         function_name: function,
         args: []
       }
@@ -126,8 +135,8 @@ defmodule Explorer.Staking.ContractState do
     end)
   end
 
-  defp staking_address(contract_abi) do
-    Reader.query_contract(%{function_name: "erc20TokenContract", args: []}, contract_abi, [])
+  defp staking_address do
+    Application.get_env(:explorer, __MODULE__, [])[:staking_contract_address]
   end
 
   # sobelow_skip ["Traversal"]
