@@ -31,9 +31,6 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
-    BlockCountCache,
-    BlockNumberCache,
-    BlocksCache,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -45,12 +42,19 @@ defmodule Explorer.Chain do
     Token,
     TokenTransfer,
     Transaction,
-    TransactionCountCache,
-    TransactionsCache,
     Wei
   }
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
+
+  alias Explorer.Chain.Cache.{
+    BlockCount,
+    BlockNumber,
+    Blocks,
+    TransactionCount,
+    Transactions
+  }
+
   alias Explorer.Chain.Import.Runner
   alias Explorer.Counters.AddressesWithBalanceCounter
   alias Explorer.Market.MarketHistoryCache
@@ -126,7 +130,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  `t:Explorer.Chain.InternalTransaction/0`s from `address`.
+  `t:Explorer.Chain.InternalTransaction/0`s from the address with the given `hash`.
 
   This function excludes any internal transactions in the results where the
   internal transaction has no siblings within the parent transaction.
@@ -145,10 +149,10 @@ defmodule Explorer.Chain do
       transactions older than the `block_number`, `transaction index`, and `index` that are passed.
 
   """
-  @spec address_to_internal_transactions(Address.t(), [paging_options | necessity_by_association_option]) :: [
+  @spec address_to_internal_transactions(Hash.Address.t(), [paging_options | necessity_by_association_option]) :: [
           InternalTransaction.t()
         ]
-  def address_to_internal_transactions(%Address{hash: hash}, options \\ []) do
+  def address_to_internal_transactions(hash, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     direction = Keyword.get(options, :direction)
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -171,13 +175,13 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Get the total number of transactions sent by the given address according to the last block indexed.
+  Get the total number of transactions sent by the address with the given hash according to the last block indexed.
 
   We have to increment +1 in the last nonce result because it works like an array position, the first
   nonce has the value 0. When last nonce is nil, it considers that the given address has 0 transactions.
   """
-  @spec total_transactions_sent_by_address(Address.t()) :: non_neg_integer()
-  def total_transactions_sent_by_address(%Address{hash: address_hash}) do
+  @spec total_transactions_sent_by_address(Hash.Address.t()) :: non_neg_integer()
+  def total_transactions_sent_by_address(address_hash) do
     last_nonce =
       address_hash
       |> Transaction.last_nonce_by_address_query()
@@ -190,9 +194,9 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Fetches the transactions related to the given address, including transactions
-  that only have the address in the `token_transfers` related table and rewards
-  for block validation.
+  Fetches the transactions related to the address with the given hash, including
+  transactions that only have the address in the `token_transfers` related table
+  and rewards for block validation.
 
   This query is divided into multiple subqueries intentionally in order to
   improve the listing performance.
@@ -214,14 +218,10 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_transactions_with_rewards(Address.t(), [paging_options | necessity_by_association_option]) :: [
+  @spec address_to_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) :: [
           Transaction.t()
         ]
-  def address_to_transactions_with_rewards(
-        %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
-        options \\ []
-      )
-      when is_list(options) do
+  def address_to_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -256,17 +256,11 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec address_to_logs(Address.t(), Keyword.t()) :: [
-          Log.t()
-        ]
-  def address_to_logs(
-        %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
-        options \\ []
-      )
-      when is_list(options) do
+  @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
+  def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
-    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumberCache.max_number(), 0, 0}
+    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.max_number(), 0, 0}
 
     base_query =
       from(log in Log,
@@ -442,8 +436,8 @@ defmodule Explorer.Chain do
     Repo.aggregate(query, :count, :hash)
   end
 
-  @spec address_to_incoming_transaction_count(Address.t()) :: non_neg_integer()
-  def address_to_incoming_transaction_count(%Address{hash: address_hash}) do
+  @spec address_to_incoming_transaction_count(Hash.Address.t()) :: non_neg_integer()
+  def address_to_incoming_transaction_count(address_hash) do
     paging_options = %PagingOptions{page_size: @max_incoming_transactions_count}
 
     base_query =
@@ -1164,7 +1158,7 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio() :: Decimal.t()
   def indexed_ratio do
-    {min, max} = BlockNumberCache.min_and_max_numbers()
+    {min, max} = BlockNumber.min_and_max_numbers()
 
     case {min, max} do
       {0, 0} ->
@@ -1246,12 +1240,12 @@ defmodule Explorer.Chain do
     block_type = Keyword.get(options, :block_type, "Block")
 
     if block_type == "Block" && !paging_options.key do
-      if BlocksCache.enough_elements?(paging_options.page_size) do
-        BlocksCache.blocks(paging_options.page_size)
+      if Blocks.enough_elements?(paging_options.page_size) do
+        Blocks.blocks(paging_options.page_size)
       else
         elements = fetch_blocks(block_type, paging_options, necessity_by_association)
 
-        BlocksCache.rewrite_cache(elements)
+        Blocks.rewrite_cache(elements)
 
         elements
       end
@@ -1333,7 +1327,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Finds all Blocks validated by the address given.
+  Finds all Blocks validated by the address with the given hash.
 
     ## Options
       * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
@@ -1347,15 +1341,15 @@ defmodule Explorer.Chain do
   """
   @spec get_blocks_validated_by_address(
           [paging_options | necessity_by_association_option],
-          Address.t()
+          Hash.Address.t()
         ) :: [Block.t()]
-  def get_blocks_validated_by_address(options \\ [], %Address{hash: hash}) when is_list(options) do
+  def get_blocks_validated_by_address(options \\ [], address_hash) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     Block
     |> join_associations(necessity_by_association)
-    |> where(miner_hash: ^hash)
+    |> where(miner_hash: ^address_hash)
     |> page_blocks(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(desc: :number)
@@ -1379,10 +1373,10 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Counts the number of `t:Explorer.Chain.Block.t/0` validated by the `address`.
+  Counts the number of `t:Explorer.Chain.Block.t/0` validated by the address with the given `hash`.
   """
-  @spec address_to_validation_count(Address.t()) :: non_neg_integer()
-  def address_to_validation_count(%Address{hash: hash}) do
+  @spec address_to_validation_count(Hash.Address.t()) :: non_neg_integer()
+  def address_to_validation_count(hash) do
     query = from(block in Block, where: block.miner_hash == ^hash, select: fragment("COUNT(*)"))
 
     Repo.one(query)
@@ -2010,11 +2004,11 @@ defmodule Explorer.Chain do
 
     if is_nil(paging_options.key) do
       paging_options.page_size
-      |> TransactionsCache.take_enough()
+      |> Transactions.take_enough()
       |> case do
         nil ->
           transactions = fetch_recent_collated_transactions(paging_options, necessity_by_association)
-          TransactionsCache.update(transactions)
+          Transactions.update(transactions)
           transactions
 
         transactions ->
@@ -2159,7 +2153,7 @@ defmodule Explorer.Chain do
   """
   @spec transaction_estimated_count() :: non_neg_integer()
   def transaction_estimated_count do
-    cached_value = TransactionCountCache.value()
+    cached_value = TransactionCount.value()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[rows]]} =
@@ -2178,7 +2172,7 @@ defmodule Explorer.Chain do
   """
   @spec block_estimated_count() :: non_neg_integer()
   def block_estimated_count do
-    cached_value = BlockCountCache.count()
+    cached_value = BlockCount.count()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
