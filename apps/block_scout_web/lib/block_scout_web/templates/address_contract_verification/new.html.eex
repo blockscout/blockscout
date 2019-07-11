@@ -105,7 +105,7 @@
         </div>
 
         <div class="add-contract-libraries-wrapper">
-          <span class="btn-line js-btn-add-contract-libraries">Add Contract Libraries</span>
+          <span class="btn btn-primary js-btn-add-contract-libraries">Add Contract Libraries</span>
         </div>
 
         <div class="smart-contract-libraries-wrapper js-smart-contract-libraries-wrapper">
@@ -222,7 +222,7 @@
           </div>
 
           <div class="add-contract-library-wrapper js-add-contract-library-wrapper">
-            <span class="btn-line js-btn-add-contract-library">Add Library</span>
+            <span class="btn btn-primary js-btn-add-contract-library">Add Library</span>
           </div>
         </div>
 
@@ -241,7 +241,7 @@
             <%= gettext("Loading....") %>
           </button>
           <%= submit gettext("Verify & publish"), class: "btn-full-primary mr-2", "data-loading": "animation"  %>
-          <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
+          <%= reset gettext("Reset"), class: "btn btn-primary mr-2 js-smart-contract-form-reset" %>
           <%=
             link(
               gettext("Cancel"),
