@@ -10,10 +10,10 @@ defmodule Explorer.Staking.ContractState do
   alias Explorer.SmartContract.Reader
 
   @table_name __MODULE__
-  @epoch_key "epoch_num"
-  @epoch_end_key "epoch_end_block"
-  @min_candidate_stake_key "min_candidate_stake"
-  @min_delegator_stake_key "min_delegator_stake"
+  @epoch_key :epoch_num
+  @epoch_end_key :epoch_end_block
+  @min_candidate_stake_key :min_candidate_stake
+  @min_delegator_stake_key :min_delegator_stake
 
   defp get(param, default) do
     if :ets.info(@table_name) != :undefined do
