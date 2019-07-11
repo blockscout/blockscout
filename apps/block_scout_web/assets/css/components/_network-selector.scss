@@ -1,6 +1,7 @@
 $network-selector-overlay-background: $modal-overlay-color !default;
 $network-selector-close-color: $primary !default;
 $network-selector-horizontal-padding: 28px;
+$network-selector-horizontal-mobile-padding: 14px;
 $btn-network-selector-load-more-background: #fff !default;
 $btn-network-selector-load-more-color: $primary !default;
 $network-selector-search-input-color: #a3a9b5 !default;
@@ -143,7 +144,10 @@ $network-selector-item-icon-dimensions: 30px !default;
   border-bottom: 1px solid $base-border-color;
   display: flex;
   flex-shrink: 0;
-  margin: 0 $network-selector-horizontal-padding;
+  margin: 0 $network-selector-horizontal-mobile-padding;
+  @media (min-width: 375px) {
+    margin: 0 $network-selector-horizontal-padding;
+  }
 }
 
 .network-selector-tab {
@@ -277,7 +281,10 @@ $network-selector-item-icon-dimensions: 30px !default;
   flex-shrink: 1;
   min-height: 100px;
   overflow: auto;
-  padding: 0 $network-selector-horizontal-padding;
+  padding: 0 $network-selector-horizontal-mobile-padding;
+  @media (min-width: 375px) {
+    padding: 0 $network-selector-horizontal-padding;
+  }
 }
 
 .network-selector-load-more-container {

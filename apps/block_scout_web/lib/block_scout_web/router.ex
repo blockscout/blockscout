@@ -23,8 +23,16 @@ defmodule BlockScoutWeb.Router do
 
     get("/supply", SupplyController, :supply)
 
+    get("/health", HealthController, :health)
+
     resources("/decompiled_smart_contract", DecompiledSmartContractController, only: [:create])
     resources("/verified_smart_contracts", VerifiedSmartContractController, only: [:create])
+  end
+
+  scope "/verify_smart_contract" do
+    pipe_through(:api)
+
+    post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
   end
 
   scope "/api", BlockScoutWeb.API.RPC do
@@ -159,7 +167,7 @@ defmodule BlockScoutWeb.Router do
       resources(
         "/contract_verifications",
         AddressContractVerificationController,
-        only: [:new, :create],
+        only: [:new],
         as: :verify_contract
       )
 
