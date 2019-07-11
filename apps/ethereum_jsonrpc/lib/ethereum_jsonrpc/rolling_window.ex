@@ -209,18 +209,20 @@ defmodule EthereumJSONRPC.RollingWindow do
   @doc """
   Display the raw contents of all windows for a given key.
   """
-  @spec inspect(table :: atom, key :: term()) :: nonempty_list(non_neg_integer)
+  @spec inspect(table :: atom, key :: term()) :: nonempty_list(non_neg_integer) || []
   def inspect(table, key) do
-    if :ets.whereis(table) == :undefined do
-      []
-    else
-      case :ets.lookup(table, key) do
-        [{_, current_window, windows}] ->
-          [current_window | windows]
+    case :ets.whereis(table) do
+      :undefined ->
+        []
 
-        _ ->
-          []
-      end
+      tid ->
+        case :ets.lookup(tid, key) do
+          [{_, current_window, windows}] ->
+            [current_window | windows]
+
+          _ ->
+            []
+        end
     end
   end
 end
