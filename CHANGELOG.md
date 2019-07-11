@@ -14,6 +14,7 @@
 - [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix, block info row fix, addresses page issue, check mark issue
 
 ### Chore
+- [#2342](https://github.com/poanetwork/blockscout/pull/2342) - Upgrade Postgres image version in Docker setup
 - [#2325](https://github.com/poanetwork/blockscout/pull/2325) - Reduce function input to address' hash only where possible
 - [#2323](https://github.com/poanetwork/blockscout/pull/2323) - Group Explorer caches
 - [#2305](https://github.com/poanetwork/blockscout/pull/2305) - Improve Address controllers
