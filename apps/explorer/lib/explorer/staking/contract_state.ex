@@ -114,7 +114,7 @@ defmodule Explorer.Staking.ContractState do
     functions
     |> Enum.map(fn function ->
       %{
-        contract_address: staking_address(),
+        contract_address: staking_address(contract_abi),
         function_name: function,
         args: []
       }
@@ -126,8 +126,8 @@ defmodule Explorer.Staking.ContractState do
     end)
   end
 
-  defp staking_address do
-    Application.get_env(:explorer, __MODULE__, [])[:staking_contract_address]
+  defp staking_address(contract_abi) do
+    Reader.query_contract(%{function_name: "erc20TokenContract", args: []}, contract_abi, [])
   end
 
   # sobelow_skip ["Traversal"]
