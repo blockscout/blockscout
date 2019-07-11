@@ -16,15 +16,6 @@ defmodule Explorer.Staking.ContractState do
   @min_delegator_stake_key :min_delegator_stake
   @token_contract_address :token_contract_address
 
-  defp get(param, default) do
-    if :ets.info(@table_name) != :undefined do
-      case :ets.lookup(@table_name, param) do
-        [{_, value}] -> value
-        _ -> default
-      end
-    end
-  end
-
   @doc "Current staking epoch number"
   def epoch_number do
     get(@epoch_key, 0)
@@ -90,6 +81,15 @@ defmodule Explorer.Staking.ContractState do
     end
 
     {:noreply, state}
+  end
+
+  defp get(param, default) do
+    if :ets.info(@table_name) != :undefined do
+      case :ets.lookup(@table_name, param) do
+        [{_, value}] -> value
+        _ -> default
+      end
+    end
   end
 
   defp fetch_chain_info do
