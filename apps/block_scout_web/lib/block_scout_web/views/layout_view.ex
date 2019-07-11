@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.LayoutView do
     user_agent =
       case Conn.get_req_header(conn, "user-agent") do
         [] -> "unknown"
-        user_agent -> user_agent
+        user_agent -> if String.valid?(user_agent), do: user_agent, else: "unknown"
       end
 
     """
