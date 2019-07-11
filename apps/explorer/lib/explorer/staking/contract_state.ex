@@ -1,6 +1,12 @@
 defmodule Explorer.Staking.ContractState do
   @moduledoc """
-  Fetches current staking epoch number and the epoch end block number.
+  Fetches:
+  1) current staking epoch number;
+  2) the epoch end block number;
+  3) minimal candidate stake;
+  4) minimal delegate stake;
+  6) token contract address.
+
   It subscribes to handle new blocks and conclude whether the epoch is over.
   """
 
@@ -36,7 +42,7 @@ defmodule Explorer.Staking.ContractState do
     get(@min_delegator_stake_key, 1)
   end
 
-  @doc "Current staking epoch number"
+  @doc "Token contract address"
   def token_contract_address do
     get(@token_contract_address, nil)
   end
