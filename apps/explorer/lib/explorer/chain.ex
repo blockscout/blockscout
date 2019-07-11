@@ -1485,7 +1485,9 @@ defmodule Explorer.Chain do
     query =
       from(
         b in Block,
-        where: b.consensus and is_nil(b.internal_transactions_indexed_at),
+        where: b.consensus,
+        where: is_nil(b.internal_transactions_indexed_at),
+        where: not b.refetch_needed,
         select: ^fields
       )
 
