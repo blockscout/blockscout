@@ -90,7 +90,11 @@ function initializeWeb3 () {
 }
 
 async function login (address) {
-  let response = await $.getJSON('/set_session', { address: address })
+  let response = await $.post('/set_session', {
+    address: address,
+    _csrf_token: $('meta[name="csrf-token"]').attr('content')
+  })
+
   store.dispatch({
     type: 'UPDATE_USER',
     user: response.user
@@ -107,7 +111,7 @@ async function loginByMetamask () {
     await window.ethereum.enable()
     const accounts = await store.getState().web3.eth.getAccounts()
 
-    const defaultAccount = accounts[0] || null
+    const defaultAccount = accounts[0]
     login(defaultAccount)
   } catch (e) {
     console.log(e)
