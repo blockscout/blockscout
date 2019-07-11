@@ -12,7 +12,10 @@ config :explorer,
   token_functions_reader_max_retries: 3,
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
-      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg"
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg",
+  include_uncles_in_average_block_time:
+    if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "false", do: false, else: true),
+  healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5)
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
@@ -71,12 +74,19 @@ else
   config :explorer, Explorer.Staking.EpochCounter, enabled: false
 end
 
-if System.get_env("SUPPLY_MODULE") == "TokenBridge" do
-  config :explorer, supply: Explorer.Chain.Supply.TokenBridge
+case System.get_env("SUPPLY_MODULE") do
+  "TokenBridge" ->
+    config :explorer, supply: Explorer.Chain.Supply.TokenBridge
+
+  "rsk" ->
+    config :explorer, supply: Explorer.Chain.Supply.RSK
+
+  _ ->
+    :ok
 end
 
-if System.get_env("SOURCE_MODULE") == "TransactionAndLog" do
-  config :explorer, Explorer.ExchangeRates.Source, source: Explorer.ExchangeRates.Source.TransactionAndLog
+if System.get_env("SOURCE_MODULE") == "TokenBridge" do
+  config :explorer, Explorer.ExchangeRates.Source, source: Explorer.ExchangeRates.Source.TokenBridge
 end
 
 config :explorer,

@@ -73,8 +73,12 @@ textarea.form-control {
 }
 
 .contract-address {
-  border-bottom: 1px dashed currentColor;
   display: inline-block;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  &:hover {
+    text-decoration-style: none;
+  }
 }
 
 .text {

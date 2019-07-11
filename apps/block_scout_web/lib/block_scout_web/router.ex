@@ -23,6 +23,8 @@ defmodule BlockScoutWeb.Router do
 
     get("/supply", SupplyController, :supply)
 
+    get("/health", HealthController, :health)
+
     resources("/decompiled_smart_contract", DecompiledSmartContractController, only: [:create])
     resources("/verified_smart_contracts", VerifiedSmartContractController, only: [:create])
   end
@@ -242,11 +244,16 @@ defmodule BlockScoutWeb.Router do
 
     get("/search_logs", AddressLogsController, :search_logs)
 
+    get("/transactions_csv", AddressTransactionController, :transactions_csv)
+
     get("/token_autocomplete", ChainController, :token_autocomplete)
+
+    get("/token_transfers_csv", AddressTransactionController, :token_transfers_csv)
 
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
     get("/api_docs", APIDocsController, :index)
+    get("/eth_rpc_api_docs", APIDocsController, :eth_rpc)
 
     get("/:page", PageNotFoundController, :index)
   end
