@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.TransactionsCache do
+defmodule Explorer.Chain.Cache.Transactions do
   @moduledoc """
   Caches the latest imported transactions
   """

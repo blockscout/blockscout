@@ -4,12 +4,14 @@ defmodule Explorer.GraphQLTest do
   import Explorer.Factory
 
   alias Explorer.{GraphQL, Repo}
+  alias Explorer.Chain.Address
 
   describe "address_to_transactions_query/1" do
     test "with address hash with zero transactions" do
       result =
         :address
         |> insert()
+        |> Map.get(:hash)
         |> GraphQL.address_to_transactions_query()
         |> Repo.all()
 
@@ -17,12 +19,12 @@ defmodule Explorer.GraphQLTest do
     end
 
     test "with matching 'to_address_hash'" do
-      address = insert(:address)
+      %Address{hash: address_hash} = address = insert(:address)
       transaction = insert(:transaction, to_address: address)
       insert(:transaction)
 
       [found_transaction] =
-        address
+        address_hash
         |> GraphQL.address_to_transactions_query()
         |> Repo.all()
 
@@ -30,12 +32,12 @@ defmodule Explorer.GraphQLTest do
     end
 
     test "with matching 'from_address_hash'" do
-      address = insert(:address)
+      %Address{hash: address_hash} = address = insert(:address)
       transaction = insert(:transaction, from_address: address)
       insert(:transaction)
 
       [found_transaction] =
-        address
+        address_hash
         |> GraphQL.address_to_transactions_query()
         |> Repo.all()
 
@@ -43,12 +45,12 @@ defmodule Explorer.GraphQLTest do
     end
 
     test "with matching 'created_contract_address_hash'" do
-      address = insert(:address)
+      %Address{hash: address_hash} = address = insert(:address)
       transaction = insert(:transaction, created_contract_address: address)
       insert(:transaction)
 
       [found_transaction] =
-        address
+        address_hash
         |> GraphQL.address_to_transactions_query()
         |> Repo.all()
 
@@ -60,7 +62,7 @@ defmodule Explorer.GraphQLTest do
       second_block = insert(:block)
       third_block = insert(:block)
 
-      address = insert(:address)
+      %Address{hash: address_hash} = address = insert(:address)
 
       3
       |> insert_list(:transaction, from_address: address)
@@ -75,7 +77,7 @@ defmodule Explorer.GraphQLTest do
       |> with_block(first_block)
 
       found_transactions =
-        address
+        address_hash
         |> GraphQL.address_to_transactions_query()
         |> Repo.all()
 

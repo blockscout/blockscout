@@ -7,13 +7,13 @@ defmodule Explorer.Application do
 
   alias Explorer.Admin
 
-  alias Explorer.Chain.{
-    BlockCountCache,
-    BlockNumberCache,
-    BlocksCache,
-    NetVersionCache,
-    TransactionCountCache,
-    TransactionsCache
+  alias Explorer.Chain.Cache.{
+    BlockCount,
+    BlockNumber,
+    Blocks,
+    NetVersion,
+    TransactionCount,
+    Transactions
   }
 
   alias Explorer.Chain.Supply.RSK
@@ -41,13 +41,13 @@ defmodule Explorer.Application do
       Explorer.SmartContract.SolcDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
-      {TransactionCountCache, [[], []]},
-      {BlockCountCache, []},
-      con_cache_child_spec(BlocksCache.cache_name()),
-      con_cache_child_spec(NetVersionCache.cache_name()),
+      {TransactionCount, [[], []]},
+      {BlockCount, []},
+      con_cache_child_spec(Blocks.cache_name()),
+      con_cache_child_spec(NetVersion.cache_name()),
       con_cache_child_spec(MarketHistoryCache.cache_name()),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
-      con_cache_child_spec(TransactionsCache.cache_name())
+      con_cache_child_spec(Transactions.cache_name())
     ]
 
     children = base_children ++ configurable_children()
@@ -56,7 +56,7 @@ defmodule Explorer.Application do
 
     res = Supervisor.start_link(children, opts)
 
-    BlockNumberCache.setup()
+    BlockNumber.setup()
 
     res
   end

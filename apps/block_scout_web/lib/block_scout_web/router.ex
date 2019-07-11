@@ -29,6 +29,12 @@ defmodule BlockScoutWeb.Router do
     resources("/verified_smart_contracts", VerifiedSmartContractController, only: [:create])
   end
 
+  scope "/verify_smart_contract" do
+    pipe_through(:api)
+
+    post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+  end
+
   scope "/api", BlockScoutWeb.API.RPC do
     pipe_through(:api)
 
@@ -161,7 +167,7 @@ defmodule BlockScoutWeb.Router do
       resources(
         "/contract_verifications",
         AddressContractVerificationController,
-        only: [:new, :create],
+        only: [:new],
         as: :verify_contract
       )
 
