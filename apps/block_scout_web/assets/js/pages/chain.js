@@ -210,7 +210,7 @@ const elements = {
   },
   '[data-selector="chain-block-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
-      if (state.blocksLoading) {
+      if (state && state.blocksLoading) {
         setTimeout(function () {
           $el.removeAttr('hidden')
           $el.show()
@@ -227,7 +227,7 @@ const elements = {
   },
   '[data-selector="transactions-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
-      if (state.transactionsLoading) {
+      if (state && state.transactionsLoading) {
         setTimeout(function () {
           $el.removeAttr('hidden')
           $el.show()
