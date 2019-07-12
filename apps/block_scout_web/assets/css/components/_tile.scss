@@ -383,7 +383,7 @@ $tile-body-a-color: #5959d8 !default;
       left: 0;
       height: calc(100% + 2px);
       width: 4px;
-      background-color: $primary;
+      background-color: $tile-type-block-color;
       transform: scaleY(0);
       transform-origin: center bottom;
       animation: blockLoaderLine 2s linear infinite;
@@ -434,16 +434,16 @@ $cube-quantity: 5;
     margin-top: -29px;
     
     .side {
-      fill: $primary;
+      fill: $tile-type-block-color;
       opacity: 1;
       
       &:nth-of-type(2) {
-        fill: lighten($primary, 30);
+        fill: lighten($tile-type-block-color, 30);
         opacity: 0.5;
       }
       
       &:nth-of-type(3) {
-        fill: lighten($primary, 80);
+        fill: lighten($tile-type-block-color, 80);
         opacity: 0.5;
       }
     }
