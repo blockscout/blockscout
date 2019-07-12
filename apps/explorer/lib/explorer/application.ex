@@ -66,6 +66,8 @@ defmodule Explorer.Application do
     [
       configure(Explorer.ExchangeRates),
       configure(Explorer.KnownTokens),
+      configure(Explorer.Chain.Transaction.History.Historian),
+      configure(Explorer.Market.History.Historian),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Validator.MetadataProcessor),
