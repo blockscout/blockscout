@@ -6,7 +6,7 @@
     <span data-selector="<%= if assigns[:name], do: @name %>">
       <%= @value %>
     </span>
-    <span class="stakes-top-stats-unit">
+    <span >
       <%= if assigns[:unit], do: @unit %>
     </span>
   </span>
