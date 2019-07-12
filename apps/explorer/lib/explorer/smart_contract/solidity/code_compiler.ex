@@ -70,7 +70,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     compiler_version = Keyword.fetch!(params, :compiler_version)
     code = Keyword.fetch!(params, :code)
     optimize = Keyword.fetch!(params, :optimize)
-    optimization_runs = params |> Keyword.get(:optimization_runs, 200) |> Integer.to_string()
+    optimization_runs = optimization_runs(params)
     evm_version = Keyword.get(params, :evm_version, List.last(allowed_evm_versions()))
     external_libs = Keyword.get(params, :external_libs, %{})
 
@@ -91,7 +91,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           "node",
           [
             Application.app_dir(:explorer, "priv/compile_solc.js"),
-            code,
+            create_source_file(code),
             compiler_version,
             optimize_value(optimize),
             optimization_runs,
@@ -162,4 +162,22 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
   defp optimize_value(true), do: "1"
   defp optimize_value("true"), do: "1"
+
+  defp optimization_runs(params) do
+    value = params |> Keyword.get(:optimization_runs, "200")
+
+    if is_binary(value) do
+      value
+    else
+      "#{value}"
+    end
+  end
+
+  defp create_source_file(source) do
+    {:ok, path} = Briefly.create()
+
+    File.write!(path, source)
+
+    path
+  end
 end

@@ -8,18 +8,20 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
     with true <- ajax?(conn) do
       exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
+      recent_market_history = Market.fetch_recent_history()
+
       market_history_data =
-        30
-        |> Market.fetch_recent_history()
-        |> case do
-          [today | the_rest] -> [%{today | closing_price: exchange_rate.usd_value} | the_rest]
-          data -> data
+        case recent_market_history do
+          [today | the_rest] ->
+            encode_market_history_data([%{today | closing_price: exchange_rate.usd_value} | the_rest])
+
+          data ->
+            encode_market_history_data(data)
         end
-        |> encode_market_history_data()
 
       json(conn, %{
         history_data: market_history_data,
-        supply_data: available_supply(Chain.supply_for_days(30), exchange_rate)
+        supply_data: available_supply(Chain.supply_for_days(), exchange_rate)
       })
     else
       _ -> unprocessable_entity(conn)

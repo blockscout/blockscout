@@ -170,17 +170,21 @@
     </div>
 
     <%= case token_transfer_type(@transaction) do %>
-      <% {type, token_transfer} -> %>
+      <% {type, transaction_with_transfers} when is_atom(type) -> %>
         <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0">
         <!-- Value -->
         <div class="card card-background-1 flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
-            <h2 class="card-title balance-card-title"><%= if type == :erc20, do: gettext("ERC-20"), else: gettext("ERC-721")%><%= gettext " Token Transfer" %></h2>
+            <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Transfer" %></h2>
             <div class="text-right">
+            <%= for transfer  <- transaction_with_transfers.token_transfers do %>
+
               <h3 class="address-balance-text">
-                  <%= token_transfer_amount(token_transfer) %>
-                  <%= link(token_symbol(token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, token_transfer.token.contract_address_hash)) %>
+                  <%= token_transfer_amount(transfer) %>
+                  <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
               </h3>
+
+            <% end %>
             </div>
           </div>
         </div>
