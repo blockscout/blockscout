@@ -1,5 +1,4 @@
 import $ from 'jquery'
-import humps from 'humps'
 import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import Web3 from 'web3'
@@ -7,7 +6,9 @@ import Web3 from 'web3'
 export const initialState = {
   web3: null,
   user: null,
-  blocksCount: null
+  blocksCount: null,
+  epochNumber: 0,
+  epochEndBlock: 0
 }
 
 export function reducer (state = initialState, action) {
@@ -22,22 +23,13 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, action.msg)
     }
     case 'RECEIVED_NEW_BLOCK': {
-      const blocksCount = action.msg.blockNumber
-      const epochEndBlock = state.blocksCount + state.epochEndIn
-      const newEpochEndIn = epochEndBlock - blocksCount
-      return Object.assign({}, state, {
-        blocksCount: blocksCount,
-        epochEndIn: newEpochEndIn
-      })
+      const blocksCount = action.msg.block_number
+      return Object.assign({}, state, { blocksCount })
     }
     case 'RECEIVED_NEW_EPOCH': {
-      const epochNumber = action.msg.epochNumber
-      const epochEndBlock = action.msg.epochEndBlock
-      const epochEndIn = epochEndBlock - state.blocksCount
-      return Object.assign({}, state, {
-        epochNumber: epochNumber,
-        epochEndIn: epochEndIn
-      })
+      const epochNumber = action.msg.epoch_number
+      const epochEndBlock = action.msg.epoch_end_block
+      return Object.assign({}, state, { epochNumber, epochEndBlock })
     }
     default:
       return state
@@ -88,8 +80,9 @@ const elements = {
   },
   '[data-selector="epoch-end-in"]': {
     render ($el, state, oldState) {
-      if (state.epochEndIn === oldState.epochEndIn) return
-      $el.text(`${state.epochEndIn}`)
+      if (state.blocksCount === oldState.blocksCount) return
+      let endIn = state.epochEndBlock - state.blocksCount
+      $el.text(endIn)
     }
   }
 }
@@ -106,7 +99,7 @@ if ($stakesPage.length) {
   blocksChannel.on('new_block', msg => {
     store.dispatch({
       type: 'RECEIVED_NEW_BLOCK',
-      msg: humps.camelizeKeys(msg)
+      msg: msg
     })
   })
 
@@ -115,7 +108,7 @@ if ($stakesPage.length) {
   epochChannel.on('new_epoch', msg => {
     store.dispatch({
       type: 'RECEIVED_NEW_EPOCH',
-      msg: humps.camelizeKeys(msg)
+      msg: msg
     })
   })
 
