@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
 
   alias BlockScoutWeb.Chain, as: ChainWeb
   alias Explorer.Chain
-  alias Explorer.Chain.BlockNumberCache
+  alias Explorer.Chain.Cache.BlockNumber
 
   def getblockreward(conn, params) do
     with {:block_param, {:ok, unsafe_block_number}} <- {:block_param, Map.fetch(params, "blockno")},
@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
 
   def eth_block_number(conn, params) do
     id = Map.get(params, "id", 1)
-    max_block_number = BlockNumberCache.max_number()
+    max_block_number = BlockNumber.max_number()
 
     render(conn, :eth_block_number, number: max_block_number, id: id)
   end

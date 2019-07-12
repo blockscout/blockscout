@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.BlockCountCache do
+defmodule Explorer.Chain.Cache.BlockCount do
   @moduledoc """
   Cache for block count.
   """
