@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import socket from '../socket'
+import { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import Web3 from 'web3'
 
@@ -94,8 +94,7 @@ if ($stakesPage.length) {
   store = createStore(reducer)
   connectElements({ store, elements })
 
-  const blocksChannel = socket.channel(`blocks:new_block`)
-  blocksChannel.join()
+  const blocksChannel = subscribeChannel(`blocks:new_block`)
   blocksChannel.on('new_block', msg => {
     store.dispatch({
       type: 'RECEIVED_NEW_BLOCK',
@@ -103,8 +102,7 @@ if ($stakesPage.length) {
     })
   })
 
-  const epochChannel = socket.channel(`staking_epoch:new_epoch`)
-  epochChannel.join()
+  const epochChannel = subscribeChannel(`staking_epoch:new_epoch`)
   epochChannel.on('new_epoch', msg => {
     store.dispatch({
       type: 'RECEIVED_NEW_EPOCH',
