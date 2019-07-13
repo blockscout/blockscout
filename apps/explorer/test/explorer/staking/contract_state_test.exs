@@ -12,9 +12,12 @@ defmodule Explorer.Staking.ContractStateTest do
   @contract_a <<16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1>>
   @contract_b <<24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1>>
 
-  test "when disabled, it returns nil" do
-    assert ContractState.epoch_number() == nil
-    assert ContractState.epoch_end_block() == nil
+  test "when disabled, returns default values" do
+    assert ContractState.epoch_number() == 0
+    assert ContractState.epoch_end_block() == 0
+    assert ContractState.min_delegator_stake() == 1
+    assert ContractState.min_candidate_stake() == 1
+    assert ContractState.token_contract_address() == nil
   end
 
   test "fetch epoch data" do

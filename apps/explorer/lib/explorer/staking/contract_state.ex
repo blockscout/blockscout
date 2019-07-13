@@ -1,13 +1,13 @@
 defmodule Explorer.Staking.ContractState do
   @moduledoc """
-  Fetches:
-  1) current staking epoch number;
-  2) the epoch end block number;
-  3) minimal candidate stake;
-  4) minimal delegate stake;
-  6) token contract address.
+  Fetches the following information from StakingAuRa contract:
+    - current staking epoch number;
+    - the epoch end block number;
+    - minimal candidate stake;
+    - minimal delegate stake;
+    - token contract address.
 
-  It subscribes to handle new blocks and conclude whether the epoch is over.
+  Subscribes to new block notifications and refreshes when new staking epoch starts.
   """
 
   use GenServer
@@ -16,35 +16,30 @@ defmodule Explorer.Staking.ContractState do
   alias Explorer.SmartContract.Reader
 
   @table_name __MODULE__
-  @epoch_key :epoch_num
-  @epoch_end_key :epoch_end_block
-  @min_candidate_stake_key :min_candidate_stake
-  @min_delegator_stake_key :min_delegator_stake
-  @token_contract_address :token_contract_address
 
   @doc "Current staking epoch number"
   def epoch_number do
-    get(@epoch_key, 0)
+    get(:epoch_number, 0)
   end
 
-  @doc "Current staking epoch number"
+  @doc "The end block of current staking epoch"
   def epoch_end_block do
-    get(@epoch_end_key, 0)
+    get(:epoch_end_block, 0)
   end
 
   @doc "Minimal candidate stake"
   def min_candidate_stake do
-    get(@min_candidate_stake_key, 1)
+    get(:min_candidate_stake, 1)
   end
 
   @doc "Minimal delegator stake"
   def min_delegator_stake do
-    get(@min_delegator_stake_key, 1)
+    get(:min_delegator_stake, 1)
   end
 
   @doc "Token contract address"
   def token_contract_address do
-    get(@token_contract_address, nil)
+    get(:token_contract_address, nil)
   end
 
   def start_link([]) do
@@ -60,10 +55,10 @@ defmodule Explorer.Staking.ContractState do
     ])
 
     Subscriber.to(:blocks, :realtime)
-    {:ok, [], {:continue, :epoch_info}}
+    {:ok, [], {:continue, []}}
   end
 
-  def handle_continue(:epoch_info, state) do
+  def handle_continue(_, state) do
     fetch_chain_info()
     {:noreply, state}
   end
@@ -75,7 +70,7 @@ defmodule Explorer.Staking.ContractState do
       |> Enum.map(&Map.get(&1, :number, 0))
       |> Enum.max(fn -> 0 end)
 
-    case :ets.lookup(@table_name, @epoch_end_key) do
+    case :ets.lookup(@table_name, :epoch_end_block) do
       [] ->
         fetch_chain_info()
 
@@ -90,32 +85,32 @@ defmodule Explorer.Staking.ContractState do
   end
 
   defp get(param, default) do
-    if :ets.info(@table_name) != :undefined do
-      case :ets.lookup(@table_name, param) do
-        [{_, value}] -> value
-        _ -> default
-      end
+    with info when info != :undefined <- :ets.info(@table_name),
+         [{_, value}] <- :ets.lookup(@table_name, param) do
+      value
+    else
+      _ -> default
     end
   end
 
   defp fetch_chain_info do
-    with data <- get_epoch_info(),
-         {:ok, [epoch_num]} <- data["stakingEpoch"],
+    with data <- query_contract(),
+         {:ok, [epoch_number]} <- data["stakingEpoch"],
          {:ok, [epoch_end_block]} <- data["stakingEpochEndBlock"],
          {:ok, [min_delegator_stake]} <- data["getDelegatorMinStake"],
          {:ok, [min_candidate_stake]} <- data["getCandidateMinStake"],
          {:ok, [token_contract_address]} <- data["erc20TokenContract"] do
       :ets.insert(@table_name, [
-        {@epoch_key, epoch_num},
-        {@epoch_end_key, epoch_end_block},
-        {@min_delegator_stake_key, min_delegator_stake},
-        {@min_candidate_stake_key, min_candidate_stake},
-        {@token_contract_address, token_contract_address}
+        {:epoch_number, epoch_number},
+        {:epoch_end_block, epoch_end_block},
+        {:min_delegator_stake, min_delegator_stake},
+        {:min_candidate_stake, min_candidate_stake},
+        {:token_contract_address, token_contract_address}
       ])
     end
   end
 
-  defp get_epoch_info do
+  defp query_contract do
     contract_abi = abi("staking.json")
 
     functions = [
@@ -129,7 +124,7 @@ defmodule Explorer.Staking.ContractState do
     functions
     |> Enum.map(fn function ->
       %{
-        contract_address: staking_address(),
+        contract_address: staking_contract_address(),
         function_name: function,
         args: []
       }
@@ -141,7 +136,7 @@ defmodule Explorer.Staking.ContractState do
     end)
   end
 
-  defp staking_address do
+  defp staking_contract_address do
     Application.get_env(:explorer, __MODULE__, [])[:staking_contract_address]
   end
 
