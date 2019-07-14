@@ -35,6 +35,53 @@ defmodule Indexer.Transform.Blocks do
     recover_pub_key(signature_hash, decode(signature))
   end
 
+  def istanbl_signer(block) when is_map(block) do
+
+    {filtered_extra_data, seal} = istanbl_extra_data(block)
+
+    signature_hash = istanbl_signature_hash(block, filtered_extra_data)
+
+    ## need double hash
+    hash_signature_hash = :keccakf1600.hash(:sha3_256, signature_hash)
+
+    recover_pub_key(hash_signature_hash, seal)
+  end
+
+  defp istanbl_extra_data(block) do
+
+    <<origin_extra::bytes-size(32), istanbl_extra_data::binary>> = decode(block.extra_data)
+
+    [ validators, seal, _ ] = ExRLP.decode(istanbl_extra_data)
+
+    encoded_filtered_intanbl_extra_data = ExRLP.encode([validators, <<>>, []])
+
+    filtered_extra_data = origin_extra <> encoded_filtered_intanbl_extra_data
+
+    { filtered_extra_data, seal}
+  end
+
+  defp istanbl_signature_hash(block,extra_data) do
+    header_data = [
+      decode(block.parent_hash),
+      decode(block.sha3_uncles),
+      decode(block.miner_hash),
+      decode(block.state_root),
+      decode(block.transactions_root),
+      decode(block.receipts_root),
+      decode(block.logs_bloom),
+      block.difficulty,
+      block.number,
+      block.gas_limit,
+      block.gas_used,
+      DateTime.to_unix(block.timestamp),
+      extra_data,
+      decode(block.mix_hash),
+      decode(block.nonce)
+    ]
+
+    :keccakf1600.hash(:sha3_256, ExRLP.encode(header_data))
+  end
+
   # Signature hash calculated from the block header.
   # Needed for PoA-based chains
   defp signature_hash(block) do
