@@ -38,7 +38,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @minimum_safe_polling_period :timer.seconds(10)
 
   @enforce_keys ~w(block_fetcher)a
-  defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
+  defstruct ~w(block_fetcher subscription previous_number max_number_seen timer last_websocket_message_time)a
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
@@ -50,7 +50,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
           },
           subscription: Subscription.t(),
           previous_number: pos_integer() | nil,
-          max_number_seen: pos_integer() | nil
+          max_number_seen: pos_integer() | nil,
+          last_websocket_message_time: pos_integer | nil
         }
 
   def start_link([arguments, gen_server_options]) do
@@ -75,31 +76,23 @@ defmodule Indexer.Block.Realtime.Fetcher do
   def handle_info(
         {subscription, {:ok, %{"number" => quantity}}},
         %__MODULE__{
-          block_fetcher: %Block.Fetcher{} = block_fetcher,
           subscription: %Subscription{} = subscription,
-          previous_number: previous_number,
-          max_number_seen: max_number_seen,
-          timer: timer
+          last_websocket_message_time: last_websocket_message_time
         } = state
       )
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
-    # Subscriptions don't support getting all the blocks and transactions data,
-    # so we need to go back and get the full block
-    start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
 
-    new_max_number = new_max_number(number, max_number_seen)
+    cond do
+      !last_websocket_message_time ->
+        fetch_and_import_new_block_from_ws(state, number)
 
-    Process.cancel_timer(timer)
-    new_timer = schedule_polling()
+      current_time() - last_websocket_message_time > Application.get_env(:indexer, :ws_block_period) ->
+        fetch_and_import_new_block_from_ws(state, number)
 
-    {:noreply,
-     %{
-       state
-       | previous_number: number,
-         max_number_seen: new_max_number,
-         timer: new_timer
-     }}
+      true ->
+        {:noreply, state}
+    end
   end
 
   @impl GenServer
@@ -130,6 +123,34 @@ defmodule Indexer.Block.Realtime.Fetcher do
        | previous_number: number,
          max_number_seen: new_max_number,
          timer: timer
+     }}
+  end
+
+  defp fetch_and_import_new_block_from_ws(
+         %__MODULE__{
+           block_fetcher: %Block.Fetcher{} = block_fetcher,
+           previous_number: previous_number,
+           max_number_seen: max_number_seen,
+           timer: timer
+         } = state,
+         number
+       ) do
+    # Subscriptions don't support getting all the blocks and transactions data,
+    # so we need to go back and get the full block
+    start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
+
+    new_max_number = new_max_number(number, max_number_seen)
+
+    Process.cancel_timer(timer)
+    new_timer = schedule_polling()
+
+    {:noreply,
+     %{
+       state
+       | previous_number: number,
+         max_number_seen: new_max_number,
+         timer: new_timer,
+         last_websocket_message_time: current_time()
      }}
   end
 
@@ -421,5 +442,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Enum.into(balances_params, MapSet.new(), fn %{address_hash: address_hash, block_number: block_number} ->
       %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
     end)
+  end
+
+  defp current_time do
+    utc_now = DateTime.utc_now()
+
+    DateTime.to_unix(utc_now, :millisecond)
   end
 end
