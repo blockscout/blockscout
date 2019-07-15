@@ -189,8 +189,8 @@ defmodule BlockScoutWeb.AddressView do
     |> Timex.format!("{M}-{D}-{YYYY}")
   end
 
-  def qr_code(%Address{hash: hash}) do
-    hash
+  def qr_code(address_hash) do
+    address_hash
     |> to_string()
     |> QRCode.to_png()
     |> Base.encode64()
@@ -219,10 +219,10 @@ defmodule BlockScoutWeb.AddressView do
 
   def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
 
-  def incoming_transaction_count(%Address{} = address) do
-    count = Chain.address_to_incoming_transaction_count(address)
-
-    Cldr.Number.to_string!(count, format: "#,###")
+  def incoming_transaction_count(address_hash) do
+    address_hash
+    |> Chain.address_to_incoming_transaction_count()
+    |> Cldr.Number.to_string!(format: "#,###")
   end
 
   def trimmed_hash(%Hash{} = hash) do

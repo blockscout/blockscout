@@ -39,11 +39,11 @@ defmodule Explorer.DataCase do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
     end
 
-    Explorer.Chain.BlockNumberCache.setup()
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.TransactionsCache.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.TransactionsCache.cache_name()})
+    Explorer.Chain.Cache.BlockNumber.setup()
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Blocks.cache_name()})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Blocks.cache_name()})
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Transactions.cache_name()})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Transactions.cache_name()})
 
     :ok
   end
