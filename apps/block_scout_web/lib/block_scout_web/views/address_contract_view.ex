@@ -21,6 +21,12 @@ defmodule BlockScoutWeb.AddressContractView do
   def format_optimization_text(true), do: gettext("true")
   def format_optimization_text(false), do: gettext("false")
 
+  def format_external_libraries(libraries) do
+    Enum.reduce(libraries, "", fn %{name: name, address_hash: address_hash}, acc ->
+      acc <> name <> " : " <> address_hash <> "\n"
+    end)
+  end
+
   def contract_lines_with_index(contract_source_code) do
     contract_lines = String.split(contract_source_code, "\n")
 
