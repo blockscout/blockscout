@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2358](https://github.com/poanetwork/blockscout/pull/2358) - set timeout for ws blocks
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
 ### Fixes
