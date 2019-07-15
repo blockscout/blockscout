@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressController do
 
   alias BlockScoutWeb.AddressView
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.AddressController do
           exchange_rate: exchange_rate,
           total_supply: total_supply,
           tx_count: tx_count,
-          validation_count: validation_count(address)
+          validation_count: validation_count(address.hash)
         )
       end)
 
@@ -69,11 +69,11 @@ defmodule BlockScoutWeb.AddressController do
     redirect(conn, to: address_transaction_path(conn, :index, id))
   end
 
-  def transaction_count(%Address{} = address) do
-    Chain.total_transactions_sent_by_address(address)
+  def transaction_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
+    Chain.total_transactions_sent_by_address(address_hash)
   end
 
-  def validation_count(%Address{} = address) do
-    Chain.address_to_validation_count(address)
+  def validation_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
+    Chain.address_to_validation_count(address_hash)
   end
 end
