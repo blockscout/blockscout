@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.AddressTokenController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash, [], false) do
       tokens_plus_one = Chain.address_tokens_with_balance(address_hash, paging_options(params))
       {tokens, next_page} = split_list_by_page(tokens_plus_one)
 
@@ -64,8 +64,8 @@ defmodule BlockScoutWeb.AddressTokenController do
         current_path: current_path(conn),
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        transaction_count: transaction_count(address),
-        validation_count: validation_count(address)
+        transaction_count: transaction_count(address_hash),
+        validation_count: validation_count(address_hash)
       )
     else
       :error ->

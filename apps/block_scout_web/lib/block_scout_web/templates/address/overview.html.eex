@@ -4,7 +4,7 @@
     <div class="card-section col-md-12 col-lg-8 pr-0-md">
       <div class="card">
         <div class="card-body">
-          <h1 class="card-title">
+          <h1 class="card-title lg-card-title">
             <%= address_title(@address) %> <%= gettext "Details" %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
@@ -74,7 +74,7 @@
                 <%= if contract?(@address) do %>
                   <%= gettext(">=") %>
                   <span data-selector="transaction-count">
-                    <%= incoming_transaction_count(@address) %>
+                    <%= incoming_transaction_count(@address.hash) %>
                   </span>
                   <%= gettext("Incoming Transactions") %>
                 <% else %>
@@ -146,7 +146,7 @@
         </button>
       </div>
       <div class="modal-body">
-        <img src="data:image/png;base64, <%= qr_code(@address) %>" class="qr-code" alt="qr_code" title="<%= @address %>" />
+        <img src="data:image/png;base64, <%= qr_code(@address.hash) %>" class="qr-code" alt="qr_code" title="<%= @address %>" />
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" data-dismiss="modal"><%= gettext "Close" %></button>
