@@ -1,21 +1,32 @@
 ## Current
 
 ### Features
-
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
 ### Fixes
+- [#2346](https://github.com/poanetwork/blockscout/pull/2346) - Avoid fetching internal transactions of blocks that still need refetching
+- [#2350](https://github.com/poanetwork/blockscout/pull/2350) - fix invalid User agent headers
+- [#2345](https://github.com/poanetwork/blockscout/pull/2345) - do not override existing market records
+- [#2337](https://github.com/poanetwork/blockscout/pull/2337) - set url params for prod explicitly
+- [#2341](https://github.com/poanetwork/blockscout/pull/2341) - fix transaction input json encoding
+- [#2311](https://github.com/poanetwork/blockscout/pull/2311) - fix market history overriding with zeroes
 - [#2310](https://github.com/poanetwork/blockscout/pull/2310) - parse url for api docs
 - [#2299](https://github.com/poanetwork/blockscout/pull/2299) - fix interpolation in error message
 - [#2303](https://github.com/poanetwork/blockscout/pull/2303) - fix transaction csv download link
 - [#2304](https://github.com/poanetwork/blockscout/pull/2304) - footer grid fix for md resolution
 - [#2291](https://github.com/poanetwork/blockscout/pull/2291) - dashboard fix for md resolution, transactions load fix, block info row fix, addresses page issue, check mark issue
+- [#2326](https://github.com/poanetwork/blockscout/pull/2326) - fix nested constructor arguments
 
 ### Chore
+- [#2342](https://github.com/poanetwork/blockscout/pull/2342) - Upgrade Postgres image version in Docker setup
+- [#2325](https://github.com/poanetwork/blockscout/pull/2325) - Reduce function input to address' hash only where possible
+- [#2323](https://github.com/poanetwork/blockscout/pull/2323) - Group Explorer caches
 - [#2305](https://github.com/poanetwork/blockscout/pull/2305) - Improve Address controllers
 - [#2302](https://github.com/poanetwork/blockscout/pull/2302) - fix names for xDai source
 - [#2289](https://github.com/poanetwork/blockscout/pull/2289) - Optional websockets for dev environment
 - [#2307](https://github.com/poanetwork/blockscout/pull/2307) - add GoJoy to README
+
+- [#2293](https://github.com/poanetwork/blockscout/pull/2293) - remove request idle timeout configuration
 
 
 ## 2.0.1-beta

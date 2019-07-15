@@ -147,7 +147,8 @@ defmodule Explorer.Factory do
       size: Enum.random(1..100_000),
       gas_limit: Enum.random(1..100_000),
       gas_used: Enum.random(1..100_000),
-      timestamp: DateTime.utc_now()
+      timestamp: DateTime.utc_now(),
+      refetch_needed: false
     }
   end
 
