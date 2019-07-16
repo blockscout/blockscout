@@ -145,10 +145,12 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
 
       assert Enum.count(response["result"]) == 1000
 
+      {last_log_index, ""} = Integer.parse(List.last(response["result"])["logIndex"], 16)
+
       next_page_params = %{
         "block_number" => transaction.block_number,
         "transaction_index" => transaction.index,
-        "log_index" => 1000
+        "log_index" => last_log_index
       }
 
       new_params =
