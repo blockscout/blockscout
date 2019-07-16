@@ -148,7 +148,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       next_page_params = %{
         "block_number" => transaction.block_number,
         "transaction_index" => transaction.index,
-        "log_index" => 999
+        "log_index" => 1000
       }
 
       new_params =
@@ -168,6 +168,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       assert Enum.all?(inserted_records, fn record ->
                Enum.any?(all_found_logs, fn found_log ->
                  {index, ""} = Integer.parse(found_log["logIndex"], 16)
+
                  record.index == index
                end)
              end)
