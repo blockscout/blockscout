@@ -64,14 +64,20 @@ defmodule Explorer.EthRPC do
     with {:ok, address_or_topic_params} <- address_or_topic_params(filter_options),
          {:ok, from_block_param, to_block_param} <- logs_blocks_filter(filter_options),
          {:ok, from_block} <- cast_block(from_block_param),
-         {:ok, to_block} <- cast_block(to_block_param) do
+         {:ok, to_block} <- cast_block(to_block_param),
+         {:ok, paging_options} <- paging_options(filter_options["paging_options"]) do
       filter =
         address_or_topic_params
         |> Map.put(:from_block, from_block)
         |> Map.put(:to_block, to_block)
         |> Map.put(:allow_non_consensus, true)
 
-      {:ok, filter |> Logs.list_logs() |> Enum.map(&render_log/1)}
+      logs =
+        filter
+        |> Logs.list_logs(paging_options)
+        |> Enum.map(&render_log/1)
+
+      {:ok, logs}
     else
       {:error, message} when is_bitstring(message) ->
         {:error, message}
@@ -212,6 +218,21 @@ defmodule Explorer.EthRPC do
         {:error, "Invalid Block Hash"}
     end
   end
+
+  defp paging_options(%{
+         "log_index" => log_index,
+         "transaction_index" => transaction_index,
+         "block_number" => block_number
+       }) do
+    {:ok,
+     %{
+       log_index: log_index,
+       transaction_index: transaction_index,
+       block_number: block_number
+     }}
+  end
+
+  defp paging_options(_), do: {:ok, nil}
 
   defp to_block_numbers(from_block, to_block, max_block_number, pending_block_number) do
     actual_pending_block_number = pending_block_number || max_block_number

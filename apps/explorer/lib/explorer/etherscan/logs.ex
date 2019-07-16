@@ -73,6 +73,7 @@ defmodule Explorer.Etherscan.Logs do
   def list_logs(filter, paging_options \\ @default_paging_options)
 
   def list_logs(%{address_hash: address_hash} = filter, paging_options) when not is_nil(address_hash) do
+    paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
 
     logs_query = where_topic_match(Log, prepared_filter)
@@ -148,6 +149,7 @@ defmodule Explorer.Etherscan.Logs do
   # query that is optimized for a logs filter over an
   # address_hash
   def list_logs(filter, paging_options) do
+    paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
 
     logs_query = where_topic_match(Log, prepared_filter)
