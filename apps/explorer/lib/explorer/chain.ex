@@ -222,25 +222,17 @@ defmodule Explorer.Chain do
           Transaction.t()
         ]
   def address_to_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
-    direction = Keyword.get(options, :direction)
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    transaction_hashes_from_token_transfers =
-      TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
-
-    transactions_list =
-      paging_options
-      |> fetch_transactions()
-      |> Transaction.where_transaction_matches(transaction_hashes_from_token_transfers, direction, address_hash)
-      |> join_associations(necessity_by_association)
-      |> Transaction.preload_token_transfers(address_hash)
-      |> Repo.all()
-
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
+      rewards_task =
+        Task.async(fn ->
+          Reward.fetch_emission_rewards_tuples(address_hash, paging_options)
+        end)
+
       address_hash
-      |> Reward.fetch_emission_rewards_tuples(paging_options)
-      |> Enum.concat(transactions_list)
+      |> address_to_transactions_without_rewards(paging_options, options)
+      |> Enum.concat(Task.await(rewards_task))
       |> Enum.sort_by(fn item ->
         case item do
           {%Reward{} = emission_reward, _} ->
@@ -252,8 +244,23 @@ defmodule Explorer.Chain do
       end)
       |> Enum.take(paging_options.page_size)
     else
-      transactions_list
+      address_to_transactions_without_rewards(address_hash, paging_options, options)
     end
+  end
+
+  defp address_to_transactions_without_rewards(address_hash, paging_options, options) do
+    direction = Keyword.get(options, :direction)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    transaction_hashes_from_token_transfers =
+      TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
+
+    paging_options
+    |> fetch_transactions()
+    |> Transaction.where_transaction_matches(transaction_hashes_from_token_transfers, direction, address_hash)
+    |> join_associations(necessity_by_association)
+    |> Transaction.preload_token_transfers(address_hash)
+    |> Repo.all()
   end
 
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
