@@ -14,12 +14,18 @@ defmodule Explorer.EthRPC do
       notes: """
       the `earliest` parameter will not work as expected currently, because genesis block balances
       are not currently imported
+      """,
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getBalance", "params": ["0x0000000000000000000000000000000000000007", "2"]}
       """
     },
     "eth_getLogs" => %{
       action: :eth_get_logs,
       notes: """
       Will never return more than 1000 log entries.
+      """,
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getLogs", "params": [{"address": "0x0000000000000000000000000000000000000026","topics": ["0x01"]}]}
       """
     }
   }
