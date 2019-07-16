@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2352](https://github.com/poanetwork/blockscout/pull/2352) - Fetch rewards in parallel with transactions
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
 ### Fixes
@@ -19,6 +20,7 @@
 - [#2326](https://github.com/poanetwork/blockscout/pull/2326) - fix nested constructor arguments
 
 ### Chore
+- [#2363](https://github.com/poanetwork/blockscout/pull/2363) - add parameters example for eth rpc
 - [#2342](https://github.com/poanetwork/blockscout/pull/2342) - Upgrade Postgres image version in Docker setup
 - [#2325](https://github.com/poanetwork/blockscout/pull/2325) - Reduce function input to address' hash only where possible
 - [#2323](https://github.com/poanetwork/blockscout/pull/2323) - Group Explorer caches
