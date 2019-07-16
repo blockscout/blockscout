@@ -194,8 +194,8 @@ defmodule Explorer.Etherscan.LogsTest do
       all_found_logs = first_found_logs ++ second_found_logs
 
       assert Enum.all?(inserted_records, fn record ->
-        Enum.any?(all_found_logs, fn found_log -> found_log.index == record.index end)
-      end)
+               Enum.any?(all_found_logs, fn found_log -> found_log.index == record.index end)
+             end)
     end
 
     test "with a valid topic{x}" do
