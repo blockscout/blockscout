@@ -5,7 +5,7 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [from: 2, where: 3, subquery: 1]
+  import Ecto.Query, only: [from: 2, where: 3, subquery: 1, order_by: 3]
 
   alias Explorer.Chain.{Block, InternalTransaction, Log, Transaction}
   alias Explorer.Repo
@@ -38,7 +38,7 @@ defmodule Explorer.Etherscan.Logs do
     :type
   ]
 
-  @default_paging_options %{block_number: nil, transaction_index: nil}
+  @default_paging_options %{block_number: nil, transaction_index: nil, log_index: nil}
 
   @doc """
   Gets a list of logs that meet the criteria in a given filter map.
@@ -240,5 +240,18 @@ defmodule Explorer.Etherscan.Logs do
 
   defp where_multiple_topics_match(query, _, _, _), do: query
 
-  defp page_logs(query, _paging_options), do: query
+  defp page_logs(query, %{block_number: nil, transaction_index: nil, log_index: nil}) do
+    query
+    |> order_by([log], asc: log.index)
+  end
+
+  defp page_logs(query, %{block_number: block_number, transaction_index: transaction_index, log_index: log_index}) do
+    sorted_query = order_by(query, [log], asc: log.index)
+
+    from(data in sorted_query,
+      where:
+        data.index > ^log_index and data.block_number >= ^block_number and
+          data.transaction_index >= ^transaction_index
+    )
+  end
 end
