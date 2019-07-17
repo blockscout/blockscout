@@ -6,53 +6,11 @@ defmodule BlockScoutWeb.Router do
   forward("/wobserver", Wobserver.Web.Router)
   forward("/admin", BlockScoutWeb.AdminRouter)
 
-  pipeline :browser do
-    plug(:accepts, ["html"])
-    plug(:fetch_session)
-    plug(:fetch_flash)
-    plug(:protect_from_forgery)
-    plug(BlockScoutWeb.CSPHeader)
+  if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter, :enabled) do
+    forward("/api", BlockScoutWeb.ApiRouter)
   end
 
-  pipeline :api do
-    plug(:accepts, ["json"])
-  end
-
-  scope "/api/v1", BlockScoutWeb.API.V1, as: :api_v1 do
-    pipe_through(:api)
-
-    get("/supply", SupplyController, :supply)
-
-    get("/health", HealthController, :health)
-
-    resources("/decompiled_smart_contract", DecompiledSmartContractController, only: [:create])
-    resources("/verified_smart_contracts", VerifiedSmartContractController, only: [:create])
-  end
-
-  scope "/verify_smart_contract" do
-    pipe_through(:api)
-
-    post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
-  end
-
-  scope "/api", BlockScoutWeb.API.RPC do
-    pipe_through(:api)
-
-    alias BlockScoutWeb.API.RPC
-
-    post("/eth_rpc", EthController, :eth_request)
-
-    forward("/", RPCTranslator, %{
-      "block" => RPC.BlockController,
-      "account" => RPC.AddressController,
-      "logs" => RPC.LogsController,
-      "token" => RPC.TokenController,
-      "stats" => RPC.StatsController,
-      "contract" => RPC.ContractController,
-      "transaction" => RPC.TransactionController
-    })
-  end
-
+  # For backward compatibility. Should be removed
   # Needs to be 200 to support the schema introspection for graphiql
   @max_complexity 200
 
@@ -70,6 +28,14 @@ defmodule BlockScoutWeb.Router do
     analyze_complexity: true,
     max_complexity: @max_complexity
   )
+
+  pipeline :browser do
+    plug(:accepts, ["html"])
+    plug(:fetch_session)
+    plug(:fetch_flash)
+    plug(:protect_from_forgery)
+    plug(BlockScoutWeb.CSPHeader)
+  end
 
   # Disallows Iframes (write routes)
   scope "/", BlockScoutWeb do
