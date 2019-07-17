@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2373](https://github.com/poanetwork/blockscout/pull/2373) - Add script to validate internal_transactions constraint for large DBs
 
 ### Fixes
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
