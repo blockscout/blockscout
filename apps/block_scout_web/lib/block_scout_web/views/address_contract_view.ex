@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
 
+  alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain.{Address, Data, InternalTransaction}
 
   def render("scripts.html", %{conn: conn}) do
@@ -20,6 +21,37 @@ defmodule BlockScoutWeb.AddressContractView do
   """
   def format_optimization_text(true), do: gettext("true")
   def format_optimization_text(false), do: gettext("false")
+
+  def format_constructor_arguments(contract) do
+    constructor_abi = Enum.find(contract.abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
+
+    input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1)
+
+    contract.constructor_arguments
+    |> decode_data(input_types)
+    |> Enum.reduce("", fn val, acc ->
+      formatted_val =
+        if is_binary(val) do
+          Base.encode16(val)
+        else
+          val
+        end
+
+      "#{acc}#{formatted_val}\n"
+    end)
+  rescue
+    _ -> contract.constructor_arguments
+  end
+
+  defp decode_data("0x" <> encoded_data, types) do
+    decode_data(encoded_data, types)
+  end
+
+  defp decode_data(encoded_data, types) do
+    encoded_data
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw(types)
+  end
 
   def format_external_libraries(libraries) do
     Enum.reduce(libraries, "", fn %{name: name, address_hash: address_hash}, acc ->

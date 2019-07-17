@@ -49,7 +49,7 @@
           <%= if @address.smart_contract.constructor_arguments do %>
             <dl class="row">
               <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Constructor arguments" %></dt>
-              <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.constructor_arguments %></dd>
+              <dd class="col-sm-8 col-md-10"><%= format_constructor_arguments(@address.smart_contract) %></dd>
             </dl>
           <% end %>
         </div>
