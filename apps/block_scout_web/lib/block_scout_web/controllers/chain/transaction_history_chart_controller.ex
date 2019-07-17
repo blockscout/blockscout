@@ -14,9 +14,6 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartController do
       |> extract_history
       |> encode_transaction_history_data
 
-
-      IO.inspect TransactionStats.by_date_range(earliest, latest)
-
       json(conn, %{
         history_data: transaction_history_data,
       })

@@ -699,6 +699,15 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:21
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:34
 #: lib/block_scout_web/templates/transaction/overview.html.eex:84
+msgid "Tx/day"
+msgstr ""
+
+
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:21
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:34
+#: lib/block_scout_web/templates/transaction/overview.html.eex:84
 msgid "TX Fee"
 msgstr ""
 

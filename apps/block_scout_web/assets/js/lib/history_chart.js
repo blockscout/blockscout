@@ -44,7 +44,7 @@ const config = {
         }
       }, {
         id: 'marketCap',
-        position: 'right',
+        display: false,
         gridLines: {
           display: false,
           drawBorder: false
@@ -53,6 +53,20 @@ const config = {
           callback: (value, index, values) => '',
           maxTicksLimit: 6,
           drawOnChartArea: false
+        }
+      }, {
+        id: 'numTransactions',
+        display: false,
+        position: 'right',
+        gridLines: {
+          display: false,
+          drawBorder: false
+        },
+        ticks: {
+          beginAtZero: true,
+          callback: (value, index, values) => `${numeral(value).format('0,0')}`,
+          maxTicksLimit: 4,
+          fontColor: sassVariables.dashboardBannerChartAxisFontColor
         }
       }]
     },
@@ -66,6 +80,8 @@ const config = {
             return `${label}: ${formatUsdValue(yLabel)}`
           } else if (datasets[datasetIndex].yAxisID === 'marketCap') {
             return `${label}: ${formatUsdValue(yLabel)}`
+          } else if (datasets[datasetIndex].yAxisID === 'numTransactions') {
+            return `${label}: ${yLabel}`
           } else {
             return yLabel
           }
@@ -88,32 +104,65 @@ function getMarketCapData (marketHistoryData, availableSupply) {
 }
 
 class MarketHistoryChart {
-  constructor (el, availableSupply, marketHistoryData) {
+  constructor (el, availableSupply, marketHistoryData, dataConfig) {
+
+    var axes = config.options.scales.yAxes.reduce(function(solution, elem){
+      solution[elem.id] = elem
+      return solution
+    },
+                                                  {})
+
     this.price = {
       label: window.localized['Price'],
       yAxisID: 'price',
-      data: getPriceData(marketHistoryData),
+      data: [],
       fill: false,
       pointRadius: 0,
       backgroundColor: sassVariables.dashboardLineColorPrice,
       borderColor: sassVariables.dashboardLineColorPrice,
       lineTension: 0
     }
+    if (dataConfig.market == undefined || dataConfig.market.indexOf("price") == -1){
+      this.price.hidden = true
+      axes["price"].display = false
+    }
+
     this.marketCap = {
       label: window.localized['Market Cap'],
       yAxisID: 'marketCap',
-      data: getMarketCapData(marketHistoryData, availableSupply),
+      data: [],
       fill: false,
       pointRadius: 0,
       backgroundColor: sassVariables.dashboardLineColorMarket,
       borderColor: sassVariables.dashboardLineColorMarket,
       lineTension: 0
     }
+    if (dataConfig.market == undefined || dataConfig.market.indexOf("market_cap") == -1){
+      this.marketCap.hidden = true
+      axes["marketCap"].display = false
+    }
+
+    this.numTransactions = {
+      label: window.localized['Tx/day'],
+      yAxisID: 'numTransactions',
+      data: [],
+      fill: false,
+      pointRadius: 0,
+      backgroundColor: sassVariables.dashboardLineColorMarket,
+      borderColor: sassVariables.dashboardLineColorTransactions,
+      lineTension: 0,
+    }
+    if (dataConfig.transactions == undefined || dataConfig.transactions.indexOf("transactions_per_day") == -1){
+      this.numTransactions.hidden = true
+      axes["numTransactions"].display = false
+    }
+
     this.availableSupply = availableSupply
-    config.data.datasets = [this.price, this.marketCap]
+    //TODO: This is where we dynamically append datasets
+    config.data.datasets = [this.price, this.marketCap, this.numTransactions]
     this.chart = new Chart(el, config)
   }
-  update (availableSupply, marketHistoryData) {
+  updateMarketHistory (availableSupply, marketHistoryData) {
     this.price.data = getPriceData(marketHistoryData)
     if (this.availableSupply !== null && typeof this.availableSupply === 'object') {
       const today = new Date().toJSON().slice(0, 10)
@@ -124,31 +173,50 @@ class MarketHistoryChart {
     }
     this.chart.update()
   }
+  updateTransactionHistory (transaction_history) {
+    this.numTransactions.data = transaction_history.map(dataPoint => {
+      return {x:dataPoint.date, y:dataPoint.number_of_transactions}
+    })
+    this.chart.update()
+  }
 }
 
 export function createMarketHistoryChart (el) {
-  const dataPath = el.dataset.market_history_chart_path
+  const dataPaths = $(el).data('history_chart_paths')
+  const dataConfig = $(el).data('history_chart_config')
+
   const $chartLoading = $('[data-chart-loading-message]')
   const $chartError = $('[data-chart-error-message]')
-  const chart = new MarketHistoryChart(el, 0, [])
-  $.getJSON(dataPath, {type: 'JSON'})
-    .done(data => {
-      const availableSupply = JSON.parse(data.supply_data)
-      const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
-      $(el).show()
-      chart.update(availableSupply, marketHistoryData)
-    })
-    .fail(() => {
-      $chartError.show()
-    })
-    .always(() => {
-      $chartLoading.hide()
-    })
-  return chart
+  const chart = new MarketHistoryChart(el, 0, [], dataConfig)
+  Object.keys(dataPaths).forEach(function(history_source){
+    $.getJSON(dataPaths[history_source], {type: 'JSON'})
+      .done(data => {
+        switch(history_source){
+        case "market":
+          const availableSupply = JSON.parse(data.supply_data)
+          const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
+          $(el).show()
+          chart.updateMarketHistory(availableSupply, marketHistoryData)
+          break;
+        case "transaction":
+          const transaction_history = JSON.parse(data.history_data)
+
+          $(el).show()
+          chart.updateTransactionHistory(transaction_history)
+          break;
+        }
+      })
+      .fail(() => {
+        $chartError.show()
+      })
+      .always(() => {
+        $chartLoading.hide()
+      })})
+  return chart;
 }
 
 $('[data-chart-error-message]').on('click', _event => {
   $('[data-chart-loading-message]').show()
   $('[data-chart-error-message]').hide()
-  createMarketHistoryChart($('[data-chart="marketHistoryChart"]')[0])
+  createMarketHistoryChart($('[data-chart="historyChart"]')[0])
 })

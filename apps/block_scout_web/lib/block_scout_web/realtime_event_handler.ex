@@ -25,6 +25,7 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     Subscriber.to(:address_coin_balances, :on_demand)
     # Does not come from the indexer
     Subscriber.to(:exchange_rate)
+    Subscriber.to(:transaction_stats)
     {:ok, []}
   end
 

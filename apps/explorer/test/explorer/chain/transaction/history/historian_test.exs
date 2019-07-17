@@ -68,6 +68,11 @@ defmodule Explorer.Chain.Transaction.History.HistorianTest do
 
       Historian.save_records(records)
 
+      records = List.replace_at(records, 0, Map.put(Enum.at(records, 0), :number_of_transactions, 4))
+      single_record = [Enum.at(records, 0)]
+
+      Historian.save_records(single_record)
+
       query = from(
         stats in TransactionStats,
         select: %{date: stats.date, number_of_transactions: stats.number_of_transactions},
