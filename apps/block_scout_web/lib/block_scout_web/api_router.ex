@@ -11,28 +11,31 @@ defmodule BlockScoutWeb.ApiRouter do
     plug(:accepts, ["json"])
   end
 
-  scope "/v1", BlockScoutWeb.API.V1, as: :api_v1 do
+  scope "/v1", as: :api_v1 do
     pipe_through(:api)
 
-    get("/supply", SupplyController, :supply)
-
-    get("/health", HealthController, :health)
-
-    post("/decompiled_smart_contract", DecompiledSmartContractController, :create)
-    post("/verified_smart_contracts", VerifiedSmartContractController, :create)
     post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
 
-    post("/eth_rpc", EthController, :eth_request)
+    scope "/", BlockScoutWeb.API.V1 do
+      get("/supply", SupplyController, :supply)
 
-    forward("/", RPCTranslator, %{
-      "block" => RPC.BlockController,
-      "account" => RPC.AddressController,
-      "logs" => RPC.LogsController,
-      "token" => RPC.TokenController,
-      "stats" => RPC.StatsController,
-      "contract" => RPC.ContractController,
-      "transaction" => RPC.TransactionController
-    })
+      get("/health", HealthController, :health)
+
+      post("/decompiled_smart_contract", DecompiledSmartContractController, :create)
+      post("/verified_smart_contracts", VerifiedSmartContractController, :create)
+
+      post("/eth_rpc", EthController, :eth_request)
+
+      forward("/", RPCTranslator, %{
+        "block" => RPC.BlockController,
+        "account" => RPC.AddressController,
+        "logs" => RPC.LogsController,
+        "token" => RPC.TokenController,
+        "stats" => RPC.StatsController,
+        "contract" => RPC.ContractController,
+        "transaction" => RPC.TransactionController
+      })
+    end
   end
 
   # Needs to be 200 to support the schema introspection for graphiql

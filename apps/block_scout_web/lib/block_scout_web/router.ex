@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Router do
   forward("/wobserver", Wobserver.Web.Router)
   forward("/admin", BlockScoutWeb.AdminRouter)
 
-  if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter, :enabled) do
+  if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:enabled] do
     forward("/api", BlockScoutWeb.ApiRouter)
 
     # For backward compatibility. Should be removed
@@ -37,8 +37,7 @@ defmodule BlockScoutWeb.Router do
     )
   end
 
-  if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter, :enabled) do
+  if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter)[:enabled] do
     forward("/", BlockScoutWeb.WebRouter)
   end
-
 end
