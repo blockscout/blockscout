@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.Router.Helpers, only: [transaction_token_transfer_path: 3]
+  import BlockScoutWeb.WebRouter.Helpers, only: [transaction_token_transfer_path: 3]
 
   alias Explorer.ExchangeRates.Token
 

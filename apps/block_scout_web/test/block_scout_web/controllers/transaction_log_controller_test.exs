@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.TransactionLogControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.Router.Helpers, only: [transaction_log_path: 3]
+  import BlockScoutWeb.WebRouter.Helpers, only: [transaction_log_path: 3]
 
   alias Explorer.ExchangeRates.Token
 
