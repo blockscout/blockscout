@@ -377,6 +377,7 @@ $tile-body-a-color: #5959d8 !default;
     border-top: 1px solid #dee2e6;
     border-right: 1px solid #dee2e6;
     border-bottom: 1px solid #dee2e6;
+    pointer-events: none;
     .tile-type-line-up {
       position: absolute;
       bottom: -1px;
