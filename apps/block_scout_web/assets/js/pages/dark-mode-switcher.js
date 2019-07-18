@@ -6,5 +6,6 @@ $('.dark-mode-changer').click(function () {
   } else {
     localStorage.setItem('current-color-mode', 'dark')
   }
+  // reload page each time
   document.location.reload(true)
 })
