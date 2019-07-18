@@ -59,10 +59,6 @@ else
   config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
 end
 
-config :explorer, Explorer.Staking.PoolsReader,
-  validators_contract_address: System.get_env("POS_VALIDATORS_CONTRACT"),
-  staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
-
 if System.get_env("POS_STAKING_CONTRACT") do
   config :explorer, Explorer.Staking.ContractState,
     enabled: true,
