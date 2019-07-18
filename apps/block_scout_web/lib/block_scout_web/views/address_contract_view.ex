@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.AddressContractView do
             val
           end
 
-        {count + 1, "#{acc}Arg [#{count}] (#{type}) : #{formatted_val}\n"}
+        {count + 1, "#{acc}Arg [#{count}] (<span style=\"color:#e2725b;\">#{type}</span>) : #{formatted_val}\n"}
       end)
 
     result
