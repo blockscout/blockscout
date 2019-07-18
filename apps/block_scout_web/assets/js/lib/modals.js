@@ -388,24 +388,11 @@ async function becomeCandidate (el) {
         openErrorModal('Error', `Since the current staking epoch is finishing now, you will be able to place a stake during the next staking epoch. Please try again in ${hours} hours ${minutes} minutes`)
       }
     } else {
-      contract.methods.addPool(stake * Math.pow(10, 18), address).send({
-        from: account,
-        gas: 400000,
-        gasPrice: 1000000000
+      let contractMethod = contract.methods.addPool(stake * Math.pow(10, 18), address)
+
+      invoke(el, account, contractMethod, () => {
+        $submitButton.html(buttonText)
       })
-        .on('receipt', _receipt => {
-          unlockAndHideModal(el)
-          $submitButton.html(buttonText)
-          store.dispatch({ type: 'START_REQUEST' })
-          store.dispatch({ type: 'GET_USER' })
-          store.dispatch({ type: 'RELOAD_POOLS_LIST' })
-          openSuccessModal('Success', 'The transaction is created')
-        })
-        .catch(_err => {
-          unlockAndHideModal(el)
-          $submitButton.html(buttonText)
-          openErrorModal('Error', 'Something went wrong')
-        })
     }
   } catch (err) {
     console.log(err)
@@ -435,22 +422,11 @@ async function removeMyPool (el) {
     $(el).find('.btn-line').attr('disabled', false)
   }
 
-  contract.methods.removeMyPool().send({
-    from: account,
-    gas: 400000,
-    gasPrice: 1000000000
+  let contractMethod = contract.methods.removeMyPool()
+
+  invoke(el, account, contractMethod, () => {
+    unlockModal()
   })
-    .on('receipt', _receipt => {
-      unlockModal()
-      store.dispatch({ type: 'START_REQUEST' })
-      store.dispatch({ type: 'GET_USER' })
-      store.dispatch({ type: 'RELOAD_POOLS_LIST' })
-      openSuccessModal('Success', 'The transaction is created')
-    })
-    .catch(_err => {
-      unlockModal()
-      openErrorModal('Error', 'Something went wrong')
-    })
 }
 
 function makeStake (event, modal, poolAddress) {
@@ -470,24 +446,11 @@ function makeStake (event, modal, poolAddress) {
   let buttonText = $submitButton.html()
   lockModal(modal)
 
-  contract.methods.stake(poolAddress, amount * Math.pow(10, 18)).send({
-    from: account,
-    gas: 400000,
-    gasPrice: 1000000000
+  let contractMethod = contract.methods.stake(poolAddress, amount * Math.pow(10, 18))
+
+  invoke(modal, account, contractMethod, () => {
+    $submitButton.html(buttonText)
   })
-    .on('receipt', _receipt => {
-      unlockAndHideModal(modal)
-      $submitButton.html(buttonText)
-      store.dispatch({ type: 'START_REQUEST' })
-      store.dispatch({ type: 'GET_USER' })
-      store.dispatch({ type: 'RELOAD_POOLS_LIST' })
-      openSuccessModal('Success', 'The transaction is created')
-    })
-    .catch(_err => {
-      unlockAndHideModal(modal)
-      $submitButton.html(buttonText)
-      openErrorModal('Error', 'Something went wrong')
-    })
 
   return false
 }
@@ -510,24 +473,11 @@ function moveStake (e, modal, fromAddress, toAddress) {
   let buttonText = $submitButton.html()
   lockModal(modal)
 
-  contract.methods.moveStake(fromAddress, toAddress, amount * Math.pow(10, 18)).send({
-    from: account,
-    gas: 400000,
-    gasPrice: 1000000000
+  let contractMethod = contract.methods.moveStake(fromAddress, toAddress, amount * Math.pow(10, 18))
+
+  invoke(modal, account, contractMethod, () => {
+    $submitButton.html(buttonText)
   })
-    .on('receipt', _receipt => {
-      unlockAndHideModal(modal)
-      $submitButton.html(buttonText)
-      store.dispatch({ type: 'START_REQUEST' })
-      store.dispatch({ type: 'GET_USER' })
-      store.dispatch({ type: 'RELOAD_POOLS_LIST' })
-      openSuccessModal('Success', 'The transaction is created')
-    })
-    .catch(_err => {
-      unlockAndHideModal(modal)
-      $submitButton.html(buttonText)
-      openErrorModal('Error', 'Something went wrong')
-    })
 
   return false
 }
@@ -556,15 +506,21 @@ function withdrawOrOrderStake (e, modal, poolAddress, method) {
     contractMethod = contract.methods.orderWithdraw(poolAddress, weiVal)
   }
 
-  contractMethod.send({
+  invoke(modal, account, contractMethod, () => {
+    $withdraw.html(withdrawText)
+    $order.html(orderText)
+  })
+}
+
+function invoke (modal, account, method, andFinally = (() => {})) {
+  method.send({
     from: account,
     gas: 400000,
     gasPrice: 1000000000
   })
     .on('receipt', _receipt => {
       unlockAndHideModal(modal)
-      $withdraw.html(withdrawText)
-      $order.html(orderText)
+      andFinally()
       store.dispatch({ type: 'START_REQUEST' })
       store.dispatch({ type: 'GET_USER' })
       store.dispatch({ type: 'RELOAD_POOLS_LIST' })
@@ -572,8 +528,7 @@ function withdrawOrOrderStake (e, modal, poolAddress, method) {
     })
     .catch(_err => {
       unlockAndHideModal(modal)
-      $withdraw.html(withdrawText)
-      $order.html(orderText)
+      andFinally()
       openErrorModal('Error', 'Something went wrong')
     })
 }
@@ -585,25 +540,11 @@ function claimWithdraw (modal, poolAddress) {
   let buttonText = $submitButton.html()
   lockModal(modal)
 
-  contract.methods.claimOrderedWithdraw(poolAddress).send({
-    from: account,
-    gas: 400000,
-    gasPrice: 1000000000
-  })
-    .on('receipt', _receipt => {
-      unlockAndHideModal(modal)
-      $submitButton.html(buttonText)
-      store.dispatch({ type: 'START_REQUEST' })
-      store.dispatch({ type: 'GET_USER' })
-      store.dispatch({ type: 'RELOAD_POOLS_LIST' })
-      openSuccessModal('Success', 'The transaction is created')
-    })
-    .catch(_err => {
-      unlockAndHideModal(modal)
-      $submitButton.html(buttonText)
-      openErrorModal('Error', 'Something went wrong')
-    })
+  let contractMethod = contract.methods.claimOrderedWithdraw(poolAddress)
 
+  invoke(account, contractMethod, () => {
+    $submitButton.html(buttonText)
+  })
   return false
 }
 
