@@ -140,6 +140,7 @@ defmodule Explorer.Etherscan.Logs do
       end
 
     query_with_consensus
+    |> order_by([log], asc: log.index)
     |> page_logs(paging_options)
     |> Repo.all()
   end
@@ -191,6 +192,7 @@ defmodule Explorer.Etherscan.Logs do
       )
 
     query_with_block_transaction_data
+    |> order_by([log], asc: log.index)
     |> page_logs(paging_options)
     |> Repo.all()
   end
@@ -244,13 +246,11 @@ defmodule Explorer.Etherscan.Logs do
 
   defp page_logs(query, %{block_number: nil, transaction_index: nil, log_index: nil}) do
     query
-    |> order_by([log], asc: log.index)
   end
 
   defp page_logs(query, %{block_number: block_number, transaction_index: transaction_index, log_index: log_index}) do
-    sorted_query = order_by(query, [log], asc: log.index)
-
-    from(data in sorted_query,
+    from(
+      data in query,
       where:
         data.index > ^log_index and data.block_number >= ^block_number and
           data.transaction_index >= ^transaction_index

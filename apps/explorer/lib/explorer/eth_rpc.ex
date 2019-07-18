@@ -72,7 +72,7 @@ defmodule Explorer.EthRPC do
          {:ok, from_block_param, to_block_param} <- logs_blocks_filter(filter_options),
          {:ok, from_block} <- cast_block(from_block_param),
          {:ok, to_block} <- cast_block(to_block_param),
-         {:ok, paging_options} <- paging_options(filter_options["paging_options"]) do
+         {:ok, paging_options} <- paging_options(filter_options) do
       filter =
         address_or_topic_params
         |> Map.put(:from_block, from_block)
@@ -227,9 +227,11 @@ defmodule Explorer.EthRPC do
   end
 
   defp paging_options(%{
-         "log_index" => log_index,
-         "transaction_index" => transaction_index,
-         "block_number" => block_number
+         "paging_options" => %{
+           "log_index" => log_index,
+           "transaction_index" => transaction_index,
+           "block_number" => block_number
+         }
        }) do
     {:ok,
      %{
