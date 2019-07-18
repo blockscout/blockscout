@@ -53,6 +53,26 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
               }} = response
     end
 
+    test "compiles smart contract with default evm version", %{contract_code_info: contract_code_info} do
+      optimize = true
+
+      response =
+        CodeCompiler.run(
+          name: contract_code_info.name,
+          compiler_version: contract_code_info.version,
+          code: contract_code_info.source_code,
+          optimize: optimize,
+          evm_version: "default"
+        )
+
+      assert {:ok,
+              %{
+                "abi" => _,
+                "bytecode" => _,
+                "name" => _
+              }} = response
+    end
+
     test "compiles code with external libraries" do
       Enum.each(@compiler_tests, fn compiler_test ->
         compiler_version = compiler_test["compiler_version"]
