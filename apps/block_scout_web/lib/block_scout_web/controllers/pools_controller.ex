@@ -66,8 +66,8 @@ defmodule BlockScoutWeb.PoolsController do
   end
 
   defp render_template(filter, conn, _) do
-    epoch_number = ContractState.epoch_number() || 0
-    epoch_end_block = ContractState.epoch_end_block() || 0
+    epoch_number = ContractState.get(:epoch_number, 0)
+    epoch_end_block = ContractState.get(:epoch_end_block, 0)
     block_number = BlockNumberCache.max_number()
     average_block_time = AverageBlockTime.average_block_time()
 

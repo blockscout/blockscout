@@ -17,29 +17,15 @@ defmodule Explorer.Staking.ContractState do
 
   @table_name __MODULE__
 
-  @doc "Current staking epoch number"
-  def epoch_number do
-    get(:epoch_number, 0)
-  end
 
-  @doc "The end block of current staking epoch"
-  def epoch_end_block do
-    get(:epoch_end_block, 0)
-  end
-
-  @doc "Minimal candidate stake"
-  def min_candidate_stake do
-    get(:min_candidate_stake, 1)
-  end
-
-  @doc "Minimal delegator stake"
-  def min_delegator_stake do
-    get(:min_delegator_stake, 1)
-  end
-
-  @doc "Token contract address"
-  def token_contract_address do
-    get(:token_contract_address, nil)
+  @spec get(atom(), value) :: value when value: any()
+  def get(param, default \\ nil) do
+    with info when info != :undefined <- :ets.info(@table_name),
+         [{_, value}] <- :ets.lookup(@table_name, param) do
+      value
+    else
+      _ -> default
+    end
   end
 
   def start_link([]) do
