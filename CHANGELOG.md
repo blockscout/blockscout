@@ -1,11 +1,13 @@
 ## Current
 
 ### Features
+- [#2379](https://github.com/poanetwork/blockscout/pull/2379) - Disable network selector when is empty
 - [#2360](https://github.com/poanetwork/blockscout/pull/2360) - add default evm version to smart contract verification
 - [#2352](https://github.com/poanetwork/blockscout/pull/2352) - Fetch rewards in parallel with transactions
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
 ### Fixes
+- [#2378](https://github.com/poanetwork/blockscout/pull/2378) - Page performance: exclude moment.js localization files except EN, remove unused css
 - [#2368](https://github.com/poanetwork/blockscout/pull/2368) - add two columns of smart contract info
 - [#2375](https://github.com/poanetwork/blockscout/pull/2375) - Update created_contract_code_indexed_at on transaction import conflict
 - [#2346](https://github.com/poanetwork/blockscout/pull/2346) - Avoid fetching internal transactions of blocks that still need refetching
