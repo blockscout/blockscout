@@ -30,15 +30,16 @@ defmodule BlockScoutWeb.AddressContractView do
     {_, result} =
       contract.constructor_arguments
       |> decode_data(input_types)
-      |> Enum.reduce({0, "#{contract.constructor_arguments}\n\n"}, fn val, {count, acc} ->
+      |> Enum.zip(constructor_abi["inputs"])
+      |> Enum.reduce({0, "#{contract.constructor_arguments}\n\n"}, fn {val, %{"type" => type}}, {count, acc} ->
         formatted_val =
           if is_binary(val) do
-            Base.encode16(val)
+            Base.encode16(val, case: :lower)
           else
             val
           end
 
-        {count + 1, "#{acc}Arg [#{count}] : #{formatted_val}\n"}
+        {count + 1, "#{acc}Arg [#{count}] (#{type}) : #{formatted_val}\n"}
       end)
 
     result
