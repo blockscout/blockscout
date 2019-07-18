@@ -6,6 +6,7 @@ defmodule BlockScout.Mixfile do
   def project do
     [
       aliases: aliases(Mix.env()),
+      version: "2.0",
       apps_path: "apps",
       deps: deps(),
       dialyzer: [
@@ -13,7 +14,7 @@ defmodule BlockScout.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: ".dialyzer-ignore"
       ],
-      elixir: "~> 1.8",
+      elixir: "~> 1.9",
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.detail": :test,
@@ -23,7 +24,17 @@ defmodule BlockScout.Mixfile do
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
-      test_coverage: [tool: ExCoveralls]
+      test_coverage: [tool: ExCoveralls],
+      releases: [
+        blockscout: [
+          applications: [
+            block_scout_web: :permanent,
+            ethereum_jsonrpc: :permanent,
+            explorer: :permanent,
+            indexer: :permanent
+          ]
+        ]
+      ]
     ]
   end
 
@@ -61,8 +72,6 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
-      # Release
-      {:distillery, "~> 2.0", runtime: false},
       # Documentation
       {:ex_doc, "~> 0.19.0", only: [:dev]},
       # Code coverage
