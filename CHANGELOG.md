@@ -2,10 +2,12 @@
 
 ### Features
 - [#2366](https://github.com/poanetwork/blockscout/pull/2366) - paginate eth logs
+- [#2360](https://github.com/poanetwork/blockscout/pull/2360) - add default evm version to smart contract verification
 - [#2352](https://github.com/poanetwork/blockscout/pull/2352) - Fetch rewards in parallel with transactions
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
 ### Fixes
+- [#2375](https://github.com/poanetwork/blockscout/pull/2375) - Update created_contract_code_indexed_at on transaction import conflict
 - [#2346](https://github.com/poanetwork/blockscout/pull/2346) - Avoid fetching internal transactions of blocks that still need refetching
 - [#2350](https://github.com/poanetwork/blockscout/pull/2350) - fix invalid User agent headers
 - [#2345](https://github.com/poanetwork/blockscout/pull/2345) - do not override existing market records
