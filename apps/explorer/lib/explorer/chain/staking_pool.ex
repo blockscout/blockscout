@@ -21,7 +21,7 @@ defmodule Explorer.Chain.StakingPool do
           is_active: boolean,
           is_banned: boolean,
           is_validator: boolean,
-          likelihood: integer,
+          likelihood: Decimal.t(),
           staked_ratio: Decimal.t(),
           self_staked_amount: Wei.t(),
           staked_amount: Wei.t(),
