@@ -32,8 +32,8 @@
 - [#2302](https://github.com/poanetwork/blockscout/pull/2302) - fix names for xDai source
 - [#2289](https://github.com/poanetwork/blockscout/pull/2289) - Optional websockets for dev environment
 - [#2307](https://github.com/poanetwork/blockscout/pull/2307) - add GoJoy to README
-
 - [#2293](https://github.com/poanetwork/blockscout/pull/2293) - remove request idle timeout configuration
+- [#2255](https://github.com/poanetwork/blockscout/pull/2255) - bump elixir version to 1.9.0
 
 
 ## 2.0.1-beta
@@ -120,6 +120,7 @@
 ### Chore
 - [#2127](https://github.com/poanetwork/blockscout/pull/2127) - use previouse chromedriver version
 - [#2118](https://github.com/poanetwork/blockscout/pull/2118) - show only the last decompiled contract
+- [#2255](https://github.com/poanetwork/blockscout/pull/2255) - upgrade elixir version to 1.9.0
 - [#2256](https://github.com/poanetwork/blockscout/pull/2256) - use the latest version of chromedriver
 
 ## 2.0.0-beta

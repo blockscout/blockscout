@@ -509,10 +509,12 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:31
 #: lib/block_scout_web/templates/layout/app.html.eex:53
 #: lib/block_scout_web/views/address_view.ex:121
+#: lib/block_scout_web/views/address_view.ex:121
 msgid "Market Cap"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:129
 #: lib/block_scout_web/views/transaction_view.ex:129
 msgid "Max of"
 msgstr ""
