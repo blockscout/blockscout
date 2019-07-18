@@ -19,9 +19,9 @@ defmodule BlockScoutWeb.Router do
     plug(:accepts, ["json"])
   end
 
-  scope "/", BlockScoutWeb.API.V1, as: :api_v1 do
+  scope "/api/v1", BlockScoutWeb.API.V1, as: :api_v1 do
     pipe_through(:api)
-    get("/api/v1/health", HealthController, :health)
+    get("/health", HealthController, :health)
   end
 
   scope "/verify_smart_contract" do
