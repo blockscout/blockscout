@@ -1,7 +1,7 @@
 ## Current
 
 ### Features
-- [#2366)(https://github.com/poanetwork/blockscout/pull/2366) - paginate eth logs
+- [#2366](https://github.com/poanetwork/blockscout/pull/2366) - paginate eth logs
 - [#2352](https://github.com/poanetwork/blockscout/pull/2352) - Fetch rewards in parallel with transactions
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
