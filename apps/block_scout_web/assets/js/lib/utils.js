@@ -11,3 +11,16 @@ export function batchChannel (func) {
     debouncedFunc()
   }
 }
+
+export function showLoader (isTimeout, loader) {
+  if (isTimeout) {
+    const timeout = setTimeout(function () {
+      loader.removeAttr('hidden')
+      loader.show()
+    }, 1000)
+    return timeout
+  } else {
+    loader.hide()
+    return null
+  }
+}
