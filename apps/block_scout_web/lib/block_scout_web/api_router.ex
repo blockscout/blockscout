@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.ApiRouter do
   use BlockScoutWeb, :router
 
   alias BlockScoutWeb.API.RPC
-  alias BlockScoutWeb.Plug.GraphQL
 
   pipeline :api do
     plug(:accepts, ["json"])
@@ -18,8 +17,6 @@ defmodule BlockScoutWeb.ApiRouter do
 
     scope "/", BlockScoutWeb.API.V1 do
       get("/supply", SupplyController, :supply)
-
-      get("/health", HealthController, :health)
 
       post("/decompiled_smart_contract", DecompiledSmartContractController, :create)
       post("/verified_smart_contracts", VerifiedSmartContractController, :create)
@@ -37,24 +34,6 @@ defmodule BlockScoutWeb.ApiRouter do
       })
     end
   end
-
-  # Needs to be 200 to support the schema introspection for graphiql
-  @max_complexity 200
-
-  forward("/graphql", Absinthe.Plug,
-    schema: BlockScoutWeb.Schema,
-    analyze_complexity: true,
-    max_complexity: @max_complexity
-  )
-
-  forward("/graphiql", Absinthe.Plug.GraphiQL,
-    schema: BlockScoutWeb.Schema,
-    interface: :advanced,
-    default_query: GraphQL.default_query(),
-    socket: BlockScoutWeb.UserSocket,
-    analyze_complexity: true,
-    max_complexity: @max_complexity
-  )
 
   # For backward compatibility. Should be removed
   scope "/", BlockScoutWeb.API.RPC do

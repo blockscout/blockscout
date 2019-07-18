@@ -199,9 +199,6 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
-    get("/api_docs", APIDocsController, :index)
-    get("/eth_rpc_api_docs", APIDocsController, :eth_rpc)
-
     get("/:page", PageNotFoundController, :index)
   end
 end

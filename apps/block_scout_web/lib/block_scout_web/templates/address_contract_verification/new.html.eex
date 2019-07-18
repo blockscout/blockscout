@@ -9,7 +9,7 @@
       <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
 
       <%= form_for @changeset,
-          api_v1_address_contract_verification_path(@conn, :create),
+          address_contract_verification_path(@conn, :create),
           [],
           fn f -> %>
 

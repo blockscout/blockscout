@@ -2,6 +2,10 @@ defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
   alias BlockScoutWeb.Plug.GraphQL
+  alias BlockScoutWeb.{ApiRouter, WebRouter}
+
+  forward("/wobserver", Wobserver.Web.Router)
+  forward("/admin", BlockScoutWeb.AdminRouter)
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -11,13 +15,24 @@ defmodule BlockScoutWeb.Router do
     plug(BlockScoutWeb.CSPHeader)
   end
 
-  forward("/wobserver", Wobserver.Web.Router)
-  forward("/admin", BlockScoutWeb.AdminRouter)
+  pipeline :api do
+    plug(:accepts, ["json"])
+  end
 
-  if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:enabled] do
-    forward("/api", BlockScoutWeb.ApiRouter)
+  scope "/", BlockScoutWeb.API.V1, as: :api_v1 do
+    pipe_through(:api)
+    get("/api/v1/health", HealthController, :health)
+  end
 
-    # For backward compatibility. Should be removed
+  scope "/verify_smart_contract" do
+    pipe_through(:api)
+
+    post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+  end
+
+  if Application.get_env(:block_scout_web, ApiRouter)[:enabled] do
+    forward("/api", ApiRouter)
+
     # Needs to be 200 to support the schema introspection for graphiql
     @max_complexity 200
 
@@ -35,9 +50,28 @@ defmodule BlockScoutWeb.Router do
       analyze_complexity: true,
       max_complexity: @max_complexity
     )
+  else
+    scope "/", BlockScoutWeb do
+      pipe_through(:browser)
+      get("/api_docs", PageNotFoundController, :index)
+      get("/eth_rpc_api_docs", PageNotFoundController, :index)
+    end
   end
 
-  if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter)[:enabled] do
+  scope "/", BlockScoutWeb do
+    pipe_through(:browser)
+
+    get("/api_docs", APIDocsController, :index)
+    get("/eth_rpc_api_docs", APIDocsController, :eth_rpc)
+  end
+
+  if Application.get_env(:block_scout_web, WebRouter)[:enabled] do
     forward("/", BlockScoutWeb.WebRouter)
+  else
+    scope "/", BlockScoutWeb do
+      pipe_through(:browser)
+
+      forward("/", APIDocsController, :index)
+    end
   end
 end

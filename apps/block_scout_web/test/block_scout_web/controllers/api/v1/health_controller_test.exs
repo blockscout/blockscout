@@ -1,8 +1,6 @@
 defmodule BlockScoutWeb.API.V1.HealthControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias BlockScoutWeb.ApiRouter.Helpers
-
   describe "GET last_block_status/0" do
     test "returns error when there are no blocks in db", %{conn: conn} do
       request = get(conn, api_v1_health_path(conn, :health))
@@ -48,9 +46,5 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
                }
              } = Poison.decode!(request.resp_body)
     end
-  end
-
-  def api_v1_health_path(conn, action) do
-    "/api" <> Helpers.api_v1_health_path(conn, action)
   end
 end
