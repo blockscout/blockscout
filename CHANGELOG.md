@@ -8,6 +8,7 @@
 
 ### Fixes
 - [#2378](https://github.com/poanetwork/blockscout/pull/2378) - Page performance: exclude moment.js localization files except EN, remove unused css
+- [#2368](https://github.com/poanetwork/blockscout/pull/2368) - add two columns of smart contract info
 - [#2375](https://github.com/poanetwork/blockscout/pull/2375) - Update created_contract_code_indexed_at on transaction import conflict
 - [#2346](https://github.com/poanetwork/blockscout/pull/2346) - Avoid fetching internal transactions of blocks that still need refetching
 - [#2350](https://github.com/poanetwork/blockscout/pull/2350) - fix invalid User agent headers

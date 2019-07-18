@@ -23,27 +23,27 @@
       <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
         <div class="mb-4">
           <dl class="row">
-            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Contract name:" %></dt>
-            <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.name %></dd>
+            <dt class="col-md-2 text-muted"><%= gettext "Contract name:" %></dt>
+            <dd class="col-md-4"><%= @address.smart_contract.name %></dd>
+            <div class="d-none d-sm-block d-md-none"></br></br></div>
+            <div class="d-block d-sm-none"></br></br></div>
+            <dt class="col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
+            <dd class="col-md-4"><%= format_optimization_text(@address.smart_contract.optimization) %></dd>
           </dl>
           <dl class="row">
-            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Compiler version" %></dt>
-            <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.compiler_version %></dd>
+            <dt class="col-md-2 text-muted"><%= gettext "Compiler version" %></dt>
+            <dd class="col-md-4"><%= @address.smart_contract.compiler_version %></dd>
+            <div class="d-none d-sm-block d-md-none"></br></br></div>
+            <div class="d-block d-sm-none"></br></br></div>
+            <%= if @address.smart_contract.optimization && @address.smart_contract.optimization_runs do %>
+              <dt class="col-md-2 text-muted"><%= gettext "Optimization runs" %></dt>
+              <dd class="col-md-4"><%= @address.smart_contract.optimization_runs %></dd>
+            <% end %>
           </dl>
           <%= if @address.smart_contract.evm_version do %>
             <dl class="row">
               <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "EVM Version" %></dt>
               <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.evm_version %></dd>
-            </dl>
-          <% end %>
-          <dl class="row">
-            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
-            <dd class="col-sm-8 col-md-10"><%= format_optimization_text(@address.smart_contract.optimization) %></dd>
-          </dl>
-          <%= if @address.smart_contract.optimization && @address.smart_contract.optimization_runs do %>
-            <dl class="row">
-              <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Optimization runs" %></dt>
-              <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.optimization_runs %></dd>
             </dl>
           <% end %>
           <%= if @address.smart_contract.constructor_arguments do %>
