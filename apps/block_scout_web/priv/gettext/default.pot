@@ -230,7 +230,7 @@ msgid "Compiler"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:30
+#: lib/block_scout_web/templates/address_contract/index.html.eex:34
 msgid "Compiler version"
 msgstr ""
 
@@ -509,10 +509,12 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:31
 #: lib/block_scout_web/templates/layout/app.html.eex:53
 #: lib/block_scout_web/views/address_view.ex:121
+#: lib/block_scout_web/views/address_view.ex:121
 msgid "Market Cap"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:129
 #: lib/block_scout_web/views/transaction_view.ex:129
 msgid "Max of"
 msgstr ""
@@ -577,7 +579,7 @@ msgid "OUT"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:40
+#: lib/block_scout_web/templates/address_contract/index.html.eex:30
 msgid "Optimization enabled"
 msgstr ""
 
@@ -1487,7 +1489,7 @@ msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:35
+#: lib/block_scout_web/templates/address_contract/index.html.eex:45
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:51
 msgid "EVM Version"
 msgstr ""
@@ -1518,7 +1520,7 @@ msgid "Decompiler version"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:45
+#: lib/block_scout_web/templates/address_contract/index.html.eex:39
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:83
 msgid "Optimization runs"
 msgstr ""
