@@ -3297,4 +3297,203 @@ defmodule Explorer.Chain do
     |> Base.decode16!(case: :mixed)
     |> TypeDecoder.decode_raw(types)
   end
+
+  @doc """
+  Checks if an `t:Explorer.Chain.Address.t/0` with the given `hash` exists.
+
+  Returns `:ok` if found
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      ...> )
+      iex> Explorer.Chain.check_address_exists(hash)
+      :ok
+
+  Returns `:not_found` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      iex> Explorer.Chain.check_address_exists(hash)
+      :not_found
+
+  """
+  @spec check_address_exists(Hash.Address.t()) :: :ok | :not_found
+  def check_address_exists(address_hash) do
+    address_hash
+    |> address_exists?()
+    |> boolean_to_check_result()
+  end
+
+  @doc """
+  Checks if an `t:Explorer.Chain.Address.t/0` with the given `hash` exists.
+
+  Returns `true` if found
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      ...> )
+      iex> Explorer.Chain.address_exists?(hash)
+      true
+
+  Returns `false` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      iex> Explorer.Chain.address_exists?(hash)
+      false
+
+  """
+  @spec address_exists?(Hash.Address.t()) :: boolean()
+  def address_exists?(address_hash) do
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^address_hash
+      )
+
+    Repo.exists?(query)
+  end
+
+  @doc """
+  Checks if it exists an `t:Explorer.Chain.Address.t/0` that has the provided
+  `t:Explorer.Chain.Address.t/0` `hash` and a contract.
+
+  Returns `:ok` if found and `:not_found` otherwise.
+  """
+  @spec check_contract_address_exists(Hash.Address.t()) :: :ok | :not_found
+  def check_contract_address_exists(address_hash) do
+    address_hash
+    |> contract_address_exists?()
+    |> boolean_to_check_result()
+  end
+
+  @doc """
+  Checks if it exists an `t:Explorer.Chain.Address.t/0` that has the provided
+  `t:Explorer.Chain.Address.t/0` `hash` and a contract.
+
+  Returns `true` if found and `false` otherwise.
+  """
+  @spec contract_address_exists?(Hash.Address.t()) :: boolean()
+  def contract_address_exists?(address_hash) do
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^address_hash and not is_nil(address.contract_code)
+      )
+
+    Repo.exists?(query)
+  end
+
+  @doc """
+  Checks if it exists a `t:Explorer.Chain.DecompiledSmartContract.t/0` for the
+  `t:Explorer.Chain.Address.t/0` with the provided `hash` and with the provided version.
+
+  Returns `:ok` if found and `:not_found` otherwise.
+  """
+  @spec check_decompiled_contract_exists(Hash.Address.t(), String.t()) :: :ok | :not_found
+  def check_decompiled_contract_exists(address_hash, version) do
+    address_hash
+    |> decompiled_contract_exists?(version)
+    |> boolean_to_check_result()
+  end
+
+  @doc """
+  Checks if it exists a `t:Explorer.Chain.DecompiledSmartContract.t/0` for the
+  `t:Explorer.Chain.Address.t/0` with the provided `hash` and with the provided version.
+
+  Returns `true` if found and `false` otherwise.
+  """
+  @spec decompiled_contract_exists?(Hash.Address.t(), String.t()) :: boolean()
+  def decompiled_contract_exists?(address_hash, version) do
+    query =
+      from(contract in DecompiledSmartContract,
+        where: contract.address_hash == ^address_hash and contract.decompiler_version == ^version
+      )
+
+    Repo.exists?(query)
+  end
+
+  @doc """
+  Checks if it exists a verified `t:Explorer.Chain.SmartContract.t/0` for the
+  `t:Explorer.Chain.Address.t/0` with the provided `hash`.
+
+  Returns `:ok` if found and `:not_found` otherwise.
+  """
+  @spec check_verified_smart_contract_exists(Hash.Address.t()) :: :ok | :not_found
+  def check_verified_smart_contract_exists(address_hash) do
+    address_hash
+    |> verified_smart_contract_exists?()
+    |> boolean_to_check_result()
+  end
+
+  @doc """
+  Checks if it exists a verified `t:Explorer.Chain.SmartContract.t/0` for the
+  `t:Explorer.Chain.Address.t/0` with the provided `hash`.
+
+  Returns `true` if found and `false` otherwise.
+  """
+  @spec verified_smart_contract_exists?(Hash.Address.t()) :: boolean()
+  def verified_smart_contract_exists?(address_hash) do
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address_hash
+      )
+
+    Repo.exists?(query)
+  end
+
+  @doc """
+  Checks if a `t:Explorer.Chain.Transaction.t/0` with the given `hash` exists.
+
+  Returns `:ok` if found
+
+      iex> %Transaction{hash: hash} = insert(:transaction)
+      iex> Explorer.Chain.check_transaction_exists(hash)
+      :ok
+
+  Returns `:not_found` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      iex> Explorer.Chain.check_transaction_exists(hash)
+      :not_found
+  """
+  @spec check_transaction_exists(Hash.Full.t()) :: :ok | :not_found
+  def check_transaction_exists(hash) do
+    hash
+    |> transaction_exists?()
+    |> boolean_to_check_result()
+  end
+
+  @doc """
+  Checks if a `t:Explorer.Chain.Transaction.t/0` with the given `hash` exists.
+
+  Returns `true` if found
+
+      iex> %Transaction{hash: hash} = insert(:transaction)
+      iex> Explorer.Chain.transaction_exists?(hash)
+      true
+
+  Returns `false` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      iex> Explorer.Chain.transaction_exists?(hash)
+      false
+  """
+  @spec transaction_exists?(Hash.Full.t()) :: boolean()
+  def transaction_exists?(hash) do
+    query =
+      from(
+        transaction in Transaction,
+        where: transaction.hash == ^hash
+      )
+
+    Repo.exists?(query)
+  end
+
+  defp boolean_to_check_result(true), do: :ok
+
+  defp boolean_to_check_result(false), do: :not_found
 end
