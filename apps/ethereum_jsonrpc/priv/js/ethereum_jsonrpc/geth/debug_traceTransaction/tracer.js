@@ -91,6 +91,9 @@
             case 'CREATE':
                 this.createOp(log);
                 break;
+            case 'CREATE2':
+                this.create2Op(log);
+                break;
             case 'SELFDESTRUCT':
                 this.selfDestructOp(log, db);
                 break;
@@ -155,6 +158,21 @@
 
         const call = {
             type: 'create',
+            from: toHex(log.contract.getAddress()),
+            init: toHex(log.memory.slice(inputOffset, inputEnd)),
+            valueBigInt: bigInt(stackValue.toString(10))
+        };
+        this.callStack.push(call);
+    },
+
+    create2Op(log) {
+        const inputOffset = log.stack.peek(1).valueOf();
+        const inputLength = log.stack.peek(2).valueOf();
+        const inputEnd = inputOffset + inputLength;
+        const stackValue = log.stack.peek(0);
+
+        const call = {
+            type: 'create2',
             from: toHex(log.contract.getAddress()),
             init: toHex(log.memory.slice(inputOffset, inputEnd)),
             valueBigInt: bigInt(stackValue.toString(10))
@@ -422,4 +440,3 @@
         call.gasUsed = '0x' + gasUsedBigInt.toString(16);
     }
 }
-
