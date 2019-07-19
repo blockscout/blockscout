@@ -930,29 +930,40 @@ defmodule Explorer.Chain do
     Repo.all(query)
   end
 
-  @spec find_contract_address(Hash.t()) :: {:ok, Address.t()} | {:error, :not_found}
-  def find_contract_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
+  @doc """
+  Finds an `t:Explorer.Chain.Address.t/0` that has the provided `t:Explorer.Chain.Address.t/0` `hash` and a contract.
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
+
+  Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
+
+  """
+  @spec find_contract_address(Hash.Address.t(), [necessity_by_association_option], boolean()) ::
+          {:ok, Address.t()} | {:error, :not_found}
+  def find_contract_address(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
+        options \\ [],
+        query_decompiled_code_flag \\ false
+      ) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     query =
       from(
         address in Address,
-        preload: [
-          :contracts_creation_internal_transaction,
-          :names,
-          :smart_contract,
-          :token,
-          :contracts_creation_transaction
-        ],
         where: address.hash == ^hash and not is_nil(address.contract_code)
       )
 
-    query_with_decompiled_flag = with_decompiled_code_flag(query, hash)
-
-    address = Repo.one(query_with_decompiled_flag)
-
-    if address do
-      {:ok, address}
-    else
-      {:error, :not_found}
+    query
+    |> join_associations(necessity_by_association)
+    |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      address -> {:ok, address}
     end
   end
 
@@ -3275,8 +3286,6 @@ defmodule Explorer.Chain do
   end
 
   defp staking_pool_filter(query, _), do: query
-
-  defp with_decompiled_code_flag(query, hash, use_option \\ true)
 
   defp with_decompiled_code_flag(query, _hash, false), do: query
 
