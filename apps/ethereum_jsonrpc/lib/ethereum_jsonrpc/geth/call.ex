@@ -432,7 +432,8 @@ defmodule EthereumJSONRPC.Geth.Call do
          "gas" => gas,
          "init" => init,
          "value" => value
-       }) when type in ~w(create create2) do
+       })
+       when type in ~w(create create2) do
     %{
       block_number: block_number,
       transaction_index: transaction_index,
@@ -462,7 +463,8 @@ defmodule EthereumJSONRPC.Geth.Call do
          "init" => init,
          "createdContractCode" => created_contract_code,
          "value" => value
-       }) when type in ~w(create create2) do
+       })
+       when type in ~w(create create2) do
     %{
       block_number: block_number,
       transaction_index: transaction_index,
