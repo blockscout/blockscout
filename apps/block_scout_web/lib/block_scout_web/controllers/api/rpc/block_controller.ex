@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
     with {:block_param, {:ok, unsafe_block_number}} <- {:block_param, Map.fetch(params, "blockno")},
          {:ok, block_number} <- ChainWeb.param_to_block_number(unsafe_block_number),
          {:ok, block} <- Chain.number_to_block(block_number) do
-      reward = Chain.block_reward(block)
+      reward = Chain.block_reward(block_number)
 
       render(conn, :block_reward, block: block, reward: reward)
     else
