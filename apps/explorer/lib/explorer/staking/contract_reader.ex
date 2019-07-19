@@ -27,7 +27,8 @@ defmodule Explorer.Staking.ContractReader do
       active_delegators: {:staking, "poolDelegators", [staking_address]},
       inactive_delegators: {:staking, "poolDelegatorsInactive", [staking_address]},
       staked_amount: {:staking, "stakeAmountTotalMinusOrderedWithdraw", [staking_address]},
-      self_staked_amount: {:staking, "stakeAmountMinusOrderedWithdraw", [staking_address, staking_address]}
+      self_staked_amount: {:staking, "stakeAmountMinusOrderedWithdraw", [staking_address, staking_address]},
+      block_rewards: {:block_reward, "snapshotRewardPercents", [staking_address]}
     ]
   end
 

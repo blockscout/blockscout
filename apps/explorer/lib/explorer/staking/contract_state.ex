@@ -47,19 +47,24 @@ defmodule Explorer.Staking.ContractState do
 
     staking_abi = abi("StakingAuRa")
     validator_set_abi = abi("ValidatorSetAuRa")
+    block_reward_abi = abi("BlockRewardAuRa")
 
     staking_contract_address = Application.get_env(:explorer, __MODULE__)[:staking_contract_address]
 
     %{"validatorSetContract" => {:ok, [validator_set_contract_address]}} =
       Reader.query_contract(staking_contract_address, staking_abi, %{"validatorSetContract" => []})
 
+    %{"blockRewardContract" => {:ok, [block_reward_contract_address]}} =
+      Reader.query_contract(validator_set_contract_address, validator_set_abi, %{"blockRewardContract" => []})
+
     state = %__MODULE__{
       seen_block: 0,
       contracts: %{
         staking: staking_contract_address,
-        validator_set: validator_set_contract_address
+        validator_set: validator_set_contract_address,
+        block_reward: block_reward_contract_address
       },
-      abi: staking_abi ++ validator_set_abi
+      abi: staking_abi ++ validator_set_abi ++ block_reward_abi
     }
 
     {:ok, state, {:continue, []}}
@@ -142,7 +147,12 @@ defmodule Explorer.Staking.ContractState do
           delegators_count: length(staking_response.active_delegators),
           staked_ratio: ratio(staking_response.staked_amount, staked_total),
           likelihood: ratio(likelihood[staking_address] || 0, total_likelihood),
-          block_reward_ratio: max(ratio(staking_response.self_staked_amount, staking_response.staked_amount), 30),
+          block_reward_ratio:
+            if mining_response.is_validator and staking_response.block_rewards != [] do
+              Enum.at(staking_response.block_rewards, 0) / 1_000_000
+            else
+              max(ratio(staking_response.self_staked_amount, staking_response.staked_amount), 30)
+            end,
           is_deleted: false
         }
         |> Map.merge(
