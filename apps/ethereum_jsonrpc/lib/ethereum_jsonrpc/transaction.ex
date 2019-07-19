@@ -14,8 +14,7 @@ defmodule EthereumJSONRPC.Transaction do
   alias EthereumJSONRPC
 
   @type elixir :: %{
-          String.t()
-          | nil => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
+          String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
         }
 
   @typedoc """
