@@ -130,7 +130,7 @@
             const ret = log.stack.peek(0);
 
             if (!ret.equals(0)) {
-                if (call.type === 'create') {
+                if (call.type === 'create' || call.type === 'create2') {
                     call.createdContractAddressHash = toHex(toAddress(ret.toString(16)));
                     call.createdContractCode = toHex(db.getCode(toAddress(ret.toString(16))));
                 } else {
@@ -261,6 +261,9 @@
             case 'CREATE':
                 result = this.ctxToCreate(ctx, db);
                 break;
+            case 'CREATE2':
+                result = this.ctxToCreate2(ctx, db);
+                break;
         }
 
         return result;
@@ -297,6 +300,22 @@
     ctxToCreate(ctx, db) {
         const result = {
             type: 'create',
+            from: toHex(ctx.from),
+            init: toHex(ctx.input),
+            valueBigInt: bigInt(ctx.value.toString(10)),
+            gasBigInt: bigInt(ctx.gas),
+            gasUsedBigInt: bigInt(ctx.gasUsed)
+        };
+
+        this.putBottomChildCalls(result);
+        this.putErrorOrCreatedContract(result, ctx, db);
+
+        return result;
+    },
+
+    ctxToCreate2(ctx, db) {
+        const result = {
+            type: 'create2',
             from: toHex(ctx.from),
             init: toHex(ctx.input),
             valueBigInt: bigInt(ctx.value.toString(10)),
