@@ -111,7 +111,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           is_banned: fragment("EXCLUDED.is_banned"),
           is_validator: fragment("EXCLUDED.is_validator"),
           likelihood: fragment("EXCLUDED.likelihood"),
-          block_reward: fragment("EXCLUDED.block_reward"),
+          block_reward_ratio: fragment("EXCLUDED.block_reward_ratio"),
           staked_ratio: fragment("EXCLUDED.staked_ratio"),
           self_staked_amount: fragment("EXCLUDED.self_staked_amount"),
           staked_amount: fragment("EXCLUDED.staked_amount"),

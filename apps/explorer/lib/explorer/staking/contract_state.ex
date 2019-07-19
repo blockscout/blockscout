@@ -142,7 +142,7 @@ defmodule Explorer.Staking.ContractState do
           delegators_count: length(staking_response.active_delegators),
           staked_ratio: ratio(staking_response.staked_amount, staked_total),
           likelihood: ratio(likelihood[staking_address] || 0, total_likelihood),
-          block_reward: max(ratio(staking_response.self_staked_amount, staking_response.staked_amount), 30),
+          block_reward_ratio: max(ratio(staking_response.self_staked_amount, staking_response.staked_amount), 30),
           is_deleted: false
         }
         |> Map.merge(
