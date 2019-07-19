@@ -364,8 +364,8 @@ defmodule Explorer.Chain do
 
   Uncles are not currently accounted for.
   """
-  @spec block_reward(Block.t()) :: Wei.t()
-  def block_reward(%Block{number: block_number}) do
+  @spec block_reward(Block.block_number()) :: Wei.t()
+  def block_reward(block_number) do
     query =
       from(
         block in Block,
@@ -415,8 +415,8 @@ defmodule Explorer.Chain do
       `:key` (a tuple of the lowest/oldest `{index}`) and. Results will be the transactions older than
       the `index` that are passed.
   """
-  @spec block_to_transactions(Block.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def block_to_transactions(%Block{hash: block_hash}, options \\ []) when is_list(options) do
+  @spec block_to_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
+  def block_to_transactions(block_hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     options
@@ -432,8 +432,8 @@ defmodule Explorer.Chain do
   @doc """
   Counts the number of `t:Explorer.Chain.Transaction.t/0` in the `block`.
   """
-  @spec block_to_transaction_count(Block.t()) :: non_neg_integer()
-  def block_to_transaction_count(%Block{hash: block_hash}) do
+  @spec block_to_transaction_count(Hash.Full.t()) :: non_neg_integer()
+  def block_to_transaction_count(block_hash) do
     query =
       from(
         transaction in Transaction,
@@ -843,7 +843,7 @@ defmodule Explorer.Chain do
   Returns `{:error, :not_found}` if there is no address by that hash present.
   Returns `{:error, :no_balance}` if there is no balance for that address at that block.
   """
-  @spec get_balance_as_of_block(Hash.Address.t(), integer | :earliest | :latest | :pending) ::
+  @spec get_balance_as_of_block(Hash.Address.t(), Block.block_number() | :earliest | :latest | :pending) ::
           {:ok, Wei.t()} | {:error, :no_balance} | {:error, :not_found}
   def get_balance_as_of_block(address, block) when is_integer(block) do
     coin_balance_query =
@@ -967,7 +967,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec find_decompiled_contract_address(Hash.t()) :: {:ok, Address.t()} | {:error, :not_found}
+  @spec find_decompiled_contract_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
   def find_decompiled_contract_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
     query =
       from(
@@ -2220,14 +2220,10 @@ defmodule Explorer.Chain do
 
   """
 
-  @spec transaction_to_internal_transactions(Transaction.t(), [paging_options | necessity_by_association_option]) :: [
+  @spec transaction_to_internal_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [
           InternalTransaction.t()
         ]
-  def transaction_to_internal_transactions(
-        %Transaction{hash: %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash},
-        options \\ []
-      )
-      when is_list(options) do
+  def transaction_to_internal_transactions(hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
@@ -2255,12 +2251,8 @@ defmodule Explorer.Chain do
       the `index` that are passed.
 
   """
-  @spec transaction_to_logs(Transaction.t(), [paging_options | necessity_by_association_option]) :: [Log.t()]
-  def transaction_to_logs(
-        %Transaction{hash: %Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash},
-        options \\ []
-      )
-      when is_list(options) do
+  @spec transaction_to_logs(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [Log.t()]
+  def transaction_to_logs(transaction_hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
@@ -2287,14 +2279,10 @@ defmodule Explorer.Chain do
       the `index` that are passed.
 
   """
-  @spec transaction_to_token_transfers(Transaction.t(), [paging_options | necessity_by_association_option]) :: [
+  @spec transaction_to_token_transfers(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [
           TokenTransfer.t()
         ]
-  def transaction_to_token_transfers(
-        %Transaction{hash: %Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash},
-        options \\ []
-      )
-      when is_list(options) do
+  def transaction_to_token_transfers(transaction_hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
@@ -2521,16 +2509,16 @@ defmodule Explorer.Chain do
     |> repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
   end
 
-  @spec address_hash_to_address_with_source_code(%Explorer.Chain.Hash{}) :: %Explorer.Chain.Address{} | nil
-  def address_hash_to_address_with_source_code(%Explorer.Chain.Hash{} = address_hash) do
+  @spec address_hash_to_address_with_source_code(Hash.Address.t()) :: Address.t() | nil
+  def address_hash_to_address_with_source_code(address_hash) do
     case Repo.get(Address, address_hash) do
       nil -> nil
       address -> Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
     end
   end
 
-  @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{} | nil
-  def address_hash_to_smart_contract(%Explorer.Chain.Hash{} = address_hash) do
+  @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil
+  def address_hash_to_smart_contract(address_hash) do
     query =
       from(
         smart_contract in SmartContract,

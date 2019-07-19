@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
           paging_options(params)
         )
 
-      token_transfers_plus_one = Chain.transaction_to_token_transfers(transaction, full_options)
+      token_transfers_plus_one = Chain.transaction_to_token_transfers(hash, full_options)
 
       {token_transfers, next_page} = split_list_by_page(token_transfers_plus_one)
 

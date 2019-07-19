@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
           paging_options(params)
         )
 
-      internal_transactions_plus_one = Chain.transaction_to_internal_transactions(transaction, full_options)
+      internal_transactions_plus_one = Chain.transaction_to_internal_transactions(hash, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
