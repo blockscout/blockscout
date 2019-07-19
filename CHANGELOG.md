@@ -7,6 +7,7 @@
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
 ### Fixes
+- [#2387](https://github.com/poanetwork/blockscout/pull/2387) - fix not existing keys in transaction json rpc
 - [#2378](https://github.com/poanetwork/blockscout/pull/2378) - Page performance: exclude moment.js localization files except EN, remove unused css
 - [#2368](https://github.com/poanetwork/blockscout/pull/2368) - add two columns of smart contract info
 - [#2375](https://github.com/poanetwork/blockscout/pull/2375) - Update created_contract_code_indexed_at on transaction import conflict
