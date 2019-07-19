@@ -2480,7 +2480,17 @@ defmodule Explorer.ChainTest do
         insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil, names: [])
         |> Repo.preload([:contracts_creation_internal_transaction, :contracts_creation_transaction, :token])
 
-      response = Chain.find_contract_address(address.hash)
+      options = [
+        necessity_by_association: %{
+          :contracts_creation_internal_transaction => :optional,
+          :names => :optional,
+          :smart_contract => :optional,
+          :token => :optional,
+          :contracts_creation_transaction => :optional
+        }
+      ]
+
+      response = Chain.find_contract_address(address.hash, options, true)
 
       assert response == {:ok, address}
     end
@@ -2527,7 +2537,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "with block without transactions", %{block: block, emission_reward: emission_reward} do
-      assert emission_reward.reward == Chain.block_reward(block)
+      assert emission_reward.reward == Chain.block_reward(block.number)
     end
   end
 
