@@ -60,7 +60,7 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   def cast(t) when t in ~w(call create create2 selfdestruct reward)a, do: {:ok, t}
   def cast("call"), do: {:ok, :call}
   def cast("create"), do: {:ok, :create}
-  def cast("create2"), do: {:ok, :create}
+  def cast("create2"), do: {:ok, :create2}
   def cast("reward"), do: {:ok, :reward}
   def cast("selfdestruct"), do: {:ok, :selfdestruct}
   def cast(_), do: :error
