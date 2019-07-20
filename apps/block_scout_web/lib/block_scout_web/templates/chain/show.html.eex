@@ -117,13 +117,7 @@
             <%= gettext "Something went wrong, click to retry." %>
           </span>
         </button>
-        <div data-selector="loading-message" class="tile tile-muted text-center mt-3">
-          <span class="loading-spinner-small mr-2">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </span>
-          <%= gettext("Loading...") %>
-        </div>
+        <!-- include tile loader here -->
       </span>
     </div>
   </div>

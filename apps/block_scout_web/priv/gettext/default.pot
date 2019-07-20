@@ -1058,7 +1058,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_read_contract/index.html.eex:14
 #: lib/block_scout_web/templates/chain/show.html.eex:99
-#: lib/block_scout_web/templates/chain/show.html.eex:125
 #: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:21
 msgid "Loading..."
 msgstr ""

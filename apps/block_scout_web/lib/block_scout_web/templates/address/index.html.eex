@@ -38,7 +38,7 @@
 					</tr>
 				</thead>
 				<tbody data-items data-selector="top-addresses-list">
-					
+					<!-- include table loader here -->
 				</tbody>
 			</table>
 		</div>
