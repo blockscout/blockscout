@@ -88,8 +88,8 @@ function getMarketCapData (marketHistoryData, availableSupply) {
 }
 
 // colors for light and dark theme
-var priceLineColor;
-var mcapLineColor;
+var priceLineColor
+var mcapLineColor
 if (localStorage.getItem('current-color-mode') === 'dark') {
   priceLineColor = sassVariables.darkprimary
   mcapLineColor = sassVariables.darksecondary
