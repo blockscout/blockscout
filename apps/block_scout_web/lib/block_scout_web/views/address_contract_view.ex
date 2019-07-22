@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.AddressContractView do
 
   def format_external_libraries(libraries) do
     Enum.reduce(libraries, "", fn %{name: name, address_hash: address_hash}, acc ->
-      "#{acc}<span style=\"color:#e2725b;\">#{name}</span> : #{address_hash}  \n"
+      "#{acc}<span class=\"hljs-title\">#{name}</span> : #{address_hash}  \n"
     end)
   end
 
