@@ -14,7 +14,7 @@
     <%= case decode_transaction(@log.transaction) do %>
       <%= {:ok, method_id, text, mapping} -> %>
         <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
-      <% _ -> %> -> ""
+      <% _ -> %>  <%= raw("") %>
     <% end %>
     <dt class="col-md-2"><%= gettext "Topics" %></dt>
     <dd class="col-md-10">
