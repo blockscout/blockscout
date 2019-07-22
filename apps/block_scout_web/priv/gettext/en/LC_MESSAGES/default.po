@@ -1216,7 +1216,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/chain/show.html.eex:91
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:19
-#: lib/block_scout_web/templates/pools/_table.html.eex:22
+#: lib/block_scout_web/templates/stakes/_table.html.eex:22
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:20

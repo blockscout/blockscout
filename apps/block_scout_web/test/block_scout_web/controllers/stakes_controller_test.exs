@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.PoolsControllerTest do
+defmodule BlockScoutWeb.StakesControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Counters.AverageBlockTime

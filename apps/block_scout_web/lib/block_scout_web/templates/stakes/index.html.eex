@@ -32,7 +32,7 @@
     </div>
 
     <%= 
-      render BlockScoutWeb.PoolsView, 
+      render BlockScoutWeb.StakesView, 
       "_table.html",
       pools_type: @pools_type
     %>
