@@ -23,7 +23,7 @@ defmodule Explorer.EthRPC do
       action: :eth_get_logs,
       notes: """
       Will never return more than 1000 log entries.\n
-      For this reason, you can use pagination options to request the next page. Pagination options params: {"block_number": 1, "transaction_index": 0, "log_index": 1} which include parameters from the last log received from the previous request.
+      For this reason, you can use pagination options to request the next page. Pagination options params: {"logIndex": "3D", "blockNumber": "6423AC", "transactionIndex": 53} which include parameters from the last log received from the previous request. These three parameters are required for pagination.
       """,
       example: """
       {"id": 0, "jsonrpc": "2.0", "method": "eth_getLogs",
