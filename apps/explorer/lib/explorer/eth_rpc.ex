@@ -26,7 +26,13 @@ defmodule Explorer.EthRPC do
       For this reason, you can use pagination options to request the next page. Pagination options params: {"block_number": 1, "transaction_index": 0, "log_index": 1} which include parameters from the last log received from the previous request.
       """,
       example: """
-      {"id": 0, "jsonrpc": "2.0", "method": "eth_getLogs", "params": [{"address": "0x0000000000000000000000000000000000000026","topics": ["0x01"]}]}
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getLogs",
+       "params": [
+        {"address": "0xc78Be425090Dbd437532594D12267C5934Cc6c6f",
+         "paging_options": {"logIndex": "3D", "blockNumber": "6423AC", "transactionIndex": 53},
+         "fromBlock": "earliest",
+         "toBlock": "latest",
+         "topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]}]}
       """
     }
   }
