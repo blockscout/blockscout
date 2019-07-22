@@ -12,14 +12,14 @@ config :explorer,
   token_functions_reader_max_retries: 3,
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
-      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg",
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,default",
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "false", do: false, else: true),
   healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5)
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
-config :explorer, Explorer.Chain.BlockNumberCache, enabled: true
+config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
   pages: String.to_integer(System.get_env("COINMARKETCAP_PAGES") || "10")

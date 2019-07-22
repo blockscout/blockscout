@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.AddressChannel do
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
-  intercept(["balance_update", "coin_balance", "count", "internal_transaction", "transaction"])
+  intercept(["balance_update", "coin_balance", "count", "internal_transaction", "transaction", "verification_result"])
 
   def join("addresses:" <> address_hash, _params, socket) do
     {:ok, %{}, assign(socket, :address_hash, address_hash)}
@@ -54,6 +54,18 @@ defmodule BlockScoutWeb.AddressChannel do
         {:noreply, socket}
 
       _ ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_out("verification_result", result, socket) do
+    case result[:result] do
+      {:ok, _contract} ->
+        push(socket, "verification", %{verification_result: :ok})
+        {:noreply, socket}
+
+      {:error, result} ->
+        push(socket, "verification", %{verification_result: result})
         {:noreply, socket}
     end
   end

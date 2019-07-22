@@ -31,9 +31,6 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
-    BlockCountCache,
-    BlockNumberCache,
-    BlocksCache,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -45,12 +42,19 @@ defmodule Explorer.Chain do
     Token,
     TokenTransfer,
     Transaction,
-    TransactionCountCache,
-    TransactionsCache,
     Wei
   }
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
+
+  alias Explorer.Chain.Cache.{
+    BlockCount,
+    BlockNumber,
+    Blocks,
+    TransactionCount,
+    Transactions
+  }
+
   alias Explorer.Chain.Import.Runner
   alias Explorer.Counters.AddressesWithBalanceCounter
   alias Explorer.Market.MarketHistoryCache
@@ -126,7 +130,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  `t:Explorer.Chain.InternalTransaction/0`s from `address`.
+  `t:Explorer.Chain.InternalTransaction/0`s from the address with the given `hash`.
 
   This function excludes any internal transactions in the results where the
   internal transaction has no siblings within the parent transaction.
@@ -145,10 +149,10 @@ defmodule Explorer.Chain do
       transactions older than the `block_number`, `transaction index`, and `index` that are passed.
 
   """
-  @spec address_to_internal_transactions(Address.t(), [paging_options | necessity_by_association_option]) :: [
+  @spec address_to_internal_transactions(Hash.Address.t(), [paging_options | necessity_by_association_option]) :: [
           InternalTransaction.t()
         ]
-  def address_to_internal_transactions(%Address{hash: hash}, options \\ []) do
+  def address_to_internal_transactions(hash, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     direction = Keyword.get(options, :direction)
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -171,13 +175,13 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Get the total number of transactions sent by the given address according to the last block indexed.
+  Get the total number of transactions sent by the address with the given hash according to the last block indexed.
 
   We have to increment +1 in the last nonce result because it works like an array position, the first
   nonce has the value 0. When last nonce is nil, it considers that the given address has 0 transactions.
   """
-  @spec total_transactions_sent_by_address(Address.t()) :: non_neg_integer()
-  def total_transactions_sent_by_address(%Address{hash: address_hash}) do
+  @spec total_transactions_sent_by_address(Hash.Address.t()) :: non_neg_integer()
+  def total_transactions_sent_by_address(address_hash) do
     last_nonce =
       address_hash
       |> Transaction.last_nonce_by_address_query()
@@ -190,9 +194,9 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Fetches the transactions related to the given address, including transactions
-  that only have the address in the `token_transfers` related table and rewards
-  for block validation.
+  Fetches the transactions related to the address with the given hash, including
+  transactions that only have the address in the `token_transfers` related table
+  and rewards for block validation.
 
   This query is divided into multiple subqueries intentionally in order to
   improve the listing performance.
@@ -214,33 +218,21 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_transactions_with_rewards(Address.t(), [paging_options | necessity_by_association_option]) :: [
+  @spec address_to_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) :: [
           Transaction.t()
         ]
-  def address_to_transactions_with_rewards(
-        %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
-        options \\ []
-      )
-      when is_list(options) do
-    direction = Keyword.get(options, :direction)
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+  def address_to_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    transaction_hashes_from_token_transfers =
-      TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
-
-    transactions_list =
-      paging_options
-      |> fetch_transactions()
-      |> Transaction.where_transaction_matches(transaction_hashes_from_token_transfers, direction, address_hash)
-      |> join_associations(necessity_by_association)
-      |> Transaction.preload_token_transfers(address_hash)
-      |> Repo.all()
-
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
+      rewards_task =
+        Task.async(fn ->
+          Reward.fetch_emission_rewards_tuples(address_hash, paging_options)
+        end)
+
       address_hash
-      |> Reward.fetch_emission_rewards_tuples(paging_options)
-      |> Enum.concat(transactions_list)
+      |> address_to_transactions_without_rewards(paging_options, options)
+      |> Enum.concat(Task.await(rewards_task))
       |> Enum.sort_by(fn item ->
         case item do
           {%Reward{} = emission_reward, _} ->
@@ -252,33 +244,42 @@ defmodule Explorer.Chain do
       end)
       |> Enum.take(paging_options.page_size)
     else
-      transactions_list
+      address_to_transactions_without_rewards(address_hash, paging_options, options)
     end
   end
 
-  @spec address_to_logs(Address.t(), Keyword.t()) :: [
-          Log.t()
-        ]
-  def address_to_logs(
-        %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
-        options \\ []
-      )
-      when is_list(options) do
+  defp address_to_transactions_without_rewards(address_hash, paging_options, options) do
+    direction = Keyword.get(options, :direction)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    transaction_hashes_from_token_transfers =
+      TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
+
+    paging_options
+    |> fetch_transactions()
+    |> Transaction.where_transaction_matches(transaction_hashes_from_token_transfers, direction, address_hash)
+    |> join_associations(necessity_by_association)
+    |> Transaction.preload_token_transfers(address_hash)
+    |> Repo.all()
+  end
+
+  @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
+  def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
-    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumberCache.max_number(), 0, 0}
+    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.max_number(), 0, 0}
 
     base_query =
       from(log in Log,
         inner_join: transaction in assoc(log, :transaction),
         order_by: [desc: transaction.block_number, desc: transaction.index],
         preload: [:transaction],
-        where:
-          log.address_hash == ^address_hash and
-            (transaction.block_number < ^block_number or
-               (transaction.block_number == ^block_number and transaction.index > ^transaction_index) or
-               (transaction.block_number == ^block_number and transaction.index == ^transaction_index and
-                  log.index > ^log_index)),
+        where: transaction.block_number < ^block_number,
+        or_where: transaction.block_number == ^block_number and transaction.index > ^transaction_index,
+        or_where:
+          transaction.block_number == ^block_number and transaction.index == ^transaction_index and
+            log.index > ^log_index,
+        where: log.address_hash == ^address_hash,
         limit: ^paging_options.page_size,
         select: log
       )
@@ -442,8 +443,8 @@ defmodule Explorer.Chain do
     Repo.aggregate(query, :count, :hash)
   end
 
-  @spec address_to_incoming_transaction_count(Address.t()) :: non_neg_integer()
-  def address_to_incoming_transaction_count(%Address{hash: address_hash}) do
+  @spec address_to_incoming_transaction_count(Hash.Address.t()) :: non_neg_integer()
+  def address_to_incoming_transaction_count(address_hash) do
     paging_options = %PagingOptions{page_size: @max_incoming_transactions_count}
 
     base_query =
@@ -676,31 +677,40 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.hash_to_address(hash)
       {:error, :not_found}
 
-  Optionally accepts:
-    - a list of bindings to preload, just like `Ecto.Query.preload/3`
-    - a boolean to also fetch the `has_decompiled_code?` virtual field or not
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
+
+  Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
 
   """
-  @spec hash_to_address(Hash.Address.t(), [Macro.t()], boolean()) :: {:ok, Address.t()} | {:error, :not_found}
+  @spec hash_to_address(Hash.Address.t(), [necessity_by_association_option], boolean()) ::
+          {:ok, Address.t()} | {:error, :not_found}
   def hash_to_address(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
-        preloads \\ [
-          :contracts_creation_internal_transaction,
-          :names,
-          :smart_contract,
-          :token,
-          :contracts_creation_transaction
+        options \\ [
+          necessity_by_association: %{
+            :contracts_creation_internal_transaction => :optional,
+            :names => :optional,
+            :smart_contract => :optional,
+            :token => :optional,
+            :contracts_creation_transaction => :optional
+          }
         ],
         query_decompiled_code_flag \\ true
       ) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     query =
       from(
         address in Address,
-        preload: ^preloads,
         where: address.hash == ^hash
       )
 
     query
+    |> join_associations(necessity_by_association)
     |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
     |> Repo.one()
     |> case do
@@ -772,16 +782,39 @@ defmodule Explorer.Chain do
       iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
       iex> found_hash == hash
       true
+
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
+
+  Optionally it also accepts a boolean to fetch the `has_decompiled_code?` virtual field or not
+
   """
-  @spec find_or_insert_address_from_hash(Hash.Address.t()) :: {:ok, Address.t()}
-  def find_or_insert_address_from_hash(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
-    case hash_to_address(hash) do
+  @spec find_or_insert_address_from_hash(Hash.Address.t(), [necessity_by_association_option], boolean()) ::
+          {:ok, Address.t()}
+  def find_or_insert_address_from_hash(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
+        options \\ [
+          necessity_by_association: %{
+            :contracts_creation_internal_transaction => :optional,
+            :names => :optional,
+            :smart_contract => :optional,
+            :token => :optional,
+            :contracts_creation_transaction => :optional
+          }
+        ],
+        query_decompiled_code_flag \\ true
+      ) do
+    case hash_to_address(hash, options, query_decompiled_code_flag) do
       {:ok, address} ->
         {:ok, address}
 
       {:error, :not_found} ->
         create_address(%{hash: to_string(hash)})
-        hash_to_address(hash)
+        hash_to_address(hash, options, query_decompiled_code_flag)
     end
   end
 
@@ -1132,7 +1165,7 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio() :: Decimal.t()
   def indexed_ratio do
-    {min, max} = BlockNumberCache.min_and_max_numbers()
+    {min, max} = BlockNumber.min_and_max_numbers()
 
     case {min, max} do
       {0, 0} ->
@@ -1214,12 +1247,12 @@ defmodule Explorer.Chain do
     block_type = Keyword.get(options, :block_type, "Block")
 
     if block_type == "Block" && !paging_options.key do
-      if BlocksCache.enough_elements?(paging_options.page_size) do
-        BlocksCache.blocks(paging_options.page_size)
+      if Blocks.enough_elements?(paging_options.page_size) do
+        Blocks.blocks(paging_options.page_size)
       else
         elements = fetch_blocks(block_type, paging_options, necessity_by_association)
 
-        BlocksCache.rewrite_cache(elements)
+        Blocks.rewrite_cache(elements)
 
         elements
       end
@@ -1301,7 +1334,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Finds all Blocks validated by the address given.
+  Finds all Blocks validated by the address with the given hash.
 
     ## Options
       * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
@@ -1315,15 +1348,15 @@ defmodule Explorer.Chain do
   """
   @spec get_blocks_validated_by_address(
           [paging_options | necessity_by_association_option],
-          Address.t()
+          Hash.Address.t()
         ) :: [Block.t()]
-  def get_blocks_validated_by_address(options \\ [], %Address{hash: hash}) when is_list(options) do
+  def get_blocks_validated_by_address(options \\ [], address_hash) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     Block
     |> join_associations(necessity_by_association)
-    |> where(miner_hash: ^hash)
+    |> where(miner_hash: ^address_hash)
     |> page_blocks(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(desc: :number)
@@ -1347,10 +1380,10 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Counts the number of `t:Explorer.Chain.Block.t/0` validated by the `address`.
+  Counts the number of `t:Explorer.Chain.Block.t/0` validated by the address with the given `hash`.
   """
-  @spec address_to_validation_count(Address.t()) :: non_neg_integer()
-  def address_to_validation_count(%Address{hash: hash}) do
+  @spec address_to_validation_count(Hash.Address.t()) :: non_neg_integer()
+  def address_to_validation_count(hash) do
     query = from(block in Block, where: block.miner_hash == ^hash, select: fragment("COUNT(*)"))
 
     Repo.one(query)
@@ -1418,6 +1451,7 @@ defmodule Explorer.Chain do
       iex> non_consensus = insert(:block, consensus: false)
       iex> unfetched = insert(:block)
       iex> fetched = insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
+      iex> to_be_refetched = insert(:block, refetch_needed: true)
       iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
       ...>   [:number],
       ...>   MapSet.new(),
@@ -1430,6 +1464,8 @@ defmodule Explorer.Chain do
       iex> unfetched.number in number_set
       true
       iex> fetched.hash in number_set
+      false
+      iex> to_be_refetched.number in number_set
       false
 
   """
@@ -1459,7 +1495,9 @@ defmodule Explorer.Chain do
     query =
       from(
         b in Block,
-        where: b.consensus and is_nil(b.internal_transactions_indexed_at),
+        where: b.consensus,
+        where: is_nil(b.internal_transactions_indexed_at),
+        where: not b.refetch_needed,
         select: ^fields
       )
 
@@ -1978,11 +2016,11 @@ defmodule Explorer.Chain do
 
     if is_nil(paging_options.key) do
       paging_options.page_size
-      |> TransactionsCache.take_enough()
+      |> Transactions.take_enough()
       |> case do
         nil ->
           transactions = fetch_recent_collated_transactions(paging_options, necessity_by_association)
-          TransactionsCache.update(transactions)
+          Transactions.update(transactions)
           transactions
 
         transactions ->
@@ -2127,7 +2165,7 @@ defmodule Explorer.Chain do
   """
   @spec transaction_estimated_count() :: non_neg_integer()
   def transaction_estimated_count do
-    cached_value = TransactionCountCache.value()
+    cached_value = TransactionCount.value()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[rows]]} =
@@ -2146,7 +2184,7 @@ defmodule Explorer.Chain do
   """
   @spec block_estimated_count() :: non_neg_integer()
   def block_estimated_count do
-    cached_value = BlockCountCache.count()
+    cached_value = BlockCount.count()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
@@ -2394,8 +2432,13 @@ defmodule Explorer.Chain do
   naming the address for reference.
   """
   @spec create_smart_contract(map()) :: {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
-  def create_smart_contract(attrs \\ %{}) do
-    smart_contract_changeset = SmartContract.changeset(%SmartContract{}, attrs)
+  def create_smart_contract(attrs \\ %{}, external_libraries \\ []) do
+    new_contract = %SmartContract{}
+
+    smart_contract_changeset =
+      new_contract
+      |> SmartContract.changeset(attrs)
+      |> Changeset.put_change(:external_libraries, external_libraries)
 
     insert_result =
       Multi.new()
@@ -2715,21 +2758,30 @@ defmodule Explorer.Chain do
   @doc """
   Fetches a `t:Token.t/0` by an address hash.
 
-  Optionally accepts a list of bindings to preload, just like `Ecto.Query.preload/3`
+  ## Options
+
+      * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Token.t/0` has no associated record for that association,
+      then the `t:Token.t/0` will not be included in the list.
   """
-  @spec token_from_address_hash(Hash.Address.t(), [Macro.t()]) :: {:ok, Token.t()} | {:error, :not_found}
+  @spec token_from_address_hash(Hash.Address.t(), [necessity_by_association_option]) ::
+          {:ok, Token.t()} | {:error, :not_found}
   def token_from_address_hash(
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = hash,
-        preloads \\ []
+        options \\ []
       ) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     query =
       from(
         token in Token,
-        where: token.contract_address_hash == ^hash,
-        preload: ^preloads
+        where: token.contract_address_hash == ^hash
       )
 
-    case Repo.one(query) do
+    query
+    |> join_associations(necessity_by_association)
+    |> Repo.one()
+    |> case do
       nil ->
         {:error, :not_found}
 

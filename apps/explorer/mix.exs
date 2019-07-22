@@ -15,7 +15,7 @@ defmodule Explorer.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.8",
+      elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -106,6 +106,7 @@ defmodule Explorer.Mixfile do
       },
       # bypass optional dependency
       {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
+      {:que, "~> 0.10.1"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       # Tracing
       {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
