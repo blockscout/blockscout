@@ -116,6 +116,16 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   tracer: Explorer.Tracer,
   otp_app: :explorer
 
+market_history_cache_ttl =
+  try do
+    String.to_integer(System.get_env("MARKET_HISTORY_CACHE_TTL"))
+  rescue
+    # 6 hours
+    _ -> 60 * 60 * 6
+  end
+
+config :explorer, Explorer.Market.MarketHistoryCache, ttl: :timer.seconds(market_history_cache_ttl)
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
