@@ -7,6 +7,7 @@
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
 
 ### Fixes
+- [#2398](https://github.com/poanetwork/blockscout/pull/2398) - show only one decoded candidate
 - [#2389](https://github.com/poanetwork/blockscout/pull/2389) - Reduce Lodash lib size (86% of lib methods are not used)
 - [#2378](https://github.com/poanetwork/blockscout/pull/2378) - Page performance: exclude moment.js localization files except EN, remove unused css
 - [#2368](https://github.com/poanetwork/blockscout/pull/2368) - add two columns of smart contract info
