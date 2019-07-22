@@ -67,6 +67,9 @@ $labels-dark: #8a8dba; // header nav, labels
 			color: $labels-dark;
 		}
 	}
+	.navbar.navbar-primary .navbar-toggler .navbar-toggler-icon {
+		filter: invert(1);
+	}
 
 	// footer
 	.footer {
@@ -280,7 +283,6 @@ $labels-dark: #8a8dba; // header nav, labels
 	.dropdown-item.active {
 		background-color: $dark-primary;
 	}
-
 	.btn-dropdown-line {
 		background-color: $dark-light;
 		border-color: $dark-light;
@@ -330,17 +332,16 @@ $labels-dark: #8a8dba; // header nav, labels
 		fill: $dark-primary;
 	}
 
-	// tooltips
-	// .tooltip-inner {
-	// 	background-color: $dark-primary;
-	// }
-	// .tooltip-arrow {
-	// 	border-top-color: $dark-primary;
-	// }
+	//tooltips
+	.tooltip .arrow:before {
+		border-top-color: $dark-primary;
+    	border-bottom-color: $dark-primary;
+	}
+	.tooltip > .tooltip-inner {background-color: $dark-primary;}
 
 	//network select
 	.network-selector-overlay {
-		background-color: rgba($dark-primary, .9);
+		background-color: rgba($dark-bg, .9);
 	}
 	.network-selector {
 		background-color: $dark-light-bg;
@@ -418,6 +419,52 @@ $labels-dark: #8a8dba; // header nav, labels
 	}
 	.border-bottom {
 		border-bottom-color: darken($labels-dark, 30) !important;
+	}
+
+	// coin balance history chart
+	.chartjs-render-monitor[data-chart="coinBalanceHistoryChart"] {
+		filter: brightness(0) invert(1) !important;
+	}
+
+	// logs search
+	.logs-search-input, .logs-search-btn, .logs-search-btn-cancel {
+		background-color: $dark-light;
+		border-color: $dark-light;
+		color: #fff;
+	}
+
+	.logs-search-btn {
+		color: $labels-dark;
+	}
+
+	.logs-search-btn {
+		&:hover {
+			background-color: $dark-primary;
+			color: #fff;
+		}
+	}
+
+	.logs-search-input {
+		&::placeholder {
+			color: $labels-dark;
+		}
+	}
+
+	// code
+	pre {
+		color: #fff;
+	}
+
+	// info allert
+	.alert-info {
+		color: $labels-dark;
+		background-color: $dark-light;
+		border-color: $dark-light;
+	}
+
+	// dark text
+	.text-dark {
+		color: #fff;
 	}
 
 }

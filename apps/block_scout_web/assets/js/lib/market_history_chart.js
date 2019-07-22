@@ -87,6 +87,17 @@ function getMarketCapData (marketHistoryData, availableSupply) {
   }
 }
 
+// colors for light and dark theme
+var priceLineColor;
+var mcapLineColor;
+if (localStorage.getItem('current-color-mode') === 'dark') {
+  priceLineColor = sassVariables.darkprimary
+  mcapLineColor = sassVariables.darksecondary
+} else {
+  priceLineColor = sassVariables.dashboardLineColorPrice
+  mcapLineColor = sassVariables.dashboardLineColorMarket
+}
+
 class MarketHistoryChart {
   constructor (el, availableSupply, marketHistoryData) {
     this.price = {
@@ -95,8 +106,8 @@ class MarketHistoryChart {
       data: getPriceData(marketHistoryData),
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.dashboardLineColorPrice,
-      borderColor: sassVariables.dashboardLineColorPrice,
+      backgroundColor: priceLineColor,
+      borderColor: priceLineColor,
       lineTension: 0
     }
     this.marketCap = {
@@ -105,8 +116,8 @@ class MarketHistoryChart {
       data: getMarketCapData(marketHistoryData, availableSupply),
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.dashboardLineColorMarket,
-      borderColor: sassVariables.dashboardLineColorMarket,
+      backgroundColor: mcapLineColor,
+      borderColor: mcapLineColor,
       lineTension: 0
     }
     this.availableSupply = availableSupply

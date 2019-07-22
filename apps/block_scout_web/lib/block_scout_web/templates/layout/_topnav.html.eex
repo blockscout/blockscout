@@ -6,8 +6,13 @@
   </script>
   <div class="container-fluid navbar-container">
     <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
-      <img class="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
+      <img class="navbar-logo" id="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
     <% end %>
+    <script>
+      if (localStorage.getItem("current-color-mode") === "dark") {
+        document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
+      }
+    </script>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -102,7 +107,7 @@
         </svg>
       </button>
       <!-- Search navbar -->
-      <div class="search-form d-lg-flex d-inline-block">
+      <div class="search-form d-lg-flex d-inline-block" style="background-color: #22223a">
         <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
         <div class="input-group" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
               <%= awesomplete(f, :q,
@@ -128,6 +133,12 @@
               </div>
           </div>
           <button class="btn btn-outline-success my-2 my-sm-0 sr-only hidden" type="submit"><%= gettext "Search" %></button>
+          <script>
+            if (localStorage.getItem("current-color-mode") === "dark") {
+              document.getElementById("q").style.backgroundColor = "#22223a";
+              document.getElementById("q").style.borderColor = "#22223a";
+            }
+          </script>
         <% end %>
       </div>
     </div>
