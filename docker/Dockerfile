@@ -1,4 +1,4 @@
-FROM bitwalker/alpine-elixir-phoenix
+FROM bitwalker/alpine-elixir-phoenix:1.9.0
 
 RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python
 
