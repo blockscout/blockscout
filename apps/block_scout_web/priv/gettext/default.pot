@@ -329,7 +329,7 @@ msgid "Curl"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:44
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:49
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:18
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:48
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:113
@@ -826,7 +826,7 @@ msgid "Top Accounts - %{subnetwork} Explorer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:14
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:19
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:83
 msgid "Topics"
 msgstr ""
