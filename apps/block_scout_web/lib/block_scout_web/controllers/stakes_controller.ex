@@ -1,7 +1,7 @@
-defmodule BlockScoutWeb.PoolsController do
+defmodule BlockScoutWeb.StakesController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.PoolsView
+  alias BlockScoutWeb.StakesView
   alias Explorer.Chain
   alias Explorer.Chain.BlockNumberCache
   alias Explorer.Counters.AverageBlockTime
@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.PoolsController do
       |> Enum.with_index(last_index + 1)
       |> Enum.map(fn {pool, index} ->
         View.render_to_string(
-          PoolsView,
+          StakesView,
           "_rows.html",
           pool: pool,
           index: index,
