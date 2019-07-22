@@ -537,7 +537,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> put_raw_call_error_or_result(transaction)
   end
 
-  defp internal_transaction_to_raw(%{type: :create} = transaction) do
+  defp internal_transaction_to_raw(%{type: type} = transaction) when type in [:create, :create2] do
     %{
       from_address_hash: from_address_hash,
       gas: gas,
@@ -549,7 +549,7 @@ defmodule Explorer.Chain.InternalTransaction do
     action = %{"from" => from_address_hash, "gas" => gas, "init" => init, "value" => value}
 
     %{
-      "type" => "create",
+      "type" => Atom.to_string(type),
       "action" => Action.to_raw(action),
       "traceAddress" => trace_address
     }
