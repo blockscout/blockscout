@@ -61,6 +61,14 @@ config :block_scout_web, BlockScoutWeb.SocialMedia,
   facebook: "PoaNetwork",
   instagram: "PoaNetwork"
 
+# Configures History
+config :block_scout_web,
+chart_config: %{market: [:price,:market_cap], transactions: [:transactions_per_day]}
+
+config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
+  history_size: 30 #days
+
+
 config :ex_cldr,
   default_locale: "en",
   locales: ["en"],
