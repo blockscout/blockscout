@@ -1041,12 +1041,12 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:47
 #: lib/block_scout_web/templates/chain/_block.html.eex:23
-#: lib/block_scout_web/views/internal_transaction_view.ex:27
+#: lib/block_scout_web/views/internal_transaction_view.ex:28
 msgid "Reward"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/internal_transaction_view.ex:26
+#: lib/block_scout_web/views/internal_transaction_view.ex:27
 msgid "Self-Destruct"
 msgstr ""
 
@@ -1803,4 +1803,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:4
 msgid "Connection Lost"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/internal_transaction_view.ex:26
+msgid "Create2"
 msgstr ""
