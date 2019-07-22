@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
   alias Explorer.Repo
   alias Explorer.Chain.Block
   alias Explorer.Chain.Transaction.History.TransactionStats
+  alias Explorer.Chain.Events.Publisher
 
   import Ecto.Query, only: [from: 2]
 
@@ -37,7 +38,8 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
   @impl Historian
   def save_records(records) do
-    {num_inserted, _} = Repo.insert_all(TransactionStats, records, on_conflict: :replace_all, conflict_target: [:date])
+    {num_inserted, _} = Repo.insert_all(TransactionStats, records, on_conflict: :replace_all_except_primary_key, conflict_target: [:date])
+    Publisher.broadcast(:transaction_stats)
     num_inserted
   end
 
