@@ -228,17 +228,21 @@ defmodule Explorer.EthRPC do
 
   defp paging_options(%{
          "paging_options" => %{
-           "log_index" => log_index,
-           "transaction_index" => transaction_index,
-           "block_number" => block_number
+           "logIndex" => log_index,
+           "transactionIndex" => transaction_index,
+           "blockNumber" => block_number
          }
-       }) do
-    {:ok,
-     %{
-       log_index: log_index,
-       transaction_index: transaction_index,
-       block_number: block_number
-     }}
+       })
+       when is_integer(transaction_index) do
+    with {:ok, parsed_block_number} <- to_block_number(block_number),
+         {parsed_log_index, ""} <- Integer.parse(log_index) do
+      {:ok,
+       %{
+         log_index: parsed_log_index,
+         transaction_index: transaction_index,
+         block_number: parsed_block_number
+       }}
+    end
   end
 
   defp paging_options(_), do: {:ok, nil}
@@ -274,6 +278,15 @@ defmodule Explorer.EthRPC do
   end
 
   defp to_block_number(_, _, _), do: {:error, "invalid block number"}
+
+  defp to_block_number(number) when is_bitstring(number) do
+    case Integer.parse(number, 16) do
+      {integer, ""} -> {:ok, integer}
+      _ -> {:error, "invalid block number"}
+    end
+  end
+
+  defp to_block_number(_), do: {:error, "invalid block number"}
 
   defp max_non_consensus_block_number(max) do
     case Chain.max_non_consensus_block_number(max) do

@@ -148,9 +148,9 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       {last_log_index, ""} = Integer.parse(List.last(response["result"])["logIndex"], 16)
 
       next_page_params = %{
-        "block_number" => transaction.block_number,
-        "transaction_index" => transaction.index,
-        "log_index" => last_log_index
+        "blockNumber" => Integer.to_string(transaction.block_number, 16),
+        "transactionIndex" => transaction.index,
+        "logIndex" => "#{last_log_index}"
       }
 
       new_params =
