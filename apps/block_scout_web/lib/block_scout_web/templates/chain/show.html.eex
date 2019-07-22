@@ -117,7 +117,6 @@
             <%= gettext "Something went wrong, click to retry." %>
           </span>
         </button>
-        <!-- include tile loader here -->
       </span>
     </div>
   </div>
