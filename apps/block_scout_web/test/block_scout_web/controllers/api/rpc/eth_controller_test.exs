@@ -150,7 +150,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       next_page_params = %{
         "blockNumber" => Integer.to_string(transaction.block_number, 16),
         "transactionIndex" => transaction.index,
-        "logIndex" => "#{last_log_index}"
+        "logIndex" => Integer.to_string(last_log_index, 16)
       }
 
       new_params =

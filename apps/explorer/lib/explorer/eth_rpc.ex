@@ -234,8 +234,8 @@ defmodule Explorer.EthRPC do
          }
        })
        when is_integer(transaction_index) do
-    with {:ok, parsed_block_number} <- to_block_number(block_number),
-         {parsed_log_index, ""} <- Integer.parse(log_index) do
+    with {:ok, parsed_block_number} <- to_number(block_number, "invalid block number"),
+         {:ok, parsed_log_index} <- to_number(log_index, "invalid log index") do
       {:ok,
        %{
          log_index: parsed_log_index,
@@ -279,14 +279,14 @@ defmodule Explorer.EthRPC do
 
   defp to_block_number(_, _, _), do: {:error, "invalid block number"}
 
-  defp to_block_number(number) when is_bitstring(number) do
+  defp to_number(number, error_message) when is_bitstring(number) do
     case Integer.parse(number, 16) do
       {integer, ""} -> {:ok, integer}
-      _ -> {:error, "invalid block number"}
+      _ -> {:error, error_message}
     end
   end
 
-  defp to_block_number(_), do: {:error, "invalid block number"}
+  defp to_number(_, error_message), do: {:error, error_message}
 
   defp max_non_consensus_block_number(max) do
     case Chain.max_non_consensus_block_number(max) do
