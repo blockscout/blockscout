@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2376](https://github.com/poanetwork/blockscout/pull/2376) - Split API and WebApp routes
 - [#2379](https://github.com/poanetwork/blockscout/pull/2379) - Disable network selector when is empty
 - [#2360](https://github.com/poanetwork/blockscout/pull/2360) - add default evm version to smart contract verification
 - [#2352](https://github.com/poanetwork/blockscout/pull/2352) - Fetch rewards in parallel with transactions
