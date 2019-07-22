@@ -17,7 +17,17 @@ config :explorer,
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "false", do: false, else: true),
   healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5)
 
-config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
+average_block_period =
+  try do
+    String.to_integer(System.get_env("AVERAGE_BLOCK_PERIOD"))
+  rescue
+    # 30 minutes
+    _ -> 30 * 60
+  end
+
+config :explorer, Explorer.Counters.AverageBlockTime,
+  enabled: true,
+  period: :timer.seconds(average_block_period)
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
 
