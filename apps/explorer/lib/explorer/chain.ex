@@ -273,7 +273,7 @@ defmodule Explorer.Chain do
       from(log in Log,
         inner_join: transaction in assoc(log, :transaction),
         order_by: [desc: transaction.block_number, desc: transaction.index],
-        preload: [:transaction],
+        preload: [:transaction, transaction: [to_address: :smart_contract]],
         where: transaction.block_number < ^block_number,
         or_where: transaction.block_number == ^block_number and transaction.index > ^transaction_index,
         or_where:
