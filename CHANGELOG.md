@@ -1,7 +1,7 @@
 ## Current
 
 ### Features
-- [#2394](https://github.com/poanetwork/blockscout/pull/2394) - dark theme
+- [#2412](https://github.com/poanetwork/blockscout/pull/2412) - dark theme
 - [#2379](https://github.com/poanetwork/blockscout/pull/2379) - Disable network selector when is empty
 - [#2374](https://github.com/poanetwork/blockscout/pull/2374) - decode constructor arguments for verified smart contracts
 - [#2366](https://github.com/poanetwork/blockscout/pull/2366) - paginate eth logs

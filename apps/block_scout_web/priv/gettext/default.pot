@@ -510,7 +510,6 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/app.html.eex:58
 #: lib/block_scout_web/views/address_view.ex:121
 #: lib/block_scout_web/views/address_view.ex:121
-#: lib/block_scout_web/views/address_view.ex:121
 msgid "Market Cap"
 msgstr ""
 
