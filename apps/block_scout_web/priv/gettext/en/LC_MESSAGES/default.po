@@ -34,7 +34,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:21
-#: lib/block_scout_web/templates/chain/_block.html.eex:11
+#: lib/block_scout_web/templates/chain/_block.html.eex:178
 msgid "%{count} Transactions"
 msgstr ""
 
@@ -330,9 +330,9 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:44
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:18
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:48
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:113
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:49
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:115
 msgid "Data"
 msgstr ""
 
@@ -522,7 +522,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:38
 #: lib/block_scout_web/templates/block/overview.html.eex:121
-#: lib/block_scout_web/templates/chain/_block.html.eex:15
+#: lib/block_scout_web/templates/chain/_block.html.eex:182
 msgid "Miner"
 msgstr ""
 
@@ -556,8 +556,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:16
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:45
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:19
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:46
 msgid "Name"
 msgstr ""
 
@@ -827,7 +827,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:14
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:83
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:85
 msgid "Topics"
 msgstr ""
 
@@ -1040,7 +1040,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:47
-#: lib/block_scout_web/templates/chain/_block.html.eex:23
+#: lib/block_scout_web/templates/chain/_block.html.eex:190
 #: lib/block_scout_web/views/internal_transaction_view.ex:27
 msgid "Reward"
 msgstr ""
@@ -1139,18 +1139,18 @@ msgid "Decoded"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:47
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:48
 msgid "Indexed?"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:17
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:46
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:20
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:47
 msgid "Type"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:3
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:4
 msgid "Method Id"
 msgstr ""
 
@@ -1160,12 +1160,8 @@ msgid "To see decoded input data, the contract must be verified."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:1
-msgid "Transaction Info"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:13
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:2
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:16
 msgid "Transaction Inputs"
 msgstr ""
 
@@ -1187,13 +1183,13 @@ msgid "Failed to decode input data."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:46
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:49
 msgid "Error rendering value"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:28
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:58
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:31
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:59
 msgid "Copy Value"
 msgstr ""
 
@@ -1203,7 +1199,7 @@ msgid "Failed to decode log data."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:42
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:43
 msgid "Log Data"
 msgstr ""
 
