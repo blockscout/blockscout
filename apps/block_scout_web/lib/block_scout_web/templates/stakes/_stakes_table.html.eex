@@ -86,6 +86,7 @@
     </table>
 </div>
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_validator_info.html" %>
+<%= render BlockScoutWeb.StakesView, "_stakes_modal_become_candidate.html" %>
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_stake.html" %>
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_withdraw.html" %>
 <%=
