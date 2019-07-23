@@ -11,7 +11,9 @@ defmodule BlockScoutWeb.TransactionLogController do
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do
     with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
          {:ok, transaction} <-
-           Chain.hash_to_transaction(transaction_hash) do
+           Chain.hash_to_transaction(transaction_hash,
+             necessity_by_association: %{[to_address: :smart_contract] => :optional}
+           ) do
       full_options =
         Keyword.merge(
           [
