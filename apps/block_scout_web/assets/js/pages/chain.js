@@ -9,7 +9,7 @@ import numeral from 'numeral'
 import socket from '../socket'
 import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { batchChannel } from '../lib/utils'
+import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
 import { createMarketHistoryChart } from '../lib/market_history_chart'
 
@@ -214,11 +214,7 @@ const elements = {
   },
   '[data-selector="chain-block-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
-      if (state.blocksLoading) {
-        $el.show()
-      } else {
-        $el.hide()
-      }
+      showLoader(state.blocksLoading, $el)
     }
   },
   '[data-selector="transactions-list"] [data-selector="error-message"]': {
@@ -228,7 +224,7 @@ const elements = {
   },
   '[data-selector="transactions-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
-      $el.toggle(state.transactionsLoading)
+      showLoader(state.transactionsLoading, $el)
     }
   },
   '[data-selector="transactions-list"]': {

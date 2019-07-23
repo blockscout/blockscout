@@ -7,6 +7,7 @@
 - [#2360](https://github.com/poanetwork/blockscout/pull/2360) - add default evm version to smart contract verification
 - [#2352](https://github.com/poanetwork/blockscout/pull/2352) - Fetch rewards in parallel with transactions
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
+- [#2324](https://github.com/poanetwork/blockscout/pull/2324) - set timeout for loading message on the main page
 
 ### Fixes
 - [#2410](https://github.com/poanetwork/blockscout/pull/2410) - preload smart contract for logs decoding
