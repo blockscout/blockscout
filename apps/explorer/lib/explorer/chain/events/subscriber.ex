@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Events.Subscriber do
 
   @allowed_broadcast_types ~w(catchup realtime on_demand)a
 
-  @allowed_events ~w(exchange_rate)a
+  @allowed_events ~w(exchange_rate staking_update)a
 
   @type broadcast_type :: :realtime | :catchup | :on_demand
 
