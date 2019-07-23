@@ -258,7 +258,7 @@ msgid "Connection Lost, click to load newer validations"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:71
+#: lib/block_scout_web/templates/address_contract/index.html.eex:75
 msgid "Contract ABI"
 msgstr ""
 
@@ -296,7 +296,7 @@ msgid "Contract name:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:59
+#: lib/block_scout_web/templates/address_contract/index.html.eex:63
 msgid "Contract source code"
 msgstr ""
 
@@ -1001,7 +1001,7 @@ msgid "at"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_contract_view.ex:22
+#: lib/block_scout_web/views/address_contract_view.ex:23
 msgid "false"
 msgstr ""
 
@@ -1019,7 +1019,7 @@ msgid "string"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_contract_view.ex:21
+#: lib/block_scout_web/views/address_contract_view.ex:22
 msgid "true"
 msgstr ""
 
@@ -1407,17 +1407,17 @@ msgid "Support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:73
+#: lib/block_scout_web/templates/address_contract/index.html.eex:77
 msgid "Copy ABI"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:89
+#: lib/block_scout_web/templates/address_contract/index.html.eex:93
 msgid "Copy Contract Creation Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:61
+#: lib/block_scout_web/templates/address_contract/index.html.eex:65
 msgid "Copy Source Code"
 msgstr ""
 
@@ -1587,27 +1587,27 @@ msgid "Block Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:101
+#: lib/block_scout_web/templates/address_contract/index.html.eex:105
 msgid "Contract Byte Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:87
+#: lib/block_scout_web/templates/address_contract/index.html.eex:91
 msgid "Contract Creation Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:93
+#: lib/block_scout_web/templates/address_contract/index.html.eex:97
 msgid "Contracts that self destruct in their constructors have no contract code published and cannot be verified."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:103
+#: lib/block_scout_web/templates/address_contract/index.html.eex:107
 msgid "Copy Contract Byte Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:94
+#: lib/block_scout_web/templates/address_contract/index.html.eex:98
 msgid "Displaying the init data provided of the creating transaction."
 msgstr ""
 
@@ -1756,11 +1756,6 @@ msgid "Change Network"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:51
-msgid "Constructor arguments"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/views/transaction_view.ex:44
 msgid "ERC-20 "
 msgstr ""
@@ -1771,7 +1766,7 @@ msgid "ERC-721 "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:116
+#: lib/block_scout_web/templates/address_contract/index.html.eex:120
 msgid "External libraries"
 msgstr ""
 
@@ -1803,4 +1798,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:4
 msgid "Connection Lost"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:53
+msgid "Constructor Arguments"
 msgstr ""
