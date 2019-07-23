@@ -34,7 +34,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:21
-#: lib/block_scout_web/templates/chain/_block.html.eex:11
+#: lib/block_scout_web/templates/chain/_block.html.eex:178
 msgid "%{count} Transactions"
 msgstr ""
 
@@ -522,7 +522,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:38
 #: lib/block_scout_web/templates/block/overview.html.eex:121
-#: lib/block_scout_web/templates/chain/_block.html.eex:15
+#: lib/block_scout_web/templates/chain/_block.html.eex:182
 msgid "Miner"
 msgstr ""
 
@@ -1040,7 +1040,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:47
-#: lib/block_scout_web/templates/chain/_block.html.eex:23
+#: lib/block_scout_web/templates/chain/_block.html.eex:190
 #: lib/block_scout_web/views/internal_transaction_view.ex:27
 msgid "Reward"
 msgstr ""
