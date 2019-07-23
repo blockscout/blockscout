@@ -39,7 +39,7 @@
               <td colspan="3"><code><%= text %></code></td>
             </tr>
           </table>
-          <div class="table-bordered table-responsive text-center">
+          <div class="table-responsive text-center">
             <table style="color: black;" summary="<%= gettext "Log Data" %>" class="table thead-light table-bordered">
               <tr>
                 <th scope="col"></th>
