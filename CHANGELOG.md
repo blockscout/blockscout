@@ -11,6 +11,7 @@
 - [#2324](https://github.com/poanetwork/blockscout/pull/2324) - set timeout for loading message on the main page
 
 ### Fixes
+- [#2417](https://github.com/poanetwork/blockscout/pull/2417) - Remove parentheses in market cap percentage
 - [#2410](https://github.com/poanetwork/blockscout/pull/2410) - preload smart contract for logs decoding
 - [#2398](https://github.com/poanetwork/blockscout/pull/2398) - show only one decoded candidate
 - [#2395](https://github.com/poanetwork/blockscout/pull/2395) - new block loading animation
