@@ -18,7 +18,7 @@ config :explorer,
   healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5)
 
 average_block_period =
-  case Integer.parse(System.get_env("AVERAGE_BLOCK_PERIOD", "")) do
+  case Integer.parse(System.get_env("AVERAGE_BLOCK_CACHE_PERIOD", "")) do
     {secs, ""} -> :timer.seconds(secs)
     _ -> :timer.minutes(30)
   end
@@ -114,13 +114,13 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   tracer: Explorer.Tracer,
   otp_app: :explorer
 
-market_history_cache_ttl =
-  case Integer.parse(System.get_env("MARKET_HISTORY_CACHE_TTL", "")) do
+market_history_cache_period =
+  case Integer.parse(System.get_env("MARKET_HISTORY_CACHE_PERIOD", "")) do
     {secs, ""} -> :timer.seconds(secs)
     _ -> :timer.hours(6)
   end
 
-config :explorer, Explorer.Market.MarketHistoryCache, ttl: market_history_cache_ttl
+config :explorer, Explorer.Market.MarketHistoryCache, period: market_history_cache_period
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
