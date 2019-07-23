@@ -2,19 +2,19 @@ defmodule BlockScoutWeb.StakesHelpers do
   @moduledoc """
   Helpers for staking templates
   """
-  alias Explorer.Chain.{BlockNumberCache, Wei}
+  alias Explorer.Chain.BlockNumberCache
   alias Timex.Duration
 
   def amount_ratio(pool) do
-    {:ok, zero_wei} = Wei.cast(0)
+    zero = Decimal.new(0)
 
     case pool do
-      %{staked_amount: ^zero_wei} ->
+      %{staked_amount: ^zero} ->
         0
 
       %{staked_amount: staked_amount, self_staked_amount: self_staked} ->
-        amount = Decimal.to_float(staked_amount.value)
-        self = Decimal.to_float(self_staked.value)
+        amount = Decimal.to_float(staked_amount)
+        self = Decimal.to_float(self_staked)
         self / amount * 100
     end
   end
