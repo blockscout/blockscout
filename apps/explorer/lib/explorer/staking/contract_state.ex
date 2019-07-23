@@ -8,7 +8,7 @@ defmodule Explorer.Staking.ContractState do
   use GenServer
 
   alias Explorer.Chain
-  alias Explorer.Chain.Events.Subscriber
+  alias Explorer.Chain.Events.{Publisher, Subscriber}
   alias Explorer.SmartContract.Reader
   alias Explorer.Staking.ContractReader
 
@@ -189,6 +189,8 @@ defmodule Explorer.Staking.ContractState do
         staking_pools_delegators: %{params: delegator_entries},
         timeout: :infinity
       })
+
+    Publisher.broadcast(:staking_update)
   end
 
   defp ratio(_numerator, 0), do: 0

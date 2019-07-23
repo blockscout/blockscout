@@ -14,6 +14,19 @@ defmodule BlockScoutWeb.StakesController do
     render_template(assigns.filter, conn, params)
   end
 
+  def render_top do
+    epoch_number = ContractState.get(:epoch_number, 0)
+    epoch_end_block = ContractState.get(:epoch_end_block, 0)
+    block_number = BlockNumberCache.max_number()
+
+    View.render_to_string(StakesView, "_stakes_top.html",
+      epoch_number: epoch_number,
+      epoch_end_in: epoch_end_block - block_number,
+      block_number: block_number,
+      logged_in: false
+    )
+  end
+
   defp render_template(filter, conn, %{"type" => "JSON"} = params) do
     [paging_options: options] = paging_options(params)
 
@@ -66,21 +79,12 @@ defmodule BlockScoutWeb.StakesController do
   end
 
   defp render_template(filter, conn, _) do
-    epoch_number = ContractState.get(:epoch_number, 0)
-    epoch_end_block = ContractState.get(:epoch_end_block, 0)
-    block_number = BlockNumberCache.max_number()
-    average_block_time = AverageBlockTime.average_block_time()
-
-    options = [
+    render(conn, "index.html",
+      top: render_top(),
       pools_type: filter,
-      epoch_number: epoch_number,
-      epoch_end_in: epoch_end_block - block_number,
-      block_number: block_number,
       current_path: current_path(conn),
-      average_block_time: average_block_time
-    ]
-
-    render(conn, "index.html", options)
+      average_block_time: AverageBlockTime.average_block_time()
+    )
   end
 
   defp next_page_path(:validator, conn, params) do
