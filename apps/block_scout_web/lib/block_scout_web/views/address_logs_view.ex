@@ -1,9 +1,9 @@
 defmodule BlockScoutWeb.AddressLogsView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.Log
 
-  def decode_transaction(transaction) do
-    Transaction.decoded_input_data(transaction)
+  def decode(log, transaction) do
+    Log.decode(log, transaction)
   end
 end
