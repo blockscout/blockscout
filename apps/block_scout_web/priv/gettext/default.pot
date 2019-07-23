@@ -1792,3 +1792,20 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:4
 msgid "Connection Lost"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:53
+msgid "Constructor Arguments"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/internal_transaction_view.ex:26
+msgid "Create2"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/_tile.html.eex:47
+#: lib/block_scout_web/templates/chain/_block.html.eex:190
+#: lib/block_scout_web/views/internal_transaction_view.ex:28
+msgid "Reward"
+msgstr ""
