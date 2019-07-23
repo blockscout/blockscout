@@ -1,7 +1,7 @@
 const path = require('path');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const { ContextReplacementPlugin } = require('webpack')
+const { ContextReplacementPlugin } = require('webpack');
 const glob = require("glob");
 
 function transpileViewScript(file) {
