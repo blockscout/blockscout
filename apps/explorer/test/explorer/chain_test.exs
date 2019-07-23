@@ -630,7 +630,7 @@ defmodule Explorer.ChainTest do
 
       assert Repo.aggregate(Transaction, :count, :hash) == 0
 
-      assert [] = Chain.block_to_transactions(block)
+      assert [] = Chain.block_to_transactions(block.hash)
     end
 
     test "with transactions" do
@@ -639,7 +639,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      assert [%Transaction{hash: ^transaction_hash}] = Chain.block_to_transactions(block)
+      assert [%Transaction{hash: ^transaction_hash}] = Chain.block_to_transactions(block.hash)
     end
 
     test "with transactions can be paginated by {index}" do
@@ -657,7 +657,7 @@ defmodule Explorer.ChainTest do
         |> with_block(block)
 
       assert second_page_hashes ==
-               block
+               block.hash
                |> Chain.block_to_transactions(paging_options: %PagingOptions{key: {index}, page_size: 50})
                |> Enum.map(& &1.hash)
                |> Enum.reverse()
@@ -683,7 +683,7 @@ defmodule Explorer.ChainTest do
         token: token
       )
 
-      fetched_transaction = List.first(Explorer.Chain.block_to_transactions(block))
+      fetched_transaction = List.first(Explorer.Chain.block_to_transactions(block.hash))
       assert fetched_transaction.hash == transaction.hash
       assert length(fetched_transaction.token_transfers) == 2
     end
@@ -693,7 +693,7 @@ defmodule Explorer.ChainTest do
     test "without transactions" do
       block = insert(:block)
 
-      assert Chain.block_to_transaction_count(block) == 0
+      assert Chain.block_to_transaction_count(block.hash) == 0
     end
 
     test "with transactions" do
@@ -702,7 +702,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      assert Chain.block_to_transaction_count(block) == 1
+      assert Chain.block_to_transaction_count(block.hash) == 1
     end
   end
 
@@ -2090,7 +2090,7 @@ defmodule Explorer.ChainTest do
     test "with transaction without internal transactions" do
       transaction = insert(:transaction)
 
-      assert [] = Chain.transaction_to_internal_transactions(transaction)
+      assert [] = Chain.transaction_to_internal_transactions(transaction.hash)
     end
 
     test "with transaction with internal transactions returns all internal transactions for a given transaction hash" do
@@ -2117,7 +2117,7 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      results = [internal_transaction | _] = Chain.transaction_to_internal_transactions(transaction)
+      results = [internal_transaction | _] = Chain.transaction_to_internal_transactions(transaction.hash)
 
       assert 2 == length(results)
 
@@ -2151,7 +2151,7 @@ defmodule Explorer.ChainTest do
                  to_address: %Ecto.Association.NotLoaded{},
                  transaction: %Transaction{block: %Ecto.Association.NotLoaded{}}
                }
-             ] = Chain.transaction_to_internal_transactions(transaction)
+             ] = Chain.transaction_to_internal_transactions(transaction.hash)
 
       assert [
                %InternalTransaction{
@@ -2161,7 +2161,7 @@ defmodule Explorer.ChainTest do
                }
              ] =
                Chain.transaction_to_internal_transactions(
-                 transaction,
+                 transaction.hash,
                  necessity_by_association: %{
                    :from_address => :optional,
                    :to_address => :optional,
@@ -2183,7 +2183,7 @@ defmodule Explorer.ChainTest do
         transaction_index: transaction.index
       )
 
-      result = Chain.transaction_to_internal_transactions(transaction)
+      result = Chain.transaction_to_internal_transactions(transaction.hash)
 
       assert Enum.empty?(result)
     end
@@ -2202,7 +2202,7 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
+      actual = Enum.at(Chain.transaction_to_internal_transactions(transaction.hash), 0)
 
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
@@ -2222,7 +2222,7 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
+      actual = Enum.at(Chain.transaction_to_internal_transactions(transaction.hash), 0)
 
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
@@ -2243,7 +2243,7 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
+      actual = Enum.at(Chain.transaction_to_internal_transactions(transaction.hash), 0)
 
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
@@ -2271,7 +2271,7 @@ defmodule Explorer.ChainTest do
         )
 
       result =
-        transaction
+        transaction.hash
         |> Chain.transaction_to_internal_transactions()
         |> Enum.map(&{&1.transaction_hash, &1.index})
 
@@ -2301,17 +2301,17 @@ defmodule Explorer.ChainTest do
         )
 
       assert [{first_transaction_hash, first_index}, {second_transaction_hash, second_index}] ==
-               transaction
+               transaction.hash
                |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {-1}, page_size: 2})
                |> Enum.map(&{&1.transaction_hash, &1.index})
 
       assert [{first_transaction_hash, first_index}] ==
-               transaction
+               transaction.hash
                |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {-1}, page_size: 1})
                |> Enum.map(&{&1.transaction_hash, &1.index})
 
       assert [{second_transaction_hash, second_index}] ==
-               transaction
+               transaction.hash
                |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {0}, page_size: 2})
                |> Enum.map(&{&1.transaction_hash, &1.index})
     end
@@ -2321,7 +2321,7 @@ defmodule Explorer.ChainTest do
     test "without logs" do
       transaction = insert(:transaction)
 
-      assert [] = Chain.transaction_to_logs(transaction)
+      assert [] = Chain.transaction_to_logs(transaction.hash)
     end
 
     test "with logs" do
@@ -2332,7 +2332,7 @@ defmodule Explorer.ChainTest do
 
       %Log{transaction_hash: transaction_hash, index: index} = insert(:log, transaction: transaction)
 
-      assert [%Log{transaction_hash: ^transaction_hash, index: ^index}] = Chain.transaction_to_logs(transaction)
+      assert [%Log{transaction_hash: ^transaction_hash, index: ^index}] = Chain.transaction_to_logs(transaction.hash)
     end
 
     test "with logs can be paginated" do
@@ -2349,7 +2349,7 @@ defmodule Explorer.ChainTest do
         |> Enum.map(& &1.index)
 
       assert second_page_indexes ==
-               transaction
+               transaction.hash
                |> Chain.transaction_to_logs(paging_options: %PagingOptions{key: {log.index}, page_size: 50})
                |> Enum.map(& &1.index)
     end
@@ -2364,7 +2364,7 @@ defmodule Explorer.ChainTest do
 
       assert [%Log{address: %Address{}, transaction: %Transaction{}}] =
                Chain.transaction_to_logs(
-                 transaction,
+                 transaction.hash,
                  necessity_by_association: %{
                    address: :optional,
                    transaction: :optional
@@ -2376,7 +2376,7 @@ defmodule Explorer.ChainTest do
                  address: %Ecto.Association.NotLoaded{},
                  transaction: %Ecto.Association.NotLoaded{}
                }
-             ] = Chain.transaction_to_logs(transaction)
+             ] = Chain.transaction_to_logs(transaction.hash)
     end
   end
 
@@ -2384,7 +2384,7 @@ defmodule Explorer.ChainTest do
     test "without token transfers" do
       transaction = insert(:transaction)
 
-      assert [] = Chain.transaction_to_token_transfers(transaction)
+      assert [] = Chain.transaction_to_token_transfers(transaction.hash)
     end
 
     test "with token transfers" do
@@ -2397,7 +2397,7 @@ defmodule Explorer.ChainTest do
         insert(:token_transfer, transaction: transaction)
 
       assert [%TokenTransfer{transaction_hash: ^transaction_hash, log_index: ^log_index}] =
-               Chain.transaction_to_token_transfers(transaction)
+               Chain.transaction_to_token_transfers(transaction.hash)
     end
 
     test "token transfers necessity_by_association loads associations" do
@@ -2410,7 +2410,7 @@ defmodule Explorer.ChainTest do
 
       assert [%TokenTransfer{token: %Token{}, transaction: %Transaction{}}] =
                Chain.transaction_to_token_transfers(
-                 transaction,
+                 transaction.hash,
                  necessity_by_association: %{
                    token: :optional,
                    transaction: :optional
@@ -2422,7 +2422,7 @@ defmodule Explorer.ChainTest do
                  token: %Ecto.Association.NotLoaded{},
                  transaction: %Ecto.Association.NotLoaded{}
                }
-             ] = Chain.transaction_to_token_transfers(transaction)
+             ] = Chain.transaction_to_token_transfers(transaction.hash)
     end
   end
 
@@ -2480,7 +2480,17 @@ defmodule Explorer.ChainTest do
         insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil, names: [])
         |> Repo.preload([:contracts_creation_internal_transaction, :contracts_creation_transaction, :token])
 
-      response = Chain.find_contract_address(address.hash)
+      options = [
+        necessity_by_association: %{
+          :contracts_creation_internal_transaction => :optional,
+          :names => :optional,
+          :smart_contract => :optional,
+          :token => :optional,
+          :contracts_creation_transaction => :optional
+        }
+      ]
+
+      response = Chain.find_contract_address(address.hash, options, true)
 
       assert response == {:ok, address}
     end
@@ -2523,11 +2533,11 @@ defmodule Explorer.ChainTest do
         |> Decimal.add(Decimal.new(3))
         |> Wei.from(:wei)
 
-      assert expected == Chain.block_reward(block)
+      assert expected == Chain.block_reward(block.number)
     end
 
     test "with block without transactions", %{block: block, emission_reward: emission_reward} do
-      assert emission_reward.reward == Chain.block_reward(block)
+      assert emission_reward.reward == Chain.block_reward(block.number)
     end
   end
 
