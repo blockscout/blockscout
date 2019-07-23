@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import omit from 'lodash/omit'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
@@ -13,7 +13,7 @@ export const initialState = {
 export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, _.omit(action, 'type'))
+      return Object.assign({}, state, omit(action, 'type'))
     }
     case 'RECEIVED_NEW_BLOCK': {
       if ((action.msg.blockNumber - state.blockNumber) > state.confirmations) {
