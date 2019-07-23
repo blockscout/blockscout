@@ -1,5 +1,172 @@
 <div class="col-lg-3 fade-up-blocks-chain" data-selector="chain-block" data-block-number="<%= @block.number %>">
   <div class="tile tile-type-block n-p d-flex flex-column">
+    <div class="tile-type-block-animation">
+      <div class="tile-type-line-up"></div>
+      <span class="cube-animation-title">Block Validated, processing...</span>
+      <div class="cube-animation-wrapper">
+        <div class="cube-animation-center">
+          <div class="cube-animation-row">
+            <div class="cube-animation-column">
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+            </div>
+            <div class="cube-animation-column">
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+            </div>
+            <div class="cube-animation-column">
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+            </div>
+          </div>
+          <div class="cube-animation-row">
+            <div class="cube-animation-column">
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+            </div>
+            <div class="cube-animation-column">
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+            </div>
+            <div class="cube-animation-column">
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+            </div>
+          </div>
+          <div class="cube-animation-row">
+            <div class="cube-animation-column">
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+            </div>
+            <div class="cube-animation-column">
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+            </div>
+            <div class="cube-animation-column">
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+              <svg class="cube" viewBox="0 0 86.6 100" x="0px" y="0px">
+                <polygon class="side" points="43.3,0 0,25 0,75 43.3,100 86.6,75 86.6,25 "></polygon>
+                <polygon class="side" points="86.6,25 43.3,50 43.3,100 86.6,75 "></polygon>
+                <polygon class="side" points="0,25 43.3,0 86.6,25 43.3,50 "></polygon>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <%= link(
           @block,
           class: "tile-title",
