@@ -1,17 +1,24 @@
 ## Current
 
 ### Features
-- [#2366](https://github.com/poanetwork/blockscout/pull/2366) - paginate eth logs
+- [#2412](https://github.com/poanetwork/blockscout/pull/2412) - dark theme
+- [#2391](https://github.com/poanetwork/blockscout/pull/2391) - Controllers Improvements
 - [#2379](https://github.com/poanetwork/blockscout/pull/2379) - Disable network selector when is empty
+- [#2374](https://github.com/poanetwork/blockscout/pull/2374) - decode constructor arguments for verified smart contracts
+- [#2366](https://github.com/poanetwork/blockscout/pull/2366) - paginate eth logs
 - [#2360](https://github.com/poanetwork/blockscout/pull/2360) - add default evm version to smart contract verification
 - [#2352](https://github.com/poanetwork/blockscout/pull/2352) - Fetch rewards in parallel with transactions
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
+- [#2324](https://github.com/poanetwork/blockscout/pull/2324) - set timeout for loading message on the main page
 
 ### Fixes
+- [#2416](https://github.com/poanetwork/blockscout/pull/2416) - Fix "page not found" handling in the router
 - [#2410](https://github.com/poanetwork/blockscout/pull/2410) - preload smart contract for logs decoding
+- [#2405](https://github.com/poanetwork/blockscout/pull/2405) - added templates for table loader and tile loader
 - [#2398](https://github.com/poanetwork/blockscout/pull/2398) - show only one decoded candidate
 - [#2395](https://github.com/poanetwork/blockscout/pull/2395) - new block loading animation
 - [#2389](https://github.com/poanetwork/blockscout/pull/2389) - Reduce Lodash lib size (86% of lib methods are not used)
+- [#2387](https://github.com/poanetwork/blockscout/pull/2387) - fix not existing keys in transaction json rpc
 - [#2378](https://github.com/poanetwork/blockscout/pull/2378) - Page performance: exclude moment.js localization files except EN, remove unused css
 - [#2368](https://github.com/poanetwork/blockscout/pull/2368) - add two columns of smart contract info
 - [#2375](https://github.com/poanetwork/blockscout/pull/2375) - Update created_contract_code_indexed_at on transaction import conflict
@@ -29,6 +36,8 @@
 - [#2326](https://github.com/poanetwork/blockscout/pull/2326) - fix nested constructor arguments
 
 ### Chore
+- [#2418](https://github.com/poanetwork/blockscout/pull/2418) - Remove parentheses in market cap percentage
+- [#2401](https://github.com/poanetwork/blockscout/pull/2401) - add ENV vars to manage updating period of average block time and market history cache
 - [#2363](https://github.com/poanetwork/blockscout/pull/2363) - add parameters example for eth rpc
 - [#2342](https://github.com/poanetwork/blockscout/pull/2342) - Upgrade Postgres image version in Docker setup
 - [#2325](https://github.com/poanetwork/blockscout/pull/2325) - Reduce function input to address' hash only where possible
