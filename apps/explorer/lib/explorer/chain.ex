@@ -2835,11 +2835,11 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  @spec fetch_last_token_balance(Hash.Address.t(), Hash.Address.t()) :: Decimal.t() | nil
+  @spec fetch_last_token_balance(Hash.Address.t(), Hash.Address.t()) :: Decimal.t()
   def fetch_last_token_balance(address_hash, token_contract_address_hash) do
     address_hash
     |> CurrentTokenBalance.last_token_balance(token_contract_address_hash)
-    |> Repo.one()
+    |> Repo.one() || Decimal.new(0)
   end
 
   @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []
