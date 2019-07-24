@@ -156,12 +156,7 @@ defmodule Explorer.Staking.ContractState do
           delegators_count: length(staking_response.active_delegators),
           staked_ratio: ratio(staking_response.staked_amount, staked_total),
           likelihood: ratio(likelihood[staking_address] || 0, total_likelihood),
-          block_reward_ratio:
-            if mining_response.is_validator and staking_response.block_rewards != [] do
-              Enum.at(staking_response.block_rewards, 0) / 1_000_000
-            else
-              max(ratio(staking_response.self_staked_amount, staking_response.staked_amount), 30)
-            end,
+          block_reward_ratio: staking_response.block_reward / 10_000,
           is_deleted: false
         }
         |> Map.merge(
