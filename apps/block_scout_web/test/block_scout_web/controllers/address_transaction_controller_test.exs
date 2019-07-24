@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
     test "with valid address hash without address", %{conn: conn} do
       conn = get(conn, address_transaction_path(conn, :index, "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"))
 
-      assert html_response(conn, 404)
+      assert html_response(conn, 200)
     end
 
     test "returns transactions for the address", %{conn: conn} do
