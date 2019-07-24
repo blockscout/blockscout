@@ -13,6 +13,14 @@ defmodule Explorer.Staking.ContractState do
   alias Explorer.Staking.ContractReader
 
   @table_name __MODULE__
+  @table_keys [
+    :token_contract_address,
+    :token,
+    :min_candidate_stake,
+    :min_delegator_stake,
+    :epoch_number,
+    :epoch_end_block
+  ]
 
   defstruct [
     :seen_block,
@@ -21,9 +29,9 @@ defmodule Explorer.Staking.ContractState do
   ]
 
   @spec get(atom(), value) :: value when value: any()
-  def get(param, default \\ nil) do
+  def get(key, default \\ nil) when key in @table_keys do
     with info when info != :undefined <- :ets.info(@table_name),
-         [{_, value}] <- :ets.lookup(@table_name, param) do
+         [{_, value}] <- :ets.lookup(@table_name, key) do
       value
     else
       _ -> default
@@ -100,6 +108,7 @@ defmodule Explorer.Staking.ContractState do
         :epoch_end_block
       ])
       |> Map.to_list()
+      |> Enum.concat(token: get_token(global_responses.token_contract_address))
 
     :ets.insert(@table_name, settings)
 
@@ -191,6 +200,15 @@ defmodule Explorer.Staking.ContractState do
       })
 
     Publisher.broadcast(:staking_update)
+  end
+
+  defp get_token(address) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address),
+         {:ok, token} <- Chain.token_from_address_hash(address_hash) do
+      token
+    else
+      _ -> nil
+    end
   end
 
   defp ratio(_numerator, 0), do: 0
