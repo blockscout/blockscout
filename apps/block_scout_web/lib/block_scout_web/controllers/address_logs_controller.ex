@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.AddressLogsController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, [], false) do
+         :ok <- Chain.check_address_exists(address_hash) do
       logs_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
       {results, next_page} = split_list_by_page(logs_plus_one)
 
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.AddressLogsController do
             nil
 
           next_page_params ->
-            address_logs_path(conn, :index, address, Map.delete(next_page_params, "type"))
+            address_logs_path(conn, :index, address_hash, Map.delete(next_page_params, "type"))
         end
 
       items =
@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.AddressLogsController do
 
   def search_logs(conn, %{"topic" => topic, "address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, [], false) do
+         :ok <- Chain.check_address_exists(address_hash) do
       topic = String.trim(topic)
 
       formatted_topic = if String.starts_with?(topic, "0x"), do: topic, else: "0x" <> topic
@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.AddressLogsController do
             nil
 
           next_page_params ->
-            address_logs_path(conn, :index, address, Map.delete(next_page_params, "type"))
+            address_logs_path(conn, :index, address_hash, Map.delete(next_page_params, "type"))
         end
 
       items =
