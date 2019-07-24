@@ -11,6 +11,7 @@
 - [#2324](https://github.com/poanetwork/blockscout/pull/2324) - set timeout for loading message on the main page
 
 ### Fixes
+- [#2416](https://github.com/poanetwork/blockscout/pull/2416) - Fix "page not found" handling in the router
 - [#2410](https://github.com/poanetwork/blockscout/pull/2410) - preload smart contract for logs decoding
 - [#2405](https://github.com/poanetwork/blockscout/pull/2405) - added templates for table loader and tile loader
 - [#2398](https://github.com/poanetwork/blockscout/pull/2398) - show only one decoded candidate
