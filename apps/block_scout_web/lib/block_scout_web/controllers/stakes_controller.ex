@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.StakesController do
 
   alias BlockScoutWeb.StakesView
   alias Explorer.Chain
-  alias Explorer.Chain.BlockNumberCache
+  alias Explorer.Chain.{BlockNumberCache, Token}
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Staking.ContractState
   alias Phoenix.View
@@ -54,6 +54,7 @@ defmodule BlockScoutWeb.StakesController do
       end
 
     average_block_time = AverageBlockTime.average_block_time()
+    token = ContractState.get(:token, %Token{})
 
     items =
       pools
@@ -62,6 +63,7 @@ defmodule BlockScoutWeb.StakesController do
         View.render_to_string(
           StakesView,
           "_rows.html",
+          token: token,
           pool: pool,
           index: index,
           average_block_time: average_block_time,
