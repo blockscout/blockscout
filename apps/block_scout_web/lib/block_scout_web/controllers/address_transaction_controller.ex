@@ -130,6 +130,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
     end
   end
 
+  def token_transfers_csv(conn, _), do: not_found(conn)
+
   def transactions_csv(conn, %{"address_id" => address_hash_string}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
@@ -149,4 +151,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
         not_found(conn)
     end
   end
+
+  def transactions_csv(conn, _), do: not_found(conn)
 end
