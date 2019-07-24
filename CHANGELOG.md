@@ -2,6 +2,8 @@
 
 ### Features
 - [#2376](https://github.com/poanetwork/blockscout/pull/2376) - Split API and WebApp routes
+- [#2412](https://github.com/poanetwork/blockscout/pull/2412) - dark theme
+- [#2399](https://github.com/poanetwork/blockscout/pull/2399) - decode verified smart contract's logs
 - [#2391](https://github.com/poanetwork/blockscout/pull/2391) - Controllers Improvements
 - [#2379](https://github.com/poanetwork/blockscout/pull/2379) - Disable network selector when is empty
 - [#2374](https://github.com/poanetwork/blockscout/pull/2374) - decode constructor arguments for verified smart contracts
