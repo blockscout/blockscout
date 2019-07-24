@@ -11,6 +11,7 @@
 - [#2324](https://github.com/poanetwork/blockscout/pull/2324) - set timeout for loading message on the main page
 
 ### Fixes
+- [#2423](https://github.com/poanetwork/blockscout/pull/2423) - add clause for transactions with indexed created contract code
 - [#2410](https://github.com/poanetwork/blockscout/pull/2410) - preload smart contract for logs decoding
 - [#2398](https://github.com/poanetwork/blockscout/pull/2398) - show only one decoded candidate
 - [#2395](https://github.com/poanetwork/blockscout/pull/2395) - new block loading animation
