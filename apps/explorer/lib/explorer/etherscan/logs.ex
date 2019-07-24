@@ -5,7 +5,7 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [from: 2, where: 3, subquery: 1]
+  import Ecto.Query, only: [from: 2, where: 3, subquery: 1, order_by: 3]
 
   alias Explorer.Chain.{Block, InternalTransaction, Log, Transaction}
   alias Explorer.Repo
@@ -38,6 +38,8 @@ defmodule Explorer.Etherscan.Logs do
     :type
   ]
 
+  @default_paging_options %{block_number: nil, transaction_index: nil, log_index: nil}
+
   @doc """
   Gets a list of logs that meet the criteria in a given filter map.
 
@@ -68,7 +70,10 @@ defmodule Explorer.Etherscan.Logs do
 
   """
   @spec list_logs(map()) :: [map()]
-  def list_logs(%{address_hash: address_hash} = filter) when not is_nil(address_hash) do
+  def list_logs(filter, paging_options \\ @default_paging_options)
+
+  def list_logs(%{address_hash: address_hash} = filter, paging_options) when not is_nil(address_hash) do
+    paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
 
     logs_query = where_topic_match(Log, prepared_filter)
@@ -134,14 +139,18 @@ defmodule Explorer.Etherscan.Logs do
         )
       end
 
-    Repo.all(query_with_consensus)
+    query_with_consensus
+    |> order_by([log], asc: log.index)
+    |> page_logs(paging_options)
+    |> Repo.all()
   end
 
   # Since address_hash was not present, we know that a
   # topic filter has been applied, so we use a different
   # query that is optimized for a logs filter over an
   # address_hash
-  def list_logs(filter) do
+  def list_logs(filter, paging_options) do
+    paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
 
     logs_query = where_topic_match(Log, prepared_filter)
@@ -182,7 +191,10 @@ defmodule Explorer.Etherscan.Logs do
         select_merge: map(log, ^@log_fields)
       )
 
-    Repo.all(query_with_block_transaction_data)
+    query_with_block_transaction_data
+    |> order_by([log], asc: log.index)
+    |> page_logs(paging_options)
+    |> Repo.all()
   end
 
   @topics [
@@ -231,4 +243,17 @@ defmodule Explorer.Etherscan.Logs do
   end
 
   defp where_multiple_topics_match(query, _, _, _), do: query
+
+  defp page_logs(query, %{block_number: nil, transaction_index: nil, log_index: nil}) do
+    query
+  end
+
+  defp page_logs(query, %{block_number: block_number, transaction_index: transaction_index, log_index: log_index}) do
+    from(
+      data in query,
+      where:
+        data.index > ^log_index and data.block_number >= ^block_number and
+          data.transaction_index >= ^transaction_index
+    )
+  end
 end
