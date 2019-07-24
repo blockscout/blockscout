@@ -30,6 +30,8 @@ defmodule BlockScoutWeb.SmartContractController do
     end
   end
 
+  def index(conn, _), do: not_found(conn)
+
   def show(conn, params) do
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]),
