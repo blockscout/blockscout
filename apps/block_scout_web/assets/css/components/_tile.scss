@@ -349,6 +349,52 @@ $tile-body-a-color: #5959d8 !default;
   }
 }
 
+// Loader
+.tile-type-loading {
+  background-color: #fff;
+  padding-top: 30px;
+  padding-bottom: 28px;
+}
+
+.tile-loader {
+  display: inline-block;
+  height: 20px;
+  width: 100%;
+  border-radius: 4px;
+  background-color: #f5f6fa;
+  overflow: hidden;
+  position: relative;
+  &:before {
+    width: inherit;
+    height: inherit;
+    content: '';
+    position: absolute;
+    background: linear-gradient(to right, #f5f6fa 2%, #eee 18%, #f5f6fa 33%);
+    animation-duration: 1.7s;
+    animation-fill-mode: forwards;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    animation-name: tilePlaceholderAnimate;
+    background-size: 1300px;
+  }
+}
+
+.tile-label-loader {
+  height: 14px;
+  width: 80px;
+}
+
+.tile-address-loader {
+  & + .tile-address-loader {
+    margin-top: 6px;
+  }
+}
+
+@keyframes tilePlaceholderAnimate {
+  0%{ background-position: -650px 0; }
+  100% { background-position: 650px 0; }
+}
+
 // Loading Animation
 
 @keyframes playBlockLoadingAnimation {

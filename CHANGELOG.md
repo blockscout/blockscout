@@ -12,6 +12,7 @@
 
 ### Fixes
 - [#2410](https://github.com/poanetwork/blockscout/pull/2410) - preload smart contract for logs decoding
+- [#2405](https://github.com/poanetwork/blockscout/pull/2405) - added templates for table loader and tile loader
 - [#2398](https://github.com/poanetwork/blockscout/pull/2398) - show only one decoded candidate
 - [#2395](https://github.com/poanetwork/blockscout/pull/2395) - new block loading animation
 - [#2389](https://github.com/poanetwork/blockscout/pull/2389) - Reduce Lodash lib size (86% of lib methods are not used)
