@@ -117,7 +117,9 @@
             <%= gettext "Something went wrong, click to retry." %>
           </span>
         </button>
-        <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
+        <div hidden data-selector="loading-message">
+          <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
+        </div>
       </span>
     </div>
   </div>
