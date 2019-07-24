@@ -252,6 +252,9 @@ defmodule Indexer.Block.Fetcher do
       %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
         []
 
+      %Transaction{created_contract_code_indexed_at: %DateTime{}} ->
+        []
+
       %Transaction{created_contract_address_hash: nil} ->
         []
     end)
