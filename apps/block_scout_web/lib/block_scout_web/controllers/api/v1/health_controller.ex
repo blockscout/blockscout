@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V1.HealthController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, PagingOptions}
 
   def health(conn, _) do
     with {:ok, number, timestamp} <- Chain.last_block_status() do
@@ -12,11 +12,20 @@ defmodule BlockScoutWeb.API.V1.HealthController do
   end
 
   def result(number, timestamp) do
+    latest_block_in_cache =
+      [
+        paging_options: %PagingOptions{page_size: 1}
+      ]
+      |> Chain.list_blocks()
+      |> List.last()
+
     %{
       "healthy" => true,
       "data" => %{
-        "latest_block_number" => to_string(number),
-        "latest_block_inserted_at" => to_string(timestamp)
+        "db_latest_block_number" => to_string(number),
+        "db_latest_block_inserted_at" => to_string(timestamp),
+        "cache_latest_block_number" => to_string(latest_block_in_cache.number),
+        "cache_latest_block_inserted_at" => to_string(latest_block_in_cache.timestamp)
       }
     }
     |> Jason.encode!()
@@ -40,8 +49,8 @@ defmodule BlockScoutWeb.API.V1.HealthController do
       "error_description" =>
         "There are no new blocks in the DB for the last 5 mins. Check the healthiness of Ethereum archive node or the Blockscout DB instance",
       "data" => %{
-        "latest_block_number" => to_string(number),
-        "latest_block_inserted_at" => to_string(timestamp)
+        "db_latest_block_number" => to_string(number),
+        "db_latest_block_inserted_at" => to_string(timestamp)
       }
     }
     |> Jason.encode!()
