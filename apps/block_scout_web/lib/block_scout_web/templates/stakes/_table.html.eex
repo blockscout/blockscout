@@ -64,3 +64,8 @@
   title: "Remove my Pool",
   text: "Do you really want to remove your pool?"
 %>
+<%= render BlockScoutWeb.StakesView,
+  "_stakes_modal_become_candidate.html",
+  min_candidate_stake: 200000,
+  token_symbol: :foo
+%>

@@ -1,6 +1,6 @@
 import $ from 'jquery'
 import humps from 'humps'
-import {store} from '../pages/stakes.js'
+import {store} from '../../pages/stakes.js'
 import * as modals from './utils.js'
 
 window.openClaimModal = async function (poolAddress) {

@@ -1,6 +1,6 @@
 import $ from 'jquery'
 import Chart from 'chart.js'
-import {store} from '../pages/stakes.js'
+import {store} from '../../pages/stakes.js'
 
 export function setProgressInfo (modal, pool, elClass = '') {
   let selfAmount = parseFloat(pool.selfStakedAmount)

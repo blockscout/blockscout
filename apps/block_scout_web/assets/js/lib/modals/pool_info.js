@@ -1,7 +1,7 @@
 import $ from 'jquery'
 import humps from 'humps'
 import moment from 'moment'
-import {store} from '../pages/stakes.js'
+import {store} from '../../pages/stakes.js'
 import * as modals from './utils.js'
 
 window.openPoolInfoModal = async function (poolAddress) {
