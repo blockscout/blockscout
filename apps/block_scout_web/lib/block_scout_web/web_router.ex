@@ -199,6 +199,6 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
-    get("/:page", PageNotFoundController, :index)
+    get("/*path", PageNotFoundController, :index)
   end
 end
