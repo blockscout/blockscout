@@ -1078,11 +1078,6 @@ msgid "GraphQL"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/pending_transaction/index.html.eex:32
-msgid "Loading"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:83
 msgid "RPC"
 msgstr ""
