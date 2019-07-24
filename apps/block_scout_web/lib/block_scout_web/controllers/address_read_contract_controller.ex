@@ -15,8 +15,18 @@ defmodule BlockScoutWeb.AddressReadContractController do
   import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
 
   def index(conn, %{"address_id" => address_hash_string}) do
+    address_options = [
+      necessity_by_association: %{
+        :contracts_creation_internal_transaction => :optional,
+        :names => :optional,
+        :smart_contract => :optional,
+        :token => :optional,
+        :contracts_creation_transaction => :optional
+      }
+    ]
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash) do
+         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       render(
         conn,
         "index.html",
