@@ -329,15 +329,6 @@ msgid "Curl"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:49
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:114
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:18
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:48
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:113
-msgid "Data"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:53
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:188
 msgid "Description"
@@ -558,8 +549,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:46
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:16
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:45
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:19
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:46
 msgid "Name"
 msgstr ""
 
@@ -825,12 +816,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_metatags.html.eex:13
 msgid "Top Accounts - %{subnetwork} Explorer"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:84
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:83
-msgid "Topics"
 msgstr ""
 
 #, elixir-format
@@ -1136,20 +1121,7 @@ msgid "Decoded"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:48
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:47
-msgid "Indexed?"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:47
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:17
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:46
-msgid "Type"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:3
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:4
 msgid "Method Id"
 msgstr ""
 
@@ -1160,12 +1132,8 @@ msgid "To see decoded input data, the contract must be verified."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:1
-msgid "Transaction Info"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:13
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:2
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:16
 msgid "Transaction Inputs"
 msgstr ""
 
@@ -1189,27 +1157,8 @@ msgid "Failed to decode input data."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:46
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:49
 msgid "Error rendering value"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:59
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:28
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:58
-msgid "Copy Value"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:29
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:29
-msgid "Failed to decode log data."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:43
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:42
-msgid "Log Data"
 msgstr ""
 
 #, elixir-format
@@ -1808,4 +1757,51 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:53
 msgid "Constructor Arguments"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:59
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:31
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:59
+msgid "Copy Value"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:49
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:114
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:49
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:115
+msgid "Data"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:29
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:29
+msgid "Failed to decode log data."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:48
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:48
+msgid "Indexed?"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:43
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:43
+msgid "Log Data"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:84
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:85
+msgid "Topics"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:47
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:20
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:47
+msgid "Type"
 msgstr ""
