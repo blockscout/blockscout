@@ -28,6 +28,14 @@ defmodule BlockScoutWeb.ChainController do
 
     transaction_stats = get_transaction_stats()
 
+    # Hack for render during testing
+    transaction_stats =
+    if length(transaction_stats) == 0 do
+       [%{number_of_transactions: 0}]
+    else
+      transaction_stats
+    end
+
     chart_data_paths = %{
       market: market_history_chart_path(conn, :show),
       transaction: transaction_history_chart_path(conn, :show)
