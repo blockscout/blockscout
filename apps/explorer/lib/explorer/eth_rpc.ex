@@ -16,7 +16,14 @@ defmodule Explorer.EthRPC do
       are not currently imported
       """,
       example: """
-      {"id": 0, "jsonrpc": "2.0", "method": "eth_getBalance", "params": ["0x0000000000000000000000000000000000000007", "2"]}
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getBalance", "params": ["0x0000000000000000000000000000000000000007", "latest"]}
+      """,
+      params: [
+        {"DATA", "20 Bytes - address to check for balance", "string"},
+        {"QUANTITY|TAG", "integer block number, or the string \"latest\", \"earliest\" or \"pending\"", "string"}
+      ],
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "0x0234c8a3397aab58"}
       """
     },
     "eth_getLogs" => %{
@@ -33,6 +40,25 @@ defmodule Explorer.EthRPC do
          "fromBlock": "earliest",
          "toBlock": "latest",
          "topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]}]}
+      """,
+      params: [
+        {"Object", "The filter options", "json"}
+      ],
+      result: """
+      {
+        "id":0,
+        "jsonrpc":"2.0",
+        "result": [{
+          "logIndex": "0x1",
+          "blockNumber":"0x1b4",
+          "blockHash": "0x8216c5785ac562ff41e2dcfdf5785ac562ff41e2dcfdf829c5a142f1fccd7d",
+          "transactionHash":  "0xdf829c5a142f1fccd7d8216c5785ac562ff41e2dcfdf5785ac562ff41e2dcf",
+          "transactionIndex": "0x0",
+          "address": "0x16c5785ac562ff41e2dcfdf829c5a142f1fccd7d",
+          "data":"0x0000000000000000000000000000000000000000000000000000000000000000",
+          "topics": ["0x59ebeb90bc63057b6515673c3ecf9438e5058bca0f92585014eced636878c9a5"]
+          }]
+      }
       """
     }
   }
