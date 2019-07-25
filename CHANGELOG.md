@@ -2,6 +2,7 @@
 
 ### Features
 - [#2412](https://github.com/poanetwork/blockscout/pull/2412) - dark theme
+- [#2399](https://github.com/poanetwork/blockscout/pull/2399) - decode verified smart contract's logs
 - [#2391](https://github.com/poanetwork/blockscout/pull/2391) - Controllers Improvements
 - [#2379](https://github.com/poanetwork/blockscout/pull/2379) - Disable network selector when is empty
 - [#2374](https://github.com/poanetwork/blockscout/pull/2374) - decode constructor arguments for verified smart contracts
@@ -14,6 +15,7 @@
 ### Fixes
 - [#2421](https://github.com/poanetwork/blockscout/pull/2421) - Fix hiding of loader for txs on the main page
 - [#2416](https://github.com/poanetwork/blockscout/pull/2416) - Fix "page not found" handling in the router
+- [#2413](https://github.com/poanetwork/blockscout/pull/2413) - remove outer tables for decoded data
 - [#2410](https://github.com/poanetwork/blockscout/pull/2410) - preload smart contract for logs decoding
 - [#2405](https://github.com/poanetwork/blockscout/pull/2405) - added templates for table loader and tile loader
 - [#2398](https://github.com/poanetwork/blockscout/pull/2398) - show only one decoded candidate
