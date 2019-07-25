@@ -4,6 +4,7 @@ import humps from 'humps'
 import numeral from 'numeral'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
+import { showLoader } from '../lib/utils'
 
 const config = {
   type: 'line',
@@ -103,6 +104,17 @@ function getMarketCapData (marketHistoryData, availableSupply) {
   }
 }
 
+// colors for light and dark theme
+var priceLineColor
+var mcapLineColor
+if (localStorage.getItem('current-color-mode') === 'dark') {
+  priceLineColor = sassVariables.darkprimary
+  mcapLineColor = sassVariables.darksecondary
+} else {
+  priceLineColor = sassVariables.dashboardLineColorPrice
+  mcapLineColor = sassVariables.dashboardLineColorMarket
+}
+
 class MarketHistoryChart {
   constructor (el, availableSupply, marketHistoryData, dataConfig) {
 
@@ -118,8 +130,8 @@ class MarketHistoryChart {
       data: [],
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.dashboardLineColorPrice,
-      borderColor: sassVariables.dashboardLineColorPrice,
+      backgroundColor: priceLineColor,
+      borderColor: priceLineColor,
       lineTension: 0
     }
     if (dataConfig.market == undefined || dataConfig.market.indexOf("price") == -1){
@@ -133,8 +145,8 @@ class MarketHistoryChart {
       data: [],
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.dashboardLineColorMarket,
-      borderColor: sassVariables.dashboardLineColorMarket,
+      backgroundColor: mcapLineColor,
+      borderColor: mcapLineColor,
       lineTension: 0
     }
     if (dataConfig.market == undefined || dataConfig.market.indexOf("market_cap") == -1){
@@ -186,6 +198,10 @@ export function createMarketHistoryChart (el) {
   const dataConfig = $(el).data('history_chart_config')
 
   const $chartLoading = $('[data-chart-loading-message]')
+
+  const isTimeout = true
+  const timeoutID = showLoader(isTimeout, $chartLoading)
+
   const $chartError = $('[data-chart-error-message]')
   const chart = new MarketHistoryChart(el, 0, [], dataConfig)
   Object.keys(dataPaths).forEach(function(history_source){

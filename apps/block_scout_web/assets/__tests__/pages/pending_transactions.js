@@ -1,4 +1,3 @@
-import _ from 'lodash'
 import { reducer, initialState } from '../../js/pages/pending_transactions'
 
 test('CHANNEL_DISCONNECTED', () => {

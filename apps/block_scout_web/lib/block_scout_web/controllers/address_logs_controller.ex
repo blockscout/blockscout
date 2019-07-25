@@ -16,8 +16,8 @@ defmodule BlockScoutWeb.AddressLogsController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
-      logs_plus_one = Chain.address_to_logs(address, paging_options(params))
+         :ok <- Chain.check_address_exists(address_hash) do
+      logs_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
       {results, next_page} = split_list_by_page(logs_plus_one)
 
       next_page_url =
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.AddressLogsController do
             nil
 
           next_page_params ->
-            address_logs_path(conn, :index, address, Map.delete(next_page_params, "type"))
+            address_logs_path(conn, :index, address_hash, Map.delete(next_page_params, "type"))
         end
 
       items =
@@ -63,8 +63,8 @@ defmodule BlockScoutWeb.AddressLogsController do
         current_path: current_path(conn),
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        transaction_count: transaction_count(address),
-        validation_count: validation_count(address)
+        transaction_count: transaction_count(address_hash),
+        validation_count: validation_count(address_hash)
       )
     else
       _ ->
@@ -74,12 +74,12 @@ defmodule BlockScoutWeb.AddressLogsController do
 
   def search_logs(conn, %{"topic" => topic, "address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         :ok <- Chain.check_address_exists(address_hash) do
       topic = String.trim(topic)
 
       formatted_topic = if String.starts_with?(topic, "0x"), do: topic, else: "0x" <> topic
 
-      logs_plus_one = Chain.address_to_logs(address, topic: formatted_topic)
+      logs_plus_one = Chain.address_to_logs(address_hash, topic: formatted_topic)
 
       {results, next_page} = split_list_by_page(logs_plus_one)
 
@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.AddressLogsController do
             nil
 
           next_page_params ->
-            address_logs_path(conn, :index, address, Map.delete(next_page_params, "type"))
+            address_logs_path(conn, :index, address_hash, Map.delete(next_page_params, "type"))
         end
 
       items =
@@ -115,4 +115,6 @@ defmodule BlockScoutWeb.AddressLogsController do
         not_found(conn)
     end
   end
+
+  def search_logs(conn, _), do: not_found(conn)
 end
