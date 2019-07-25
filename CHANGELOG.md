@@ -38,6 +38,7 @@
 - [#2326](https://github.com/poanetwork/blockscout/pull/2326) - fix nested constructor arguments
 
 ### Chore
+- [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
 - [#2418](https://github.com/poanetwork/blockscout/pull/2418) - Remove parentheses in market cap percentage
 - [#2401](https://github.com/poanetwork/blockscout/pull/2401) - add ENV vars to manage updating period of average block time and market history cache
 - [#2363](https://github.com/poanetwork/blockscout/pull/2363) - add parameters example for eth rpc
