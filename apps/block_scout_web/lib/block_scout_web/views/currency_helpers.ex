@@ -25,6 +25,9 @@ defmodule BlockScoutWeb.CurrencyHelpers do
 
   ## Examples
 
+      iex> format_according_to_decimals(nil, Decimal.new(5))
+      "-"
+
       iex> format_according_to_decimals(Decimal.new(20500000), Decimal.new(5))
       "205"
 
@@ -40,7 +43,11 @@ defmodule BlockScoutWeb.CurrencyHelpers do
       iex> format_according_to_decimals(205000, Decimal.new(2))
       "2,050"
   """
-  @spec format_according_to_decimals(non_neg_integer(), nil) :: String.t()
+  @spec format_according_to_decimals(non_neg_integer() | nil, nil) :: String.t()
+  def format_according_to_decimals(nil, _) do
+    "-"
+  end
+
   def format_according_to_decimals(value, nil) do
     format_according_to_decimals(value, Decimal.new(0))
   end
