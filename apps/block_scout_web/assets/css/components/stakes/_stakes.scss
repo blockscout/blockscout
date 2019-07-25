@@ -67,9 +67,12 @@ $stakes-stats-item-border-color: #fff !default;
 }
 
 .stakes-top-stats-login {
-  color: $secondary;
-  cursor: pointer;
-  margin-right: 8px;
+  &, &:hover {
+    color: $secondary;
+    text-decoration: none;
+    cursor: pointer;
+    margin-right: 8px;
+  }
 }
 
 .stakes-address-container {
