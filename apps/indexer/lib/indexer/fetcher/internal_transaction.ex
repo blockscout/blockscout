@@ -188,20 +188,20 @@ defmodule Indexer.Fetcher.InternalTransaction do
             {hash, block_number}
           end)
 
-        with {:ok, imported} <-
-               Chain.import(%{
-                 addresses: %{params: addresses_params},
-                 internal_transactions: %{params: internal_transactions_params_without_failed_creations},
-                 internal_transactions_indexed_at_blocks: %{
-                   params: internal_transactions_indexed_at_blocks,
-                   with: :number_only_changeset
-                 },
-                 timeout: :infinity
-               }) do
-          async_import_coin_balances(imported, %{
-            address_hash_to_fetched_balance_block_number: address_hash_to_block_number
-          })
-        else
+        case Chain.import(%{
+               addresses: %{params: addresses_params},
+               internal_transactions: %{params: internal_transactions_params_without_failed_creations},
+               internal_transactions_indexed_at_blocks: %{
+                 params: internal_transactions_indexed_at_blocks,
+                 with: :number_only_changeset
+               },
+               timeout: :infinity
+             }) do
+          {:ok, imported} ->
+            async_import_coin_balances(imported, %{
+              address_hash_to_fetched_balance_block_number: address_hash_to_block_number
+            })
+
           {:error, step, reason, _changes_so_far} ->
             Logger.error(
               fn ->
