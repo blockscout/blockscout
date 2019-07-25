@@ -396,11 +396,11 @@
     "outputs": [
       {
         "name": "likelihoods",
-        "type": "int256[]"
+        "type": "uint256[]"
       },
       {
         "name": "sum",
-        "type": "int256"
+        "type": "uint256"
       }
     ],
     "payable": false,
