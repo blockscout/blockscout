@@ -13,8 +13,10 @@
 - [#2324](https://github.com/poanetwork/blockscout/pull/2324) - set timeout for loading message on the main page
 
 ### Fixes
-- [#2413](https://github.com/poanetwork/blockscout/pull/2413) - remove outer tables for decoded data
+- [#2421](https://github.com/poanetwork/blockscout/pull/2421) - Fix hiding of loader for txs on the main page
+- [#2420](https://github.com/poanetwork/blockscout/pull/2420) - fetch data from cache in healthy endpoint
 - [#2416](https://github.com/poanetwork/blockscout/pull/2416) - Fix "page not found" handling in the router
+- [#2413](https://github.com/poanetwork/blockscout/pull/2413) - remove outer tables for decoded data
 - [#2410](https://github.com/poanetwork/blockscout/pull/2410) - preload smart contract for logs decoding
 - [#2405](https://github.com/poanetwork/blockscout/pull/2405) - added templates for table loader and tile loader
 - [#2398](https://github.com/poanetwork/blockscout/pull/2398) - show only one decoded candidate
@@ -39,6 +41,7 @@
 
 ### Chore
 - [#2432](https://github.com/poanetwork/blockscout/pull/2432) - bump credo version
+- [#2422](https://github.com/poanetwork/blockscout/pull/2422) - check if address_id is binary in token_transfers_csv endpoint
 - [#2418](https://github.com/poanetwork/blockscout/pull/2418) - Remove parentheses in market cap percentage
 - [#2401](https://github.com/poanetwork/blockscout/pull/2401) - add ENV vars to manage updating period of average block time and market history cache
 - [#2363](https://github.com/poanetwork/blockscout/pull/2363) - add parameters example for eth rpc
