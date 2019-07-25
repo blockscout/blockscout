@@ -109,7 +109,7 @@
         </button>
       </div>
       <div class="modal-body">
-        <img src="data:image/png;base64, <%= BlockScoutWeb.AddressView.qr_code(@token.contract_address) %> " class="qr-code" alt="qr_code" title="<%= @token.contract_address %>" />
+        <img src="data:image/png;base64, <%= BlockScoutWeb.AddressView.qr_code(@token.contract_address_hash) %> " class="qr-code" alt="qr_code" title="<%= @token.contract_address %>" />
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" data-dismiss="modal"><%= gettext "Close" %></button>

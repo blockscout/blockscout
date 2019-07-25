@@ -11,7 +11,7 @@ defmodule Explorer.Counters.AverageBlockTime do
   alias Explorer.Repo
   alias Timex.Duration
 
-  @refresh_period 30 * 60 * 1_000
+  @refresh_period Application.get_env(:explorer, __MODULE__)[:period]
 
   @doc """
   Starts a process to periodically update the counter of the token holders.

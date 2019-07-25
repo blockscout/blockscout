@@ -416,7 +416,8 @@ defmodule Explorer.Chain.Transaction do
     candidates_query =
       from(
         contract_method in ContractMethod,
-        where: contract_method.identifier == ^method_id
+        where: contract_method.identifier == ^method_id,
+        limit: 1
       )
 
     candidates =

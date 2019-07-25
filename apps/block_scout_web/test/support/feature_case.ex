@@ -27,8 +27,8 @@ defmodule BlockScoutWeb.FeatureCase do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
     end
 
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.TransactionsCache.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.TransactionsCache.cache_name()})
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Transactions.cache_name()})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Transactions.cache_name()})
 
     metadata = Phoenix.Ecto.SQL.Sandbox.metadata_for(Explorer.Repo, self())
     {:ok, session} = Wallaby.start_session(metadata: metadata)
