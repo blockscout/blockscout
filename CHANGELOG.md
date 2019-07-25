@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 2.0.2-beta
+
+### Features
 - [#2412](https://github.com/poanetwork/blockscout/pull/2412) - dark theme
 - [#2399](https://github.com/poanetwork/blockscout/pull/2399) - decode verified smart contract's logs
 - [#2391](https://github.com/poanetwork/blockscout/pull/2391) - Controllers Improvements
