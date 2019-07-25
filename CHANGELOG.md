@@ -22,6 +22,7 @@
 - [#2398](https://github.com/poanetwork/blockscout/pull/2398) - show only one decoded candidate
 - [#2395](https://github.com/poanetwork/blockscout/pull/2395) - new block loading animation
 - [#2389](https://github.com/poanetwork/blockscout/pull/2389) - Reduce Lodash lib size (86% of lib methods are not used)
+- [#2388](https://github.com/poanetwork/blockscout/pull/2388) - add create2 support to geth's js tracer
 - [#2387](https://github.com/poanetwork/blockscout/pull/2387) - fix not existing keys in transaction json rpc
 - [#2378](https://github.com/poanetwork/blockscout/pull/2378) - Page performance: exclude moment.js localization files except EN, remove unused css
 - [#2368](https://github.com/poanetwork/blockscout/pull/2368) - add two columns of smart contract info

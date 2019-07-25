@@ -1026,14 +1026,7 @@ msgid "Delegate Call"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:47
-#: lib/block_scout_web/templates/chain/_block.html.eex:190
 #: lib/block_scout_web/views/internal_transaction_view.ex:27
-msgid "Reward"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/views/internal_transaction_view.ex:26
 msgid "Self-Destruct"
 msgstr ""
 
@@ -1767,6 +1760,11 @@ msgid "Copy Value"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/views/internal_transaction_view.ex:26
+msgid "Create2"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:49
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:114
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
@@ -1791,6 +1789,13 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:43
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:43
 msgid "Log Data"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/_tile.html.eex:47
+#: lib/block_scout_web/templates/chain/_block.html.eex:190
+#: lib/block_scout_web/views/internal_transaction_view.ex:28
+msgid "Reward"
 msgstr ""
 
 #, elixir-format
