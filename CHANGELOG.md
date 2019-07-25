@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2433](https://github.com/poanetwork/blockscout/pull/2433) - Add a functionality to try Eth RPC methods in the documentation
 - [#2391](https://github.com/poanetwork/blockscout/pull/2391) - Controllers Improvements
 - [#2379](https://github.com/poanetwork/blockscout/pull/2379) - Disable network selector when is empty
 - [#2374](https://github.com/poanetwork/blockscout/pull/2374) - decode constructor arguments for verified smart contracts
