@@ -1,5 +1,7 @@
 const path = require('path');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const TerserJSPlugin = require('terser-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { ContextReplacementPlugin } = require('webpack');
 const glob = require("glob");
@@ -32,6 +34,9 @@ const appJs =
       filename: 'app.js',
       path: path.resolve(__dirname, '../priv/static/js')
     },
+    optimization: {
+      minimizer: [new TerserJSPlugin({}), new OptimizeCSSAssetsPlugin({})],
+    },
     module: {
       rules: [
         {
@@ -43,8 +48,9 @@ const appJs =
         },
         {
           test: /\.scss$/,
-          use: ExtractTextPlugin.extract({
-            use: [{
+          use: [
+            MiniCssExtractPlugin.loader,
+            {
               loader: "css-loader"
             }, {
               loader: "postcss-loader"
@@ -57,9 +63,8 @@ const appJs =
                   'node_modules/@fortawesome/fontawesome-free/scss'
                 ]
               }
-            }],
-            fallback: 'style-loader'
-          })
+            }
+          ]
         }, {
           test: /\.(svg|ttf|eot|woff|woff2)$/,
           use: {
@@ -74,7 +79,9 @@ const appJs =
       ]
     },
     plugins: [
-      new ExtractTextPlugin('../css/app.css'),
+      new MiniCssExtractPlugin({
+        filename: '../css/app.css'
+      }),
       new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/)
     ]
