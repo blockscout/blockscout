@@ -7,8 +7,8 @@ defmodule Explorer.History.Historian do
   Record of historical values for a specific date.
   """
   @type record :: %{
-    date: Date.t()
-  }
+          date: Date.t()
+        }
 
   @doc """
   Compile history for a specified amount of units in the past. Units are defined by historian impl
@@ -25,8 +25,8 @@ defmodule Explorer.History.Historian do
       alias Explorer.History.Historian
 
       def start_link(_) do
-        #Expansion:
-        #HistoryProcess.start_link(Explorer.History.Process, [:ok, __MODULE__], name: __MODULE__)
+        # Expansion:
+        # HistoryProcess.start_link(Explorer.History.Process, [:ok, __MODULE__], name: __MODULE__)
         GenServer.start_link(Explorer.History.Process, [:ok, __MODULE__], name: __MODULE__)
       end
 

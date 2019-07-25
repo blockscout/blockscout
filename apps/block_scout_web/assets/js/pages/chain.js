@@ -1,3 +1,4 @@
+/* global _ */
 import $ from 'jquery'
 import omit from 'lodash/omit'
 import first from 'lodash/first'
@@ -107,9 +108,9 @@ function baseReducer (state = initialState, action) {
         })
       }
     }
-    case 'RECIEVED_UPDATED_TRANSACTION_STATS':{
+    case 'RECIEVED_UPDATED_TRANSACTION_STATS': {
       return Object.assign({}, state, {
-        transactionStats: action.msg.stats,
+        transactionStats: action.msg.stats
       })
     }
     case 'START_TRANSACTIONS_FETCH':
@@ -154,7 +155,7 @@ const elements = {
       if (chart && !(oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) && state.availableSupply) {
         chart.updateMarketHistory(state.availableSupply, state.marketHistoryData)
       }
-      if (chart && !(_.isEqual(oldState.transactionStats, state.transactionStats))){ 
+      if (chart && !(_.isEqual(oldState.transactionStats, state.transactionStats))) {
         chart.updateTransactionHistory(state.transactionStats)
       }
     }

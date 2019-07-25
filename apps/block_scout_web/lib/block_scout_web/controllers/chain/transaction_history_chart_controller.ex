@@ -5,17 +5,19 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartController do
 
   def show(conn, _params) do
     with true <- ajax?(conn) do
-      [{:history_size, history_size}]  = Application.get_env(:block_scout_web, __MODULE__, 30)
+      [{:history_size, history_size}] = Application.get_env(:block_scout_web, __MODULE__, 30)
 
       latest = Date.utc_today()
       earliest = Date.add(latest, -1 * history_size)
 
-      transaction_history_data = TransactionStats.by_date_range(earliest, latest)
+      date_range = TransactionStats.by_date_range(earliest, latest)
+
+      transaction_history_data = date_range
       |> extract_history
       |> encode_transaction_history_data
 
       json(conn, %{
-        history_data: transaction_history_data,
+        history_data: transaction_history_data
       })
     else
       _ -> unprocessable_entity(conn)
@@ -24,7 +26,8 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartController do
 
   defp extract_history(db_results) do
     Enum.map(db_results, fn row ->
-      %{date: row.date, number_of_transactions: row.number_of_transactions} end)
+      %{date: row.date, number_of_transactions: row.number_of_transactions}
+    end)
   end
 
   defp encode_transaction_history_data(transaction_history_data) do
