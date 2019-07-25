@@ -4,10 +4,12 @@ defmodule BlockScoutWeb.API.V1.HealthController do
   alias Explorer.Chain
 
   def health(conn, _) do
-    with {:ok, number, timestamp} <- Chain.last_block_status() do
-      send_resp(conn, :ok, result(number, timestamp))
-    else
-      status -> send_resp(conn, :internal_server_error, error(status))
+    case Chain.last_block_status() do
+      {:ok, number, timestamp} ->
+        send_resp(conn, :ok, result(number, timestamp))
+
+      status ->
+        send_resp(conn, :internal_server_error, error(status))
     end
   end
 

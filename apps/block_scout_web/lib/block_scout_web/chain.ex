@@ -246,18 +246,22 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp transaction_from_param(param) do
-    with {:ok, hash} <- string_to_transaction_hash(param) do
-      hash_to_transaction(hash)
-    else
-      :error -> {:error, :not_found}
+    case string_to_transaction_hash(param) do
+      {:ok, hash} ->
+        hash_to_transaction(hash)
+
+      :error ->
+        {:error, :not_found}
     end
   end
 
   defp hash_string_to_block(hash_string) do
-    with {:ok, hash} <- string_to_block_hash(hash_string) do
-      hash_to_block(hash)
-    else
-      :error -> {:error, :not_found}
+    case string_to_block_hash(hash_string) do
+      {:ok, hash} ->
+        hash_to_block(hash)
+
+      :error ->
+        {:error, :not_found}
     end
   end
 end
