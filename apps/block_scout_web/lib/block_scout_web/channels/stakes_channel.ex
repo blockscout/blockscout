@@ -12,9 +12,14 @@ defmodule BlockScoutWeb.StakesChannel do
     {:ok, %{}, socket}
   end
 
+  def handle_in("set_account", account, socket) do
+    socket = assign(socket, :account, account)
+    handle_out("staking_update", nil, socket)
+  end
+
   def handle_out("staking_update", _data, socket) do
     push(socket, "staking_update", %{
-      top_html: StakesController.render_top()
+      top_html: StakesController.render_top(socket)
     })
 
     {:noreply, socket}
