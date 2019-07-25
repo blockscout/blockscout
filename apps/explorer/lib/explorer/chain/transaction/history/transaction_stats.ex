@@ -9,7 +9,6 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
 
   alias Explorer.Repo
 
-
   schema "transaction_stats" do
     field(:date, :date)
     field(:number_of_transactions, :integer)
@@ -28,9 +27,11 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
   @spec by_date_range(Date.t(), Date.t()) :: [__MODULE__]
   def by_date_range(earliest, latest) do
     # Create a query
-    query = from stat in __MODULE__,
-              where: (stat.date >= ^earliest and stat.date<=^latest),
-              order_by: [desc: :date]
+    query =
+      from(stat in __MODULE__,
+        where: stat.date >= ^earliest and stat.date <= ^latest,
+        order_by: [desc: :date]
+      )
 
     Repo.all(query)
   end

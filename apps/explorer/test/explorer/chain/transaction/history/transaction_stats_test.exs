@@ -5,10 +5,11 @@ defmodule Explorer.Chain.Transaction.History.TransactionStatsTest do
   alias Explorer.Repo
 
   test "by_date_range()" do
-
-    some_transaction_stats = [%{date: ~D[2019-07-09], number_of_transactions: 10},
-                              %{date: ~D[2019-07-08], number_of_transactions: 20},
-                              %{date: ~D[2019-07-07], number_of_transactions: 30}]
+    some_transaction_stats = [
+      %{date: ~D[2019-07-09], number_of_transactions: 10},
+      %{date: ~D[2019-07-08], number_of_transactions: 20},
+      %{date: ~D[2019-07-07], number_of_transactions: 30}
+    ]
 
     Repo.insert_all(TransactionStats, some_transaction_stats)
 
@@ -21,7 +22,6 @@ defmodule Explorer.Chain.Transaction.History.TransactionStatsTest do
     assert 20 == Enum.at(all3, 1).number_of_transactions
     assert ~D[2019-07-07] = Enum.at(all3, 2).date
     assert 30 == Enum.at(all3, 2).number_of_transactions
-
 
     just2 = TransactionStats.by_date_range(~D[2019-07-08], ~D[2019-07-09])
     assert 2 == length(just2)

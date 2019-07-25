@@ -122,11 +122,14 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event({:chain_event, :transaction_stats}) do
     today = Date.utc_today()
-    [{:history_size, history_size}]  = Application.get_env(:block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController, 30)
+
+    [{:history_size, history_size}] =
+      Application.get_env(:block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController, 30)
 
     x_days_back = Date.add(today, -1 * history_size)
-    stats = TransactionStats.by_date_range(x_days_back, today)
-      |> Enum.map(fn item -> Map.drop(item, [:__meta__]) end)
+
+    date_range =  TransactionStats.by_date_range(x_days_back, today)
+    stats = Enum.map(date_range, fn item -> Map.drop(item, [:__meta__]) end)
 
     Endpoint.broadcast("transactions:stats", "update", %{stats: stats})
   end

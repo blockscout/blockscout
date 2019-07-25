@@ -1,5 +1,8 @@
 defmodule Explorer.History.Process do
-
+  @moduledoc """
+  Creates the GenServer process used by a Historian to compile_history and to save_records.
+  Specifically used by Market.History.Historian and Transaction.History.Historian
+  """
   use GenServer
   require Logger
 
@@ -34,6 +37,7 @@ defmodule Explorer.History.Process do
   def handle_info({:DOWN, _, :process, _, _}, state) do
     {:noreply, state}
   end
+
   # Actions
 
   @spec successful_compilation(Historian.record(), module()) :: any()
@@ -42,9 +46,9 @@ defmodule Explorer.History.Process do
     schedule_next_compilation()
   end
 
-  defp schedule_next_compilation() do
+  defp schedule_next_compilation do
     delay = config_or_default(:history_fetch_interval, :timer.minutes(60))
-    Process.send_after(self(), {:compile_historical_records, 1,}, delay)
+    Process.send_after(self(), {:compile_historical_records, 1}, delay)
   end
 
   @spec failed_compilation(non_neg_integer(), module(), non_neg_integer()) :: any()

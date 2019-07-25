@@ -1,3 +1,4 @@
+/* global _ */
 import $ from 'jquery'
 import omit from 'lodash/omit'
 import first from 'lodash/first'
@@ -9,7 +10,7 @@ import numeral from 'numeral'
 import socket from '../socket'
 import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { batchChannel, showLoader } from '../lib/utils'
+import { batchChannel } from '../lib/utils'
 import listMorph from '../lib/list_morph'
 import { createMarketHistoryChart } from '../lib/history_chart'
 
@@ -107,9 +108,9 @@ function baseReducer (state = initialState, action) {
         })
       }
     }
-    case 'RECIEVED_UPDATED_TRANSACTION_STATS':{
+    case 'RECIEVED_UPDATED_TRANSACTION_STATS': {
       return Object.assign({}, state, {
-        transactionStats: action.msg.stats,
+        transactionStats: action.msg.stats
       })
     }
     case 'START_TRANSACTIONS_FETCH':
@@ -154,7 +155,7 @@ const elements = {
       if (chart && !(oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) && state.availableSupply) {
         chart.updateMarketHistory(state.availableSupply, state.marketHistoryData)
       }
-      if (chart && !(_.isEqual(oldState.transactionStats, state.transactionStats))){ 
+      if (chart && !(_.isEqual(oldState.transactionStats, state.transactionStats))) {
         chart.updateTransactionHistory(state.transactionStats)
       }
     }
@@ -223,7 +224,11 @@ const elements = {
   },
   '[data-selector="chain-block-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
-      showLoader(state.blocksLoading, $el)
+      if (state.blocksLoading) {
+        $el.show()
+      } else {
+        $el.hide()
+      }
     }
   },
   '[data-selector="transactions-list"] [data-selector="error-message"]': {
@@ -233,7 +238,7 @@ const elements = {
   },
   '[data-selector="transactions-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
-      showLoader(state.transactionsLoading, $el)
+      $el.toggle(state.transactionsLoading)
     }
   },
   '[data-selector="transactions-list"]': {

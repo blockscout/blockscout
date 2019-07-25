@@ -4,7 +4,6 @@ import humps from 'humps'
 import numeral from 'numeral'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
-import { showLoader } from '../lib/utils'
 
 const config = {
   type: 'line',
@@ -104,25 +103,13 @@ function getMarketCapData (marketHistoryData, availableSupply) {
   }
 }
 
-// colors for light and dark theme
-var priceLineColor
-var mcapLineColor
-if (localStorage.getItem('current-color-mode') === 'dark') {
-  priceLineColor = sassVariables.darkprimary
-  mcapLineColor = sassVariables.darksecondary
-} else {
-  priceLineColor = sassVariables.dashboardLineColorPrice
-  mcapLineColor = sassVariables.dashboardLineColorMarket
-}
-
 class MarketHistoryChart {
   constructor (el, availableSupply, marketHistoryData, dataConfig) {
-
-    var axes = config.options.scales.yAxes.reduce(function(solution, elem){
+    var axes = config.options.scales.yAxes.reduce(function (solution, elem) {
       solution[elem.id] = elem
       return solution
     },
-                                                  {})
+    {})
 
     this.price = {
       label: window.localized['Price'],
@@ -130,13 +117,13 @@ class MarketHistoryChart {
       data: [],
       fill: false,
       pointRadius: 0,
-      backgroundColor: priceLineColor,
-      borderColor: priceLineColor,
+      backgroundColor: sassVariables.dashboardLineColorPrice,
+      borderColor: sassVariables.dashboardLineColorPrice,
       lineTension: 0
     }
-    if (dataConfig.market == undefined || dataConfig.market.indexOf("price") == -1){
+    if (dataConfig.market === undefined || dataConfig.market.indexOf('price') === -1) {
       this.price.hidden = true
-      axes["price"].display = false
+      axes['price'].display = false
     }
 
     this.marketCap = {
@@ -145,13 +132,13 @@ class MarketHistoryChart {
       data: [],
       fill: false,
       pointRadius: 0,
-      backgroundColor: mcapLineColor,
-      borderColor: mcapLineColor,
+      backgroundColor: sassVariables.dashboardLineColorMarket,
+      borderColor: sassVariables.dashboardLineColorMarket,
       lineTension: 0
     }
-    if (dataConfig.market == undefined || dataConfig.market.indexOf("market_cap") == -1){
+    if (dataConfig.market === undefined || dataConfig.market.indexOf('market_cap') === -1) {
       this.marketCap.hidden = true
-      axes["marketCap"].display = false
+      axes['marketCap'].display = false
     }
 
     this.numTransactions = {
@@ -162,15 +149,14 @@ class MarketHistoryChart {
       pointRadius: 0,
       backgroundColor: sassVariables.dashboardLineColorMarket,
       borderColor: sassVariables.dashboardLineColorTransactions,
-      lineTension: 0,
+      lineTension: 0
     }
-    if (dataConfig.transactions == undefined || dataConfig.transactions.indexOf("transactions_per_day") == -1){
+    if (dataConfig.transactions === undefined || dataConfig.transactions.indexOf('transactions_per_day') === -1) {
       this.numTransactions.hidden = true
-      axes["numTransactions"].display = false
+      axes['numTransactions'].display = false
     }
 
     this.availableSupply = availableSupply
-    //TODO: This is where we dynamically append datasets
     config.data.datasets = [this.price, this.marketCap, this.numTransactions]
     this.chart = new Chart(el, config)
   }
@@ -185,9 +171,9 @@ class MarketHistoryChart {
     }
     this.chart.update()
   }
-  updateTransactionHistory (transaction_history) {
-    this.numTransactions.data = transaction_history.map(dataPoint => {
-      return {x:dataPoint.date, y:dataPoint.number_of_transactions}
+  updateTransactionHistory (transactionHistory) {
+    this.numTransactions.data = transactionHistory.map(dataPoint => {
+      return {x: dataPoint.date, y: dataPoint.number_of_transactions}
     })
     this.chart.update()
   }
@@ -198,28 +184,24 @@ export function createMarketHistoryChart (el) {
   const dataConfig = $(el).data('history_chart_config')
 
   const $chartLoading = $('[data-chart-loading-message]')
-
-  const isTimeout = true
-  const timeoutID = showLoader(isTimeout, $chartLoading)
-
   const $chartError = $('[data-chart-error-message]')
   const chart = new MarketHistoryChart(el, 0, [], dataConfig)
-  Object.keys(dataPaths).forEach(function(history_source){
-    $.getJSON(dataPaths[history_source], {type: 'JSON'})
+  Object.keys(dataPaths).forEach(function (historySource) {
+    $.getJSON(dataPaths[historySource], {type: 'JSON'})
       .done(data => {
-        switch(history_source){
-        case "market":
-          const availableSupply = JSON.parse(data.supply_data)
-          const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
-          $(el).show()
-          chart.updateMarketHistory(availableSupply, marketHistoryData)
-          break;
-        case "transaction":
-          const transaction_history = JSON.parse(data.history_data)
+        switch (historySource) {
+          case 'market':
+            const availableSupply = JSON.parse(data.supply_data)
+            const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
+            $(el).show()
+            chart.updateMarketHistory(availableSupply, marketHistoryData)
+            break
+          case 'transaction':
+            const transactionHistory = JSON.parse(data.history_data)
 
-          $(el).show()
-          chart.updateTransactionHistory(transaction_history)
-          break;
+            $(el).show()
+            chart.updateTransactionHistory(transactionHistory)
+            break
         }
       })
       .fail(() => {
@@ -227,8 +209,9 @@ export function createMarketHistoryChart (el) {
       })
       .always(() => {
         $chartLoading.hide()
-      })})
-  return chart;
+      })
+  })
+  return chart
 }
 
 $('[data-chart-error-message]').on('click', _event => {

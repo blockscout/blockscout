@@ -2,10 +2,10 @@ defmodule BlockScoutWeb.ChainController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.ChainView
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Transaction}
-  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Chain.Supply.RSK
+  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market
@@ -14,7 +14,6 @@ defmodule BlockScoutWeb.ChainController do
   def show(conn, _params) do
     transaction_estimated_count = Chain.transaction_estimated_count()
     block_count = Chain.block_estimated_count()
-
 
     market_cap_calculation =
       case Application.get_env(:explorer, :supply) do
@@ -29,8 +28,18 @@ defmodule BlockScoutWeb.ChainController do
 
     transaction_stats = get_transaction_stats()
 
-    chart_data_paths = %{market: market_history_chart_path(conn, :show),
-                        transaction: transaction_history_chart_path(conn, :show)}
+    # Hack for render during testing
+    transaction_stats =
+    if length(transaction_stats) == 0 do
+       [%{number_of_transactions: 0}]
+    else
+      transaction_stats
+    end
+
+    chart_data_paths = %{
+      market: market_history_chart_path(conn, :show),
+      transaction: transaction_history_chart_path(conn, :show)
+    }
 
     chart_config = Application.get_env(:block_scout_web, :chart_config, %{})
 
@@ -51,14 +60,14 @@ defmodule BlockScoutWeb.ChainController do
     )
   end
 
-  def get_transaction_stats() do
+  def get_transaction_stats do
     stats_scale = date_range(1)
     TransactionStats.by_date_range(stats_scale.earliest, stats_scale.latest)
   end
 
   def date_range(num_days) do
     today = Date.utc_today()
-    x_days_back = Date.add(today, -1*(num_days-1))
+    x_days_back = Date.add(today, -1 * (num_days - 1))
     %{earliest: x_days_back, latest: today}
   end
 
@@ -74,8 +83,6 @@ defmodule BlockScoutWeb.ChainController do
         not_found(conn)
     end
   end
-
-  def search(conn, _), do: not_found(conn)
 
   def token_autocomplete(conn, %{"q" => term}) when is_binary(term) do
     if term == "" do
@@ -97,15 +104,9 @@ defmodule BlockScoutWeb.ChainController do
   def chain_blocks(conn, _params) do
     if ajax?(conn) do
       blocks =
-        [
-          paging_options: %PagingOptions{page_size: 4},
-          necessity_by_association: %{
-            [miner: :names] => :optional,
-            :transactions => :optional,
-            :rewards => :optional
-          }
-        ]
+        [paging_options: %PagingOptions{page_size: 4}]
         |> Chain.list_blocks()
+        |> Repo.preload([[miner: :names], :transactions, :rewards])
         |> Enum.map(fn block ->
           %{
             chain_block_html:

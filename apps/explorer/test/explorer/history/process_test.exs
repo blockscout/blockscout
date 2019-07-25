@@ -13,6 +13,7 @@ defmodule Explorer.History.ProcessTest do
 
   test "handle_info with `{:compile_historical_records, days}`" do
     records = [%{date: ~D[2018-04-01], closing_price: Decimal.new(10), opening_price: Decimal.new(5)}]
+
     TestHistorian
     |> expect(:compile_records, fn 1 -> {:ok, records} end)
     |> expect(:save_records, fn _ -> :ok end)
@@ -43,7 +44,7 @@ defmodule Explorer.History.ProcessTest do
     assert {:noreply, state} == HistoryProcess.handle_info({nil, {1, 0, {:ok, [record]}}}, state)
 
     # Message isn't sent before interval is up
-    refute_receive {:compile_historical_records, 1}, history_fetch_interval-1
+    refute_receive {:compile_historical_records, 1}, history_fetch_interval - 1
 
     # Now message is sent
     assert_receive {:compile_historical_records, 1}
@@ -54,9 +55,8 @@ defmodule Explorer.History.ProcessTest do
     |> expect(:compile_records, fn 1 -> :error end)
     |> expect(:save_records, fn _ -> :ok end)
 
-    #Process will restart, so this is needed
+    # Process will restart, so this is needed
     set_mox_global()
-
 
     state = %{historian: TestHistorian}
 
@@ -69,7 +69,7 @@ defmodule Explorer.History.ProcessTest do
     assert {:noreply, state} == HistoryProcess.handle_info({nil, {1, 0, :error}}, state)
 
     # Message isn't sent before interval is up
-    refute_receive {_ref, {1, 1, :error}}, base_backoff-1
+    refute_receive {_ref, {1, 1, :error}}, base_backoff - 1
 
     # Now message is sent
     assert_receive {_ref, {1, 1, :error}}
