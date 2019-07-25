@@ -1,5 +1,6 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import map from 'lodash/map'
+import merge from 'lodash/merge'
 import URI from 'urijs'
 import humps from 'humps'
 import listMorph from '../lib/list_morph'
@@ -164,7 +165,7 @@ export const elements = {
 
       if (state.itemKey) {
         const container = $el[0]
-        const newElements = _.map(state.items, (item) => $(item)[0])
+        const newElements = map(state.items, (item) => $(item)[0])
         listMorph(container, newElements, { key: state.itemKey })
         return
       }
@@ -244,7 +245,7 @@ export const elements = {
  * adding or removing with the correct animation. Check list_morph.js for more informantion.
  */
 export function createAsyncLoadStore (reducer, initialState, itemKey) {
-  const state = _.merge(asyncInitialState, initialState)
+  const state = merge(asyncInitialState, initialState)
   const store = createStore(reduceReducers(asyncReducer, reducer, state))
 
   if (typeof itemKey !== 'undefined') {

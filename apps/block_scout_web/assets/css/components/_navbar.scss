@@ -253,3 +253,9 @@ $navbar-logo-width: auto !default;
     padding-right: 0;
   }
 }
+
+.nav-item-networks {
+  .topnav-nav-link {
+    transition: none !important;
+  }
+}

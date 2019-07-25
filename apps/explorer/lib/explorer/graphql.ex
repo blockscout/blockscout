@@ -12,7 +12,6 @@ defmodule Explorer.GraphQL do
     ]
 
   alias Explorer.Chain.{
-    Address,
     Hash,
     InternalTransaction,
     TokenTransfer,
@@ -23,12 +22,12 @@ defmodule Explorer.GraphQL do
 
   @doc """
   Returns a query to fetch transactions with a matching `to_address_hash`,
-  `from_address_hash`, or `created_contract_address_hash` field for a given address.
+  `from_address_hash`, or `created_contract_address_hash` field for a given address hash.
 
   Orders transactions by descending block number and index.
   """
-  @spec address_to_transactions_query(Address.t()) :: Ecto.Query.t()
-  def address_to_transactions_query(%Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash}) do
+  @spec address_to_transactions_query(Hash.Address.t()) :: Ecto.Query.t()
+  def address_to_transactions_query(address_hash) do
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> where([transaction], transaction.to_address_hash == ^address_hash)
