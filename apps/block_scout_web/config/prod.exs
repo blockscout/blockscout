@@ -20,8 +20,10 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   check_origin: false,
   http: [port: System.get_env("PORT")],
   url: [
-    scheme: "http",
-    port: System.get_env("PORT")
+    scheme: "https",
+    port: System.get_env("PORT"),
+    host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
+    path: System.get_env("NETWORK_PATH") || "/"
   ]
 
 config :block_scout_web, BlockScoutWeb.Tracer, env: "production", disabled?: true
