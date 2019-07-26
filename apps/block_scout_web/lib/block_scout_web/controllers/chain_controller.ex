@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.ChainController do
     transaction_stats = TransactionStats.by_date_range(stats_scale.earliest, stats_scale.latest)
 
     # Need datapoint for legend if none currently available.
-    if Enum.empty?(transaction_stats) == 0 do
+    if Enum.empty?(transaction_stats) do
       [%{number_of_transactions: 0}]
     else
       transaction_stats

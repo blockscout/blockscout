@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
   """
   @type t :: %__MODULE__{
           date: Date.t(),
-          number_of_transactions: Integer.t()
+          number_of_transactions: integer()
         }
 
   @spec by_date_range(Date.t(), Date.t()) :: [__MODULE__]
