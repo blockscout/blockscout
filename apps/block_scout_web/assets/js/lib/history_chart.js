@@ -4,6 +4,7 @@ import humps from 'humps'
 import numeral from 'numeral'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
+import { showLoader } from '../lib/utils'
 
 const config = {
   type: 'line',
@@ -184,6 +185,9 @@ export function createMarketHistoryChart (el) {
   const dataConfig = $(el).data('history_chart_config')
 
   const $chartLoading = $('[data-chart-loading-message]')
+  const isTimeout = true
+  const timeoutID = showLoader(isTimeout, $chartLoading)
+
   const $chartError = $('[data-chart-error-message]')
   const chart = new MarketHistoryChart(el, 0, [], dataConfig)
   Object.keys(dataPaths).forEach(function (historySource) {
@@ -209,6 +213,7 @@ export function createMarketHistoryChart (el) {
       })
       .always(() => {
         $chartLoading.hide()
+        clearTimeout(timeoutID)
       })
   })
   return chart
