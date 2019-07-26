@@ -131,7 +131,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
     end
   end
 
-  def token_transfers_csv(conn, %{"address_id" => address_hash_string}) do
+  def token_transfers_csv(conn, %{"address_id" => address_hash_string}) when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       address

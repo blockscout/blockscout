@@ -426,13 +426,14 @@ defmodule EthereumJSONRPC.Geth.Call do
          "transactionHash" => transaction_hash,
          "index" => index,
          "traceAddress" => trace_address,
-         "type" => "create" = type,
+         "type" => type,
          "from" => from_address_hash,
          "error" => error,
          "gas" => gas,
          "init" => init,
          "value" => value
-       }) do
+       })
+       when type in ~w(create create2) do
     %{
       block_number: block_number,
       transaction_index: transaction_index,
@@ -454,7 +455,7 @@ defmodule EthereumJSONRPC.Geth.Call do
          "transactionHash" => transaction_hash,
          "index" => index,
          "traceAddress" => trace_address,
-         "type" => "create",
+         "type" => type,
          "from" => from_address_hash,
          "createdContractAddressHash" => created_contract_address_hash,
          "gas" => gas,
@@ -462,14 +463,15 @@ defmodule EthereumJSONRPC.Geth.Call do
          "init" => init,
          "createdContractCode" => created_contract_code,
          "value" => value
-       }) do
+       })
+       when type in ~w(create create2) do
     %{
       block_number: block_number,
       transaction_index: transaction_index,
       transaction_hash: transaction_hash,
       index: index,
       trace_address: trace_address,
-      type: "create",
+      type: type,
       from_address_hash: from_address_hash,
       gas: gas,
       gas_used: gas_used,
