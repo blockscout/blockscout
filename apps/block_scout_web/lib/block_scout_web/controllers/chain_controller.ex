@@ -28,14 +28,6 @@ defmodule BlockScoutWeb.ChainController do
 
     transaction_stats = get_transaction_stats()
 
-    # Hack for render during testing
-    transaction_stats =
-    if length(transaction_stats) == 0 do
-       [%{number_of_transactions: 0}]
-    else
-      transaction_stats
-    end
-
     chart_data_paths = %{
       market: market_history_chart_path(conn, :show),
       transaction: transaction_history_chart_path(conn, :show)
@@ -62,7 +54,15 @@ defmodule BlockScoutWeb.ChainController do
 
   def get_transaction_stats do
     stats_scale = date_range(1)
-    TransactionStats.by_date_range(stats_scale.earliest, stats_scale.latest)
+    transaction_stats = TransactionStats.by_date_range(stats_scale.earliest, stats_scale.latest)
+
+    # Need datapoint for legend if none currently available.
+    if Enum.empty?(transaction_stats) == 0 do
+      [%{number_of_transactions: 0}]
+    else
+      transaction_stats
+    end
+
   end
 
   def date_range(num_days) do
