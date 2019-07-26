@@ -28,9 +28,12 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartControllerTest do
     test "returns appropriate json data" do
       latest = ~D[2019-07-12]
       dts = [latest, Date.add(latest, -1), Date.add(latest, -2)]
-      some_transaction_stats = [%{date: Enum.at(dts, 0), number_of_transactions: 10},
-                                %{date: Enum.at(dts, 1), number_of_transactions: 20},
-                                %{date: Enum.at(dts, 2), number_of_transactions: 30}]
+
+      some_transaction_stats = [
+        %{date: Enum.at(dts, 0), number_of_transactions: 10},
+        %{date: Enum.at(dts, 1), number_of_transactions: 20},
+        %{date: Enum.at(dts, 2), number_of_transactions: 30}
+      ]
 
       {num, _} = Repo.insert_all(TransactionStats, some_transaction_stats)
       assert num == 3
@@ -40,7 +43,8 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartControllerTest do
         |> put_req_header("x-requested-with", "xmlhttprequest")
         |> TransactionHistoryChartController.show([])
 
-      expected = "{\"history_data\":\"[{\\\"date\\\":\\\"2019-07-12\\\",\\\"number_of_transactions\\\":10},{\\\"date\\\":\\\"2019-07-11\\\",\\\"number_of_transactions\\\":20},{\\\"date\\\":\\\"2019-07-10\\\",\\\"number_of_transactions\\\":30}]\"}"
+      expected =
+        "{\"history_data\":\"[{\\\"date\\\":\\\"2019-07-12\\\",\\\"number_of_transactions\\\":10},{\\\"date\\\":\\\"2019-07-11\\\",\\\"number_of_transactions\\\":20},{\\\"date\\\":\\\"2019-07-10\\\",\\\"number_of_transactions\\\":30}]\"}"
 
       assert conn.resp_body =~ expected
     end

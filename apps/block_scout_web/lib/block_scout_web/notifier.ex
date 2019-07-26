@@ -128,7 +128,7 @@ defmodule BlockScoutWeb.Notifier do
 
     x_days_back = Date.add(today, -1 * history_size)
 
-    date_range =  TransactionStats.by_date_range(x_days_back, today)
+    date_range = TransactionStats.by_date_range(x_days_back, today)
     stats = Enum.map(date_range, fn item -> Map.drop(item, [:__meta__]) end)
 
     Endpoint.broadcast("transactions:stats", "update", %{stats: stats})

@@ -12,9 +12,10 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartController do
 
       date_range = TransactionStats.by_date_range(earliest, latest)
 
-      transaction_history_data = date_range
-      |> extract_history
-      |> encode_transaction_history_data
+      transaction_history_data =
+        date_range
+        |> extract_history
+        |> encode_transaction_history_data
 
       json(conn, %{
         history_data: transaction_history_data

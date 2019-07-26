@@ -62,7 +62,6 @@ defmodule BlockScoutWeb.ChainController do
     else
       transaction_stats
     end
-
   end
 
   def date_range(num_days) do

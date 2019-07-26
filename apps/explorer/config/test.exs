@@ -26,7 +26,6 @@ config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: false,
 config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
 config :explorer, Explorer.Market.History.Historian, enabled: false
 
-
 config :explorer, Explorer.Tracer, disabled?: false
 
 config :logger, :explorer,

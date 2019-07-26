@@ -12,7 +12,6 @@ defmodule Explorer.Chain.Transaction.History.Historian do
 
   import Ecto.Query, only: [from: 2]
 
-
   @behaviour Historian
 
   @impl Historian
