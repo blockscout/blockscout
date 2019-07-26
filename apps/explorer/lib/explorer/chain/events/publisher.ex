@@ -2,6 +2,7 @@ defmodule Explorer.Chain.Events.Publisher do
   @moduledoc """
   Publishes events related to the Chain context.
   """
+  alias Explorer.Repo
 
   @allowed_events ~w(addresses address_coin_balances blocks block_rewards internal_transactions token_transfers transactions contract_verification_result)a
 
@@ -19,11 +20,8 @@ defmodule Explorer.Chain.Events.Publisher do
   end
 
   defp send_data(event_type) do
-    Registry.dispatch(Registry.ChainEvents, event_type, fn entries ->
-      for {pid, _registered_val} <- entries do
-        send(pid, {:chain_event, event_type})
-      end
-    end)
+    payload = encode_payload({:chain_event, event_type})
+    Repo.query("NOTIFY chain_event, '#{payload}';")
   end
 
   # The :catchup type of event is not being consumed right now.
@@ -32,10 +30,13 @@ defmodule Explorer.Chain.Events.Publisher do
   defp send_data(_event_type, :catchup, _event_data), do: :ok
 
   defp send_data(event_type, broadcast_type, event_data) do
-    Registry.dispatch(Registry.ChainEvents, {event_type, broadcast_type}, fn entries ->
-      for {pid, _registered_val} <- entries do
-        send(pid, {:chain_event, event_type, broadcast_type, event_data})
-      end
-    end)
+    payload = encode_payload({:chain_event, event_type, broadcast_type, event_data})
+    Repo.query("NOTIFY chain_event, '#{payload}';")
+  end
+
+  defp encode_payload(payload) do
+    payload
+    |> :erlang.term_to_binary()
+    |> Base.encode64()
   end
 end
