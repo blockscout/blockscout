@@ -1,4 +1,3 @@
-/* global _ */
 import $ from 'jquery'
 import omit from 'lodash/omit'
 import first from 'lodash/first'
@@ -155,7 +154,7 @@ const elements = {
       if (chart && !(oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) && state.availableSupply) {
         chart.updateMarketHistory(state.availableSupply, state.marketHistoryData)
       }
-      if (chart && !(_.isEqual(oldState.transactionStats, state.transactionStats))) {
+      if (chart && !(JSON.stringify(oldState.transactionStats) == JSON.stringify(state.transactionStats))) {
         chart.updateTransactionHistory(state.transactionStats)
       }
     }
