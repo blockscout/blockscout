@@ -26,8 +26,8 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartControllerTest do
     end
 
     test "returns appropriate json data" do
-      td = Date.utc_today()
-      dts = [Date.utc_today(), Date.add(td, -1), Date.add(td, -2)]
+      latest = ~D[2019-07-12]
+      dts = [latest, Date.add(latest, -1), Date.add(latest, -2)]
       some_transaction_stats = [%{date: Enum.at(dts, 0), number_of_transactions: 10},
                                 %{date: Enum.at(dts, 1), number_of_transactions: 20},
                                 %{date: Enum.at(dts, 2), number_of_transactions: 30}]
