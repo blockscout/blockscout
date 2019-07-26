@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.BlocksCache do
+defmodule Explorer.Chain.Cache.Blocks do
   @moduledoc """
   Caches the last imported blocks
   """

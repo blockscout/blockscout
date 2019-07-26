@@ -26,6 +26,43 @@ $stakes-table-cell-separation: 25px !default;
   }
 }
 
+// Loader
+.table-content-loader {
+  display: inline-block;
+  height: 24px;
+  width: 100%;
+  border-radius: 4px;
+  background-color: #f5f6fa;
+  overflow: hidden;
+  position: relative;
+  &:before {
+    width: inherit;
+    height: inherit;
+    content: '';
+    position: absolute;
+    background: linear-gradient(to right, #f5f6fa 2%, #eee 18%, #f5f6fa 33%);
+    animation-duration: 1.7s;
+    animation-fill-mode: forwards;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    animation-name: placeholderAnimate;
+    background-size: 1300px;
+  }
+}
+
+@keyframes placeholderAnimate {
+  0%{ background-position: -650px 0; }
+  100% { background-position: 650px 0; }
+}
+
+.table-content-pseudo {
+  td {
+    &:last-child {
+      padding-right: 24px !important;
+    }
+  }
+}
+
 .stakes-table {
   min-width: fit-content;
   width: 100%;

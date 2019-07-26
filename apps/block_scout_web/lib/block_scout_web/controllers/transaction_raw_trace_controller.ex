@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
                :token_transfers => :optional
              }
            ) do
-      internal_transactions = Chain.transaction_to_internal_transactions(transaction)
+      internal_transactions = Chain.transaction_to_internal_transactions(hash)
 
       render(
         conn,

@@ -1,8 +1,18 @@
-<nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar">
+<nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
+  <script>
+    if (localStorage.getItem("current-color-mode") === "dark") {
+      document.getElementById("top-navbar").style.backgroundColor = "#282945";
+    }
+  </script>
   <div class="container-fluid navbar-container">
     <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
-      <img class="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
+      <img class="navbar-logo" id="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
     <% end %>
+    <script>
+      if (localStorage.getItem("current-color-mode") === "dark") {
+        document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
+      }
+    </script>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -82,7 +92,7 @@
           </div>
         </li>
         <li class="nav-item dropdown nav-item-networks">
-          <a class="nav-link topnav-nav-link dropdown-toggle active-icon js-show-network-selector <%= if dropdown_nets() == [], do: "disabled" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <a class="nav-link topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
             </span>
@@ -90,8 +100,14 @@
           </a>
         </li>
       </ul>
+      <!-- Dark mode changer -->
+      <button class="dark-mode-changer" id="dark-mode-changer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="16">
+            <path fill="#9B62FF" fill-rule="evenodd" d="M14.88 11.578a.544.544 0 0 0-.599-.166 5.7 5.7 0 0 1-1.924.321c-3.259 0-5.91-2.632-5.91-5.866 0-1.947.968-3.759 2.59-4.849a.534.534 0 0 0-.225-.97A5.289 5.289 0 0 0 8.059 0C3.615 0 0 3.588 0 8s3.615 8 8.059 8c2.82 0 5.386-1.423 6.862-3.806a.533.533 0 0 0-.041-.616z"/>
+        </svg>
+      </button>
       <!-- Search navbar -->
-      <div class="search-form d-lg-flex d-inline-block">
+      <div class="search-form d-lg-flex d-inline-block" style="background-color: #22223a">
         <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
         <div class="input-group" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
               <%= awesomplete(f, :q,
@@ -117,9 +133,22 @@
               </div>
           </div>
           <button class="btn btn-outline-success my-2 my-sm-0 sr-only hidden" type="submit"><%= gettext "Search" %></button>
+          <script>
+            if (localStorage.getItem("current-color-mode") === "dark") {
+              document.getElementById("q").style.backgroundColor = "#22223a";
+              document.getElementById("q").style.borderColor = "#22223a";
+            }
+          </script>
         <% end %>
       </div>
     </div>
   </div>
 </nav>
 <%= render BlockScoutWeb.LayoutView, "_network_selector.html" %>
+<script>
+  if (localStorage.getItem("current-color-mode") === "dark") {
+    var modeChanger = document.getElementById("dark-mode-changer");
+    modeChanger.className += " " + "dark-mode-changer--dark";
+    document.body.className += " " + "dark-theme-applied";
+  }
+</script> 

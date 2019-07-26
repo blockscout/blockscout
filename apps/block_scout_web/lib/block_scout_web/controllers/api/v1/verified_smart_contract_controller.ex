@@ -7,8 +7,8 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
 
   def create(conn, params) do
     with {:ok, hash} <- validate_address_hash(params["address_hash"]),
-         :ok <- smart_contract_exists?(hash),
-         :ok <- verified_smart_contract_exists?(hash) do
+         :ok <- Chain.check_address_exists(hash),
+         {:contract, :not_found} <- {:contract, Chain.check_verified_smart_contract_exists(hash)} do
       external_libraries = fetch_external_libraries(params)
 
       case Publisher.publish(hash, params, external_libraries) do
@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
       :not_found ->
         send_resp(conn, :unprocessable_entity, encode(%{error: "address is not found"}))
 
-      :contract_exists ->
+      {:contract, :ok} ->
         send_resp(
           conn,
           :unprocessable_entity,
@@ -40,25 +40,10 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
     end
   end
 
-  defp smart_contract_exists?(address_hash) do
-    case Chain.hash_to_address(address_hash) do
-      {:ok, _address} -> :ok
-      _ -> :not_found
-    end
-  end
-
   defp validate_address_hash(address_hash) do
     case Address.cast(address_hash) do
       {:ok, hash} -> {:ok, hash}
       :error -> :invalid_address
-    end
-  end
-
-  defp verified_smart_contract_exists?(address_hash) do
-    if Chain.address_hash_to_smart_contract(address_hash) do
-      :contract_exists
-    else
-      :ok
     end
   end
 

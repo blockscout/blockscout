@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.TransactionCountCache do
+defmodule Explorer.Chain.Cache.TransactionCount do
   @moduledoc """
   Cache for estimated transaction count.
   """
