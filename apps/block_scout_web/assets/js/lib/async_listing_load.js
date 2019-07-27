@@ -41,6 +41,8 @@ import { createStore, connectElements } from '../lib/redux_helpers.js'
 export const asyncInitialState = {
   /* it will consider any query param in the current URI as paging */
   beyondPageOne: (URI(window.location).query() !== ''),
+  /* will be sent along with { type: 'JSON' } to controller, useful for dynamically changing parameters */
+  additionalParams: {},
   /* an array with every html element of the list being shown */
   items: [],
   /* the key for diffing the elements in the items array */
@@ -51,6 +53,10 @@ export const asyncInitialState = {
   requestError: false,
   /* if response has no items */
   emptyResponse: false,
+  /* if it is loading the first page */
+  loadingFirstPage: true,
+  /* link to the current page */
+  currentPagePath: null,
   /* link to the next page */
   nextPagePath: null,
   /* link to the previous page */
@@ -62,7 +68,10 @@ export const asyncInitialState = {
 export function asyncReducer (state = asyncInitialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, { nextPagePath: action.nextPagePath })
+      return Object.assign({}, state, {
+        nextPagePath: action.nextPagePath,
+        currentPagePath: action.nextPagePath
+      })
     }
     case 'ADD_ITEM_KEY': {
       return Object.assign({}, state, { itemKey: action.itemKey })
@@ -70,7 +79,8 @@ export function asyncReducer (state = asyncInitialState, action) {
     case 'START_REQUEST': {
       return Object.assign({}, state, {
         loading: true,
-        requestError: false
+        requestError: false,
+        currentPagePath: action.path
       })
     }
     case 'REQUEST_ERROR': {
@@ -78,7 +88,8 @@ export function asyncReducer (state = asyncInitialState, action) {
     }
     case 'FINISH_REQUEST': {
       return Object.assign({}, state, {
-        loading: false
+        loading: false,
+        loadingFirstPage: false
       })
     }
     case 'ITEMS_FETCHED': {
@@ -131,7 +142,7 @@ export const elements = {
   },
   '[data-async-listing] [data-loading-message]': {
     render ($el, state) {
-      if (state.loading) return $el.show()
+      if (state.loadingFirstPage) return $el.show()
 
       $el.hide()
     }
@@ -140,7 +151,7 @@ export const elements = {
     render ($el, state) {
       if (
         !state.requestError &&
-        (!state.loading) &&
+        (!state.loading || !state.loadingFirstPage) &&
         state.items.length === 0
       ) {
         return $el.show()
@@ -198,16 +209,6 @@ export const elements = {
       $el.attr('href', state.prevPagePath)
     }
   },
-  '[data-async-listing] [data-first-page-button]': {
-    render ($el, state) {
-      if (state.pagesStack.length === 0) {
-        return $el.hide()
-      }
-      $el.show()
-      $el.attr('disabled', false)
-      $el.attr('href', window.location.href.split('?')[0])
-    }
-  },
   '[data-async-listing] [data-page-number]': {
     render ($el, state) {
       if (state.emptyResponse) {
@@ -223,7 +224,7 @@ export const elements = {
   },
   '[data-async-listing] [data-loading-button]': {
     render ($el, state) {
-      if (state.loading) return $el.show()
+      if (!state.loadingFirstPage && state.loading) return $el.show()
 
       $el.hide()
     }
@@ -267,24 +268,26 @@ export function createAsyncLoadStore (reducer, initialState, itemKey) {
   return store
 }
 
+export function refreshPage (store) {
+  loadPage(store, store.getState().currentPagePath)
+}
+
+function loadPage (store, path) {
+  store.dispatch({type: 'START_REQUEST', path})
+  $.getJSON(path, merge({type: 'JSON'}, store.getState().additionalParams))
+    .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
+    .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
+    .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+}
+
 function firstPageLoad (store) {
   const $element = $('[data-async-listing]')
   function loadItemsNext () {
-    const path = store.getState().nextPagePath
-    store.dispatch({type: 'START_REQUEST'})
-    $.getJSON(path, {type: 'JSON'})
-      .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-      .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+    loadPage(store, store.getState().nextPagePath)
   }
 
   function loadItemsPrev () {
-    const path = store.getState().prevPagePath
-    store.dispatch({type: 'START_REQUEST'})
-    $.getJSON(path, {type: 'JSON'})
-      .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-      .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+    loadPage(store, store.getState().prevPagePath)
   }
   loadItemsNext()
 
