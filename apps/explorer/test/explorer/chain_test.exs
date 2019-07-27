@@ -4980,7 +4980,7 @@ defmodule Explorer.ChainTest do
 
       options = %PagingOptions{page_size: 20, page_number: 1}
 
-      assert [gotten_validator] = Chain.staking_pools(:validator, options)
+      assert [%{pool: gotten_validator}] = Chain.staking_pools(:validator, options)
       assert inserted_validator.staking_address_hash == gotten_validator.staking_address_hash
     end
 
@@ -4990,7 +4990,7 @@ defmodule Explorer.ChainTest do
 
       options = %PagingOptions{page_size: 20, page_number: 1}
 
-      assert [gotten_pool] = Chain.staking_pools(:active, options)
+      assert [%{pool: gotten_pool}] = Chain.staking_pools(:active, options)
       assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
     end
 
@@ -5000,7 +5000,7 @@ defmodule Explorer.ChainTest do
 
       options = %PagingOptions{page_size: 20, page_number: 1}
 
-      assert [gotten_pool] = Chain.staking_pools(:inactive, options)
+      assert [%{pool: gotten_pool}] = Chain.staking_pools(:inactive, options)
       assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
     end
   end

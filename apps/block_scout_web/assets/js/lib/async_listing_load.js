@@ -42,6 +42,8 @@ import '../app'
 export const asyncInitialState = {
   /* it will consider any query param in the current URI as paging */
   beyondPageOne: (URI(window.location).query() !== ''),
+  /* will be sent along with { type: 'JSON' } to controller, useful for dynamically changing parameters */
+  additionalParams: {},
   /* an array with every html element of the list being shown */
   items: [],
   /* the key for diffing the elements in the items array */
@@ -52,6 +54,8 @@ export const asyncInitialState = {
   requestError: false,
   /* if response has no items */
   emptyResponse: false,
+  /* link to the current page */
+  currentPagePath: null,
   /* link to the next page */
   nextPagePath: null,
   /* link to the previous page */
@@ -63,7 +67,10 @@ export const asyncInitialState = {
 export function asyncReducer (state = asyncInitialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, { nextPagePath: action.nextPagePath })
+      return Object.assign({}, state, {
+        nextPagePath: action.nextPagePath,
+        currentPagePath: action.nextPagePath
+      })
     }
     case 'ADD_ITEM_KEY': {
       return Object.assign({}, state, { itemKey: action.itemKey })
@@ -71,7 +78,8 @@ export function asyncReducer (state = asyncInitialState, action) {
     case 'START_REQUEST': {
       return Object.assign({}, state, {
         loading: true,
-        requestError: false
+        requestError: false,
+        currentPagePath: action.path
       })
     }
     case 'REQUEST_ERROR': {
@@ -275,6 +283,18 @@ export function createAsyncLoadStore (reducer, initialState, itemKey) {
   connectElements({ store, elements })
   firstPageLoad(store)
   return store
+}
+
+export function refreshPage (store) {
+  loadPage(store, store.getState().currentPagePath)
+}
+
+function loadPage (store, path) {
+  store.dispatch({type: 'START_REQUEST', path})
+  $.getJSON(path, merge({type: 'JSON'}, store.getState().additionalParams))
+    .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
+    .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
+    .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
 }
 
 function firstPageLoad (store) {

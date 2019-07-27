@@ -7,12 +7,14 @@ defmodule Explorer.Chain do
     only: [
       from: 2,
       join: 4,
+      join: 5,
       limit: 2,
       lock: 2,
       order_by: 2,
       order_by: 3,
       preload: 2,
       select: 2,
+      select: 3,
       subquery: 1,
       union: 2,
       union_all: 2,
@@ -4721,34 +4723,50 @@ defmodule Explorer.Chain do
   end
 
   @doc "Get staking pools from the DB"
-  @spec staking_pools(filter :: :validator | :active | :inactive, options :: PagingOptions.t()) :: [map()]
-  def staking_pools(filter, paging_options \\ @default_paging_options) do
-    filter
-    |> staking_pools_query(paging_options)
-    |> Repo.all()
-  end
-
-  defp staking_pools_query(filter, paging_options) do
-    page_size = paging_options.page_size
-
+  @spec staking_pools(
+          filter :: :validator | :active | :inactive,
+          options :: PagingOptions.t(),
+          delegator_address_hash :: Hash.t() | nil
+        ) :: [map()]
+  def staking_pools(filter, paging_options \\ @default_paging_options, delegator_address_hash \\ nil) do
     base_query =
       StakingPool
       |> where(is_deleted: false)
       |> staking_pool_filter(filter)
-      |> limit(^page_size)
+      |> staking_pools_paging_query(paging_options)
+
+    query =
+      if delegator_address_hash do
+        base_query
+        |> join(:left, [p], pd in StakingPoolsDelegator,
+          on: p.staking_address_hash == pd.pool_address_hash and pd.delegator_address_hash == ^delegator_address_hash
+        )
+        |> select([p, pd], %{pool: p, delegator: pd})
+      else
+        base_query
+        |> select([p], %{pool: p, delegator: nil})
+      end
+
+    Repo.all(query)
+  end
+
+  defp staking_pools_paging_query(base_query, paging_options) do
+    paging_query =
+      base_query
+      |> limit(^paging_options.page_size)
       |> order_by(desc: :staked_ratio, asc: :staking_address_hash)
 
     case paging_options.key do
       {value, address_hash} ->
         where(
-          base_query,
+          paging_query,
           [p],
           p.staked_ratio < ^value or
             (p.staked_ratio == ^value and p.staking_address_hash > ^address_hash)
         )
 
       _ ->
-        base_query
+        paging_query
     end
   end
 
