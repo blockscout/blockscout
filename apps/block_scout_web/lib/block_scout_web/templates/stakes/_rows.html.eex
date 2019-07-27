@@ -34,9 +34,15 @@
       </span>
     <% else %>
       <div class="stakes-controls">
-        <%= render BlockScoutWeb.StakesView, "_stakes_control_move.html", address: @pool.staking_address_hash %>
-        <%= render BlockScoutWeb.StakesView, "_stakes_control_withdraw.html", address: @pool.staking_address_hash %>
-        <%= render BlockScoutWeb.StakesView, "_stakes_control_stake.html", address: @pool.staking_address_hash %>
+        <%= if @buttons.move do %>
+          <%= render BlockScoutWeb.StakesView, "_stakes_control_move.html", address: @pool.staking_address_hash %>
+        <% end %>
+        <%= if @buttons.withdraw do %>
+          <%= render BlockScoutWeb.StakesView, "_stakes_control_withdraw.html", address: @pool.staking_address_hash %>
+        <% end %>
+        <%= if @buttons.stake do %>
+          <%= render BlockScoutWeb.StakesView, "_stakes_control_stake.html", address: @pool.staking_address_hash %>
+        <% end %>
       </div>
     <% end %>
   </td>

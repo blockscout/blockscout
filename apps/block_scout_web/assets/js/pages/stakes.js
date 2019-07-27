@@ -2,7 +2,7 @@ import $ from 'jquery'
 import _ from 'lodash'
 import { subscribeChannel } from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
-import { createAsyncLoadStore } from '../lib/async_listing_load'
+import { createAsyncLoadStore, refreshPage } from '../lib/async_listing_load'
 import Web3 from 'web3'
 
 export const initialState = {
@@ -24,7 +24,11 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, { web3: action.web3 })
     }
     case 'ACCOUNT_UPDATED': {
-      return Object.assign({}, state, { account: action.account })
+      return Object.assign({}, state, {
+        account: action.account,
+        additionalParams: { account: action.account }
+      })
+    }
     }
     default:
       return state
@@ -73,6 +77,7 @@ function initializeWeb3 (store) {
 function setAccount (account, store) {
   store.dispatch({ type: 'ACCOUNT_UPDATED', account })
   store.getState().channel.push('set_account', account)
+  refreshPage(store)
 }
 
 async function loginByMetamask (event) {
