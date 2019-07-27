@@ -48,7 +48,7 @@ defmodule BlockScoutWeb.StakesController do
       |> Map.get("position", "0")
       |> String.to_integer()
 
-    pools_plus_one = Chain.staking_pools(filter, options)
+    pools_plus_one = Chain.staking_pools(filter, options, params["account"])
 
     {pools, next_page} = split_list_by_page(pools_plus_one)
 
@@ -68,11 +68,12 @@ defmodule BlockScoutWeb.StakesController do
 
     average_block_time = AverageBlockTime.average_block_time()
     token = ContractState.get(:token, %Token{})
+    epoch_number = ContractState.get(:epoch_number, 0)
 
     items =
       pools
       |> Enum.with_index(last_index + 1)
-      |> Enum.map(fn {pool, index} ->
+      |> Enum.map(fn {%{pool: pool, delegator: delegator}, index} ->
         View.render_to_string(
           StakesView,
           "_rows.html",
@@ -80,7 +81,12 @@ defmodule BlockScoutWeb.StakesController do
           pool: pool,
           index: index,
           average_block_time: average_block_time,
-          pools_type: filter
+          pools_type: filter,
+          buttons: %{
+            stake: true,
+            move: move_allowed?(delegator),
+            withdraw: withdraw_allowed?(delegator, epoch_number)
+          }
         )
       end)
 
@@ -112,5 +118,19 @@ defmodule BlockScoutWeb.StakesController do
 
   defp next_page_path(:inactive, conn, params) do
     inactive_pools_path(conn, :index, params)
+  end
+
+  defp move_allowed?(nil), do: false
+
+  defp move_allowed?(delegator) do
+    delegator.is_active and Decimal.positive?(delegator.max_withdraw_allowed)
+  end
+
+  defp withdraw_allowed?(nil, _epoch_number), do: false
+
+  defp withdraw_allowed?(delegator, epoch_number) do
+    (delegator.is_active and Decimal.positive?(delegator.max_withdraw_allowed)) or
+      (delegator.is_active and Decimal.positive?(delegator.max_ordered_withdraw_allowed)) or
+      (Decimal.positive?(delegator.ordered_withdraw) and delegator.ordered_withdraw_epoch < epoch_number)
   end
 end
