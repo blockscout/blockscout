@@ -10,7 +10,11 @@ import Web3 from 'web3'
 export const initialState = {
   channel: null,
   web3: null,
-  account: null
+  account: null,
+  stakingContract: null,
+  blockRewardContract: null,
+  tokenDecimals: 0,
+  tokenSymbol: ''
 }
 
 export function reducer (state = initialState, action) {
@@ -31,6 +35,13 @@ export function reducer (state = initialState, action) {
         additionalParams: { account: action.account }
       })
     }
+    case 'RECEIVED_CONTRACTS': {
+      return Object.assign({}, state, {
+        stakingContract: action.stakingContract,
+        blockRewardContract: action.blockRewardContract,
+        tokenDecimals: action.tokenDecimals,
+        tokenSymbol: action.tokenSymbol
+      })
     }
     default:
       return state
@@ -41,23 +52,32 @@ const elements = {
 }
 
 const $stakesPage = $('[data-page="stakes"]')
+const $stakesTop = $('[data-selector="stakes-top"]')
 if ($stakesPage.length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierPool')
   connectElements({ store, elements })
 
   const channel = subscribeChannel('stakes:staking_update')
-  channel.on('staking_update', msg => onStakingUpdate(msg, store))
   store.dispatch({ type: 'CHANNEL_CONNECTED', channel })
 
+  channel.on('staking_update', msg => $stakesTop.html(msg.top_html))
+  channel.on('contracts', msg => {
+    const web3 = store.getState().web3
+    const stakingContract =
+      new web3.eth.Contract(msg.staking_contract.abi, msg.staking_contract.address)
+    const blockRewardContract =
+      new web3.eth.Contract(msg.block_reward_contract.abi, msg.block_reward_contract.address)
+
+    store.dispatch({
+      type: 'RECEIVED_CONTRACTS',
+      stakingContract,
+      blockRewardContract,
+      tokenDecimals: parseInt(msg.token_decimals),
+      tokenSymbol: msg.token_symbol
+    })
+  })
+
   initializeWeb3(store)
-}
-
-function onStakingUpdate (msg, store) {
-  $('[data-selector="stakes-top"]').html(msg.top_html)
-
-  if (store.getState().web3) {
-    $('[data-selector="login-button"]').on('click', loginByMetamask)
-  }
 }
 
 function initializeWeb3 (store) {
@@ -73,6 +93,8 @@ function initializeWeb3 (store) {
         setAccount(account, store)
       }
     }, 100)
+
+    $stakesTop.on('click', '[data-selector="login-button"]', loginByMetamask)
   }
 }
 
