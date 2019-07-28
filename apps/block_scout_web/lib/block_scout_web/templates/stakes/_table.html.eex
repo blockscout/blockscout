@@ -36,31 +36,3 @@
     <tbody data-items></tbody>
   </table>
 </div>
-<%=
-  render BlockScoutWeb.CommonComponentsView,
-  "_modal_status.html",
-  status: "error",
-  title: "Lorem Ipsum",
-  text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor."
-%>
-<%=
-  render BlockScoutWeb.CommonComponentsView,
-  "_modal_status.html",
-  status: "warning",
-  title: "Lorem Ipsum",
-  text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor."
-%>
-<%=
-  render BlockScoutWeb.CommonComponentsView,
-  "_modal_status.html",
-  status: "success",
-  title: "Lorem Ipsum",
-  text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor."
-%>
-<%=
-  render BlockScoutWeb.CommonComponentsView,
-  "_modal_status.html",
-  status: "question",
-  title: "Remove my Pool",
-  text: "Do you really want to remove your pool?"
-%>
