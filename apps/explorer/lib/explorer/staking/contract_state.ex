@@ -19,7 +19,10 @@ defmodule Explorer.Staking.ContractState do
     :min_candidate_stake,
     :min_delegator_stake,
     :epoch_number,
-    :epoch_end_block
+    :epoch_end_block,
+    :staking_contract,
+    :validator_set_contract,
+    :block_reward_contract
   ]
 
   defstruct [
@@ -74,6 +77,12 @@ defmodule Explorer.Staking.ContractState do
       },
       abi: staking_abi ++ validator_set_abi ++ block_reward_abi
     }
+
+    :ets.insert(@table_name,
+      staking_contract: %{abi: staking_abi, address: staking_contract_address},
+      validator_set_contract: %{abi: validator_set_abi, address: validator_set_contract_address},
+      block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address}
+    )
 
     {:ok, state, {:continue, []}}
   end
