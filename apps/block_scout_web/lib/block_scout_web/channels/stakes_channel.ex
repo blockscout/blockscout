@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.StakesChannel do
   use BlockScoutWeb, :channel
 
   alias BlockScoutWeb.StakesController
+  alias Explorer.Staking.ContractState
 
   intercept(["staking_update"])
 
@@ -13,7 +14,11 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("set_account", account, socket) do
-    socket = assign(socket, :account, account)
+    socket =
+      socket
+      |> assign(:account, account)
+      |> push_staking_contract()
+
     handle_out("staking_update", nil, socket)
   end
 
@@ -23,5 +28,22 @@ defmodule BlockScoutWeb.StakesChannel do
     })
 
     {:noreply, socket}
+  end
+
+  defp push_staking_contract(socket) do
+    if socket.assigns[:contract_sent] do
+      socket
+    else
+      token = ContractState.get(:token)
+
+      push(socket, "contracts", %{
+        staking_contract: ContractState.get(:staking_contract),
+        block_reward_contract: ContractState.get(:block_reward_contract),
+        token_decimals: to_string(token.decimals),
+        token_symbol: token.symbol
+      })
+
+      assign(socket, :contract_sent, true)
+    end
   end
 end
