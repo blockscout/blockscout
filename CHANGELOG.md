@@ -6,6 +6,7 @@
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
 ### Chore
+- [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
 
 
 ## 2.0.2-beta
