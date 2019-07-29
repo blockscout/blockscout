@@ -190,7 +190,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:32
-#: lib/block_scout_web/templates/address/overview.html.eex:95
+#: lib/block_scout_web/templates/address/overview.html.eex:97
 #: lib/block_scout_web/templates/address_validation/index.html.eex:13
 #: lib/block_scout_web/views/address_view.ex:311
 msgid "Blocks Validated"
@@ -209,8 +209,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
-#: lib/block_scout_web/templates/address/overview.html.eex:144
-#: lib/block_scout_web/templates/address/overview.html.eex:152
+#: lib/block_scout_web/templates/address/overview.html.eex:146
+#: lib/block_scout_web/templates/address/overview.html.eex:154
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:107
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:115
 msgid "Close"
@@ -319,7 +319,7 @@ msgid "Copy Txn Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:105
+#: lib/block_scout_web/templates/address/overview.html.eex:107
 msgid "Created by"
 msgstr ""
 
@@ -621,7 +621,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:33
-#: lib/block_scout_web/templates/address/overview.html.eex:143
+#: lib/block_scout_web/templates/address/overview.html.eex:145
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:106
 msgid "QR Code"
@@ -989,7 +989,7 @@ msgid "Yes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:111
+#: lib/block_scout_web/templates/address/overview.html.eex:113
 msgid "at"
 msgstr ""
 
@@ -1387,7 +1387,7 @@ msgid "Contract Libraries"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:88
+#: lib/block_scout_web/templates/address/overview.html.eex:89
 msgid "Last Balance Update: Block #"
 msgstr ""
 
@@ -1433,7 +1433,7 @@ msgid "Incoming Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:119
+#: lib/block_scout_web/templates/address/overview.html.eex:121
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
