@@ -34,7 +34,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:21
-#: lib/block_scout_web/templates/chain/_block.html.eex:178
+#: lib/block_scout_web/templates/chain/_block.html.eex:11
 msgid "%{count} Transactions"
 msgstr ""
 
@@ -190,7 +190,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:32
-#: lib/block_scout_web/templates/address/overview.html.eex:95
+#: lib/block_scout_web/templates/address/overview.html.eex:97
 #: lib/block_scout_web/templates/address_validation/index.html.eex:13
 #: lib/block_scout_web/views/address_view.ex:311
 msgid "Blocks Validated"
@@ -209,8 +209,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
-#: lib/block_scout_web/templates/address/overview.html.eex:144
-#: lib/block_scout_web/templates/address/overview.html.eex:152
+#: lib/block_scout_web/templates/address/overview.html.eex:146
+#: lib/block_scout_web/templates/address/overview.html.eex:154
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:107
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:115
 msgid "Close"
@@ -319,7 +319,7 @@ msgid "Copy Txn Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:105
+#: lib/block_scout_web/templates/address/overview.html.eex:107
 msgid "Created by"
 msgstr ""
 
@@ -514,7 +514,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:38
 #: lib/block_scout_web/templates/block/overview.html.eex:121
-#: lib/block_scout_web/templates/chain/_block.html.eex:182
+#: lib/block_scout_web/templates/chain/_block.html.eex:15
 msgid "Miner"
 msgstr ""
 
@@ -621,7 +621,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:33
-#: lib/block_scout_web/templates/address/overview.html.eex:143
+#: lib/block_scout_web/templates/address/overview.html.eex:145
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:106
 msgid "QR Code"
@@ -983,7 +983,7 @@ msgid "Yes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:111
+#: lib/block_scout_web/templates/address/overview.html.eex:113
 msgid "at"
 msgstr ""
 
@@ -1026,14 +1026,7 @@ msgid "Delegate Call"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:47
-#: lib/block_scout_web/templates/chain/_block.html.eex:190
 #: lib/block_scout_web/views/internal_transaction_view.ex:27
-msgid "Reward"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/views/internal_transaction_view.ex:26
 msgid "Self-Destruct"
 msgstr ""
 
@@ -1387,7 +1380,7 @@ msgid "Contract Libraries"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:88
+#: lib/block_scout_web/templates/address/overview.html.eex:89
 msgid "Last Balance Update: Block #"
 msgstr ""
 
@@ -1433,7 +1426,7 @@ msgid "Incoming Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:119
+#: lib/block_scout_web/templates/address/overview.html.eex:121
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
@@ -1767,7 +1760,12 @@ msgstr ""
 msgid "Copy Value"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
+#: lib/block_scout_web/views/internal_transaction_view.ex:26
+msgid "Create2"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:49
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:114
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
@@ -1794,7 +1792,14 @@ msgstr ""
 msgid "Log Data"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
+#: lib/block_scout_web/templates/block/_tile.html.eex:47
+#: lib/block_scout_web/templates/chain/_block.html.eex:23
+#: lib/block_scout_web/views/internal_transaction_view.ex:28
+msgid "Reward"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:84
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:85
 msgid "Topics"
