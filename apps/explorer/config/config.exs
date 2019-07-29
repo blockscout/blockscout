@@ -65,7 +65,7 @@ if System.get_env("METADATA_CONTRACT") && System.get_env("VALIDATORS_CONTRACT") 
     metadata_contract_address: System.get_env("METADATA_CONTRACT"),
     validators_contract_address: System.get_env("VALIDATORS_CONTRACT")
 
-  config :explorer, Explorer.Validator.MetadataProcessor, enabled: true
+  config :explorer, Explorer.Validator.MetadataProcessor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 else
   config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
 end
