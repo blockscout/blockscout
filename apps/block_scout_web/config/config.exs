@@ -28,7 +28,8 @@ config :block_scout_web,
     "EtherChain" => "https://www.etherchain.org/",
     "Bloxy" => "https://bloxy.info/"
   },
-  other_networks: System.get_env("SUPPORTED_CHAINS")
+  other_networks: System.get_env("SUPPORTED_CHAINS"),
+  webapp_url: System.get_env("WEBAPP_URL")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 

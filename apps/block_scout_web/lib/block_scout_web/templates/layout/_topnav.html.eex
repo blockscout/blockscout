@@ -5,7 +5,7 @@
     }
   </script>
   <div class="container-fluid navbar-container">
-    <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
+    <%= link to: webapp_url(@conn), class: "navbar-brand", "data-test": "header_logo" do %>
       <img class="navbar-logo" id="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
     <% end %>
     <script>
