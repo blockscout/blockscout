@@ -568,4 +568,24 @@ $labels-dark: #8a8dba; // header nav, labels
 		}
 	}
 
+	// API docs dropdown content
+	.api-doc-parameters-list-item-description,
+	.api-doc-parameters-list-item-title,
+	.api-doc-parameters-list-title,
+	.api-doc-list-item-controls-view-more {
+		color: #fff;
+	}
+
+	.api-doc-parameters-list {
+		border-bottom-color: darken($labels-dark, 30);
+	}
+	.api-doc-parameters-container {
+		border-top-color: darken($labels-dark, 30);
+	}
+	.api-doc-tab {
+		color: $dark-primary !important;
+		&.active {
+			border-bottom-color: $dark-primary;
+		}
+	}
 }
