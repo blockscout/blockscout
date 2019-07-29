@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#2432](https://github.com/poanetwork/blockscout/pull/2432) - bump credo version
 
 
 ## 2.0.2-beta
@@ -49,7 +50,6 @@
 - [#2326](https://github.com/poanetwork/blockscout/pull/2326) - fix nested constructor arguments
 
 ### Chore
-- [#2432](https://github.com/poanetwork/blockscout/pull/2432) - bump credo version
 - [#2422](https://github.com/poanetwork/blockscout/pull/2422) - check if address_id is binary in token_transfers_csv endpoint
 - [#2418](https://github.com/poanetwork/blockscout/pull/2418) - Remove parentheses in market cap percentage
 - [#2401](https://github.com/poanetwork/blockscout/pull/2401) - add ENV vars to manage updating period of average block time and market history cache
