@@ -84,6 +84,7 @@ defmodule EthereumJSONRPC.GethTest do
   end
 
   describe "fetch_pending_transactions/1" do
+    @tag :no_geth
     test "fetches pending transactions", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
         {:ok,
