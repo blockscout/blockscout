@@ -30,6 +30,7 @@ defmodule Explorer.Chain.Events.Listener do
     {:noreply, state}
   end
 
+  # sobelow_skip ["Misc.BinToTerm"]
   defp decode_payload!(payload) do
     payload
     |> Base.decode64!()

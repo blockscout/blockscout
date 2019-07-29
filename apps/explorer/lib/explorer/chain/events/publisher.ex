@@ -2,6 +2,7 @@ defmodule Explorer.Chain.Events.Publisher do
   @moduledoc """
   Publishes events related to the Chain context.
   """
+  alias Ecto.Adapters.SQL.Sandbox
   alias Explorer.Repo
 
   @allowed_events ~w(addresses address_coin_balances blocks block_rewards internal_transactions token_transfers transactions contract_verification_result)a
@@ -17,11 +18,12 @@ defmodule Explorer.Chain.Events.Publisher do
   @spec broadcast(atom()) :: :ok
   def broadcast(event_type) do
     send_data(event_type)
+    :ok
   end
 
   defp send_data(event_type) do
     payload = encode_payload({:chain_event, event_type})
-    Repo.query("NOTIFY chain_event, '#{payload}';")
+    send_notify(payload)
   end
 
   # The :catchup type of event is not being consumed right now.
@@ -31,12 +33,24 @@ defmodule Explorer.Chain.Events.Publisher do
 
   defp send_data(event_type, broadcast_type, event_data) do
     payload = encode_payload({:chain_event, event_type, broadcast_type, event_data})
-    Repo.query("NOTIFY chain_event, '#{payload}';")
+    send_notify(payload)
   end
 
   defp encode_payload(payload) do
     payload
-    |> :erlang.term_to_binary()
+    |> :erlang.term_to_binary([:compressed])
     |> Base.encode64()
+  end
+
+  defp send_notify(payload) do
+    fun = fn ->
+      Repo.query("select pg_notify('chain_event', $1::text);", [payload])
+    end
+
+    if Mix.env() == :test do
+      Sandbox.unboxed_run(Repo, fun)
+    else
+      fun.()
+    end
   end
 end
