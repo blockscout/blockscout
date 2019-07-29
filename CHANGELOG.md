@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
 
 
 ## 2.0.2-beta
