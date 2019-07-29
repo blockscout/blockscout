@@ -464,7 +464,108 @@ $labels-dark: #8a8dba; // header nav, labels
 
 	// dark text
 	.text-dark {
+		color: #fff !important;
+	}
+
+	// Contract Verification
+	.new-smart-contract-container {
+		background-color: $dark-light-bg;
+		background-image: linear-gradient(to bottom right, $dark-light 100%, $dark-light 100%);
+		@media (max-width: 991.98px) {
+			background-image: none;
+		}
+	}
+	.smart-contract-form-group-inner-wrapper .smart-contract-form-group-tooltip {
+		color: $labels-dark;
+	}
+	.smart-contract-title {
 		color: #fff;
+	}
+	.smart-contract-form-group-inner-wrapper > label {
+		color: $labels-dark;
+	}
+	.smart-contract-form-buttons {
+		border-top-color: darken($labels-dark, 30);
+		.btn-no-border {
+			background-color: $dark-light;
+			border-color: $dark-light;
+			color: #fff;
+			&:hover {
+				background-color: $dark-primary;
+				color: #fff;
+			}
+		}
+	}
+	.add-contract-libraries-wrapper {
+		border-top-color: darken($labels-dark, 30);
+	}
+
+	.token-tile-view-more:before, .token-tile-view-more:after {
+		border-top-color: darken($labels-dark, 30);
+		border-bottom-color: darken($labels-dark, 30);
+	}
+	
+	// Form Controlls
+	.form-control {
+		background-color: $dark-light;
+		border-color: $dark-light;
+		color: #fff;
+		&::placeholder {
+			color: $labels-dark;
+		}
+		&:focus {
+			background-color: $dark-light;
+			border-color: $dark-primary;
+			color: #fff;
+		}
+	}
+	.radio-big .radio-icon {
+		border-color: $labels-dark;
+	}
+	.radio-big input[type="radio"]:checked + .radio-icon {
+		border-color: $dark-primary;
+	}
+	.radio-big input[type="radio"]:checked + .radio-icon::before {
+		background: $dark-primary;
+	}
+	.radio-big .radio-text {
+		color: #fff;
+	}
+
+	// Content loading placeholders
+	.tile-loader, .table-content-loader {
+		background-color: $dark-light;
+		&:before {
+			background: linear-gradient(to right, $dark-light 2%, $dark-light-bg 18%, $dark-light 33%);
+		}
+	}
+
+	// Verify other explorers
+	.verify-other-explorers-elem {
+		border-color: darken($labels-dark, 30);
+		.exp-logo {
+			border-right-color: darken($labels-dark, 30);
+		}
+		.exp-content {
+			h3 {
+				color: #fff;
+			}
+			div {
+				color: $labels-dark;
+			}
+		}
+	}
+	.verify-other-explorers-more {
+		border-color: $dark-primary;
+		svg path {
+			fill: $dark-primary;
+		}
+		&:hover {
+			background-color: $dark-primary;
+			svg path {
+				fill: #fff;
+			}
+		}
 	}
 
 }
