@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2458](https://github.com/poanetwork/blockscout/pull/2458) - Add LAST_BLOCK var to index range of blocks
 
 ### Fixes
 
