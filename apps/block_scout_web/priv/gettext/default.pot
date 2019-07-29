@@ -1589,7 +1589,7 @@ msgid "Next epoch in"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:22
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:36
 msgid "Order Withdrawal"
 msgstr ""
 
@@ -1640,7 +1640,7 @@ msgid "Withdraw"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:21
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:28
 msgid "Withdraw Now"
 msgstr ""
 
@@ -1878,4 +1878,14 @@ msgstr ""
 #: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:11
 #: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:48
 msgid "Move Stake"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:8
+msgid "Claim Ordered Withdraw"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:19
+msgid "Claim the Amount"
 msgstr ""
