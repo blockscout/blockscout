@@ -6,7 +6,7 @@
 
 ### Chore
 - [#2432](https://github.com/poanetwork/blockscout/pull/2432) - bump credo version
-
+- [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
 
 ## 2.0.2-beta
 

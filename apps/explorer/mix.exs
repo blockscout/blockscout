@@ -117,7 +117,7 @@ defmodule Explorer.Mixfile do
       # Attach `:prometheus_ecto` to `:ecto`
       {:telemetry, "~> 0.3.0"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
-      {:timex, "~> 3.4"},
+      {:timex, "~> 3.6"},
       {:con_cache, "~> 0.13"}
     ]
   end
