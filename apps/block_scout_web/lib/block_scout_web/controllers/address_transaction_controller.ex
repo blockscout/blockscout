@@ -87,7 +87,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
           {:ok, _} ->
             json(conn, %{items: [], next_page_path: ""})
 
-          {:error, _} ->
+          _ ->
             not_found(conn)
         end
     end
@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
               current_path: current_path(conn)
             )
 
-          {:error, _} ->
+          _ ->
             not_found(conn)
         end
     end
