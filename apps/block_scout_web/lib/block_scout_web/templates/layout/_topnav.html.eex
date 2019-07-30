@@ -156,6 +156,33 @@
             </div>
           </li>
         <% end %>
+        <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
+          <li class="nav-item dropdown">
+            <a href="#" role="button" id="stakesDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
+              </span>
+              <%= gettext("Stakes") %>
+            </a>
+            <div class="dropdown-menu" aria-labeledby="navbarStakesDropdown">
+              <%= link(
+                    gettext("Validators"),
+                    class: "dropdown-item #{tab_status("validators", @conn.request_path)}",
+                    to: validators_path(@conn, :index)
+                  ) %>
+              <%= link(
+                    gettext("Active Pools"),
+                    class: "dropdown-item #{tab_status("active-pools", @conn.request_path)}",
+                    to: active_pools_path(@conn, :index)
+                  ) %>
+              <%= link(
+                    gettext("Inactive Pools"),
+                    class: "dropdown-item #{tab_status("inactive-pools", @conn.request_path)}",
+                    to: inactive_pools_path(@conn, :index)
+                  ) %>
+            </div>
+          </li>
+        <% end %>
         <li class="nav-item dropdown">
           <a class="nav-link topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">

@@ -27,6 +27,7 @@ defmodule BlockScoutWeb.Chain do
     Token,
     TokenTransfer,
     Transaction,
+    StakingPool,
     Wei
   }
 
@@ -280,6 +281,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%CoinBalance{block_number: block_number}) do
     %{"block_number" => block_number}
+  end
+
+  defp paging_params(%StakingPool{staking_address_hash: address_hash, staked_ratio: value}) do
+    %{"address_hash" => address_hash, "value" => Decimal.to_string(value)}
   end
 
   defp block_or_transaction_from_param(param) do

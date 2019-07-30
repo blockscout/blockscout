@@ -1,0 +1,38 @@
+<div class="stakes-table-container">
+  <table class="stakes-table">
+    <thead>
+      <tr>
+        <th class="stakes-table-th">&nbsp;</th>
+        <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: "Pool", tooltip: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut." %>
+        <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: "Staked Amount", tooltip: "Lorem ipsum dolor sit iusmod tempor incididunt ut." %>
+        <%= if @pools_type == :inactive do %>
+          <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: "Banned", tooltip: "Sed do eiusmod tempor incididunt ut." %>
+        <% else %>
+          <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: "Stakes Ratio", tooltip: "Sed do eiusmod tempor incididunt ut." %>
+        <% end %>
+        <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: "Delegators", tooltip: "Lorem ipsum dolor sit amet." %>
+        <th class="stakes-table-th">&nbsp;</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td colspan="6">
+          <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+            <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+
+    <tbody data-empty-response-message style="display: none;">
+      <tr>
+        <td colspan="6">
+          <%= render BlockScoutWeb.StakesView, "_stakes_empty_content.html" %>
+        </td>
+      </tr>
+    </tbody>
+
+    <tbody data-items></tbody>
+  </table>
+</div>

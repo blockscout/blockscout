@@ -11,7 +11,6 @@ defmodule Explorer.Chain do
       lock: 2,
       order_by: 2,
       order_by: 3,
-      offset: 2,
       preload: 2,
       select: 2,
       subquery: 1,
@@ -4715,14 +4714,33 @@ defmodule Explorer.Chain do
 
   @doc "Get staking pools from the DB"
   @spec staking_pools(filter :: :validator | :active | :inactive, options :: PagingOptions.t()) :: [map()]
-  def staking_pools(filter, %PagingOptions{page_size: page_size, page_number: page_number} \\ @default_paging_options) do
-    off = page_size * (page_number - 1)
-
-    StakingPool
-    |> staking_pool_filter(filter)
-    |> limit(^page_size)
-    |> offset(^off)
+  def staking_pools(filter, paging_options \\ @default_paging_options) do
+    filter
+    |> staking_pools_query(paging_options)
     |> Repo.all()
+  end
+
+  defp staking_pools_query(filter, paging_options) do
+    page_size = paging_options.page_size
+
+    base_query =
+      StakingPool
+      |> staking_pool_filter(filter)
+      |> limit(^page_size)
+      |> order_by(desc: :staked_ratio, asc: :staking_address_hash)
+
+    case paging_options.key do
+      {value, address_hash} ->
+        where(
+          base_query,
+          [p],
+          p.staked_ratio < ^value or
+            (p.staked_ratio == ^value and p.staking_address_hash > ^address_hash)
+        )
+
+      _ ->
+        base_query
+    end
   end
 
   @doc "Get count of staking pools from the DB"
