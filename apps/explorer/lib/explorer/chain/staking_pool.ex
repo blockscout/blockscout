@@ -9,8 +9,7 @@ defmodule Explorer.Chain.StakingPool do
   alias Explorer.Chain.{
     Address,
     Hash,
-    StakingPoolsDelegator,
-    Wei
+    StakingPoolsDelegator
   }
 
   @type t :: %__MODULE__{
@@ -24,8 +23,8 @@ defmodule Explorer.Chain.StakingPool do
           likelihood: Decimal.t(),
           block_reward_ratio: Decimal.t(),
           staked_ratio: Decimal.t(),
-          self_staked_amount: Wei.t(),
-          staked_amount: Wei.t(),
+          self_staked_amount: Decimal.t(),
+          staked_amount: Decimal.t(),
           was_banned_count: integer,
           was_validator_count: integer,
           is_deleted: boolean
@@ -51,8 +50,8 @@ defmodule Explorer.Chain.StakingPool do
     field(:likelihood, :decimal)
     field(:block_reward_ratio, :decimal)
     field(:staked_ratio, :decimal)
-    field(:self_staked_amount, Wei)
-    field(:staked_amount, Wei)
+    field(:self_staked_amount, :decimal)
+    field(:staked_amount, :decimal)
     field(:was_banned_count, :integer)
     field(:was_validator_count, :integer)
     field(:is_deleted, :boolean, default: false)
