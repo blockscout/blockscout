@@ -53,7 +53,16 @@ config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :ti
 
 config :explorer, Explorer.Market.History.Historian, enabled: true
 
-config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: true
+if System.get_env("HISTORY_FETCH_INTERVAL") do
+  mins = String.to_integer(System.get_env("HISTORY_FETCH_INTERVAL"))
+  config :explorer, Explorer.History.Process, history_fetch_interval: :timer.minutes(mins)
+end
+
+if System.get_env("ENABLE_TXS_STATS") do
+  config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: true
+else
+  config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
+end
 
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
