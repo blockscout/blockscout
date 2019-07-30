@@ -15,7 +15,7 @@ defmodule EthereumJsonrpc.MixProject do
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.8",
+      elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
@@ -82,7 +82,7 @@ defmodule EthereumJsonrpc.MixProject do
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 0.4.0"},
       # Convert unix timestamps in JSONRPC to DateTimes
-      {:timex, "~> 3.4"},
+      {:timex, "~> 3.6"},
       # Encode/decode function names and arguments
       {:ex_abi, "~> 0.1.18"},
       # `:verify_fun` for `Socket.Web.connect`

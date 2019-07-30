@@ -74,7 +74,7 @@
                 <%= if contract?(@address) do %>
                   <%= gettext(">=") %>
                   <span data-selector="transaction-count">
-                    <%= incoming_transaction_count(@address) %>
+                    <%= incoming_transaction_count(@address.hash) %>
                   </span>
                   <%= gettext("Incoming Transactions") %>
                 <% else %>
@@ -84,9 +84,11 @@
                   <%= gettext("Transactions Sent") %>
                 <% end %>
               </span>
-              <span class="address-detail-item">
-                <%= gettext("Last Balance Update: Block #") %><span data-selector="fetched-coin-balance-block-number"><%= @address.fetched_coin_balance_block_number %></span>
-              </span>
+              <%= if @address.fetched_coin_balance_block_number do %>
+                <span class="address-detail-item">
+                  <%= gettext("Last Balance Update: Block #") %><span data-selector="fetched-coin-balance-block-number"><%= @address.fetched_coin_balance_block_number %></span>
+                </span>
+              <% end %>
               <%= if validator?(@validation_count) do %>
                 <span class="address-detail-item">
                   <span data-selector="validation-count">
@@ -146,7 +148,7 @@
         </button>
       </div>
       <div class="modal-body">
-        <img src="data:image/png;base64, <%= qr_code(@address) %>" class="qr-code" alt="qr_code" title="<%= @address %>" />
+        <img src="data:image/png;base64, <%= qr_code(@address.hash) %>" class="qr-code" alt="qr_code" title="<%= @address %>" />
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" data-dismiss="modal"><%= gettext "Close" %></button>

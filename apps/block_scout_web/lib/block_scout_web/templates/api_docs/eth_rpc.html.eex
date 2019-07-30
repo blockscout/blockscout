@@ -22,11 +22,13 @@
           <tr>
             <th>Supported Method</th>
             <th>Notes</th>
+            <th>Parameters example</th>
           </tr>
           <%= for {method, info} <- Map.to_list(@documentation) do %>
             <tr>
               <td> <a href="https://github.com/ethereum/wiki/wiki/JSON-RPC#<%= method %>"> <%= method %> </a> </td>
               <td> <%= Map.get(info, :notes, "N/A") %> </td>
+              <td> <%= Map.get(info, :example, "N/A") %> </td>
             </tr>
           <% end %>
         </table>

@@ -10,7 +10,10 @@ defmodule EthereumJSONRPC.RollingWindowTest do
   setup do
     # We set `window_length` to a large time frame so that we can sweep manually to simulate
     # time passing
-    RollingWindow.start_link([table: @table, duration: :timer.minutes(120), window_count: 3], name: RollingWindow)
+    {:ok, pid} =
+      RollingWindow.start_link([table: @table, duration: :timer.minutes(120), window_count: 3], name: RollingWindow)
+
+    on_exit(fn -> Process.exit(pid, :normal) end)
 
     :ok
   end
