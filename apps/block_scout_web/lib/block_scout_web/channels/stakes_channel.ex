@@ -115,6 +115,38 @@ defmodule BlockScoutWeb.StakesChannel do
     {:reply, {:ok, result}, socket}
   end
 
+  def handle_in("render_withdraw_stake", %{"address" => staking_address}, socket) do
+    pool = Chain.staking_pool(staking_address)
+    token = ContractState.get(:token)
+    delegator = Chain.staking_pool_delegator(staking_address, socket.assigns.account)
+    epoch_number = ContractState.get(:epoch_number, 0)
+
+    claim_html =
+      if Decimal.positive?(delegator.ordered_withdraw) and delegator.ordered_withdraw_epoch < epoch_number do
+        View.render_to_string(StakesView, "_stakes_modal_claim.html",
+          token: token,
+          delegator: delegator,
+          pool: pool
+        )
+      end
+
+    html =
+      View.render_to_string(StakesView, "_stakes_modal_withdraw.html",
+        token: token,
+        delegator: delegator,
+        pool: pool
+      )
+
+    result = %{
+      claim_html: claim_html,
+      html: html,
+      self_staked_amount: pool.self_staked_amount,
+      staked_amount: pool.staked_amount
+    }
+
+    {:reply, {:ok, result}, socket}
+  end
+
   def handle_out("staking_update", _data, socket) do
     push(socket, "staking_update", %{
       top_html: StakesController.render_top(socket)

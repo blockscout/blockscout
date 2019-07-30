@@ -1,0 +1,51 @@
+<div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-stake" role="document">
+    <div class="modal-content">
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
+      <div class="modal-stake-two-cols">
+        <div>
+          <div class="modal-header">
+            <h5 class="modal-title"><%= gettext("Withdraw") %></h5>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="input-group form-group">
+                <input amount type="text" class="form-control n-b-r" placeholder="<%= gettext("Amount") %>">
+                <div class="input-group-prepend last">
+                  <div class="input-group-text"><%= @token.symbol %></div>
+                </div>
+              </div>
+              <p class="form-p">You Staked:
+                <span class="text-dark">
+                  <%= format_according_to_decimals(@delegator.stake_amount, @token.decimals) %> <%= @token.symbol %>
+                </span>
+              </p>
+              <div class="form-buttons">
+                <%=
+                  if Decimal.positive?(@delegator.max_withdraw_allowed) do
+                    render BlockScoutWeb.StakesView,
+                    "_stakes_btn_withdraw.html",
+                    text: gettext("Withdraw Now"),
+                    extra_class: "full-width btn-add-full withdraw"
+                  end
+                %>
+                <%=
+                  if Decimal.positive?(@delegator.max_ordered_withdraw_allowed) do
+                    render BlockScoutWeb.StakesView,
+                    "_stakes_btn_withdraw.html",
+                    text: gettext("Order Withdrawal"),
+                    extra_class: "full-width btn-add-full order-withdraw"
+                  end
+                %>
+              </div>
+            </form>
+          </div>
+          <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: "Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod temp incididunt ut labore et dolore magna. Sed do eiusmod temp incididunt ut.", extra_class: "b-b-r-0" %>
+        </div>
+        <div class="modal-stake-right">
+          <%= render BlockScoutWeb.StakesView, "_stakes_progress.html", pool: @pool, token: @token %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
