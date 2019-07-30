@@ -340,6 +340,9 @@ $tile-body-a-color: #5959d8 !default;
         padding-right: 6px;
       }
     }
+    .tile-type-block {  
+      overflow: hidden; 
+    }
     .row {
       @include media-breakpoint-down(lg) {
         margin-left: -6px;
