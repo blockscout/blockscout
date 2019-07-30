@@ -123,9 +123,42 @@ $stakes-table-cell-separation: 25px !default;
 }
 
 .stakes-td-link-style {
-  color: $primary;
+  color: $secondary;
 
   .stakes-tr-banned & {
     color: $stakes-banned-color;
+  }
+}
+
+.stakes-tr-banned td:last-child {
+  text-align: right;
+  padding-right: 30px;
+}
+
+.stakes-table {
+  .check-tooltip {
+    &:hover {
+      .check-tooltip-circle {
+        fill: $secondary;
+      }
+    }
+  }
+  .stakes-tr-banned {
+    .check-tooltip {
+      .check-tooltip-circle {
+        fill: rgba($stakes-banned-color, .15);
+      }
+      .check-tooltip-check {
+        fill: $stakes-banned-color;
+      }
+      &:hover {
+        .check-tooltip-circle {
+          fill: $stakes-banned-color;
+        }
+        .check-tooltip-check {
+          fill: #fff;
+        }
+      }
+    }
   }
 }
