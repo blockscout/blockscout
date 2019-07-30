@@ -162,7 +162,10 @@ defmodule Explorer.Staking.ContractState do
         %{
           staking_address_hash: staking_address,
           delegators_count: length(staking_response.active_delegators),
-          staked_ratio: ratio(staking_response.staked_amount, staked_total),
+          staked_ratio:
+            if staking_response.is_active do
+              ratio(staking_response.staked_amount, staked_total)
+            end,
           likelihood: ratio(likelihood[staking_address] || 0, total_likelihood),
           block_reward_ratio: staking_response.block_reward / 10_000,
           is_deleted: false
