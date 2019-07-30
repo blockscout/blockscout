@@ -63,9 +63,9 @@ defmodule EthereumJSONRPC.Geth do
         |> Transactions.to_elixir()
         |> Transactions.elixir_to_params()
         |> Enum.map(fn params ->
-          # txpool_content always returns transaction with 0x0000000000000000000000000000000000000000000000000000000000000000 value in block hash.
+          # txpool_content always returns transaction with 0x0000000000000000000000000000000000000000000000000000000000000000 value in block hash and index is not null.
           # https://github.com/ethereum/go-ethereum/issues/19897
-          %{params | block_hash: nil}
+          %{params | block_hash: nil, index: nil}
         end)
 
       {:ok, transactions_params}
