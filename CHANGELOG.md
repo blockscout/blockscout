@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2468](https://github.com/poanetwork/blockscout/pull/2468) - fix confirmations for non consensus blocks
 
 ### Chore
 - [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
