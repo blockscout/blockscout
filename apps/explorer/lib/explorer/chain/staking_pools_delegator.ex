@@ -9,17 +9,16 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
   alias Explorer.Chain.{
     Address,
     Hash,
-    StakingPool,
-    Wei
+    StakingPool
   }
 
   @type t :: %__MODULE__{
           pool_address_hash: Hash.Address.t(),
           delegator_address_hash: Hash.Address.t(),
-          max_ordered_withdraw_allowed: Wei.t(),
-          max_withdraw_allowed: Wei.t(),
-          ordered_withdraw: Wei.t(),
-          stake_amount: Wei.t(),
+          max_ordered_withdraw_allowed: Decimal.t(),
+          max_withdraw_allowed: Decimal.t(),
+          ordered_withdraw: Decimal.t(),
+          stake_amount: Decimal.t(),
           ordered_withdraw_epoch: integer(),
           is_active: boolean(),
           is_deleted: boolean()
@@ -38,11 +37,11 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
   )a
 
   schema "staking_pools_delegators" do
-    field(:max_ordered_withdraw_allowed, Wei)
-    field(:max_withdraw_allowed, Wei)
-    field(:ordered_withdraw, Wei)
+    field(:max_ordered_withdraw_allowed, :decimal)
+    field(:max_withdraw_allowed, :decimal)
+    field(:ordered_withdraw, :decimal)
     field(:ordered_withdraw_epoch, :integer)
-    field(:stake_amount, Wei)
+    field(:stake_amount, :decimal)
     field(:is_active, :boolean, default: true)
     field(:is_deleted, :boolean, default: false)
 
