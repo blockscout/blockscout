@@ -115,4 +115,6 @@ defmodule BlockScoutWeb.AddressLogsController do
         not_found(conn)
     end
   end
+
+  def search_logs(conn, _), do: not_found(conn)
 end

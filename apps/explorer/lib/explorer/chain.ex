@@ -273,7 +273,7 @@ defmodule Explorer.Chain do
       from(log in Log,
         inner_join: transaction in assoc(log, :transaction),
         order_by: [desc: transaction.block_number, desc: transaction.index],
-        preload: [:transaction],
+        preload: [:transaction, transaction: [to_address: :smart_contract]],
         where: transaction.block_number < ^block_number,
         or_where: transaction.block_number == ^block_number and transaction.index > ^transaction_index,
         or_where:
@@ -1818,7 +1818,7 @@ defmodule Explorer.Chain do
     Repo.one!(query)
   end
 
-  def last_block_status do
+  def last_db_block_status do
     query =
       from(block in Block,
         select: {block.number, block.timestamp},
@@ -1827,21 +1827,38 @@ defmodule Explorer.Chain do
         limit: 1
       )
 
-    case Repo.one(query) do
-      nil ->
-        {:error, :no_blocks}
+    query
+    |> Repo.one()
+    |> block_status()
+  end
 
-      {number, timestamp} ->
-        now = DateTime.utc_now()
-        last_block_period = DateTime.diff(now, timestamp, :millisecond)
+  def last_cache_block_status do
+    [
+      paging_options: %PagingOptions{page_size: 1}
+    ]
+    |> list_blocks()
+    |> List.last()
+    |> case do
+      %{timestamp: timestamp, number: number} ->
+        block_status({number, timestamp})
 
-        if last_block_period > Application.get_env(:explorer, :healthy_blocks_period) do
-          {:error, number, timestamp}
-        else
-          {:ok, number, timestamp}
-        end
+      _ ->
+        block_status(nil)
     end
   end
+
+  defp block_status({number, timestamp}) do
+    now = DateTime.utc_now()
+    last_block_period = DateTime.diff(now, timestamp, :millisecond)
+
+    if last_block_period > Application.get_env(:explorer, :healthy_blocks_period) do
+      {:error, number, timestamp}
+    else
+      {:ok, number, timestamp}
+    end
+  end
+
+  defp block_status(nil), do: {:error, :no_blocks}
 
   @doc """
   Calculates the ranges of missing consensus blocks in `range`.
