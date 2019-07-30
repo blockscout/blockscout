@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.StakesController do
 
   alias BlockScoutWeb.StakesView
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Token
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Staking.ContractState
@@ -12,6 +13,19 @@ defmodule BlockScoutWeb.StakesController do
 
   def index(%{assigns: assigns} = conn, params) do
     render_template(assigns.filter, conn, params)
+  end
+
+  def render_top do
+    epoch_number = ContractState.get(:epoch_number, 0)
+    epoch_end_block = ContractState.get(:epoch_end_block, 0)
+    block_number = BlockNumber.get_max()
+
+    View.render_to_string(StakesView, "_stakes_top.html",
+      epoch_number: epoch_number,
+      epoch_end_in: epoch_end_block - block_number,
+      block_number: block_number,
+      logged_in: false
+    )
   end
 
   defp render_template(filter, conn, %{"type" => "JSON"} = params) do
@@ -69,8 +83,10 @@ defmodule BlockScoutWeb.StakesController do
 
   defp render_template(filter, conn, _) do
     render(conn, "index.html",
+      top: render_top(),
       pools_type: filter,
-      current_path: current_path(conn)
+      current_path: current_path(conn),
+      average_block_time: AverageBlockTime.average_block_time()
     )
   end
 
