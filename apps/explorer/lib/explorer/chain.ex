@@ -4531,7 +4531,7 @@ defmodule Explorer.Chain do
   @doc "Get staking pools from the DB"
   @spec staking_pools(
           filter :: :validator | :active | :inactive,
-          options :: PagingOptions.t(),
+          paging_options :: PagingOptions.t() | :all,
           delegator_address_hash :: Hash.t() | nil
         ) :: [map()]
   def staking_pools(filter, paging_options \\ @default_paging_options, delegator_address_hash \\ nil) do
@@ -4555,6 +4555,8 @@ defmodule Explorer.Chain do
 
     Repo.all(query)
   end
+
+  defp staking_pools_paging_query(base_query, :all), do: base_query
 
   defp staking_pools_paging_query(base_query, paging_options) do
     paging_query =
@@ -4599,6 +4601,13 @@ defmodule Explorer.Chain do
 
   def staking_pool(staking_address_hash) do
     Repo.get_by(StakingPool, staking_address_hash: staking_address_hash)
+  end
+
+  def staking_pool_delegator(pool_address_hash, delegator_address_hash) do
+    Repo.get_by(StakingPoolsDelegator,
+      pool_address_hash: pool_address_hash,
+      delegator_address_hash: delegator_address_hash
+    )
   end
 
   def get_total_staked(address_hash) do
