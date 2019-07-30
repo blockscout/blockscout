@@ -101,6 +101,9 @@ defmodule BlockScoutWeb.TransactionView do
       %Block{consensus: true} ->
         {:ok, confirmations} = Chain.confirmations(block, named_arguments)
         Cldr.Number.to_string!(confirmations, format: "#,###")
+
+      %Block{consensus: false} ->
+        0
     end
   end
 
