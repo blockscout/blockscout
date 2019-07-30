@@ -1,0 +1,4 @@
+<div class="stakes-top-stats-item">
+  <span class="stakes-top-stats-label"><%= @title %></span>
+  <span class="stakes-top-stats-value"><%= @value %></span>
+</div>
