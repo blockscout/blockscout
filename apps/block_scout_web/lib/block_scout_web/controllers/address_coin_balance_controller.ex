@@ -68,6 +68,12 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
         validation_count: validation_count(address_hash),
         current_path: current_path(conn)
       )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
     end
   end
 end
