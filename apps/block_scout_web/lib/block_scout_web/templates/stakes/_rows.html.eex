@@ -34,6 +34,9 @@
       </span>
     <% else %>
       <div class="stakes-controls">
+        <%= if @buttons.move do %>
+          <%= render BlockScoutWeb.StakesView, "_stakes_control_move.html", address: @pool.staking_address_hash %>
+        <% end %>
         <%= if @buttons.stake do %>
           <%= render BlockScoutWeb.StakesView, "_stakes_control_stake.html", address: @pool.staking_address_hash %>
         <% end %>
