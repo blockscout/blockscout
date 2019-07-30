@@ -51,6 +51,11 @@
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
+    <%=
+      for status <- ["error", "warning", "success", "question"] do
+        render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status
+      end
+    %>
     <script>
       window.localized = {
         'Blocks Indexed': '<%= gettext("Blocks Indexed") %>',
