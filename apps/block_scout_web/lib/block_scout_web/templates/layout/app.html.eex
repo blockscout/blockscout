@@ -65,6 +65,7 @@
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
+<<<<<<< HEAD
     <%= if (
       @view_module != Elixir.BlockScoutWeb.ChainView &&
       @view_module != Elixir.BlockScoutWeb.BlockView &&
@@ -104,6 +105,11 @@
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>
+    <%=
+      for status <- ["error", "warning", "success", "question"] do
+        render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status
+      end
+    %>
     <%= render_existing(@view_module, "scripts.html", assigns) %>
   </body>
 </html>
