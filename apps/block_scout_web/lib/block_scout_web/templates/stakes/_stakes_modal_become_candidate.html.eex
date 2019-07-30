@@ -1,0 +1,35 @@
+<div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-become-candidate" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><%= gettext("Become a Candidate") %></h5>
+      </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
+      <div class="modal-body">
+        <form>
+          <div class="input-group form-group">
+            <input candidate-stake type="text" class="form-control n-b-r" placeholder="<%= gettext("Amount") %>">
+            <div class="input-group-prepend last">
+              <div class="input-group-text"><%= @token.symbol %></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <input mining-address type="text" class="form-control" placeholder="<%= gettext("Your Mining Address") %>">
+          </div>
+          <p class="form-p m-b-0">Minimum Stake:
+            <span class="text-dark">
+              <%= format_according_to_decimals(@min_candidate_stake, @token.decimals) %> <%= @token.symbol %>
+            </span>
+          </p>
+          <p class="form-p">Your Balance:
+            <span class="text-dark">
+              <%= format_according_to_decimals(@balance, @token.decimals) %> <%= @token.symbol %>
+            </span>
+          </p>
+          <div class="form-buttons"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become a Candidate"), extra_class: "full-width" %></div>
+        </form>
+      </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: "Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod temp incididunt ut labore et dolore magna. Sed do eiusmod temp incididunt ut." %>
+    </div>
+  </div>
+</div>
