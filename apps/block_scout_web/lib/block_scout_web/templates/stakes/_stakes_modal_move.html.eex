@@ -1,0 +1,65 @@
+<div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered <%= if @pool_to do "modal-stake-move" end %>" role="document">
+    <div class="modal-content">
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
+      <div class="modal-stake-two-cols">
+        <div class="modal-stake-left">
+          <%= render BlockScoutWeb.StakesView, "_stakes_progress.html", pool: @pool_from, token: @token, extra_class: "js-pool-from-progress" %>
+        </div>
+        <div class="modal-stake-middle">
+          <div class="modal-header">
+            <h5 class="modal-title"><%= gettext("Move Stake") %></h5>
+          </div>
+          <div class="modal-body">
+            <form>
+              <div class="input-group form-group">
+                <input move-amount type="text" class="form-control n-b-r" placeholder="<%= gettext("Amount") %>" value="<%= @amount %>">
+                <div class="input-group-prepend last">
+                  <div class="input-group-text"><%= @token.symbol %></div>
+                </div>
+              </div>
+              <p class="form-p">You Staked:
+                <span class="text-dark">
+                  <%= format_according_to_decimals(@delegator.stake_amount, @token.decimals) %> <%= @token.symbol %>
+                </span>
+              </p>
+              <div class="input-group form-group">
+                <select pool-select class="form-control">
+                  <option disabled <%= unless @pool_to do "selected" end %>><%= gettext("Choose Pool") %></option>
+                  <%= for %{pool: pool} <- @pools, pool.staking_address_hash != @pool_from.staking_address_hash do %>
+                    <option
+                      value="<%= pool.staking_address_hash %>"
+                      <%= if @pool_to && pool.staking_address_hash == @pool_to.staking_address_hash do "selected" end %>
+                    >
+                      <%= BlockScoutWeb.AddressView.trimmed_hash(pool.staking_address_hash) %>
+                    </option>
+                  <% end %>
+                </select>
+              </div>
+              <p class="form-p">Max Amount to Move:
+                <span class="text-dark">
+                  <%= format_according_to_decimals(@delegator.max_withdraw_allowed, @token.decimals) %> <%= @token.symbol %>
+                </span>
+              </p>
+              <div class="form-buttons">
+                <%=
+                  render BlockScoutWeb.StakesView,
+                  "_stakes_btn_stake.html",
+                  text: gettext("Move Stake"),
+                  extra_class: "full-width btn-add-full",
+                  disabled: is_nil(@pool_to)
+                %>
+              </div>
+            </form>
+          </div>
+          <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: "Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod temp incididunt ut labore et dolore magna. Sed do eiusmod temp incididunt ut.", extra_class: "b-b-l-0 #{if @pool_to do "b-b-r-0" end}" %>
+        </div>
+        <%= if @pool_to do %>
+          <div class="modal-stake-right">
+            <%= render BlockScoutWeb.StakesView, "_stakes_progress.html", pool: @pool_to, token: @token, extra_class: "js-pool-to-progress" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
