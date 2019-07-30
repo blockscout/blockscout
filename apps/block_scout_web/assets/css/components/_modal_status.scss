@@ -15,8 +15,8 @@ $modal-status-graph-question: #329ae9 !default;
 
 .modal-status-graph {
   align-items: center;
-  border-top-left-radius: $modal-border-radius;
-  border-top-right-radius: $modal-border-radius;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
   display: flex;
   height: 135px;
   justify-content: center;
