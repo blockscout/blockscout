@@ -6,9 +6,10 @@
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
 ### Chore
+- [#2457](https://github.com/poanetwork/blockscout/pull/2457) - update mix.lock
+- [#2435](https://github.com/poanetwork/blockscout/pull/2435) - Replace deprecated extract-text-webpack-plugin with mini-css-extract-plugin
 - [#2450](https://github.com/poanetwork/blockscout/pull/2450) - Fix clearance of logs and node_modules folders in clearing script
 - [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
-
 
 ## 2.0.2-beta
 
