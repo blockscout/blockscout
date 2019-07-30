@@ -14,6 +14,7 @@ $stakes-stats-item-border-color: #fff !default;
 .stakes-top-stats {
   display: flex;
   justify-content: space-between;
+  align-items: center;
 
   @include stats-item($stakes-stats-item-border-color, $stakes-stats-item-color);
 
@@ -66,7 +67,7 @@ $stakes-stats-item-border-color: #fff !default;
 }
 
 .stakes-top-stats-login {
-  color: $primary;
+  color: $secondary;
   cursor: pointer;
   margin-right: 8px;
 }
