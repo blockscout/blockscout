@@ -49,6 +49,7 @@ $ export NETWORK=POA
 | `GRAPHIQL_TRANSACTION` | | Default transaction in query to GraphiQL. | (empty) |  v1.2.0+ | :white_check_mark: |
 | `FIRST_BLOCK` | | The block number, where indexing begins from. | 0 |  v1.3.8+ | |
 | `LAST_BLOCK` | | The block number, where indexing stops. | (empty) | v2.0.3+ | |
+| `MAX_SKIPPING_DISTANCE` | | The maximum distance the indexer is allowed to wait for when notified of a number not following the lask known one. | 4 | master |
 | `TXS_COUNT_CACHE_PERIOD` | | Interval in seconds to restart the task, which calculates the total txs count. | 60 * 60 * 2 |  v1.3.9+ | |
 | `ADDRESS_WITH_BALANCES` <br /> `_UPDATE_INTERVAL`|  | Interval in seconds to restart the task, which calculates addresses with balances. | 30 * 60 |  v1.3.9+ | |
 | `LINK_TO_OTHER_EXPLORERS` | | true/false. If true, links to other explorers are added in the footer  | (empty)  |  v1.3.0+ | |
