@@ -9,6 +9,7 @@ import Web3 from 'web3'
 import { openValidatorInfoModal } from './stakes/validator_info'
 import { openBecomeCandidateModal } from './stakes/become_candidate'
 import { openRemovePoolModal } from './stakes/remove_pool'
+import { openMakeStakeModal } from './stakes/make_stake'
 
 export const initialState = {
   channel: null,
@@ -84,6 +85,7 @@ if ($stakesPage.length) {
     .on('click', '.js-validator-info', event => openValidatorInfoModal(event, store))
     .on('click', '.js-become-candidate', () => openBecomeCandidateModal(store))
     .on('click', '.js-remove-pool', () => openRemovePoolModal(store))
+    .on('click', '.js-make-stake', event => openMakeStakeModal(event, store))
 
   initializeWeb3(store)
 }
