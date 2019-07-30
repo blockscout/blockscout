@@ -84,6 +84,37 @@ defmodule BlockScoutWeb.StakesChannel do
     {:reply, {:ok, result}, socket}
   end
 
+  def handle_in("render_move_stake", %{"from" => from_address, "to" => to_address, "amount" => amount}, socket) do
+    pool_from = Chain.staking_pool(from_address)
+    pool_to = to_address && Chain.staking_pool(to_address)
+    pools = Chain.staking_pools(:active, :all)
+    delegator = Chain.staking_pool_delegator(from_address, socket.assigns.account)
+    min_delegator_stake = ContractState.get(:min_delegator_stake)
+    token = ContractState.get(:token)
+
+    html =
+      View.render_to_string(StakesView, "_stakes_modal_move.html",
+        token: token,
+        pools: pools,
+        pool_from: pool_from,
+        pool_to: pool_to,
+        delegator: delegator,
+        amount: amount
+      )
+
+    result = %{
+      html: html,
+      min_delegator_stake: min_delegator_stake,
+      max_withdraw_allowed: delegator.max_withdraw_allowed,
+      from_self_staked_amount: pool_from.self_staked_amount,
+      from_staked_amount: pool_from.staked_amount,
+      to_self_staked_amount: pool_to && pool_to.self_staked_amount,
+      to_staked_amount: pool_to && pool_to.staked_amount
+    }
+
+    {:reply, {:ok, result}, socket}
+  end
+
   def handle_out("staking_update", _data, socket) do
     push(socket, "staking_update", %{
       top_html: StakesController.render_top(socket)
