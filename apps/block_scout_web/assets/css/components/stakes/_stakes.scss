@@ -138,3 +138,10 @@ $stakes-stats-item-border-color: #fff !default;
     justify-self: center;
   }
 }
+
+.staking-pg-container {
+  padding: 0 30px 30px;
+  &.at-bottom {
+    padding-top: 30px;
+  }
+}
