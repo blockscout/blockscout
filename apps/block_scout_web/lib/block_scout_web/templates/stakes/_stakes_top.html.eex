@@ -7,6 +7,9 @@
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item_account.html", account: @account, token: @token %>
       <!-- Buttons -->
       <div class="stakes-top-buttons">
+        <%= unless @account[:pool] && @account.pool.is_active do %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become a Candidate"), extra_class: "js-become-candidate" %>
+        <% end %>
       </div>
     </div>
   </div>
