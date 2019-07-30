@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Mixfile do
         plt_add_deps: :transitive,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.8",
+      elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -125,7 +125,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:spandex_datadog, "~> 0.4.0"},
       # `:spandex` tracing of `:phoenix`
       {:spandex_phoenix, "~> 0.3.1"},
-      {:timex, "~> 3.4"},
+      {:timex, "~> 3.6"},
       {:wallaby, "~> 0.22", only: [:test], runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},

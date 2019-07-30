@@ -38,7 +38,7 @@
 					</tr>
 				</thead>
 				<tbody data-items data-selector="top-addresses-list">
-					
+					<%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html" %>
 				</tbody>
 			</table>
 		</div>

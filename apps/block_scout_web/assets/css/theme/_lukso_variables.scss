@@ -151,3 +151,20 @@ $dashboard-banner-network-plain-container-height: 150px;
 $badge-neutral-color: $tertiary;
 $badge-neutral-background-color: rgba($tertiary, .1);
 $api-text-monospace-color: $tertiary;
+
+// Dark theme
+$dark-primary: #fdcec4;
+$dark-secondary: #a96c55;
+$dark-primary-alternate: #a96c55;
+
+.dark-theme-applied {
+  .dashboard-banner-network-stats-value {
+    color: $dark-primary !important;
+  }
+  .layout-container .dashboard-banner-container {
+    background-color: #282945 !important;
+  }
+  .dashboard-banner-network-plain-container::after {
+    box-shadow: none !important;
+  }
+}
