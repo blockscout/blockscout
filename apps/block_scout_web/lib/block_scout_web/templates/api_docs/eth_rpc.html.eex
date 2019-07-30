@@ -17,10 +17,8 @@
     </div>
   </div>
   <div class="card">
-    <div class="card-body">
-      <%= for {method, info} <- Map.to_list(@documentation) do %>
-        <%= render "_eth_rpc_item.html", action: method, info: info %>
-      <% end %>
-    </div>
+    <%= for {method, info} <- Map.to_list(@documentation) do %>
+      <%= render "_eth_rpc_item.html", action: method, info: info %>
+    <% end %>
   </div>
 </section>

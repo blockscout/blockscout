@@ -8,7 +8,7 @@
   >
     <div data-selector="stop-propagation" class="api-doc-list-item-description">
       <h3 class="api-doc-list-item-title"><%= @action %></h3>
-      <p class="api-doc-list-item-title"><%= raw @info.notes %></p>
+      <p class="api-doc-list-item-contents"><%= raw @info.notes %></p>
       <p class="api-doc-list-item-query api-text-monospace api-text-monospace-background">curl -X POST --data '{"id":0,"jsonrpc":"2.0","method": "<%= @action %>", params: []}'</p>
       <p class="api-doc-list-item-text"><%= raw @info.example %></p>
     </div>
@@ -51,18 +51,27 @@
         <h3 class="col-10 api-doc-parameters-list-title"><%= gettext "Description" %></h3>
       </div>
       <!-- Params -->
-      <%= for {name, description, type} <- @info.params do %>
+      <%= for param <- @info.params do %>
         <div class="row api-doc-parameters-list-item">
           <div class="col-sm-4 col-md-2">
-            <h5 class="api-doc-parameters-list-item-title"><%= name %> <span class="align-text-bottom text-danger"></span></h5>
+            <h5 class="api-doc-parameters-list-item-title">
+              <%= param.name %>
+              <%= if param.required do %>
+                <span class="align-text-bottom text-danger">
+                  *<small><%= gettext "required" %></small>
+                </span>
+              <% end %>
+            </h5>
           </div>
           <div class="col-sm-8 col-md-10">
-            <p  class="api-doc-parameters-list-item-description"><%= description %></p>
+            <p  class="api-doc-parameters-list-item-description"><%= param.description %></p>
             <input
-              class="collapse form-control"
-              data-parameter-type='<%= type %>'
+              class="collapse form-control <%= if param.required, do: "form-control-danger is-invalid" %>"
+              data-parameter-type='<%= param.type %>'
+              data-required='<%= if param.required, do: "true", else: "false" %>'
               data-selector='<%= "eth-#{@action}-try-api-ui" %>'
-              type="text"
+              type="text",
+              value='<%= param.default %>'
             />
           </div>
         </div>
@@ -90,38 +99,38 @@
           ><%= gettext "Clear" %></button>
         </div>
       </div>
-    </div>
 
-    <!-- CURL / Request URL / Server Response -->
-    <div
-      class="tile text-dark mt-5 collapse"
-      data-selector='<%= "eth-#{@action}-try-api-ui-result" %>'
-    >
-      <div class="mb-3">
-        <h5 class="api-doc-parameters-list-item-title"><%= gettext "Curl" %></h5>
-        <div class="tile tile-muted p-1">
-          <pre
-            class="m-2"
-            data-selector='<%= "eth-#{@action}-curl" %>'
-          ></pre>
+      <!-- CURL / Request URL / Server Response -->
+      <div
+        class="tile text-dark mt-5 collapse"
+        data-selector='<%= "eth-#{@action}-try-api-ui-result" %>'
+      >
+        <div class="mb-3">
+          <h5 class="api-doc-parameters-list-item-title"><%= gettext "Curl" %></h5>
+          <div class="tile tile-muted p-1">
+            <pre
+              class="m-2"
+              data-selector='<%= "eth-#{@action}-curl" %>'
+            ></pre>
+          </div>
         </div>
-      </div>
-      <h5 class="api-doc-parameters-list-item-title"><%= gettext "Server Response" %></h5>
-      <div class="row">
-        <h4 class="col-2 api-doc-parameters-list-title"><%= gettext "Code" %></h4>
-        <h4 class="col-10 api-doc-parameters-list-title"><%= gettext "Details" %></h4>
-      </div>
-      <div class="row">
-        <div
-          class="col-2 pr-0 pr-md-2 col-md-2"
-        ><strong data-selector='<%= "eth-#{@action}-server-response-code" %>'></strong></div>
-        <div class="col-10 col-md-10">
-          <p class="api-doc-parameters-list-item-description"><%= gettext "Response Body" %></p>
-            <div class="tile tile-muted p-1 card-server-response-body">
-              <pre
-                class="m-2"
-                data-selector='<%= "eth-#{@action}-server-response-body" %>'
-              ></pre>
+        <h5 class="api-doc-parameters-list-item-title"><%= gettext "Server Response" %></h5>
+        <div class="row">
+          <h4 class="col-2 api-doc-parameters-list-title"><%= gettext "Code" %></h4>
+          <h4 class="col-10 api-doc-parameters-list-title"><%= gettext "Details" %></h4>
+        </div>
+        <div class="row">
+          <div
+            class="col-2 pr-0 pr-md-2 col-md-2"
+          ><strong data-selector='<%= "eth-#{@action}-server-response-code" %>'></strong></div>
+          <div class="col-10 col-md-10">
+            <p class="api-doc-parameters-list-item-description"><%= gettext "Response Body" %></p>
+              <div class="tile tile-muted p-1 card-server-response-body">
+                <pre
+                  class="m-2"
+                  data-selector='<%= "eth-#{@action}-server-response-body" %>'
+                ></pre>
+            </div>
           </div>
         </div>
       </div>

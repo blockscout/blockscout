@@ -12,15 +12,27 @@ defmodule Explorer.EthRPC do
     "eth_getBalance" => %{
       action: :eth_get_balance,
       notes: """
-      the `earliest` parameter will not work as expected currently, because genesis block balances
+      The `earliest` parameter will not work as expected currently, because genesis block balances
       are not currently imported
       """,
       example: """
       {"id": 0, "jsonrpc": "2.0", "method": "eth_getBalance", "params": ["0x0000000000000000000000000000000000000007", "latest"]}
       """,
       params: [
-        {"DATA", "20 Bytes - address to check for balance", "string"},
-        {"QUANTITY|TAG", "integer block number, or the string \"latest\", \"earliest\" or \"pending\"", "string"}
+        %{
+          name: "Data",
+          description: "20 Bytes - address to check for balance",
+          type: "string",
+          default: nil,
+          required: true
+        },
+        %{
+          name: "Quantity|Tag",
+          description: "Integer block number, or the string \"latest\", \"earliest\" or \"pending\"",
+          type: "string",
+          default: "latest",
+          required: true
+        }
       ],
       result: """
       {"id": 0, "jsonrpc": "2.0", "result": "0x0234c8a3397aab58"}
@@ -42,7 +54,7 @@ defmodule Explorer.EthRPC do
          "topics": ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]}]}
       """,
       params: [
-        {"Object", "The filter options", "json"}
+        %{name: "Object", description: "The filter options", type: "json", default: nil, required: true}
       ],
       result: """
       {
