@@ -6,6 +6,7 @@ import { subscribeChannel } from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
 import { createAsyncLoadStore, refreshPage } from '../lib/async_listing_load'
 import Web3 from 'web3'
+import { openValidatorInfoModal } from './stakes/validator_info'
 
 export const initialState = {
   channel: null,
@@ -76,6 +77,9 @@ if ($stakesPage.length) {
       tokenSymbol: msg.token_symbol
     })
   })
+
+  $(document.body)
+    .on('click', '.js-validator-info', event => openValidatorInfoModal(event, store))
 
   initializeWeb3(store)
 }
