@@ -1,8 +1,8 @@
-<div class="stakes-address-container">
-    <span class="stakes-address js-validator-info-modal">
-        <%= binary_part(to_string(@address), 0, 13) %>
-    </span>
-    <%= if @tooltip do %>
-        <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: @tooltip %>
-    <% end %>
+<div class="stakes-address-container js-validator-info" data-address="<%= to_string(@address) %>">
+  <span class="stakes-address">
+    <%= BlockScoutWeb.AddressView.trimmed_hash(@address) %>
+  </span>
+  <%= if @tooltip do %>
+    <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: @tooltip %>
+  <% end %>
 </div>
