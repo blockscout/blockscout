@@ -44,7 +44,6 @@ const config = {
         }
       }, {
         id: 'marketCap',
-        display: false,
         gridLines: {
           display: false,
           drawBorder: false
@@ -56,8 +55,7 @@ const config = {
         }
       }, {
         id: 'numTransactions',
-        display: false,
-        position: 'right',
+        position: "right",
         gridLines: {
           display: false,
           drawBorder: false
@@ -111,6 +109,9 @@ class MarketHistoryChart {
     },
     {})
 
+    var priceActivated = true
+    var marketCapActivated = true
+
     this.price = {
       label: window.localized['Price'],
       yAxisID: 'price',
@@ -124,6 +125,7 @@ class MarketHistoryChart {
     if (dataConfig.market === undefined || dataConfig.market.indexOf('price') === -1) {
       this.price.hidden = true
       axes['price'].display = false
+      priceActivated = false
     }
 
     this.marketCap = {
@@ -139,6 +141,7 @@ class MarketHistoryChart {
     if (dataConfig.market === undefined || dataConfig.market.indexOf('market_cap') === -1) {
       this.marketCap.hidden = true
       axes['marketCap'].display = false
+      marketCapActivated = false
     }
 
     this.numTransactions = {
@@ -151,9 +154,14 @@ class MarketHistoryChart {
       borderColor: sassVariables.dashboardLineColorTransactions,
       lineTension: 0
     }
+
     if (dataConfig.transactions === undefined || dataConfig.transactions.indexOf('transactions_per_day') === -1) {
       this.numTransactions.hidden = true
       axes['numTransactions'].display = false
+    } else if (!priceActivated && !marketCapActivated) {
+      axes['numTransactions'].position = 'left'
+      this.numTransactions.backgroundColor = sassVariables.dashboardLineColorPrice
+      this.numTransactions.borderColor = sassVariables.dashboardLineColorPrice
     }
 
     this.availableSupply = availableSupply
