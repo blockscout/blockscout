@@ -15,6 +15,7 @@ defmodule Explorer.Staking.ContractState do
   @table_name __MODULE__
   @table_keys [
     :token_contract_address,
+    :token,
     :min_candidate_stake,
     :min_delegator_stake,
     :epoch_number,
@@ -107,6 +108,7 @@ defmodule Explorer.Staking.ContractState do
         :epoch_end_block
       ])
       |> Map.to_list()
+      |> Enum.concat(token: get_token(global_responses.token_contract_address))
 
     :ets.insert(@table_name, settings)
 
@@ -190,6 +192,15 @@ defmodule Explorer.Staking.ContractState do
         staking_pools_delegators: %{params: delegator_entries},
         timeout: :infinity
       })
+  end
+
+  defp get_token(address) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address),
+         {:ok, token} <- Chain.token_from_address_hash(address_hash) do
+      token
+    else
+      _ -> nil
+    end
   end
 
   defp ratio(_numerator, 0), do: 0
