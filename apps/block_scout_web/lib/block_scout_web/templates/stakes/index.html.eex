@@ -1,3 +1,6 @@
+<div data-selector="stakes-top">
+  <%= raw(@top) %>
+</div>
 <section data-page="stakes" class="container">
   <div class="card" data-async-load data-async-listing="<%= @current_path %>">
     <%= render BlockScoutWeb.StakesView, "_stakes_tabs.html", conn: @conn %>
