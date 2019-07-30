@@ -1,3 +1,5 @@
+import $ from 'jquery'
+import Chart from 'chart.js'
 import { refreshPage } from '../../lib/async_listing_load'
 import { openErrorModal, openSuccessModal } from '../../lib/modals'
 
@@ -44,3 +46,33 @@ export async function makeContractCall (call, store) {
   }
 }
 
+export function setupChart ($canvas, self, total) {
+  const primaryColor = $('.btn-full-primary').css('background-color')
+  const backgroundColors = [
+    primaryColor,
+    'rgba(202, 199, 226, 0.5)'
+  ]
+  const data = total > 0 ? [self, total - self] : [0, 1]
+
+  // eslint-disable-next-line no-new
+  new Chart($canvas, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: data,
+        backgroundColor: backgroundColors,
+        hoverBackgroundColor: backgroundColors,
+        borderWidth: 0
+      }]
+    },
+    options: {
+      cutoutPercentage: 80,
+      legend: {
+        display: false
+      },
+      tooltips: {
+        enabled: false
+      }
+    }
+  })
+}
