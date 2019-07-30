@@ -55,7 +55,7 @@ const config = {
         }
       }, {
         id: 'numTransactions',
-        position: "right",
+        position: 'right',
         gridLines: {
           display: false,
           drawBorder: false
