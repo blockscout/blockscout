@@ -40,6 +40,26 @@ defmodule BlockScoutWeb.StakesChannel do
     {:reply, {:ok, %{html: html}}, socket}
   end
 
+  def handle_in("render_become_candidate", _, socket) do
+    min_candidate_stake = ContractState.get(:min_candidate_stake)
+    token = ContractState.get(:token)
+    balance = Chain.fetch_last_token_balance(socket.assigns.account, token.contract_address_hash)
+
+    html =
+      View.render_to_string(StakesView, "_stakes_modal_become_candidate.html",
+        min_candidate_stake: min_candidate_stake,
+        balance: balance,
+        token: token
+      )
+
+    result = %{
+      html: html,
+      min_candidate_stake: min_candidate_stake
+    }
+
+    {:reply, {:ok, result}, socket}
+  end
+
   def handle_out("staking_update", _data, socket) do
     push(socket, "staking_update", %{
       top_html: StakesController.render_top(socket)
