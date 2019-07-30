@@ -11,6 +11,7 @@ import { openBecomeCandidateModal } from './stakes/become_candidate'
 import { openRemovePoolModal } from './stakes/remove_pool'
 import { openMakeStakeModal } from './stakes/make_stake'
 import { openMoveStakeModal } from './stakes/move_stake'
+import { openWithdrawStakeModal } from './stakes/withdraw_stake'
 
 export const initialState = {
   channel: null,
@@ -88,6 +89,7 @@ if ($stakesPage.length) {
     .on('click', '.js-remove-pool', () => openRemovePoolModal(store))
     .on('click', '.js-make-stake', event => openMakeStakeModal(event, store))
     .on('click', '.js-move-stake', event => openMoveStakeModal(event, store))
+    .on('click', '.js-withdraw-stake', event => openWithdrawStakeModal(event, store))
 
   initializeWeb3(store)
 }
