@@ -1,0 +1,17 @@
+<div class="card-title-container">
+  <div class="card-title"><%= @title %></div>
+  <div class="card-title-controls">
+    <%= if @show_banned_checkbox do %>
+      <div class="check card-title-control">
+        <input type="checkbox" />
+        <div class="check-icon"></div>
+        <div class="check-text">Show banned only</div>
+      </div>
+    <% end %>
+    <div class="check card-title-control">
+      <input type="checkbox" />
+      <div class="check-icon"></div>
+      <div class="check-text">Show only those I staked into</div>
+    </div>
+  </div>
+</div>

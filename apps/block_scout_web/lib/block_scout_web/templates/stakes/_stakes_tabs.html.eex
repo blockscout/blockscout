@@ -1,0 +1,23 @@
+<div class="card-tabs">
+    <%=
+    link(
+        gettext("Validators"),
+        class: "card-tab #{tab_status("validators", @conn.request_path)}",
+        to: validators_path(@conn, :index)
+        )
+    %>
+    <%=
+    link(
+        gettext("Active Pools"),
+        class: "card-tab #{tab_status("active_pools", @conn.request_path)}",
+        to: active_pools_path(@conn, :index)
+        )
+    %>
+    <%=
+    link(
+        gettext("Inactive Pools"),
+        class: "card-tab #{tab_status("inactive_pools", @conn.request_path)}",
+        to: inactive_pools_path(@conn, :index)
+        )
+    %>
+</div>

@@ -42,6 +42,10 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/uncles", BlockController, :uncle, as: :uncle)
 
+    get("/validators", StakesController, :index, as: :validators, assigns: %{filter: :validator})
+    get("/active_pools", StakesController, :index, as: :active_pools, assigns: %{filter: :active})
+    get("/inactive_pools", StakesController, :index, as: :inactive_pools, assigns: %{filter: :inactive})
+
     resources("/pending-transactions", PendingTransactionController, only: [:index])
 
     resources("/recent-transactions", RecentTransactionsController, only: [:index])

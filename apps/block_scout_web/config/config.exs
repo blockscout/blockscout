@@ -21,7 +21,8 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network_icon: System.get_env("NETWORK_ICON"),
   logo: System.get_env("LOGO"),
   logo_footer: System.get_env("LOGO_FOOTER"),
-  has_emission_funds: false
+  has_emission_funds: false,
+  staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT"))
 
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
