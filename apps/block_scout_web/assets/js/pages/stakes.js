@@ -8,6 +8,7 @@ import { createAsyncLoadStore, refreshPage } from '../lib/async_listing_load'
 import Web3 from 'web3'
 import { openValidatorInfoModal } from './stakes/validator_info'
 import { openBecomeCandidateModal } from './stakes/become_candidate'
+import { openRemovePoolModal } from './stakes/remove_pool'
 
 export const initialState = {
   channel: null,
@@ -82,6 +83,7 @@ if ($stakesPage.length) {
   $(document.body)
     .on('click', '.js-validator-info', event => openValidatorInfoModal(event, store))
     .on('click', '.js-become-candidate', () => openBecomeCandidateModal(store))
+    .on('click', '.js-remove-pool', () => openRemovePoolModal(store))
 
   initializeWeb3(store)
 }
