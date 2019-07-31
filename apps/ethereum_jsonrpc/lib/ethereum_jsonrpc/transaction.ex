@@ -353,4 +353,8 @@ defmodule EthereumJSONRPC.Transaction do
       _ -> {key, quantity_to_integer(chain_id)}
     end
   end
+
+  defp entry_to_elixir(_) do
+    {nil, nil}
+  end
 end
