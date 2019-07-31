@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import omit from 'lodash/omit'
 import humps from 'humps'
 import { connectElements } from './redux_helpers.js'
 
@@ -12,7 +12,7 @@ const initialState = {
 function infiniteScrollReducer (state = initialState, action) {
   switch (action.type) {
     case 'INFINITE_SCROLL_ELEMENTS_LOAD': {
-      return Object.assign({}, state, _.omit(action, 'type'))
+      return Object.assign({}, state, omit(action, 'type'))
     }
     case 'LOADING_NEXT_PAGE': {
       return Object.assign({}, state, {
