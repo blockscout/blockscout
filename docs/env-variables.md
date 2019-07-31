@@ -55,3 +55,9 @@ $ export NETWORK=POA
 | `SUPPORTED_CHAINS` | | Array of supported chains that displays in the footer and in the chains dropdown. This var was introduced in this PR [#1900](https://github.com/poanetwork/blockscout/pull/1900) and looks like an array of JSON objects.  | (empty) |  v2.0.0+ |
 | `BLOCK_COUNT_CACHE_PERIOD ` | | time to live of cache in seconds. This var was introduced in [#1876](https://github.com/poanetwork/blockscout/pull/1876)  | 600 |  v2.0.0+ |
 | `ALLOWED_EVM_VERSIONS ` | | the comma-separated list of allowed EVM versions for contracts verification. This var was introduced in [#1964](https://github.com/poanetwork/blockscout/pull/1964)  | "homestead, tangerineWhistle, spuriousDragon, byzantium, constantinople, petersburg" |  v2.0.0+ |
+| `DISABLE_WEBAPP` | | If `true`, endpoints to webapp are hidden (compile-time) | `false` | master |
+| `DISABLE_API` | | If `true`, read-only endpoints to API are hidden (compile-time) | `false` | master |
+| `DISABLE_INDEXER` | | If `true`, indexer application doesn't run | `false` | master |
+| `DISABLE_UPDATE_ENDPOINTS` | | If `true`, endpoints which update DB are hidden | `false` | master |
+| `WEBAPP_URL` | | Link to web application instance, e.g. `http://host/path` | (empty) | master |
+| `API_URL` | | Link to API instance, e.g. `http://host/path` | (empty) | master |
