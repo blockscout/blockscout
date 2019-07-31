@@ -261,6 +261,6 @@ defmodule BlockScoutWeb.Router do
     get("/api_docs", APIDocsController, :index)
     get("/eth_rpc_api_docs", APIDocsController, :eth_rpc)
 
-    get("/:page", PageNotFoundController, :index)
+    get("/*path", PageNotFoundController, :index)
   end
 end
