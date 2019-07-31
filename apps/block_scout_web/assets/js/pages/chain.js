@@ -107,7 +107,7 @@ function baseReducer (state = initialState, action) {
         })
       }
     }
-    case 'RECIEVED_UPDATED_TRANSACTION_STATS': {
+    case 'RECEIVED_UPDATED_TRANSACTION_STATS': {
       return Object.assign({}, state, {
         transactionStats: action.msg.stats
       })
@@ -301,7 +301,7 @@ if ($chainDetailsPage.length) {
   const transactionStatsChannel = socket.channel('transactions:stats')
   transactionStatsChannel.join()
   transactionStatsChannel.on('update', msg => store.dispatch({
-    type: 'RECIEVED_UPDATED_TRANSACTION_STATS',
+    type: 'RECEIVED_UPDATED_TRANSACTION_STATS',
     msg: msg
   }))
 }
