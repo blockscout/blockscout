@@ -13,10 +13,16 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       assert html_response(conn, 422)
     end
 
-    test "with valid address hash without address", %{conn: conn} do
-      conn = get(conn, address_transaction_path(conn, :index, "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"))
+    test "with valid address hash without address in the DB", %{conn: conn} do
+      conn =
+        get(
+          conn,
+          address_transaction_path(conn, :index, "0x8bf38d4764929064f2d4d3a56520a76ab3df415b", %{"type" => "JSON"})
+        )
 
-      assert html_response(conn, 404)
+      assert json_response(conn, 200)
+      transaction_tiles = json_response(conn, 200)["items"]
+      assert transaction_tiles |> length() == 0
     end
 
     test "returns transactions for the address", %{conn: conn} do
