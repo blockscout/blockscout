@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2456](https://github.com/poanetwork/blockscout/pull/2456) - fetch pending transactions for geth
 
 ### Fixes
 - [#2459](https://github.com/poanetwork/blockscout/pull/2459) - fix top addresses query
