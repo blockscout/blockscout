@@ -30,10 +30,12 @@ defmodule BlockScoutWeb.SmartContractController do
     end
   end
 
+  def index(conn, _), do: not_found(conn)
+
   def show(conn, params) do
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]),
-         {:ok, _address} <- Chain.find_contract_address(address_hash),
+         :ok <- Chain.check_contract_address_exists(address_hash),
          outputs =
            Reader.query_function(
              address_hash,
@@ -51,7 +53,7 @@ defmodule BlockScoutWeb.SmartContractController do
       :error ->
         unprocessable_entity(conn)
 
-      {:error, :not_found} ->
+      :not_found ->
         not_found(conn)
 
       _ ->
