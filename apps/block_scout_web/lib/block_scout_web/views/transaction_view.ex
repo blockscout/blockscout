@@ -39,6 +39,25 @@ defmodule BlockScoutWeb.TransactionView do
     if type, do: {type, transaction_with_transfers}
   end
 
+  def aggregate_token_transfers(token_transfers) do
+    token_transfers
+    |> Enum.reduce(%{}, fn token_transfer, acc ->
+      new_entry = %{
+        token: token_transfer.token,
+        amount: token_transfer.amount,
+        token_id: token_transfer.token_id
+      }
+
+      existing_entry = Map.get(acc, token_transfer.token.contract_address_hash, %{new_entry | amount: Decimal.new(0)})
+
+      Map.put(acc, token_transfer.token.contract_address_hash, %{
+        new_entry
+        | amount: Decimal.add(new_entry.amount, existing_entry.amount)
+      })
+    end)
+    |> Enum.map(fn {_key, value} -> value end)
+  end
+
   def token_type_name(type) do
     case type do
       :erc20 -> gettext("ERC-20 ")
