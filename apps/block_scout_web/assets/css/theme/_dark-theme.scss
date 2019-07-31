@@ -534,9 +534,9 @@ $labels-dark: #8a8dba; // header nav, labels
 
 	// Content loading placeholders
 	.tile-loader, .table-content-loader {
-		background-color: $dark-light;
+		background-color: $dark-bg !important;
 		&:before {
-			background: linear-gradient(to right, $dark-light 2%, $dark-light-bg 18%, $dark-light 33%);
+			background: linear-gradient(to right, $dark-bg 2%, lighten($dark-bg, 3) 18%, $dark-bg 33%);
 		}
 	}
 
@@ -567,6 +567,22 @@ $labels-dark: #8a8dba; // header nav, labels
 			}
 		}
 	}
+	.verify-other-explorers-elem {
+		&:hover {
+			text-decoration: none;
+			color: #fff;
+			.exp-content {
+				h3, div {
+					color: #fff;
+				}
+			}
+		}
+	}
+	.verify-other-explorers-cell {
+		.exp-logo {
+			color: #333 !important;
+		}
+	}
 
 	// API docs dropdown content
 	.api-doc-parameters-list-item-description,
@@ -587,5 +603,59 @@ $labels-dark: #8a8dba; // header nav, labels
 		&.active {
 			border-bottom-color: $dark-primary;
 		}
+	}
+
+	// Common Buttons
+	.btn-secondary, .button-secondary {
+		background-color: transparent;
+		border-color: $dark-primary;
+		color: $dark-primary;
+		&:hover {
+			background-color: $dark-primary;
+			border-color: $dark-primary;
+			color: #fff;
+		}
+	}
+
+	.awesomplete {
+		& > ul {
+			background: $dark-light-bg;
+			&:before {
+				background: $dark-light-bg;
+			}
+			li {
+				&:hover {
+					background-color: $dark-primary;
+					color: #fff;
+					mark {
+						background: darken($dark-primary, 10);
+						color: #fff;
+					}
+				}
+			}
+		}
+		mark {
+			background: $dark-primary;
+			color: #fff;
+		}
+	}
+
+	// Decoded data
+	.table.thead-light.table-bordered {
+		color: #fff !important;
+	}
+	.table-bordered, .table-bordered td, .table-bordered th {
+		border-color: darken($labels-dark, 30);
+	}
+	.dark-theme-applied .table td, .dark-theme-applied .table th, .dark-theme-applied hr {
+		border-top-color: darken($labels-dark, 30);
+	}
+	.btn-copy-ico svg path {
+		fill: #fff;
+	}
+
+	// pre
+	.pre-scrollable.line-numbers {
+		filter: invert(100%);
 	}
 }
