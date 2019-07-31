@@ -2464,9 +2464,10 @@ defmodule Explorer.Chain do
       |> Multi.run(:set_address_verified, &set_address_verified/2)
       |> Repo.transaction()
 
-    with {:ok, %{smart_contract: smart_contract}} <- insert_result do
-      {:ok, smart_contract}
-    else
+    case insert_result do
+      {:ok, %{smart_contract: smart_contract}} ->
+        {:ok, smart_contract}
+
       {:error, :smart_contract, changeset, _} ->
         {:error, changeset}
 
@@ -2601,7 +2602,11 @@ defmodule Explorer.Chain do
   defp page_addresses(query, %PagingOptions{key: nil}), do: query
 
   defp page_addresses(query, %PagingOptions{key: {coin_balance, hash}}) do
-    where(query, [address], address.fetched_coin_balance <= ^coin_balance and address.hash > ^hash)
+    from(address in query,
+      where:
+        (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
+          address.fetched_coin_balance < ^coin_balance
+    )
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
@@ -2936,9 +2941,10 @@ defmodule Explorer.Chain do
       )
       |> Repo.transaction()
 
-    with {:ok, %{token: token}} <- insert_result do
-      {:ok, token}
-    else
+    case insert_result do
+      {:ok, %{token: token}} ->
+        {:ok, token}
+
       {:error, :token, changeset, _} ->
         {:error, changeset}
     end
