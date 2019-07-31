@@ -229,13 +229,23 @@ defmodule BlockScoutWeb.LayoutView do
     end
   end
 
-  defp webapp_url(conn) do
+  def webapp_url(conn) do
     :block_scout_web
     |> Application.get_env(:webapp_url)
     |> validate_url()
     |> case do
       :error -> chain_path(conn, :show)
-      url -> url
+      {:ok, url} -> url
+    end
+  end
+
+  def api_url do
+    :block_scout_web
+    |> Application.get_env(:api_url)
+    |> validate_url()
+    |> case do
+      :error -> ""
+      {:ok, url} -> url
     end
   end
 

@@ -29,7 +29,8 @@ config :block_scout_web,
     "Bloxy" => "https://bloxy.info/"
   },
   other_networks: System.get_env("SUPPORTED_CHAINS"),
-  webapp_url: System.get_env("WEBAPP_URL")
+  webapp_url: System.get_env("WEBAPP_URL"),
+  api_url: System.get_env("API_URL")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 

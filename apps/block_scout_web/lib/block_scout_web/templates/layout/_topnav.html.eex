@@ -68,7 +68,7 @@
             <% end %>
           </li>
         <% end %>
-        <%= if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:enabled] do %>
+        <%= if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:enabled] or Application.get_env(:block_scout_web, :api_url) do %>
           <li class="nav-item dropdown">
             <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
@@ -80,17 +80,17 @@
               <%= link(
                     gettext("GraphQL"),
                     class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
-                    to: "/graphiql"
+                    to: api_url() <> "/graphiql"
                   ) %>
               <%= link(
                     gettext("RPC"),
                     class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
-                    to: api_docs_path(@conn, :index)
+                    to: api_url() <> api_docs_path(@conn, :index)
                   ) %>
               <%= link(
                     gettext("Eth RPC"),
                     class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
-                    to: api_docs_path(@conn, :eth_rpc)
+                    to: api_url() <> api_docs_path(@conn, :eth_rpc)
                   ) %>
             </div>
           </li>
