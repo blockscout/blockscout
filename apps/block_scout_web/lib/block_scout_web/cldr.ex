@@ -3,5 +3,6 @@ defmodule BlockScoutWeb.Cldr do
     default_locale: "en",
     locales: ["en"],
     gettext: BlockScoutWeb.Gettext,
-    generate_docs: false
+    generate_docs: false,
+    providers: [Cldr.Number, Cldr.Unit]
 end
