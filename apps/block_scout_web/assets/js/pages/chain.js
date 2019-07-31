@@ -1,11 +1,15 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import omit from 'lodash/omit'
+import first from 'lodash/first'
+import rangeRight from 'lodash/rangeRight'
+import find from 'lodash/find'
+import map from 'lodash/map'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { batchChannel } from '../lib/utils'
+import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
 import { createMarketHistoryChart } from '../lib/market_history_chart'
 
@@ -33,7 +37,7 @@ export const reducer = withMissingBlocks(baseReducer)
 function baseReducer (state = initialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, _.omit(action, 'type'))
+      return Object.assign({}, state, omit(action, 'type'))
     }
     case 'RECEIVED_NEW_ADDRESS_COUNT': {
       return Object.assign({}, state, {
@@ -122,12 +126,12 @@ function withMissingBlocks (reducer) {
 
     if (!result.blocks || result.blocks.length < 2) return result
 
-    const maxBlock = _.first(result.blocks).blockNumber
+    const maxBlock = first(result.blocks).blockNumber
     const minBlock = maxBlock - (result.blocks.length - 1)
 
     return Object.assign({}, result, {
-      blocks: _.rangeRight(minBlock, maxBlock + 1)
-        .map((blockNumber) => _.find(result.blocks, ['blockNumber', blockNumber]) || {
+      blocks: rangeRight(minBlock, maxBlock + 1)
+        .map((blockNumber) => find(result.blocks, ['blockNumber', blockNumber]) || {
           blockNumber,
           chainBlockHtml: placeHolderBlock(blockNumber)
         })
@@ -194,7 +198,7 @@ const elements = {
       const container = $el[0]
 
       if (state.blocksLoading === false) {
-        const blocks = _.map(state.blocks, ({ chainBlockHtml }) => $(chainBlockHtml)[0])
+        const blocks = map(state.blocks, ({ chainBlockHtml }) => $(chainBlockHtml)[0])
         listMorph(container, blocks, { key: 'dataset.blockNumber', horizontal: true })
       }
     }
@@ -210,11 +214,7 @@ const elements = {
   },
   '[data-selector="chain-block-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
-      if (state.blocksLoading) {
-        $el.show()
-      } else {
-        $el.hide()
-      }
+      showLoader(state.blocksLoading, $el)
     }
   },
   '[data-selector="transactions-list"] [data-selector="error-message"]': {
@@ -224,7 +224,7 @@ const elements = {
   },
   '[data-selector="transactions-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
-      $el.toggle(state.transactionsLoading)
+      showLoader(state.transactionsLoading, $el)
     }
   },
   '[data-selector="transactions-list"]': {
@@ -234,7 +234,7 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.transactions === state.transactions) return
       const container = $el[0]
-      const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
+      const newElements = map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
       listMorph(container, newElements, { key: 'dataset.identifierHash' })
     }
   },
