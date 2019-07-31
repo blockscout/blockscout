@@ -13,13 +13,8 @@ defmodule BlockScoutWeb.ApiRouter do
   scope "/v1", as: :api_v1 do
     pipe_through(:api)
 
-    post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
-
     scope "/", BlockScoutWeb.API.V1 do
       get("/supply", SupplyController, :supply)
-
-      post("/decompiled_smart_contract", DecompiledSmartContractController, :create)
-      post("/verified_smart_contracts", VerifiedSmartContractController, :create)
 
       post("/eth_rpc", EthController, :eth_request)
 
