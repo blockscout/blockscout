@@ -125,6 +125,57 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       assert [%{"data" => "0x010101"}, %{"data" => "0x020202"}] = Enum.sort_by(response["result"], &Map.get(&1, "data"))
     end
 
+    test "paginates logs", %{conn: conn, api_params: api_params} do
+      contract_address = insert(:contract_address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: contract_address)
+        |> with_block()
+
+      inserted_records =
+        insert_list(2000, :log, address: contract_address, transaction: transaction, first_topic: "0x01")
+
+      params = params(api_params, [%{"address" => to_string(contract_address), "topics" => [["0x01"]]}])
+
+      assert response =
+               conn
+               |> post("/api/eth_rpc", params)
+               |> json_response(200)
+
+      assert Enum.count(response["result"]) == 1000
+
+      {last_log_index, ""} = Integer.parse(List.last(response["result"])["logIndex"], 16)
+
+      next_page_params = %{
+        "blockNumber" => Integer.to_string(transaction.block_number, 16),
+        "transactionIndex" => transaction.index,
+        "logIndex" => Integer.to_string(last_log_index, 16)
+      }
+
+      new_params =
+        params(api_params, [
+          %{"paging_options" => next_page_params, "address" => to_string(contract_address), "topics" => [["0x01"]]}
+        ])
+
+      assert new_response =
+               conn
+               |> post("/api/eth_rpc", new_params)
+               |> json_response(200)
+
+      assert Enum.count(response["result"]) == 1000
+
+      all_found_logs = response["result"] ++ new_response["result"]
+
+      assert Enum.all?(inserted_records, fn record ->
+               Enum.any?(all_found_logs, fn found_log ->
+                 {index, ""} = Integer.parse(found_log["logIndex"], 16)
+
+                 record.index == index
+               end)
+             end)
+    end
+
     test "with a matching address and multiple topic matches in different positions", %{
       conn: conn,
       api_params: api_params
