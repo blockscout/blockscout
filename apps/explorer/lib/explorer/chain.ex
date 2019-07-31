@@ -2602,7 +2602,11 @@ defmodule Explorer.Chain do
   defp page_addresses(query, %PagingOptions{key: nil}), do: query
 
   defp page_addresses(query, %PagingOptions{key: {coin_balance, hash}}) do
-    where(query, [address], address.fetched_coin_balance <= ^coin_balance and address.hash > ^hash)
+    from(address in query,
+      where:
+        (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
+          address.fetched_coin_balance < ^coin_balance
+    )
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
