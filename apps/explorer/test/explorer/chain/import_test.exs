@@ -1575,8 +1575,7 @@ defmodule Explorer.Chain.ImportTest do
                        from_address_hash: from_address_hash,
                        to_address_hash: to_address_hash,
                        token_contract_address_hash: token_contract_address_hash,
-                       transaction_hash: transaction_hash,
-                       token: params_for(:token, contract_address_hash: token_contract_address_hash)
+                       transaction_hash: transaction_hash
                      )
                    ],
                    timeout: 1

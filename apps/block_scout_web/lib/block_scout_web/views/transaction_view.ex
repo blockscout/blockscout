@@ -48,9 +48,9 @@ defmodule BlockScoutWeb.TransactionView do
         token_id: token_transfer.token_id
       }
 
-      existing_entry = Map.get(acc, token_transfer.token.contract_address_hash, %{new_entry | amount: Decimal.new(0)})
+      existing_entry = Map.get(acc, token_transfer.token_contract_address, %{new_entry | amount: Decimal.new(0)})
 
-      Map.put(acc, token_transfer.token.contract_address_hash, %{
+      Map.put(acc, token_transfer.token_contract_address, %{
         new_entry
         | amount: Decimal.add(new_entry.amount, existing_entry.amount)
       })
