@@ -16,8 +16,8 @@ defmodule BlockScoutWeb.AddressDecompiledContractController do
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        transaction_count: transaction_count(address),
-        validation_count: validation_count(address)
+        transaction_count: transaction_count(address_hash),
+        validation_count: validation_count(address_hash)
       )
     else
       :error ->
