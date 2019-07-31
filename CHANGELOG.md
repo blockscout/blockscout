@@ -39,7 +39,6 @@
 - [#2350](https://github.com/poanetwork/blockscout/pull/2350) - fix invalid User agent headers
 - [#2345](https://github.com/poanetwork/blockscout/pull/2345) - do not override existing market records
 - [#2337](https://github.com/poanetwork/blockscout/pull/2337) - set url params for prod explicitly
-- [#2346](https://github.com/poanetwork/blockscout/pull/2346) - Avoid fetching internal transactions of blocks that still need refetching
 - [#2341](https://github.com/poanetwork/blockscout/pull/2341) - fix transaction input json encoding
 - [#2311](https://github.com/poanetwork/blockscout/pull/2311) - fix market history overriding with zeroes
 - [#2310](https://github.com/poanetwork/blockscout/pull/2310) - parse url for api docs
