@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.BlockNumberCache do
+defmodule Explorer.Chain.Cache.BlockNumber do
   @moduledoc """
   Cache for max and min block numbers.
   """
