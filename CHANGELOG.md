@@ -2,6 +2,7 @@
 
 ### Features
 - [#2376](https://github.com/poanetwork/blockscout/pull/2376) - Split API and WebApp routes
+- [#2456](https://github.com/poanetwork/blockscout/pull/2456) - fetch pending transactions for geth
 
 ### Fixes
 - [#2459](https://github.com/poanetwork/blockscout/pull/2459) - fix top addresses query
