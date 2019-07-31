@@ -5,7 +5,7 @@
       <div class="dashboard-banner-network-graph">
         <!-- Graph -->
         <div class="dashboard-banner-chart">
-          <div data-chart-loading-message class="tile tile-muted text-center mt-5">
+          <div hidden data-chart-loading-message class="tile tile-muted text-center mt-5">
             <span class="loading-spinner-small mr-2">
               <span class="loading-spinner-block-1"></span>
               <span class="loading-spinner-block-2"></span>
@@ -91,8 +91,8 @@
             <%= gettext "Something went wrong, click to reload." %>
           </span>
         </button>
-        <div data-selector="loading-message" class="tile tile-muted text-center mt-3 w-100">
-          <span class="loading-spinner-small mr-2">
+        <div hidden data-selector="loading-message" class="tile tile-muted text-center mt-3 w-100" >
+          <span  class="loading-spinner-small mr-2">
             <span class="loading-spinner-block-1"></span>
             <span class="loading-spinner-block-2"></span>
           </span>
@@ -117,12 +117,8 @@
             <%= gettext "Something went wrong, click to retry." %>
           </span>
         </button>
-        <div data-selector="loading-message" class="tile tile-muted text-center mt-3">
-          <span class="loading-spinner-small mr-2">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </span>
-          <%= gettext("Loading...") %>
+        <div hidden data-selector="loading-message">
+          <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
         </div>
       </span>
     </div>

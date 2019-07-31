@@ -72,7 +72,8 @@ defmodule Explorer.SmartContract.Verifier do
       generated_bytecode != blockchain_bytecode_without_whisper ->
         {:error, :generated_bytecode}
 
-      has_constructor_with_params?(abi) && !ConstructorArguments.verify(address_hash, arguments_data) ->
+      has_constructor_with_params?(abi) &&
+          !ConstructorArguments.verify(address_hash, blockchain_bytecode_without_whisper, arguments_data) ->
         {:error, :constructor_arguments}
 
       true ->

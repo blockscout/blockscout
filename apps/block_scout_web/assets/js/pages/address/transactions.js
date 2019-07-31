@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import omit from 'lodash/omit'
 import URI from 'urijs'
 import humps from 'humps'
 import { subscribeChannel } from '../../socket'
@@ -16,7 +16,7 @@ export function reducer (state, action) {
   switch (action.type) {
     case 'PAGE_LOAD':
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, _.omit(action, 'type'))
+      return Object.assign({}, state, omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
       if (state.beyondPageOne) return state
