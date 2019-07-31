@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      internal_transactions_plus_one = Chain.address_to_internal_transactions(address, full_options)
+      internal_transactions_plus_one = Chain.address_to_internal_transactions(address_hash, full_options)
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
       next_page_path =
@@ -71,8 +71,8 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         current_path: current_path(conn),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        transaction_count: transaction_count(address),
-        validation_count: validation_count(address)
+        transaction_count: transaction_count(address_hash),
+        validation_count: validation_count(address_hash)
       )
     else
       :error ->

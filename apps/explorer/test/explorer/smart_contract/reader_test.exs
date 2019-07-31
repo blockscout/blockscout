@@ -102,7 +102,7 @@ defmodule Explorer.SmartContract.ReaderTest do
     end
   end
 
-  describe "query_verified_contract/2" do
+  describe "query_verified_contract/3" do
     test "correctly returns the results of the smart contract functions" do
       hash =
         :smart_contract

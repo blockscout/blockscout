@@ -2,6 +2,17 @@
 
 Below is a table outlining the environment variables utilized by BlockScout.
 
+**Notes:**
+- This table is horizontally scrollable, version information is located in the last column.
+- Settings related to the `ETHEREUM_JSONRPC_VARIANT` variable and client related settings for running a full archive node with geth or parity are located in [this forum post](https://forum.poa.network/t/faq-what-settings-are-required-on-a-parity-or-geth-client/1805).
+- Additional information related to certain variables is available on the [ansible deployment](ansible-deployment.md) page.
+- To set variables using the CLI, use the export command. For example: 
+```bash
+$ export ETHEREUM_JSONRPC_VARIANT=parity
+$ export COIN=POA
+$ export NETWORK=POA
+```
+
 
 | Variable | Required | Description | Default | Version |
 | --- | --- | --- | ---| --- |
@@ -32,7 +43,7 @@ Below is a table outlining the environment variables utilized by BlockScout.
 | `HEART_BEAT_TIMEOUT` | | Production environment variable to restart the application in the event of a crash. | 30 | all |
 | `HEART_COMMAND` | | Production environment variable to restart the application in the event of a crash. | systemctl restart explorer.service | all |
 | `BLOCKSCOUT_VERSION` | | Added to the footer to signify the current BlockScout version. | (empty) | v1.3.4+ |
-| `RELEASE_LINK` | | The link to Blockscout release notes in the footer. | https://github.com/poanetwork/ <br /> <u>blockscout/releases/</u> <br /> <u>tag/${BLOCKSCOUT_VERSION}</u> | v1.3.5+ |
+| `RELEASE_LINK` | | The link to Blockscout release notes in the footer. | <u>https: //github.com/poanetwork/</u> <br /><u>blockscout/releases/</u> <br /> <u>tag/${BLOCKSCOUT_VERSION}</u> | v1.3.5+ |
 | `ELIXIR_VERSION` | | Elixir version to install on the node before Blockscout deploy. | (empty) | all |
 | `BLOCK_TRANSFORMER` | | Transformer for blocks: base or clique. | base |  v1.3.4+ |
 | `GRAPHIQL _TRANSACTION` | | Default transaction in query to GraphiQL. | (empty) |  v1.3.4+ |

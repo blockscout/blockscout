@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.NetVersionCache do
+defmodule Explorer.Chain.Cache.NetVersion do
   @moduledoc """
   Caches chain version.
   """

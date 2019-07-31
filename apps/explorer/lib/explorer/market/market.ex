@@ -40,7 +40,12 @@ defmodule Explorer.Market do
 
   @doc false
   def bulk_insert_history(records) do
-    Repo.insert_all(MarketHistory, records, on_conflict: :replace_all, conflict_target: [:date])
+    records_without_zeroes =
+      Enum.reject(records, fn item ->
+        Decimal.equal?(item.closing_price, 0) && Decimal.equal?(item.opening_price, 0)
+      end)
+
+    Repo.insert_all(MarketHistory, records_without_zeroes, on_conflict: :nothing, conflict_target: [:date])
   end
 
   def add_price(%{symbol: symbol} = token) do

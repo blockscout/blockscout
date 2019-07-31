@@ -35,8 +35,13 @@ defmodule BlockScoutWeb.APIDocsView do
   end
 
   def blockscout_url do
-    if System.get_env("BLOCKSCOUT_HOST") do
-      "http://" <> System.get_env("BLOCKSCOUT_HOST")
+    url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
+    host = url_params[:host]
+    path = url_params[:path]
+    scheme = url_params[:scheme]
+
+    if host != "localhost" do
+      scheme <> "://" <> host <> path
     else
       Endpoint.url()
     end
