@@ -152,12 +152,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     unique_entries = unique_entries(entries, variant)
 
-    internal_transactions_indexed_at_blocks =
-      case variant do
-        EthereumJSONRPC.Parity -> Enum.map(unique_entries, &block_params/1)
-        _ -> []
-      end
-
     unique_entries_count = Enum.count(unique_entries)
     Logger.metadata(count: unique_entries_count)
 
@@ -176,47 +170,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
     |> case do
       {:ok, internal_transactions_params} ->
-        internal_transactions_params_without_failed_creations = remove_failed_creations(internal_transactions_params)
-
-        addresses_params =
-          Addresses.extract_addresses(%{
-            internal_transactions: internal_transactions_params_without_failed_creations
-          })
-
-        address_hash_to_block_number =
-          Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
-            {hash, block_number}
-          end)
-
-        with {:ok, imported} <-
-               Chain.import(%{
-                 addresses: %{params: addresses_params},
-                 internal_transactions: %{params: internal_transactions_params_without_failed_creations},
-                 internal_transactions_indexed_at_blocks: %{
-                   params: internal_transactions_indexed_at_blocks,
-                   with: :number_only_changeset
-                 },
-                 timeout: :infinity
-               }) do
-          async_import_coin_balances(imported, %{
-            address_hash_to_fetched_balance_block_number: address_hash_to_block_number
-          })
-        else
-          {:error, step, reason, _changes_so_far} ->
-            Logger.error(
-              fn ->
-                [
-                  "failed to import internal transactions for transactions: ",
-                  inspect(reason)
-                ]
-              end,
-              step: step,
-              error_count: unique_entries_count
-            )
-
-            # re-queue the de-duped entries
-            {:retry, unique_entries}
-        end
+        import_internal_transaction(internal_transactions_params, json_rpc_named_arguments, unique_entries)
 
       {:error, reason} ->
         Logger.error(fn -> ["failed to fetch internal transactions for transactions: ", inspect(reason)] end,
@@ -228,6 +182,60 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
       :ignore ->
         :ok
+    end
+  end
+
+  defp import_internal_transaction(internal_transactions_params, json_rpc_named_arguments, unique_entries) do
+    internal_transactions_indexed_at_blocks =
+      case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+        EthereumJSONRPC.Parity -> Enum.map(unique_entries, &block_params/1)
+        _ -> []
+      end
+
+    unique_entries_count = Enum.count(unique_entries)
+    internal_transactions_params_without_failed_creations = remove_failed_creations(internal_transactions_params)
+
+    addresses_params =
+      Addresses.extract_addresses(%{
+        internal_transactions: internal_transactions_params_without_failed_creations
+      })
+
+    address_hash_to_block_number =
+      Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
+        {hash, block_number}
+      end)
+
+    imports =
+      Chain.import(%{
+        addresses: %{params: addresses_params},
+        internal_transactions: %{params: internal_transactions_params_without_failed_creations},
+        internal_transactions_indexed_at_blocks: %{
+          params: internal_transactions_indexed_at_blocks,
+          with: :number_only_changeset
+        },
+        timeout: :infinity
+      })
+
+    case imports do
+      {:ok, imported} ->
+        async_import_coin_balances(imported, %{
+          address_hash_to_fetched_balance_block_number: address_hash_to_block_number
+        })
+
+      {:error, step, reason, _changes_so_far} ->
+        Logger.error(
+          fn ->
+            [
+              "failed to import internal transactions for transactions: ",
+              inspect(reason)
+            ]
+          end,
+          step: step,
+          error_count: unique_entries_count
+        )
+
+        # re-queue the de-duped entries
+        {:retry, unique_entries}
     end
   end
 
