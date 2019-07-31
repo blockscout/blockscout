@@ -1,7 +1,7 @@
-defmodule Explorer.Chain.TransactionsCacheTest do
+defmodule Explorer.Chain.Cache.TransactionsTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.TransactionsCache
+  alias Explorer.Chain.Cache.Transactions
   alias Explorer.Repo
 
   @size 51
@@ -10,9 +10,9 @@ defmodule Explorer.Chain.TransactionsCacheTest do
     test "adds a new value to a new cache with preloads" do
       transaction = insert(:transaction) |> preload_all()
 
-      TransactionsCache.update(transaction)
+      Transactions.update(transaction)
 
-      assert TransactionsCache.take(1) == [transaction]
+      assert Transactions.take(1) == [transaction]
     end
 
     test "adds several elements, removing the oldest when necessary" do
@@ -23,9 +23,9 @@ defmodule Explorer.Chain.TransactionsCacheTest do
           insert(:transaction) |> with_block(block)
         end)
 
-      TransactionsCache.update(transactions)
+      Transactions.update(transactions)
 
-      assert TransactionsCache.all() == Enum.reverse(preload_all(transactions))
+      assert Transactions.all() == Enum.reverse(preload_all(transactions))
 
       more_transactions =
         (@size + 1)..(@size + 10)
@@ -34,14 +34,14 @@ defmodule Explorer.Chain.TransactionsCacheTest do
           insert(:transaction) |> with_block(block)
         end)
 
-      TransactionsCache.update(more_transactions)
+      Transactions.update(more_transactions)
 
       kept_transactions =
         Enum.reverse(transactions ++ more_transactions)
         |> Enum.take(@size)
         |> preload_all()
 
-      assert TransactionsCache.take(@size) == kept_transactions
+      assert Transactions.take(@size) == kept_transactions
     end
 
     test "does not add a transaction too old when full" do
@@ -52,28 +52,28 @@ defmodule Explorer.Chain.TransactionsCacheTest do
           insert(:transaction) |> with_block(block)
         end)
 
-      TransactionsCache.update(transactions)
+      Transactions.update(transactions)
 
       loaded_transactions = Enum.reverse(preload_all(transactions))
-      assert TransactionsCache.all() == loaded_transactions
+      assert Transactions.all() == loaded_transactions
 
       block = insert(:block, number: 1)
-      insert(:transaction) |> with_block(block) |> TransactionsCache.update()
+      insert(:transaction) |> with_block(block) |> Transactions.update()
 
-      assert TransactionsCache.all() == loaded_transactions
+      assert Transactions.all() == loaded_transactions
     end
 
     test "adds intermediate transactions" do
       blocks = 1..10 |> Map.new(fn n -> {n, insert(:block, number: n)} end)
 
-      insert(:transaction) |> with_block(blocks[1]) |> TransactionsCache.update()
-      insert(:transaction) |> with_block(blocks[10]) |> TransactionsCache.update()
+      insert(:transaction) |> with_block(blocks[1]) |> Transactions.update()
+      insert(:transaction) |> with_block(blocks[10]) |> Transactions.update()
 
-      assert TransactionsCache.size() == 2
+      assert Transactions.size() == 2
 
-      insert(:transaction) |> with_block(blocks[5]) |> TransactionsCache.update()
+      insert(:transaction) |> with_block(blocks[5]) |> Transactions.update()
 
-      assert TransactionsCache.size() == 3
+      assert Transactions.size() == 3
     end
   end
 

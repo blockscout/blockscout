@@ -62,15 +62,15 @@ defmodule BlockScoutWeb.TransactionController do
 
   def show(conn, %{"id" => id}) do
     with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(id),
-         {:ok, %Chain.Transaction{} = transaction} <- Chain.hash_to_transaction(transaction_hash) do
-      if Chain.transaction_has_token_transfers?(transaction.hash) do
+         :ok <- Chain.check_transaction_exists(transaction_hash) do
+      if Chain.transaction_has_token_transfers?(transaction_hash) do
         redirect(conn, to: transaction_token_transfer_path(conn, :index, id))
       else
         redirect(conn, to: transaction_internal_transaction_path(conn, :index, id))
       end
     else
       :error -> conn |> put_status(422) |> render("invalid.html", transaction_hash: id)
-      {:error, :not_found} -> conn |> put_status(404) |> render("not_found.html", transaction_hash: id)
+      :not_found -> conn |> put_status(404) |> render("not_found.html", transaction_hash: id)
     end
   end
 end

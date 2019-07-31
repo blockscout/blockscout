@@ -1,25 +1,31 @@
 defmodule BlockScoutWeb.ApiDocsViewTest do
-  use BlockScoutWeb.ConnCase, async: true
+  use BlockScoutWeb.ConnCase, async: false
 
-  alias BlockScoutWeb.{APIDocsView, Endpoint}
+  alias BlockScoutWeb.APIDocsView
 
   describe "blockscout_url/0" do
-    test "returns url with scheme and host without port" do
-      System.put_env("BLOCKSCOUT_HOST", "localhost")
-      System.put_env("NETWORK_PATH", "")
+    setup do
+      original = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)
 
-      assert APIDocsView.blockscout_url() == "http://localhost"
-      assert Endpoint.url() == "http://localhost:4002"
+      on_exit(fn -> Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint, original) end)
+
+      :ok
+    end
+
+    test "returns url with scheme and host without port" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/"]
+      )
+
+      assert APIDocsView.blockscout_url() == "https://blockscout.com/"
     end
 
     test "returns url with scheme and host with path" do
-      System.put_env("BLOCKSCOUT_HOST", "localhost/chain/dog")
-      System.put_env("NETWORK_PATH", "/chain/dog")
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/chain/dog"]
+      )
 
-      assert APIDocsView.blockscout_url() == "http://localhost/chain/dog"
-      assert Endpoint.url() == "http://localhost:4002"
-
-      System.put_env("NETWORK_PATH", "")
+      assert APIDocsView.blockscout_url() == "https://blockscout.com/chain/dog"
     end
   end
 end
