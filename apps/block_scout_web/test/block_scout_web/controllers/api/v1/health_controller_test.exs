@@ -4,8 +4,8 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
   alias Explorer.{Chain, PagingOptions}
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Blocks.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Blocks.cache_name()})
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
 
     :ok
   end
