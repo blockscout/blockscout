@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Cldr.Number do
+defmodule BlockScoutWeb.CldrHelper.Number do
   @moduledoc """
   Work-arounds for `Cldr.Number` bugs
   """

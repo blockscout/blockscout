@@ -98,12 +98,7 @@ defmodule Explorer.Mixfile do
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
       {:prometheus, "~> 4.0", override: true},
       # Prometheus metrics for query duration
-      {
-        :prometheus_ecto,
-        "~> 1.3",
-        # Ecto 3.0 compatibility
-        github: "deadtrickster/prometheus-ecto", ref: "650a403183f6a2fb6b682d7fbcba8bf9d24fe1e4"
-      },
+      {:prometheus_ecto, "~> 1.4.3"},
       # bypass optional dependency
       {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
       {:que, "~> 0.10.1"},
