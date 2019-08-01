@@ -4,6 +4,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { ContextReplacementPlugin } = require('webpack');
+const { CriticalPlugin } = require('webpack-plugin-critical');
 const glob = require("glob");
 
 function transpileViewScript(file) {
@@ -83,7 +84,13 @@ const appJs =
         filename: '../css/app.css'
       }),
       new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
-      new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/)
+      new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
+      // new CriticalPlugin({
+      //   src: 'index.html',
+      //   inline: true,
+      //   minify: true,
+      //   dest: 'index.html'
+      // })
     ]
   }
 
