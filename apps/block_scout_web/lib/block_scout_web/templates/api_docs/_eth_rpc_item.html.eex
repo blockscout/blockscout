@@ -66,7 +66,7 @@
           <div class="col-sm-8 col-md-10">
             <p  class="api-doc-parameters-list-item-description"><%= param.description %></p>
             <input
-              class="collapse form-control <%= if param.required, do: "form-control-danger is-invalid" %>"
+              class="collapse form-control <%= if param.required && !param.default, do: "form-control-danger is-invalid" %>"
               data-parameter-type='<%= param.type %>'
               data-required='<%= if param.required, do: "true", else: "false" %>'
               data-selector='<%= "eth-#{@action}-try-api-ui" %>'
