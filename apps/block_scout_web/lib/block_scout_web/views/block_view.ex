@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.BlockView do
       |> Enum.map(&Decimal.to_float(Wei.to(&1.gas_price, :gwei)))
       |> mean()
       |> Kernel.||(0)
-      |> Cldr.Number.to_string!()
+      |> BlockScoutWeb.Cldr.Number.to_string!()
 
     unit_text = gettext("Gwei")
 
