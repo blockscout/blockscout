@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Events.PublisherTest do
 
       Publisher.broadcast([{event_type, event_data}], broadcast_type)
 
-      refute_receive {:chain_event, ^event_type, ^broadcast_type, []}
+      refute_received {:chain_event, ^event_type, ^broadcast_type, []}
     end
 
     test "won't send event that is not allowed" do

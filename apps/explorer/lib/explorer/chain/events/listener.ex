@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Events.Listener do
   alias Postgrex.Notifications
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, "chain_event")
+    GenServer.start_link(__MODULE__, "chain_event", name: __MODULE__)
   end
 
   def init(channel) do
