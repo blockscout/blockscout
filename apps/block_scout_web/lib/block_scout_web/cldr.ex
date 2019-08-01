@@ -1,4 +1,8 @@
 defmodule BlockScoutWeb.Cldr do
+  @moduledoc """
+  Cldr global configuration.
+  """
+
   use Cldr,
     default_locale: "en",
     locales: ["en"],
