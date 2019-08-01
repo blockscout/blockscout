@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2477](https://github.com/poanetwork/blockscout/pull/2477) - aggregate token transfers on transaction page
 - [#2456](https://github.com/poanetwork/blockscout/pull/2456) - fetch pending transactions for geth
 
 ### Fixes
