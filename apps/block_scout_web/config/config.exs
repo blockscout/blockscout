@@ -65,7 +65,7 @@ price_chart_config =
   end
 
 tx_chart_config =
-  if System.get_env("SHOW_TX_CHART") do
+  if System.get_env("SHOW_TXS_CHART") do
     %{transactions: [:transactions_per_day]}
   else
     %{}
