@@ -655,7 +655,29 @@ $labels-dark: #8a8dba; // header nav, labels
 	}
 
 	// pre
-	.pre-scrollable.line-numbers {
-		filter: invert(100%);
+	.pre-scrollable.line-numbers, .hljs {
+		background: $dark-light;
+		color: #fff;
+	}
+
+	.hljs-comment {
+		color: $labels-dark;
+	}
+
+	.hljs-title, .hljs-section {
+		color: #ff2294;
+	}
+
+	.hljs-type, .hljs-string, .hljs-number, .hljs-selector-id, .hljs-selector-class, .hljs-quote, .hljs-template-tag, .hljs-deletion {
+		color: #ff2294;
+	}
+
+	.hljs-literal, .hljs-built_in, .hljs-bullet, .hljs-code, .hljs-addition {
+		color: #20dd94;
+	}
+
+	.line-numbers [data-line-number]:before {
+		color: #3f436b !important;
+		border-right-color: #3f436b !important;
 	}
 }
