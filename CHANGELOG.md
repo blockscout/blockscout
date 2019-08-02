@@ -8,6 +8,7 @@
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
 ### Chore
+- [#2492](https://github.com/poanetwork/blockscout/pull/2492) - hide decoded row if event is not decoded
 - [#2432](https://github.com/poanetwork/blockscout/pull/2432) - bump credo version
 - [#2457](https://github.com/poanetwork/blockscout/pull/2457) - update mix.lock
 - [#2435](https://github.com/poanetwork/blockscout/pull/2435) - Replace deprecated extract-text-webpack-plugin with mini-css-extract-plugin
