@@ -30,8 +30,6 @@
           <div class="alert alert-danger">
             <%= gettext "Failed to decode log data." %>
           </div>
-        <% {:error, :no_matching_function} -> %>
-          <%= nil %>
         <% {:ok, method_id, text, mapping} -> %>
           <dt class="col-md-2"><%= gettext "Decoded" %></dt>
           <dd class="col-md-10">
@@ -84,7 +82,7 @@
             <% end %>
          </table>
        </div>
-        <% _ -> %>
+       <% _ -> %>
           <%= nil %>
       <% end %>
     <dt class="col-md-2"><%= gettext "Topics" %></dt>
