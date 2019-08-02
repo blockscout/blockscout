@@ -1819,8 +1819,7 @@ defmodule Explorer.Chain do
   end
 
   def count_db_decompiled_contracts do
-    query =
-      (from p in "decompiled_smart_contracts", select: count(p.id))
+    query = from(p in "pg_class", select: p.reltuples, where: p.relname == "decompiled_smart_contracts")
 
     query
     |> Repo.one()
@@ -1830,8 +1829,6 @@ defmodule Explorer.Chain do
   defp decompiled_contracts_count(count) do
     {:ok, count}
   end
-
-  defp decompiled_contracts_count(nil), do: {:error, :no_decompiled_smart_contracts}
 
   def last_db_block_status do
     query =
