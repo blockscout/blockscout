@@ -11,10 +11,10 @@
             ) %>
       </h3>
     </dd>
-    <dt class="col-md-2"><%= gettext "Decoded" %></dt>
-    <dd class="col-md-10">
       <%= case decode(@log, @log.transaction) do %>
         <% {:error, :contract_not_verified} -> %>
+          <dt class="col-md-2"><%= gettext "Decoded" %></dt>
+          <dd class="col-md-10">
           <div class="alert alert-info">
             <%= gettext "To see decoded input data, the contract must be verified." %>
             <%= case @log.transaction do %>
@@ -25,10 +25,16 @@
             <% end %>
           </div>
         <% {:error, :could_not_decode} -> %>
+          <dt class="col-md-2"><%= gettext "Decoded" %></dt>
+          <dd class="col-md-10">
           <div class="alert alert-danger">
             <%= gettext "Failed to decode log data." %>
           </div>
+        <% {:error, :no_matching_function} -> %>
+          <%= nil %>
         <% {:ok, method_id, text, mapping} -> %>
+          <dt class="col-md-2"><%= gettext "Decoded" %></dt>
+          <dd class="col-md-10">
           <table summary="Transaction Info" class="table thead-light table-bordered transaction-input-table">
             <tr>
               <td>Method Id</td>
