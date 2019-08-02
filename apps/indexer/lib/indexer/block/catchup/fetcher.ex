@@ -72,7 +72,14 @@ defmodule Indexer.Block.Catchup.Fetcher do
       ) do
     Logger.metadata(fetcher: :block_catchup)
 
-    {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+    {:ok, latest_block_number} =
+      case latest_block() do
+        nil ->
+          EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+
+        number ->
+          {:ok, number}
+      end
 
     case latest_block_number do
       # let realtime indexer get the genesis block
@@ -335,6 +342,15 @@ defmodule Indexer.Block.Catchup.Fetcher do
     case Integer.parse(string_value) do
       {integer, ""} -> integer
       _ -> 0
+    end
+  end
+
+  defp latest_block do
+    string_value = Application.get_env(:indexer, :last_block)
+
+    case Integer.parse(string_value) do
+      {integer, ""} -> integer
+      _ -> nil
     end
   end
 end
