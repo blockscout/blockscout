@@ -23,19 +23,13 @@ defmodule BlockScoutWeb.Router do
     pipe_through(:api)
     get("/health", HealthController, :health)
 
-    if Application.get_env(:block_scout_web, ApiRouter)[:enabled_update_endpoints] do
+    if Application.get_env(:block_scout_web, ApiRouter)[:writing_enabled] do
       post("/decompiled_smart_contract", DecompiledSmartContractController, :create)
       post("/verified_smart_contracts", VerifiedSmartContractController, :create)
     end
   end
 
-  scope "/verify_smart_contract" do
-    pipe_through(:api)
-
-    post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
-  end
-
-  if Application.get_env(:block_scout_web, ApiRouter)[:enabled] do
+  if Application.get_env(:block_scout_web, ApiRouter)[:reading_enabled] do
     forward("/api", ApiRouter)
 
     # Needs to be 200 to support the schema introspection for graphiql
@@ -68,6 +62,12 @@ defmodule BlockScoutWeb.Router do
 
     get("/api_docs", APIDocsController, :index)
     get("/eth_rpc_api_docs", APIDocsController, :eth_rpc)
+  end
+
+  scope "/verify_smart_contract" do
+    pipe_through(:api)
+
+    post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
   end
 
   if Application.get_env(:block_scout_web, WebRouter)[:enabled] do

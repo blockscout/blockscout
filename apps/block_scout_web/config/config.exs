@@ -89,8 +89,8 @@ config :wobserver,
   mode: :plug
 
 config :block_scout_web, BlockScoutWeb.ApiRouter,
-  enabled: System.get_env("DISABLE_API") != "true",
-  enabled_update_endpoints: System.get_env("DISABLE_UPDATE_ENDPOINTS") != "true"
+  writing_enabled: System.get_env("DISABLE_WRITE_API") != "true",
+  reading_enabled: System.get_env("DISABLE_READ_API") != "true"
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 

@@ -1,10 +1,18 @@
+defmodule RPCTranslatorForwarder do
+  @moduledoc """
+  Phoenix router limits forwarding,
+  so this module is to forward old paths for backward compatibility
+  """
+  alias BlockScoutWeb.API.RPC.RPCTranslator
+  defdelegate init(opts), to: RPCTranslator
+  defdelegate call(conn, opts), to: RPCTranslator
+end
+
 defmodule BlockScoutWeb.ApiRouter do
   @moduledoc """
   Router for API
   """
   use BlockScoutWeb, :router
-
-  alias BlockScoutWeb.API.RPC
 
   pipeline :api do
     plug(:accepts, ["json"])
@@ -13,12 +21,13 @@ defmodule BlockScoutWeb.ApiRouter do
   scope "/v1", as: :api_v1 do
     pipe_through(:api)
 
-    scope "/", BlockScoutWeb.API.V1 do
-      get("/supply", SupplyController, :supply)
+    scope "/" do
+      alias BlockScoutWeb.API.{RPC, V1}
+      get("/supply", V1.SupplyController, :supply)
 
-      post("/eth_rpc", EthController, :eth_request)
+      post("/eth_rpc", RPC.EthController, :eth_request)
 
-      forward("/", RPCTranslator, %{
+      forward("/", RPC.RPCTranslator, %{
         "block" => RPC.BlockController,
         "account" => RPC.AddressController,
         "logs" => RPC.LogsController,
@@ -31,12 +40,13 @@ defmodule BlockScoutWeb.ApiRouter do
   end
 
   # For backward compatibility. Should be removed
-  scope "/", BlockScoutWeb.API.RPC do
+  scope "/" do
+    alias BlockScoutWeb.API.RPC
     pipe_through(:api)
 
-    post("/eth_rpc", EthController, :eth_request)
+    post("/eth_rpc", RPC.EthController, :eth_request)
 
-    forward("/", RPCTranslator, %{
+    forward("/", RPCTranslatorForwarder, %{
       "block" => RPC.BlockController,
       "account" => RPC.AddressController,
       "logs" => RPC.LogsController,
