@@ -40,6 +40,26 @@ defmodule BlockScoutWeb.StakesChannel do
     {:reply, {:ok, %{html: html}}, socket}
   end
 
+  def handle_in("render_delegators_list", %{"address" => staking_address}, socket) do
+    pool = Chain.staking_pool(staking_address)
+    token = ContractState.get(:token)
+
+    delegators =
+      staking_address
+      |> Chain.staking_pool_delegators()
+      |> Enum.sort_by(&(to_string(&1.delegator_address_hash) != socket.assigns[:account]))
+
+    html =
+      View.render_to_string(StakesView, "_stakes_modal_delegators_list.html",
+        account: socket.assigns[:account],
+        pool: pool,
+        delegators: delegators,
+        token: token
+      )
+
+    {:reply, {:ok, %{html: html}}, socket}
+  end
+
   def handle_in("render_become_candidate", _, socket) do
     min_candidate_stake = ContractState.get(:min_candidate_stake)
     token = ContractState.get(:token)
