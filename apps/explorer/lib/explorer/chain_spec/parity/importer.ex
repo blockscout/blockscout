@@ -3,7 +3,17 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   Imports data from parity chain spec.
   """
 
-  @max_block_number 9_999_999_999_999_999_999
+  alias Explorer.Repo
+  alias Explorer.Chain.Block.{EmissionReward, Range}
+  alias Explorer.Chain.Wei
+
+  @max_block_number :infinity
+
+  def import_emission_rewards(chain_spec) do
+    rewards = emission_rewards(chain_spec)
+
+    Repo.insert_all(EmissionReward, rewards)
+  end
 
   def emission_rewards(chain_spec) do
     rewards = chain_spec["engine"]["Ethash"]["params"]["blockReward"]
@@ -22,15 +32,17 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   end
 
   defp create_range([{block_number1, reward}, {block_number2, _}]) do
+    block_number1 = if block_number1 != 0, do: block_number1 + 1, else: 0
+
     %{
-      block_range: block_number1..block_number2,
+      block_range: %Range{from: block_number1, to: block_number2},
       reward: reward
     }
   end
 
   defp create_range([{block_number, reward}]) do
     %{
-      block_range: block_number..@max_block_number,
+      block_range: %Range{from: block_number + 1, to: @max_block_number},
       reward: reward
     }
   end
@@ -38,7 +50,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   defp parse_hex_numbers(rewards) do
     Enum.map(rewards, fn {hex_block_number, hex_reward} ->
       block_number = parse_hex_number(hex_block_number)
-      reward = parse_hex_number(hex_reward)
+      {:ok, reward} = hex_reward |> parse_hex_number() |> Wei.cast()
 
       {block_number, reward}
     end)

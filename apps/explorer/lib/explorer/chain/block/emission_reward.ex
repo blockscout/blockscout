@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Block.EmissionReward do
   Represents the static reward given to the miner of a block in a range of block numbers.
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
 
   alias Explorer.Chain.Block.{EmissionReward, Range}
   alias Explorer.Chain.Wei
@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Block.EmissionReward do
 
   def changeset(%__MODULE__{} = emission_reward, attrs) do
     emission_reward
-    |> cast(attr, [:block_range, :reward])
+    |> cast(attrs, [:block_range, :reward])
     |> validate_required([:block_range, :reward])
   end
 end
