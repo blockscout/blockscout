@@ -24,4 +24,10 @@ defmodule Explorer.Chain.Block.EmissionReward do
     field(:block_range, Range)
     field(:reward, Wei)
   end
+
+  def changeset(%__MODULE__{} = emission_reward, attrs) do
+    emission_reward
+    |> cast(attr, [:block_range, :reward])
+    |> validate_required([:block_range, :reward])
+  end
 end
