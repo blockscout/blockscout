@@ -4,7 +4,6 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { ContextReplacementPlugin } = require('webpack');
-const { CriticalPlugin } = require('webpack-plugin-critical');
 const glob = require("glob");
 
 function transpileViewScript(file) {
@@ -28,6 +27,46 @@ function transpileViewScript(file) {
   }
 };
 
+const jsOptimizationParams = {
+  cache: true,
+  parallel: true,
+  sourceMap: true,
+}
+
+const awesompleteJs = {
+  entry: {
+    awesomplete: './js/lib/awesomplete.js',
+    'awesomplete-util': './js/lib/awesomplete-util.js',
+  },
+  output: {
+    filename: '[name].min.js',
+    path: path.resolve(__dirname, '../priv/static/js')
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: "css-loader",
+          }
+        ],
+      },
+    ],
+  },
+  optimization: {
+    minimizer: [
+      new TerserJSPlugin(jsOptimizationParams),
+    ],
+  },
+  plugins: [
+    new MiniCssExtractPlugin({
+      filename: '../css/awesomplete.css'
+    }),
+  ]
+}
+
 const appJs =
   {
     entry: './js/app.js',
@@ -36,7 +75,7 @@ const appJs =
       path: path.resolve(__dirname, '../priv/static/js')
     },
     optimization: {
-      minimizer: [new TerserJSPlugin({}), new OptimizeCSSAssetsPlugin({})],
+      minimizer: [new TerserJSPlugin(jsOptimizationParams), new OptimizeCSSAssetsPlugin({})],
     },
     module: {
       rules: [
@@ -84,16 +123,10 @@ const appJs =
         filename: '../css/app.css'
       }),
       new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
-      new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
-      // new CriticalPlugin({
-      //   src: 'index.html',
-      //   inline: true,
-      //   minify: true,
-      //   dest: 'index.html'
-      // })
+      new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/)
     ]
   }
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript);
 
-module.exports = viewScripts.concat(appJs);
+module.exports = viewScripts.concat(appJs, awesompleteJs);
