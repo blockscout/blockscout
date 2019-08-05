@@ -15,7 +15,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   def init(_) do
     :timer.send_interval(@interval, :import)
 
-    %{}
+    {:ok, %{}}
   end
 
   # Callback for errored fetch
@@ -49,7 +49,7 @@ defmodule Explorer.ChainSpec.GenesisData do
     {:noreply, state}
   end
 
-  defp fetch_genesis_data do
+  def fetch_genesis_data do
     if Application.get_env(:explorer, __MODULE__)[:chain_spec_path] do
       Task.Supervisor.async_nolink(Explorer.GenesisDataTaskSupervisor, fn ->
         chain_spec = Application.get_env(:explorer, __MODULE__)[:chain_spec_path] |> File.read!() |> Jason.decode!()
