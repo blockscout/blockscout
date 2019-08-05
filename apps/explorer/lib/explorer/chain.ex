@@ -4797,6 +4797,13 @@ defmodule Explorer.Chain do
     Repo.get_by(StakingPool, staking_address_hash: staking_address_hash)
   end
 
+  def staking_pool_delegators(staking_address_hash) do
+    StakingPoolsDelegator
+    |> where(pool_address_hash: ^staking_address_hash, is_active: true)
+    |> order_by(desc: :stake_amount)
+    |> Repo.all()
+  end
+
   def staking_pool_delegator(pool_address_hash, delegator_address_hash) do
     Repo.get_by(StakingPoolsDelegator,
       pool_address_hash: pool_address_hash,
