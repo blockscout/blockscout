@@ -1,10 +1,13 @@
 ## Current
 
 ### Features
+- [#2477](https://github.com/poanetwork/blockscout/pull/2477) - aggregate token transfers on transaction page
 - [#2458](https://github.com/poanetwork/blockscout/pull/2458) - Add LAST_BLOCK var to add ability indexing in the range of blocks
 - [#2456](https://github.com/poanetwork/blockscout/pull/2456) - fetch pending transactions for geth
 
 ### Fixes
+- [#2496](https://github.com/poanetwork/blockscout/pull/2496) - fix docker build
+- [#2495](https://github.com/poanetwork/blockscout/pull/2495) - fix logs for indexed chain
 - [#2459](https://github.com/poanetwork/blockscout/pull/2459) - fix top addresses query
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
