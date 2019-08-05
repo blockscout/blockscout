@@ -19,19 +19,9 @@ defmodule BlockScoutWeb.Router do
     plug(:accepts, ["json"])
   end
 
-  scope "/api/v1", BlockScoutWeb.API.V1, as: :api_v1 do
-    pipe_through(:api)
-    get("/health", HealthController, :health)
-
-    if Application.get_env(:block_scout_web, ApiRouter)[:writing_enabled] do
-      post("/decompiled_smart_contract", DecompiledSmartContractController, :create)
-      post("/verified_smart_contracts", VerifiedSmartContractController, :create)
-    end
-  end
+  forward("/api", ApiRouter)
 
   if Application.get_env(:block_scout_web, ApiRouter)[:reading_enabled] do
-    forward("/api", ApiRouter)
-
     # Needs to be 200 to support the schema introspection for graphiql
     @max_complexity 200
 
