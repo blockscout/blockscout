@@ -12,7 +12,8 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   def import_emission_rewards(chain_spec) do
     rewards = emission_rewards(chain_spec)
 
-    Repo.insert_all(EmissionReward, rewards)
+    {_, nil} = Repo.delete_all(EmissionReward)
+    {_, nil} = Repo.insert_all(EmissionReward, rewards)
   end
 
   def emission_rewards(chain_spec) do
