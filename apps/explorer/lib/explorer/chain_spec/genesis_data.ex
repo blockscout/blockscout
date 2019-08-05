@@ -49,6 +49,7 @@ defmodule Explorer.ChainSpec.GenesisData do
     {:noreply, state}
   end
 
+  # sobelow_skip ["Traversal"]
   def fetch_genesis_data do
     if Application.get_env(:explorer, __MODULE__)[:chain_spec_path] do
       Task.Supervisor.async_nolink(Explorer.GenesisDataTaskSupervisor, fn ->
