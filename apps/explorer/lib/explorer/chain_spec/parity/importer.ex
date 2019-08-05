@@ -6,7 +6,8 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   alias Explorer.Chain
   alias Explorer.Chain.Block.{EmissionReward, Range}
   alias Explorer.Chain.Hash.Address, as: AddressHash
-  alias Explorer.Chain.{Repo, Wei}
+  alias Explorer.Chain.Wei
+  alias Explorer.Repo
 
   @max_block_number :infinity
 
@@ -17,6 +18,26 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     {_, nil} = Repo.insert_all(EmissionReward, rewards)
   end
 
+  def import_genesis_coin_balances(chain_spec) do
+    balance_params =
+      chain_spec
+      |> genesis_coin_balances()
+      |> Stream.map(fn balance_map ->
+        Map.put(balance_map, :block_number, 0)
+      end)
+      |> Enum.to_list()
+
+    address_params =
+      balance_params
+      |> Stream.map(fn %{address_hash: hash} ->
+        %{hash: hash}
+      end)
+      |> Enum.to_list()
+
+    params = %{address_coin_balances: %{params: balance_params}, addresses: %{params: address_params}}
+
+    Chain.import(params)
+  end
 
   def genesis_coin_balances(chain_spec) do
     accounts = chain_spec["accounts"]

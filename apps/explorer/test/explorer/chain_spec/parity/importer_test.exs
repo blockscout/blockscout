@@ -1,9 +1,9 @@
 defmodule Explorer.ChainSpec.Parity.ImporterTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Block.EmissionReward
-  alias Explorer.Chain.Block.Range
-  alias Explorer.Chain.{Hash, Wei}
+  alias Explorer.Chain.Address.CoinBalance
+  alias Explorer.Chain.Block.{EmissionReward, Range}
+  alias Explorer.Chain.{Address, Hash, Wei}
   alias Explorer.ChainSpec.Parity.Importer
   alias Explorer.Repo
 
@@ -93,6 +93,16 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
                balance: 2_000_000_000_000_000_000_000
              } ==
                List.first(coin_balances)
+    end
+  end
+
+  describe "import_genesis_coin_balances/1" do
+    test "imports coin balances" do
+      {:ok, %{address_coin_balances: address_coin_balances}} = Importer.import_genesis_coin_balances(@chain_spec)
+
+      assert Enum.count(address_coin_balances) == 403
+      assert CoinBalance |> Repo.all() |> Enum.count() == 403
+      assert Address |> Repo.all() |> Enum.count() == 403
     end
   end
 end
