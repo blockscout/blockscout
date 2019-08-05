@@ -1,0 +1,75 @@
+<div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-validator-info" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Delegators</h5>
+      </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
+      <div class="modal-body">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th class="stakes-table-th">&nbsp;</th>
+              <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: "Staker's Address", tooltip: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut." %>
+              <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: "Total Stake Amount", tooltip: "Lorem ipsum dolor sit iusmod tempor incididunt ut." %>
+              <%=
+                title = if @pool.is_validator do "Reward Percent" else "Potential Reward Percent" end
+
+                render BlockScoutWeb.StakesView,
+                  "_stakes_th.html",
+                  title: title,
+                  tooltip: "Lorem ipsum dolor sit iusmod tempor incididunt ut."
+              %>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td class="stakes-td"><div class="stakes-td-order">1</div></td>
+              <td class="stakes-td">
+                <%=
+                  tooltip = if @pool.is_validator do "This is a validator" else false end
+
+                  render BlockScoutWeb.StakesView,
+                    "_stakes_address.html",
+                    address: @pool.staking_address_hash,
+                    tooltip: tooltip
+                %>
+              </td>
+              <td class="stakes-td"><%= format_according_to_decimals(@pool.self_staked_amount, @token.decimals) %></td>
+              <td class="stakes-td"><%= @pool.block_reward_ratio %>%</td>
+            </tr>
+
+            <%= for {delegator, index} <- Enum.with_index(@delegators, 2) do %>
+              <tr>
+                <td class="stakes-td"><div class="stakes-td-order"><%= index %></div></td>
+                <td class="stakes-td">
+                  <div class="stakes-address-container">
+                    <span class="stakes-address">
+                      <%= BlockScoutWeb.AddressView.trimmed_hash(delegator.delegator_address_hash) %>
+                    </span>
+                    <%= if to_string(delegator.delegator_address_hash) == @account do %>
+                      <div
+                          class="me-tooltip"
+                          data-boundary="window"
+                          data-container="body"
+                          data-html="true"
+                          data-placement="top"
+                          data-toggle="tooltip"
+                          title="It's me!"
+                      >
+                          ME
+                      </div>
+                    <% end %>
+                  </div>
+                </td>
+                <td class="stakes-td"><%= format_according_to_decimals(delegator.stake_amount, @token.decimals) %></td>
+                <td class="stakes-td"><%= if delegator.reward_ratio do "#{delegator.reward_ratio}%" else "-" end %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
