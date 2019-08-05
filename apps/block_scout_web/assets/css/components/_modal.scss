@@ -69,42 +69,7 @@
   }
 }
 
-.modal-fullwidth-xs {
-  @include media-breakpoint-down(xs) {
-    padding-right: 0 !important;
-
-    .modal-dialog {
-      max-width: initial;
-      min-width: initial;
-      margin: 0.5rem 0;
-    }
-
-    .modal-content {
-      border-radius: 0;
-
-      > div {
-        border-radius: 0;
-      }
-    }
-
-    .close.close-modal {
-      right: 10px;
-      top: 5px;
-
-      path {
-        fill: #a3a9b5;
-      }
-    }
-
-    .modal-bottom-disclaimer {
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0;
-    }
-  }
-}
-
-@media (min-width: 576px) {
-  .modal-dialog {
-    max-width: 530px !important;
-  }
+.modal-table {
+  width: calc(100% + #{$modal-horizontal-padding} * 2);
+  margin: 0 -#{$modal-horizontal-padding} 0;
 }
