@@ -7,6 +7,7 @@
 
 ### Fixes
 - [#2496](https://github.com/poanetwork/blockscout/pull/2496) - fix docker build
+- [#2495](https://github.com/poanetwork/blockscout/pull/2495) - fix logs for indexed chain
 - [#2459](https://github.com/poanetwork/blockscout/pull/2459) - fix top addresses query
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
