@@ -1,5 +1,5 @@
 <div class="text-nowrap row mt-3 mt-sm-0" data-test="token_transfer">
-  <span class="col-xs-12 col-lg-5">
+  <span class="col-xs-12 col-lg-8">
     <%= if from_or_to_address?(@token_transfer, @address) do %>
       <%= if @token_transfer.from_address_hash == @address.hash do %>
         <span data-test="transaction_type" class="text-danger">
@@ -20,7 +20,6 @@
     </span>
   </span>
   <span class="col-xs-12 col-lg-4 ml-3 ml-sm-0 text-truncate">
-  <%= token_transfer_amount(@token_transfer) %>
-  <%= link(token_symbol(@token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @token_transfer.token.contract_address_hash)) %>
+  <%= token_transfer_amount(@token_transfer) %> <%= link(token_symbol(@token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @token_transfer.token.contract_address_hash)) %>
   </span>
 </div>

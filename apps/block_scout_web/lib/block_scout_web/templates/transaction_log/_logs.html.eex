@@ -1,7 +1,7 @@
 <div data-test="transaction_log" class="tile tile-muted">
   <dl class="row">
-    <dt class="col-md-1"> <%= gettext "Address" %> </dt>
-    <dd class="col-md-11">
+    <dt class="col-lg-2"> <%= gettext "Address" %> </dt>
+    <dd class="col-lg-10">
       <h3 class="">
         <%= link(
             @log.address,
@@ -11,8 +11,8 @@
           ) %>
       </h3>
     </dd>
-    <dt class="col-md-1"><%= gettext "Decoded" %></dt>
-    <dd class="col-md-11">
+    <dt class="col-lg-2"><%= gettext "Decoded" %></dt>
+    <dd class="col-lg-10">
       <%= case decode(@log, @transaction) do %>
         <% {:error, :contract_not_verified} -> %>
           <div class="alert alert-info">
@@ -82,8 +82,8 @@
           <%= nil %>
       <% end %>
 
-    <dt class="col-md-1"><%= gettext "Topics" %></dt>
-    <dd class="col-md-11">
+    <dt class="col-lg-2"><%= gettext "Topics" %></dt>
+    <dd class="col-lg-10">
       <div class="raw-transaction-log-topics">
         <%= unless is_nil(@log.first_topic) do %>
           <div class="text-dark">
@@ -111,10 +111,10 @@
         <% end %>
       </div>
     </dd>
-    <dt class="col-md-1">
+    <dt class="col-lg-2">
       <%= gettext "Data" %>
     </dt>
-    <dd class="col-md-11">
+    <dd class="col-lg-10">
       <%= unless is_nil(@log.data) do %>
         <div class="text-dark raw-transaction-log-data">
           <%= @log.data %>

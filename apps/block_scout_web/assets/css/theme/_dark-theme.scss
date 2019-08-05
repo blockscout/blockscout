@@ -680,4 +680,8 @@ $labels-dark: #8a8dba; // header nav, labels
 		color: #3f436b !important;
 		border-right-color: #3f436b !important;
 	}
+
+	.alert-link {
+		color: $dark-secondary;
+	}
 }
