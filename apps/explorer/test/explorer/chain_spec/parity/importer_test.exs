@@ -3,7 +3,7 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
 
   alias Explorer.Chain.Block.EmissionReward
   alias Explorer.Chain.Block.Range
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{Hash, Wei}
   alias Explorer.ChainSpec.Parity.Importer
   alias Explorer.Repo
 
@@ -76,6 +76,23 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
 
       assert new_third.reward == %Wei{value: Decimal.new(2_000_000_000_000_000_000)}
       assert new_third.block_range == %Range{from: 7_280_001, to: :infinity}
+    end
+  end
+
+  describe "genesis_coin_balances/1" do
+    test "parses coin balance" do
+      coin_balances = Importer.genesis_coin_balances(@chain_spec)
+
+      assert Enum.count(coin_balances) == 403
+
+      assert %{
+               address_hash: %Hash{
+                 byte_count: 20,
+                 bytes: <<121, 174, 179, 69, 102, 185, 116, 195, 90, 88, 129, 222, 192, 32, 146, 125, 167, 223, 93, 37>>
+               },
+               balance: 2_000_000_000_000_000_000_000
+             } ==
+               List.first(coin_balances)
     end
   end
 end

@@ -3,9 +3,10 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   Imports data from parity chain spec.
   """
 
-  alias Explorer.Repo
+  alias Explorer.Chain
   alias Explorer.Chain.Block.{EmissionReward, Range}
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.Hash.Address, as: AddressHash
+  alias Explorer.Chain.{Repo, Wei}
 
   @max_block_number :infinity
 
@@ -16,12 +17,33 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     {_, nil} = Repo.insert_all(EmissionReward, rewards)
   end
 
+
+  def genesis_coin_balances(chain_spec) do
+    accounts = chain_spec["accounts"]
+
+    parse_accounts(accounts)
+  end
+
   def emission_rewards(chain_spec) do
     rewards = chain_spec["engine"]["Ethash"]["params"]["blockReward"]
 
     rewards
     |> parse_hex_numbers()
     |> format_ranges()
+  end
+
+  defp parse_accounts(accounts) do
+    accounts
+    |> Stream.filter(fn {_address, map} ->
+      !is_nil(map["balance"])
+    end)
+    |> Stream.map(fn {address, %{"balance" => value}} ->
+      {:ok, address_hash} = AddressHash.cast(address)
+      balance = parse_hex_number(value)
+
+      %{address_hash: address_hash, value: balance}
+    end)
+    |> Enum.to_list()
   end
 
   defp format_ranges(block_number_reward_pairs) do
