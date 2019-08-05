@@ -27,6 +27,8 @@ config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
   period: average_block_period
 
+config :explorer, Explorer.ChainSpec.GenesisData, chain_spec_path: System.get_env("CHAIN_SPEC_PATH")
+
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
