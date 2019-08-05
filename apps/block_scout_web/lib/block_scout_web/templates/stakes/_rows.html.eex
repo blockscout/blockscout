@@ -26,7 +26,11 @@
       <%= if @pool.staked_ratio, do: "#{@pool.staked_ratio}%" %>
     <% end %>
   </td>
-  <td class="stakes-td"><span class="stakes-td-link-style"><%= @pool.delegators_count %></span></td>
+  <td class="stakes-td">
+    <span class="stakes-td-link-style js-delegators-list" data-address="<%= @pool.staking_address_hash %>">
+      <%= @pool.delegators_count %>
+    </span>
+  </td>
   <td class="stakes-td">
     <%= if @pool.is_banned do %>
       <span class="stakes-td-banned-info">

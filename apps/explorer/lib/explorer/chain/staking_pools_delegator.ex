@@ -18,8 +18,9 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
           max_ordered_withdraw_allowed: Decimal.t(),
           max_withdraw_allowed: Decimal.t(),
           ordered_withdraw: Decimal.t(),
-          stake_amount: Decimal.t(),
           ordered_withdraw_epoch: integer(),
+          stake_amount: Decimal.t(),
+          reward_ratio: Decimal.t(),
           is_active: boolean(),
           is_deleted: boolean()
         }
@@ -27,7 +28,7 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
   @attrs ~w(
     pool_address_hash delegator_address_hash max_ordered_withdraw_allowed
     max_withdraw_allowed ordered_withdraw stake_amount ordered_withdraw_epoch
-    is_active is_deleted
+    reward_ratio is_active is_deleted
   )a
 
   @req_attrs ~w(
@@ -42,6 +43,7 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
     field(:ordered_withdraw, :decimal)
     field(:ordered_withdraw_epoch, :integer)
     field(:stake_amount, :decimal)
+    field(:reward_ratio, :decimal)
     field(:is_active, :boolean, default: true)
     field(:is_deleted, :boolean, default: false)
 

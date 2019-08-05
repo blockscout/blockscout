@@ -139,6 +139,11 @@ defmodule Explorer.Staking.ContractState do
           Enum.map(responses.inactive_delegators, &{pool_address, &1, false})
       end)
 
+    delegator_rewards =
+      Enum.into(pool_staking_responses, %{}, fn {pool_address, responses} ->
+        {pool_address, Enum.into(Enum.zip(responses.stakers, responses.reward_percents), %{})}
+      end)
+
     delegator_responses =
       delegators
       |> Enum.map(fn {pool_address, delegator_address, _} ->
@@ -191,10 +196,28 @@ defmodule Explorer.Staking.ContractState do
 
     delegator_entries =
       Enum.map(delegator_responses, fn {{pool_address, delegator_address, is_active}, response} ->
+        staking_response = pool_staking_responses[pool_address]
+        mining_response = pool_mining_responses[pool_address]
+
+        reward_ratio =
+          if mining_response.is_validator do
+            reward_ratio = delegator_rewards[pool_address][delegator_address]
+
+            if reward_ratio do
+              reward_ratio / 10_000
+            end
+          else
+            ratio(
+              response.stake_amount - response.ordered_withdraw,
+              staking_response.staked_amount - staking_response.self_staked_amount
+            ) * min(0.7, 1 - staking_response.block_reward / 1_000_000)
+          end
+
         Map.merge(response, %{
           delegator_address_hash: delegator_address,
           pool_address_hash: pool_address,
-          is_active: is_active
+          is_active: is_active,
+          reward_ratio: reward_ratio
         })
       end)
 
