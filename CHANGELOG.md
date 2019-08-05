@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2499](https://github.com/poanetwork/blockscout/pull/2499) - import emission reward ranges
 - [#2458](https://github.com/poanetwork/blockscout/pull/2458) - Add LAST_BLOCK var to add ability indexing in the range of blocks
 - [#2456](https://github.com/poanetwork/blockscout/pull/2456) - fetch pending transactions for geth
 
