@@ -110,6 +110,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
           max_withdraw_allowed: fragment("EXCLUDED.max_withdraw_allowed"),
           max_ordered_withdraw_allowed: fragment("EXCLUDED.max_ordered_withdraw_allowed"),
           ordered_withdraw_epoch: fragment("EXCLUDED.ordered_withdraw_epoch"),
+          reward_ratio: fragment("EXCLUDED.reward_ratio"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", delegator.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", delegator.updated_at),
           is_active: fragment("EXCLUDED.is_active"),
