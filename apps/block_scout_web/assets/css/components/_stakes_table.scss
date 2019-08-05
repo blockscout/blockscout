@@ -124,6 +124,7 @@ $stakes-table-cell-separation: 25px !default;
 
 .stakes-td-link-style {
   color: $secondary;
+  cursor: pointer;
 
   .stakes-tr-banned & {
     color: $stakes-banned-color;
