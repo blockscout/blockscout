@@ -232,7 +232,7 @@ defmodule Explorer.Chain do
 
       address_hash
       |> address_to_transactions_without_rewards(paging_options, options)
-      |> Enum.concat(Task.await(rewards_task))
+      |> Enum.concat(Task.await(rewards_task, 20_000))
       |> Enum.sort_by(fn item ->
         case item do
           {%Reward{} = emission_reward, _} ->
