@@ -23,6 +23,7 @@
 - [#2450](https://github.com/poanetwork/blockscout/pull/2450) - Fix clearance of logs and node_modules folders in clearing script
 - [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
 - [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
+- [#2373](https://github.com/poanetwork/blockscout/pull/2373) - Add script to validate internal_transactions constraint for large DBs
 
 ## 2.0.2-beta
 
