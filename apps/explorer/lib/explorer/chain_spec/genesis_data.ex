@@ -11,9 +11,14 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   @interval :timer.minutes(2)
 
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  end
+
   @impl GenServer
   def init(_) do
     :timer.send_interval(@interval, :import)
+    Process.send_after(self(), :import, @interval)
 
     {:ok, %{}}
   end
@@ -58,6 +63,8 @@ defmodule Explorer.ChainSpec.GenesisData do
 
         {:ok, _} = Importer.import_genesis_coin_balances(chain_spec)
       end)
+    else
+      Logger.warn(fn -> "Failed to fetch genesis data. Chain spec path is not set." end)
     end
   end
 end
