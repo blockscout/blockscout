@@ -16,12 +16,13 @@
 
 ### Chore
 - [#2492](https://github.com/poanetwork/blockscout/pull/2492) - hide decoded row if event is not decoded
-- [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
+- [#2490](https://github.com/poanetwork/blockscout/pull/2490) - enable credo duplicated code check
 - [#2432](https://github.com/poanetwork/blockscout/pull/2432) - bump credo version
 - [#2457](https://github.com/poanetwork/blockscout/pull/2457) - update mix.lock
 - [#2435](https://github.com/poanetwork/blockscout/pull/2435) - Replace deprecated extract-text-webpack-plugin with mini-css-extract-plugin
 - [#2450](https://github.com/poanetwork/blockscout/pull/2450) - Fix clearance of logs and node_modules folders in clearing script
 - [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
+- [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
 
 ## 2.0.2-beta
 
