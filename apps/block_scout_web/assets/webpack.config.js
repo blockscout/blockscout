@@ -29,9 +29,13 @@ function transpileViewScript(file) {
 
 const appJs =
   {
-    entry: './js/app.js',
+    entry: {
+      app: './js/app.js',
+      stakes: './js/pages/stakes.js',
+      'non-critical': './css/non-critical.scss',
+    },
     output: {
-      filename: 'app.js',
+      filename: '[name].js',
       path: path.resolve(__dirname, '../priv/static/js')
     },
     optimization: {
@@ -80,7 +84,7 @@ const appJs =
     },
     plugins: [
       new MiniCssExtractPlugin({
-        filename: '../css/app.css'
+        filename: '../css/[name].css'
       }),
       new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/)
