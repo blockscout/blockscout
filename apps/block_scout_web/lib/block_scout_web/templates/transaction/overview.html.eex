@@ -177,7 +177,7 @@
           <div class="card-body card-body-flex-column-space-between">
             <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Transfer" %></h2>
             <div class="text-right">
-            <%= for transfer  <- transaction_with_transfers.token_transfers do %>
+            <%= for transfer  <- aggregate_token_transfers(transaction_with_transfers.token_transfers) do %>
 
               <h3 class="address-balance-text">
                   <%= token_transfer_amount(transfer) %>

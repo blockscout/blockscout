@@ -49,7 +49,7 @@ msgid "%{subnetwork} Explorer - BlockScout"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:144
+#: lib/block_scout_web/views/transaction_view.ex:163
 msgid "(Awaiting internal transactions for status)"
 msgstr ""
 
@@ -276,12 +276,12 @@ msgid "Contract Address Pending"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:221
+#: lib/block_scout_web/views/transaction_view.ex:240
 msgid "Contract Call"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:220
+#: lib/block_scout_web/views/transaction_view.ex:239
 msgid "Contract Creation"
 msgstr ""
 
@@ -356,12 +356,12 @@ msgid "Error trying to fetch balances."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:148
+#: lib/block_scout_web/views/transaction_view.ex:167
 msgid "Error: %{reason}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:146
+#: lib/block_scout_web/views/transaction_view.ex:165
 msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
 
@@ -466,7 +466,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:11
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6
 #: lib/block_scout_web/views/address_view.ex:306
-#: lib/block_scout_web/views/transaction_view.ex:274
+#: lib/block_scout_web/views/transaction_view.ex:293
 msgid "Internal Transactions"
 msgstr ""
 
@@ -493,7 +493,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:17
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:8
 #: lib/block_scout_web/views/address_view.ex:312
-#: lib/block_scout_web/views/transaction_view.ex:275
+#: lib/block_scout_web/views/transaction_view.ex:294
 msgid "Logs"
 msgstr ""
 
@@ -506,8 +506,8 @@ msgid "Market Cap"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:129
-#: lib/block_scout_web/views/transaction_view.ex:129
+#: lib/block_scout_web/views/transaction_view.ex:148
+#: lib/block_scout_web/views/transaction_view.ex:148
 msgid "Max of"
 msgstr ""
 
@@ -598,8 +598,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:55
-#: lib/block_scout_web/views/transaction_view.ex:143
-#: lib/block_scout_web/views/transaction_view.ex:177
+#: lib/block_scout_web/views/transaction_view.ex:162
+#: lib/block_scout_web/views/transaction_view.ex:196
 msgid "Pending"
 msgstr ""
 
@@ -686,7 +686,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_emission_reward_tile.html.eex:8
-#: lib/block_scout_web/views/transaction_view.ex:145
+#: lib/block_scout_web/views/transaction_view.ex:164
 msgid "Success"
 msgstr ""
 
@@ -791,7 +791,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:5
 #: lib/block_scout_web/templates/transaction_token_transfer/_token_transfer.html.eex:4
-#: lib/block_scout_web/views/transaction_view.ex:219
+#: lib/block_scout_web/views/transaction_view.ex:238
 msgid "Token Transfer"
 msgstr ""
 
@@ -801,7 +801,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
 #: lib/block_scout_web/views/tokens/overview_view.ex:35
-#: lib/block_scout_web/views/transaction_view.ex:273
+#: lib/block_scout_web/views/transaction_view.ex:292
 msgid "Token Transfers"
 msgstr ""
 
@@ -835,7 +835,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:3
-#: lib/block_scout_web/views/transaction_view.ex:222
+#: lib/block_scout_web/views/transaction_view.ex:241
 msgid "Transaction"
 msgstr ""
 
@@ -1495,7 +1495,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:24
 #: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:7
-#: lib/block_scout_web/views/transaction_view.ex:276
+#: lib/block_scout_web/views/transaction_view.ex:295
 msgid "Raw Trace"
 msgstr ""
 
@@ -1703,12 +1703,12 @@ msgid "Change Network"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:44
+#: lib/block_scout_web/views/transaction_view.ex:63
 msgid "ERC-20 "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:45
+#: lib/block_scout_web/views/transaction_view.ex:64
 msgid "ERC-721 "
 msgstr ""
 
