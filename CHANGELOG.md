@@ -7,6 +7,7 @@
 
 ### Fixes
 - [#2503](https://github.com/poanetwork/blockscout/pull/2503) - Mitigate autocompletion library influence to page loading performance
+- [#2502](https://github.com/poanetwork/blockscout/pull/2502) - increase reward task timeout
 - [#2463](https://github.com/poanetwork/blockscout/pull/2463) - dark theme fixes
 - [#2496](https://github.com/poanetwork/blockscout/pull/2496) - fix docker build
 - [#2495](https://github.com/poanetwork/blockscout/pull/2495) - fix logs for indexed chain
