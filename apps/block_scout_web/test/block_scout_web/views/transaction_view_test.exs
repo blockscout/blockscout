@@ -253,4 +253,20 @@ defmodule BlockScoutWeb.TransactionViewTest do
       assert TransactionView.current_tab_name(logs_path) == "Logs"
     end
   end
+
+  describe "aggregate_token_transfers/1" do
+    test "aggregates token transfers" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer = insert(:token_transfer, transaction: transaction, amount: Decimal.new(1))
+
+      result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
+
+      assert Enum.count(result) == 1
+      assert List.first(result).amount == Decimal.new(3)
+    end
+  end
 end
