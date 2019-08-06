@@ -15,6 +15,7 @@
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
 ### Chore
+- [#2492](https://github.com/poanetwork/blockscout/pull/2492) - hide decoded row if event is not decoded
 - [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
 - [#2432](https://github.com/poanetwork/blockscout/pull/2432) - bump credo version
 - [#2457](https://github.com/poanetwork/blockscout/pull/2457) - update mix.lock
