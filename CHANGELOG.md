@@ -1,16 +1,29 @@
 ## Current
 
 ### Features
-- [#2373](https://github.com/poanetwork/blockscout/pull/2373) - Add script to validate internal_transactions constraint for large DBs
+- [#2477](https://github.com/poanetwork/blockscout/pull/2477) - aggregate token transfers on transaction page
+- [#2458](https://github.com/poanetwork/blockscout/pull/2458) - Add LAST_BLOCK var to add ability indexing in the range of blocks
+- [#2456](https://github.com/poanetwork/blockscout/pull/2456) - fetch pending transactions for geth
 
 ### Fixes
+- [#2503](https://github.com/poanetwork/blockscout/pull/2503) - Mitigate autocompletion library influence to page loading performance
+- [#2502](https://github.com/poanetwork/blockscout/pull/2502) - increase reward task timeout
+- [#2463](https://github.com/poanetwork/blockscout/pull/2463) - dark theme fixes
+- [#2496](https://github.com/poanetwork/blockscout/pull/2496) - fix docker build
+- [#2495](https://github.com/poanetwork/blockscout/pull/2495) - fix logs for indexed chain
+- [#2459](https://github.com/poanetwork/blockscout/pull/2459) - fix top addresses query
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
 ### Chore
+- [#2492](https://github.com/poanetwork/blockscout/pull/2492) - hide decoded row if event is not decoded
+- [#2490](https://github.com/poanetwork/blockscout/pull/2490) - enable credo duplicated code check
+- [#2432](https://github.com/poanetwork/blockscout/pull/2432) - bump credo version
 - [#2457](https://github.com/poanetwork/blockscout/pull/2457) - update mix.lock
 - [#2435](https://github.com/poanetwork/blockscout/pull/2435) - Replace deprecated extract-text-webpack-plugin with mini-css-extract-plugin
 - [#2450](https://github.com/poanetwork/blockscout/pull/2450) - Fix clearance of logs and node_modules folders in clearing script
 - [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
+- [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
+- [#2373](https://github.com/poanetwork/blockscout/pull/2373) - Add script to validate internal_transactions constraint for large DBs
 
 ## 2.0.2-beta
 
