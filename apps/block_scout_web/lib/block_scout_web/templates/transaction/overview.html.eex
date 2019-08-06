@@ -221,8 +221,7 @@
             </h3>
             <!-- Gas Limit -->
             <p class="address-current-balance">
-              <%= gettext "Limit" %>
-              <%= format_gas_limit(@transaction.gas) %>
+              <%= gettext "Limit" %> <%= format_gas_limit(@transaction.gas) %>
             </p>
           </div>
         </div>
