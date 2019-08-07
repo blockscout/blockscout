@@ -1510,7 +1510,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:40
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:39
 msgid "Page"
 msgstr ""
 
@@ -1528,7 +1528,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:40
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:39
 msgid "of"
 msgstr ""
 
