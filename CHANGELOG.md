@@ -6,6 +6,7 @@
 - [#2456](https://github.com/poanetwork/blockscout/pull/2456) - fetch pending transactions for geth
 
 ### Fixes
+- [#2520](https://github.com/poanetwork/blockscout/pull/2520) - Hide loading message when fetching is failed
 - [#2503](https://github.com/poanetwork/blockscout/pull/2503) - Mitigate autocompletion library influence to page loading performance
 - [#2502](https://github.com/poanetwork/blockscout/pull/2502) - increase reward task timeout
 - [#2463](https://github.com/poanetwork/blockscout/pull/2463) - dark theme fixes
