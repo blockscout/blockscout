@@ -64,7 +64,7 @@ defmodule BlockScoutWeb.Mixfile do
       # Integrates Absinthe subscriptions with Phoenix
       {:absinthe_phoenix, git: "https://github.com/ayrat555/absinthe_phoenix.git", branch: "master"},
       # Plug support for Absinthe
-      {:absinthe_plug, git: "https://github.com/ayrat555/absinthe_plug.git", branch: "ab-allow-to-set-default-query"},
+      {:absinthe_plug, git: "https://github.com/ayrat555/absinthe_plug.git", branch: "ab-enable-default-query"},
       # Absinthe support for the Relay framework
       {:absinthe_relay, "~> 1.4"},
       {:bypass, "~> 1.0", only: :test},
