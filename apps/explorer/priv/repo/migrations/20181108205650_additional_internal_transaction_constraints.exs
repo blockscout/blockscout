@@ -7,6 +7,9 @@ defmodule Explorer.Repo.Migrations.AdditionalInternalTransactionConstraints do
   mix ecto.migrate
   psql -d $DATABASE -a -f priv/repo/migrations/scripts/20181108205650_additional_internal_transaction_constraints.sql
   ```
+
+  NOTE: you may want to consider using `apps/explorer/priv/repo/migrations/scripts/20181108205650_large_additional_internal_transaction_constraints.sql`
+  instead if you are dealing with a very large number of transactions/internal_transactions.
   """
 
   use Ecto.Migration
