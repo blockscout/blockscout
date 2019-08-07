@@ -1,18 +1,27 @@
 <div class="api-doc-list-item" >
-  <div
-    aria-controls="<%= @action %>"
-    aria-expanded="false"
-    class="api-doc-list-item-contents"
-    data-toggle="collapse"
-    href="#<%= @action %>"
-  >
-    <div data-selector="stop-propagation" class="api-doc-list-item-description">
+  <div class="api-doc-list-item-contents" href="#<%= @action %>">
+    <div class="api-doc-list-item-description">
       <h3 class="api-doc-list-item-title"><%= @action %></h3>
       <p class="api-doc-list-item-contents"><%= raw @info.notes %></p>
-      <p class="api-doc-list-item-query api-text-monospace api-text-monospace-background">curl -X POST --data '{"id":0,"jsonrpc":"2.0","method": "<%= @action %>", params: []}'</p>
-      <p class="api-doc-list-item-text"><%= raw @info.example %></p>
+      <span class="api-doc-list-item-query api-text-monospace api-text-monospace-background btn" 
+        data-clipboard-text="curl -X POST --data '{&quot;id&quot;:0,&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;method&quot;: &quot;<%= @action %>&quot;, params: []}'"
+      >
+        curl -X POST --data '{"id":0,"jsonrpc":"2.0","method": "<%= @action %>", params: []}'
+      </span>
+      <p class="api-doc-list-item-text">
+        <div class="tile tile-muted p-1">
+          <pre
+            class="m-2"
+            data-json='<%= @info.example %>'
+          ></pre>
+        </div>
+      </p>
     </div>
-    <div class="api-doc-list-item-controls">
+    <div class="api-doc-list-item-controls" 
+      aria-controls="<%= @action %>"
+      aria-expanded="false"
+      data-toggle="collapse"
+      href="#<%= @action %>">
       <div class="api-doc-list-item-controls-badges">
         <span class="badge badge-neutral api-badge"><%= gettext "POST" %></span>
       </div>
