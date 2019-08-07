@@ -60,8 +60,7 @@ config :block_scout_web, BlockScoutWeb.SocialMedia,
 
 config :ex_cldr,
   default_locale: "en",
-  locales: ["en"],
-  gettext: BlockScoutWeb.Gettext
+  default_backend: BlockScoutWeb.Cldr
 
 config :logger, :block_scout_web,
   # keep synced with `config/config.exs`
