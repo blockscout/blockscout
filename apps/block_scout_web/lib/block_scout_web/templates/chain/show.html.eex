@@ -56,7 +56,7 @@
               <%= gettext "Total transactions" %>
             </span>
             <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
-              <%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
+              <%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
             </span>
           </div>
           <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-3">
@@ -64,7 +64,7 @@
               <%= gettext "Total blocks" %>
             </span>
             <span class="dashboard-banner-network-stats-value" data-selector="block-count">
-              <%= Cldr.Number.to_string!(@block_count, format: "#,###") %>
+              <%= BlockScoutWeb.Cldr.Number.to_string!(@block_count, format: "#,###") %>
             </span>
           </div>
           <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-4">
@@ -72,7 +72,7 @@
               <%= gettext "Wallet addresses" %>
             </span>
             <span class="dashboard-banner-network-stats-value" data-selector="address-count">
-              <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
+              <%= BlockScoutWeb.Cldr.Number.to_string!(@address_count, format: "#,###") %>
             </span>
           </div>
         </div>
