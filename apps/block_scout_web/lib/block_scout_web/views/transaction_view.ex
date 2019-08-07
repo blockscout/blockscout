@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
-  alias Cldr.Number
+  alias BlockScoutWeb.Cldr.Number
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
@@ -119,7 +119,7 @@ defmodule BlockScoutWeb.TransactionView do
 
       %Block{consensus: true} ->
         {:ok, confirmations} = Chain.confirmations(block, named_arguments)
-        Cldr.Number.to_string!(confirmations, format: "#,###")
+        BlockScoutWeb.Cldr.Number.to_string!(confirmations, format: "#,###")
     end
   end
 
@@ -175,7 +175,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def gas(%type{gas: gas}) when is_transaction_type(type) do
-    Cldr.Number.to_string!(gas)
+    BlockScoutWeb.Cldr.Number.to_string!(gas)
   end
 
   def skip_decoding?(transaction) do

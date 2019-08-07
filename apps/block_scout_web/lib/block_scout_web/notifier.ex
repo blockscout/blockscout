@@ -126,7 +126,7 @@ defmodule BlockScoutWeb.Notifier do
   """
   def broadcast_blocks_indexed_ratio(ratio, finished?) do
     Endpoint.broadcast("blocks:indexing", "index_status", %{
-      ratio: ratio,
+      ratio: Decimal.to_string(ratio),
       finished: finished?
     })
   end
