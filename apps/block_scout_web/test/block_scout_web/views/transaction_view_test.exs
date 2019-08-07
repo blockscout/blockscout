@@ -279,7 +279,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
       result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
 
-      assert Enum.count(result) == 1
+      assert Enum.count(result) == 3
       assert List.first(result).amount == nil
     end
   end
