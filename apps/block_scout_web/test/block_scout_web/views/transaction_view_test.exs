@@ -268,5 +268,19 @@ defmodule BlockScoutWeb.TransactionViewTest do
       assert Enum.count(result) == 1
       assert List.first(result).amount == Decimal.new(3)
     end
+
+    test "does not aggregate NFT tokens" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer = insert(:token_transfer, transaction: transaction, amount: nil)
+
+      result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
+
+      assert Enum.count(result) == 1
+      assert List.first(result).amount == nil
+    end
   end
 end
