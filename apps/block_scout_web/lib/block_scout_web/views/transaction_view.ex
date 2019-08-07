@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.TransactionView do
         aggregate_reducer(token_transfer, acc)
       end)
 
-    final_transfers = Enum.map(transfers, fn {_key, value} -> value end)
+    final_transfers = Map.values(transfers)
 
     final_transfers ++ nft_transfers
   end
