@@ -15,7 +15,7 @@
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
 ### Chore
-- [#2507](https://github.com/poanetwork/blockscout/pull/2507) - get rid of telemetry warnings
+- [#2507](https://github.com/poanetwork/blockscout/pull/2507) - update minor version of ecto, ex_machina, phoenix_live_reload
 - [#2473](https://github.com/poanetwork/blockscout/pull/2473) - get rid of cldr warnings
 - [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
 - [#2492](https://github.com/poanetwork/blockscout/pull/2492) - hide decoded row if event is not decoded
