@@ -180,8 +180,7 @@
             <%= for transfer  <- aggregate_token_transfers(transaction_with_transfers.token_transfers) do %>
 
               <h3 class="address-balance-text">
-                  <%= token_transfer_amount(transfer) %>
-                  <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
+                  <%= token_transfer_amount(transfer) %> <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
               </h3>
 
             <% end %>

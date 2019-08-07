@@ -104,8 +104,7 @@
           <%= if contract?(@address) do %>
             <span class="text-muted" data-test="address_contract_creator">
               <%= if from_address_hash do %>
-                <%= gettext "Created by" %>
-                <%= link(
+                <%= gettext "Created by" %> <%= link(
                   trimmed_hash(from_address_hash(@address)),
                   to: address_path(@conn, :show, from_address_hash(@address))
                 ) %>
