@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   """
 
   alias BlockScoutWeb.{CurrencyHelpers}
-  alias Explorer.Chain.{Address, Token, TokenTransfer}
+  alias Explorer.Chain.{Address, Token}
 
   @doc """
   Returns the token transfers' amount according to the token's type and decimals.
@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   When the token's type is ERC-721, the function will return a string with the token_id that
   represents the ERC-721 token since this kind of token doesn't have amount and decimals.
   """
-  def token_transfer_amount(%TokenTransfer{token: token, amount: amount, token_id: token_id}) do
+  def token_transfer_amount(%{token: token, amount: amount, token_id: token_id}) do
     do_token_transfer_amount(token, amount, token_id)
   end
 
