@@ -16,6 +16,8 @@
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
 ### Chore
+- [#2473](https://github.com/poanetwork/blockscout/pull/2473) - get rid of cldr warnings
+- [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
 - [#2492](https://github.com/poanetwork/blockscout/pull/2492) - hide decoded row if event is not decoded
 - [#2490](https://github.com/poanetwork/blockscout/pull/2490) - enable credo duplicated code check
 - [#2432](https://github.com/poanetwork/blockscout/pull/2432) - bump credo version
