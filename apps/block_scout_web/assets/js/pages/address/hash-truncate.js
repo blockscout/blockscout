@@ -9,7 +9,7 @@ var truncate = function (fullStr, strLen, separator) {
   var backChars = Math.floor(charsToShow / 2)
   return fullStr.substr(0, frontChars) + separator + fullStr.substr(fullStr.length - backChars)
 }
-// apply
+// apply truncation
 var tStrCheck = document.getElementById('tStr')
 if (document.body.contains(tStrCheck)) {
   var tStr = document.getElementById('tStr').innerHTML
