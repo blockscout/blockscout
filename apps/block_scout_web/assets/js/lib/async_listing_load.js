@@ -72,6 +72,7 @@ export function asyncReducer (state = asyncInitialState, action) {
     case 'START_REQUEST': {
       return Object.assign({}, state, {
         loading: true,
+        loadingFirstPage: true,
         requestError: false
       })
     }
