@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
 
   alias Explorer.Repo
   alias Explorer.Chain.{Address, DecompiledSmartContract}
+  alias BlockScoutWeb.ApiRouter.Helpers
 
   import Ecto.Query,
     only: [from: 2]
@@ -113,5 +114,9 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
 
       assert request.status == 403
     end
+  end
+
+  defp api_v1_decompiled_smart_contract_path(conn, action) do
+    "/api" <> Helpers.api_v1_decompiled_smart_contract_path(conn, action)
   end
 end

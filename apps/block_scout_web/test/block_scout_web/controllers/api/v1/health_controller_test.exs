@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.{Chain, PagingOptions}
+  alias BlockScoutWeb.ApiRouter.Helpers
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Blocks.cache_name()})
@@ -86,5 +87,9 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
                "latest_block_inserted_at" => _
              }
            } = Poison.decode!(request.resp_body)
+  end
+
+  defp api_v1_health_path(conn, action) do
+    "/api" <> Helpers.api_v1_health_path(conn, action)
   end
 end
