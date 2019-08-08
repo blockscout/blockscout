@@ -1,4 +1,4 @@
-<div data-selector="loading-message" class="tile tile-type-loading">
+<div data-loading-message data-selector="loading-message" class="tile tile-type-loading">
   <div class="row tile-body">
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
       <span class="tile-label">
@@ -22,7 +22,7 @@
     </div>
   </div>
 </div>
-<div data-selector="loading-message" class="tile tile-type-loading">
+<div data-loading-message data-selector="loading-message" class="tile tile-type-loading">
   <div class="row tile-body">
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
       <span class="tile-label">
@@ -46,7 +46,7 @@
     </div>
   </div>
 </div>
-<div data-selector="loading-message" class="tile tile-type-loading">
+<div data-loading-message data-selector="loading-message" class="tile tile-type-loading">
   <div class="row tile-body">
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
       <span class="tile-label">

@@ -1,3 +1,7 @@
+<link rel="preload" href="/css/awesomplete.css" as="style" onload="this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="/css/awesomplete.css"></noscript>
+<script src="/js/awesomplete.min.js"></script>
+<script src="/js/awesomplete-util.min.js"></script>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <script>
     if (localStorage.getItem("current-color-mode") === "dark") {
@@ -86,7 +90,7 @@
                 ) %>
             <%= link(
                   gettext("Eth RPC"),
-                  class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
+                  class: "dropdown-item #{tab_status("eth_rpc_api_docs", @conn.request_path)}",
                   to: api_docs_path(@conn, :eth_rpc)
                 ) %>
           </div>
