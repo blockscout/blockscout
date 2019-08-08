@@ -79,7 +79,7 @@
                   <%= gettext("Incoming Transactions") %>
                 <% else %>
                   <span data-selector="transaction-count">
-                    <%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %>
+                    <%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_count, format: "#,###") %>
                   </span>
                   <%= gettext("Transactions Sent") %>
                 <% end %>
@@ -92,7 +92,7 @@
               <%= if validator?(@validation_count) do %>
                 <span class="address-detail-item">
                   <span data-selector="validation-count">
-                    <%= Cldr.Number.to_string!(@validation_count, format: "#,###") %>
+                    <%= BlockScoutWeb.Cldr.Number.to_string!(@validation_count, format: "#,###") %>
                   </span>
                   <%= gettext("Blocks Validated") %>
                 </span>

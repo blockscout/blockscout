@@ -25,8 +25,9 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   def init(opts), do: opts
 
   def call(%Conn{params: %{"module" => module, "action" => action}} = conn, translations) do
-    with {:ok, controller} <- translate_module(translations, module),
+    with {:ok, {controller, write_actions}} <- translate_module(translations, module),
          {:ok, action} <- translate_action(action),
+         true <- action_accessed?(action, write_actions),
          {:ok, conn} <- call_controller(conn, controller, action) do
       conn
     else
@@ -64,7 +65,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   end
 
   @doc false
-  @spec translate_module(map(), String.t()) :: {:ok, module()} | {:error, :no_action}
+  @spec translate_module(map(), String.t()) :: {:ok, {module(), list(atom())}} | {:error, :no_action}
   defp translate_module(translations, module) do
     module_lowercase = String.downcase(module)
 
@@ -81,6 +82,16 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
     {:ok, String.to_existing_atom(action_lowercase)}
   rescue
     ArgumentError -> {:error, :no_action}
+  end
+
+  defp action_accessed?(action, write_actions) do
+    conf = Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)
+
+    if action in write_actions do
+      conf[:writing_enabled] || {:error, :no_action}
+    else
+      conf[:reading_enabled] || {:error, :no_action}
+    end
   end
 
   @doc false

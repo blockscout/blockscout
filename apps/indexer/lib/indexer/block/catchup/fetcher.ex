@@ -123,7 +123,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
               Shrinkable.shrunk?(sequence)
           end
 
-        %{first_block_number: first, missing_block_count: missing_block_count, shrunk: shrunk}
+        %{first_block_number: first, last_block_number: last, missing_block_count: missing_block_count, shrunk: shrunk}
     end
   end
 
