@@ -8,6 +8,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   require Logger
 
   alias Explorer.ChainSpec.Parity.Importer
+  alias HTTPoison.Response
 
   @interval :timer.minutes(2)
 
@@ -56,15 +57,52 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   # sobelow_skip ["Traversal"]
   def fetch_genesis_data do
-    if Application.get_env(:explorer, __MODULE__)[:chain_spec_path] do
-      Task.Supervisor.async_nolink(Explorer.GenesisDataTaskSupervisor, fn ->
-        chain_spec = Application.get_env(:explorer, __MODULE__)[:chain_spec_path] |> File.read!() |> Jason.decode!()
-        Importer.import_emission_rewards(chain_spec)
+    path = Application.get_env(:explorer, __MODULE__)[:chain_spec_path]
 
-        {:ok, _} = Importer.import_genesis_coin_balances(chain_spec)
+    if path do
+      Task.Supervisor.async_nolink(Explorer.GenesisDataTaskSupervisor, fn ->
+        case fetch_spec(path) do
+          {:ok, chain_spec} ->
+            Importer.import_emission_rewards(chain_spec)
+            {:ok, _} = Importer.import_genesis_coin_balances(chain_spec)
+
+          {:error, reason} ->
+            Logger.warn(fn -> "Failed to fetch genesis data. #{inspect(reason)}" end)
+        end
       end)
     else
       Logger.warn(fn -> "Failed to fetch genesis data. Chain spec path is not set." end)
     end
+  end
+
+  defp fetch_spec(path) do
+    if valid_url?(path) do
+      fetch_from_url(path)
+    else
+      fetch_from_file(path)
+    end
+  end
+
+  defp fetch_from_file(path) do
+    with {:ok, data} <- File.read(path),
+         {:ok, json} <- Jason.decode(data) do
+      {:ok, json}
+    end
+  end
+
+  defp fetch_from_url(url) do
+    case HTTPoison.get(url) do
+      {:ok, %Response{body: body, status_code: 200}} ->
+        {:ok, Jason.decode!(body)}
+
+      reason ->
+        {:error, reason}
+    end
+  end
+
+  defp valid_url?(string) do
+    uri = URI.parse(string)
+
+    uri.scheme != nil && uri.host =~ "."
   end
 end
