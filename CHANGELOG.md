@@ -1,13 +1,67 @@
 ## Current
 
 ### Features
+- [#2477](https://github.com/poanetwork/blockscout/pull/2477) - aggregate token transfers on transaction page
+- [#2458](https://github.com/poanetwork/blockscout/pull/2458) - Add LAST_BLOCK var to add ability indexing in the range of blocks
+- [#2456](https://github.com/poanetwork/blockscout/pull/2456) - fetch pending transactions for geth
 - [#2403](https://github.com/poanetwork/blockscout/pull/2403) - Return gasPrice field at the result of gettxinfo method
+
+### Fixes
+- [#2520](https://github.com/poanetwork/blockscout/pull/2520) - Hide loading message when fetching is failed
+- [#2523](https://github.com/poanetwork/blockscout/pull/2523) - Avoid importing internal_transactions of pending transactions
+- [#2519](https://github.com/poanetwork/blockscout/pull/2519) - enable `First` page button in pagination
+- [#2515](https://github.com/poanetwork/blockscout/pull/2515) - do not aggregate NFT token transfers
+- [#2512](https://github.com/poanetwork/blockscout/pull/2512) - alert link fix
+- [#2508](https://github.com/poanetwork/blockscout/pull/2508) - logs view columns fix
+- [#2506](https://github.com/poanetwork/blockscout/pull/2506) - fix two active tab in the top menu
+- [#2503](https://github.com/poanetwork/blockscout/pull/2503) - Mitigate autocompletion library influence to page loading performance
+- [#2502](https://github.com/poanetwork/blockscout/pull/2502) - increase reward task timeout
+- [#2463](https://github.com/poanetwork/blockscout/pull/2463) - dark theme fixes
+- [#2496](https://github.com/poanetwork/blockscout/pull/2496) - fix docker build
+- [#2495](https://github.com/poanetwork/blockscout/pull/2495) - fix logs for indexed chain
+- [#2459](https://github.com/poanetwork/blockscout/pull/2459) - fix top addresses query
+- [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
+
+### Chore
+- [#2507](https://github.com/poanetwork/blockscout/pull/2507) - update minor version of ecto, ex_machina, phoenix_live_reload
+- [#2516](https://github.com/poanetwork/blockscout/pull/2516) - update absinthe plug from fork
+- [#2473](https://github.com/poanetwork/blockscout/pull/2473) - get rid of cldr warnings
+- [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
+- [#2492](https://github.com/poanetwork/blockscout/pull/2492) - hide decoded row if event is not decoded
+- [#2490](https://github.com/poanetwork/blockscout/pull/2490) - enable credo duplicated code check
+- [#2432](https://github.com/poanetwork/blockscout/pull/2432) - bump credo version
+- [#2457](https://github.com/poanetwork/blockscout/pull/2457) - update mix.lock
+- [#2435](https://github.com/poanetwork/blockscout/pull/2435) - Replace deprecated extract-text-webpack-plugin with mini-css-extract-plugin
+- [#2450](https://github.com/poanetwork/blockscout/pull/2450) - Fix clearance of logs and node_modules folders in clearing script
+- [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
+- [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
+- [#2373](https://github.com/poanetwork/blockscout/pull/2373) - Add script to validate internal_transactions constraint for large DBs
+
+## 2.0.2-beta
+
+### Features
+- [#2412](https://github.com/poanetwork/blockscout/pull/2412) - dark theme
+- [#2399](https://github.com/poanetwork/blockscout/pull/2399) - decode verified smart contract's logs
+- [#2391](https://github.com/poanetwork/blockscout/pull/2391) - Controllers Improvements
 - [#2379](https://github.com/poanetwork/blockscout/pull/2379) - Disable network selector when is empty
+- [#2374](https://github.com/poanetwork/blockscout/pull/2374) - decode constructor arguments for verified smart contracts
+- [#2366](https://github.com/poanetwork/blockscout/pull/2366) - paginate eth logs
 - [#2360](https://github.com/poanetwork/blockscout/pull/2360) - add default evm version to smart contract verification
 - [#2352](https://github.com/poanetwork/blockscout/pull/2352) - Fetch rewards in parallel with transactions
 - [#2294](https://github.com/poanetwork/blockscout/pull/2294) - add healthy block period checking endpoint
+- [#2324](https://github.com/poanetwork/blockscout/pull/2324) - set timeout for loading message on the main page
 
 ### Fixes
+- [#2421](https://github.com/poanetwork/blockscout/pull/2421) - Fix hiding of loader for txs on the main page
+- [#2420](https://github.com/poanetwork/blockscout/pull/2420) - fetch data from cache in healthy endpoint
+- [#2416](https://github.com/poanetwork/blockscout/pull/2416) - Fix "page not found" handling in the router
+- [#2413](https://github.com/poanetwork/blockscout/pull/2413) - remove outer tables for decoded data
+- [#2410](https://github.com/poanetwork/blockscout/pull/2410) - preload smart contract for logs decoding
+- [#2405](https://github.com/poanetwork/blockscout/pull/2405) - added templates for table loader and tile loader
+- [#2398](https://github.com/poanetwork/blockscout/pull/2398) - show only one decoded candidate
+- [#2389](https://github.com/poanetwork/blockscout/pull/2389) - Reduce Lodash lib size (86% of lib methods are not used)
+- [#2388](https://github.com/poanetwork/blockscout/pull/2388) - add create2 support to geth's js tracer
+- [#2387](https://github.com/poanetwork/blockscout/pull/2387) - fix not existing keys in transaction json rpc
 - [#2378](https://github.com/poanetwork/blockscout/pull/2378) - Page performance: exclude moment.js localization files except EN, remove unused css
 - [#2368](https://github.com/poanetwork/blockscout/pull/2368) - add two columns of smart contract info
 - [#2375](https://github.com/poanetwork/blockscout/pull/2375) - Update created_contract_code_indexed_at on transaction import conflict
@@ -25,6 +79,9 @@
 - [#2326](https://github.com/poanetwork/blockscout/pull/2326) - fix nested constructor arguments
 
 ### Chore
+- [#2422](https://github.com/poanetwork/blockscout/pull/2422) - check if address_id is binary in token_transfers_csv endpoint
+- [#2418](https://github.com/poanetwork/blockscout/pull/2418) - Remove parentheses in market cap percentage
+- [#2401](https://github.com/poanetwork/blockscout/pull/2401) - add ENV vars to manage updating period of average block time and market history cache
 - [#2363](https://github.com/poanetwork/blockscout/pull/2363) - add parameters example for eth rpc
 - [#2342](https://github.com/poanetwork/blockscout/pull/2342) - Upgrade Postgres image version in Docker setup
 - [#2325](https://github.com/poanetwork/blockscout/pull/2325) - Reduce function input to address' hash only where possible

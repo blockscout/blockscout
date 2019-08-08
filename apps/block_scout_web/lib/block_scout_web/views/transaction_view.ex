@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
-  alias Cldr.Number
+  alias BlockScoutWeb.Cldr.Number
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
@@ -37,6 +37,46 @@ defmodule BlockScoutWeb.TransactionView do
 
     type = Chain.transaction_token_transfer_type(transaction)
     if type, do: {type, transaction_with_transfers}
+  end
+
+  def aggregate_token_transfers(token_transfers) do
+    {transfers, nft_transfers} =
+      token_transfers
+      |> Enum.reduce({%{}, []}, fn token_transfer, acc ->
+        aggregate_reducer(token_transfer, acc)
+      end)
+
+    final_transfers = Map.values(transfers)
+
+    final_transfers ++ nft_transfers
+  end
+
+  defp aggregate_reducer(%{amount: amount} = token_transfer, {acc1, acc2}) when is_nil(amount) do
+    new_entry = %{
+      token: token_transfer.token,
+      amount: nil,
+      token_id: token_transfer.token_id
+    }
+
+    {acc1, [new_entry | acc2]}
+  end
+
+  defp aggregate_reducer(token_transfer, {acc1, acc2}) do
+    new_entry = %{
+      token: token_transfer.token,
+      amount: token_transfer.amount,
+      token_id: token_transfer.token_id
+    }
+
+    existing_entry = Map.get(acc1, token_transfer.token_contract_address, %{new_entry | amount: Decimal.new(0)})
+
+    new_acc1 =
+      Map.put(acc1, token_transfer.token_contract_address, %{
+        new_entry
+        | amount: Decimal.add(new_entry.amount, existing_entry.amount)
+      })
+
+    {new_acc1, acc2}
   end
 
   def token_type_name(type) do
@@ -100,7 +140,7 @@ defmodule BlockScoutWeb.TransactionView do
 
       %Block{consensus: true} ->
         {:ok, confirmations} = Chain.confirmations(block, named_arguments)
-        Cldr.Number.to_string!(confirmations, format: "#,###")
+        BlockScoutWeb.Cldr.Number.to_string!(confirmations, format: "#,###")
     end
   end
 
@@ -156,7 +196,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def gas(%type{gas: gas}) when is_transaction_type(type) do
-    Cldr.Number.to_string!(gas)
+    BlockScoutWeb.Cldr.Number.to_string!(gas)
   end
 
   def skip_decoding?(transaction) do
