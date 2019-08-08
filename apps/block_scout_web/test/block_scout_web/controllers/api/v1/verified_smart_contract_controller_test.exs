@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.API.V1.VerifiedControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Factory
-  alias BlockScoutWeb.ApiRouter.Helpers
   # alias Explorer.Chain.DecompiledSmartContract
 
   # import Ecto.Query,
@@ -72,6 +71,6 @@ defmodule BlockScoutWeb.API.V1.VerifiedControllerTest do
   end
 
   defp api_v1_verified_smart_contract_path(conn, action) do
-    "/api" <> Helpers.api_v1_verified_smart_contract_path(conn, action)
+    "/api" <> ApiRoutes.api_v1_verified_smart_contract_path(conn, action)
   end
 end

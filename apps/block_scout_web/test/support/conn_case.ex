@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.ConnCase do
       import Explorer.Factory
 
       alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
+      alias BlockScoutWeb.ApiRouter.Helpers, as: ApiRoutes
     end
   end
 
