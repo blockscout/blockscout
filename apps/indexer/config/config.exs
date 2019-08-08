@@ -42,6 +42,8 @@ config :indexer,
 # config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
 config :indexer, Indexer.Fetcher.StakingPools.Supervisor, disabled?: true
 
+config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
+
 config :indexer, Indexer.Tracer,
   service: :indexer,
   adapter: SpandexDatadog.Adapter,
