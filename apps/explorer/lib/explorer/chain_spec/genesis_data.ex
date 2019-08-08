@@ -55,7 +55,6 @@ defmodule Explorer.ChainSpec.GenesisData do
     {:noreply, state}
   end
 
-  # sobelow_skip ["Traversal"]
   def fetch_genesis_data do
     path = Application.get_env(:explorer, __MODULE__)[:chain_spec_path]
 
@@ -83,6 +82,7 @@ defmodule Explorer.ChainSpec.GenesisData do
     end
   end
 
+  # sobelow_skip ["Traversal"]
   defp fetch_from_file(path) do
     with {:ok, data} <- File.read(path),
          {:ok, json} <- Jason.decode(data) do
