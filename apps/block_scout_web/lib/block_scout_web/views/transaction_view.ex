@@ -40,22 +40,43 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def aggregate_token_transfers(token_transfers) do
-    token_transfers
-    |> Enum.reduce(%{}, fn token_transfer, acc ->
-      new_entry = %{
-        token: token_transfer.token,
-        amount: token_transfer.amount,
-        token_id: token_transfer.token_id
-      }
+    {transfers, nft_transfers} =
+      token_transfers
+      |> Enum.reduce({%{}, []}, fn token_transfer, acc ->
+        aggregate_reducer(token_transfer, acc)
+      end)
 
-      existing_entry = Map.get(acc, token_transfer.token_contract_address, %{new_entry | amount: Decimal.new(0)})
+    final_transfers = Map.values(transfers)
 
-      Map.put(acc, token_transfer.token_contract_address, %{
+    final_transfers ++ nft_transfers
+  end
+
+  defp aggregate_reducer(%{amount: amount} = token_transfer, {acc1, acc2}) when is_nil(amount) do
+    new_entry = %{
+      token: token_transfer.token,
+      amount: nil,
+      token_id: token_transfer.token_id
+    }
+
+    {acc1, [new_entry | acc2]}
+  end
+
+  defp aggregate_reducer(token_transfer, {acc1, acc2}) do
+    new_entry = %{
+      token: token_transfer.token,
+      amount: token_transfer.amount,
+      token_id: token_transfer.token_id
+    }
+
+    existing_entry = Map.get(acc1, token_transfer.token_contract_address, %{new_entry | amount: Decimal.new(0)})
+
+    new_acc1 =
+      Map.put(acc1, token_transfer.token_contract_address, %{
         new_entry
         | amount: Decimal.add(new_entry.amount, existing_entry.amount)
       })
-    end)
-    |> Enum.map(fn {_key, value} -> value end)
+
+    {new_acc1, acc2}
   end
 
   def token_type_name(type) do
