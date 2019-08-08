@@ -22,12 +22,17 @@ defmodule BlockScoutWeb.Router do
     pipe_through(:api)
 
     get("/supply", SupplyController, :supply)
+
+    resources("/decompiled_smart_contract", DecompiledSmartContractController, only: [:create])
+    resources("/verified_smart_contracts", VerifiedSmartContractController, only: [:create])
   end
 
   scope "/api", BlockScoutWeb.API.RPC do
     pipe_through(:api)
 
     alias BlockScoutWeb.API.RPC
+
+    post("/eth_rpc", EthController, :eth_request)
 
     forward("/", RPCTranslator, %{
       "block" => RPC.BlockController,
@@ -69,7 +74,10 @@ defmodule BlockScoutWeb.Router do
 
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
 
-    resources("/market_history_chart", Chain.MarketHistoryChartController, only: [:show], singleton: true)
+    resources("/market_history_chart", Chain.MarketHistoryChartController,
+      only: [:show],
+      singleton: true
+    )
 
     resources "/blocks", BlockController, only: [:index, :show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
@@ -91,6 +99,13 @@ defmodule BlockScoutWeb.Router do
         TransactionInternalTransactionController,
         only: [:index],
         as: :internal_transaction
+      )
+
+      resources(
+        "/raw_trace",
+        TransactionRawTraceController,
+        only: [:index],
+        as: :raw_trace
       )
 
       resources("/logs", TransactionLogController, only: [:index], as: :log)
@@ -125,6 +140,20 @@ defmodule BlockScoutWeb.Router do
         AddressContractController,
         only: [:index],
         as: :contract
+      )
+
+      resources(
+        "/decompiled_contracts",
+        AddressDecompiledContractController,
+        only: [:index],
+        as: :decompiled_contract
+      )
+
+      resources(
+        "/logs",
+        AddressLogsController,
+        only: [:index],
+        as: :logs
       )
 
       resources(
@@ -211,8 +240,19 @@ defmodule BlockScoutWeb.Router do
 
     get("/search", ChainController, :search)
 
+    get("/search_logs", AddressLogsController, :search_logs)
+
+    get("/transactions_csv", AddressTransactionController, :transactions_csv)
+
+    get("/token_autocomplete", ChainController, :token_autocomplete)
+
+    get("/token_transfers_csv", AddressTransactionController, :token_transfers_csv)
+
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
     get("/api_docs", APIDocsController, :index)
+    get("/eth_rpc_api_docs", APIDocsController, :eth_rpc)
+
+    get("/:page", PageNotFoundController, :index)
   end
 end

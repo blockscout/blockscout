@@ -3,9 +3,10 @@ defmodule EthereumJSONRPC.Geth do
   Ethereum JSONRPC methods that are only supported by [Geth](https://github.com/ethereum/go-ethereum/wiki/geth).
   """
 
-  import EthereumJSONRPC, only: [id_to_params: 1, json_rpc: 2, request: 1]
+  import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
-  alias EthereumJSONRPC.Geth.Calls
+  alias EthereumJSONRPC.{FetchedBalance, FetchedCode}
+  alias EthereumJSONRPC.Geth.{Calls, Tracer}
 
   @behaviour EthereumJSONRPC.Variant
 
@@ -28,9 +29,21 @@ defmodule EthereumJSONRPC.Geth do
            id_to_params
            |> debug_trace_transaction_requests()
            |> json_rpc(json_rpc_named_arguments) do
-      debug_trace_transaction_responses_to_internal_transactions_params(responses, id_to_params)
+      debug_trace_transaction_responses_to_internal_transactions_params(
+        responses,
+        id_to_params,
+        json_rpc_named_arguments
+      )
     end
   end
+
+  @doc """
+  Internal transaction fetching for entire blocks is not currently supported for Geth.
+
+  To signal to the caller that fetching is not supported, `:ignore` is returned.
+  """
+  @impl EthereumJSONRPC.Variant
+  def fetch_block_internal_transactions(_block_range, _json_rpc_named_arguments), do: :ignore
 
   @doc """
   Pending transaction fetching is not supported currently for Geth.
@@ -54,12 +67,87 @@ defmodule EthereumJSONRPC.Geth do
     request(%{id: id, method: "debug_traceTransaction", params: [hash_data, %{tracer: @tracer}]})
   end
 
-  defp debug_trace_transaction_responses_to_internal_transactions_params(responses, id_to_params)
+  defp debug_trace_transaction_responses_to_internal_transactions_params(
+         [%{result: %{"structLogs" => _}} | _] = responses,
+         id_to_params,
+         json_rpc_named_arguments
+       )
+       when is_map(id_to_params) do
+    with {:ok, receipts} <-
+           id_to_params
+           |> Enum.map(fn {id, %{hash_data: hash_data}} ->
+             request(%{id: id, method: "eth_getTransactionReceipt", params: [hash_data]})
+           end)
+           |> json_rpc(json_rpc_named_arguments),
+         {:ok, txs} <-
+           id_to_params
+           |> Enum.map(fn {id, %{hash_data: hash_data}} ->
+             request(%{id: id, method: "eth_getTransactionByHash", params: [hash_data]})
+           end)
+           |> json_rpc(json_rpc_named_arguments) do
+      receipts_map = Enum.into(receipts, %{}, fn %{id: id, result: receipt} -> {id, receipt} end)
+      txs_map = Enum.into(txs, %{}, fn %{id: id, result: tx} -> {id, tx} end)
+
+      responses
+      |> Enum.map(fn %{id: id, result: %{"structLogs" => _} = result} ->
+        debug_trace_transaction_response_to_internal_transactions_params(
+          %{id: id, result: Tracer.replay(result, Map.fetch!(receipts_map, id), Map.fetch!(txs_map, id))},
+          id_to_params
+        )
+      end)
+      |> reduce_internal_transactions_params()
+      |> fetch_missing_data(json_rpc_named_arguments)
+    end
+  end
+
+  defp debug_trace_transaction_responses_to_internal_transactions_params(
+         responses,
+         id_to_params,
+         _json_rpc_named_arguments
+       )
        when is_list(responses) and is_map(id_to_params) do
     responses
     |> Enum.map(&debug_trace_transaction_response_to_internal_transactions_params(&1, id_to_params))
     |> reduce_internal_transactions_params()
   end
+
+  defp fetch_missing_data({:ok, transactions}, json_rpc_named_arguments) when is_list(transactions) do
+    id_to_params = id_to_params(transactions)
+
+    with {:ok, responses} <-
+           id_to_params
+           |> Enum.map(fn
+             {id, %{created_contract_address_hash: address, block_number: block_number}} ->
+               FetchedCode.request(%{id: id, block_quantity: integer_to_quantity(block_number), address: address})
+
+             {id, %{type: "selfdestruct", from: hash_data, block_number: block_number}} ->
+               FetchedBalance.request(%{id: id, block_quantity: integer_to_quantity(block_number), hash_data: hash_data})
+
+             _ ->
+               nil
+           end)
+           |> Enum.reject(&is_nil/1)
+           |> json_rpc(json_rpc_named_arguments) do
+      results = Enum.into(responses, %{}, fn %{id: id, result: result} -> {id, result} end)
+
+      transactions =
+        id_to_params
+        |> Enum.map(fn
+          {id, %{created_contract_address_hash: _} = transaction} ->
+            %{transaction | created_contract_code: Map.fetch!(results, id)}
+
+          {id, %{type: "selfdestruct"} = transaction} ->
+            %{transaction | value: Map.fetch!(results, id)}
+
+          {_, transaction} ->
+            transaction
+        end)
+
+      {:ok, transactions}
+    end
+  end
+
+  defp fetch_missing_data(result, _json_rpc_named_arguments), do: result
 
   defp debug_trace_transaction_response_to_internal_transactions_params(%{id: id, result: calls}, id_to_params)
        when is_map(id_to_params) do

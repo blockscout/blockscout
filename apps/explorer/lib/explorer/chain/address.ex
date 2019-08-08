@@ -8,9 +8,22 @@ defmodule Explorer.Chain.Address do
   use Explorer.Schema
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Address, Block, Data, Hash, InternalTransaction, SmartContract, Token, Transaction, Wei}
 
-  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce)a
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Data,
+    DecompiledSmartContract,
+    Hash,
+    InternalTransaction,
+    NetVersionCache,
+    SmartContract,
+    Token,
+    Transaction,
+    Wei
+  }
+
+  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified)a
   @required_attrs ~w(hash)a
   @allowed_attrs @optional_attrs ++ @required_attrs
 
@@ -50,6 +63,7 @@ defmodule Explorer.Chain.Address do
            except: [
              :__meta__,
              :smart_contract,
+             :decompiled_smart_contracts,
              :token,
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
@@ -62,6 +76,10 @@ defmodule Explorer.Chain.Address do
     field(:fetched_coin_balance_block_number, :integer)
     field(:contract_code, Data)
     field(:nonce, :integer)
+    field(:decompiled, :boolean, default: false)
+    field(:verified, :boolean, default: false)
+    field(:has_decompiled_code?, :boolean, virtual: true)
+    field(:stale?, :boolean, virtual: true)
 
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)
@@ -79,6 +97,7 @@ defmodule Explorer.Chain.Address do
     )
 
     has_many(:names, Address.Name, foreign_key: :address_hash)
+    has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash)
 
     timestamps()
   end
@@ -112,6 +131,21 @@ defmodule Explorer.Chain.Address do
   end
 
   def checksum(hash, iodata?) do
+    checksum_formatted =
+      case Application.get_env(:explorer, :checksum_function) || :eth do
+        :eth -> eth_checksum(hash)
+        :rsk -> rsk_checksum(hash)
+      end
+
+    if iodata? do
+      ["0x" | checksum_formatted]
+    else
+      to_string(["0x" | checksum_formatted])
+    end
+  end
+
+  # https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP60.md
+  def eth_checksum(hash) do
     string_hash =
       hash
       |> to_string()
@@ -119,26 +153,46 @@ defmodule Explorer.Chain.Address do
 
     match_byte_stream = stream_every_four_bytes_of_sha256(string_hash)
 
-    checksum_formatted =
-      string_hash
-      |> stream_binary()
-      |> Stream.zip(match_byte_stream)
-      |> Enum.map(fn
-        {digit, _} when digit in '0123456789' ->
-          digit
+    string_hash
+    |> stream_binary()
+    |> Stream.zip(match_byte_stream)
+    |> Enum.map(fn
+      {digit, _} when digit in '0123456789' ->
+        digit
 
-        {alpha, 1} ->
-          alpha - 32
+      {alpha, 1} ->
+        alpha - 32
 
-        {alpha, _} ->
-          alpha
-      end)
+      {alpha, _} ->
+        alpha
+    end)
+  end
 
-    if iodata? do
-      ["0x" | checksum_formatted]
-    else
-      to_string(["0x" | checksum_formatted])
-    end
+  def rsk_checksum(hash) do
+    chain_id = NetVersionCache.version()
+
+    string_hash =
+      hash
+      |> to_string()
+      |> String.trim_leading("0x")
+
+    prefix = "#{chain_id}0x"
+
+    match_byte_stream = stream_every_four_bytes_of_sha256("#{prefix}#{string_hash}")
+
+    string_hash
+    |> stream_binary()
+    |> Stream.zip(match_byte_stream)
+    |> Enum.map(fn
+      {digit, _} when digit in '0123456789' ->
+        digit
+
+      {alpha, 1} ->
+        alpha - 32
+
+      {alpha, _} ->
+        alpha
+    end)
   end
 
   defp stream_every_four_bytes_of_sha256(value) do

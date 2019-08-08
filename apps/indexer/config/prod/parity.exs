@@ -6,20 +6,20 @@ config :indexer,
     transport: EthereumJSONRPC.HTTP,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
-      url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || "https://rpc.fuse.io",
+      url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL"),
       method_to_url: [
-        eth_getBalance: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "https://explorer-node.fuse.io",
-        trace_block: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "https://explorer-node.fuse.io",
-        trace_replayTransaction: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "https://explorer-node.fuse.io"
+        eth_getBalance: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),
+        trace_block: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),
+        trace_replayTransaction: System.get_env("ETHEREUM_JSONRPC_TRACE_URL")
       ],
-      http_options: [recv_timeout: :timer.minutes(1), timeout: :timer.minutes(1), hackney: [pool: :ethereum_jsonrpc]]
+      http_options: [recv_timeout: :timer.minutes(10), timeout: :timer.minutes(10), hackney: [pool: :ethereum_jsonrpc]]
     ],
     variant: EthereumJSONRPC.Parity
   ],
   subscribe_named_arguments: [
-    transport: EthereumJSONRPC.WebSocket,
+    transport: System.get_env("ETHEREUM_JSONRPC_WS_URL") && EthereumJSONRPC.WebSocket,
     transport_options: [
       web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
-      url: System.get_env("ETHEREUM_JSONRPC_WS_URL") || "wss://explorer-node.fuse.io/ws"
+      url: System.get_env("ETHEREUM_JSONRPC_WS_URL")
     ]
   ]

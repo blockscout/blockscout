@@ -15,7 +15,7 @@ defmodule Explorer.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.6",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -66,6 +66,7 @@ defmodule Explorer.Mixfile do
       # CSV output for benchee
       {:benchee_csv, "~> 0.8.0", only: :test},
       {:bypass, "~> 1.0", only: :test},
+      {:briefly, "~> 0.4", github: "CargoSense/briefly"},
       {:comeonin, "~> 4.0"},
       {:credo, "1.0.0", only: :test, runtime: false},
       # For Absinthe to load data in batches
@@ -92,6 +93,7 @@ defmodule Explorer.Mixfile do
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},
       {:poison, "~> 3.1"},
+      {:nimble_csv, "~> 0.6.0"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
       {:prometheus, "~> 4.0", override: true},
@@ -108,13 +110,14 @@ defmodule Explorer.Mixfile do
       # Tracing
       {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
       # `:spandex` integration with Datadog
-      {:spandex_datadog, "~> 0.3.1"},
+      {:spandex_datadog, "~> 0.4.0"},
       # `:spandex` tracing of `:ecto`
       {:spandex_ecto, "~> 0.4.0"},
       # Attach `:prometheus_ecto` to `:ecto`
       {:telemetry, "~> 0.3.0"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
-      {:timex, "~> 3.4"}
+      {:timex, "~> 3.4"},
+      {:con_cache, "~> 0.13"}
     ]
   end
 

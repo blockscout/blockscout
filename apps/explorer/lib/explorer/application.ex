@@ -6,7 +6,19 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
-  alias Explorer.Chain.BlockNumberCache
+
+  alias Explorer.Chain.{
+    BlockCountCache,
+    BlockNumberCache,
+    BlocksCache,
+    NetVersionCache,
+    TransactionCountCache,
+    TransactionsCache
+  }
+
+  alias Explorer.Chain.Supply.RSK
+
+  alias Explorer.Market.MarketHistoryCache
   alias Explorer.Repo.PrometheusLogger
 
   @impl Application
@@ -26,8 +38,16 @@ defmodule Explorer.Application do
       Supervisor.Spec.worker(SpandexDatadog.ApiServer, [datadog_opts()]),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
+      Explorer.SmartContract.SolcDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
-      {Admin.Recovery, [[], [name: Admin.Recovery]]}
+      {Admin.Recovery, [[], [name: Admin.Recovery]]},
+      {TransactionCountCache, [[], []]},
+      {BlockCountCache, []},
+      con_cache_child_spec(BlocksCache.cache_name()),
+      con_cache_child_spec(NetVersionCache.cache_name()),
+      con_cache_child_spec(MarketHistoryCache.cache_name()),
+      con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
+      con_cache_child_spec(TransactionsCache.cache_name())
     ]
 
     children = base_children ++ configurable_children()
@@ -48,15 +68,14 @@ defmodule Explorer.Application do
       configure(Explorer.Market.History.Cataloger),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
       configure(Explorer.Counters.AverageBlockTime),
-      configure(Explorer.Validator.MetadataProcessor)
+      configure(Explorer.Validator.MetadataProcessor),
+      configure(Explorer.Staking.EpochCounter)
     ]
     |> List.flatten()
   end
 
   defp should_start?(process) do
-    :explorer
-    |> Application.fetch_env!(process)
-    |> Keyword.fetch!(:enabled)
+    Application.get_env(:explorer, process, [])[:enabled] == true
   end
 
   defp configure(process) do
@@ -75,5 +94,17 @@ defmodule Explorer.Application do
       sync_threshold: System.get_env("SPANDEX_SYNC_THRESHOLD") || 100,
       http: HTTPoison
     ]
+  end
+
+  defp con_cache_child_spec(name, params \\ [ttl_check_interval: false]) do
+    params = Keyword.put(params, :name, name)
+
+    Supervisor.child_spec(
+      {
+        ConCache,
+        params
+      },
+      id: {ConCache, name}
+    )
   end
 end

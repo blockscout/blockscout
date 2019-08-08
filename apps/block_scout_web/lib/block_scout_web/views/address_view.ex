@@ -1,18 +1,20 @@
 defmodule BlockScoutWeb.AddressView do
   use BlockScoutWeb, :view
 
-  import BlockScoutWeb.AddressController, only: [validation_count: 1]
+  require Logger
 
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
 
   @dialyzer :no_match
 
   @tabs [
     "coin_balances",
     "contracts",
+    "decompiled_contracts",
     "internal_transactions",
     "read_contract",
     "tokens",
@@ -107,6 +109,8 @@ defmodule BlockScoutWeb.AddressView do
     format_wei_value(balance, :ether)
   end
 
+  def balance_percentage(_, nil), do: ""
+
   def balance_percentage(%Address{fetched_coin_balance: balance}, total_supply) do
     balance
     |> Wei.to(:ether)
@@ -115,6 +119,10 @@ defmodule BlockScoutWeb.AddressView do
     |> Decimal.round(4)
     |> Decimal.to_string(:normal)
     |> Kernel.<>("% #{gettext("Market Cap")}")
+  end
+
+  def empty_exchange_rate?(exchange_rate) do
+    TokenExchangeRate.null?(exchange_rate)
   end
 
   def balance_percentage(%Address{fetched_coin_balance: _} = address) do
@@ -198,6 +206,11 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
 
+  def has_decompiled_code?(address) do
+    address.has_decompiled_code? ||
+      (Ecto.assoc_loaded?(address.decompiled_smart_contracts) && Enum.count(address.decompiled_smart_contracts) > 0)
+  end
+
   def token_title(%Token{name: nil, contract_address_hash: contract_address_hash}) do
     contract_address_hash
     |> to_string
@@ -206,12 +219,23 @@ defmodule BlockScoutWeb.AddressView do
 
   def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
 
+  def incoming_transaction_count(%Address{} = address) do
+    count = Chain.address_to_incoming_transaction_count(address)
+
+    Cldr.Number.to_string!(count, format: "#,###")
+  end
+
   def trimmed_hash(%Hash{} = hash) do
     string_hash = to_string(hash)
     "#{String.slice(string_hash, 0..5)}–#{String.slice(string_hash, -6..-1)}"
   end
 
   def trimmed_hash(_), do: ""
+
+  def trimmed_verify_link(hash) do
+    string_hash = to_string(hash)
+    "#{String.slice(string_hash, 0..21)}..."
+  end
 
   def transaction_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
     address.contracts_creation_internal_transaction.transaction_hash
@@ -227,6 +251,18 @@ defmodule BlockScoutWeb.AddressView do
 
   def from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
     address.contracts_creation_transaction.from_address_hash
+  end
+
+  def from_address_hash(_address) do
+    nil
+  end
+
+  def address_link_to_other_explorer(link, address, full) do
+    if full do
+      link <> to_string(address)
+    else
+      trimmed_verify_link(link <> to_string(address))
+    end
   end
 
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
@@ -269,9 +305,11 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["transactions"]), do: gettext("Transactions")
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["contracts"]), do: gettext("Code")
+  defp tab_name(["decompiled_contracts"]), do: gettext("Decompiled Code")
   defp tab_name(["read_contract"]), do: gettext("Read Contract")
   defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
+  defp tab_name(["logs"]), do: gettext("Logs")
 
   def short_hash(%Address{hash: hash}) do
     <<

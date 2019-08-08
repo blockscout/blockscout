@@ -1,10 +1,150 @@
 defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase, async: false
 
-  alias Explorer.Chain
-  alias Explorer.Repo
-  alias Explorer.Chain.{Transaction, Wei}
+  import Mox
+
   alias BlockScoutWeb.API.RPC.AddressController
+  alias Explorer.Chain
+  alias Explorer.Chain.{Events.Subscriber, Transaction, Wei}
+  alias Explorer.Counters.{AddressesWithBalanceCounter, AverageBlockTime}
+  alias Indexer.Fetcher.CoinBalanceOnDemand
+  alias Explorer.Repo
+
+  setup :set_mox_global
+  setup :verify_on_exit!
+
+  setup do
+    mocked_json_rpc_named_arguments = [
+      transport: EthereumJSONRPC.Mox,
+      transport_options: []
+    ]
+
+    start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+    start_supervised!(AverageBlockTime)
+    start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
+    start_supervised!(AddressesWithBalanceCounter)
+
+    Application.put_env(:explorer, AverageBlockTime, enabled: true)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, AverageBlockTime, enabled: false)
+    end)
+
+    :ok
+  end
+
+  describe "listaccounts" do
+    setup do
+      Subscriber.to(:addresses, :on_demand)
+      Subscriber.to(:address_coin_balances, :on_demand)
+
+      %{params: %{"module" => "account", "action" => "listaccounts"}}
+    end
+
+    test "with no addresses", %{params: params, conn: conn} do
+      response =
+        conn
+        |> get("/api", params)
+        |> json_response(200)
+
+      assert response["message"] == "OK"
+      assert response["status"] == "1"
+      assert response["result"] == []
+    end
+
+    test "with existing addresses", %{params: params, conn: conn} do
+      first_address = insert(:address, fetched_coin_balance: 10, inserted_at: Timex.shift(Timex.now(), minutes: -10))
+      second_address = insert(:address, fetched_coin_balance: 100, inserted_at: Timex.shift(Timex.now(), minutes: -5))
+      first_address_hash = to_string(first_address.hash)
+      second_address_hash = to_string(second_address.hash)
+
+      response =
+        conn
+        |> get("/api", params)
+        |> json_response(200)
+
+      assert response["message"] == "OK"
+      assert response["status"] == "1"
+
+      assert [
+               %{
+                 "address" => ^first_address_hash,
+                 "balance" => "10"
+               },
+               %{
+                 "address" => ^second_address_hash,
+                 "balance" => "100"
+               }
+             ] = response["result"]
+    end
+
+    test "with a stale balance", %{conn: conn, params: params} do
+      now = Timex.now()
+
+      mining_address =
+        insert(:address,
+          fetched_coin_balance: 0,
+          fetched_coin_balance_block_number: 2,
+          inserted_at: Timex.shift(now, minutes: -10)
+        )
+
+      mining_address_hash = to_string(mining_address.hash)
+      # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
+      # back we'd need to go to get 24 hours in the past)
+      insert(:block, number: 0, timestamp: Timex.shift(now, hours: -50), miner: mining_address)
+      insert(:block, number: 1, timestamp: Timex.shift(now, hours: -25), miner: mining_address)
+      AverageBlockTime.refresh()
+
+      address =
+        insert(:address,
+          fetched_coin_balance: 100,
+          fetched_coin_balance_block_number: 0,
+          inserted_at: Timex.shift(now, minutes: -5)
+        )
+
+      address_hash = to_string(address.hash)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
+                                                     %{
+                                                       id: id,
+                                                       method: "eth_getBalance",
+                                                       params: [^address_hash, "0x1"]
+                                                     }
+                                                   ],
+                                                   _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
+      end)
+
+      response =
+        conn
+        |> get("/api", params)
+        |> json_response(200)
+
+      assert response["message"] == "OK"
+      assert response["status"] == "1"
+
+      assert [
+               %{
+                 "address" => ^mining_address_hash,
+                 "balance" => "0",
+                 "stale" => false
+               },
+               %{
+                 "address" => ^address_hash,
+                 "balance" => "100",
+                 "stale" => true
+               }
+             ] = response["result"]
+
+      {:ok, expected_wei} = Wei.cast(2)
+
+      assert_receive({:chain_event, :addresses, :on_demand, [received_address]})
+
+      assert received_address.hash == address.hash
+      assert received_address.fetched_coin_balance == expected_wei
+      assert received_address.fetched_coin_balance_block_number == 1
+    end
+  end
 
   describe "balance" do
     test "with missing address hash", %{conn: conn} do
@@ -97,7 +237,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       expected_result =
         Enum.map(addresses, fn address ->
-          %{"account" => "#{address.hash}", "balance" => "#{address.fetched_coin_balance.value}"}
+          %{"account" => "#{address.hash}", "balance" => "#{address.fetched_coin_balance.value}", "stale" => false}
         end)
 
       assert response =
@@ -166,8 +306,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       }
 
       expected_result = [
-        %{"account" => address1, "balance" => "0"},
-        %{"account" => address2, "balance" => "0"}
+        %{"account" => address1, "balance" => "0", "stale" => false},
+        %{"account" => address2, "balance" => "0", "stale" => false}
       ]
 
       assert response =
@@ -199,7 +339,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       expected_result =
         Enum.map(addresses, fn address ->
-          %{"account" => "#{address.hash}", "balance" => "#{address.fetched_coin_balance.value}"}
+          %{"account" => "#{address.hash}", "balance" => "#{address.fetched_coin_balance.value}", "stale" => false}
         end)
 
       assert response =
@@ -223,8 +363,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       }
 
       expected_result = [
-        %{"account" => address2_hash, "balance" => "0"},
-        %{"account" => "#{address1.hash}", "balance" => "#{address1.fetched_coin_balance.value}"}
+        %{"account" => address2_hash, "balance" => "0", "stale" => false},
+        %{"account" => "#{address1.hash}", "balance" => "#{address1.fetched_coin_balance.value}", "stale" => false}
       ]
 
       assert response =
@@ -271,7 +411,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       }
 
       expected_result = [
-        %{"account" => "#{address.hash}", "balance" => "#{address.fetched_coin_balance.value}"}
+        %{"account" => "#{address.hash}", "balance" => "#{address.fetched_coin_balance.value}", "stale" => false}
       ]
 
       assert response =
@@ -724,34 +864,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["message"] == "OK"
     end
 
-    test "ignores pagination params if page is less than 1", %{conn: conn} do
-      address = insert(:address)
-
-      6
-      |> insert_list(:transaction, from_address: address)
-      |> with_block()
-
-      params = %{
-        "module" => "account",
-        "action" => "txlist",
-        "address" => "#{address.hash}",
-        # page number
-        "page" => "0",
-        # page size
-        "offset" => "2"
-      }
-
-      assert response =
-               conn
-               |> get("/api", params)
-               |> json_response(200)
-
-      assert length(response["result"]) == 6
-      assert response["status"] == "1"
-      assert response["message"] == "OK"
-    end
-
-    test "ignores pagination params if offset is less than 1", %{conn: conn} do
+    test "ignores offset param if offset is less than 1", %{conn: conn} do
       address = insert(:address)
 
       6
@@ -778,7 +891,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["message"] == "OK"
     end
 
-    test "ignores pagination params if offset is over 10,000", %{conn: conn} do
+    test "ignores offset param if offset is over 10,000", %{conn: conn} do
       address = insert(:address)
 
       6
@@ -1299,6 +1412,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "type" => "#{internal_transaction.type}",
           "gas" => "#{internal_transaction.gas}",
           "gasUsed" => "#{internal_transaction.gas_used}",
+          "index" => "#{internal_transaction.index}",
+          "transactionHash" => "#{transaction.hash}",
           "isError" => "0",
           "errCode" => "#{internal_transaction.error}"
         }
@@ -1446,6 +1561,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "gas" => "#{internal_transaction.gas}",
           "gasUsed" => "#{internal_transaction.gas_used}",
           "isError" => "0",
+          "index" => "#{internal_transaction.index}",
+          "transactionHash" => "#{transaction.hash}",
           "errCode" => "#{internal_transaction.error}"
         }
       ]
@@ -1654,6 +1771,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "gasPrice" => to_string(transaction.gas_price.value),
           "gasUsed" => to_string(transaction.gas_used),
           "cumulativeGasUsed" => to_string(transaction.cumulative_gas_used),
+          "logIndex" => to_string(token_transfer.log_index),
           "input" => to_string(transaction.input),
           "confirmations" => "0"
         }

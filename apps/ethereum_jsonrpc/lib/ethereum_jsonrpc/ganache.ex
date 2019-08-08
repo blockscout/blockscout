@@ -22,6 +22,14 @@ defmodule EthereumJSONRPC.Ganache do
   def fetch_internal_transactions(_transactions_params, _json_rpc_named_arguments), do: :ignore
 
   @doc """
+  Internal transaction fetching is not currently supported for Ganache.
+
+  To signal to the caller that fetching is not supported, `:ignore` is returned.
+  """
+  @impl EthereumJSONRPC.Variant
+  def fetch_block_internal_transactions(_block_range, _json_rpc_named_arguments), do: :ignore
+
+  @doc """
   Pending transaction fetching is not supported currently for Ganache.
 
   To signal to the caller that fetching is not supported, `:ignore` is returned.

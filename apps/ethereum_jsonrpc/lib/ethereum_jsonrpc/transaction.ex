@@ -7,6 +7,7 @@ defmodule EthereumJSONRPC.Transaction do
   [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblockhashandindex),
   and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblocknumberandindex)
   """
+  require Logger
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
@@ -149,23 +150,25 @@ defmodule EthereumJSONRPC.Transaction do
     elixir_to_params(%{transaction | "input" => "0x"})
   end
 
-  def elixir_to_params(%{
-        "blockHash" => block_hash,
-        "blockNumber" => block_number,
-        "from" => from_address_hash,
-        "gas" => gas,
-        "gasPrice" => gas_price,
-        "hash" => hash,
-        "input" => input,
-        "nonce" => nonce,
-        "r" => r,
-        "s" => s,
-        "to" => to_address_hash,
-        "transactionIndex" => index,
-        "v" => v,
-        "value" => value
-      }) do
-    %{
+  def elixir_to_params(
+        %{
+          "blockHash" => block_hash,
+          "blockNumber" => block_number,
+          "from" => from_address_hash,
+          "gas" => gas,
+          "gasPrice" => gas_price,
+          "hash" => hash,
+          "input" => input,
+          "nonce" => nonce,
+          "r" => r,
+          "s" => s,
+          "to" => to_address_hash,
+          "transactionIndex" => index,
+          "v" => v,
+          "value" => value
+        } = transaction
+      ) do
+    result = %{
       block_hash: block_hash,
       block_number: block_number,
       from_address_hash: from_address_hash,
@@ -182,6 +185,12 @@ defmodule EthereumJSONRPC.Transaction do
       value: value,
       transaction_index: index
     }
+
+    if transaction["creates"] do
+      Map.put(result, :created_contract_address_hash, transaction["creates"])
+    else
+      result
+    end
   end
 
   # Ganache bug. it return `to: "0x0"` except of `to: null`
@@ -296,6 +305,12 @@ defmodule EthereumJSONRPC.Transaction do
   """
   def to_elixir(transaction) when is_map(transaction) do
     Enum.into(transaction, %{}, &entry_to_elixir/1)
+  end
+
+  def to_elixir(transaction) when is_binary(transaction) do
+    Logger.warn(["Fetched transaction is not full: ", transaction])
+
+    nil
   end
 
   # double check that no new keys are being missed by requiring explicit match for passthrough

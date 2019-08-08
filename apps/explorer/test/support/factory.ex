@@ -17,14 +17,18 @@ defmodule Explorer.Factory do
     Address.TokenBalance,
     Address.CoinBalance,
     Block,
+    ContractMethod,
     Data,
+    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     Log,
     SmartContract,
     Token,
     TokenTransfer,
-    Transaction
+    Transaction,
+    StakingPool,
+    StakingPoolsDelegator
   }
 
   alias Explorer.Market.MarketHistory
@@ -123,7 +127,11 @@ defmodule Explorer.Factory do
       |> sequence(& &1)
       |> Hash.Address.cast()
 
-    address_hash
+    if to_string(address_hash) == "0x0000000000000000000000000000000000000000" do
+      address_hash()
+    else
+      address_hash
+    end
   end
 
   def block_factory do
@@ -143,6 +151,22 @@ defmodule Explorer.Factory do
     }
   end
 
+  def contract_method_factory() do
+    %ContractMethod{
+      identifier: Base.decode16!("60fe47b1", case: :lower),
+      abi: %{
+        "constant" => false,
+        "inputs" => [%{"name" => "x", "type" => "uint256"}],
+        "name" => "set",
+        "outputs" => [],
+        "payable" => false,
+        "stateMutability" => "nonpayable",
+        "type" => "function"
+      },
+      type: "function"
+    }
+  end
+
   def block_hash do
     {:ok, block_hash} =
       "block_hash"
@@ -159,7 +183,8 @@ defmodule Explorer.Factory do
   def block_second_degree_relation_factory do
     %Block.SecondDegreeRelation{
       uncle_hash: block_hash(),
-      nephew: build(:block)
+      nephew: build(:block),
+      index: 0
     }
   end
 
@@ -459,6 +484,7 @@ defmodule Explorer.Factory do
 
     address = %Address{
       hash: address_hash(),
+      verified: true,
       contract_code: contract_code_info().bytecode,
       smart_contract: smart_contract
     }
@@ -492,11 +518,11 @@ defmodule Explorer.Factory do
     }
   end
 
-  def smart_contract_factory() do
+  def smart_contract_factory do
     contract_code_info = contract_code_info()
 
     %SmartContract{
-      address_hash: insert(:address).hash,
+      address_hash: insert(:address, contract_code: contract_code_info.bytecode, verified: true).hash,
       compiler_version: contract_code_info.version,
       name: contract_code_info.name,
       contract_source_code: contract_code_info.source_code,
@@ -505,7 +531,17 @@ defmodule Explorer.Factory do
     }
   end
 
-  def token_balance_factory() do
+  def decompiled_smart_contract_factory do
+    contract_code_info = contract_code_info()
+
+    %DecompiledSmartContract{
+      address_hash: insert(:address, contract_code: contract_code_info.bytecode, decompiled: true).hash,
+      decompiler_version: "test_decompiler",
+      decompiled_source_code: contract_code_info.source_code
+    }
+  end
+
+  def token_balance_factory do
     %TokenBalance{
       address: build(:address),
       token_contract_address_hash: insert(:token).contract_address_hash,
@@ -515,7 +551,7 @@ defmodule Explorer.Factory do
     }
   end
 
-  def address_current_token_balance_factory() do
+  def address_current_token_balance_factory do
     %CurrentTokenBalance{
       address: build(:address),
       token_contract_address_hash: insert(:token).contract_address_hash,
@@ -574,6 +610,38 @@ defmodule Explorer.Factory do
     %Administrator{
       role: "owner",
       user: build(:user)
+    }
+  end
+
+  def staking_pool_factory do
+    wei_per_ether = 1_000_000_000_000_000_000
+
+    %StakingPool{
+      staking_address_hash: address_hash(),
+      mining_address_hash: address_hash(),
+      banned_until: 0,
+      delegators_count: 0,
+      is_active: true,
+      is_banned: false,
+      is_validator: true,
+      staked_amount: wei_per_ether * 500,
+      self_staked_amount: wei_per_ether * 300,
+      was_banned_count: 0,
+      was_validator_count: 1
+    }
+  end
+
+  def staking_pools_delegator_factory do
+    wei_per_ether = 1_000_000_000_000_000_000
+
+    %StakingPoolsDelegator{
+      pool_address_hash: address_hash(),
+      delegator_address_hash: address_hash(),
+      max_ordered_withdraw_allowed: wei_per_ether * 100,
+      max_withdraw_allowed: wei_per_ether * 50,
+      ordered_withdraw: wei_per_ether * 600,
+      stake_amount: wei_per_ether * 200,
+      ordered_withdraw_epoch: 2
     }
   end
 end

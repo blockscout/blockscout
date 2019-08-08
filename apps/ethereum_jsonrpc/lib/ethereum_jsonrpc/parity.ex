@@ -27,17 +27,25 @@ defmodule EthereumJSONRPC.Parity do
   end
 
   @doc """
+  Internal transaction fetching for individual transactions is no longer supported for Parity.
+
+  To signal to the caller that fetching is not supported, `:ignore` is returned.
+  """
+  @impl EthereumJSONRPC.Variant
+  def fetch_internal_transactions(_transactions_params, _json_rpc_named_arguments), do: :ignore
+
+  @doc """
   Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Parity trace URL.
   """
   @impl EthereumJSONRPC.Variant
-  def fetch_internal_transactions(transactions_params, json_rpc_named_arguments) when is_list(transactions_params) do
-    id_to_params = id_to_params(transactions_params)
+  def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
+    id_to_params = id_to_params(block_numbers)
 
     with {:ok, responses} <-
            id_to_params
-           |> trace_replay_transaction_requests()
+           |> trace_replay_block_transactions_requests()
            |> json_rpc(json_rpc_named_arguments) do
-      trace_replay_transaction_responses_to_internal_transactions_params(responses, id_to_params)
+      trace_replay_block_transactions_responses_to_internal_transactions_params(responses, id_to_params)
     end
   end
 
@@ -68,9 +76,9 @@ defmodule EthereumJSONRPC.Parity do
     Enum.map(block_numbers, &%{block_quantity: integer_to_quantity(&1)})
   end
 
-  defp trace_replay_transaction_responses_to_internal_transactions_params(responses, id_to_params)
+  defp trace_replay_block_transactions_responses_to_internal_transactions_params(responses, id_to_params)
        when is_list(responses) and is_map(id_to_params) do
-    with {:ok, traces} <- trace_replay_transaction_responses_to_traces(responses, id_to_params) do
+    with {:ok, traces} <- trace_replay_block_transactions_responses_to_traces(responses, id_to_params) do
       params =
         traces
         |> Traces.to_elixir()
@@ -80,10 +88,10 @@ defmodule EthereumJSONRPC.Parity do
     end
   end
 
-  defp trace_replay_transaction_responses_to_traces(responses, id_to_params)
+  defp trace_replay_block_transactions_responses_to_traces(responses, id_to_params)
        when is_list(responses) and is_map(id_to_params) do
     responses
-    |> Enum.map(&trace_replay_transaction_response_to_traces(&1, id_to_params))
+    |> Enum.map(&trace_replay_block_transactions_response_to_traces(&1, id_to_params))
     |> Enum.reduce(
       {:ok, []},
       fn
@@ -115,48 +123,48 @@ defmodule EthereumJSONRPC.Parity do
     end
   end
 
-  defp trace_replay_transaction_response_to_traces(%{id: id, result: %{"trace" => traces}}, id_to_params)
-       when is_list(traces) and is_map(id_to_params) do
-    %{block_number: block_number, hash_data: transaction_hash, transaction_index: transaction_index} =
-      Map.fetch!(id_to_params, id)
+  defp trace_replay_block_transactions_response_to_traces(%{id: id, result: results}, id_to_params)
+       when is_list(results) and is_map(id_to_params) do
+    block_number = Map.fetch!(id_to_params, id)
 
     annotated_traces =
-      traces
+      results
       |> Stream.with_index()
-      |> Enum.map(fn {trace, index} ->
-        Map.merge(trace, %{
-          "blockNumber" => block_number,
-          "index" => index,
-          "transactionIndex" => transaction_index,
-          "transactionHash" => transaction_hash
-        })
+      |> Enum.flat_map(fn {%{"trace" => traces, "transactionHash" => transaction_hash}, transaction_index} ->
+        traces
+        |> Stream.with_index()
+        |> Enum.map(fn {trace, index} ->
+          Map.merge(trace, %{
+            "blockNumber" => block_number,
+            "transactionHash" => transaction_hash,
+            "transactionIndex" => transaction_index,
+            "index" => index
+          })
+        end)
       end)
 
     {:ok, annotated_traces}
   end
 
-  defp trace_replay_transaction_response_to_traces(%{id: id, error: error}, id_to_params)
+  defp trace_replay_block_transactions_response_to_traces(%{id: id, error: error}, id_to_params)
        when is_map(id_to_params) do
-    %{block_number: block_number, hash_data: transaction_hash, transaction_index: transaction_index} =
-      Map.fetch!(id_to_params, id)
+    block_number = Map.fetch!(id_to_params, id)
 
     annotated_error =
       Map.put(error, :data, %{
-        "blockNumber" => block_number,
-        "transactionIndex" => transaction_index,
-        "transactionHash" => transaction_hash
+        "blockNumber" => block_number
       })
 
     {:error, annotated_error}
   end
 
-  defp trace_replay_transaction_requests(id_to_params) when is_map(id_to_params) do
-    Enum.map(id_to_params, fn {id, %{hash_data: hash_data}} ->
-      trace_replay_transaction_request(%{id: id, hash_data: hash_data})
+  defp trace_replay_block_transactions_requests(id_to_params) when is_map(id_to_params) do
+    Enum.map(id_to_params, fn {id, block_number} ->
+      trace_replay_block_transactions_request(%{id: id, block_number: block_number})
     end)
   end
 
-  defp trace_replay_transaction_request(%{id: id, hash_data: hash_data}) do
-    request(%{id: id, method: "trace_replayTransaction", params: [hash_data, ["trace"]]})
+  defp trace_replay_block_transactions_request(%{id: id, block_number: block_number}) do
+    request(%{id: id, method: "trace_replayBlockTransactions", params: [integer_to_quantity(block_number), ["trace"]]})
   end
 end

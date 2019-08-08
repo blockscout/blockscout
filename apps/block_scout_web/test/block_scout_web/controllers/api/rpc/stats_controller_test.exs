@@ -107,6 +107,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
       configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
       Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
       Application.put_env(:explorer, Explorer.ExchangeRates, table_name: :rates)
+      Application.put_env(:explorer, Explorer.ExchangeRates, enabled: true)
 
       ExchangeRates.init([])
 
@@ -122,6 +123,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
 
       eth = %Token{
         available_supply: Decimal.new("1000000.0"),
+        total_supply: Decimal.new("1000000.0"),
         btc_value: Decimal.new("1.000"),
         id: "test",
         last_updated: DateTime.utc_now(),

@@ -6,8 +6,9 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   import Explorer.Chain.Import.RunnerCase, only: [insert_address_with_token_balances: 1, update_holder_count!: 2]
 
   alias Ecto.Multi
-  alias Explorer.Chain.Import.Runner.{Blocks, Transaction}
+  alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
   alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain
   alias Explorer.Repo
 
   describe "run/1" do
@@ -258,6 +259,83 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
                 blocks_update_token_holder_counts: []
               }} = run_block_consensus_change(block, true, options)
     end
+
+    # Regression test for https://github.com/poanetwork/blockscout/issues/1644
+    test "discards neighbouring blocks if they aren't related to the current one because of reorg and/or import timeout",
+         %{consensus_block: %Block{number: block_number, hash: block_hash, miner_hash: miner_hash}, options: options} do
+      old_block1 = params_for(:block, miner_hash: miner_hash, parent_hash: block_hash, number: block_number + 1)
+
+      new_block1 = params_for(:block, miner_hash: miner_hash, parent_hash: block_hash, number: block_number + 1)
+      new_block2 = params_for(:block, miner_hash: miner_hash, parent_hash: new_block1.hash, number: block_number + 2)
+
+      range = block_number..(block_number + 2)
+
+      insert_block(new_block1, options)
+      insert_block(new_block2, options)
+      assert Chain.missing_block_number_ranges(range) == []
+
+      insert_block(old_block1, options)
+      assert Chain.missing_block_number_ranges(range) == [(block_number + 2)..(block_number + 2)]
+
+      insert_block(new_block2, options)
+      assert Chain.missing_block_number_ranges(range) == [(block_number + 1)..(block_number + 1)]
+
+      insert_block(new_block1, options)
+      assert Chain.missing_block_number_ranges(range) == []
+    end
+
+    # Regression test for https://github.com/poanetwork/blockscout/issues/1911
+    test "forces block refetch if transaction is re-collated in a different block",
+         %{consensus_block: %Block{number: block_number, hash: block_hash, miner_hash: miner_hash}, options: options} do
+      new_block1 = params_for(:block, miner_hash: miner_hash, parent_hash: block_hash, number: block_number + 1)
+      new_block2 = params_for(:block, miner_hash: miner_hash, parent_hash: new_block1.hash, number: block_number + 2)
+
+      range = block_number..(block_number + 2)
+
+      insert_block(new_block1, options)
+      insert_block(new_block2, options)
+      assert Chain.missing_block_number_ranges(range) == []
+
+      trans_hash = transaction_hash()
+
+      transaction1 = transaction_params_with_block([hash: trans_hash], new_block1)
+      insert_transaction(transaction1, options)
+      assert Chain.missing_block_number_ranges(range) == []
+
+      transaction2 = transaction_params_with_block([hash: trans_hash], new_block2)
+      insert_transaction(transaction2, options)
+      assert Chain.missing_block_number_ranges(range) == [(block_number + 1)..(block_number + 1)]
+    end
+  end
+
+  defp insert_block(block_params, options) do
+    %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+
+    Multi.new()
+    |> Blocks.run([block_changes], options)
+    |> Repo.transaction()
+  end
+
+  defp transaction_params_with_block(transaction_params, block_params) do
+    params_for(:transaction, transaction_params)
+    |> Map.merge(%{
+      block_hash: block_params.hash,
+      block_number: block_params.number,
+      cumulative_gas_used: 50_000,
+      error: nil,
+      gas_used: 50_000,
+      index: 0,
+      from_address_hash: insert(:address).hash
+    })
+  end
+
+  defp insert_transaction(transaction_params, options) do
+    %Ecto.Changeset{valid?: true, changes: transaction_changes} =
+      Transaction.changeset(%Transaction{}, transaction_params)
+
+    Multi.new()
+    |> Transactions.run([transaction_changes], options)
+    |> Repo.transaction()
   end
 
   defp count(schema) do

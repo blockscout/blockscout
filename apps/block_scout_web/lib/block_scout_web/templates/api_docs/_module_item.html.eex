@@ -1,0 +1,4 @@
+<a class="api-anchors-list-item" href="#<%= @module.name %>">
+  <span class="api-anchors-list-item-title"><%= "#{String.capitalize(@module.name)}" %></span>
+  <span class="api-anchors-list-item-value"><span class="api-text-monospace api-text-monospace-background">?module=<%= @module.name %></span></span>
+</a>

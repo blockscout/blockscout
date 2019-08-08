@@ -3,14 +3,14 @@
 For now this integration is not production ready. It made only for local usage only !
 
 ## How to use ?
-First of all blockscout requires `PostgreSQL` server for working. 
+First of all, blockscout requires `PostgreSQL` server for working. 
 It will be provided by starting script (new docker image will be created named `postgres`)
 
 **Starting command**
 `make start` - will set everything up and start blockscout in container.
 To connect it to your local environment you will have to configure it using [env variables](#env-variables)
 
-Exmaple connecting to local `ganache` instance running on port `2000` on Mac/Windows:
+Example connecting to local `ganache` instance running on port `2000` on Mac/Windows:
 ```bash
 COIN=DAI \
 ETHEREUM_JSONRPC_VARIANT=ganache \ 
@@ -27,15 +27,15 @@ On Linux docker is starting using `--network=host` and all services should be av
 
 ### Migrations
 
-By default `Makefile` will do migrations for you on `PostgreSQL` creation. 
-But you could run migrations manualy using `make migrate` command.
+By default, `Makefile` will do migrations for you on `PostgreSQL` creation. 
+But you could run migrations manually using `make migrate` command.
 
 **WARNING** Migrations will clean up your local database !
 
 ## Env variables
 
-BlockScout support 3 different JSON RPC Variants.
-Vriant could be configured using `ETHEREUM_JSONRPC_VARIANT` environment variable.
+BlockScout supports 3 different JSON RPC Variants.
+Variant could be configured using `ETHEREUM_JSONRPC_VARIANT` environment variable.
 
 Example: 
 ```bash
@@ -54,7 +54,7 @@ Available options are:
 | `ETHEREUM_JSONRPC_VARIANT` | Variant of your JSON RPC service: `parity`, `geth` or `ganache` | `parity` |
 | `ETHEREUM_JSONRPC_HTTP_URL` | HTTP JSON RPC URL Only for `geth` or `ganache` variant | Different per JSONRPC variant |
 | `ETHEREUM_JSONRPC_WS_URL` | WS JSON RPC url | Different per JSONRPC variant |
-| `ETHEREUM_JSONRPC_TRACE_URL` | Trace URL **Only for `parity` variant** | `https://explorer-node.fuse.io` |
+| `ETHEREUM_JSONRPC_TRACE_URL` | Trace URL **Only for `parity` variant** | `http://localhost:8545` |
 | `COIN` | Default Coin | `POA` |
 | `LOGO` | Coin logo | Empty | 
 | `NETWORK` | Network | Empty |

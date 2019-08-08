@@ -13,6 +13,11 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
 
   @behaviour Import.Runner
 
+  @row_defaults %{
+    decompiled: false,
+    verified: false
+  }
+
   # milliseconds
   @timeout 60_000
 
@@ -45,9 +50,16 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
 
     update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
 
+    changes_list_with_defaults =
+      Enum.map(changes_list, fn change ->
+        Enum.reduce(@row_defaults, change, fn {default_key, default_value}, acc ->
+          Map.put_new(acc, default_key, default_value)
+        end)
+      end)
+
     multi
     |> Multi.run(:addresses, fn repo, _ ->
-      insert(repo, changes_list, insert_options)
+      insert(repo, changes_list_with_defaults, insert_options)
     end)
     |> Multi.run(:created_address_code_indexed_at_transactions, fn repo, %{addresses: addresses}
                                                                    when is_list(addresses) ->
@@ -87,7 +99,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     from(address in Address,
       update: [
         set: [
-          contract_code: fragment("COALESCE(?, EXCLUDED.contract_code)", address.contract_code),
+          contract_code: fragment("COALESCE(EXCLUDED.contract_code, ?)", address.contract_code),
           # ARGMAX on two columns
           fetched_coin_balance:
             fragment(

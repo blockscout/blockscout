@@ -21,15 +21,18 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => [
       %{
         "account" => "0xddbd2b932c763ba5b1b7ae3b362eac3e8d40121a",
-        "balance" => "40807168566070000000000"
+        "balance" => "40807168566070000000000",
+        "stale" => true
       },
       %{
         "account" => "0x63a9975ba31b0b9626b34300f7f627147df1f526",
-        "balance" => "332567136222827062478"
+        "balance" => "332567136222827062478",
+        "stale" => false
       },
       %{
         "account" => "0x198ef1ec325a96cc354c7266a038be8b5c558f67",
-        "balance" => "185178830000000000"
+        "balance" => "185178830000000000",
+        "stale" => false
       }
     ]
   }
@@ -79,6 +82,8 @@ defmodule BlockScoutWeb.Etherscan do
         "to" => "",
         "value" => "5488334153118633",
         "contractAddress" => "0x883103875d905c11f9ac7dacbfc16deb39655361",
+        "transactionHash" => "0xd65b788c610949704a5f9aac2228c7c777434dfe11c863a12306f57fcbd8cdbb",
+        "index" => "0",
         "input" => "",
         "type" => "create",
         "gas" => "814937",
@@ -95,6 +100,12 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => []
   }
 
+  @account_eth_get_balance_example_value %{
+    "jsonrpc" => "2.0",
+    "result" => "0x0234c8a3397aab58",
+    "id" => 1
+  }
+
   @account_tokentx_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -107,6 +118,7 @@ defmodule BlockScoutWeb.Etherscan do
         "blockHash" => "0x6169c5dc05d0051564ba3eae8ebfbdefda640c5f5ffc095846b8aed0b44f64ea",
         "from" => "0x4e83362442b8d1bec281594cea3050c8eb01311c",
         "contractAddress" => "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+        "logIndex" => "0",
         "to" => "0x21e21ba085289f81a86921de890eed30f1ad2375",
         "value" => "10000000000000000000",
         "tokenName" => "Maker",
@@ -164,6 +176,17 @@ defmodule BlockScoutWeb.Etherscan do
         "blockNumber" => "3462296",
         "timeStamp" => "1491118514",
         "blockReward" => "5194770940000000000"
+      }
+    ]
+  }
+
+  @account_listaccounts_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "address" => "0x0000000000000000000000000000000000000000",
+        "balance" => "135499"
       }
     ]
   }
@@ -265,6 +288,51 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @block_eth_block_number_example_value %{
+    "jsonrpc" => "2.0",
+    "result" => "767969",
+    "id" => 1
+  }
+
+  @contract_listcontracts_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "SourceCode" => """
+        pragma solidity >0.4.24;
+
+        contract Test {
+        constructor() public { b = hex"12345678901234567890123456789012"; }
+        event Event(uint indexed a, bytes32 b);
+        event Event2(uint indexed a, bytes32 b);
+        function foo(uint a) public { emit Event(a, b); }
+        bytes32 b;
+        }
+        """,
+        "ABI" => """
+        [{
+        "type":"event",
+        "inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],
+        "name":"Event"
+        }, {
+        "type":"event",
+        "inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],
+        "name":"Event2"
+        }, {
+        "type":"function",
+        "inputs": [{"name":"a","type":"uint256"}],
+        "name":"foo",
+        "outputs": []
+        }]
+        """,
+        "ContractName" => "Test",
+        "CompilerVersion" => "v0.2.1-2016-01-30-91a6b35",
+        "OptimizationUsed" => "1"
+      }
+    ]
+  }
+
   @contract_getabi_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -275,6 +343,49 @@ defmodule BlockScoutWeb.Etherscan do
   @contract_getabi_example_value_error %{
     "status" => "0",
     "message" => "Contract source code not verified",
+    "result" => nil
+  }
+
+  @contract_verify_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => %{
+      "SourceCode" => """
+      pragma solidity >0.4.24;
+
+      contract Test {
+      constructor() public { b = hex"12345678901234567890123456789012"; }
+      event Event(uint indexed a, bytes32 b);
+      event Event2(uint indexed a, bytes32 b);
+      function foo(uint a) public { emit Event(a, b); }
+      bytes32 b;
+      }
+      """,
+      "ABI" => """
+      [{
+      "type":"event",
+      "inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],
+      "name":"Event"
+      }, {
+      "type":"event",
+      "inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],
+      "name":"Event2"
+      }, {
+      "type":"function",
+      "inputs": [{"name":"a","type":"uint256"}],
+      "name":"foo",
+      "outputs": []
+      }]
+      """,
+      "ContractName" => "Test",
+      "CompilerVersion" => "v0.2.1-2016-01-30-91a6b35",
+      "OptimizationUsed" => "1"
+    }
+  }
+
+  @contract_verify_example_value_error %{
+    "status" => "0",
+    "message" => "There was an error verifying the contract.",
     "result" => nil
   }
 
@@ -380,9 +491,24 @@ defmodule BlockScoutWeb.Etherscan do
     enum_interpretation: %{"0" => "error", "1" => "ok"}
   }
 
+  @jsonrpc_version_type %{
+    type: "string",
+    example: ~s("2.0")
+  }
+
   @message_type %{
     type: "string",
     example: ~s("OK")
+  }
+
+  @hex_number_type %{
+    type: "string",
+    example: ~s("767969")
+  }
+
+  @id_type %{
+    type: "string",
+    example: ~s("1")
   }
 
   @wei_type %{
@@ -401,6 +527,13 @@ defmodule BlockScoutWeb.Etherscan do
     type: "address hash",
     definition: "A 160-bit code used for identifying accounts or contracts.",
     example: ~s("0x95426f2bc716022fcf1def006dbc4bb81f5b5164")
+  }
+
+  @stale_type %{
+    type: "boolean",
+    definition:
+      "Represents whether or not the balance has not been checked in the last 24 hours, and will be rechecked.",
+    example: true
   }
 
   @transaction_hash_type %{
@@ -470,6 +603,11 @@ defmodule BlockScoutWeb.Etherscan do
         type: "block number",
         definition: "A nonnegative number used to identify blocks.",
         example: ~s("0x5c958")
+      },
+      index: %{
+        type: "log index",
+        definition: "A nonnegative number used to identify logs.",
+        example: ~s("1")
       }
     }
   }
@@ -478,7 +616,8 @@ defmodule BlockScoutWeb.Etherscan do
     name: "AddressBalance",
     fields: %{
       address: @address_hash_type,
-      balance: @wei_type
+      balance: @wei_type,
+      stale: @stale_type
     }
   }
 
@@ -720,24 +859,18 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
+  @account_model %{
+    name: "Account",
+    fields: %{
+      "address" => @address_hash_type,
+      "balance" => @wei_type
+    }
+  }
+
   @contract_model %{
     name: "Contract",
     fields: %{
-      "SourceCode" => %{
-        type: "contract source code",
-        definition: "The contract's source code.",
-        example: """
-        "pragma solidity >0.4.24;
-
-        contract Test {
-          constructor() public { b = hex"12345678901234567890123456789012"; }
-          event Event(uint indexed a, bytes32 b);
-          event Event2(uint indexed a, bytes32 b);
-          function foo(uint a) public { emit Event(a, b); }
-          bytes32 b;
-        }"
-        """
-      },
+      "Address" => @address_hash_type,
       "ABI" => %{
         type: "ABI",
         definition: "JSON string for the contract's Application Binary Interface (ABI)",
@@ -769,6 +902,56 @@ defmodule BlockScoutWeb.Etherscan do
       }
     }
   }
+
+  @contract_source_code_type %{
+    type: "contract source code",
+    definition: "The contract's source code.",
+    example: """
+    "pragma solidity >0.4.24;
+
+    contract Test {
+      constructor() public { b = hex"12345678901234567890123456789012"; }
+      event Event(uint indexed a, bytes32 b);
+      event Event2(uint indexed a, bytes32 b);
+      function foo(uint a) public { emit Event(a, b); }
+      bytes32 b;
+    }"
+    """
+  }
+
+  @contract_decompiled_source_code_type %{
+    type: "contract decompiled source code",
+    definition: "The contract's decompiled source code.",
+    example: """
+    const name() = 'CryptoKitties'
+    const GEN0_STARTING_PRICE() = 10^16
+    const GEN0_AUCTION_DURATION() = 86400
+    const GEN0_CREATION_LIMIT() = 45000
+    const symbol() = 'CK'
+    const PROMO_CREATION_LIMIT() = 5000
+    def storage:
+      ceoAddress is addr # mask(160, 0) at storage #0
+      cfoAddress is addr # mask(160, 0) at storage #1
+      stor1.768 is uint16 => uint256 # mask(256, 768) at storage #1
+      cooAddress is addr # mask(160, 0) at storage #2
+      stor2.0 is uint256 => uint256 # mask(256, 0) at storage #2
+      paused is uint8 # mask(8, 160) at storage #2
+      stor2.256 is uint256 => uint256 # mask(256, 256) at storage #2
+      stor3 is uint32 #
+    ...<continues>
+    """
+  }
+
+  @contract_decompiler_version_type %{
+    type: "decompiler version",
+    definition: "When decompiled source code is present, the decompiler version with which it was generated.",
+    example: "decompiler.version"
+  }
+
+  @contract_with_sourcecode_model @contract_model
+                                  |> put_in([:fields, "SourceCode"], @contract_source_code_type)
+                                  |> put_in([:fields, "DecompiledSourceCode"], @contract_decompiled_source_code_type)
+                                  |> put_in([:fields, "DecompilerVersion"], @contract_decompiler_version_type)
 
   @transaction_receipt_status_model %{
     name: "TransactionReceiptStatus",
@@ -851,9 +1034,61 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
+  @account_eth_get_balance_action %{
+    name: "eth_get_balance",
+    description:
+      "Mimics Ethereum JSON RPC's eth_getBalance. Returns the balance as of the provided block (defaults to latest)",
+    required_params: [
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "The address of the account."
+      }
+    ],
+    optional_params: [
+      %{
+        key: "block",
+        placeholder: "block",
+        type: "string",
+        description: """
+        Either the block number as a string, or one of latest, earliest or pending
+
+        latest will be the latest balance in a *consensus* block.
+        earliest will be the first recorded balance for the address.
+        pending will be the latest balance in consensus *or* nonconcensus blocks.
+        """
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_eth_get_balance_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            jsonrpc: @jsonrpc_version_type,
+            id: @id_type,
+            result: @hex_number_type
+          }
+        }
+      }
+    ]
+  }
+
   @account_balance_action %{
     name: "balance",
-    description: "Get balance for address. Also available through a GraphQL 'addresses' query.",
+    description: """
+        Get balance for address. Also available through a GraphQL 'addresses' query.
+
+        If the balance hasn't been updated in a long time, we will double check
+        with the node to fetch the absolute latest balance. This will not be
+        reflected in the current request, but once it is updated, subsequent requests
+        will show the updated balance. If you want to know whether or not we are checking
+        for another balance, use the `balancemulti` action. That contains a property
+        called `stale` that will let you know to recheck that balance in the near future.
+    """,
     required_params: [
       %{
         key: "address",
@@ -887,7 +1122,15 @@ defmodule BlockScoutWeb.Etherscan do
 
   @account_balancemulti_action %{
     name: "balancemulti",
-    description: "Get balance for multiple addresses. Also available through a GraphQL 'addresses' query.",
+    description: """
+        Get balance for multiple addresses. Also available through a GraphQL 'addresses' query.
+
+        If the balance hasn't been updated in a long time, we will double check
+        with the node to fetch the absolute latest balance. This will not be
+        reflected in the current request, but once it is updated, subsequent requests
+        will show the updated balance. You can know that this is taking place via
+        the `stale` attribute, which is set to `true` if a new balance is being fetched.
+    """,
     required_params: [
       %{
         key: "address",
@@ -1289,6 +1532,45 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @account_listaccounts_action %{
+    name: "listaccounts",
+    description:
+      "Get a list of accounts and their balances, sorted ascending by the time they were first seen by the explorer.",
+    required_params: [],
+    optional_params: [
+      %{
+        key: "page",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction."
+      },
+      %{
+        key: "offset",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_listaccounts_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @account_model
+            }
+          }
+        }
+      }
+    ]
+  }
+
   @logs_getlogs_action %{
     name: "getLogs",
     description: "Get event logs for an address and/or topics. Up to a maximum of 1,000 event logs.",
@@ -1535,6 +1817,35 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @block_eth_block_number_action %{
+    name: "eth_block_number",
+    description: "Mimics Ethereum JSON RPC's eth_blockNumber. Returns the lastest block number",
+    required_params: [],
+    optional_params: [
+      %{
+        key: "id",
+        placeholder: "request id",
+        type: "integer",
+        description: "A nonnegative integer that represents the json rpc request id."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful request",
+        example_value: Jason.encode!(@block_eth_block_number_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            jsonrpc: @jsonrpc_version_type,
+            id: @id_type,
+            result: @hex_number_type
+          }
+        }
+      }
+    ]
+  }
+
   @block_getblockreward_action %{
     name: "getblockreward",
     description: "Get block reward by block number.",
@@ -1568,6 +1879,181 @@ defmodule BlockScoutWeb.Etherscan do
         code: "200",
         description: "error",
         example_value: Jason.encode!(@block_getblockreward_example_value_error)
+      }
+    ]
+  }
+
+  @contract_listcontracts_action %{
+    name: "listcontracts",
+    description: """
+    Get a list of contracts, sorted ascending by the time they were first seen by the explorer.
+
+    If you provide the filters `not_decompiled`(`4`) or `not_verified(4)` the results will not
+    be sorted for performance reasons.
+    """,
+    required_params: [],
+    optional_params: [
+      %{
+        key: "page",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction."
+      },
+      %{
+        key: "offset",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
+      },
+      %{
+        key: "filter",
+        type: "string",
+        description:
+          "verified|decompiled|unverified|not_decompiled|empty, or 1|2|3|4|5 respectively. This requests only contracts with that status."
+      },
+      %{
+        key: "not_decompiled_with_version",
+        type: "string",
+        description:
+          "Ensures that none of the returned contracts were decompiled with the provided version. Ignored unless filtering for decompiled contracts."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@contract_listcontracts_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @contract_model
+            }
+          }
+        }
+      }
+    ]
+  }
+
+  @contract_verify_action %{
+    name: "verify",
+    description: "Verify a contract with its source code and contract creation information.",
+    required_params: [
+      %{
+        key: "addressHash",
+        placeholder: "addressHash",
+        type: "string",
+        description: "The address of the contract."
+      },
+      %{
+        key: "name",
+        placeholder: "name",
+        type: "string",
+        description: "The name of the contract."
+      },
+      %{
+        key: "compilerVersion",
+        placeholder: "compilerVersion",
+        type: "string",
+        description: "The compiler version for the contract."
+      },
+      %{
+        key: "optimization",
+        placeholder: false,
+        type: "boolean",
+        description: "Whether or not compiler optimizations were enabled."
+      },
+      %{
+        key: "contractSourceCode",
+        placeholder: "contractSourceCode",
+        type: "string",
+        description: "The source code of the contract."
+      }
+    ],
+    optional_params: [
+      %{
+        key: "constructorArguments",
+        type: "string",
+        description: "The constructor argument data provided."
+      },
+      %{
+        key: "evmVersion",
+        placeholder: "evmVersion",
+        type: "string",
+        description: "The EVM version for the contract."
+      },
+      %{
+        key: "optimizationRuns",
+        placeholder: "optimizationRuns",
+        type: "integer",
+        description: "The number of optimization runs used during compilation"
+      },
+      %{
+        key: "library1Name",
+        type: "string",
+        description: "The name of the first library used."
+      },
+      %{
+        key: "library1Address",
+        type: "string",
+        description: "The address of the first library used."
+      },
+      %{
+        key: "library2Name",
+        type: "string",
+        description: "The name of the second library used."
+      },
+      %{
+        key: "library2Address",
+        type: "string",
+        description: "The address of the second library used."
+      },
+      %{
+        key: "library3Name",
+        type: "string",
+        description: "The name of the third library used."
+      },
+      %{
+        key: "library3Address",
+        type: "string",
+        description: "The address of the third library used."
+      },
+      %{
+        key: "library4Name",
+        type: "string",
+        description: "The name of the fourth library used."
+      },
+      %{
+        key: "library4Address",
+        type: "string",
+        description: "The address of the fourth library used."
+      },
+      %{
+        key: "library5Name",
+        type: "string",
+        description: "The name of the fourth library used."
+      },
+      %{
+        key: "library5Address",
+        type: "string",
+        description: "The address of the fourth library used."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@contract_verify_example_value),
+        type: "model",
+        model: @contract_model
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@contract_verify_example_value_error)
       }
     ]
   }
@@ -1633,7 +2119,7 @@ defmodule BlockScoutWeb.Etherscan do
             message: @message_type,
             result: %{
               type: "array",
-              array_type: @contract_model
+              array_type: @contract_with_sourcecode_model
             }
           }
         }
@@ -1657,7 +2143,13 @@ defmodule BlockScoutWeb.Etherscan do
         description: "Transaction hash. Hash of contents of the transaction."
       }
     ],
-    optional_params: [],
+    optional_params: [
+      %{
+        key: "index",
+        type: "integer",
+        description: "A nonnegative integer that represents the log index to be used for pagination."
+      }
+    ],
     responses: [
       %{
         code: "200",
@@ -1760,6 +2252,7 @@ defmodule BlockScoutWeb.Etherscan do
   @account_module %{
     name: "account",
     actions: [
+      @account_eth_get_balance_action,
       @account_balance_action,
       @account_balancemulti_action,
       @account_txlist_action,
@@ -1767,7 +2260,8 @@ defmodule BlockScoutWeb.Etherscan do
       @account_tokentx_action,
       @account_tokenbalance_action,
       @account_tokenlist_action,
-      @account_getminedblocks_action
+      @account_getminedblocks_action,
+      @account_listaccounts_action
     ]
   }
 
@@ -1792,14 +2286,16 @@ defmodule BlockScoutWeb.Etherscan do
 
   @block_module %{
     name: "block",
-    actions: [@block_getblockreward_action]
+    actions: [@block_getblockreward_action, @block_eth_block_number_action]
   }
 
   @contract_module %{
     name: "contract",
     actions: [
+      @contract_listcontracts_action,
       @contract_getabi_action,
-      @contract_getsourcecode_action
+      @contract_getsourcecode_action,
+      @contract_verify_action
     ]
   }
 

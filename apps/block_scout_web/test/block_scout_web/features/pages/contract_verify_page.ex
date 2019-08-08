@@ -13,15 +13,21 @@ defmodule BlockScoutWeb.ContractVerifyPage do
         contract_name: contract_name,
         version: version,
         optimization: optimization,
-        source_code: source_code
+        source_code: source_code,
+        evm_version: evm_version
       }) do
     session
     |> fill_in(css("[data-test='contract_name']"), with: contract_name)
-    |> fill_in(text_field("Enter the Solidity Contract Code below"), with: source_code)
+    |> fill_in(text_field("Enter the Solidity Contract Code"), with: source_code)
 
     case version do
       nil -> nil
       _ -> click(session, option(version))
+    end
+
+    case evm_version do
+      nil -> nil
+      _ -> click(session, option(evm_version))
     end
 
     case optimization do

@@ -10,7 +10,7 @@ defmodule Indexer.MixProject do
       deps: deps(),
       deps_path: "../../deps",
       description: "Fetches block chain data from on-chain node for later reading with Explorer.",
-      elixir: "~> 1.6",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
@@ -49,7 +49,7 @@ defmodule Indexer.MixProject do
       # JSONRPC access to Parity for `Explorer.Indexer`
       {:ethereum_jsonrpc, in_umbrella: true},
       # RLP encoding
-      {:ex_rlp, "~> 0.3"},
+      {:ex_rlp, "~> 0.5.2"},
       # Code coverage
       {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       # Importing to database
@@ -63,7 +63,7 @@ defmodule Indexer.MixProject do
       # Tracing
       {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
       # `:spandex` integration with Datadog
-      {:spandex_datadog, "~> 0.3.1"}
+      {:spandex_datadog, "~> 0.4.0"}
     ]
   end
 

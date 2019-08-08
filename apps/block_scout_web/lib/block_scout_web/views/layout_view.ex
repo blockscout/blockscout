@@ -2,8 +2,68 @@ defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
   alias Plug.Conn
+  alias Poison.Parser
 
   @issue_url "https://github.com/poanetwork/blockscout/issues/new"
+  @default_other_networks [
+    %{
+      title: "POA Core",
+      url: "https://blockscout.com/poa/core"
+    },
+    %{
+      title: "POA Sokol",
+      url: "https://blockscout.com/poa/sokol",
+      test_net?: true
+    },
+    %{
+      title: "xDai Chain",
+      url: "https://blockscout.com/poa/dai"
+    },
+    %{
+      title: "Ethereum Mainnet",
+      url: "https://blockscout.com/eth/mainnet"
+    },
+    %{
+      title: "Kovan Testnet",
+      url: "https://blockscout.com/eth/kovan",
+      test_net?: true
+    },
+    %{
+      title: "Ropsten Testnet",
+      url: "https://blockscout.com/eth/ropsten",
+      test_net?: true
+    },
+    %{
+      title: "Goerli Testnet",
+      url: "https://blockscout.com/eth/goerli",
+      test_net?: true
+    },
+    %{
+      title: "Rinkeby Testnet",
+      url: "https://blockscout.com/eth/rinkeby",
+      test_net?: true
+    },
+    %{
+      title: "Ethereum Classic",
+      url: "https://blockscout.com/etc/mainnet",
+      other?: true
+    },
+    %{
+      title: "Aerum Mainnet",
+      url: "https://blockscout.com/aerum/mainnet",
+      other?: true
+    },
+    %{
+      title: "Callisto Mainnet",
+      url: "https://blockscout.com/callisto/mainnet",
+      other?: true
+    },
+    %{
+      title: "RSK Mainnet",
+      url: "https://blockscout.com/rsk/mainnet",
+      other?: true
+    }
+  ]
 
   alias BlockScoutWeb.SocialMedia
 
@@ -15,12 +75,17 @@ defmodule BlockScoutWeb.LayoutView do
     Keyword.get(application_config(), :logo) || "/images/blockscout_logo.svg"
   end
 
+  def logo_footer do
+    Keyword.get(application_config(), :logo_footer) || Keyword.get(application_config(), :logo) ||
+      "/images/blockscout_logo.svg"
+  end
+
   def subnetwork_title do
-    Keyword.get(application_config(), :subnetwork) || "Sokol Testnet"
+    Keyword.get(application_config(), :subnetwork) || ""
   end
 
   def network_title do
-    Keyword.get(application_config(), :network) || "POA"
+    Keyword.get(application_config(), :network) || ""
   end
 
   defp application_config do
@@ -76,23 +141,83 @@ defmodule BlockScoutWeb.LayoutView do
     BlockScoutWeb.version()
   end
 
+  def release_link(version) do
+    release_link_env_var = Application.get_env(:block_scout_web, :release_link)
+
+    release_link =
+      cond do
+        version == "" || version == nil ->
+          nil
+
+        release_link_env_var == "" || release_link_env_var == nil ->
+          "https://github.com/poanetwork/blockscout/releases/tag/" <> version
+
+        true ->
+          release_link_env_var
+      end
+
+    if release_link == nil do
+      ""
+    else
+      html_escape({:safe, "<a href=\"#{release_link}\" class=\"footer-link\" target=\"_blank\">#{version}</a>"})
+    end
+  end
+
   def ignore_version?("unknown"), do: true
   def ignore_version?(_), do: false
 
   def other_networks do
-    :block_scout_web
-    |> Application.get_env(:other_networks, [])
+    get_other_networks =
+      if Application.get_env(:block_scout_web, :other_networks) do
+        :block_scout_web
+        |> Application.get_env(:other_networks)
+        |> Parser.parse!(%{keys: :atoms!})
+      else
+        @default_other_networks
+      end
+
+    get_other_networks
     |> Enum.reject(fn %{title: title} ->
       title == subnetwork_title()
     end)
+    |> Enum.sort()
   end
 
-  def main_nets do
-    Enum.reject(other_networks(), &Map.get(&1, :test_net?))
+  def main_nets(nets) do
+    nets
+    |> Enum.reject(&Map.get(&1, :test_net?))
   end
 
-  def test_nets do
-    Enum.filter(other_networks(), &Map.get(&1, :test_net?))
+  def test_nets(nets) do
+    nets
+    |> Enum.filter(&Map.get(&1, :test_net?))
+  end
+
+  def dropdown_nets do
+    other_networks()
+    |> Enum.reject(&Map.get(&1, :hide_in_dropdown?))
+  end
+
+  def dropdown_main_nets do
+    dropdown_nets()
+    |> main_nets()
+  end
+
+  def dropdown_test_nets do
+    dropdown_nets()
+    |> test_nets()
+  end
+
+  def dropdown_head_main_nets do
+    dropdown_nets()
+    |> main_nets()
+    |> Enum.reject(&Map.get(&1, :other?))
+  end
+
+  def dropdown_other_nets do
+    dropdown_nets()
+    |> main_nets()
+    |> Enum.filter(&Map.get(&1, :other?))
   end
 
   def other_explorers do

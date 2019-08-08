@@ -1,6 +1,9 @@
+@import "./mixins";
 
 /* Phoenix flash messages */
-.alert:empty { display: none; }
+.alert:empty {
+  display: none;
+}
 
 /* This file is for your main application css. */
 
@@ -13,8 +16,10 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 
 // Bootstrap Core CSS
 @import "node_modules/bootstrap/scss/functions";
-@import "theme/variables";
 @import "node_modules/bootstrap/scss/mixins";
+
+@import "theme/variables";
+
 @import "node_modules/bootstrap/scss/root";
 @import "node_modules/bootstrap/scss/reboot";
 @import "node_modules/bootstrap/scss/grid";
@@ -36,16 +41,17 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "node_modules/bootstrap/scss/progress";
 
 // Bootstrap Components
+@import "node_modules/bootstrap/scss/alert";
+@import "node_modules/bootstrap/scss/badge";
+@import "node_modules/bootstrap/scss/card";
 @import "node_modules/bootstrap/scss/dropdown";
-@import "node_modules/bootstrap/scss/transitions";
-@import "node_modules/bootstrap/scss/tables";
+@import "node_modules/bootstrap/scss/forms";
 @import "node_modules/bootstrap/scss/nav";
 @import "node_modules/bootstrap/scss/navbar";
-@import "node_modules/bootstrap/scss/card";
-@import "node_modules/bootstrap/scss/forms";
+@import "node_modules/bootstrap/scss/pagination";
+@import "node_modules/bootstrap/scss/tables";
 @import "node_modules/bootstrap/scss/tooltip";
-@import "node_modules/bootstrap/scss/badge";
-@import "node_modules/bootstrap/scss/alert";
+@import "node_modules/bootstrap/scss/transitions";
 
 // Code highlight
 @import "node_modules/highlight.js/styles/default";
@@ -56,14 +62,14 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 // Custom SCSS
 @import "layout";
 @import "typography";
-@import "tooltip";
 @import "code";
+@import "helpers";
 @import "elements";
 @import "forms";
 @import "components/panels";
 @import "components/nav_tabs";
 @import "components/dot";
-@import "components/pagination";
+@import "components/pagination_container";
 @import "components/address_link";
 @import "components/footer";
 @import "components/filter";
@@ -87,8 +93,46 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/transaction-input";
 @import "components/coin-balance-tile";
 @import "components/highlight";
+@import "components/copy_icon";
+@import "components/btn_full";
+@import "components/btn_line";
+@import "components/stakes";
+@import "components/check";
+@import "components/stakes_table";
+@import "components/i_tooltip";
+@import "components/check_tooltip";
+@import "components/tooltip";
+@import "components/progress_from_to";
+@import "components/stakes_empty_content";
+@import "components/stakes_btn_remove_pool";
+@import "components/modal";
+@import "components/modal_validator_info";
+@import "components/form";
+@import "components/stakes_progress";
+@import "components/modal_status";
+@import "components/modal_bottom_disclaimer";
+@import "components/modal_become_candidate";
+@import "components/modal_stake";
+@import "components/btn_copy";
+@import "components/btn_qr";
+@import "components/btn_address_card";
+@import "components/btn_dropdown_line";
+@import "components/transaction";
+@import "components/api";
+@import "components/alerts";
+@import "components/verify_other_explorers";
+@import "components/errors";
+@import "components/log-search";
+@import "components/radio";
+@import "components/network-selector";
+@import "components/new_smart_contract";
+@import "components/radio_big";
+@import "components/btn_no_border";
 
 :export {
+  dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;
+  dashboardLineColorMarket: $dashboard-line-color-market;
+  dashboardLineColorPrice: $dashboard-line-color-price;
   primary: $primary;
   secondary: $secondary;
 }

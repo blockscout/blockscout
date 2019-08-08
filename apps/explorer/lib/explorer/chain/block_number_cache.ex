@@ -6,13 +6,10 @@ defmodule Explorer.Chain.BlockNumberCache do
   alias Explorer.Chain
 
   @tab :block_number_cache
-  # 30 minutes
-  @cache_period 1_000 * 60 * 30
   @key "min_max"
-  @opts_key "opts"
 
-  @spec setup(Keyword.t()) :: :ok
-  def setup(opts \\ []) do
+  @spec setup() :: :ok
+  def setup do
     if :ets.whereis(@tab) == :undefined do
       :ets.new(@tab, [
         :set,
@@ -22,7 +19,6 @@ defmodule Explorer.Chain.BlockNumberCache do
       ])
     end
 
-    setup_opts(opts)
     update_cache()
 
     :ok
@@ -41,15 +37,11 @@ defmodule Explorer.Chain.BlockNumberCache do
   end
 
   defp value(type) do
-    initial_cache = {_min, _max, old_current_time} = cached_values()
-
-    {min, max, _current_time} =
-      if current_time() - old_current_time > cache_period() do
-        update_cache()
-
+    {min, max} =
+      if Application.get_env(:explorer, __MODULE__)[:enabled] do
         cached_values()
       else
-        initial_cache
+        min_and_max_from_db()
       end
 
     case type do
@@ -59,18 +51,29 @@ defmodule Explorer.Chain.BlockNumberCache do
     end
   end
 
-  defp update_cache do
-    current_time = current_time()
-    {min, max} = Chain.fetch_min_and_max_block_numbers()
-    tuple = {min, max, current_time}
+  @spec update(non_neg_integer()) :: boolean()
+  def update(number) do
+    {old_min, old_max} = cached_values()
 
-    :ets.insert(@tab, {@key, tuple})
+    cond do
+      number > old_max ->
+        tuple = {old_min, number}
+        :ets.insert(@tab, {@key, tuple})
+
+      number < old_min ->
+        tuple = {number, old_max}
+        :ets.insert(@tab, {@key, tuple})
+
+      true ->
+        false
+    end
   end
 
-  defp setup_opts(opts) do
-    cache_period = opts[:cache_period] || @cache_period
+  defp update_cache do
+    {min, max} = min_and_max_from_db()
+    tuple = {min, max}
 
-    :ets.insert(@tab, {@opts_key, cache_period})
+    :ets.insert(@tab, {@key, tuple})
   end
 
   defp cached_values do
@@ -79,15 +82,10 @@ defmodule Explorer.Chain.BlockNumberCache do
     cached_values
   end
 
-  defp cache_period do
-    [{_, cache_period}] = :ets.lookup(@tab, @opts_key)
-
-    cache_period
-  end
-
-  defp current_time do
-    utc_now = DateTime.utc_now()
-
-    DateTime.to_unix(utc_now, :millisecond)
+  defp min_and_max_from_db do
+    Chain.fetch_min_and_max_block_numbers()
+  rescue
+    _e ->
+      {0, 0}
   end
 end

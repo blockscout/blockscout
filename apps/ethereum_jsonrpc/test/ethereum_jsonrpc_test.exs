@@ -57,7 +57,7 @@ defmodule EthereumJSONRPCTest do
             "invalid argument 0: json: cannot unmarshal hex string of odd length into Go value of type common.Address"
 
           EthereumJSONRPC.Parity ->
-            "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
+            "Invalid params: invalid length 1, expected a 0x-prefixed hex string with length of 40."
 
           _ ->
             raise ArgumentError, "Unsupported variant (#{variant}})"
@@ -886,90 +886,21 @@ defmodule EthereumJSONRPCTest do
     end
   end
 
-  describe "execute_contract_functions/3" do
-    test "executes the functions with the block_number" do
-      json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-      functions = [
-        %{
-          contract_address: "0x0000000000000000000000000000000000000000",
-          data: "0x6d4ce63c",
-          id: "get"
-        }
-      ]
-
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x0000000000000000000000000000000000000000000000000000000000000000"
-             }
-           ]}
+  describe "fetch_net_version/1" do
+    test "fetches net version", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      expected_version =
+        case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+          EthereumJSONRPC.Parity -> 77
+          _variant -> 1
         end
-      )
 
-      blockchain_result =
-        {:ok,
-         [
-           %{
-             id: "get",
-             jsonrpc: "2.0",
-             result: "0x0000000000000000000000000000000000000000000000000000000000000000"
-           }
-         ]}
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+          {:ok, "#{expected_version}"}
+        end)
+      end
 
-      assert EthereumJSONRPC.execute_contract_functions(
-               functions,
-               json_rpc_named_arguments,
-               block_number: 1000
-             ) == blockchain_result
-    end
-
-    test "executes the functions even when the block_number is not given" do
-      json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-      functions = [
-        %{
-          contract_address: "0x0000000000000000000000000000000000000000",
-          data: "0x6d4ce63c",
-          id: "get"
-        }
-      ]
-
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}, "latest"]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x0000000000000000000000000000000000000000000000000000000000000000"
-             }
-           ]}
-        end
-      )
-
-      blockchain_result =
-        {:ok,
-         [
-           %{
-             id: "get",
-             jsonrpc: "2.0",
-             result: "0x0000000000000000000000000000000000000000000000000000000000000000"
-           }
-         ]}
-
-      assert EthereumJSONRPC.execute_contract_functions(
-               functions,
-               json_rpc_named_arguments
-             ) == blockchain_result
+      assert {:ok, ^expected_version} = EthereumJSONRPC.fetch_net_version(json_rpc_named_arguments)
     end
   end
 

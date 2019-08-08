@@ -11,7 +11,8 @@ defmodule BlockScoutWeb.Chain do
       number_to_block: 1,
       string_to_address_hash: 1,
       string_to_block_hash: 1,
-      string_to_transaction_hash: 1
+      string_to_transaction_hash: 1,
+      token_contract_address_from_token_name: 1
     ]
 
   alias Explorer.Chain.Block.Reward
@@ -24,13 +25,16 @@ defmodule BlockScoutWeb.Chain do
     InternalTransaction,
     Log,
     TokenTransfer,
-    Transaction
+    Transaction,
+    Wei
   }
 
   alias Explorer.PagingOptions
 
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
+  @address_hash_len 40
+  @tx_block_hash_len 64
 
   def default_paging_options do
     @default_paging_options
@@ -59,18 +63,22 @@ defmodule BlockScoutWeb.Chain do
   @spec from_param(String.t()) :: {:ok, Address.t() | Block.t() | Transaction.t()} | {:error, :not_found}
   def from_param(param)
 
-  def from_param("0x" <> number_string = param) do
-    case String.length(number_string) do
-      40 -> address_from_param(param)
-      64 -> block_or_transaction_from_param(param)
-      _ -> {:error, :not_found}
-    end
-  end
+  def from_param("0x" <> number_string = param) when byte_size(number_string) == @address_hash_len,
+    do: address_from_param(param)
 
-  def from_param(formatted_number) when is_binary(formatted_number) do
-    case param_to_block_number(formatted_number) do
+  def from_param("0x" <> number_string = param) when byte_size(number_string) == @tx_block_hash_len,
+    do: block_or_transaction_from_param(param)
+
+  def from_param(param) when byte_size(param) == @address_hash_len,
+    do: address_from_param("0x" <> param)
+
+  def from_param(param) when byte_size(param) == @tx_block_hash_len,
+    do: block_or_transaction_from_param("0x" <> param)
+
+  def from_param(string) when is_binary(string) do
+    case param_to_block_number(string) do
       {:ok, number} -> number_to_block(number)
-      {:error, :invalid} -> {:error, :not_found}
+      _ -> token_address_from_name(string)
     end
   end
 
@@ -78,6 +86,16 @@ defmodule BlockScoutWeb.Chain do
 
   def next_page_params(_, list, params) do
     Map.merge(params, paging_params(List.last(list)))
+  end
+
+  def paging_options(%{"hash" => hash, "fetched_coin_balance" => fetched_coin_balance}) do
+    with {coin_balance, ""} <- Integer.parse(fetched_coin_balance),
+         {:ok, address_hash} <- string_to_address_hash(hash) do
+      [paging_options: %{@default_paging_options | key: {%Wei{value: Decimal.new(coin_balance)}, address_hash}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
   end
 
   def paging_options(%{
@@ -114,13 +132,17 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def paging_options(%{"index" => index_string}) do
+  def paging_options(%{"index" => index_string}) when is_binary(index_string) do
     with {index, ""} <- Integer.parse(index_string) do
       [paging_options: %{@default_paging_options | key: {index}}]
     else
       _ ->
         [paging_options: @default_paging_options]
     end
+  end
+
+  def paging_options(%{"index" => index}) when is_integer(index) do
+    [paging_options: %{@default_paging_options | key: {index}}]
   end
 
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}) do
@@ -159,6 +181,17 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  defp token_address_from_name(name) do
+    case token_contract_address_from_token_name(name) do
+      {:ok, hash} -> find_or_insert_address_from_hash(hash)
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp paging_params({%Address{hash: hash, fetched_coin_balance: fetched_coin_balance}, _}) do
+    %{"hash" => hash, "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)}
+  end
+
   defp paging_params({%Reward{block: %{number: number}}, _}) do
     %{"block_number" => number, "index" => 0}
   end
@@ -172,8 +205,12 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number, "transaction_index" => transaction_index, "index" => index}
   end
 
-  defp paging_params(%Log{index: index}) do
-    %{"index" => index}
+  defp paging_params(%Log{index: index} = log) do
+    if Ecto.assoc_loaded?(log.transaction) do
+      %{"block_number" => log.transaction.block_number, "transaction_index" => log.transaction.index, "index" => index}
+    else
+      %{"index" => index}
+    end
   end
 
   defp paging_params(%Transaction{block_number: nil, inserted_at: inserted_at, hash: hash}) do

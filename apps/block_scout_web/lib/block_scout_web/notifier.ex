@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.Notifier do
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
     market_history_data =
-      case Market.fetch_recent_history(30) do
+      case Market.fetch_recent_history() do
         [today | the_rest] -> [%{today | closing_price: exchange_rate.usd_value} | the_rest]
         data -> data
       end
@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_block(block) do
     preloaded_block = Repo.preload(block, [[miner: :names], :transactions, :rewards])
-    average_block_time = AverageBlockTime.average_block_time(preloaded_block)
+    average_block_time = AverageBlockTime.average_block_time()
 
     Endpoint.broadcast("blocks:new_block", "new_block", %{
       block: preloaded_block,
