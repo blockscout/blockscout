@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
-  alias Cldr.Number
+  alias BlockScoutWeb.Cldr.Number
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
@@ -37,6 +37,25 @@ defmodule BlockScoutWeb.TransactionView do
 
     type = Chain.transaction_token_transfer_type(transaction)
     if type, do: {type, transaction_with_transfers}
+  end
+
+  def aggregate_token_transfers(token_transfers) do
+    token_transfers
+    |> Enum.reduce(%{}, fn token_transfer, acc ->
+      new_entry = %{
+        token: token_transfer.token,
+        amount: token_transfer.amount,
+        token_id: token_transfer.token_id
+      }
+
+      existing_entry = Map.get(acc, token_transfer.token_contract_address, %{new_entry | amount: Decimal.new(0)})
+
+      Map.put(acc, token_transfer.token_contract_address, %{
+        new_entry
+        | amount: Decimal.add(new_entry.amount, existing_entry.amount)
+      })
+    end)
+    |> Enum.map(fn {_key, value} -> value end)
   end
 
   def token_type_name(type) do
@@ -100,7 +119,7 @@ defmodule BlockScoutWeb.TransactionView do
 
       %Block{consensus: true} ->
         {:ok, confirmations} = Chain.confirmations(block, named_arguments)
-        Cldr.Number.to_string!(confirmations, format: "#,###")
+        BlockScoutWeb.Cldr.Number.to_string!(confirmations, format: "#,###")
 
       %Block{consensus: false} ->
         0
@@ -159,7 +178,7 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def gas(%type{gas: gas}) when is_transaction_type(type) do
-    Cldr.Number.to_string!(gas)
+    BlockScoutWeb.Cldr.Number.to_string!(gas)
   end
 
   def skip_decoding?(transaction) do
