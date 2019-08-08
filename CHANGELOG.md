@@ -6,6 +6,10 @@
 - [#2456](https://github.com/poanetwork/blockscout/pull/2456) - fetch pending transactions for geth
 
 ### Fixes
+- [#2519](https://github.com/poanetwork/blockscout/pull/2519) - enable `First` page button in pagination
+- [#2515](https://github.com/poanetwork/blockscout/pull/2515) - do not aggregate NFT token transfers
+- [#2512](https://github.com/poanetwork/blockscout/pull/2512) - alert link fix
+- [#2508](https://github.com/poanetwork/blockscout/pull/2508) - logs view columns fix
 - [#2506](https://github.com/poanetwork/blockscout/pull/2506) - fix two active tab in the top menu
 - [#2503](https://github.com/poanetwork/blockscout/pull/2503) - Mitigate autocompletion library influence to page loading performance
 - [#2502](https://github.com/poanetwork/blockscout/pull/2502) - increase reward task timeout
@@ -16,6 +20,8 @@
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
 ### Chore
+- [#2507](https://github.com/poanetwork/blockscout/pull/2507) - update minor version of ecto, ex_machina, phoenix_live_reload
+- [#2516](https://github.com/poanetwork/blockscout/pull/2516) - update absinthe plug from fork
 - [#2473](https://github.com/poanetwork/blockscout/pull/2473) - get rid of cldr warnings
 - [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
 - [#2492](https://github.com/poanetwork/blockscout/pull/2492) - hide decoded row if event is not decoded
