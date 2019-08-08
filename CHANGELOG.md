@@ -6,6 +6,7 @@
 - [#2456](https://github.com/poanetwork/blockscout/pull/2456) - fetch pending transactions for geth
 
 ### Fixes
+- [#2520](https://github.com/poanetwork/blockscout/pull/2520) - Hide loading message when fetching is failed
 - [#2523](https://github.com/poanetwork/blockscout/pull/2523) - Avoid importing internal_transactions of pending transactions
 - [#2519](https://github.com/poanetwork/blockscout/pull/2519) - enable `First` page button in pagination
 - [#2515](https://github.com/poanetwork/blockscout/pull/2515) - do not aggregate NFT token transfers

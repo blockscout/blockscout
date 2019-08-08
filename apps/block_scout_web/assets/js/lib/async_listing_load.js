@@ -51,8 +51,6 @@ export const asyncInitialState = {
   requestError: false,
   /* if response has no items */
   emptyResponse: false,
-  /* if it is loading the first page */
-  loadingFirstPage: true,
   /* link to the next page */
   nextPagePath: null,
   /* link to the previous page */
@@ -80,8 +78,7 @@ export function asyncReducer (state = asyncInitialState, action) {
     }
     case 'FINISH_REQUEST': {
       return Object.assign({}, state, {
-        loading: false,
-        loadingFirstPage: false
+        loading: false
       })
     }
     case 'ITEMS_FETCHED': {
@@ -134,7 +131,7 @@ export const elements = {
   },
   '[data-async-listing] [data-loading-message]': {
     render ($el, state) {
-      if (state.loadingFirstPage) return $el.show()
+      if (state.loading) return $el.show()
 
       $el.hide()
     }
@@ -143,7 +140,7 @@ export const elements = {
     render ($el, state) {
       if (
         !state.requestError &&
-        (!state.loading || !state.loadingFirstPage) &&
+        (!state.loading) &&
         state.items.length === 0
       ) {
         return $el.show()
@@ -226,7 +223,7 @@ export const elements = {
   },
   '[data-async-listing] [data-loading-button]': {
     render ($el, state) {
-      if (!state.loadingFirstPage && state.loading) return $el.show()
+      if (state.loading) return $el.show()
 
       $el.hide()
     }
