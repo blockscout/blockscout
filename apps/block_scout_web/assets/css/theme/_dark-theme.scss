@@ -712,9 +712,16 @@ $labels-dark: #8a8dba; // header nav, labels
 				}
 			}
 		}
+	}
     
 	// alert link
 	.alert-link {
 		color: $dark-secondary;
+	}
+
+	// alert danger
+	.alert-danger {
+		background-color: $dark-light;
+		border-color: $dark-light;
 	}
 }
