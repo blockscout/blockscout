@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.ConnCase do
       # Import conveniences for testing with connections
       use Phoenix.ConnTest
       import BlockScoutWeb.Router.Helpers
+      import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
 
       # The default endpoint for testing
       @endpoint BlockScoutWeb.Endpoint
@@ -27,6 +28,7 @@ defmodule BlockScoutWeb.ConnCase do
       import Explorer.Factory
 
       alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
+      alias BlockScoutWeb.ApiRouter.Helpers, as: ApiRoutes
     end
   end
 
