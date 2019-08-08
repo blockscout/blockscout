@@ -1,12 +1,22 @@
 ## Current
 
 ### Features
+- [#2376](https://github.com/poanetwork/blockscout/pull/2376) - Split API and WebApp routes
 - [#2477](https://github.com/poanetwork/blockscout/pull/2477) - aggregate token transfers on transaction page
 - [#2458](https://github.com/poanetwork/blockscout/pull/2458) - Add LAST_BLOCK var to add ability indexing in the range of blocks
 - [#2456](https://github.com/poanetwork/blockscout/pull/2456) - fetch pending transactions for geth
+- [#2403](https://github.com/poanetwork/blockscout/pull/2403) - Return gasPrice field at the result of gettxinfo method
 
 ### Fixes
 - [#2524](https://github.com/poanetwork/blockscout/pull/2524) - fix dark theme validator data styles
+- [#2528](https://github.com/poanetwork/blockscout/pull/2528) - fix coin history chart data
+- [#2520](https://github.com/poanetwork/blockscout/pull/2520) - Hide loading message when fetching is failed
+- [#2523](https://github.com/poanetwork/blockscout/pull/2523) - Avoid importing internal_transactions of pending transactions
+- [#2519](https://github.com/poanetwork/blockscout/pull/2519) - enable `First` page button in pagination
+- [#2515](https://github.com/poanetwork/blockscout/pull/2515) - do not aggregate NFT token transfers
+- [#2512](https://github.com/poanetwork/blockscout/pull/2512) - alert link fix
+- [#2508](https://github.com/poanetwork/blockscout/pull/2508) - logs view columns fix
+- [#2506](https://github.com/poanetwork/blockscout/pull/2506) - fix two active tab in the top menu
 - [#2503](https://github.com/poanetwork/blockscout/pull/2503) - Mitigate autocompletion library influence to page loading performance
 - [#2502](https://github.com/poanetwork/blockscout/pull/2502) - increase reward task timeout
 - [#2463](https://github.com/poanetwork/blockscout/pull/2463) - dark theme fixes
@@ -16,6 +26,7 @@
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
 ### Chore
+- [#2507](https://github.com/poanetwork/blockscout/pull/2507) - update minor version of ecto, ex_machina, phoenix_live_reload
 - [#2516](https://github.com/poanetwork/blockscout/pull/2516) - update absinthe plug from fork
 - [#2473](https://github.com/poanetwork/blockscout/pull/2473) - get rid of cldr warnings
 - [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0

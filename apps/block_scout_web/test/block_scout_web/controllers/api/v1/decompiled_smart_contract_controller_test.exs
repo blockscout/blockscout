@@ -114,4 +114,8 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
       assert request.status == 403
     end
   end
+
+  defp api_v1_decompiled_smart_contract_path(conn, action) do
+    "/api" <> ApiRoutes.api_v1_decompiled_smart_contract_path(conn, action)
+  end
 end

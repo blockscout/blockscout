@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
   use Explorer.DataCase
 
   alias Ecto.Multi
-  alias Explorer.Chain.{Data, Wei, Transaction}
+  alias Explorer.Chain.{Data, Wei, Transaction, InternalTransaction}
   alias Explorer.Chain.Import.Runner.InternalTransactions
 
   describe "run/1" do
@@ -19,6 +19,28 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
 
       assert :error == Repo.get(Transaction, transaction.hash).status
+    end
+
+    test "pending transactions don't get updated not its internal_transactions inserted" do
+      transaction = insert(:transaction) |> with_block(status: :ok)
+      pending = insert(:transaction)
+
+      assert :ok == transaction.status
+      assert is_nil(pending.block_hash)
+
+      index = 0
+
+      transaction_changes = make_internal_transaction_changes(transaction.hash, index, nil)
+      pending_changes = make_internal_transaction_changes(pending.hash, index, nil)
+
+      assert {:ok, _} = run_internal_transactions([transaction_changes, pending_changes])
+
+      assert %InternalTransaction{} =
+               Repo.one(from(i in InternalTransaction, where: i.transaction_hash == ^transaction.hash))
+
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^pending.hash) |> Repo.one() |> is_nil()
+
+      assert is_nil(Repo.get(Transaction, pending.hash).block_hash)
     end
   end
 
