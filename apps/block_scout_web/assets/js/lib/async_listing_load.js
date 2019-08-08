@@ -198,6 +198,16 @@ export const elements = {
       $el.attr('href', state.prevPagePath)
     }
   },
+  '[data-async-listing] [data-first-page-button]': {
+    render ($el, state) {
+      if (state.pagesStack.length === 0) {
+        return $el.hide()
+      }
+      $el.show()
+      $el.attr('disabled', false)
+      $el.attr('href', window.location.href.split('?')[0])
+    }
+  },
   '[data-async-listing] [data-page-number]': {
     render ($el, state) {
       if (state.emptyResponse) {
