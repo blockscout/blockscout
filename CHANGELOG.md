@@ -18,6 +18,7 @@
 - [#2519](https://github.com/poanetwork/blockscout/pull/2519) - enable `First` page button in pagination
 - [#2517](https://github.com/poanetwork/blockscout/pull/2517) - remove duplicate indexes
 - [#2515](https://github.com/poanetwork/blockscout/pull/2515) - do not aggregate NFT token transfers
+- [#2514](https://github.com/poanetwork/blockscout/pull/2514) - Isolating of staking dapp css && extracting of non-critical css
 - [#2512](https://github.com/poanetwork/blockscout/pull/2512) - alert link fix
 - [#2508](https://github.com/poanetwork/blockscout/pull/2508) - logs view columns fix
 - [#2506](https://github.com/poanetwork/blockscout/pull/2506) - fix two active tab in the top menu
