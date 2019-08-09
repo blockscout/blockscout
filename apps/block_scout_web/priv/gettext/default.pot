@@ -205,7 +205,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:137
-#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:108
+#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:106
 msgid "Clear"
 msgstr ""
 
@@ -222,8 +222,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:42
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:165
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:187
-#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:128
-#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:151
+#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:126
+#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:149
 #: lib/block_scout_web/views/address_view.ex:307
 msgid "Code"
 msgstr ""
@@ -329,7 +329,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:146
-#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:118
+#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:116
 msgid "Curl"
 msgstr ""
 
@@ -337,14 +337,14 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:53
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:188
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:60
-#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:152
+#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:150
 msgid "Description"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:8
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:166
-#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:129
+#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:127
 msgid "Details"
 msgstr ""
 
@@ -387,7 +387,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:211
-#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:166
+#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:164
 msgid "Example Value"
 msgstr ""
 
@@ -666,13 +666,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:173
-#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:136
+#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:134
 msgid "Response Body"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:185
-#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:149
+#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:147
 msgid "Responses"
 msgstr ""
 
@@ -691,7 +691,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:163
-#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:126
+#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:124
 msgid "Server Response"
 msgstr ""
 
