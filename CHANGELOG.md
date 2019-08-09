@@ -1,6 +1,8 @@
 ## Current
 
 ### Features
+- [#2433](https://github.com/poanetwork/blockscout/pull/2433) - Add a functionality to try Eth RPC methods in the documentation
+- [#2529](https://github.com/poanetwork/blockscout/pull/2529) - show both eth value and token transfers on transaction overview page
 - [#2376](https://github.com/poanetwork/blockscout/pull/2376) - Split API and WebApp routes
 - [#2477](https://github.com/poanetwork/blockscout/pull/2477) - aggregate token transfers on transaction page
 - [#2458](https://github.com/poanetwork/blockscout/pull/2458) - Add LAST_BLOCK var to add ability indexing in the range of blocks
@@ -8,11 +10,15 @@
 - [#2403](https://github.com/poanetwork/blockscout/pull/2403) - Return gasPrice field at the result of gettxinfo method
 
 ### Fixes
+- [#2543](https://github.com/poanetwork/blockscout/pull/2543) - do not hide search input during logs search
+- [#2532](https://github.com/poanetwork/blockscout/pull/2532) - don't show empty token transfers on the transaction overview page
 - [#2528](https://github.com/poanetwork/blockscout/pull/2528) - fix coin history chart data
 - [#2520](https://github.com/poanetwork/blockscout/pull/2520) - Hide loading message when fetching is failed
 - [#2523](https://github.com/poanetwork/blockscout/pull/2523) - Avoid importing internal_transactions of pending transactions
 - [#2519](https://github.com/poanetwork/blockscout/pull/2519) - enable `First` page button in pagination
+- [#2517](https://github.com/poanetwork/blockscout/pull/2517) - remove duplicate indexes
 - [#2515](https://github.com/poanetwork/blockscout/pull/2515) - do not aggregate NFT token transfers
+- [#2514](https://github.com/poanetwork/blockscout/pull/2514) - Isolating of staking dapp css && extracting of non-critical css
 - [#2512](https://github.com/poanetwork/blockscout/pull/2512) - alert link fix
 - [#2508](https://github.com/poanetwork/blockscout/pull/2508) - logs view columns fix
 - [#2506](https://github.com/poanetwork/blockscout/pull/2506) - fix two active tab in the top menu
