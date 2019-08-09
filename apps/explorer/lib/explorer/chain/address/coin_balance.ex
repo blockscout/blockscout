@@ -75,7 +75,6 @@ defmodule Explorer.Chain.Address.CoinBalance do
     from(
       cb in CoinBalance,
       where: cb.address_hash == ^address_hash,
-      where: cb.value > ^0,
       inner_join: b in Block,
       on: cb.block_number == b.number,
       order_by: [desc: :block_number],
