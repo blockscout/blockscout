@@ -87,4 +87,8 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
              }
            } = Poison.decode!(request.resp_body)
   end
+
+  defp api_v1_health_path(conn, action) do
+    "/api" <> ApiRoutes.api_v1_health_path(conn, action)
+  end
 end
