@@ -11,6 +11,7 @@
 
 ### Fixes
 - [#2543](https://github.com/poanetwork/blockscout/pull/2543) - do not hide search input during logs search
+- [#2524](https://github.com/poanetwork/blockscout/pull/2524) - fix dark theme validator data styles
 - [#2532](https://github.com/poanetwork/blockscout/pull/2532) - don't show empty token transfers on the transaction overview page
 - [#2528](https://github.com/poanetwork/blockscout/pull/2528) - fix coin history chart data
 - [#2520](https://github.com/poanetwork/blockscout/pull/2520) - Hide loading message when fetching is failed
