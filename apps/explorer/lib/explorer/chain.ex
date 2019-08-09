@@ -66,6 +66,8 @@ defmodule Explorer.Chain do
 
   @max_incoming_transactions_count 10_000
 
+  @coin_balance_records_count 90
+
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -2976,7 +2978,7 @@ defmodule Explorer.Chain do
   @spec address_to_balances_by_day(Hash.Address.t()) :: [balance_by_day]
   def address_to_balances_by_day(address_hash) do
     address_hash
-    |> CoinBalance.balances_by_day()
+    |> CoinBalance.balances_by_day(@coin_balance_records_count)
     |> Repo.all()
     |> normalize_balances_by_day()
   end
