@@ -371,7 +371,8 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/app.html.eex:56
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:30
-#: lib/block_scout_web/templates/transaction/overview.html.eex:196
+#: lib/block_scout_web/templates/transaction/overview.html.eex:179
+#: lib/block_scout_web/templates/transaction/overview.html.eex:211
 #: lib/block_scout_web/views/wei_helpers.ex:78
 msgid "Ether"
 msgstr "POA"
@@ -483,7 +484,7 @@ msgid "Less than"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:224
+#: lib/block_scout_web/templates/transaction/overview.html.eex:239
 msgid "Limit"
 msgstr ""
 
@@ -897,7 +898,7 @@ msgid "Unique Token"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:218
+#: lib/block_scout_web/templates/transaction/overview.html.eex:233
 msgid "Used"
 msgstr ""
 
@@ -917,7 +918,8 @@ msgid "Validations"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:196
+#: lib/block_scout_web/templates/transaction/overview.html.eex:179
+#: lib/block_scout_web/templates/transaction/overview.html.eex:211
 msgid "Value"
 msgstr ""
 
@@ -1493,7 +1495,7 @@ msgid "View All Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:214
+#: lib/block_scout_web/templates/transaction/overview.html.eex:229
 msgid "Gas"
 msgstr ""
 
@@ -1642,7 +1644,7 @@ msgid "New Smart Contract Verification"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:178
+#: lib/block_scout_web/templates/transaction/overview.html.eex:192
 msgid " Token Transfer"
 msgstr ""
 

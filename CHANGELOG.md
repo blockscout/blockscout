@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2529](https://github.com/poanetwork/blockscout/pull/2529) - show both eth value and token transfers on transaction overview page
 - [#2376](https://github.com/poanetwork/blockscout/pull/2376) - Split API and WebApp routes
 - [#2477](https://github.com/poanetwork/blockscout/pull/2477) - aggregate token transfers on transaction page
 - [#2458](https://github.com/poanetwork/blockscout/pull/2458) - Add LAST_BLOCK var to add ability indexing in the range of blocks
