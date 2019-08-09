@@ -88,7 +88,7 @@
 
       <!-- Buttons for Other / Extra -->
       <div class="row">
-        <div class="col-sm-2 offset-sm-4 col-md-2 offset-md-2">
+        <div class="offset-sm-4 offset-md-2 col-10">
           <button
             class="collapse button button-primary"
             data-action="<%= @action %>"
@@ -97,10 +97,8 @@
             data-try-eth-api-ui-button-type="execute"
             role="button"
           ><%= gettext "Execute" %></button>
-        </div>
-        <div class="col-sm-2 col-md-2 mt-2 mt-md-0">
           <button
-            class="collapse button button-secondary w-100"
+            class="collapse button button-secondary"
             data-action="<%= @action %>"
             data-module="eth"
             data-selector='<%= "eth-#{@action}-btn-try-api-clear" %>'
