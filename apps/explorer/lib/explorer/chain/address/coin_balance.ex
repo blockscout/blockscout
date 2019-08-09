@@ -115,7 +115,6 @@ defmodule Explorer.Chain.Address.CoinBalance do
     |> select([cb, b], %{timestamp: b.timestamp})
   end
 
-
   def changeset(%__MODULE__{} = balance, params) do
     balance
     |> cast(params, @allowed_fields)
