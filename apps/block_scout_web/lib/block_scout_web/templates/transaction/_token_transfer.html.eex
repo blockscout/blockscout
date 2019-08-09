@@ -20,9 +20,7 @@
     </span>
   </span>
   <span class="col-xs-12 col-lg-4 ml-3 ml-sm-0 text-truncate">
-    <span id="tStr">
-      <%= token_transfer_amount(@token_transfer) %>
-    </span>
+    <span id="tStr"><%= token_transfer_amount(@token_transfer) %></span>
     <%= link(token_symbol(@token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @token_transfer.token.contract_address_hash)) %>
   </span>
 </div>
