@@ -11,6 +11,7 @@ $form-control-border-color: #e2e5ec !default;
 
   &:focus {
     border-color: $secondary;
+    box-shadow: none;
   }
 
   &.n-b-r {
