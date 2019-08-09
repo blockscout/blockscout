@@ -11,6 +11,7 @@
 
 ### Fixes
 - [#2510](https://github.com/poanetwork/blockscout/pull/2510) - address name fix
+- [#2543](https://github.com/poanetwork/blockscout/pull/2543) - do not hide search input during logs search
 - [#2532](https://github.com/poanetwork/blockscout/pull/2532) - don't show empty token transfers on the transaction overview page
 - [#2528](https://github.com/poanetwork/blockscout/pull/2528) - fix coin history chart data
 - [#2520](https://github.com/poanetwork/blockscout/pull/2520) - Hide loading message when fetching is failed
@@ -18,6 +19,7 @@
 - [#2519](https://github.com/poanetwork/blockscout/pull/2519) - enable `First` page button in pagination
 - [#2517](https://github.com/poanetwork/blockscout/pull/2517) - remove duplicate indexes
 - [#2515](https://github.com/poanetwork/blockscout/pull/2515) - do not aggregate NFT token transfers
+- [#2514](https://github.com/poanetwork/blockscout/pull/2514) - Isolating of staking dapp css && extracting of non-critical css
 - [#2512](https://github.com/poanetwork/blockscout/pull/2512) - alert link fix
 - [#2508](https://github.com/poanetwork/blockscout/pull/2508) - logs view columns fix
 - [#2506](https://github.com/poanetwork/blockscout/pull/2506) - fix two active tab in the top menu
