@@ -75,9 +75,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/table";
 @import "components/navbar";
 @import "components/alerts";
-
-@import "theme/dark-theme";
-
 @import "components/animations";
 @import "components/card";
 @import "components/tile";
@@ -115,6 +112,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/new_smart_contract";
 @import "components/radio_big";
 @import "components/btn_no_border";
+
+@import "theme/dark-theme";
 
 :export {
   dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;

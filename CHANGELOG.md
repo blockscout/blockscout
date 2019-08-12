@@ -10,6 +10,7 @@
 - [#2403](https://github.com/poanetwork/blockscout/pull/2403) - Return gasPrice field at the result of gettxinfo method
 
 ### Fixes
+- [#2553](https://github.com/poanetwork/blockscout/pull/2553) - Dark theme import to the end of sass
 - [#2549](https://github.com/poanetwork/blockscout/pull/2549) - Fix wrong colour of tooltip
 - [#2548](https://github.com/poanetwork/blockscout/pull/2548) - CSS preload support in Firefox
 - [#2547](https://github.com/poanetwork/blockscout/pull/2547) - do not show eth value if it's zero on the transaction overview page
