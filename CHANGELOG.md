@@ -10,6 +10,7 @@
 - [#2403](https://github.com/poanetwork/blockscout/pull/2403) - Return gasPrice field at the result of gettxinfo method
 
 ### Fixes
+- [#2548](https://github.com/poanetwork/blockscout/pull/2548) - CSS preload support in Firefox
 - [#2543](https://github.com/poanetwork/blockscout/pull/2543) - do not hide search input during logs search
 - [#2524](https://github.com/poanetwork/blockscout/pull/2524) - fix dark theme validator data styles
 - [#2532](https://github.com/poanetwork/blockscout/pull/2532) - don't show empty token transfers on the transaction overview page
