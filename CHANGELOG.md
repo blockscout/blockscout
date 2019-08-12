@@ -11,6 +11,7 @@
 
 ### Fixes
 - [#2549](https://github.com/poanetwork/blockscout/pull/2549) - Fix wrong colour of tooltip
+- [#2548](https://github.com/poanetwork/blockscout/pull/2548) - CSS preload support in Firefox
 - [#2547](https://github.com/poanetwork/blockscout/pull/2547) - do not show eth value if it's zero on the transaction overview page
 - [#2543](https://github.com/poanetwork/blockscout/pull/2543) - do not hide search input during logs search
 - [#2524](https://github.com/poanetwork/blockscout/pull/2524) - fix dark theme validator data styles
