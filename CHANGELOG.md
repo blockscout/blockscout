@@ -11,6 +11,9 @@
 
 ### Fixes
 - [#2550](https://github.com/poanetwork/blockscout/pull/2550) - correctly encode decimal values for frontend
+- [#2549](https://github.com/poanetwork/blockscout/pull/2549) - Fix wrong colour of tooltip
+- [#2548](https://github.com/poanetwork/blockscout/pull/2548) - CSS preload support in Firefox
+- [#2547](https://github.com/poanetwork/blockscout/pull/2547) - do not show eth value if it's zero on the transaction overview page
 - [#2543](https://github.com/poanetwork/blockscout/pull/2543) - do not hide search input during logs search
 - [#2524](https://github.com/poanetwork/blockscout/pull/2524) - fix dark theme validator data styles
 - [#2532](https://github.com/poanetwork/blockscout/pull/2532) - don't show empty token transfers on the transaction overview page
@@ -22,6 +25,7 @@
 - [#2515](https://github.com/poanetwork/blockscout/pull/2515) - do not aggregate NFT token transfers
 - [#2514](https://github.com/poanetwork/blockscout/pull/2514) - Isolating of staking dapp css && extracting of non-critical css
 - [#2512](https://github.com/poanetwork/blockscout/pull/2512) - alert link fix
+- [#2509](https://github.com/poanetwork/blockscout/pull/2509) - value-ticker gaps fix
 - [#2508](https://github.com/poanetwork/blockscout/pull/2508) - logs view columns fix
 - [#2506](https://github.com/poanetwork/blockscout/pull/2506) - fix two active tab in the top menu
 - [#2503](https://github.com/poanetwork/blockscout/pull/2503) - Mitigate autocompletion library influence to page loading performance

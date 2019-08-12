@@ -7,6 +7,10 @@
 @import "node_modules/bootstrap/scss/modal";
 @import "node_modules/bootstrap/scss/tooltip";
 
+@import "components/i_tooltip";
+@import "components/check_tooltip";
+@import "components/tooltip";
+
 @import "components/qr-code";
 @import "components/modal_variables";
 @import "components/modal";
