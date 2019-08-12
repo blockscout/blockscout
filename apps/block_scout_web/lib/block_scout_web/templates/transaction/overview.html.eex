@@ -170,7 +170,7 @@
     </div>
 
     <%= case token_transfer_type(@transaction) do %>
-      <% {type, %{token_transfers: token_transfers} = transaction_with_transfers} when  is_list(token_transfers) -> %>
+      <% {type, %{token_transfers: token_transfers} = transaction_with_transfers} when is_list(token_transfers) and token_transfers != [] -> %>
         <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0">
         <!-- Value -->
         <div class="card card-background-1 flex-grow-1">
