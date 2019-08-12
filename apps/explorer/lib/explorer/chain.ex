@@ -2965,7 +2965,6 @@ defmodule Explorer.Chain do
     |> CoinBalance.fetch_coin_balances(paging_options)
     |> page_coin_balances(paging_options)
     |> Repo.all()
-    |> Enum.dedup()
   end
 
   def get_coin_balance(address_hash, block_number) do
@@ -2998,7 +2997,7 @@ defmodule Explorer.Chain do
     today = Date.to_string(NaiveDateTime.utc_now())
 
     if Enum.count(result) > 0 && !Enum.any?(result, fn map -> map[:date] == today end) do
-      [%{date: today, value: List.last(result)[:value]} | result]
+      result ++ [%{date: today, value: List.last(result)[:value]}]
     else
       result
     end
