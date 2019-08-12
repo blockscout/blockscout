@@ -31,6 +31,15 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.PagingOptions
 
+  defimpl Poison.Encoder, for: Decimal do
+    def encode(value, _opts) do
+      # silence the xref warning
+      decimal = Decimal
+
+      [?\", decimal.to_string(value), ?\"]
+    end
+  end
+
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @address_hash_len 40
@@ -124,18 +133,20 @@ defmodule BlockScoutWeb.Chain do
   end
 
   def paging_options(%{"block_number" => block_number_string}) do
-    with {block_number, ""} <- Integer.parse(block_number_string) do
-      [paging_options: %{@default_paging_options | key: {block_number}}]
-    else
+    case Integer.parse(block_number_string) do
+      {block_number, ""} ->
+        [paging_options: %{@default_paging_options | key: {block_number}}]
+
       _ ->
         [paging_options: @default_paging_options]
     end
   end
 
   def paging_options(%{"index" => index_string}) when is_binary(index_string) do
-    with {index, ""} <- Integer.parse(index_string) do
-      [paging_options: %{@default_paging_options | key: {index}}]
-    else
+    case Integer.parse(index_string) do
+      {index, ""} ->
+        [paging_options: %{@default_paging_options | key: {index}}]
+
       _ ->
         [paging_options: @default_paging_options]
     end
@@ -174,10 +185,12 @@ defmodule BlockScoutWeb.Chain do
   def split_list_by_page(list_plus_one), do: Enum.split(list_plus_one, @page_size)
 
   defp address_from_param(param) do
-    with {:ok, hash} <- string_to_address_hash(param) do
-      find_or_insert_address_from_hash(hash)
-    else
-      :error -> {:error, :not_found}
+    case string_to_address_hash(param) do
+      {:ok, hash} ->
+        find_or_insert_address_from_hash(hash)
+
+      :error ->
+        {:error, :not_found}
     end
   end
 
@@ -246,18 +259,22 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp transaction_from_param(param) do
-    with {:ok, hash} <- string_to_transaction_hash(param) do
-      hash_to_transaction(hash)
-    else
-      :error -> {:error, :not_found}
+    case string_to_transaction_hash(param) do
+      {:ok, hash} ->
+        hash_to_transaction(hash)
+
+      :error ->
+        {:error, :not_found}
     end
   end
 
   defp hash_string_to_block(hash_string) do
-    with {:ok, hash} <- string_to_block_hash(hash_string) do
-      hash_to_block(hash)
-    else
-      :error -> {:error, :not_found}
+    case string_to_block_hash(hash_string) do
+      {:ok, hash} ->
+        hash_to_block(hash)
+
+      :error ->
+        {:error, :not_found}
     end
   end
 end
