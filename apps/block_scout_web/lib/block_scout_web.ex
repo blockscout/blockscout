@@ -24,6 +24,7 @@ defmodule BlockScoutWeb do
 
       import BlockScoutWeb.Controller
       import BlockScoutWeb.Router.Helpers
+      import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
       import BlockScoutWeb.Gettext
       import BlockScoutWeb.ErrorHelpers
       import Plug.Conn
@@ -54,6 +55,8 @@ defmodule BlockScoutWeb do
         Views.ScriptHelpers,
         WeiHelpers
       }
+
+      import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
 
       import PhoenixFormAwesomplete
     end

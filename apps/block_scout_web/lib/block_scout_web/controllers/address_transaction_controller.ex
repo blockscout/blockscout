@@ -83,7 +83,13 @@ defmodule BlockScoutWeb.AddressTransactionController do
         unprocessable_entity(conn)
 
       {:error, :not_found} ->
-        not_found(conn)
+        case Chain.Hash.Address.validate(address_hash_string) do
+          {:ok, _} ->
+            json(conn, %{items: [], next_page_path: ""})
+
+          _ ->
+            not_found(conn)
+        end
     end
   end
 
@@ -106,7 +112,26 @@ defmodule BlockScoutWeb.AddressTransactionController do
         unprocessable_entity(conn)
 
       {:error, :not_found} ->
-        not_found(conn)
+        {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
+        address = %Chain.Address{hash: address_hash, smart_contract: nil, token: nil}
+
+        case Chain.Hash.Address.validate(address_hash_string) do
+          {:ok, _} ->
+            render(
+              conn,
+              "index.html",
+              address: address,
+              coin_balance_status: nil,
+              exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+              filter: params["filter"],
+              transaction_count: 0,
+              validation_count: 0,
+              current_path: current_path(conn)
+            )
+
+          _ ->
+            not_found(conn)
+        end
     end
   end
 

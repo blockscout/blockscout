@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.WeiHelpers do
 
   import BlockScoutWeb.Gettext
 
-  alias BlockScoutWeb.Cldr
+  alias BlockScoutWeb.CldrHelper
   alias Explorer.Chain.Wei
 
   @valid_units ~w(wei gwei ether)a
@@ -60,9 +60,9 @@ defmodule BlockScoutWeb.WeiHelpers do
 
     formatted_value =
       if Decimal.cmp(converted_value, 1_000_000_000_000) == :gt do
-        Cldr.Number.to_string!(converted_value, format: "0.###E+0")
+        CldrHelper.Number.to_string!(converted_value, format: "0.###E+0")
       else
-        Cldr.Number.to_string!(converted_value, format: "#,##0.##################")
+        CldrHelper.Number.to_string!(converted_value, format: "#,##0.##################")
       end
 
     if Keyword.get(options, :include_unit_label, true) do
