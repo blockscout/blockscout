@@ -5,8 +5,9 @@ defmodule Explorer.Chain.Log do
 
   require Logger
 
-  alias ABI.{Event, FunctionSelector}
-  alias Explorer.Chain.{Address, Data, Hash, Transaction}
+  alias ABI.{Event, FunctionSelector, Util}
+  alias Explorer.Chain.{Address, ContractMethod, Data, Hash, Transaction}
+  alias Explorer.Repo
 
   @required_attrs ~w(address_hash data index transaction_hash)a
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type)a
@@ -114,7 +115,37 @@ defmodule Explorer.Chain.Log do
          do: {:ok, identifier, text, mapping}
   end
 
-  def decode(_log, _transaction), do: {:error, :contract_not_verified}
+  def decode(log, transaction) do
+    IO.inspect("    case Util.split_method_id(log.first_topic) do")
+    case Util.split_method_id(log.first_topic) |> IO.inspect do
+      {:ok, method_id, _rest} ->
+        find_candidates(method_id, log, transaction) |> IO.inspect
+      _ ->
+        {:error, :could_not_decode}
+    end
+  end
+
+  defp find_candidates(_method_id, log, transaction) do
+    candidates_query =
+      from(
+        contract_method in ContractMethod,
+        # where: contract_method.identifier == ^method_id,
+        limit: 3
+      )
+
+    candidates =
+      candidates_query
+      |> Repo.all()
+      |> IO.inspect
+      |> Enum.flat_map(fn contract_method ->
+        case find_and_decode(contract_method.abi, log, transaction) do
+          {:ok, _, _} = result -> [result]
+          _ -> []
+        end
+      end)
+
+    {:error, :contract_not_verified, candidates}
+  end
 
   defp find_and_decode(abi, log, transaction) do
     with {%FunctionSelector{} = selector, mapping} <-

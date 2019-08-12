@@ -2,7 +2,8 @@ defmodule Explorer.Chain.LogTest do
   use Explorer.DataCase
 
   alias Ecto.Changeset
-  alias Explorer.Chain.Log
+  alias Explorer.Chain.{ContractMethod, Log, SmartContract}
+  alias Explorer.Repo
 
   doctest Log
 
@@ -99,6 +100,45 @@ defmodule Explorer.Chain.LogTest do
                   {"_number", "uint256", false, 0},
                   {"_belly", "bool", true, true}
                 ]}
+    end
+
+    test "finds decoding candidates" do
+      params = params_for(:smart_contract, %{abi: [
+            %{
+              "anonymous" => false,
+              "inputs" => [
+                %{"indexed" => true, "name" => "_from_human", "type" => "string"},
+                %{"indexed" => false, "name" => "_number", "type" => "uint256"},
+                %{"indexed" => true, "name" => "_belly", "type" => "bool"}
+              ],
+              "name" => "WantsPets",
+              "type" => "event"
+            }
+          ]})
+
+      # changeset has a callback to insert contract methods
+      %SmartContract{}
+      |> SmartContract.changeset(params)
+      |> Repo.insert!()
+
+      topic1 = "0x" <> Base.encode16(:keccakf1600.hash(:sha3_256, "WantsPets(string,uint256,bool)"), case: :lower)
+      topic2 = "0x" <> Base.encode16(:keccakf1600.hash(:sha3_256, "bob"), case: :lower)
+      topic3 = "0x0000000000000000000000000000000000000000000000000000000000000001"
+      data = "0x0000000000000000000000000000000000000000000000000000000000000000"
+
+      transaction = insert(:transaction)
+
+      log =
+        insert(:log,
+          transaction: transaction,
+          first_topic: topic1 <> "00",
+          second_topic: topic2,
+          third_topic: topic3,
+          fourth_topic: nil,
+          data: data
+        )
+
+      assert Log.decode(log, transaction)
     end
   end
 end
