@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-body">
       <h1 class="card-title margin-bottom-sm"><%= gettext("ETH RPC API Documentation") %></h2>
-      <p class="api-text-monospace" data-endpoint-url="<%= blockscout_url() %>/api/eth_rpc">[ <%= gettext "Base URL:" %> <%= blockscout_url() %>/api/eth_rpc ]</p>
+      <p class="api-text-monospace" data-endpoint-url="<%= blockscout_url() %>api/eth_rpc">[ <%= gettext "Base URL:" %> <%= blockscout_url() %>api/eth_rpc ]</p>
       <p class="card-subtitle margin-bottom-0">
         <%= gettext "This API is provided to support some rpc methods in the exact format specified for ethereum nodes, which can be found " %>
 
