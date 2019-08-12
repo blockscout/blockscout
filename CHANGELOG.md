@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 2.0.3-beta
+
+### Features
 - [#2433](https://github.com/poanetwork/blockscout/pull/2433) - Add a functionality to try Eth RPC methods in the documentation
 - [#2529](https://github.com/poanetwork/blockscout/pull/2529) - show both eth value and token transfers on transaction overview page
 - [#2376](https://github.com/poanetwork/blockscout/pull/2376) - Split API and WebApp routes
@@ -54,6 +63,7 @@
 - [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
 - [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
 - [#2373](https://github.com/poanetwork/blockscout/pull/2373) - Add script to validate internal_transactions constraint for large DBs
+
 
 ## 2.0.2-beta
 
@@ -199,6 +209,7 @@
 - [#2255](https://github.com/poanetwork/blockscout/pull/2255) - upgrade elixir version to 1.9.0
 - [#2256](https://github.com/poanetwork/blockscout/pull/2256) - use the latest version of chromedriver
 
+
 ## 2.0.0-beta
 
 ### Features
@@ -281,6 +292,7 @@
 - [#2055](https://github.com/poanetwork/blockscout/pull/2055) - Increase timeout for geth indexers
 - [#2069](https://github.com/poanetwork/blockscout/pull/2069) - Docsify integration: static docs page generation
 
+
 ## 1.3.15-beta
 
 ### Features
@@ -310,6 +322,7 @@
 
 - [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
 
+
 ## 1.3.13-beta
 
 ### Features
@@ -322,9 +335,11 @@
 - [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
 - [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
 
+
 ## 1.3.12-beta
 
 Reverting of synchronous block counter, implemented in #1848
+
 
 ## 1.3.11-beta
 
@@ -346,6 +361,7 @@ Reverting of synchronous block counter, implemented in #1848
 
 - [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
 - [#1837](https://github.com/poanetwork/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
+
 
 ## 1.3.10-beta
 
@@ -456,6 +472,7 @@ Reverting of synchronous block counter, implemented in #1848
 ### Chore
 
  - [#1610](https://github.com/poanetwork/blockscout/pull/1610) - Add PIRL to Readme
+
 
 ## 1.3.6-beta
 
