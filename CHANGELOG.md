@@ -32,6 +32,7 @@
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
 
 ### Chore
+- [#2552](https://github.com/poanetwork/blockscout/pull/2552) - remove brackets for token holders percentage
 - [#2507](https://github.com/poanetwork/blockscout/pull/2507) - update minor version of ecto, ex_machina, phoenix_live_reload
 - [#2516](https://github.com/poanetwork/blockscout/pull/2516) - update absinthe plug from fork
 - [#2473](https://github.com/poanetwork/blockscout/pull/2473) - get rid of cldr warnings
