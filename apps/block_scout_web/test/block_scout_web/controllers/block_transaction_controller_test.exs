@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.BlockTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.Router.Helpers, only: [block_transaction_path: 3]
+  import BlockScoutWeb.WebRouter.Helpers, only: [block_transaction_path: 3]
 
   describe "GET index/2" do
     test "with invalid block number", %{conn: conn} do

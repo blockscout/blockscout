@@ -23,6 +23,7 @@ $button-secondary-color: $secondary !default;
       background-color: darken($button-primary-color, 10%);
       border-color: darken($button-primary-color, 10%);
       color: #fff;
+      outline: none !important;
       text-decoration: none;
     }
 

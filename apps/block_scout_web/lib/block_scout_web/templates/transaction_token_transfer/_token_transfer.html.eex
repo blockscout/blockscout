@@ -13,8 +13,7 @@
       </span>
 
       <span class="tile-title text-truncate">
-        <%= token_transfer_amount(@token_transfer) %>
-        <%= link(token_symbol(@token_transfer.token), to: token_path(@conn, :show, @token_transfer.token.contract_address_hash)) %>
+        <%= token_transfer_amount(@token_transfer) %> <%= link(token_symbol(@token_transfer.token), to: token_path(@conn, :show, @token_transfer.token.contract_address_hash)) %>
       </span>
     </div>
   </div>
