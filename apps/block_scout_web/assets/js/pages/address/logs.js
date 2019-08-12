@@ -45,7 +45,7 @@ const elements = {
   },
   '[data-search]': {
     render ($el, state) {
-      if (state.emptyResponse) {
+      if (state.emptyResponse && !state.isSearch) {
         return $el.hide()
       }
 
