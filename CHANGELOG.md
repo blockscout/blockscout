@@ -34,6 +34,7 @@
 - [#2495](https://github.com/poanetwork/blockscout/pull/2495) - fix logs for indexed chain
 - [#2459](https://github.com/poanetwork/blockscout/pull/2459) - fix top addresses query
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
+- [#2551](https://github.com/poanetwork/blockscout/pull/2551) - Correctly handle dynamically created Bootstrap tooltips
 
 ### Chore
 - [#2507](https://github.com/poanetwork/blockscout/pull/2507) - update minor version of ecto, ex_machina, phoenix_live_reload
