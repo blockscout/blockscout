@@ -64,7 +64,7 @@ defmodule EthereumJsonrpc.MixProject do
       # WebSocket-server for testing `EthereumJSONRPC.WebSocket.WebSocketClient`.
       {:cowboy, "~> 2.0", only: [:dev, :test]},
       # Style Checking
-      {:credo, "1.0.0", only: :test, runtime: false},
+      {:credo, "~> 1.1", only: :test, runtime: false},
       # Static Type Checking
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Code coverage
@@ -82,7 +82,7 @@ defmodule EthereumJsonrpc.MixProject do
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 0.4.0"},
       # Convert unix timestamps in JSONRPC to DateTimes
-      {:timex, "~> 3.4"},
+      {:timex, "~> 3.6"},
       # Encode/decode function names and arguments
       {:ex_abi, "~> 0.1.18"},
       # `:verify_fun` for `Socket.Web.connect`
