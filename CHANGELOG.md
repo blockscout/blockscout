@@ -37,6 +37,7 @@
 
 ### Chore
 - [#2554](https://github.com/poanetwork/blockscout/pull/2554) - remove extra slash for endpoint url in docs
+- [#2552](https://github.com/poanetwork/blockscout/pull/2552) - remove brackets for token holders percentage
 - [#2507](https://github.com/poanetwork/blockscout/pull/2507) - update minor version of ecto, ex_machina, phoenix_live_reload
 - [#2516](https://github.com/poanetwork/blockscout/pull/2516) - update absinthe plug from fork
 - [#2473](https://github.com/poanetwork/blockscout/pull/2473) - get rid of cldr warnings
