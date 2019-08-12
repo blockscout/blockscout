@@ -5,6 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+    <link rel="preload" href="/css/non-critical.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="/css/non-critical.css"></noscript>
 
     <link rel="apple-touch-icon" sizes="180x180" href="<%= static_path(@conn, "/apple-touch-icon.png") %>">
     <link rel="icon" type="image/png" sizes="32x32" href="<%= static_path(@conn, "/favicon-32x32.png") %>">
@@ -15,10 +17,6 @@
     <meta name="msapplication-TileColor" content="#7dd79f">
     <meta name="msapplication-config" content="<%= static_path(@conn, "/browserconfig.xml") %>">
     <meta name="theme-color" content="#ffffff">
-
-    <link rel="stylesheet" href="https://nico-amsterdam.github.io/awesomplete-util/css/awesomplete.css">
-    <script src="https://nico-amsterdam.github.io/awesomplete-util/js/awesomplete.min.js"></script>
-    <script src="https://nico-amsterdam.github.io/awesomplete-util/js/awesomplete-util.min.js"></script>
 
     <%= render_existing(@view_module, "_metatags.html", assigns) || render("_default_title.html") %>
   </head>

@@ -170,20 +170,33 @@
     </div>
 
     <%= case token_transfer_type(@transaction) do %>
-      <% {type, transaction_with_transfers} when is_atom(type) -> %>
+      <% {type, %{token_transfers: token_transfers} = transaction_with_transfers} when is_list(token_transfers) and token_transfers != [] -> %>
         <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0">
         <!-- Value -->
         <div class="card card-background-1 flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
+            <%= if @transaction.value && @transaction.value.value != Decimal.new(0) do %>
+              <h2 class="card-title balance-card-title"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
+              <div class="text-right">
+                <h3 class="address-balance-text">
+                  <%= value(@transaction) %>
+                </h3>
+                <%= if !empty_exchange_rate?(@exchange_rate) do %>
+                  <p class="address-current-balance"
+                    data-wei-value=<%= @transaction.value.value %>
+                    data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
+                  </p>
+                <% end %>
+              </div>
+            <% end %>
             <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Transfer" %></h2>
             <div class="text-right">
-            <%= for transfer  <- transaction_with_transfers.token_transfers do %>
-
+            <%= for transfer  <- aggregate_token_transfers(transaction_with_transfers.token_transfers) do %>
               <h3 class="address-balance-text">
                   <%= token_transfer_amount(transfer) %>
+                  <%= " "%>
                   <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
               </h3>
-
             <% end %>
             </div>
           </div>
@@ -221,8 +234,7 @@
             </h3>
             <!-- Gas Limit -->
             <p class="address-current-balance">
-              <%= gettext "Limit" %>
-              <%= format_gas_limit(@transaction.gas) %>
+              <%= gettext "Limit" %> <%= format_gas_limit(@transaction.gas) %>
             </p>
           </div>
         </div>

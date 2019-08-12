@@ -232,7 +232,7 @@ defmodule Explorer.Chain do
 
       address_hash
       |> address_to_transactions_without_rewards(paging_options, options)
-      |> Enum.concat(Task.await(rewards_task))
+      |> Enum.concat(Task.await(rewards_task, :timer.seconds(20)))
       |> Enum.sort_by(fn item ->
         case item do
           {%Reward{} = emission_reward, _} ->
@@ -2464,9 +2464,10 @@ defmodule Explorer.Chain do
       |> Multi.run(:set_address_verified, &set_address_verified/2)
       |> Repo.transaction()
 
-    with {:ok, %{smart_contract: smart_contract}} <- insert_result do
-      {:ok, smart_contract}
-    else
+    case insert_result do
+      {:ok, %{smart_contract: smart_contract}} ->
+        {:ok, smart_contract}
+
       {:error, :smart_contract, changeset, _} ->
         {:error, changeset}
 
@@ -2603,7 +2604,7 @@ defmodule Explorer.Chain do
   defp page_addresses(query, %PagingOptions{key: {coin_balance, hash}}) do
     from(address in query,
       where:
-        (address.fetched_coin_balance <= ^coin_balance and address.hash > ^hash) or
+        (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
           address.fetched_coin_balance < ^coin_balance
     )
   end
@@ -2940,9 +2941,10 @@ defmodule Explorer.Chain do
       )
       |> Repo.transaction()
 
-    with {:ok, %{token: token}} <- insert_result do
-      {:ok, token}
-    else
+    case insert_result do
+      {:ok, %{token: token}} ->
+        {:ok, token}
+
       {:error, :token, changeset, _} ->
         {:error, changeset}
     end
