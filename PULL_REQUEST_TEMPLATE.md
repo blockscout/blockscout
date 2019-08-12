@@ -35,3 +35,5 @@
   - [ ] If I added new functionality, I added tests covering it.
   - [ ] If I fixed a bug, I added a regression test to prevent the bug from silently reappearing again.
   - [ ] I checked whether I should update the docs and did so if necessary
+  - [ ] If I added/changed/removed ENV var, I should update the list of env vars in https://github.com/poanetwork/blockscout/blob/master/docs/env-variables.md to reflect changes in the table here https://poanetwork.github.io/blockscout/#/env-variables?id=blockscout-env-variables. I've set `master` in the `Version` column.
+  - [ ] If I add new indices into DB, I checked, that they don't redundant with PGHero or other tools

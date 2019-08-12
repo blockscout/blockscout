@@ -73,10 +73,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
 
+    final_changes_list = reject_pending_transactions(ordered_changes_list, repo)
+
     {:ok, internal_transactions} =
       Import.insert_changes_list(
         repo,
-        ordered_changes_list,
+        final_changes_list,
         conflict_target: [:transaction_hash, :index],
         for: InternalTransaction,
         on_conflict: on_conflict,
@@ -156,6 +158,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       from(
         t in Transaction,
         where: t.hash in ^ordered_transaction_hashes,
+        where: not is_nil(t.block_hash),
         update: [
           set: [
             internal_transactions_indexed_at: ^timestamps.updated_at,
@@ -180,15 +183,32 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         ]
       )
 
-    transaction_count = Enum.count(ordered_transaction_hashes)
-
     try do
-      {^transaction_count, result} = repo.update_all(query, [], timeout: timeout)
+      {_transaction_count, result} = repo.update_all(query, [], timeout: timeout)
 
       {:ok, result}
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, transaction_hashes: ordered_transaction_hashes}}
     end
+  end
+
+  defp reject_pending_transactions(ordered_changes_list, repo) do
+    transaction_hashes =
+      ordered_changes_list
+      |> Enum.map(& &1.transaction_hash)
+      |> Enum.dedup()
+
+    query =
+      from(t in Transaction,
+        where: t.hash in ^transaction_hashes,
+        where: is_nil(t.block_hash),
+        select: t.hash
+      )
+
+    pending_transactions = repo.all(query)
+
+    ordered_changes_list
+    |> Enum.reject(fn %{transaction_hash: hash} -> Enum.member?(pending_transactions, hash) end)
   end
 end
