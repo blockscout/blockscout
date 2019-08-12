@@ -79,8 +79,7 @@
                   <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
                 <% else %>
                   <%= format_integer_to_currency(@token.total_supply) %>
-                <% end %>
-                <%= @token.symbol %>
+                <% end %> <%= @token.symbol %>
               </h3>
               <%= if @token.usd_value do %>
                 <div class="text-uppercase">
