@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2563](https://github.com/poanetwork/blockscout/pull/2563) - Fix view less transfers button
 
 ### Chore
 
