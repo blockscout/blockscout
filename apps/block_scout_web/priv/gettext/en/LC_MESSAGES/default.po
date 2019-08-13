@@ -62,7 +62,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:38
+#: lib/block_scout_web/templates/layout/app.html.eex:42
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -136,8 +136,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_link.html.eex:2
-#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:29
-#: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:40
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:28
+#: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:39
 msgid "Block #%{number}"
 msgstr ""
 
@@ -157,7 +157,7 @@ msgid "Block Height: %{height}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:53
+#: lib/block_scout_web/templates/layout/app.html.eex:57
 msgid "Block Mined, awaiting import..."
 msgstr ""
 
@@ -184,7 +184,7 @@ msgid "Blocks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:52
+#: lib/block_scout_web/templates/layout/app.html.eex:56
 msgid "Blocks Indexed"
 msgstr ""
 
@@ -211,10 +211,10 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
-#: lib/block_scout_web/templates/address/overview.html.eex:146
-#: lib/block_scout_web/templates/address/overview.html.eex:154
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:107
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:115
+#: lib/block_scout_web/templates/address/overview.html.eex:145
+#: lib/block_scout_web/templates/address/overview.html.eex:153
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:106
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:114
 msgid "Close"
 msgstr ""
 
@@ -375,12 +375,12 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:15
-#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:21
-#: lib/block_scout_web/templates/layout/app.html.eex:58
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20
+#: lib/block_scout_web/templates/layout/app.html.eex:62
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:30
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:29
 #: lib/block_scout_web/templates/transaction/overview.html.eex:179
-#: lib/block_scout_web/templates/transaction/overview.html.eex:211
+#: lib/block_scout_web/templates/transaction/overview.html.eex:209
 #: lib/block_scout_web/views/wei_helpers.ex:78
 msgid "Ether"
 msgstr "POA"
@@ -451,13 +451,13 @@ msgid "Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:39
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:74
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:38
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:72
 msgid "IN"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:54
+#: lib/block_scout_web/templates/layout/app.html.eex:58
 msgid "Indexing Tokens"
 msgstr ""
 
@@ -489,12 +489,12 @@ msgid "Inventory"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:55
+#: lib/block_scout_web/templates/layout/app.html.eex:59
 msgid "Less than"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:239
+#: lib/block_scout_web/templates/transaction/overview.html.eex:237
 msgid "Limit"
 msgstr ""
 
@@ -510,7 +510,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:31
-#: lib/block_scout_web/templates/layout/app.html.eex:56
+#: lib/block_scout_web/templates/layout/app.html.eex:60
 #: lib/block_scout_web/views/address_view.ex:121
 #: lib/block_scout_web/views/address_view.ex:121
 msgid "Market Cap"
@@ -578,8 +578,8 @@ msgid "Nonce"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:37
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:70
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:36
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:68
 msgid "OUT"
 msgstr ""
 
@@ -629,15 +629,15 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:24
-#: lib/block_scout_web/templates/layout/app.html.eex:57
+#: lib/block_scout_web/templates/layout/app.html.eex:61
 msgid "Price"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:33
-#: lib/block_scout_web/templates/address/overview.html.eex:145
+#: lib/block_scout_web/templates/address/overview.html.eex:144
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:106
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:105
 msgid "QR Code"
 msgstr ""
 
@@ -709,7 +709,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:21
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:34
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:32
 #: lib/block_scout_web/templates/transaction/overview.html.eex:84
 msgid "TX Fee"
 msgstr ""
@@ -915,7 +915,7 @@ msgid "Unique Token"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:233
+#: lib/block_scout_web/templates/transaction/overview.html.eex:231
 msgid "Used"
 msgstr ""
 
@@ -936,7 +936,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:179
-#: lib/block_scout_web/templates/transaction/overview.html.eex:211
+#: lib/block_scout_web/templates/transaction/overview.html.eex:209
 msgid "Value"
 msgstr ""
 
@@ -957,12 +957,12 @@ msgid "View Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:55
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:53
 msgid "View Less Transfers"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:54
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:52
 msgid "View More Transfers"
 msgstr ""
 
@@ -1002,7 +1002,7 @@ msgid "Yes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:113
+#: lib/block_scout_web/templates/address/overview.html.eex:112
 msgid "at"
 msgstr ""
 
@@ -1450,7 +1450,7 @@ msgid "Incoming Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:121
+#: lib/block_scout_web/templates/address/overview.html.eex:120
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
@@ -1513,7 +1513,7 @@ msgid "View All Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:229
+#: lib/block_scout_web/templates/transaction/overview.html.eex:227
 msgid "Gas"
 msgstr ""
 
