@@ -116,6 +116,10 @@ $api-doc-list-item-view-more-color: $api-doc-list-item-title-color !default;
   margin: 0;
 }
 
+.api-doc-list-item-description {
+  width: 100%
+}
+
 .api-doc-list-item-controls {
   display: flex;
   flex-direction: column;
