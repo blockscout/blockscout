@@ -19,6 +19,7 @@
 - [#2403](https://github.com/poanetwork/blockscout/pull/2403) - Return gasPrice field at the result of gettxinfo method
 
 ### Fixes
+- [#2560](https://github.com/poanetwork/blockscout/pull/2560) - fix slash before not empty path in docs
 - [#2553](https://github.com/poanetwork/blockscout/pull/2553) - Dark theme import to the end of sass
 - [#2550](https://github.com/poanetwork/blockscout/pull/2550) - correctly encode decimal values for frontend
 - [#2549](https://github.com/poanetwork/blockscout/pull/2549) - Fix wrong colour of tooltip
