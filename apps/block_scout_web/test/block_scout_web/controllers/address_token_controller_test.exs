@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressTokenControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  import BlockScoutWeb.Router.Helpers, only: [address_token_path: 3]
+  import BlockScoutWeb.WebRouter.Helpers, only: [address_token_path: 3]
 
   alias Explorer.Chain.{Token}
 
