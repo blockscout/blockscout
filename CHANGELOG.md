@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2556](https://github.com/poanetwork/blockscout/issues/2556) - fix first page button for uncles and reorgs
 
 ### Chore
 
