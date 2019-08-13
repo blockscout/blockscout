@@ -46,4 +46,22 @@ defmodule BlockScoutWeb.APIDocsView do
       Endpoint.url()
     end
   end
+
+  def api_url do
+    handle_slash("api")
+  end
+
+  def eth_rpc_api_url do
+    handle_slash("api/eth_rpc")
+  end
+
+  defp handle_slash(path) do
+    base_url = blockscout_url()
+
+    if String.ends_with?(base_url, "/") do
+      base_url <> path
+    else
+      base_url <> "/" <> path
+    end
+  end
 end
