@@ -31,6 +31,15 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.PagingOptions
 
+  defimpl Poison.Encoder, for: Decimal do
+    def encode(value, _opts) do
+      # silence the xref warning
+      decimal = Decimal
+
+      [?\", decimal.to_string(value), ?\"]
+    end
+  end
+
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @address_hash_len 40
