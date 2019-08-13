@@ -11,7 +11,7 @@
         </span>
 
         <%= if show_total_supply_percentage?(@token.total_supply) do %>
-          (<%= total_supply_percentage(@token_balance.value, @token.total_supply) %>)
+          <%= total_supply_percentage(@token_balance.value, @token.total_supply) %>
         <% end %>
       </span>
     </div>
