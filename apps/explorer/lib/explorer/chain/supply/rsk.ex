@@ -17,11 +17,15 @@ defmodule Explorer.Chain.Supply.RSK do
   @cache_name :rsk_balance
   @balance_key :balance
 
-  def market_cap(exchange_rate) do
+  def market_cap(%{usd_value: nil}), do: Decimal.new(0)
+
+  def market_cap(%{usd_value: usd_value}) do
     btc = circulating()
 
-    Decimal.mult(btc, exchange_rate.usd_value)
+    Decimal.mult(btc, usd_value)
   end
+
+  def market_cap(_), do: Decimal.new(0)
 
   @doc "Equivalent to getting the circulating value "
   def supply_for_days(days) do
