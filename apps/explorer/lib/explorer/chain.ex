@@ -2997,7 +2997,7 @@ defmodule Explorer.Chain do
     today = Date.to_string(NaiveDateTime.utc_now())
 
     if Enum.count(result) > 0 && !Enum.any?(result, fn map -> map[:date] == today end) do
-      result ++ [%{date: today, value: List.last(result)[:value]}]
+      List.flatten([result | [%{date: today, value: List.last(result)[:value]}]])
     else
       result
     end

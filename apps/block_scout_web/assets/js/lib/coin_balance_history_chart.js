@@ -21,7 +21,7 @@ export function createCoinBalanceHistoryChart (el) {
       var stepSize = 3
 
       if (data.length > 1) {
-        var diff = Math.abs(new Date(data[0].date) - new Date(data[1].date))
+        var diff = Math.abs(new Date(data[data.length - 1].date) - new Date(data[data.length - 2].date))
         var periodInDays = diff / (1000 * 60 * 60 * 24)
 
         stepSize = periodInDays
