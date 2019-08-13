@@ -28,4 +28,40 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
       assert APIDocsView.blockscout_url() == "https://blockscout.com/chain/dog"
     end
   end
+
+  describe "api_url/1" do
+    test "adds slash before path" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/chain/dog"]
+      )
+
+      assert APIDocsView.api_url() == "https://blockscout.com/chain/dog/api"
+    end
+
+    test "does not add slash to empty path" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "https", host: "blockscout.com", port: 9999, path: ""]
+      )
+
+      assert APIDocsView.api_url() == "https://blockscout.com/api"
+    end
+  end
+
+  describe "eth_rpc_api_url/1" do
+    test "adds slash before path" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/chain/dog"]
+      )
+
+      assert APIDocsView.eth_rpc_api_url() == "https://blockscout.com/chain/dog/api/eth_rpc"
+    end
+
+    test "does not add slash to empty path" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "https", host: "blockscout.com", port: 9999, path: ""]
+      )
+
+      assert APIDocsView.eth_rpc_api_url() == "https://blockscout.com/api/eth_rpc"
+    end
+  end
 end
