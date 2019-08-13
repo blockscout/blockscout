@@ -17,9 +17,7 @@ defmodule Explorer.Chain.Supply.RSK do
   @cache_name :rsk_balance
   @balance_key :balance
 
-  def market_cap(%{usd_value: nil}), do: Decimal.new(0)
-
-  def market_cap(%{usd_value: usd_value}) do
+  def market_cap(%{usd_value: usd_value}) when not is_nil(usd_value) do
     btc = circulating()
 
     Decimal.mult(btc, usd_value)
