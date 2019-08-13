@@ -78,6 +78,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
       where: not is_nil(cb.value),
       inner_join: b in Block,
       on: cb.block_number == b.number,
+      distinct: cb.block_number,
       order_by: [desc: :block_number],
       limit: ^page_size,
       select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
