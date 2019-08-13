@@ -58,10 +58,6 @@ defmodule BlockScoutWeb.APIDocsView do
   defp handle_slash(path) do
     base_url = blockscout_url()
 
-    if String.ends_with?(base_url, "/") do
-      base_url <> path
-    else
-      base_url <> "/" <> path
-    end
+    Path.join(base_url, path)
   end
 end
