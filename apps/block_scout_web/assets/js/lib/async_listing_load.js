@@ -206,11 +206,11 @@ export const elements = {
       $el.show()
       $el.attr('disabled', false)
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const blockParam = urlParams.get('block_type');
+      const urlParams = new URLSearchParams(window.location.search)
+      const blockParam = urlParams.get('block_type')
 
       if (blockParam !== null) {
-        $el.attr('href', window.location.href.split('?')[0] + "?block_type=" + blockParam)
+        $el.attr('href', window.location.href.split('?')[0] + '?block_type=' + blockParam)
       } else {
         $el.attr('href', window.location.href.split('?')[0])
       }
