@@ -20,6 +20,7 @@
 
 ### Fixes
 - [#2562](https://github.com/poanetwork/blockscout/pull/2562) - Fix dark theme flickering
+- [#2559](https://github.com/poanetwork/blockscout/pull/2559) - fix rsk total supply for empty exchange rate
 - [#2553](https://github.com/poanetwork/blockscout/pull/2553) - Dark theme import to the end of sass
 - [#2550](https://github.com/poanetwork/blockscout/pull/2550) - correctly encode decimal values for frontend
 - [#2549](https://github.com/poanetwork/blockscout/pull/2549) - Fix wrong colour of tooltip
