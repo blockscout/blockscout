@@ -79,18 +79,20 @@
                   <%= gettext("Incoming Transactions") %>
                 <% else %>
                   <span data-selector="transaction-count">
-                    <%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %>
+                    <%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_count, format: "#,###") %>
                   </span>
                   <%= gettext("Transactions Sent") %>
                 <% end %>
               </span>
-              <span class="address-detail-item">
-                <%= gettext("Last Balance Update: Block #") %><span data-selector="fetched-coin-balance-block-number"><%= @address.fetched_coin_balance_block_number %></span>
-              </span>
+              <%= if @address.fetched_coin_balance_block_number do %>
+                <span class="address-detail-item">
+                  <%= gettext("Last Balance Update: Block #") %><span data-selector="fetched-coin-balance-block-number"><%= @address.fetched_coin_balance_block_number %></span>
+                </span>
+              <% end %>
               <%= if validator?(@validation_count) do %>
                 <span class="address-detail-item">
                   <span data-selector="validation-count">
-                    <%= Cldr.Number.to_string!(@validation_count, format: "#,###") %>
+                    <%= BlockScoutWeb.Cldr.Number.to_string!(@validation_count, format: "#,###") %>
                   </span>
                   <%= gettext("Blocks Validated") %>
                 </span>
@@ -102,8 +104,7 @@
           <%= if contract?(@address) do %>
             <span class="text-muted" data-test="address_contract_creator">
               <%= if from_address_hash do %>
-                <%= gettext "Created by" %>
-                <%= link(
+                <%= gettext "Created by" %> <%= link(
                   trimmed_hash(from_address_hash(@address)),
                   to: address_path(@conn, :show, from_address_hash(@address))
                 ) %>

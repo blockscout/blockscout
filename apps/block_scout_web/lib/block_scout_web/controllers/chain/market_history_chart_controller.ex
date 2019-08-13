@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
   alias Explorer.ExchangeRates.Token
 
   def show(conn, _params) do
-    with true <- ajax?(conn) do
+    if ajax?(conn) do
       exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
       recent_market_history = Market.fetch_recent_history()
@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
         supply_data: available_supply(Chain.supply_for_days(), exchange_rate)
       })
     else
-      _ -> unprocessable_entity(conn)
+      unprocessable_entity(conn)
     end
   end
 
