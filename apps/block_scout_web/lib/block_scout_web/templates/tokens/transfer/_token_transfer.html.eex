@@ -28,8 +28,7 @@
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">
-          <%= token_transfer_amount(@transfer) %>
-          <%= @transfer.token.symbol %>
+          <%= token_transfer_amount(@transfer) %> <%= @transfer.token.symbol %>
         </span>
       </span>
     </div>

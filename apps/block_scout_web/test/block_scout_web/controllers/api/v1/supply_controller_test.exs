@@ -10,4 +10,8 @@ defmodule BlockScoutWeb.API.V1.SupplyControllerTest do
     assert response["total_supply"] == Chain.total_supply()
     assert response["circulating_supply"] == Chain.circulating_supply()
   end
+
+  def api_v1_supply_path(conn, action) do
+    "/api" <> ApiRoutes.api_v1_supply_path(conn, action)
+  end
 end

@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslatorTest do
     test "with a bad action atom", %{conn: conn} do
       conn = %Conn{conn | params: %{"module" => "test", "action" => "some_atom_that_should_not_exist"}}
 
-      result = RPCTranslator.call(conn, %{"test" => TestController})
+      result = RPCTranslator.call(conn, %{"test" => {TestController, []}})
       assert result.halted
       assert response = json_response(result, 400)
       assert response["message"] =~ "Unknown action"
@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslatorTest do
     test "with an invalid controller action", %{conn: conn} do
       conn = %Conn{conn | params: %{"module" => "test", "action" => "index"}}
 
-      result = RPCTranslator.call(conn, %{"test" => TestController})
+      result = RPCTranslator.call(conn, %{"test" => {TestController, []}})
       assert result.halted
       assert response = json_response(result, 400)
       assert response["message"] =~ "Unknown action"
@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslatorTest do
     end
 
     test "with missing params", %{conn: conn} do
-      result = RPCTranslator.call(conn, %{"test" => TestController})
+      result = RPCTranslator.call(conn, %{"test" => {TestController, []}})
       assert result.halted
       assert response = json_response(result, 400)
       assert response["message"] =~ "'module' and 'action' are required"
@@ -71,7 +71,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslatorTest do
     test "with a valid request", %{conn: conn} do
       conn = %Conn{conn | params: %{"module" => "test", "action" => "test_action"}}
 
-      result = RPCTranslator.call(conn, %{"test" => TestController})
+      result = RPCTranslator.call(conn, %{"test" => {TestController, []}})
       assert json_response(result, 200) == %{}
     end
   end

@@ -185,7 +185,12 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
   def handle_info(
         {ref,
-         %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: false = shrunk}},
+         %{
+           first_block_number: first_block_number,
+           last_block_number: last_block_number,
+           missing_block_count: missing_block_count,
+           shrunk: false = shrunk
+         }},
         %__MODULE__{
           bound_interval: bound_interval,
           task: %Task{ref: ref}
@@ -197,7 +202,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
         0 ->
           Logger.info("Index already caught up.",
             first_block_number: first_block_number,
-            last_block_number: 0,
+            last_block_number: last_block_number,
             missing_block_count: 0,
             shrunk: shrunk
           )
