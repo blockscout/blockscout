@@ -125,6 +125,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:3
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:19
 msgid "Balance"
 msgstr ""
 
@@ -157,7 +158,7 @@ msgid "Block Height: %{height}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:57
+#: lib/block_scout_web/templates/layout/app.html.eex:62
 msgid "Block Mined, awaiting import..."
 msgstr ""
 
@@ -184,7 +185,7 @@ msgid "Blocks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:56
+#: lib/block_scout_web/templates/layout/app.html.eex:61
 msgid "Blocks Indexed"
 msgstr ""
 
@@ -376,7 +377,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:15
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20
-#: lib/block_scout_web/templates/layout/app.html.eex:62
+#: lib/block_scout_web/templates/layout/app.html.eex:67
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:29
 #: lib/block_scout_web/templates/transaction/overview.html.eex:179
@@ -457,7 +458,7 @@ msgid "IN"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:58
+#: lib/block_scout_web/templates/layout/app.html.eex:63
 msgid "Indexing Tokens"
 msgstr ""
 
@@ -489,7 +490,7 @@ msgid "Inventory"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:59
+#: lib/block_scout_web/templates/layout/app.html.eex:64
 msgid "Less than"
 msgstr ""
 
@@ -510,7 +511,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:31
-#: lib/block_scout_web/templates/layout/app.html.eex:60
+#: lib/block_scout_web/templates/layout/app.html.eex:65
 #: lib/block_scout_web/views/address_view.ex:121
 #: lib/block_scout_web/views/address_view.ex:121
 msgid "Market Cap"
@@ -629,7 +630,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:24
-#: lib/block_scout_web/templates/layout/app.html.eex:61
+#: lib/block_scout_web/templates/layout/app.html.eex:66
 msgid "Price"
 msgstr ""
 
@@ -678,8 +679,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:127
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:144
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:154
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:171
 msgid "Search"
 msgstr ""
 
@@ -1189,6 +1190,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/chain/show.html.eex:91
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:19
+#: lib/block_scout_web/templates/stakes/_table.html.eex:22
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:20
@@ -1454,8 +1456,8 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:121
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:125
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:148
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:152
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1833,4 +1835,143 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:20
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:53
 msgid "Type"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:6
+msgid "%{blocks} block"
+msgid_plural "%{blocks} blocks"
+msgstr[0] ""
+msgstr[1] ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:117
+#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:11
+msgid "Active Pools"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:11
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:16
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:13
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:13
+msgid "Amount"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_empty_content.html.eex:14
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:5
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:29
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:13
+msgid "Become a Candidate"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:5
+msgid "Block number"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:28
+msgid "Choose Pool"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:8
+msgid "Claim Ordered Withdraw"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:19
+msgid "Claim the Amount"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:30
+msgid "Delegators"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:4
+msgid "Epoch number"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:122
+#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:18
+msgid "Inactive Pools"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:11
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:48
+msgid "Move Stake"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:6
+msgid "Next epoch in"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:36
+msgid "Order Withdrawal"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:18
+msgid "Pool"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:11
+msgid "Remove My Pool"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:8
+msgid "Stake"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:29
+msgid "Stake More"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:22
+msgid "Staked"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:108
+msgid "Stakes"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:24
+msgid "Stakes Ratio"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:112
+#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:4
+msgid "Validators"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:8
+msgid "Withdraw"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:28
+msgid "Withdraw Now"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:17
+msgid "Your Mining Address"
 msgstr ""
