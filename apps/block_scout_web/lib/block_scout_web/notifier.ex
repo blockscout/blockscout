@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.{AddressContractVerificationView, Endpoint}
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.SmartContract.{Solidity.CodeCompiler, Solidity.CompilerVersion}
@@ -86,10 +87,12 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :staking_update}) do
     epoch_number = ContractState.get(:epoch_number, 0)
     epoch_end_block = ContractState.get(:epoch_end_block, 0)
+    block_number = BlockNumber.max_number()
 
     Endpoint.broadcast("stakes:staking_update", "staking_update", %{
       epoch_number: epoch_number,
-      epoch_end_block: epoch_end_block
+      epoch_end_block: epoch_end_block,
+      block_number: block_number
     })
   end
 
