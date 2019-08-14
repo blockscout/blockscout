@@ -11,6 +11,7 @@ defmodule Explorer.Staking.ContractState do
   alias Explorer.Chain.Events.{Publisher, Subscriber}
   alias Explorer.SmartContract.Reader
   alias Explorer.Staking.ContractReader
+  alias Explorer.Token.{BalanceReader, MetadataRetriever}
 
   @table_name __MODULE__
   @table_keys [
@@ -19,6 +20,7 @@ defmodule Explorer.Staking.ContractState do
     :min_candidate_stake,
     :min_delegator_stake,
     :epoch_number,
+    :epoch_start_block,
     :epoch_end_block,
     :staking_contract,
     :validator_set_contract,
@@ -88,7 +90,7 @@ defmodule Explorer.Staking.ContractState do
   end
 
   def handle_continue(_, state) do
-    fetch_state(state.contracts, state.abi)
+    fetch_state(state.contracts, state.abi, state.seen_block)
     {:noreply, state}
   end
 
@@ -97,15 +99,18 @@ defmodule Explorer.Staking.ContractState do
     latest_block = Enum.max_by(blocks, & &1.number)
 
     if latest_block.number > state.seen_block do
-      fetch_state(state.contracts, state.abi)
+      fetch_state(state.contracts, state.abi, latest_block.number)
       {:noreply, %{state | seen_block: latest_block.number}}
     else
       {:noreply, state}
     end
   end
 
-  defp fetch_state(contracts, abi) do
+  defp fetch_state(contracts, abi, block_number) do
+    previous_epoch = get(:epoch_number, 0)
+
     global_responses = ContractReader.perform_requests(ContractReader.global_requests(), contracts, abi)
+    token = get_token(global_responses.token_contract_address)
 
     settings =
       global_responses
@@ -114,10 +119,11 @@ defmodule Explorer.Staking.ContractState do
         :min_candidate_stake,
         :min_delegator_stake,
         :epoch_number,
+        :epoch_start_block,
         :epoch_end_block
       ])
       |> Map.to_list()
-      |> Enum.concat(token: get_token(global_responses.token_contract_address))
+      |> Enum.concat(token: token)
 
     :ets.insert(@table_name, settings)
 
@@ -228,7 +234,62 @@ defmodule Explorer.Staking.ContractState do
         timeout: :infinity
       })
 
+    if token && previous_epoch != global_responses.epoch_number do
+      update_tokens(token.contract_address_hash, contracts, abi, global_responses.epoch_start_block - 1, block_number)
+    end
+
     Publisher.broadcast(:staking_update)
+  end
+
+  defp update_tokens(token_contract_address_hash, contracts, abi, last_epoch_block_number, block_number) do
+    now = DateTime.utc_now()
+
+    token_params =
+      token_contract_address_hash
+      |> MetadataRetriever.get_functions_of()
+      |> Map.merge(%{
+        contract_address_hash: token_contract_address_hash,
+        type: "ERC-20"
+      })
+
+    addresses =
+      block_number
+      |> ContractReader.pools_snapshot_requests()
+      |> ContractReader.perform_requests(contracts, abi)
+      |> Map.fetch!(:staking_addresses)
+      |> Enum.flat_map(&ContractReader.stakers_snapshot_requests(&1, last_epoch_block_number))
+      |> ContractReader.perform_requests(contracts, abi)
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.uniq()
+
+    balance_params =
+      addresses
+      |> Enum.map(
+        &%{
+          token_contract_address_hash: token_contract_address_hash,
+          address_hash: &1,
+          block_number: block_number
+        }
+      )
+      |> BalanceReader.get_balances_of()
+      |> Enum.zip(addresses)
+      |> Enum.map(fn {{:ok, balance}, address} ->
+        %{
+          address_hash: address,
+          token_contract_address_hash: token_contract_address_hash,
+          block_number: block_number,
+          value: balance,
+          value_fetched_at: now
+        }
+      end)
+
+    {:ok, _} =
+      Chain.import(%{
+        addresses: %{params: Enum.map(addresses, &%{hash: &1}), on_conflict: :nothing},
+        address_current_token_balances: %{params: balance_params},
+        tokens: %{params: [token_params]}
+      })
   end
 
   defp get_token(address) do
