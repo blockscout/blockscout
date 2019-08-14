@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.StakesChannel do
 
   alias BlockScoutWeb.{StakesController, StakesView}
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Staking.ContractState
   alias Phoenix.View
@@ -22,7 +23,14 @@ defmodule BlockScoutWeb.StakesChannel do
       |> assign(:account, account)
       |> push_staking_contract()
 
-    handle_out("staking_update", nil, socket)
+    handle_out(
+      "staking_update",
+      %{
+        block_number: BlockNumber.get_max(),
+        epoch_number: ContractState.get(:epoch_number, 0)
+      },
+      socket
+    )
   end
 
   def handle_in("render_validator_info", %{"address" => staking_address}, socket) do
@@ -167,8 +175,10 @@ defmodule BlockScoutWeb.StakesChannel do
     {:reply, {:ok, result}, socket}
   end
 
-  def handle_out("staking_update", _data, socket) do
+  def handle_out("staking_update", data, socket) do
     push(socket, "staking_update", %{
+      epoch_number: data.epoch_number,
+      block_number: data.block_number,
       top_html: StakesController.render_top(socket)
     })
 

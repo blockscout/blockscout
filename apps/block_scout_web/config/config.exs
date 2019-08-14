@@ -22,7 +22,8 @@ config :block_scout_web, BlockScoutWeb.Chain,
   logo: System.get_env("LOGO"),
   logo_footer: System.get_env("LOGO_FOOTER"),
   has_emission_funds: false,
-  staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT"))
+  staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT")),
+  staking_table_refresh_interval: 10
 
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",

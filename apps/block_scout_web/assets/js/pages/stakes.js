@@ -21,7 +21,10 @@ export const initialState = {
   stakingContract: null,
   blockRewardContract: null,
   tokenDecimals: 0,
-  tokenSymbol: ''
+  tokenSymbol: '',
+  refreshInterval: null,
+  lastEpochNumber: 0,
+  lastBlockNumber: 0
 }
 
 export function reducer (state = initialState, action) {
@@ -42,6 +45,12 @@ export function reducer (state = initialState, action) {
         additionalParams: { account: action.account }
       })
     }
+    case 'RECEIVED_UPDATE': {
+      return Object.assign({}, state, {
+        lastEpochNumber: action.lastEpochNumber,
+        lastBlockNumber: action.lastBlockNumber
+      })
+    }
     case 'RECEIVED_CONTRACTS': {
       return Object.assign({}, state, {
         stakingContract: action.stakingContract,
@@ -56,6 +65,11 @@ export function reducer (state = initialState, action) {
 }
 
 const elements = {
+  '[data-page="stakes"]': {
+    load ($el) {
+      return { refreshInterval: $el.data('refresh-interval') || null }
+    }
+  }
 }
 
 const $stakesPage = $('[data-page="stakes"]')
@@ -67,7 +81,23 @@ if ($stakesPage.length) {
   const channel = subscribeChannel('stakes:staking_update')
   store.dispatch({ type: 'CHANNEL_CONNECTED', channel })
 
-  channel.on('staking_update', msg => $stakesTop.html(msg.top_html))
+  channel.on('staking_update', msg => {
+    $stakesTop.html(msg.top_html)
+
+    const state = store.getState()
+    if (
+      msg.epoch_number > state.lastEpochNumber ||
+      (state.refreshInterval && msg.block_number >= state.lastBlockNumber + state.refreshInterval)
+    ) {
+      store.dispatch({
+        type: 'RECEIVED_UPDATE',
+        lastEpochNumber: msg.epoch_number,
+        lastBlockNumber: msg.block_number
+      })
+      refreshPage(store)
+    }
+  })
+
   channel.on('contracts', msg => {
     const web3 = store.getState().web3
     const stakingContract =
