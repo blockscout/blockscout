@@ -18,4 +18,6 @@ Mox.defmock(Explorer.ExchangeRates.Source.TestSource, for: Explorer.ExchangeRate
 
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)
 
+Absinthe.Test.prime(BlockScoutWeb.Schema)
+
 Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)

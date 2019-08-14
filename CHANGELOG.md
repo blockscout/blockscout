@@ -6,6 +6,7 @@
 - [#2568](https://github.com/poanetwork/blockscout/pull/2568) - filter pending token transfers
 
 ### Chore
+- [#2566](https://github.com/poanetwork/blockscout/pull/2566) - upgrade absinthe phoenix
 
 
 ## 2.0.3-beta
