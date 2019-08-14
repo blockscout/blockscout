@@ -104,7 +104,8 @@ defmodule BlockScoutWeb.StakesController do
       top: render_top(conn),
       pools_type: filter,
       current_path: current_path(conn),
-      average_block_time: AverageBlockTime.average_block_time()
+      average_block_time: AverageBlockTime.average_block_time(),
+      refresh_interval: Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_table_refresh_interval]
     )
   end
 
