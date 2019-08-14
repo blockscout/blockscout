@@ -4,6 +4,8 @@
 
 ### Fixes
 - [#2568](https://github.com/poanetwork/blockscout/pull/2568) - filter pending token transfers
+- [#2564](https://github.com/poanetwork/blockscout/pull/2564) - fix first page button for uncles and reorgs
+- [#2563](https://github.com/poanetwork/blockscout/pull/2563) - Fix view less transfers button
 
 ### Chore
 - [#2566](https://github.com/poanetwork/blockscout/pull/2566) - upgrade absinthe phoenix
