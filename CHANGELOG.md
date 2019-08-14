@@ -6,6 +6,7 @@
 - [#2563](https://github.com/poanetwork/blockscout/pull/2563) - Fix view less transfers button
 
 ### Chore
+- [#2566](https://github.com/poanetwork/blockscout/pull/2566) - upgrade absinthe phoenix
 
 
 ## 2.0.3-beta
