@@ -138,9 +138,25 @@ defmodule BlockScoutWeb.StakesChannel do
     pool_from = Chain.staking_pool(from_address)
     pool_to = to_address && Chain.staking_pool(to_address)
     pools = Chain.staking_pools(:active, :all)
-    delegator = Chain.staking_pool_delegator(from_address, socket.assigns.account)
-    min_delegator_stake = ContractState.get(:min_delegator_stake)
+    delegator_from = Chain.staking_pool_delegator(from_address, socket.assigns.account)
+    delegator_to = to_address && Chain.staking_pool_delegator(to_address, socket.assigns.account)
     token = ContractState.get(:token)
+
+    min_from_stake =
+      if delegator_from.delegator_address_hash == delegator_from.pool_address_hash do
+        ContractState.get(:min_candidate_stake)
+      else
+        ContractState.get(:min_delegator_stake)
+      end
+
+    min_to_stake =
+      if delegator_to do
+        if delegator_to.delegator_address_hash == delegator_to.pool_address_hash do
+          ContractState.get(:min_candidate_stake)
+        else
+          ContractState.get(:min_delegator_stake)
+        end
+      end
 
     html =
       View.render_to_string(StakesView, "_stakes_modal_move.html",
@@ -148,18 +164,29 @@ defmodule BlockScoutWeb.StakesChannel do
         pools: pools,
         pool_from: pool_from,
         pool_to: pool_to,
-        delegator: delegator,
+        delegator_from: delegator_from,
+        delegator_to: delegator_to,
         amount: amount
       )
 
     result = %{
       html: html,
-      min_delegator_stake: min_delegator_stake,
-      max_withdraw_allowed: delegator.max_withdraw_allowed,
-      from_self_staked_amount: pool_from.self_staked_amount,
-      from_staked_amount: pool_from.staked_amount,
-      to_self_staked_amount: pool_to && pool_to.self_staked_amount,
-      to_staked_amount: pool_to && pool_to.staked_amount
+      max_withdraw_allowed: delegator_from.max_withdraw_allowed,
+      from: %{
+        stake_amount: delegator_from.stake_amount,
+        min_stake: min_from_stake,
+        self_staked_amount: pool_from.self_staked_amount,
+        staked_amount: pool_from.staked_amount
+      },
+      to:
+        if pool_to do
+          %{
+            stake_amount: (delegator_to && delegator_to.stake_amount) || 0,
+            min_stake: min_to_stake,
+            self_staked_amount: pool_to.self_staked_amount,
+            staked_amount: pool_to.staked_amount
+          }
+        end
     }
 
     {:reply, {:ok, result}, socket}
