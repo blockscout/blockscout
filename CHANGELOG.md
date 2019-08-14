@@ -6,6 +6,7 @@
 - [#2538](https://github.com/poanetwork/blockscout/pull/2538) - fetch the last not empty coin balance records
 
 ### Chore
+- [#2566](https://github.com/poanetwork/blockscout/pull/2566) - upgrade absinthe phoenix
 
 
 ## 2.0.3-beta
