@@ -208,11 +208,12 @@ export const elements = {
 
       const urlParams = new URLSearchParams(window.location.search)
       const blockParam = urlParams.get('block_type')
+      const firstPageHref = window.location.href.split('?')[0]
 
       if (blockParam !== null) {
-        $el.attr('href', window.location.href.split('?')[0] + '?block_type=' + blockParam)
+        $el.attr('href', firstPageHref + '?block_type=' + blockParam)
       } else {
-        $el.attr('href', window.location.href.split('?')[0])
+        $el.attr('href', firstPageHref)
       }
     }
   },
