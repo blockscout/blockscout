@@ -40,10 +40,10 @@ defmodule Explorer.DataCase do
     end
 
     Explorer.Chain.Cache.BlockNumber.setup()
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Blocks.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Blocks.cache_name()})
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Transactions.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Transactions.cache_name()})
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
 
     :ok
   end

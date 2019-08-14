@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2497](https://github.com/poanetwork/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
 
 ### Fixes
 - [#2564](https://github.com/poanetwork/blockscout/pull/2564) - fix first page button for uncles and reorgs

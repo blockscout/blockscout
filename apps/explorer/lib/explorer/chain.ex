@@ -1258,14 +1258,16 @@ defmodule Explorer.Chain do
     block_type = Keyword.get(options, :block_type, "Block")
 
     if block_type == "Block" && !paging_options.key do
-      if Blocks.enough_elements?(paging_options.page_size) do
-        Blocks.blocks(paging_options.page_size)
-      else
-        elements = fetch_blocks(block_type, paging_options, necessity_by_association)
+      case Blocks.take_enough(paging_options.page_size) do
+        nil ->
+          elements = fetch_blocks(block_type, paging_options, necessity_by_association)
 
-        Blocks.rewrite_cache(elements)
+          Blocks.update(elements)
 
-        elements
+          elements
+
+        blocks ->
+          blocks
       end
     else
       fetch_blocks(block_type, paging_options, necessity_by_association)
