@@ -6,6 +6,7 @@
 - [#2564](https://github.com/poanetwork/blockscout/pull/2564) - fix first page button for uncles and reorgs
 
 ### Chore
+- [#2566](https://github.com/poanetwork/blockscout/pull/2566) - upgrade absinthe phoenix
 
 
 ## 2.0.3-beta
