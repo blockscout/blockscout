@@ -51,7 +51,6 @@ defmodule BlockScoutWeb.Schema.Subscription.TokenTransfersTest do
     end
 
     test "ignores irrelevant tokens", %{socket: socket} do
-      IO.inspect(Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint))
       transaction = insert(:transaction)
       [token_transfer1, token_transfer2] = insert_list(2, :token_transfer, transaction: transaction)
       address_hash1 = to_string(token_transfer1.token_contract_address_hash)
