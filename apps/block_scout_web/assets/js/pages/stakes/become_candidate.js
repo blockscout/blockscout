@@ -30,13 +30,17 @@ async function becomeCandidate ($modal, store, msg) {
   const decimals = store.getState().tokenDecimals
 
   const minStake = new BigNumber(msg.min_candidate_stake)
+  const balance = new BigNumber(msg.balance)
   const stake = new BigNumber($modal.find('[candidate-stake]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
   if (!stake.isPositive() || stake.isLessThan(minStake)) {
     openErrorModal('Error', `You cannot stake less than ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
     return false
+  } else if (stake.isGreaterThan(balance)) {
+    openErrorModal('Error', `You cannot stake more than ${balance.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
+    return false
   }
 
-  const miningAddress = $modal.find('[mining-address]').val().toLowerCase()
+  const miningAddress = $modal.find('[mining-address]').val().trim().toLowerCase()
   if (miningAddress === store.getState().account || !web3.utils.isAddress(miningAddress)) {
     openErrorModal('Error', 'Invalid Mining Address')
     return false
