@@ -2975,8 +2975,13 @@ defmodule Explorer.Chain do
 
   @spec address_to_balances_by_day(Hash.Address.t()) :: [balance_by_day]
   def address_to_balances_by_day(address_hash) do
+    latest_block_timestamp =
+      address_hash
+      |> CoinBalance.last_coin_balance_timestamp()
+      |> Repo.one()
+
     address_hash
-    |> CoinBalance.balances_by_day()
+    |> CoinBalance.balances_by_day(latest_block_timestamp)
     |> Repo.all()
     |> normalize_balances_by_day()
   end
@@ -2992,7 +2997,7 @@ defmodule Explorer.Chain do
     today = Date.to_string(NaiveDateTime.utc_now())
 
     if Enum.count(result) > 0 && !Enum.any?(result, fn map -> map[:date] == today end) do
-      [%{date: today, value: List.last(result)[:value]} | result]
+      List.flatten([result | [%{date: today, value: List.last(result)[:value]}]])
     else
       result
     end
