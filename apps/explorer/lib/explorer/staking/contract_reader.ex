@@ -11,6 +11,7 @@ defmodule Explorer.Staking.ContractReader do
       min_candidate_stake: {:staking, "candidateMinStake", []},
       min_delegator_stake: {:staking, "delegatorMinStake", []},
       epoch_number: {:staking, "stakingEpoch", []},
+      epoch_start_block: {:staking, "stakingEpochStartBlock", []},
       epoch_end_block: {:staking, "stakingEpochEndBlock", []},
       active_pools: {:staking, "getPools", []},
       inactive_pools: {:staking, "getPoolsInactive", []},
@@ -54,6 +55,14 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  def pools_snapshot_requests(block_number) do
+    [staking_addresses: {:block_reward, "snapshotStakingAddresses", [], block_number}]
+  end
+
+  def stakers_snapshot_requests(pool_address, block_number) do
+    [{pool_address, {:block_reward, "snapshotStakers", [pool_address], block_number}}]
+  end
+
   def perform_requests(requests, contracts, abi) do
     requests
     |> generate_requests(contracts)
@@ -70,12 +79,21 @@ defmodule Explorer.Staking.ContractReader do
   end
 
   defp generate_requests(functions, contracts) do
-    Enum.map(functions, fn {_, {contract, function, args}} ->
-      %{
-        contract_address: contracts[contract],
-        function_name: function,
-        args: args
-      }
+    Enum.map(functions, fn
+      {_, {contract, function, args}} ->
+        %{
+          contract_address: contracts[contract],
+          function_name: function,
+          args: args
+        }
+
+      {_, {contract, function, args, block_number}} ->
+        %{
+          contract_address: contracts[contract],
+          function_name: function,
+          args: args,
+          block_number: block_number
+        }
     end)
   end
 
