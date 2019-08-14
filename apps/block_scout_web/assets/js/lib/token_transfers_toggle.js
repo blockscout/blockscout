@@ -1,20 +1,17 @@
 import $ from 'jquery'
 
-const tokenTransferToggle = (element) => {
-  const $element = $(element)
-  const $tokenTransferClose = $element.find("[data-selector='token-transfer-close']")
-  const $tokenTransferOpen = $element.find("[data-selector='token-transfer-open']")
+$(document.body).on('click', '[data-selector="token-transfer-open"]', event => {
+  const $tokenTransferOpen = event.target
+  const $parent = $tokenTransferOpen.parentElement
+  const $tokenTransferClose = $parent.querySelector("[data-selector='token-transfer-close']")
+  $tokenTransferOpen.classList.add('d-none')
+  $tokenTransferClose.classList.remove('d-none')
+})
 
-  $element.on('show.bs.collapse', () => {
-    $tokenTransferOpen.addClass('d-none')
-    $tokenTransferClose.removeClass('d-none')
-  })
-
-  $element.on('hide.bs.collapse', () => {
-    $tokenTransferClose.addClass('d-none')
-    $tokenTransferOpen.removeClass('d-none')
-  })
-}
-
-// Initialize the script scoped for each card.
-$("[data-selector='token-transfers-toggle']").each((_index, element) => tokenTransferToggle(element))
+$(document.body).on('click', '[data-selector="token-transfer-close"]', event => {
+  const $tokenTransferClose = event.target
+  const $parent = $tokenTransferClose.parentElement
+  const $tokenTransferOpen = $parent.querySelector("[data-selector='token-transfer-open']")
+  $tokenTransferClose.classList.add('d-none')
+  $tokenTransferOpen.classList.remove('d-none')
+})
