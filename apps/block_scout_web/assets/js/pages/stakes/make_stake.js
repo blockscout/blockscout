@@ -30,11 +30,16 @@ function makeStake ($modal, address, store, msg) {
   const stakingContract = store.getState().stakingContract
   const decimals = store.getState().tokenDecimals
 
-  const minStake = new BigNumber(msg.min_delegator_stake)
+  const minStake = new BigNumber(msg.min_stake)
+  const currentStake = new BigNumber(msg.delegator_staked)
+  const balance = new BigNumber(msg.balance)
   const stake = new BigNumber($modal.find('[delegator-stake]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
 
-  if (!stake.isPositive() || stake.isLessThan(minStake)) {
+  if (!stake.isPositive() || stake.plus(currentStake).isLessThan(minStake)) {
     openErrorModal('Error', `You cannot stake less than ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
+    return false
+  } else if (stake.isGreaterThan(balance)) {
+    openErrorModal('Error', `You cannot stake more than ${balance.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
     return false
   }
 

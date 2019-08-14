@@ -1935,7 +1935,7 @@ msgid "Stake"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:29
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:40
 msgid "Stake More"
 msgstr ""
 
@@ -1979,4 +1979,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:26
 msgid "Ordered"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:42
+msgid "Place stake"
 msgstr ""
