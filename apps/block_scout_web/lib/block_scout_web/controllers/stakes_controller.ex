@@ -142,7 +142,7 @@ defmodule BlockScoutWeb.StakesController do
   defp move_allowed?(nil), do: false
 
   defp move_allowed?(delegator) do
-    delegator.is_active and Decimal.positive?(delegator.max_withdraw_allowed)
+    Decimal.positive?(delegator.max_withdraw_allowed)
   end
 
   defp withdraw_allowed?(nil, _epoch_number), do: false

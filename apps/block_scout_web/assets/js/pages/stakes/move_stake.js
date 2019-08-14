@@ -16,9 +16,9 @@ export function openMoveStakeModal (event, store) {
 }
 
 function setupModal ($modal, fromAddress, store, msg) {
-  setupChart($modal.find('.js-pool-from-progress'), msg.from_self_staked_amount, msg.from_staked_amount)
-  if ($modal.find('.js-pool-to-progress').length) {
-    setupChart($modal.find('.js-pool-to-progress'), msg.to_self_staked_amount, msg.to_staked_amount)
+  setupChart($modal.find('.js-pool-from-progress'), msg.from.self_staked_amount, msg.from.staked_amount)
+  if (msg.to) {
+    setupChart($modal.find('.js-pool-to-progress'), msg.to.self_staked_amount, msg.to.staked_amount)
   }
 
   $modal.find('form').submit(() => {
@@ -45,12 +45,25 @@ function moveStake ($modal, fromAddress, store, msg) {
   const stakingContract = store.getState().stakingContract
   const decimals = store.getState().tokenDecimals
 
-  const minStake = new BigNumber(msg.min_delegator_stake)
+  const minFromStake = new BigNumber(msg.from.min_stake)
+  const minToStake = new BigNumber(msg.to.min_stake)
+  const currentFromStake = new BigNumber(msg.from.stake_amount)
+  const currentToStake = new BigNumber(msg.to.stake_amount)
   const maxAllowed = new BigNumber(msg.max_withdraw_allowed)
   const stake = new BigNumber($modal.find('[move-amount]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
 
-  if (!stake.isPositive() || stake.isLessThan(minStake) || stake.isGreaterThan(maxAllowed)) {
-    openErrorModal('Error', `You cannot stake less than ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol} and more than ${maxAllowed.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
+  if (!stake.isPositive() || stake.plus(currentToStake).isLessThan(minToStake)) {
+    openErrorModal('Error', `You cannot move less than ${minToStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol} to this pool`)
+    return false
+  }
+
+  if (stake.isGreaterThan(maxAllowed)) {
+    openErrorModal('Error', `You cannot move more than ${maxAllowed.shiftedBy(-decimals)} ${store.getState().tokenSymbol} right now`)
+    return false
+  }
+
+  if (stake.isLessThan(currentFromStake) && currentFromStake.minus(stake).isLessThan(minFromStake)) {
+    openErrorModal('Error', `You can't leave less than ${minFromStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol} in the source pool`)
     return false
   }
 
