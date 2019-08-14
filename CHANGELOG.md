@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2568](https://github.com/poanetwork/blockscout/pull/2568) - filter pending token transfers
 
 ### Chore
 
