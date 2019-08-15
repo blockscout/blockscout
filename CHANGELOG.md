@@ -2,10 +2,19 @@
 
 ### Features
 - [#2561](https://github.com/poanetwork/blockscout/pull/2561) - Add token's type to the response of tokenlist method
+- [#2499](https://github.com/poanetwork/blockscout/pull/2499) - import emission reward ranges
+- [#2497](https://github.com/poanetwork/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
 
 ### Fixes
+- [#2570](https://github.com/poanetwork/blockscout/pull/2570) - Network icons preload
+- [#2569](https://github.com/poanetwork/blockscout/pull/2569) - do not fetch emission rewards for transactions csv exporter
+- [#2568](https://github.com/poanetwork/blockscout/pull/2568) - filter pending token transfers
+- [#2564](https://github.com/poanetwork/blockscout/pull/2564) - fix first page button for uncles and reorgs
+- [#2563](https://github.com/poanetwork/blockscout/pull/2563) - Fix view less transfers button
+- [#2538](https://github.com/poanetwork/blockscout/pull/2538) - fetch the last not empty coin balance records
 
 ### Chore
+- [#2566](https://github.com/poanetwork/blockscout/pull/2566) - upgrade absinthe phoenix
 
 
 ## 2.0.3-beta
@@ -20,6 +29,9 @@
 - [#2403](https://github.com/poanetwork/blockscout/pull/2403) - Return gasPrice field at the result of gettxinfo method
 
 ### Fixes
+- [#2562](https://github.com/poanetwork/blockscout/pull/2562) - Fix dark theme flickering
+- [#2560](https://github.com/poanetwork/blockscout/pull/2560) - fix slash before not empty path in docs
+- [#2559](https://github.com/poanetwork/blockscout/pull/2559) - fix rsk total supply for empty exchange rate
 - [#2553](https://github.com/poanetwork/blockscout/pull/2553) - Dark theme import to the end of sass
 - [#2550](https://github.com/poanetwork/blockscout/pull/2550) - correctly encode decimal values for frontend
 - [#2549](https://github.com/poanetwork/blockscout/pull/2549) - Fix wrong colour of tooltip
