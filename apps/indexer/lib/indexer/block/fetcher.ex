@@ -189,7 +189,7 @@ defmodule Indexer.Block.Fetcher do
 
     BlockNumber.update(max_block.number)
     BlockNumber.update(min_block.number)
-    BlocksCache.update_blocks(blocks)
+    BlocksCache.update(blocks)
   end
 
   defp update_transactions_cache(transactions) do
