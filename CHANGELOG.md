@@ -1,6 +1,25 @@
 ## Current
 
 ### Features
+- [#2561](https://github.com/poanetwork/blockscout/pull/2561) - Add token's type to the response of tokenlist method
+- [#2499](https://github.com/poanetwork/blockscout/pull/2499) - import emission reward ranges
+- [#2497](https://github.com/poanetwork/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
+
+### Fixes
+- [#2570](https://github.com/poanetwork/blockscout/pull/2570) - Network icons preload
+- [#2569](https://github.com/poanetwork/blockscout/pull/2569) - do not fetch emission rewards for transactions csv exporter
+- [#2568](https://github.com/poanetwork/blockscout/pull/2568) - filter pending token transfers
+- [#2564](https://github.com/poanetwork/blockscout/pull/2564) - fix first page button for uncles and reorgs
+- [#2563](https://github.com/poanetwork/blockscout/pull/2563) - Fix view less transfers button
+- [#2538](https://github.com/poanetwork/blockscout/pull/2538) - fetch the last not empty coin balance records
+
+### Chore
+- [#2566](https://github.com/poanetwork/blockscout/pull/2566) - upgrade absinthe phoenix
+
+
+## 2.0.3-beta
+
+### Features
 - [#2433](https://github.com/poanetwork/blockscout/pull/2433) - Add a functionality to try Eth RPC methods in the documentation
 - [#2529](https://github.com/poanetwork/blockscout/pull/2529) - show both eth value and token transfers on transaction overview page
 - [#2376](https://github.com/poanetwork/blockscout/pull/2376) - Split API and WebApp routes
@@ -10,6 +29,11 @@
 - [#2403](https://github.com/poanetwork/blockscout/pull/2403) - Return gasPrice field at the result of gettxinfo method
 
 ### Fixes
+- [#2562](https://github.com/poanetwork/blockscout/pull/2562) - Fix dark theme flickering
+- [#2560](https://github.com/poanetwork/blockscout/pull/2560) - fix slash before not empty path in docs
+- [#2559](https://github.com/poanetwork/blockscout/pull/2559) - fix rsk total supply for empty exchange rate
+- [#2553](https://github.com/poanetwork/blockscout/pull/2553) - Dark theme import to the end of sass
+- [#2550](https://github.com/poanetwork/blockscout/pull/2550) - correctly encode decimal values for frontend
 - [#2549](https://github.com/poanetwork/blockscout/pull/2549) - Fix wrong colour of tooltip
 - [#2548](https://github.com/poanetwork/blockscout/pull/2548) - CSS preload support in Firefox
 - [#2547](https://github.com/poanetwork/blockscout/pull/2547) - do not show eth value if it's zero on the transaction overview page
@@ -34,8 +58,11 @@
 - [#2495](https://github.com/poanetwork/blockscout/pull/2495) - fix logs for indexed chain
 - [#2459](https://github.com/poanetwork/blockscout/pull/2459) - fix top addresses query
 - [#2425](https://github.com/poanetwork/blockscout/pull/2425) - Force to show address view for checksummed address even if it is not in DB
+- [#2551](https://github.com/poanetwork/blockscout/pull/2551) - Correctly handle dynamically created Bootstrap tooltips
 
 ### Chore
+- [#2554](https://github.com/poanetwork/blockscout/pull/2554) - remove extra slash for endpoint url in docs
+- [#2552](https://github.com/poanetwork/blockscout/pull/2552) - remove brackets for token holders percentage
 - [#2507](https://github.com/poanetwork/blockscout/pull/2507) - update minor version of ecto, ex_machina, phoenix_live_reload
 - [#2516](https://github.com/poanetwork/blockscout/pull/2516) - update absinthe plug from fork
 - [#2473](https://github.com/poanetwork/blockscout/pull/2473) - get rid of cldr warnings
@@ -49,6 +76,7 @@
 - [#2434](https://github.com/poanetwork/blockscout/pull/2434) - get rid of timex warnings
 - [#2402](https://github.com/poanetwork/blockscout/pull/2402) - bump otp version to 22.0
 - [#2373](https://github.com/poanetwork/blockscout/pull/2373) - Add script to validate internal_transactions constraint for large DBs
+
 
 ## 2.0.2-beta
 
@@ -194,6 +222,7 @@
 - [#2255](https://github.com/poanetwork/blockscout/pull/2255) - upgrade elixir version to 1.9.0
 - [#2256](https://github.com/poanetwork/blockscout/pull/2256) - use the latest version of chromedriver
 
+
 ## 2.0.0-beta
 
 ### Features
@@ -276,6 +305,7 @@
 - [#2055](https://github.com/poanetwork/blockscout/pull/2055) - Increase timeout for geth indexers
 - [#2069](https://github.com/poanetwork/blockscout/pull/2069) - Docsify integration: static docs page generation
 
+
 ## 1.3.15-beta
 
 ### Features
@@ -305,6 +335,7 @@
 
 - [#1892](https://github.com/poanetwork/blockscout/pull/1892) - Remove temporary worker modules
 
+
 ## 1.3.13-beta
 
 ### Features
@@ -317,9 +348,11 @@
 - [#1881](https://github.com/poanetwork/blockscout/pull/1881) - fix: store solc versions locally for performance
 - [#1898](https://github.com/poanetwork/blockscout/pull/1898) - check if the constructor has arguments before verifying constructor arguments
 
+
 ## 1.3.12-beta
 
 Reverting of synchronous block counter, implemented in #1848
+
 
 ## 1.3.11-beta
 
@@ -341,6 +374,7 @@ Reverting of synchronous block counter, implemented in #1848
 
 - [#1814](https://github.com/poanetwork/blockscout/pull/1814) - Clear build artefacts script
 - [#1837](https://github.com/poanetwork/blockscout/pull/1837) - Add -f flag to clear_build.sh script delete static folder
+
 
 ## 1.3.10-beta
 
@@ -451,6 +485,7 @@ Reverting of synchronous block counter, implemented in #1848
 ### Chore
 
  - [#1610](https://github.com/poanetwork/blockscout/pull/1610) - Add PIRL to Readme
+
 
 ## 1.3.6-beta
 

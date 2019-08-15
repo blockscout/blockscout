@@ -5,7 +5,7 @@
             <span class="radio-icon"></span>
         </span>
         <span class="network-selector-item-content">
-            <span class='network-selector-item-icon network-selector-item-icon-<%= String.downcase(String.replace(@title, " ", "-")) %>' style="background-image: url('/images/network-selector-icons/<%= String.downcase(String.replace(@title, " ", "-")) %>.png');"></span>
+            <span class='network-selector-item-icon network-selector-item-icon-<%= String.downcase(String.replace(@title, " ", "-")) %>'></span>
             <span class="network-selector-item-title">
                 <%= @title %>
             </span>
