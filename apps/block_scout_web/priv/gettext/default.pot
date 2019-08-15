@@ -709,7 +709,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:72
-#: lib/block_scout_web/templates/layout/app.html.eex:61
+#: lib/block_scout_web/templates/layout/app.html.eex:63
 msgid "Tx/day"
 msgstr ""
 

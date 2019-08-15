@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartController do
   alias Explorer.Chain.Transaction.History.TransactionStats
 
   def show(conn, _params) do
-    with true <- ajax?(conn) do
+    if ajax?(conn) do
       [{:history_size, history_size}] = Application.get_env(:block_scout_web, __MODULE__, 30)
 
       latest = Date.utc_today()
@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartController do
         history_data: transaction_history_data
       })
     else
-      _ -> unprocessable_entity(conn)
+      unprocessable_entity(conn)
     end
   end
 
