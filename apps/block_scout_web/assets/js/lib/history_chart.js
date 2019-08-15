@@ -14,6 +14,7 @@ const config = {
   options: {
     layout: {
       padding: {
+        left: 20,
         right: 20
       }
     },
