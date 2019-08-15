@@ -6,12 +6,12 @@ defmodule Explorer.MarketTest do
   alias Explorer.Repo
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Blocks.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Blocks.cache_name()})
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
 
     on_exit(fn ->
-      Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Blocks.cache_name()})
-      Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Blocks.cache_name()})
+      Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     end)
 
     :ok
