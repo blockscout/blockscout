@@ -10,6 +10,7 @@
 - [#2538](https://github.com/poanetwork/blockscout/pull/2538) - fetch the last not empty coin balance records
 
 ### Chore
+- [#2574](https://github.com/poanetwork/blockscout/pull/2574) - limit request body in json rpc error
 - [#2566](https://github.com/poanetwork/blockscout/pull/2566) - upgrade absinthe phoenix
 
 
