@@ -51,15 +51,21 @@ config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
-txs_init_lag =
+txs_stats_init_lag =
   System.get_env("TXS_HISTORIAN_INIT_LAG", "0")
   |> Integer.parse
   |> elem(0)
   |> :timer.minutes
 
+txs_stats_days_to_compile_at_init =
+  System.get_env("TXS_STATS_DAYS_TO_COMPILE_AT_INIT", "30")
+  |> Integer.parse
+  |> elem(0)
+
 config :explorer, Explorer.Chain.Transaction.History.Historian,
   enabled: System.get_env("ENABLE_TXS_STATS", "false") != "false",
-  init_lag: txs_init_lag
+  init_lag: txs_stats_init_lag,
+  days_to_compile_at_init: txs_stats_days_to_compile_at_init
 
 config :explorer, Explorer.Market.History.Historian,
   enabled: true

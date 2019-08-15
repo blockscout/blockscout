@@ -15,8 +15,14 @@ defmodule Explorer.History.Process do
         t when is_integer(t) and t >= 0 -> t
         _ -> 0
       end
-    IO.inspect init_lag
-    Process.send_after(self(), {:compile_historical_records, 365}, init_lag)
+
+    days_to_compile =
+      case Application.get_env(:explorer, historian, [])[:days_to_compile_at_init] do
+        days when is_integer(days) and days >= 1 -> days
+        _ -> 365
+      end
+
+    Process.send_after(self(), {:compile_historical_records, days_to_compile}, init_lag)
     {:ok, %{historian: historian}}
   end
 
