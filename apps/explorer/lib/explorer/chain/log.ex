@@ -117,7 +117,9 @@ defmodule Explorer.Chain.Log do
 
   def decode(log, transaction) do
     case log.first_topic do
-      "0x" <> <<method_id::binary-size(4), _rest::binary>> ->
+      "0x" <> hex_part ->
+        {number, ""} = Integer.parse(hex_part, 16)
+        <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
         find_candidates(method_id, log, transaction)
 
       _ ->
@@ -125,11 +127,11 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  defp find_candidates(_method_id, log, transaction) do
+  defp find_candidates(method_id, log, transaction) do
     candidates_query =
       from(
         contract_method in ContractMethod,
-        # where: contract_method.identifier == ^method_id,
+        where: contract_method.identifier == ^method_id,
         limit: 3
       )
 
