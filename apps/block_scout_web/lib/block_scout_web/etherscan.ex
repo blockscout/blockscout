@@ -163,7 +163,16 @@ defmodule BlockScoutWeb.Etherscan do
         "contractAddress" => "0x0000000000000000000000000000000000000000",
         "name" => "Example Token",
         "decimals" => "18",
-        "symbol" => "ET"
+        "symbol" => "ET",
+        "type" => "ERC-20"
+      },
+      %{
+        "balance" => "1",
+        "contractAddress" => "0x0000000000000000000000000000000000000001",
+        "name" => "Example ERC-721 Token",
+        "decimals" => "18",
+        "symbol" => "ET7",
+        "type" => "ERC-721"
       }
     ]
   }
@@ -440,6 +449,7 @@ defmodule BlockScoutWeb.Etherscan do
       "from" => "0x000000000000000000000000000000000000000c",
       "gasLimit" => "91966",
       "gasUsed" => "95123",
+      "gasPrice" => "100000",
       "hash" => "0x0000000000000000000000000000000000000000000000000000000000000004",
       "input" => "0x04",
       "logs" => [
@@ -986,6 +996,7 @@ defmodule BlockScoutWeb.Etherscan do
       input: @input_type,
       gasLimit: @wei_type,
       gasUsed: @gas_type,
+      gasPrice: @wei_type,
       logs: %{
         type: "array",
         array_type: @logs_details
