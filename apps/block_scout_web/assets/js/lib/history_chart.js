@@ -150,7 +150,7 @@ class MarketHistoryChart {
       data: [],
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.dashboardLineColorMarket,
+      backgroundColor: sassVariables.dashboardLineColorTransactions,
       borderColor: sassVariables.dashboardLineColorTransactions,
       lineTension: 0
     }
