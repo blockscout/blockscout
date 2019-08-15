@@ -28,8 +28,7 @@
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">
-          <%= token_transfer_amount(@transfer) %>
-          <%= @transfer.token.symbol %>
+          <%= token_transfer_amount(@transfer) %> <%= @transfer.token.symbol %>
         </span>
       </span>
     </div>
@@ -38,7 +37,7 @@
       <span class="mr-2 mr-md-0 order-1">
         <%= link(
           gettext("Block #%{number}", number: @transfer.block_number),
-          to: block_path(BlockScoutWeb.Endpoint, :show, @transfer.transaction.block_number)
+          to: block_path(BlockScoutWeb.Endpoint, :show, @transfer.block_number)
         ) %>
       </span>
       <span class="mr-2 mr-md-0 order-2" data-from-now="<%= @transfer.transaction.block.timestamp %>"></span>

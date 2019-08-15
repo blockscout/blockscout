@@ -20,6 +20,9 @@ import 'bootstrap'
 
 import './locale'
 
+// support of preload in Firefox
+import '../node_modules/fg-loadcss/dist/cssrelpreload.min'
+
 import './pages/address'
 import './pages/address/coin_balances'
 import './pages/address/transactions'
@@ -59,5 +62,6 @@ import './lib/async_listing_load'
 import './lib/tooltip'
 import './lib/modals'
 import './lib/try_api'
+import './lib/try_eth_api'
 import './lib/card_tabs'
 import './lib/network_selector'

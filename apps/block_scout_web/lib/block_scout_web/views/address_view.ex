@@ -222,7 +222,7 @@ defmodule BlockScoutWeb.AddressView do
   def incoming_transaction_count(address_hash) do
     address_hash
     |> Chain.address_to_incoming_transaction_count()
-    |> Cldr.Number.to_string!(format: "#,###")
+    |> BlockScoutWeb.Cldr.Number.to_string!(format: "#,###")
   end
 
   def trimmed_hash(%Hash{} = hash) do

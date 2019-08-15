@@ -232,7 +232,7 @@ defmodule Explorer.Chain do
 
       address_hash
       |> address_to_transactions_without_rewards(paging_options, options)
-      |> Enum.concat(Task.await(rewards_task))
+      |> Enum.concat(Task.await(rewards_task, :timer.seconds(20)))
       |> Enum.sort_by(fn item ->
         case item do
           {%Reward{} = emission_reward, _} ->
@@ -248,7 +248,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp address_to_transactions_without_rewards(address_hash, paging_options, options) do
+  def address_to_transactions_without_rewards(address_hash, paging_options, options) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -1258,14 +1258,16 @@ defmodule Explorer.Chain do
     block_type = Keyword.get(options, :block_type, "Block")
 
     if block_type == "Block" && !paging_options.key do
-      if Blocks.enough_elements?(paging_options.page_size) do
-        Blocks.blocks(paging_options.page_size)
-      else
-        elements = fetch_blocks(block_type, paging_options, necessity_by_association)
+      case Blocks.take_enough(paging_options.page_size) do
+        nil ->
+          elements = fetch_blocks(block_type, paging_options, necessity_by_association)
 
-        Blocks.rewrite_cache(elements)
+          Blocks.update(elements)
 
-        elements
+          elements
+
+        blocks ->
+          blocks
       end
     else
       fetch_blocks(block_type, paging_options, necessity_by_association)
@@ -2464,9 +2466,10 @@ defmodule Explorer.Chain do
       |> Multi.run(:set_address_verified, &set_address_verified/2)
       |> Repo.transaction()
 
-    with {:ok, %{smart_contract: smart_contract}} <- insert_result do
-      {:ok, smart_contract}
-    else
+    case insert_result do
+      {:ok, %{smart_contract: smart_contract}} ->
+        {:ok, smart_contract}
+
       {:error, :smart_contract, changeset, _} ->
         {:error, changeset}
 
@@ -2601,7 +2604,11 @@ defmodule Explorer.Chain do
   defp page_addresses(query, %PagingOptions{key: nil}), do: query
 
   defp page_addresses(query, %PagingOptions{key: {coin_balance, hash}}) do
-    where(query, [address], address.fetched_coin_balance <= ^coin_balance and address.hash > ^hash)
+    from(address in query,
+      where:
+        (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
+          address.fetched_coin_balance < ^coin_balance
+    )
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
@@ -2936,9 +2943,10 @@ defmodule Explorer.Chain do
       )
       |> Repo.transaction()
 
-    with {:ok, %{token: token}} <- insert_result do
-      {:ok, token}
-    else
+    case insert_result do
+      {:ok, %{token: token}} ->
+        {:ok, token}
+
       {:error, :token, changeset, _} ->
         {:error, changeset}
     end
@@ -2969,8 +2977,13 @@ defmodule Explorer.Chain do
 
   @spec address_to_balances_by_day(Hash.Address.t()) :: [balance_by_day]
   def address_to_balances_by_day(address_hash) do
+    latest_block_timestamp =
+      address_hash
+      |> CoinBalance.last_coin_balance_timestamp()
+      |> Repo.one()
+
     address_hash
-    |> CoinBalance.balances_by_day()
+    |> CoinBalance.balances_by_day(latest_block_timestamp)
     |> Repo.all()
     |> normalize_balances_by_day()
   end
@@ -2986,7 +2999,7 @@ defmodule Explorer.Chain do
     today = Date.to_string(NaiveDateTime.utc_now())
 
     if Enum.count(result) > 0 && !Enum.any?(result, fn map -> map[:date] == today end) do
-      [%{date: today, value: List.last(result)[:value]} | result]
+      List.flatten([result | [%{date: today, value: List.last(result)[:value]}]])
     else
       result
     end

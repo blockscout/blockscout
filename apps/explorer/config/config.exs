@@ -27,6 +27,8 @@ config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
   period: average_block_period
 
+config :explorer, Explorer.ChainSpec.GenesisData, enabled: true, chain_spec_path: System.get_env("CHAIN_SPEC_PATH")
+
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
 
 config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
@@ -67,7 +69,7 @@ config :explorer, Explorer.Chain.Transaction.History.Historian,
   init_lag: txs_stats_init_lag,
   days_to_compile_at_init: txs_stats_days_to_compile_at_init
 
-config :explorer, Explorer.Market.History.Historian, enabled: true
+config :explorer, Explorer.Market.History.Historian, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
 history_fetch_interval =
   case Integer.parse(System.get_env("HISTORY_FETCH_INTERVAL", "")) do
@@ -90,7 +92,7 @@ if System.get_env("METADATA_CONTRACT") && System.get_env("VALIDATORS_CONTRACT") 
     metadata_contract_address: System.get_env("METADATA_CONTRACT"),
     validators_contract_address: System.get_env("VALIDATORS_CONTRACT")
 
-  config :explorer, Explorer.Validator.MetadataProcessor, enabled: true
+  config :explorer, Explorer.Validator.MetadataProcessor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 else
   config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
 end

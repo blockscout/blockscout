@@ -38,17 +38,18 @@ defmodule Explorer.Application do
       Supervisor.Spec.worker(SpandexDatadog.ApiServer, [datadog_opts()]),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor}, id: Explorer.HistoryTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.GenesisDataTaskSupervisor}, id: GenesisDataTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
       Explorer.SmartContract.SolcDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
       {TransactionCount, [[], []]},
       {BlockCount, []},
-      con_cache_child_spec(Blocks.cache_name()),
+      Blocks,
       con_cache_child_spec(NetVersion.cache_name()),
       con_cache_child_spec(MarketHistoryCache.cache_name()),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
-      con_cache_child_spec(Transactions.cache_name())
+      Transactions
     ]
 
     children = base_children ++ configurable_children()
@@ -65,6 +66,7 @@ defmodule Explorer.Application do
   defp configurable_children do
     [
       configure(Explorer.ExchangeRates),
+      configure(Explorer.ChainSpec.GenesisData),
       configure(Explorer.KnownTokens),
       configure(Explorer.Chain.Transaction.History.Historian),
       configure(Explorer.Market.History.Historian),

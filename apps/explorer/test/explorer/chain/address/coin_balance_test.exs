@@ -2,8 +2,8 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
   use Explorer.DataCase
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Block, Wei}
   alias Explorer.Chain.Address.CoinBalance
+  alias Explorer.Chain.{Block, Wei}
   alias Explorer.PagingOptions
 
   describe "changeset/2" do
@@ -225,7 +225,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
 
       assert(length(result) == 1)
 
-      value = List.first(result) |> Map.get(:value)
+      value = result |> List.first() |> Map.get(:value)
 
       assert(value == Wei.from(Decimal.new(3000), :wei))
     end
@@ -247,7 +247,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
 
       assert(length(result) == 1)
 
-      value = List.first(result) |> Map.get(:value)
+      value = result |> List.first() |> Map.get(:value)
 
       assert(value == Wei.from(Decimal.new(3000), :wei))
     end
@@ -269,9 +269,33 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
 
       assert(length(result) == 1)
 
-      value = List.first(result) |> Map.get(:value)
+      value = result |> List.first() |> Map.get(:value)
 
       assert(value == Wei.from(Decimal.new(3000), :wei))
+    end
+
+    test "fetches old records" do
+      address = insert(:address)
+      noon = Timex.now() |> Timex.beginning_of_day() |> Timex.set(hour: 12)
+
+      old_block = insert(:block, timestamp: Timex.shift(noon, days: -700))
+      insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: old_block.number)
+
+      latest_block_timestamp =
+        address.hash
+        |> CoinBalance.last_coin_balance_timestamp()
+        |> Repo.one()
+
+      result =
+        address.hash
+        |> CoinBalance.balances_by_day(latest_block_timestamp)
+        |> Repo.all()
+
+      assert(length(result) == 1)
+
+      value = result |> List.first() |> Map.get(:value)
+
+      assert(value == Wei.from(Decimal.new(2000), :wei))
     end
   end
 end

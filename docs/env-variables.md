@@ -6,7 +6,7 @@ Below is a table outlining the environment variables utilized by BlockScout.
 - This table is horizontally scrollable, version information is located in the last column.
 - Settings related to the `ETHEREUM_JSONRPC_VARIANT` variable and client related settings for running a full archive node with geth or parity are located in [this forum post](https://forum.poa.network/t/faq-what-settings-are-required-on-a-parity-or-geth-client/1805).
 - Additional information related to certain variables is available on the [ansible deployment](ansible-deployment.md) page.
-- To set variables using the CLI, use the export command. For example: 
+- To set variables using the CLI, use the export command. For example:
 ```bash
 $ export ETHEREUM_JSONRPC_VARIANT=parity
 $ export COIN=POA
@@ -35,9 +35,9 @@ $ export NETWORK=POA
 | `SOURCE_MODULE` | | This environment variable is used to calculate the exchange rate and is specifically used by the xDai Chain. | false | all |
 | `DATABASE_URL` | | Production environment variable to define the Database endpoint. | (empty) | all |
 | `POOL_SIZE` | | Production environment variable to define the number of database connections allowed. | 20 | all |
-|  `ECTO_USE_SSL`| | Production environment variable to use SSL on Ecto queries. | true | all |
-|  `DATADOG_HOST` | | Host configuration setting for [Datadog integration](https://docs.datadoghq.com/integrations/) | (empty) | all |
-|  `DATADOG_PORT` | | Port configuration setting for [Datadog integration](https://docs.datadoghq.com/integrations/). | (empty} | all |
+| `ECTO_USE_SSL` | | Production environment variable to use SSL on Ecto queries. | true | all |
+| `DATADOG_HOST` | | Host configuration setting for [Datadog integration](https://docs.datadoghq.com/integrations/) | (empty) | all |
+| `DATADOG_PORT` | | Port configuration setting for [Datadog integration](https://docs.datadoghq.com/integrations/). | (empty} | all |
 | `SPANDEX_BATCH_SIZE` | | [Spandex](https://github.com/spandex-project/spandex) and Datadog configuration setting. | (empty) | all |
 |  `SPANDEX_SYNC_THRESHOLD` | | [Spandex](https://github.com/spandex-project/spandex) and Datadog configuration setting.  | (empty) | all |
 | `HEART_BEAT_TIMEOUT` | | Production environment variable to restart the application in the event of a crash. | 30 | all |
@@ -48,10 +48,18 @@ $ export NETWORK=POA
 | `BLOCK_TRANSFORMER` | | Transformer for blocks: base or clique. | base |  v1.3.4+ |
 | `GRAPHIQL _TRANSACTION` | | Default transaction in query to GraphiQL. | (empty) |  v1.3.4+ |
 | `FIRST_BLOCK` | | The block number, where indexing begins from. | 0 |  v1.3.8+ |
+| `LAST_BLOCK` | | The block number, where indexing stops. | (empty) | v2.0.3+ |
 | `TXS_COUNT_CACHE_PERIOD` | | Interval in seconds to restart the task, which calculates the total txs count. | 60 * 60 * 2 |  v1.3.9+ |
 | `ADDRESS_WITH_BALANCES` <br /> `_UPDATE_INTERVAL`|  | Interval in seconds to restart the task, which calculates addresses with balances. | 30 * 60 |  v1.3.9+ |
 | `LINK_TO_OTHER_EXPLORERS` | | true/false. If true, links to other explorers are added in the footer  | (empty)  |  v1.3.0+ |
 | `COINMARKETCAP_PAGES` | | the number of pages on coinmarketcap to list in order to find token's price  | 10 |  v1.3.10+ |
+| `CHAIN_SPEC_PATH` | | Chain specification path (absolute file system path or url) to import block emission reward ranges and genesis account balances from | (empty) | master |
 | `SUPPORTED_CHAINS` | | Array of supported chains that displays in the footer and in the chains dropdown. This var was introduced in this PR [#1900](https://github.com/poanetwork/blockscout/pull/1900) and looks like an array of JSON objects.  | (empty) |  v2.0.0+ |
 | `BLOCK_COUNT_CACHE_PERIOD ` | | time to live of cache in seconds. This var was introduced in [#1876](https://github.com/poanetwork/blockscout/pull/1876)  | 600 |  v2.0.0+ |
 | `ALLOWED_EVM_VERSIONS ` | | the comma-separated list of allowed EVM versions for contracts verification. This var was introduced in [#1964](https://github.com/poanetwork/blockscout/pull/1964)  | "homestead, tangerineWhistle, spuriousDragon, byzantium, constantinople, petersburg" |  v2.0.0+ |
+| `DISABLE_WEBAPP` | | If `true`, endpoints to webapp are hidden (compile-time) | `false` | v2.0.3+ |
+| `DISABLE_READ_API` | | If `true`, read-only endpoints to API are hidden (compile-time) | `false` | v2.0.3+ |
+| `DISABLE_WRITE_API` | | If `true`, write endpoints to API are hidden (compile-time) | `false` | v2.0.3+ |
+| `DISABLE_INDEXER` | | If `true`, indexer application doesn't run | `false` | v2.0.3+ |
+| `WEBAPP_URL` | | Link to web application instance, e.g. `http://host/path` | (empty) | v2.0.3+ |
+| `API_URL` | | Link to API instance, e.g. `http://host/path` | (empty) | v2.0.3+ |

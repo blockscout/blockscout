@@ -234,7 +234,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		}
 	}
 
-	.btn-copy-icon, .btn-qr-icon {
+	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon {
 		border-color: $dark-primary;
 		path {
 			fill: $dark-primary;
@@ -464,7 +464,318 @@ $labels-dark: #8a8dba; // header nav, labels
 
 	// dark text
 	.text-dark {
+		color: #fff !important;
+	}
+
+	// Contract Verification
+	.new-smart-contract-container {
+		background-color: $dark-light-bg;
+		background-image: linear-gradient(to bottom right, $dark-light 100%, $dark-light 100%);
+		@media (max-width: 991.98px) {
+			background-image: none;
+		}
+	}
+	.smart-contract-form-group-inner-wrapper .smart-contract-form-group-tooltip {
+		color: $labels-dark;
+	}
+	.smart-contract-title {
+		color: #fff;
+	}
+	.smart-contract-form-group-inner-wrapper > label {
+		color: $labels-dark;
+	}
+	.smart-contract-form-buttons {
+		border-top-color: darken($labels-dark, 30);
+		.btn-no-border {
+			background-color: $dark-light;
+			border-color: $dark-light;
+			color: #fff;
+			&:hover {
+				background-color: $dark-primary;
+				color: #fff;
+			}
+		}
+	}
+	.add-contract-libraries-wrapper {
+		border-top-color: darken($labels-dark, 30);
+	}
+
+	.token-tile-view-more:before, .token-tile-view-more:after {
+		border-top-color: darken($labels-dark, 30);
+		border-bottom-color: darken($labels-dark, 30);
+	}
+	
+	// Form Controlls
+	.form-control {
+		background-color: $dark-light;
+		border-color: $dark-light;
+		color: #fff;
+		&::placeholder {
+			color: $labels-dark;
+		}
+		&:focus {
+			background-color: $dark-light;
+			border-color: $dark-primary;
+			color: #fff;
+		}
+	}
+	.radio-big .radio-icon {
+		border-color: $labels-dark;
+	}
+	.radio-big input[type="radio"]:checked + .radio-icon {
+		border-color: $dark-primary;
+	}
+	.radio-big input[type="radio"]:checked + .radio-icon::before {
+		background: $dark-primary;
+	}
+	.radio-big .radio-text {
 		color: #fff;
 	}
 
+	// Content loading placeholders
+	.tile-loader, .table-content-loader {
+		background-color: $dark-bg !important;
+		&:before {
+			background: linear-gradient(to right, $dark-bg 2%, lighten($dark-bg, 3) 18%, $dark-bg 33%);
+		}
+	}
+
+	// Verify other explorers
+	.verify-other-explorers-elem {
+		border-color: darken($labels-dark, 30);
+		.exp-logo {
+			border-right-color: darken($labels-dark, 30);
+		}
+		.exp-content {
+			h3 {
+				color: #fff;
+			}
+			div {
+				color: $labels-dark;
+			}
+		}
+	}
+	.verify-other-explorers-more {
+		border-color: $dark-primary;
+		svg path {
+			fill: $dark-primary;
+		}
+		&:hover {
+			background-color: $dark-primary;
+			svg path {
+				fill: #fff;
+			}
+		}
+	}
+	.verify-other-explorers-elem {
+		&:hover {
+			text-decoration: none;
+			color: #fff;
+			.exp-content {
+				h3, div {
+					color: #fff;
+				}
+			}
+		}
+	}
+
+	#explorersModal {
+		.modal-title {
+			color: #fff;
+		}
+
+		.text-muted {
+			color: $labels-dark;
+		}
+
+		.modal-footer {
+			border-top-color: darken($labels-dark, 30);
+		}
+
+		.modal-content {
+			background-color: $dark-light-bg;
+
+			.btn-primary {
+				background-color: $dark-primary;
+				border-color: $dark-primary;
+				&:hover {
+					background-color: $dark-primary;
+					border-color: $dark-primary;
+				}
+			}
+		}
+
+		.verify-other-explorers-cell {
+			.exp-logo {
+				color: #fff;
+			}
+		}
+
+		.close {
+			color: #fff;
+		}
+	}
+
+	// API docs dropdown content
+	.api-doc-parameters-list-item-description,
+	.api-doc-parameters-list-item-title,
+	.api-doc-parameters-list-title,
+	.api-doc-list-item-controls-view-more {
+		color: #fff;
+	}
+
+	.api-doc-parameters-list {
+		border-bottom-color: darken($labels-dark, 30);
+	}
+	.api-doc-parameters-container {
+		border-top-color: darken($labels-dark, 30);
+	}
+	.api-doc-tab {
+		color: $dark-primary !important;
+		&.active {
+			border-bottom-color: $dark-primary;
+		}
+	}
+
+	// Common Buttons
+	.btn-secondary, .button-secondary {
+		background-color: transparent;
+		border-color: $dark-primary;
+		color: $dark-primary;
+		&:hover {
+			background-color: $dark-primary;
+			border-color: $dark-primary;
+			color: #fff;
+		}
+	}
+
+	.awesomplete {
+		& > ul {
+			background: $dark-light-bg;
+			&:before {
+				background: $dark-light-bg;
+			}
+			li {
+				&:hover {
+					background-color: $dark-primary;
+					color: #fff;
+					mark {
+						background: darken($dark-primary, 10);
+						color: #fff;
+					}
+				}
+			}
+		}
+		mark {
+			background: $dark-primary;
+			color: #fff;
+		}
+	}
+
+	// Decoded data
+	.table.thead-light.table-bordered {
+		color: #fff !important;
+	}
+	.table-bordered, .table-bordered td, .table-bordered th {
+		border-color: darken($labels-dark, 30);
+	}
+	.dark-theme-applied .table td, .dark-theme-applied .table th, .dark-theme-applied hr {
+		border-top-color: darken($labels-dark, 30);
+	}
+	.btn-copy-ico svg path {
+		fill: #fff;
+	}
+
+	// pre
+	.pre-scrollable.line-numbers, .hljs {
+		background: $dark-light;
+		color: #fff;
+	}
+
+	.hljs-comment {
+		color: $labels-dark;
+	}
+
+	.hljs-title, .hljs-section {
+		color: #ff2294;
+	}
+
+	.hljs-type, .hljs-string, .hljs-number, .hljs-selector-id, .hljs-selector-class, .hljs-quote, .hljs-template-tag, .hljs-deletion {
+		color: #ff2294;
+	}
+
+	.hljs-literal, .hljs-built_in, .hljs-bullet, .hljs-code, .hljs-addition {
+		color: #20dd94;
+	}
+
+	.line-numbers [data-line-number]:before {
+		color: #3f436b !important;
+		border-right-color: #3f436b !important;
+	}
+
+	// 'text dark' label
+	.text-dark {
+		color: #fff;
+	}
+
+	// validator info
+	#validatorModal {
+		.modal-title {
+			color: #fff;
+		}
+
+		.text-muted {
+			color: $labels-dark;
+		}
+
+		.modal-footer {
+			border-top-color: darken($labels-dark, 30);
+		}
+
+		.modal-content {
+			background-color: $dark-light-bg;
+
+			.btn-primary {
+				background-color: $dark-primary;
+				border-color: $dark-primary;
+				&:hover {
+					background-color: $dark-primary;
+					border-color: $dark-primary;
+				}
+			}
+		}
+
+		.close {
+			color: #fff;
+		}
+	}
+    
+	// alerts
+	.alert-link {
+		color: $labels-dark;
+	}
+
+	.alert-danger {
+		background-color: $dark-light;
+		border-color: $dark-light;
+		.alert-link {
+			color: $alert-danger-color;
+		}
+	}
+
+	.tile .alert {
+		background: rgba(#000, .1);
+	}
+
+	// primary buttons
+	.btn-full-primary, .button-primary {
+		background: $dark-primary;
+		border-color: $dark-primary;
+		color: #fff;
+		&:hover {
+			background: darken($dark-primary, 6);
+			border-color: darken($dark-primary, 6);
+			color: #fff;
+		}
+	}
 }
