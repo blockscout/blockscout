@@ -154,6 +154,7 @@ const elements = {
       if (chart && !(oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) && state.availableSupply) {
         chart.updateMarketHistory(state.availableSupply, state.marketHistoryData)
       }
+
       if (chart && !(JSON.stringify(oldState.transactionStats) === JSON.stringify(state.transactionStats))) {
         chart.updateTransactionHistory(state.transactionStats)
       }
@@ -193,6 +194,13 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.usdMarketCap === state.usdMarketCap) return
       $el.empty().append(formatUsdValue(state.usdMarketCap))
+    }
+  },
+  '[data-selector="tx_per_day"]': {
+    render ($el, state, oldState) {
+      if (!(JSON.stringify(oldState.transactionStats) === JSON.stringify(state.transactionStats))) {
+        $el.empty().append(state.transactionStats[0].number_of_transactions)
+      }
     }
   },
   '[data-selector="chain-block-list"]': {

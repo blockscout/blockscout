@@ -71,7 +71,7 @@
                 <span class="dashboard-banner-chart-legend-label">
                     <%= gettext "Tx/day" %>
                 </span>
-                <span class="dashboard-banner-chart-legend-value" data-selector="numTransactions">
+                <span class="dashboard-banner-chart-legend-value" data-selector="tx_per_day">
                     <%= Enum.at(@transaction_stats, 0).number_of_transactions %>
                 </span>
             </div>
