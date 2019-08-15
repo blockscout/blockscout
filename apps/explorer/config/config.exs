@@ -58,7 +58,7 @@ txs_stats_init_lag =
   |> :timer.minutes
 
 txs_stats_days_to_compile_at_init =
-  System.get_env("TXS_STATS_DAYS_TO_COMPILE_AT_INIT", "30")
+  System.get_env("TXS_STATS_DAYS_TO_COMPILE_AT_INIT", "40")
   |> Integer.parse
   |> elem(0)
 
