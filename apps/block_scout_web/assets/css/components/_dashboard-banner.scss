@@ -69,7 +69,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   display: grid;
   grid-template-columns: repeat(var(--numChartData), 0.9fr);
   padding-bottom: 12px;
-  padding-left:55px;
+  padding-left:20px;
 
   .dashboard-banner-chart-legend-item {
     padding-bottom: 3px;

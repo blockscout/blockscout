@@ -12,6 +12,11 @@ const config = {
     datasets: []
   },
   options: {
+    layout: {
+      padding: {
+        right: 20
+      }
+    },
     legend: {
       display: false
     },
