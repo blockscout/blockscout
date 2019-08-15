@@ -1,0 +1,14 @@
+body:after {
+	position:absolute; width:0; height:0; overflow:hidden; z-index:-1;
+	content:
+		url(/images/network-selector-icons/callisto-mainnet.png)
+		url(/images/network-selector-icons/ethereum-classic.png)
+		url(/images/network-selector-icons/goerli-testnet.png)
+		url(/images/network-selector-icons/kovan-testnet.png)
+		url(/images/network-selector-icons/poa-core.png)
+		url(/images/network-selector-icons/poa-sokol.png)
+		url(/images/network-selector-icons/rinkeby-testnet.png)
+		url(/images/network-selector-icons/rsk-mainnet.png)
+		url(/images/network-selector-icons/ropsten-testnet.png)
+		url(/images/network-selector-icons/xdai-chain.png)
+};

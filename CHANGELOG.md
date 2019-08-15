@@ -1,10 +1,15 @@
 ## Current
 
 ### Features
+- [#2561](https://github.com/poanetwork/blockscout/pull/2561) - Add token's type to the response of tokenlist method
+- [#2499](https://github.com/poanetwork/blockscout/pull/2499) - import emission reward ranges
 - [#2497](https://github.com/poanetwork/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
 
 ### Fixes
 - [#2572](https://github.com/poanetwork/blockscout/pull/2572) - Ease non-critical css
+- [#2570](https://github.com/poanetwork/blockscout/pull/2570) - Network icons preload
+- [#2569](https://github.com/poanetwork/blockscout/pull/2569) - do not fetch emission rewards for transactions csv exporter
+- [#2568](https://github.com/poanetwork/blockscout/pull/2568) - filter pending token transfers
 - [#2564](https://github.com/poanetwork/blockscout/pull/2564) - fix first page button for uncles and reorgs
 - [#2563](https://github.com/poanetwork/blockscout/pull/2563) - Fix view less transfers button
 - [#2538](https://github.com/poanetwork/blockscout/pull/2538) - fetch the last not empty coin balance records
