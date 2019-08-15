@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartControllerTest do
     end
 
     test "returns appropriate json data" do
-      latest = ~D[2019-07-12]
+      latest = Date.utc_today()
       dts = [latest, Date.add(latest, -1), Date.add(latest, -2)]
 
       some_transaction_stats = [
@@ -43,10 +43,16 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartControllerTest do
         |> put_req_header("x-requested-with", "xmlhttprequest")
         |> TransactionHistoryChartController.show([])
 
-      expected =
-        "{\"history_data\":\"[{\\\"date\\\":\\\"2019-07-12\\\",\\\"number_of_transactions\\\":10},{\\\"date\\\":\\\"2019-07-11\\\",\\\"number_of_transactions\\\":20},{\\\"date\\\":\\\"2019-07-10\\\",\\\"number_of_transactions\\\":30}]\"}"
+      # turn conn.resp_body into a map using JSON
+      response_data = Jason.decode!(conn.resp_body, keys: :atoms)
+      history_data = Jason.decode!(response_data.history_data, keys: :atoms)
 
-      assert conn.resp_body =~ expected
+      history_data_with_elixir_dates =
+        Enum.map(history_data, fn stat ->
+          Map.put(stat, :date, Date.from_iso8601!(stat.date))
+        end)
+
+      assert history_data_with_elixir_dates == some_transaction_stats
     end
   end
 end
