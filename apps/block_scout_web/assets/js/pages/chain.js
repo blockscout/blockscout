@@ -199,7 +199,7 @@ const elements = {
   '[data-selector="tx_per_day"]': {
     render ($el, state, oldState) {
       if (!(JSON.stringify(oldState.transactionStats) === JSON.stringify(state.transactionStats))) {
-        $el.empty().append(state.transactionStats[0].number_of_transactions)
+        $el.empty().append(numeral(state.transactionStats[0].number_of_transactions).format('0,0'))
       }
     }
   },

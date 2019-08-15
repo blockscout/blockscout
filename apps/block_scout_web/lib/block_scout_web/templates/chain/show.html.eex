@@ -72,7 +72,7 @@
                     <%= gettext "Tx/day" %>
                 </span>
                 <span class="dashboard-banner-chart-legend-value" data-selector="tx_per_day">
-                    <%= Enum.at(@transaction_stats, 0).number_of_transactions %>
+                    <%= Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).number_of_transactions, format: "#,###") %>
                 </span>
             </div>
             <% end %>
