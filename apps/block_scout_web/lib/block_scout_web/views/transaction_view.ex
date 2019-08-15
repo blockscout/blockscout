@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.TransactionView do
     transaction_with_transfers = Repo.preload(transaction, token_transfers: :token)
 
     type = Chain.transaction_token_transfer_type(transaction)
-    if type, do: {type, transaction_with_transfers}
+    if type, do: {type, transaction_with_transfers}, else: {nil, transaction_with_transfers}
   end
 
   def aggregate_token_transfers(token_transfers) do
@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.TransactionView do
     case type do
       :erc20 -> gettext("ERC-20 ")
       :erc721 -> gettext("ERC-721 ")
-      :token_transfer -> ""
+      _ -> ""
     end
   end
 

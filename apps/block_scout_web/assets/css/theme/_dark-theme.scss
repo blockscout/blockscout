@@ -234,7 +234,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		}
 	}
 
-	.btn-copy-icon, .btn-qr-icon {
+	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon {
 		border-color: $dark-primary;
 		path {
 			fill: $dark-primary;
@@ -578,9 +578,41 @@ $labels-dark: #8a8dba; // header nav, labels
 			}
 		}
 	}
-	.verify-other-explorers-cell {
-		.exp-logo {
-			color: #333 !important;
+
+	#explorersModal {
+		.modal-title {
+			color: #fff;
+		}
+
+		.text-muted {
+			color: $labels-dark;
+		}
+
+		.modal-footer {
+			border-top-color: darken($labels-dark, 30);
+		}
+
+		.modal-content {
+			background-color: $dark-light-bg;
+
+			.btn-primary {
+				background-color: $dark-primary;
+				border-color: $dark-primary;
+				&:hover {
+					background-color: $dark-primary;
+					border-color: $dark-primary;
+				}
+			}
+		}
+
+		.verify-other-explorers-cell {
+			.exp-logo {
+				color: #fff;
+			}
+		}
+
+		.close {
+			color: #fff;
 		}
 	}
 
@@ -681,8 +713,69 @@ $labels-dark: #8a8dba; // header nav, labels
 		border-right-color: #3f436b !important;
 	}
 
-	// alert link
+	// 'text dark' label
+	.text-dark {
+		color: #fff;
+	}
+
+	// validator info
+	#validatorModal {
+		.modal-title {
+			color: #fff;
+		}
+
+		.text-muted {
+			color: $labels-dark;
+		}
+
+		.modal-footer {
+			border-top-color: darken($labels-dark, 30);
+		}
+
+		.modal-content {
+			background-color: $dark-light-bg;
+
+			.btn-primary {
+				background-color: $dark-primary;
+				border-color: $dark-primary;
+				&:hover {
+					background-color: $dark-primary;
+					border-color: $dark-primary;
+				}
+			}
+		}
+
+		.close {
+			color: #fff;
+		}
+	}
+    
+	// alerts
 	.alert-link {
-		color: $dark-secondary;
+		color: $labels-dark;
+	}
+
+	.alert-danger {
+		background-color: $dark-light;
+		border-color: $dark-light;
+		.alert-link {
+			color: $alert-danger-color;
+		}
+	}
+
+	.tile .alert {
+		background: rgba(#000, .1);
+	}
+
+	// primary buttons
+	.btn-full-primary, .button-primary {
+		background: $dark-primary;
+		border-color: $dark-primary;
+		color: #fff;
+		&:hover {
+			background: darken($dark-primary, 6);
+			border-color: darken($dark-primary, 6);
+			color: #fff;
+		}
 	}
 }

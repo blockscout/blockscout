@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.Router.Helpers, only: [transaction_internal_transaction_path: 3]
+  import BlockScoutWeb.WebRouter.Helpers, only: [transaction_internal_transaction_path: 3]
 
   alias Explorer.Chain.InternalTransaction
   alias Explorer.ExchangeRates.Token

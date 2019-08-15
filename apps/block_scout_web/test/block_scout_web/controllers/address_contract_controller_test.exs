@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressContractControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  import BlockScoutWeb.Router.Helpers, only: [address_contract_path: 3]
+  import BlockScoutWeb.WebRouter.Helpers, only: [address_contract_path: 3]
 
   alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
