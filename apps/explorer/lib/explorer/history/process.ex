@@ -10,7 +10,13 @@ defmodule Explorer.History.Process do
 
   @impl GenServer
   def init([:ok, historian]) do
-    send(self(), {:compile_historical_records, 365})
+    init_lag =
+      case Application.get_env(:explorer, historian, [])[:init_lag] do
+        t when is_integer(t) and t >= 0 -> t
+        _ -> 0
+      end
+    IO.inspect init_lag
+    Process.send_after(self(), {:compile_historical_records, 365}, init_lag)
     {:ok, %{historian: historian}}
   end
 

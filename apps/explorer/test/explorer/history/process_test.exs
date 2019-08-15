@@ -6,9 +6,22 @@ defmodule Explorer.History.ProcessTest do
   alias Explorer.History.Process, as: HistoryProcess
   alias Explorer.History.TestHistorian
 
-  test "init" do
-    assert {:ok, %{:historian => TestHistorian}} = HistoryProcess.init([:ok, TestHistorian])
-    assert_received {:compile_historical_records, 365}
+  setup do
+    Application.put_env(:explorer, TestHistorian, init_lag: 0)
+  end
+
+  describe "init/1" do
+    test "sends compile_historical_records with no init_lag" do
+      assert {:ok, %{:historian => TestHistorian}} = HistoryProcess.init([:ok, TestHistorian])
+      assert_receive {:compile_historical_records, 365}, 50
+    end
+
+    test "sends compile_historical_records after some init_lag" do
+      Application.put_env(:explorer, TestHistorian, init_lag: 200)
+      assert {:ok, %{:historian => TestHistorian}} = HistoryProcess.init([:ok, TestHistorian])
+      refute_receive {:compile_historical_records, 365}, 150
+      assert_receive {:compile_historical_records, 365}
+    end
   end
 
   test "handle_info with `{:compile_historical_records, days}`" do
