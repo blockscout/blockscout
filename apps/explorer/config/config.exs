@@ -53,13 +53,13 @@ config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :ti
 
 txs_stats_init_lag =
   System.get_env("TXS_HISTORIAN_INIT_LAG", "0")
-  |> Integer.parse
+  |> Integer.parse()
   |> elem(0)
-  |> :timer.minutes
+  |> :timer.minutes()
 
 txs_stats_days_to_compile_at_init =
   System.get_env("TXS_STATS_DAYS_TO_COMPILE_AT_INIT", "40")
-  |> Integer.parse
+  |> Integer.parse()
   |> elem(0)
 
 config :explorer, Explorer.Chain.Transaction.History.Historian,
@@ -67,8 +67,7 @@ config :explorer, Explorer.Chain.Transaction.History.Historian,
   init_lag: txs_stats_init_lag,
   days_to_compile_at_init: txs_stats_days_to_compile_at_init
 
-config :explorer, Explorer.Market.History.Historian,
-  enabled: true
+config :explorer, Explorer.Market.History.Historian, enabled: true
 
 history_fetch_interval =
   case Integer.parse(System.get_env("HISTORY_FETCH_INTERVAL", "")) do
