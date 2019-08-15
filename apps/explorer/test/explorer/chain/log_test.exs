@@ -2,7 +2,7 @@ defmodule Explorer.Chain.LogTest do
   use Explorer.DataCase
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{ContractMethod, Log, SmartContract}
+  alias Explorer.Chain.{Log, SmartContract}
   alias Explorer.Repo
 
   doctest Log
@@ -103,7 +103,9 @@ defmodule Explorer.Chain.LogTest do
     end
 
     test "finds decoding candidates" do
-      params = params_for(:smart_contract, %{abi: [
+      params =
+        params_for(:smart_contract, %{
+          abi: [
             %{
               "anonymous" => false,
               "inputs" => [
@@ -114,7 +116,8 @@ defmodule Explorer.Chain.LogTest do
               "name" => "WantsPets",
               "type" => "event"
             }
-          ]})
+          ]
+        })
 
       # changeset has a callback to insert contract methods
       %SmartContract{}
@@ -131,14 +134,35 @@ defmodule Explorer.Chain.LogTest do
       log =
         insert(:log,
           transaction: transaction,
-          first_topic: topic1 <> "00",
+          first_topic: topic1,
           second_topic: topic2,
           third_topic: topic3,
           fourth_topic: nil,
           data: data
         )
 
-      assert Log.decode(log, transaction)
+      assert Log.decode(log, transaction) ==
+               {:error, :contract_not_verified,
+                [
+                  {:ok,
+                   %ABI.FunctionSelector{
+                     function: "WantsPets",
+                     input_names: ["_from_human", "_number", "_belly"],
+                     inputs_indexed: [true, false, true],
+                     method_id: <<235, 155, 60, 76>>,
+                     returns: [],
+                     type: :event,
+                     types: [:string, {:uint, 256}, :bool]
+                   },
+                   [
+                     {"_from_human", "string", true,
+                      {:dynamic,
+                       <<56, 228, 122, 123, 113, 157, 206, 99, 102, 42, 234, 244, 52, 64, 50, 111, 85, 27, 138, 126,
+                         225, 152, 206, 227, 92, 181, 213, 23, 242, 210, 150, 162>>}},
+                     {"_number", "uint256", false, 0},
+                     {"_belly", "bool", true, true}
+                   ]}
+                ]}
     end
   end
 end

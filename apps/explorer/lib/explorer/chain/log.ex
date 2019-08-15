@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Log do
 
   require Logger
 
-  alias ABI.{Event, FunctionSelector, Util}
+  alias ABI.{Event, FunctionSelector}
   alias Explorer.Chain.{Address, ContractMethod, Data, Hash, Transaction}
   alias Explorer.Repo
 
@@ -116,10 +116,10 @@ defmodule Explorer.Chain.Log do
   end
 
   def decode(log, transaction) do
-    IO.inspect("    case Util.split_method_id(log.first_topic) do")
-    case Util.split_method_id(log.first_topic) |> IO.inspect do
-      {:ok, method_id, _rest} ->
-        find_candidates(method_id, log, transaction) |> IO.inspect
+    case log.first_topic do
+      "0x" <> <<method_id::binary-size(4), _rest::binary>> ->
+        find_candidates(method_id, log, transaction)
+
       _ ->
         {:error, :could_not_decode}
     end
@@ -136,9 +136,8 @@ defmodule Explorer.Chain.Log do
     candidates =
       candidates_query
       |> Repo.all()
-      |> IO.inspect
       |> Enum.flat_map(fn contract_method ->
-        case find_and_decode(contract_method.abi, log, transaction) do
+        case find_and_decode([contract_method.abi], log, transaction) do
           {:ok, _, _} = result -> [result]
           _ -> []
         end
