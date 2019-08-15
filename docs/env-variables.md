@@ -6,7 +6,7 @@ Below is a table outlining the environment variables utilized by BlockScout.
 - This table is horizontally scrollable, version information is located in the last column.
 - Settings related to the `ETHEREUM_JSONRPC_VARIANT` variable and client related settings for running a full archive node with geth or parity are located in [this forum post](https://forum.poa.network/t/faq-what-settings-are-required-on-a-parity-or-geth-client/1805).
 - Additional information related to certain variables is available on the [ansible deployment](ansible-deployment.md) page.
-- To set variables using the CLI, use the export command. For example: 
+- To set variables using the CLI, use the export command. For example:
 ```bash
 $ export ETHEREUM_JSONRPC_VARIANT=parity
 $ export COIN=POA
@@ -53,6 +53,7 @@ $ export NETWORK=POA
 | `ADDRESS_WITH_BALANCES` <br /> `_UPDATE_INTERVAL`|  | Interval in seconds to restart the task, which calculates addresses with balances. | 30 * 60 |  v1.3.9+ |
 | `LINK_TO_OTHER_EXPLORERS` | | true/false. If true, links to other explorers are added in the footer  | (empty)  |  v1.3.0+ |
 | `COINMARKETCAP_PAGES` | | the number of pages on coinmarketcap to list in order to find token's price  | 10 |  v1.3.10+ |
+| `CHAIN_SPEC_PATH` | | Chain specification path (absolute file system path or url) to import block emission reward ranges and genesis account balances from | (empty) | master |
 | `SUPPORTED_CHAINS` | | Array of supported chains that displays in the footer and in the chains dropdown. This var was introduced in this PR [#1900](https://github.com/poanetwork/blockscout/pull/1900) and looks like an array of JSON objects.  | (empty) |  v2.0.0+ |
 | `BLOCK_COUNT_CACHE_PERIOD ` | | time to live of cache in seconds. This var was introduced in [#1876](https://github.com/poanetwork/blockscout/pull/1876)  | 600 |  v2.0.0+ |
 | `ALLOWED_EVM_VERSIONS ` | | the comma-separated list of allowed EVM versions for contracts verification. This var was introduced in [#1964](https://github.com/poanetwork/blockscout/pull/1964)  | "homestead, tangerineWhistle, spuriousDragon, byzantium, constantinople, petersburg" |  v2.0.0+ |
