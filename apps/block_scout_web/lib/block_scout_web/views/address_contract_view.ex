@@ -63,11 +63,11 @@ defmodule BlockScoutWeb.AddressContractView do
     end)
   end
 
-  def contract_lines_with_index(contract_contract) do
+  def contract_lines_with_index(source_code, inserted_at \\ nil) do
     contract_lines =
-      contract_contract.contract_source_code
+      source_code
       |> String.split("\n")
-      |> SmartContract.add_submitted_comment(contract_contract.inserted_at)
+      |> SmartContract.add_submitted_comment(inserted_at)
 
     max_digits =
       contract_lines

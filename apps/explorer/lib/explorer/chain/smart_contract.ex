@@ -285,7 +285,7 @@ defmodule Explorer.Chain.SmartContract do
       end)
 
     if index do
-      List.replace_at(contract_lines, index, "* Submitted for verification at blockscout.com")
+      List.replace_at(contract_lines, index, "* Submitted for verification at blockscout.com on #{inserted_at}")
     else
       header = ["/**", "* Submitted for verification at blockscout.com on #{inserted_at}", "*/"]
 
