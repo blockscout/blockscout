@@ -1,4 +1,20 @@
 <div data-test="transaction_log" class="tile tile-muted">
+  <% decoded_result = decode(@log, @transaction) %>
+  <%= case decoded_result do %>
+    <%= {:error, :contract_not_verified, _cadidates} -> %>
+      <div class="alert alert-info">
+      <%= gettext "To see accurate decoded input data, the contract must be verified." %>
+      <%= case @transaction do %>
+        <% %{to_address: %{hash: hash}} -> %>
+          <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
+        <% _ -> %>
+          <%= nil %>
+          <% end %>
+      </div>
+    <% _ -> %>
+      <%= nil %>
+  <% end %>
+
   <dl class="row">
     <dt class="col-lg-2"> <%= gettext "Address" %> </dt>
     <dd class="col-lg-10">
@@ -84,7 +100,7 @@
             <% end %>
             </table>
             </div>
-          <% {:error, :contract_not_verified, results} when is_list(results) and not results == []  -> %>
+          <% {:error, :contract_not_verified, results} -> %>
              <%= for {:ok, method_id, text, mapping} <- results do %>
                <dt class="col-md-2"><%= gettext "Decoded" %></dt>
                <dd class="col-md-10">

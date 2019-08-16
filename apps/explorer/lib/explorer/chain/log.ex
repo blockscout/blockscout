@@ -140,8 +140,14 @@ defmodule Explorer.Chain.Log do
       |> Repo.all()
       |> Enum.flat_map(fn contract_method ->
         case find_and_decode([contract_method.abi], log, transaction) do
-          {:ok, _, _} = result -> [result]
-          _ -> []
+          {:ok, selector, mapping} ->
+            identifier = Base.encode16(selector.method_id, case: :lower)
+            text = function_call(selector.function, mapping)
+
+            [{:ok, identifier, text, mapping}]
+
+          _ ->
+            []
         end
       end)
 
