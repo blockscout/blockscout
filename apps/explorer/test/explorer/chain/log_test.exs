@@ -48,7 +48,7 @@ defmodule Explorer.Chain.LogTest do
 
       log = insert(:log, transaction: transaction)
 
-      assert Log.decode(log, transaction) == {:error, :contract_not_verified}
+      assert Log.decode(log, transaction) == {:error, :could_not_decode}
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
@@ -144,16 +144,7 @@ defmodule Explorer.Chain.LogTest do
       assert Log.decode(log, transaction) ==
                {:error, :contract_not_verified,
                 [
-                  {:ok,
-                   %ABI.FunctionSelector{
-                     function: "WantsPets",
-                     input_names: ["_from_human", "_number", "_belly"],
-                     inputs_indexed: [true, false, true],
-                     method_id: <<235, 155, 60, 76>>,
-                     returns: [],
-                     type: :event,
-                     types: [:string, {:uint, 256}, :bool]
-                   },
+                  {:ok, "eb9b3c4c", "WantsPets(string indexed _from_human, uint256 _number, bool indexed _belly)",
                    [
                      {"_from_human", "string", true,
                       {:dynamic,
