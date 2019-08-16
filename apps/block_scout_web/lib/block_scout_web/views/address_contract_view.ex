@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
 
   alias ABI.{FunctionSelector, TypeDecoder}
-  alias Explorer.Chain.{Address, Data, InternalTransaction}
+  alias Explorer.Chain.{Address, Data, InternalTransaction, SmartContract}
 
   def render("scripts.html", %{conn: conn}) do
     render_scripts(conn, "address_contract/code_highlighting.js")
@@ -63,8 +63,11 @@ defmodule BlockScoutWeb.AddressContractView do
     end)
   end
 
-  def contract_lines_with_index(contract_source_code) do
-    contract_lines = String.split(contract_source_code, "\n")
+  def contract_lines_with_index(contract_contract) do
+    contract_lines =
+      contract_contract.contract_source_code
+      |> String.split("\n")
+      |> SmartContract.add_submitted_comment(contract_contract.inserted_at)
 
     max_digits =
       contract_lines
