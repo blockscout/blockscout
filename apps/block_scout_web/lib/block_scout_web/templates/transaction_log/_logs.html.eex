@@ -27,19 +27,7 @@
           ) %>
       </h3>
     </dd>
-      <%= case decode(@log, @transaction) do %>
-        <% {:error, :contract_not_verified} -> %>
-          <dt class="col-lg-2"><%= gettext "Decoded" %></dt>
-          <dd class="col-lg-10">
-          <div class="alert alert-info">
-            <%= gettext "To see decoded input data, the contract must be verified." %>
-            <%= case @transaction do %>
-              <% %{to_address: %{hash: hash}} -> %>
-                <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
-              <% _ -> %>
-                <%= nil %>
-            <% end %>
-          </div>
+      <%= case decoded_result do %>
         <% {:error, :could_not_decode} -> %>
           <dt class="col-lg-2"><%= gettext "Decoded" %></dt>
           <dd class="col-lg-10">
