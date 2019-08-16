@@ -274,7 +274,7 @@ defmodule Explorer.Chain.SmartContract do
   def add_submitted_comment(code, inserted_at) when is_binary(code) do
     code
     |> String.split("\n")
-    |> add_submitted_commet(inserted_at)
+    |> add_submitted_comment(inserted_at)
     |> Enum.join("\n")
   end
 
