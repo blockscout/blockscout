@@ -563,6 +563,7 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:19
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:52
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:105
 msgid "Name"
 msgstr ""
 
@@ -1134,6 +1135,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:16
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:28
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:36
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:89
 msgid "Decoded"
 msgstr ""
 
@@ -1780,6 +1782,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:63
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:31
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:65
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:118
 msgid "Copy Value"
 msgstr ""
 
@@ -1793,7 +1796,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:118
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:55
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:121
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:108
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:175
 msgid "Data"
 msgstr ""
 
@@ -1806,12 +1810,14 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:52
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:54
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:107
 msgid "Indexed?"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:47
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:49
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:102
 msgid "Log Data"
 msgstr ""
 
@@ -1824,7 +1830,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:88
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:91
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:145
 msgid "Topics"
 msgstr ""
 
@@ -1832,5 +1838,6 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:51
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:20
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:53
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:106
 msgid "Type"
 msgstr ""
