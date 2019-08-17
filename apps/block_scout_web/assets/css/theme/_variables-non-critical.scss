@@ -1,5 +1,5 @@
 @import "theme/base_variables";
-@import "neutral_variables-non-critical";
+// @import "neutral_variables-non-critical";
 // @import "dai_variables-non-critical";
 // @import "ethereum_classic_variables-non-critical";
 // @import "ethereum_variables-non-critical";
@@ -11,7 +11,7 @@
 // @import "lukso_variables-non-critical";
 // @import "musicoin_variables-non-critical";
 // @import "pirl_variables-non-critical";
-// @import "poa_variables-non-critical";
+@import "poa_variables-non-critical";
 // @import "posdao_variables-non-critical";
 // @import "rinkeby_variables-non-critical";
 // @import "ropsten_variables-non-critical";
