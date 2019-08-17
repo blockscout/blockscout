@@ -30,6 +30,14 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
   end
 
   describe "api_url/1" do
+    setup do
+      original = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)
+
+      on_exit(fn -> Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint, original) end)
+
+      :ok
+    end
+
     test "adds slash before path" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
         url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/chain/dog"]
@@ -48,6 +56,14 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
   end
 
   describe "eth_rpc_api_url/1" do
+    setup do
+      original = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)
+
+      on_exit(fn -> Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint, original) end)
+
+      :ok
+    end
+
     test "adds slash before path" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
         url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/chain/dog"]

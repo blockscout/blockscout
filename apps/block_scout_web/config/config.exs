@@ -42,7 +42,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     path: System.get_env("NETWORK_PATH") || "/"
   ],
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: BlockScoutWeb.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub: [name: BlockScoutWeb.PubSub]
 
 config :block_scout_web, BlockScoutWeb.Tracer,
   service: :block_scout_web,
