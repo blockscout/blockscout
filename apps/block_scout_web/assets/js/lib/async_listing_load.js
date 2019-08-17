@@ -205,7 +205,16 @@ export const elements = {
       }
       $el.show()
       $el.attr('disabled', false)
-      $el.attr('href', window.location.href.split('?')[0])
+
+      const urlParams = new URLSearchParams(window.location.search)
+      const blockParam = urlParams.get('block_type')
+      const firstPageHref = window.location.href.split('?')[0]
+
+      if (blockParam !== null) {
+        $el.attr('href', firstPageHref + '?block_type=' + blockParam)
+      } else {
+        $el.attr('href', firstPageHref)
+      }
     }
   },
   '[data-async-listing] [data-page-number]': {
