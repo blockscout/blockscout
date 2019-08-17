@@ -2079,7 +2079,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "contractAddress" => to_string(token_balance.token_contract_address_hash),
           "name" => token_balance.token.name,
           "decimals" => to_string(token_balance.token.decimals),
-          "symbol" => token_balance.token.symbol
+          "symbol" => token_balance.token.symbol,
+          "type" => token_balance.token.type
         }
       ]
 
