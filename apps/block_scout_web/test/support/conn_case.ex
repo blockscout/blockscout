@@ -40,8 +40,8 @@ defmodule BlockScoutWeb.ConnCase do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
     end
 
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Transactions.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.Cache.Transactions.cache_name()})
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end

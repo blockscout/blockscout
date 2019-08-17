@@ -168,7 +168,8 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "contractAddress" => to_string(token.contract_address_hash),
       "name" => token.name,
       "decimals" => to_string(token.decimals),
-      "symbol" => token.symbol
+      "symbol" => token.symbol,
+      "type" => token.type
     }
   end
 

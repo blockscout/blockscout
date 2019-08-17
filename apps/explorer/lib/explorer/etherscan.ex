@@ -249,7 +249,8 @@ defmodule Explorer.Etherscan do
           contract_address_hash: tb.token_contract_address_hash,
           name: t.name,
           decimals: t.decimals,
-          symbol: t.symbol
+          symbol: t.symbol,
+          type: t.type
         }
       )
 
