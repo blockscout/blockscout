@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                "invalid is not a valid value for `filter`. Please use one of: verified, decompiled, unverified, not_decompiled, 1, 2, 3, 4."
 
       assert response["status"] == "0"
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
     test "with no contracts", %{conn: conn, params: params} do
@@ -28,6 +29,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["message"] == "OK"
       assert response["status"] == "1"
       assert response["result"] == []
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
     test "with a verified smart contract, all contract information is shown", %{conn: conn, params: params} do
@@ -50,6 +52,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
                }
              ]
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
     test "with an unverified contract address, only basic information is shown", %{conn: conn, params: params} do
@@ -72,6 +75,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
     test "filtering for only unverified contracts shows only unverified contracts", %{params: params, conn: conn} do
@@ -95,6 +99,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
     test "filtering for only unverified contracts does not show self destructed contracts", %{
@@ -122,6 +127,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
     test "filtering for only verified contracts shows only verified contracts", %{params: params, conn: conn} do
@@ -145,6 +151,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
                }
              ]
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
     test "filtering for only decompiled contracts shows only decompiled contracts", %{params: params, conn: conn} do
@@ -168,6 +175,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
     test "filtering for only decompiled contracts, with a decompiled with version filter", %{params: params, conn: conn} do
@@ -191,6 +199,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
     test "filtering for only decompiled contracts, with a decompiled with version filter, where another decompiled version exists",
@@ -216,6 +225,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
              } in response["result"]
 
       refute to_string(non_match.address_hash) in Enum.map(response["result"], &Map.get(&1, "Address"))
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
     test "filtering for only not_decompiled (and by extension not verified contracts)", %{params: params, conn: conn} do
@@ -240,6 +250,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
     test "filtering for only not_decompiled (and by extension not verified contracts) does not show empty contracts", %{
@@ -268,6 +279,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+      assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
   end
 
@@ -287,6 +299,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getabi_schema(), response)
     end
 
     test "with an invalid address hash", %{conn: conn} do
@@ -305,6 +318,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getabi_schema(), response)
     end
 
     test "with an address that doesn't exist", %{conn: conn} do
@@ -322,6 +336,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["result"] == nil
       assert response["status"] == "0"
       assert response["message"] == "Contract source code not verified"
+      assert :ok = ExJsonSchema.Validator.validate(getabi_schema(), response)
     end
 
     test "with a verified contract address", %{conn: conn} do
@@ -341,6 +356,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["result"] == Jason.encode!(contract.abi)
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getabi_schema(), response)
     end
   end
 
@@ -360,6 +376,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
     end
 
     test "with an invalid address hash", %{conn: conn} do
@@ -378,6 +395,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
     end
 
     test "with an address that doesn't exist", %{conn: conn} do
@@ -408,6 +426,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
     end
 
     test "with a verified contract address", %{conn: conn} do
@@ -443,6 +462,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
     end
   end
 
@@ -481,6 +501,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["status"] == "1"
       assert response["result"] == expected_result
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(verify_schema(), response)
     end
 
     test "with external libraries", %{conn: conn} do
@@ -539,6 +560,76 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert result["DecompiledSourceCode"] == "Contract source code not decompiled."
       assert result["DecompilerVersion"] == ""
       assert result["OptimizationUsed"] == "1"
+      assert :ok = ExJsonSchema.Validator.validate(verify_schema(), response)
     end
+  end
+
+  defp listcontracts_schema do
+    resolve_schema(%{
+      "type" => ["array", "null"],
+      "items" => %{
+        "type" => "object",
+        "properties" => %{
+          "Address" => %{"type" => "string"},
+          "ABI" => %{"type" => "string"},
+          "ContractName" => %{"type" => "string"},
+          "CompilerVersion" => %{"type" => "string"},
+          "OptimizationUsed" => %{"type" => "string"}
+        }
+      }
+    })
+  end
+
+  defp getabi_schema do
+    resolve_schema(%{
+      "type" => ["string", "null"]
+    })
+  end
+
+  defp getsourcecode_schema do
+    resolve_schema(%{
+      "type" => ["array", "null"],
+      "items" => %{
+        "type" => "object",
+        "properties" => %{
+          "Address" => %{"type" => "string"},
+          "SourceCode" => %{"type" => "string"},
+          "ABI" => %{"type" => "string"},
+          "ContractName" => %{"type" => "string"},
+          "CompilerVersion" => %{"type" => "string"},
+          "OptimizationUsed" => %{"type" => "string"},
+          "DecompiledSourceCode" => %{"type" => "string"},
+          "DecompilerVersion" => %{"type" => "string"}
+        }
+      }
+    })
+  end
+
+  defp verify_schema do
+    resolve_schema(%{
+      "type" => "object",
+      "properties" => %{
+        "Address" => %{"type" => "string"},
+        "SourceCode" => %{"type" => "string"},
+        "ABI" => %{"type" => "string"},
+        "ContractName" => %{"type" => "string"},
+        "CompilerVersion" => %{"type" => "string"},
+        "DecompiledSourceCode" => %{"type" => "string"},
+        "DecompilerVersion" => %{"type" => "string"},
+        "OptimizationUsed" => %{"type" => "string"}
+      }
+    })
+  end
+
+  defp resolve_schema(result \\ %{}) do
+    %{
+      "type" => "object",
+      "properties" => %{
+        "message" => %{"type" => "string"},
+        "status" => %{"type" => "string"}
+      }
+    }
+    |> put_in(["properties", "result"], result)
+    |> ExJsonSchema.Schema.resolve()
   end
 end
