@@ -52,6 +52,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
                }
              ]
+
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
@@ -75,6 +76,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
@@ -99,6 +101,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
@@ -127,6 +130,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
@@ -151,6 +155,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")
                }
              ]
+
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
@@ -175,6 +180,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
@@ -199,6 +205,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
@@ -250,6 +257,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
 
@@ -279,6 +287,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  "OptimizationUsed" => ""
                }
              ]
+
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
     end
   end
