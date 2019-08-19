@@ -8,7 +8,6 @@ defmodule Explorer.ChainSpec.POA.Importer do
   alias Explorer.SmartContract.Reader
   alias Explorer.Chain.Block.{EmissionReward, Range}
 
-  @reward_by_block_contract_address "0xeca443e8e1ab29971a45a9c57a6a9875701698a5"
   @block_reward_amount_abi %{
     "type" => "function",
     "stateMutability" => "view",
@@ -51,11 +50,15 @@ defmodule Explorer.ChainSpec.POA.Importer do
   end
 
   def block_reward_amount do
-    call_contract(@reward_by_block_contract_address, @block_reward_amount_abi, @block_reward_amount_params)
+    call_contract(rewards_contract_address(), @block_reward_amount_abi, @block_reward_amount_params)
   end
 
   def emission_funds_amount do
-    call_contract(@reward_by_block_contract_address, @emission_funds_amount_abi, @emission_funds_amount_params)
+    call_contract(rewards_contract_address(), @emission_funds_amount_abi, @emission_funds_amount_params)
+  end
+
+  defp rewards_contract_address do
+    Application.get_env(:explorer, GenesisData)[:rewards_contract_address]
   end
 
   defp call_contract(address, abi, params) do

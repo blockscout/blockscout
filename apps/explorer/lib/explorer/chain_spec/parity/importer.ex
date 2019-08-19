@@ -7,14 +7,17 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   alias Explorer.Chain.Block.{EmissionReward, Range}
   alias Explorer.Chain.Hash.Address, as: AddressHash
   alias Explorer.Chain.Wei
+  alias Explorer.ChainSpec.GenesisData
+  alias Explorer.ChainSpec.POA.Importer, as: PoaEmissionImporter
 
   @max_block_number :infinity
 
   def import_emission_rewards(chain_spec) do
-    rewards = emission_rewards(chain_spec)
-
-    {_, nil} = Repo.delete_all(EmissionReward)
-    {_, nil} = Repo.insert_all(EmissionReward, rewards)
+    if Application.get_env(:explorer, GenesisData)[:emission_format] == "POA" do
+      PoaEmissionImporter.import_emission_rewards()
+    else
+      import_rewards_from_chain_spec(chain_spec)
+    end
   end
 
   def import_genesis_coin_balances(chain_spec) do
@@ -36,6 +39,13 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     params = %{address_coin_balances: %{params: balance_params}, addresses: %{params: address_params}}
 
     Chain.import(params)
+  end
+
+  defp import_rewards_from_chain_spec(chain_spec) do
+    rewards = emission_rewards(chain_spec)
+
+    {_, nil} = Repo.delete_all(EmissionReward)
+    {_, nil} = Repo.insert_all(EmissionReward, rewards)
   end
 
   def genesis_coin_balances(chain_spec) do
