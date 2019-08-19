@@ -20,8 +20,8 @@ defmodule BlockScoutWeb.Controller do
   def unprocessable_entity(conn) do
     conn
     |> put_status(:unprocessable_entity)
-    |> put_view(BlockScoutWeb.ErrorView)
-    |> render("422.html")
+    |> put_view(BlockScoutWeb.ErrorNewView)
+    |> render("error_422.html")
   end
 
   @doc """
