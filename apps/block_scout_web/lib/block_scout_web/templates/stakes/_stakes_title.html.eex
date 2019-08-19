@@ -3,13 +3,13 @@
   <div class="card-title-controls">
     <%= if @show_banned_checkbox do %>
       <div class="check card-title-control">
-        <input type="checkbox" />
+        <input type="checkbox" pool-filter-banned />
         <div class="check-icon"></div>
         <div class="check-text">Show banned only</div>
       </div>
     <% end %>
     <div class="check card-title-control">
-      <input type="checkbox" />
+      <input type="checkbox" pool-filter-my />
       <div class="check-icon"></div>
       <div class="check-text">Show only those I staked into</div>
     </div>
