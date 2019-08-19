@@ -6,7 +6,7 @@
       <span class="api-doc-list-item-query api-text-monospace api-text-monospace-background btn" 
         data-clipboard-text="curl -X POST --data '{&quot;id&quot;:0,&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;method&quot;: &quot;<%= @action %>&quot;, params: []}'"
       >
-        curl -X POST --data '{"id":0,"jsonrpc":"2.0","method": "<%= @action %>", params: []}'
+        curl -X POST --data '{"id":0,"jsonrpc":"2.0","method": "<%= @action %>", "params": []}'
       </span>
       <p class="api-doc-list-item-text">
         <div class="tile tile-muted p-1">
