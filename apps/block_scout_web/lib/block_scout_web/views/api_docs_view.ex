@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.APIDocsView do
       "#{scheme}://#{host}#{path}"
     else
       port = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:http][:port]
-      "#{scheme}://#{host}:#{to_string(port)}#{path}"
+      "#{scheme}://#{host}:#{to_string(port)}"
     end
   end
 
