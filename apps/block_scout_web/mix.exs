@@ -62,9 +62,9 @@ defmodule BlockScoutWeb.Mixfile do
       # GraphQL toolkit
       {:absinthe, "~> 1.4"},
       # Integrates Absinthe subscriptions with Phoenix
-      {:absinthe_phoenix, git: "https://github.com/ayrat555/absinthe_phoenix.git", branch: "master"},
+      {:absinthe_phoenix, git: "https://github.com/ayrat555/absinthe_phoenix.git", branch: "ab-update-plug"},
       # Plug support for Absinthe
-      {:absinthe_plug, git: "https://github.com/ayrat555/absinthe_plug.git", branch: "ab-allow-to-set-default-query"},
+      {:absinthe_plug, git: "https://github.com/ayrat555/absinthe_plug.git", branch: "ab-enable-default-query"},
       # Absinthe support for the Relay framework
       {:absinthe_relay, "~> 1.4"},
       {:bypass, "~> 1.0", only: :test},
@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:phoenix, "~> 1.4"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.10"},
-      {:phoenix_live_reload, "~> 1.0", only: [:dev]},
+      {:phoenix_live_reload, "~> 1.2", only: [:dev]},
       {:phoenix_pubsub, "~> 1.0"},
       # use `:cowboy` for WebServer with `:plug`
       {:plug_cowboy, "~> 2.0"},
@@ -130,7 +130,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:wallaby, "~> 0.22", only: [:test], runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
-      {:phoenix_form_awesomplete, "~> 0.1.4"}
+      {:phoenix_form_awesomplete, "~> 0.1.4"},
+      {:ex_json_schema, "~> 0.6.1"}
     ]
   end
 

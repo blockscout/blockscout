@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  import BlockScoutWeb.Router.Helpers,
+  import BlockScoutWeb.WebRouter.Helpers,
     only: [address_internal_transaction_path: 3, address_internal_transaction_path: 4]
 
   alias Explorer.Chain.{Block, InternalTransaction, Transaction}

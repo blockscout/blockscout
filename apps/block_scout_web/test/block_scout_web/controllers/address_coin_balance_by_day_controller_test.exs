@@ -14,7 +14,10 @@ defmodule BlockScoutWeb.AddressCoinBalanceByDayControllerTest do
 
       response = json_response(conn, 200)
 
-      assert length(response) == 2
+      assert [
+               %{"date" => _, "value" => 2.0e-15},
+               %{"date" => _, "value" => 1.0e-15}
+             ] = response
     end
   end
 end
