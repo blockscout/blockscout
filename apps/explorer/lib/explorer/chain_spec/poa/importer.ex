@@ -35,17 +35,16 @@ defmodule Explorer.ChainSpec.POA.Importer do
     block_reward = block_reward_amount()
     emission_funds = emission_funds_amount()
 
-    rewards =
-      [
-        %{
-          block_range: %Range{from: 0, to: @emission_funds_block_start},
-          reward: %Wei{value: block_reward}
-        },
-        %{
-          block_range: %Range{from: @emission_funds_block_start + 1, to: :infinity},
-          reward: %Wei{value: Decimal.add(block_reward, emission_funds)}
-        }
-      ]
+    rewards = [
+      %{
+        block_range: %Range{from: 0, to: @emission_funds_block_start},
+        reward: %Wei{value: block_reward}
+      },
+      %{
+        block_range: %Range{from: @emission_funds_block_start + 1, to: :infinity},
+        reward: %Wei{value: Decimal.add(block_reward, emission_funds)}
+      }
+    ]
 
     {_, nil} = Repo.delete_all(EmissionReward)
     {_, nil} = Repo.insert_all(EmissionReward, rewards)
