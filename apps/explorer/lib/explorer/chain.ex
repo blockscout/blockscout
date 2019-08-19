@@ -4727,16 +4727,24 @@ defmodule Explorer.Chain do
   @spec staking_pools(
           filter :: :validator | :active | :inactive,
           paging_options :: PagingOptions.t() | :all,
-          delegator_address_hash :: Hash.t() | nil
+          delegator_address_hash :: Hash.t() | nil,
+          filter_banned :: boolean() | nil,
+          filter_my :: boolean() | nil
         ) :: [map()]
-  def staking_pools(filter, paging_options \\ @default_paging_options, delegator_address_hash \\ nil) do
+  def staking_pools(
+        filter,
+        paging_options \\ @default_paging_options,
+        delegator_address_hash \\ nil,
+        filter_banned \\ false,
+        filter_my \\ false
+      ) do
     base_query =
       StakingPool
       |> where(is_deleted: false)
       |> staking_pool_filter(filter)
       |> staking_pools_paging_query(paging_options)
 
-    query =
+    delegator_query =
       if delegator_address_hash do
         base_query
         |> join(:left, [p], pd in StakingPoolsDelegator,
@@ -4748,7 +4756,21 @@ defmodule Explorer.Chain do
         |> select([p], %{pool: p, delegator: nil})
       end
 
-    Repo.all(query)
+    banned_query =
+      if filter_banned do
+        where(delegator_query, is_banned: true)
+      else
+        delegator_query
+      end
+
+    filtered_query =
+      if delegator_address_hash && filter_my do
+        where(banned_query, [..., pd], not is_nil(pd))
+      else
+        banned_query
+      end
+
+    Repo.all(filtered_query)
   end
 
   defp staking_pools_paging_query(base_query, :all), do: base_query
