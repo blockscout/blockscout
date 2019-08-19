@@ -42,7 +42,17 @@ export function reducer (state = initialState, action) {
     case 'ACCOUNT_UPDATED': {
       return Object.assign({}, state, {
         account: action.account,
-        additionalParams: { account: action.account }
+        additionalParams: Object.assign({}, state.additionalParams, {
+          account: action.account
+        })
+      })
+    }
+    case 'FILTERS_UPDATED': {
+      return Object.assign({}, state, {
+        additionalParams: Object.assign({}, state.additionalParams, {
+          filterBanned: action.filterBanned,
+          filterMy: action.filterMy
+        })
       })
     }
     case 'RECEIVED_UPDATE': {
@@ -67,7 +77,13 @@ export function reducer (state = initialState, action) {
 const elements = {
   '[data-page="stakes"]': {
     load ($el) {
-      return { refreshInterval: $el.data('refresh-interval') || null }
+      return {
+        refreshInterval: $el.data('refresh-interval') || null,
+        additionalParams: {
+          filterBanned: $el.find('[pool-filter-banned]').prop('checked'),
+          filterMy: $el.find('[pool-filter-my]').prop('checked')
+        }
+      }
     }
   }
 }
@@ -123,7 +139,20 @@ if ($stakesPage.length) {
     .on('click', '.js-move-stake', event => openMoveStakeModal(event, store))
     .on('click', '.js-withdraw-stake', event => openWithdrawStakeModal(event, store))
 
+  $stakesPage
+    .on('change', '[pool-filter-banned]', () => updateFilters(store))
+    .on('change', '[pool-filter-my]', () => updateFilters(store))
+
   initializeWeb3(store)
+}
+
+function updateFilters (store) {
+  store.dispatch({
+    type: 'FILTERS_UPDATED',
+    filterBanned: $stakesPage.find('[pool-filter-banned]').prop('checked'),
+    filterMy: $stakesPage.find('[pool-filter-my]').prop('checked')
+  })
+  refreshPage(store)
 }
 
 function initializeWeb3 (store) {

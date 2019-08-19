@@ -48,7 +48,16 @@ defmodule BlockScoutWeb.StakesController do
       |> Map.get("position", "0")
       |> String.to_integer()
 
-    pools_plus_one = Chain.staking_pools(filter, options, params["account"])
+    pools_plus_one =
+      Chain.staking_pools(
+        filter,
+        options,
+        unless params["account"] == "" do
+          params["account"]
+        end,
+        params["filterBanned"] == "true",
+        params["filterMy"] == "true"
+      )
 
     {pools, next_page} = split_list_by_page(pools_plus_one)
 
