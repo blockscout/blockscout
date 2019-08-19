@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.APIDocsView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.{Endpoint, LayoutView}
+  alias BlockScoutWeb.LayoutView
 
   def action_tile_id(module, action) do
     "#{module}-#{action}"
@@ -41,9 +41,10 @@ defmodule BlockScoutWeb.APIDocsView do
     scheme = url_params[:scheme]
 
     if host != "localhost" do
-      scheme <> "://" <> host <> path
+      "#{scheme}://#{host}#{path}"
     else
-      Endpoint.url()
+      port = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:http][:port]
+      "#{scheme}://#{host}:#{to_string(port)}#{path}"
     end
   end
 

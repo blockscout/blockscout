@@ -50,7 +50,6 @@ $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
   const inputs = $(`input[data-selector="${module}-${action}-try-api-ui"]`)
   const params = $.map(inputs, parseInput)
   const formData = wrapJsonRpc(action, params)
-  console.log(formData)
   const loadingText = '<span class="loading-spinner-small mr-2"><span class="loading-spinner-block-1"></span><span class="loading-spinner-block-2"></span></span> Loading...'
 
   clickedButton.prop('disabled', true)
@@ -60,8 +59,10 @@ $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
     clickedButton.html(loadingText)
   }
 
+  const url = $('[data-endpoint-url]').attr('data-endpoint-url')
+
   $.ajax({
-    url: '/api/eth_rpc',
+    url: url,
     type: 'POST',
     data: JSON.stringify(formData),
     dataType: 'json',
