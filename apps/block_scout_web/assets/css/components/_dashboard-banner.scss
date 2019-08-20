@@ -3,8 +3,14 @@ $dashboard-banner-gradient-end: lighten(
   $dashboard-banner-gradient-start,
   5%
 ) !default;
-$dashboard-banner-network-plain-container-background-color: lighten($dashboard-banner-gradient-end, 5%)!default;
-$dashboard-line-color-price: lighten($dashboard-banner-gradient-end, 5%) !default;
+$dashboard-banner-network-plain-container-background-color: lighten(
+  $dashboard-banner-gradient-end,
+  5%
+) !default;
+$dashboard-line-color-price: lighten(
+  $dashboard-banner-gradient-end,
+  5%
+) !default;
 $dashboard-line-color-market: $secondary !default;
 $dashboard-stats-item-label-color: #fff !default;
 $dashboard-stats-item-value-color: rgba(#fff, 0.8) !default;
@@ -20,6 +26,10 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   overflow: hidden;
   padding: 0;
   position: relative;
+  height: 249px;
+  @include media-breakpoint-down(sm) {
+    height: auto;
+  }
 }
 
 .dashboard-banner {
@@ -65,8 +75,8 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
 }
 
 .dashboard-banner-chart-legend {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  /* grid-template-columns: 1fr 1fr; */
   padding-bottom: 12px;
 
   .dashboard-banner-chart-legend-item {
@@ -74,6 +84,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     padding-left: 12px;
     padding-top: 3px;
     position: relative;
+    padding-right: 60px;
 
     @include media-breakpoint-down(md) {
       display: flex;
@@ -140,7 +151,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   display: flex;
   height: $dashboard-banner-network-plain-container-height;
   justify-content: center;
-  margin: 0 0 0 30px;
+  margin: 45px 0 0 30px;
   max-width: 100%;
   padding: 30px 0 30px 60px;
   width: 750px;
@@ -205,7 +216,11 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     grid-template-columns: 1fr 1fr;
   }
 
-  @include stats-item($dashboard-stats-item-border-color, $dashboard-stats-item-label-color, $dashboard-stats-item-value-color);
+  @include stats-item(
+    $dashboard-stats-item-border-color,
+    $dashboard-stats-item-label-color,
+    $dashboard-stats-item-value-color
+  );
 
   .dashboard-banner-network-stats-item {
     @media (max-width: 374px) {
