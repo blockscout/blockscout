@@ -3,6 +3,8 @@ defmodule Explorer.ChainSpec.POA.Importer do
   Imports emission reward range for POA chain.
   """
 
+  require Logger
+
   alias Explorer.Chain.Wei
   alias Explorer.Repo
   alias Explorer.SmartContract.Reader
