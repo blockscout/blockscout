@@ -51,15 +51,23 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   def genesis_coin_balances(chain_spec) do
     accounts = chain_spec["accounts"]
 
-    parse_accounts(accounts)
+    if accounts do
+      parse_accounts(accounts)
+    else
+      Logger.warn(fn -> "No accounts are defined in chain spec" end)
+    end
   end
 
   def emission_rewards(chain_spec) do
     rewards = chain_spec["engine"]["Ethash"]["params"]["blockReward"]
 
-    rewards
-    |> parse_hex_numbers()
-    |> format_ranges()
+    if rewards do
+      rewards
+      |> parse_hex_numbers()
+      |> format_ranges()
+    else
+      Logger.warn(fn -> "No rewards are defined in chain spec" end)
+    end
   end
 
   defp parse_accounts(accounts) do
