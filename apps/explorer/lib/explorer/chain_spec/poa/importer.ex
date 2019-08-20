@@ -34,22 +34,26 @@ defmodule Explorer.ChainSpec.POA.Importer do
   @emission_funds_block_start 5_098_087
 
   def import_emission_rewards do
-    block_reward = block_reward_amount()
-    emission_funds = emission_funds_amount()
+    if is_nil(rewards_contract_address()) do
+      Logger.warn(fn -> "No rewards contract address is defined" end)
+    else
+      block_reward = block_reward_amount()
+      emission_funds = emission_funds_amount()
 
-    rewards = [
-      %{
-        block_range: %Range{from: 0, to: @emission_funds_block_start},
-        reward: %Wei{value: block_reward}
-      },
-      %{
-        block_range: %Range{from: @emission_funds_block_start + 1, to: :infinity},
-        reward: %Wei{value: Decimal.add(block_reward, emission_funds)}
-      }
-    ]
+      rewards = [
+        %{
+          block_range: %Range{from: 0, to: @emission_funds_block_start},
+          reward: %Wei{value: block_reward}
+        },
+        %{
+          block_range: %Range{from: @emission_funds_block_start + 1, to: :infinity},
+          reward: %Wei{value: Decimal.add(block_reward, emission_funds)}
+        }
+      ]
 
-    {_, nil} = Repo.delete_all(EmissionReward)
-    {_, nil} = Repo.insert_all(EmissionReward, rewards)
+      {_, nil} = Repo.delete_all(EmissionReward)
+      {_, nil} = Repo.insert_all(EmissionReward, rewards)
+    end
   end
 
   def block_reward_amount do

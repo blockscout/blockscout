@@ -3,6 +3,8 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   Imports data from parity chain spec.
   """
 
+  require Logger
+
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.{EmissionReward, Range}
   alias Explorer.Chain.Hash.Address, as: AddressHash
