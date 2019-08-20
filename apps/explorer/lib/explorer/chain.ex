@@ -193,6 +193,16 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec set_refetch_needed_flag(non_neg_integer(), non_neg_integer(), Keyword.t90()) :: {integer(), nil | [term()]}
+  def set_refetch_needed_flag(start_block, end_block, query_opts \\ [timeout: :timer.minutes(2)]) do
+    query =
+      from(block in Block,
+        where: block.number >= ^start_block and block.number <= ^end_block and block.consensus == true
+      )
+
+    Repo.update_all(query, [set: [refetch_needed: true]], query_opts)
+  end
+
   @doc """
   Fetches the transactions related to the address with the given hash, including
   transactions that only have the address in the `token_transfers` related table

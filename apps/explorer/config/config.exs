@@ -47,6 +47,11 @@ config :explorer, Explorer.Counters.AddressesWithBalanceCounter,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
 
+config :explorer, Indexer.Block.Reindex.Fetcher,
+  enabled: true,
+  start_block: System.get_env("REINDEX_BLOCK_START", "0"),
+  end_block: System.get_env("REINDEX_BLOCK_END", "0")
+
 config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
 config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
