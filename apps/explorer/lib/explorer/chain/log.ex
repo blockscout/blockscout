@@ -118,9 +118,14 @@ defmodule Explorer.Chain.Log do
   def decode(log, transaction) do
     case log.first_topic do
       "0x" <> hex_part ->
-        {number, ""} = Integer.parse(hex_part, 16)
-        <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
-        find_candidates(method_id, log, transaction)
+        case Integer.parse(hex_part, 16) do
+          {number, ""} ->
+            <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
+            find_candidates(method_id, log, transaction)
+
+          _ ->
+            {:error, :could_not_decode}
+        end
 
       _ ->
         {:error, :could_not_decode}

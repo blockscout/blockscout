@@ -10,7 +10,7 @@
             <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
           <% _ -> %>
             <%= nil %>
-            <% end %>
+        <% end %>
         </div>
       <% _ -> %>
         <%= nil %>
