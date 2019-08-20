@@ -90,7 +90,7 @@ defmodule BlockScoutWeb.StakesController do
           average_block_time: average_block_time,
           pools_type: filter,
           buttons: %{
-            stake: true,
+            stake: not pool.is_unremovable,
             move: move_allowed?(delegator),
             withdraw: withdraw_allowed?(delegator, epoch_number)
           }
