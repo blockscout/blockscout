@@ -29,7 +29,10 @@ config :explorer, Explorer.Counters.AverageBlockTime,
 
 config :explorer, Explorer.ChainSpec.GenesisData, enabled: false, chain_spec_path: System.get_env("CHAIN_SPEC_PATH")
 
-config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
+config :explorer, Explorer.Chain.Cache.BlockNumber,
+  enabled: true,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 config :explorer, Explorer.ExchangeRates.Source.CoinGecko, coin_id: System.get_env("COIN_GECKO_ID", "poa-network")
 
@@ -122,6 +125,14 @@ market_history_cache_period =
   end
 
 config :explorer, Explorer.Market.MarketHistoryCache, period: market_history_cache_period
+
+config :explorer, Explorer.Chain.Cache.Blocks,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
+config :explorer, Explorer.Chain.Cache.Transactions,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
