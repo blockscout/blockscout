@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
         url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/"]
       )
 
-      assert APIDocsView.blockscout_url() == "https://blockscout.com/"
+      assert APIDocsView.blockscout_url() == "blockscout.com/"
     end
 
     test "returns url with scheme and host with path" do
@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
         url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/chain/dog"]
       )
 
-      assert APIDocsView.blockscout_url() == "https://blockscout.com/chain/dog"
+      assert APIDocsView.blockscout_url() == "blockscout.com/chain/dog"
     end
   end
 
@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
         url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/chain/dog"]
       )
 
-      assert APIDocsView.api_url() == "https://blockscout.com/chain/dog/api"
+      assert APIDocsView.api_url() == "blockscout.com/chain/dog/api"
     end
 
     test "does not add slash to empty path" do
@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
         url: [scheme: "https", host: "blockscout.com", port: 9999, path: ""]
       )
 
-      assert APIDocsView.api_url() == "https://blockscout.com/api"
+      assert APIDocsView.api_url() == "blockscout.com/api"
     end
   end
 
@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
         url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/chain/dog"]
       )
 
-      assert APIDocsView.eth_rpc_api_url() == "https://blockscout.com/chain/dog/api/eth_rpc"
+      assert APIDocsView.eth_rpc_api_url() == "blockscout.com/chain/dog/api/eth_rpc"
     end
 
     test "does not add slash to empty path" do
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
         url: [scheme: "https", host: "blockscout.com", port: 9999, path: ""]
       )
 
-      assert APIDocsView.eth_rpc_api_url() == "https://blockscout.com/api/eth_rpc"
+      assert APIDocsView.eth_rpc_api_url() == "blockscout.com/api/eth_rpc"
     end
   end
 end
