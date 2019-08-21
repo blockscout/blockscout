@@ -43,6 +43,10 @@ function parseInput (input) {
   }
 }
 
+function dropDomain (url) {
+  return url.split('/').slice(1).join('/')
+}
+
 $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
   const clickedButton = $(event.target)
   const module = clickedButton.attr('data-module')
@@ -62,7 +66,7 @@ $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
   const url = $('[data-endpoint-url]').attr('data-endpoint-url')
 
   $.ajax({
-    url: url,
+    url: '/' + dropDomain(url),
     type: 'POST',
     data: JSON.stringify(formData),
     dataType: 'json',

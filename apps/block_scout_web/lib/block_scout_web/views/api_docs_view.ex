@@ -38,13 +38,12 @@ defmodule BlockScoutWeb.APIDocsView do
     url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
     host = url_params[:host]
     path = url_params[:path]
-    scheme = url_params[:scheme]
 
     if host != "localhost" do
-      "#{scheme}://#{host}#{path}"
+      "#{host}#{path}"
     else
       port = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:http][:port]
-      "#{scheme}://#{host}:#{to_string(port)}"
+      "#{host}:#{to_string(port)}"
     end
   end
 
