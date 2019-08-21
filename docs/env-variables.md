@@ -53,6 +53,7 @@ $ export NETWORK=POA
 | `ADDRESS_WITH_BALANCES` <br /> `_UPDATE_INTERVAL`|  | Interval in seconds to restart the task, which calculates addresses with balances. | 30 * 60 |  v1.3.9+ |
 | `LINK_TO_OTHER_EXPLORERS` | | true/false. If true, links to other explorers are added in the footer  | (empty)  |  v1.3.0+ |
 | `COINMARKETCAP_PAGES` | | the number of pages on coinmarketcap to list in order to find token's price  | 10 |  v1.3.10+ |
+| `COIN_GECKO_ID` | | CoinGecko coin id required for fetching an exchange rate | poa-network | master |
 | `CHAIN_SPEC_PATH` | | Chain specification path (absolute file system path or url) to import block emission reward ranges and genesis account balances from | (empty) | master |
 | `SUPPORTED_CHAINS` | | Array of supported chains that displays in the footer and in the chains dropdown. This var was introduced in this PR [#1900](https://github.com/poanetwork/blockscout/pull/1900) and looks like an array of JSON objects.  | (empty) |  v2.0.0+ |
 | `BLOCK_COUNT_CACHE_PERIOD ` | | time to live of cache in seconds. This var was introduced in [#1876](https://github.com/poanetwork/blockscout/pull/1876)  | 600 |  v2.0.0+ |
