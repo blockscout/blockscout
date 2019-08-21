@@ -4,11 +4,11 @@
       <!-- Block Details -->
       <div class="card card-mr-50-md">
         <div class="card-body">
-          <h1 class="card-title" data-test="detail_type">
+          <h1 class="card-title" data-test="detail_type" >
             <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
           </h1>
           <!-- Block Height -->
-          <h3 data-test="block_detail_number">
+          <h3 data-test="block_detail_number" style="width: 170px;" data-toggle="tooltip" data-placement="right" data-offset="0 0" title="" data-original-title="The block number in which transactions were recorded.">
             <%= if block_type(@block) == "Block" do %>
               <%= gettext("Block Height: %{height}", height: @block.number) %> <%= if @block.number == 0, do: "- " <> gettext("Genesis Block")%>
             <% else %>
@@ -35,8 +35,9 @@
 
           <!-- Block Hash -->
           <dl class="row">
-            <dt class="col-sm-3 text-muted"><%= gettext "Hash" %></dt>
-            <dd class="col-sm-9"><a class="transaction__link"><%= to_string(@block.hash) %></a></dd>
+            <dt class="col-sm-3 text-muted " ><%= gettext "Hash" %></dt>
+            
+            <dd class="col-sm-9"><a class="transaction__link" data-toggle="tooltip" data-placement="top"  title="" data-original-title="The SHA256 hash of the block."><%= to_string(@block.hash) %></a></dd>
           </dl>
 
           <%= unless @block.number == 0 do %>
@@ -44,11 +45,13 @@
               <dl class="row">
                 <dt class="col-sm-3 text-muted"><%= gettext "Parent Hash" %></dt>
                 <dd class="col-sm-9">
+                <span data-toggle="tooltip" data-placement="top"  title="" data-original-title="The SHA256 hash of the parent block." >
                   <%= link(
                       @block.parent_hash,
                       class: "transaction__link",
                       to: block_path(@conn, :show, @block.number - 1)
                     ) %>
+                    </span>
                 </dd>
               </dl>
           <% end %>
@@ -56,8 +59,8 @@
           <!-- Difficulty value -->
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Difficulty" %></dt>
-            <dd class="col-sm-9">
-              <span><%= @block.difficulty |> BlockScoutWeb.Cldr.Number.to_string! %></span>
+            <dd class="col-sm-9" >
+              <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Block difficulty for miner, used to calibrate block generation time (Note: constant in POA based networks)."><%= @block.difficulty |> BlockScoutWeb.Cldr.Number.to_string! %></span>
             </dd>
           </dl>
 
@@ -65,13 +68,13 @@
             <!-- Total Difficulty -->
             <dl class="row">
               <dt class="col-sm-3 text-muted"><%= gettext "Total Difficulty" %></dt>
-              <dd class="col-sm-9"><span><%= @block.total_difficulty |> BlockScoutWeb.Cldr.Number.to_string! %></span></dd>
+              <dd class="col-sm-9"><span data-toggle="tooltip" data-placement="top" title="" data-original-title="Integer of the total difficulty of the chain until this block."><%= @block.total_difficulty |> BlockScoutWeb.Cldr.Number.to_string! %></span></dd>
             </dl>
 
             <!-- Nonce -->
             <dl class="row">
               <dt class="col-sm-3 text-muted"><%= gettext "Nonce" %></dt>
-              <dd class="col-sm-9"><span><%= to_string(@block.nonce) %></span></dd>
+              <dd class="col-sm-9"><span data-toggle="tooltip" data-placement="top" title="" data-original-title="64-bit hash of value verifying proof-of-work (note: null for POA chains)."><%= to_string(@block.nonce) %></span></dd>
             </dl>
 
             <%= if length(@block.uncle_relations) > 0 do %>
@@ -94,17 +97,17 @@
 
             <!-- Otherwise it will be displayed in its own block -->
             <%= if show_reward?(@block.rewards) do %>
-              <dl class="row">
+              <dl class="row" >
                 <dt class="col-sm-3 text-muted"><%= gettext "Gas Used" %></dt>
                 <dd class="col-sm-9">
                   <span><%= @block.gas_used |> BlockScoutWeb.Cldr.Number.to_string! %></span>
-                  <span class="text-muted">(<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%") %>)</span>
+                  <span class="text-muted" data-toggle="tooltip" data-placement="top" title="" data-original-title="Total gas used by all transactions in this block (% used / limit).">(<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%") %>)</span>
                 </dt>
               </dl>
               <dl class="row mb-0">
                 <dt class="col-sm-3 text-muted"><%= gettext "Gas Limit" %></dt>
                 <dd class="col-sm-9">
-                  <span><%= BlockScoutWeb.Cldr.Number.to_string!(@block.gas_limit) %></span>
+                  <span data-toggle="tooltip" data-placement="top" title="" data-original-title="The maximum gas allowed in this block."><%= BlockScoutWeb.Cldr.Number.to_string!(@block.gas_limit) %></span>
                 </dd>
               </dl>
             <% end %>
@@ -121,7 +124,7 @@
           <h2 class="card-title balance-card-title"><%= gettext "Miner" %></h2>
           <div class="text-right">
             <!-- Validator's Name -->
-            <h3 class="address-balance-text text-truncate">
+            <h3 class="address-balance-text text-truncate"  data-toggle="tooltip" data-offset ="0 15" data-placement="left" title="" data-original-title="Block Miner / Validator Address">
               <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: @block.miner,
@@ -133,8 +136,10 @@
       </div>
 
       <!-- Validator Reward or Gas-->
-      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
-        <div class="card-body card-body-flex-column-space-between">
+      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0" >
+        <div class="card-body card-body-flex-column-space-between" data-toggle="tooltip" data-offset ="0 0" data-animation="true" data-placement="left" title="" data-original-title="If Miner: Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees.
+If POA: Amount of distributed reward. Currently validators receive 1 POA token + TX fees, and the Emission fund receives 1 POA per validated block.
+If xDai: Validators receive Tx fees if collected (If transactions exist in the block)">
           <%= if show_reward?(@block.rewards) do %>
             <h2 class="card-title balance-card-title"><%= gettext "Block Rewards" %></h2>
             <div class="text-right">
