@@ -16,6 +16,11 @@
               <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
             <% end %>
           </h3>
+          <div class="collapse" id="collapseExample">
+  <div class="card card-body">
+    Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred nesciunt sapiente ea proident.
+  </div>
+</div>
           <div class="d-flex justify-content-start text-muted block-details-row">
             <!-- # of Transactions -->
             <span class="mr-4 block-detail-el"> <%= gettext "%{count} Transactions", count: @block_transaction_count %> </span>
@@ -124,7 +129,7 @@
           <h2 class="card-title balance-card-title"><%= gettext "Miner" %></h2>
           <div class="text-right">
             <!-- Validator's Name -->
-            <h3 class="address-balance-text text-truncate"  data-toggle="tooltip" data-offset ="0 15" data-placement="left" title="" data-original-title="Block Miner / Validator Address">
+            <h3 class="address-balance-text text-truncate"  data-toggle="tooltip" data-offset ="0 20" data-placement="left" title="" data-original-title="Block Miner / Validator Address">
               <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: @block.miner,
@@ -137,9 +142,9 @@
 
       <!-- Validator Reward or Gas-->
       <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0" >
-        <div class="card-body card-body-flex-column-space-between" data-toggle="tooltip" data-offset ="0 0" data-animation="true" data-placement="left" title="" data-original-title="If Miner: Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees.
-If POA: Amount of distributed reward. Currently validators receive 1 POA token + TX fees, and the Emission fund receives 1 POA per validated block.
-If xDai: Validators receive Tx fees if collected (If transactions exist in the block)">
+        <div class="card-body card-body-flex-column-space-between" data-toggle="tooltip" data-offset ="0 0" data-animation="true" data-placement="left" title="" data-original-title="If Miner : Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees.
+If POA : Amount of distributed reward. Currently validators receive 1 POA token + TX fees, and the Emission fund receives 1 POA per validated block.
+If xDai : Validators receive Tx fees if collected (If transactions exist in the block)">
           <%= if show_reward?(@block.rewards) do %>
             <h2 class="card-title balance-card-title"><%= gettext "Block Rewards" %></h2>
             <div class="text-right">
