@@ -83,7 +83,7 @@ defmodule Explorer.ExchangeRates.Source do
 
   @spec exchange_rates_source() :: module()
   defp exchange_rates_source do
-    config(:source) || Explorer.ExchangeRates.Source.CoinMarketCap
+    config(:source) || Explorer.ExchangeRates.Source.CoinGecko
   end
 
   @spec config(atom()) :: term
