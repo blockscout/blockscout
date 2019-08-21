@@ -11,7 +11,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @behaviour Source
 
   @impl Source
-  def format_data(data) do
+  def format_data(%{"market_data" => _} = data) do
     {:ok, price} = get_btc_price()
     btc_price = to_decimal(price)
 
@@ -40,6 +40,9 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       }
     ]
   end
+
+  @impl Source
+  def format_data(_), do: []
 
   @impl Source
   def source_url do
