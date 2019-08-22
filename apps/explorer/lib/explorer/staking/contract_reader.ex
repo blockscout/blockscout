@@ -17,7 +17,8 @@ defmodule Explorer.Staking.ContractReader do
       inactive_pools: {:staking, "getPoolsInactive", []},
       pools_likely: {:staking, "getPoolsToBeElected", []},
       pools_likelihood: {:staking, "getPoolsLikelihood", []},
-      validators: {:validator_set, "getValidators", []}
+      validators: {:validator_set, "getValidators", []},
+      unremovable_validator: {:validator_set, "unremovableValidator", []}
     ]
   end
 
@@ -37,7 +38,6 @@ defmodule Explorer.Staking.ContractReader do
 
   def pool_mining_requests(mining_address) do
     [
-      is_validator: {:validator_set, "isValidator", [mining_address]},
       was_validator_count: {:validator_set, "validatorCounter", [mining_address]},
       is_banned: {:validator_set, "isValidatorBanned", [mining_address]},
       banned_until: {:validator_set, "bannedUntil", [mining_address]},

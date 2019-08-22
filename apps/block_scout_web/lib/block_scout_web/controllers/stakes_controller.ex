@@ -92,7 +92,7 @@ defmodule BlockScoutWeb.StakesController do
           average_block_time: average_block_time,
           pools_type: filter,
           buttons: %{
-            stake: true,
+            stake: stake_allowed?(pool, delegator),
             move: move_allowed?(delegator),
             withdraw: withdraw_allowed?(delegator, epoch_number)
           }
@@ -128,6 +128,14 @@ defmodule BlockScoutWeb.StakesController do
 
   defp next_page_path(:inactive, conn, params) do
     inactive_pools_path(conn, :index, params)
+  end
+
+  defp stake_allowed?(pool, nil) do
+    Decimal.positive?(pool.self_staked_amount)
+  end
+
+  defp stake_allowed?(pool, delegator) do
+    Decimal.positive?(pool.self_staked_amount) or delegator.delegator_address_hash == pool.staking_address_hash
   end
 
   defp move_allowed?(nil), do: false
