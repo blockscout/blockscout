@@ -36,7 +36,7 @@
 
           <!-- Block Hash -->
           <dl class="row">
-            <dt class="col-sm-3 text-muted " ><%= gettext "Hash" %></dt>
+            <dt class="col-sm-3 text-muted"><%= gettext "Hash" %></dt>
             
             <dd class="col-sm-9"><a class="transaction__link" data-toggle="tooltip" data-placement="top"  title="" data-original-title="The SHA256 hash of the block."><%= to_string(@block.hash) %></a></dd>
           </dl>
