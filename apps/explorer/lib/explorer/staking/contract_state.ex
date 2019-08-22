@@ -128,6 +128,8 @@ defmodule Explorer.Staking.ContractState do
     :ets.insert(@table_name, settings)
 
     pools = global_responses.active_pools ++ global_responses.inactive_pools
+    is_validator = Enum.into(global_responses.validators, %{}, &{hash_to_string(&1), true})
+    unremovable_validator = global_responses.unremovable_validator
 
     pool_staking_responses =
       pools
@@ -179,7 +181,9 @@ defmodule Explorer.Staking.ContractState do
             end,
           likelihood: ratio(likelihood[staking_address] || 0, total_likelihood),
           block_reward_ratio: staking_response.block_reward / 10_000,
-          is_deleted: false
+          is_deleted: false,
+          is_validator: is_validator[staking_response.mining_address_hash] || false,
+          is_unremovable: hash_to_string(staking_address) == unremovable_validator
         }
         |> Map.merge(
           Map.take(staking_response, [
@@ -191,7 +195,6 @@ defmodule Explorer.Staking.ContractState do
         )
         |> Map.merge(
           Map.take(mining_response, [
-            :is_validator,
             :was_validator_count,
             :is_banned,
             :banned_until,
@@ -203,10 +206,9 @@ defmodule Explorer.Staking.ContractState do
     delegator_entries =
       Enum.map(delegator_responses, fn {{pool_address, delegator_address, is_active}, response} ->
         staking_response = pool_staking_responses[pool_address]
-        mining_response = pool_mining_responses[pool_address]
 
         reward_ratio =
-          if mining_response.is_validator do
+          if is_validator[staking_response.mining_address_hash] do
             reward_ratio = delegator_rewards[pool_address][delegator_address]
 
             if reward_ratio do
@@ -303,6 +305,8 @@ defmodule Explorer.Staking.ContractState do
 
   defp ratio(_numerator, 0), do: 0
   defp ratio(numerator, denominator), do: numerator / denominator * 100
+
+  defp hash_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
   # sobelow_skip ["Traversal"]
   defp abi(file_name) do
