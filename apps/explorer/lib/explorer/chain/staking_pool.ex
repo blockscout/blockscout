@@ -20,6 +20,7 @@ defmodule Explorer.Chain.StakingPool do
           is_active: boolean,
           is_banned: boolean,
           is_validator: boolean,
+          is_unremovable: boolean,
           likelihood: Decimal.t(),
           block_reward_ratio: Decimal.t(),
           staked_ratio: Decimal.t(),
@@ -34,11 +35,12 @@ defmodule Explorer.Chain.StakingPool do
     is_active delegators_count staked_amount self_staked_amount is_validator
     was_validator_count is_banned was_banned_count banned_until likelihood
     staked_ratio staking_address_hash mining_address_hash block_reward_ratio
+    is_unremovable
   )a
   @req_attrs ~w(
     is_active delegators_count staked_amount self_staked_amount is_validator
     was_validator_count is_banned was_banned_count banned_until
-    staking_address_hash mining_address_hash
+    staking_address_hash mining_address_hash is_unremovable
   )a
 
   schema "staking_pools" do
@@ -47,6 +49,7 @@ defmodule Explorer.Chain.StakingPool do
     field(:is_active, :boolean, default: false)
     field(:is_banned, :boolean, default: false)
     field(:is_validator, :boolean, default: false)
+    field(:is_unremovable, :boolean, default: false)
     field(:likelihood, :decimal)
     field(:block_reward_ratio, :decimal)
     field(:staked_ratio, :decimal)
