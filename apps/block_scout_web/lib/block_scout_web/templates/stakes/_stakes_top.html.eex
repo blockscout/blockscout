@@ -8,7 +8,9 @@
       <!-- Buttons -->
       <div class="stakes-top-buttons">
         <%= if @account[:pool] && @account.pool.is_active do %>
-          <%= render BlockScoutWeb.StakesView, "_stakes_btn_remove_pool.html", text: gettext("Remove My Pool"), extra_class: "js-remove-pool" %>
+          <%= unless @account.pool.is_unremovable do %>
+            <%= render BlockScoutWeb.StakesView, "_stakes_btn_remove_pool.html", text: gettext("Remove My Pool"), extra_class: "js-remove-pool" %>
+          <% end %>
         <% else %>
           <%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become a Candidate"), extra_class: "js-become-candidate" %>
         <% end %>
