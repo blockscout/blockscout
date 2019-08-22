@@ -1975,3 +1975,8 @@ msgstr ""
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:17
 msgid "Your Mining Address"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:26
+msgid "Ordered"
+msgstr ""
