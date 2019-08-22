@@ -6,6 +6,7 @@
 - [#2497](https://github.com/poanetwork/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
 
 ### Fixes
+- [#2592](https://github.com/poanetwork/blockscout/pull/2592) - process new metadata format for whisper
 - [#2572](https://github.com/poanetwork/blockscout/pull/2572) - Ease non-critical css
 - [#2570](https://github.com/poanetwork/blockscout/pull/2570) - Network icons preload
 - [#2569](https://github.com/poanetwork/blockscout/pull/2569) - do not fetch emission rewards for transactions csv exporter
@@ -15,6 +16,7 @@
 - [#2538](https://github.com/poanetwork/blockscout/pull/2538) - fetch the last not empty coin balance records
 
 ### Chore
+- [#2594](https://github.com/poanetwork/blockscout/pull/2594) - do not start genesis data fetching periodically
 - [#2590](https://github.com/poanetwork/blockscout/pull/2590) - restore backward compatablity with old releases
 - [#2574](https://github.com/poanetwork/blockscout/pull/2574) - limit request body in json rpc error
 - [#2566](https://github.com/poanetwork/blockscout/pull/2566) - upgrade absinthe phoenix
