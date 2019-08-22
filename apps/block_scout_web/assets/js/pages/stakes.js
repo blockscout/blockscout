@@ -102,6 +102,7 @@ if ($stakesPage.length) {
 
   channel.on('staking_update', msg => {
     $stakesTop.html(msg.top_html)
+    $('.tooltip').tooltip('hide')
 
     const state = store.getState()
     if (
