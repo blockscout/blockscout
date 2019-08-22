@@ -39,7 +39,12 @@ defmodule Explorer.ExchangeRates.Source do
   defp fetch_exchange_rates_request(source) do
     case HTTPoison.get(source.source_url(), headers()) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        {:ok, source.format_data(body)}
+        result =
+          body
+          |> decode_json()
+          |> source.format_data()
+
+        {:ok, result}
 
       {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
         {:error, decode_json(body)["error"]}

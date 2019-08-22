@@ -11,11 +11,9 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @behaviour Source
 
   @impl Source
-  def format_data(%{"market_data" => _} = data) do
+  def format_data(%{"market_data" => _} = json_data) do
     {:ok, price} = get_btc_price()
     btc_price = to_decimal(price)
-
-    json_data = decode_json(data)
 
     market_data = json_data["market_data"]
     {:ok, last_updated, 0} = DateTime.from_iso8601(market_data["last_updated"])
