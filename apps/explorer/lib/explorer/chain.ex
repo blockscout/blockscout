@@ -4815,14 +4815,7 @@ defmodule Explorer.Chain do
         select: sum(delegator.stake_amount)
       )
 
-    self_staked_query =
-      from(
-        pool in StakingPool,
-        where: pool.staking_address_hash == ^address_hash and pool.is_active,
-        select: sum(pool.self_staked_amount)
-      )
-
-    Decimal.add(Repo.one(staked_query) || Decimal.new(0), Repo.one(self_staked_query) || Decimal.new(0))
+    Repo.one(staked_query) || Decimal.new(0)
   end
 
   defp with_decompiled_code_flag(query, _hash, false), do: query

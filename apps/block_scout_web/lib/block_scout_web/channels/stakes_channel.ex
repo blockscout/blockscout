@@ -55,7 +55,15 @@ defmodule BlockScoutWeb.StakesChannel do
     delegators =
       staking_address
       |> Chain.staking_pool_delegators()
-      |> Enum.sort_by(&(to_string(&1.delegator_address_hash) != socket.assigns[:account]))
+      |> Enum.sort_by(fn delegator ->
+        delegator_address = to_string(delegator.delegator_address_hash)
+
+        cond do
+          delegator_address == staking_address -> 0
+          delegator_address == socket.assigns[:account] -> 1
+          true -> 2
+        end
+      end)
 
     html =
       View.render_to_string(StakesView, "_stakes_modal_delegators_list.html",
