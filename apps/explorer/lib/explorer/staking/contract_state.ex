@@ -143,7 +143,8 @@ defmodule Explorer.Staking.ContractState do
 
     delegators =
       Enum.flat_map(pool_staking_responses, fn {pool_address, responses} ->
-        Enum.map(responses.active_delegators, &{pool_address, &1, true}) ++
+        [{pool_address, pool_address, true}] ++
+          Enum.map(responses.active_delegators, &{pool_address, &1, true}) ++
           Enum.map(responses.inactive_delegators, &{pool_address, &1, false})
       end)
 
