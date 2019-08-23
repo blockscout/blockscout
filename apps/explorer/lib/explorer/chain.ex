@@ -2968,7 +2968,11 @@ defmodule Explorer.Chain do
     |> page_coin_balances(paging_options)
     |> Repo.all()
     |> Enum.dedup_by(fn record ->
-      record.delta == Decimal.new(0)
+      if record.delta == Decimal.new(0) do
+        :dup
+      else
+        System.unique_integer
+      end
     end)
   end
 
