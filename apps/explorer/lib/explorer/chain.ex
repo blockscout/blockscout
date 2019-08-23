@@ -2971,7 +2971,7 @@ defmodule Explorer.Chain do
       if record.delta == Decimal.new(0) do
         :dup
       else
-        System.unique_integer
+        System.unique_integer()
       end
     end)
   end
