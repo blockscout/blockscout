@@ -47,7 +47,7 @@ defmodule Explorer.Staking.ContractReader do
 
   def delegator_requests(pool_address, delegator_address) do
     [
-      stake_amount: {:staking, "stakeAmount", [pool_address, delegator_address]},
+      stake_amount: {:staking, "stakeAmountMinusOrderedWithdraw", [pool_address, delegator_address]},
       ordered_withdraw: {:staking, "orderedWithdrawAmount", [pool_address, delegator_address]},
       max_withdraw_allowed: {:staking, "maxWithdrawAllowed", [pool_address, delegator_address]},
       max_ordered_withdraw_allowed: {:staking, "maxWithdrawOrderAllowed", [pool_address, delegator_address]},
