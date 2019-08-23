@@ -1863,8 +1863,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_empty_content.html.eex:14
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:5
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:29
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:15
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:36
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:17
 msgid "Become a Candidate"
 msgstr ""
 
@@ -1973,7 +1973,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:17
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:21
 msgid "Your Mining Address"
 msgstr ""
 
