@@ -8,6 +8,7 @@ defmodule Explorer.Chain do
       from: 2,
       join: 4,
       limit: 2,
+      lock: 2,
       order_by: 2,
       order_by: 3,
       offset: 2,
@@ -2924,14 +2925,20 @@ defmodule Explorer.Chain do
         ]) :: {integer(), nil | [term()]}
   def find_and_update_replaced_transactions(transactions, timeout \\ :infinity) do
     query =
-      Enum.reduce(transactions, Transaction, fn %{hash: hash, nonce: nonce, from_address_hash: from_address_hash},
-                                                query ->
-        from(t in query,
-          or_where:
-            t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and t.hash != ^hash and
-              not is_nil(t.block_number)
-        )
-      end)
+      transactions
+      |> Enum.reduce(
+        Transaction,
+        fn %{hash: hash, nonce: nonce, from_address_hash: from_address_hash}, query ->
+          from(t in query,
+            or_where:
+              t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and t.hash != ^hash and
+                not is_nil(t.block_number)
+          )
+        end
+      )
+      # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+      |> order_by(asc: :hash)
+      |> lock("FOR UPDATE")
 
     hashes = Enum.map(transactions, & &1.hash)
 
@@ -2974,10 +2981,15 @@ defmodule Explorer.Chain do
             or_where: t.nonce == ^nonce and t.from_address_hash == ^from_address and is_nil(t.block_hash)
           )
         end)
+        # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+        |> order_by(asc: :hash)
+        |> lock("FOR UPDATE")
 
-      update_query = from(t in query, update: [set: [status: ^:error, error: "dropped/replaced"]])
-
-      Repo.update_all(update_query, [], timeout: timeout)
+      Repo.update_all(
+        from(t in Transaction, join: s in subquery(query), on: t.hash == s.hash),
+        [set: [error: "dropped/replaced", status: :error]],
+        timeout: timeout
+      )
     end
   end
 

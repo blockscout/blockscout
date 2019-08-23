@@ -31,6 +31,7 @@
 - [#2497](https://github.com/poanetwork/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
 
 ### Fixes
+- [#2619](https://github.com/poanetwork/blockscout/pull/2619) - Enforce DB transaction's order to prevent deadlocks
 - [#2659](https://github.com/poanetwork/blockscout/pull/2659) - Multipurpose front-end part update
 - [#2640](https://github.com/poanetwork/blockscout/pull/2640) - SVG network icons
 - [#2635](https://github.com/poanetwork/blockscout/pull/2635) - optimize ERC721 inventory query

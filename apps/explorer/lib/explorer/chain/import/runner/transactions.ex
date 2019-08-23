@@ -81,7 +81,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     ordered_changes_list =
       changes_list
       |> put_internal_transactions_indexed_at(inserted_at, token_transfer_transaction_hash_set)
-      # order so that row ShareLocks are grabbed in a consistent order
+      # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(& &1.hash)
 
     Import.insert_changes_list(
@@ -191,36 +191,38 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
          timestamps: %{updated_at: updated_at}
        })
        when is_list(transactions) do
-    ordered_block_hashes =
+    block_hashes =
       transactions
       |> Enum.filter(fn %{block_hash: block_hash, old_block_hash: old_block_hash} ->
         not is_nil(old_block_hash) and block_hash != old_block_hash
       end)
       |> MapSet.new(& &1.old_block_hash)
-      |> Enum.sort()
+      |> MapSet.to_list()
 
-    if Enum.empty?(ordered_block_hashes) do
+    if Enum.empty?(block_hashes) do
       {:ok, []}
     else
       query =
         from(
           block in Block,
-          where: block.hash in ^ordered_block_hashes,
-          update: [
-            set: [
-              consensus: false,
-              updated_at: ^updated_at
-            ]
-          ]
+          where: block.hash in ^block_hashes,
+          # Enforce Block ShareLocks order (see docs: sharelocks.md)
+          order_by: [asc: block.hash],
+          lock: "FOR UPDATE"
         )
 
       try do
-        {_, result} = repo.update_all(query, [], timeout: timeout)
+        {_, result} =
+          repo.update_all(
+            from(b in Block, join: s in subquery(query), on: b.hash == s.hash),
+            [set: [consensus: false, updated_at: updated_at]],
+            timeout: timeout
+          )
 
         {:ok, result}
       rescue
         postgrex_error in Postgrex.Error ->
-          {:error, %{exception: postgrex_error, block_hashes: ordered_block_hashes}}
+          {:error, %{exception: postgrex_error, block_hashes: block_hashes}}
       end
     end
   end

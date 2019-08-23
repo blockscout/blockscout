@@ -62,16 +62,18 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
       from(
         pool in StakingPool,
         where: pool.staking_address_hash not in ^addresses,
-        update: [
-          set: [
-            is_deleted: true,
-            is_active: false
-          ]
-        ]
+        # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
+        order_by: pool.staking_address_hash,
+        lock: "FOR UPDATE"
       )
 
     try do
-      {_, result} = repo.update_all(query, [], timeout: timeout)
+      {_, result} =
+        repo.update_all(
+          from(p in StakingPool, join: s in subquery(query), on: p.staking_address_hash == s.staking_address_hash),
+          [set: [is_deleted: true, is_active: false]],
+          timeout: timeout
+        )
 
       {:ok, result}
     rescue
@@ -90,10 +92,13 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
+    # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.staking_address_hash)
+
     {:ok, _} =
       Import.insert_changes_list(
         repo,
-        changes_list,
+        ordered_changes_list,
         conflict_target: :staking_address_hash,
         on_conflict: on_conflict,
         for: StakingPool,
@@ -142,6 +147,15 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
         from(
           p in StakingPool,
           where: p.is_active == true,
+          # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
+          order_by: p.staking_address_hash,
+          lock: "FOR UPDATE"
+        )
+
+      update_query =
+        from(p in StakingPool,
+          join: s in subquery(query),
+          on: p.staking_address_hash == s.staking_address_hash,
           update: [
             set: [
               staked_ratio: p.staked_amount / ^total * 100,
@@ -150,7 +164,8 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           ]
         )
 
-      {count, _} = repo.update_all(query, [], timeout: timeout)
+      {count, _} = repo.update_all(update_query, [], timeout: timeout)
+
       {:ok, count}
     else
       {:ok, 1}

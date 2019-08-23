@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
   defp insert(repo, changes_list, %{timeout: timeout} = options) when is_atom(repo) and is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # order so that row ShareLocks are grabbed in a consistent order
+    # Enforce SeconDegreeRelation ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.nephew_hash, &1.uncle_hash})
 
     Import.insert_changes_list(repo, ordered_changes_list,

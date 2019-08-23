@@ -70,7 +70,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
        when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # order so that row ShareLocks are grabbed in a consistent order
+    # Enforce InternalTransaction ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
 
     final_changes_list = reject_pending_transactions(ordered_changes_list, repo)
@@ -149,16 +149,26 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
          timestamps: timestamps
        })
        when is_list(internal_transactions) do
-    ordered_transaction_hashes =
+    transaction_hashes =
       internal_transactions
       |> MapSet.new(& &1.transaction_hash)
-      |> Enum.sort()
+      |> MapSet.to_list()
 
     query =
       from(
         t in Transaction,
-        where: t.hash in ^ordered_transaction_hashes,
+        where: t.hash in ^transaction_hashes,
         where: not is_nil(t.block_hash),
+        # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+        order_by: t.hash,
+        lock: "FOR UPDATE"
+      )
+
+    update_query =
+      from(
+        t in Transaction,
+        join: s in subquery(query),
+        on: t.hash == s.hash,
         update: [
           set: [
             internal_transactions_indexed_at: ^timestamps.updated_at,
@@ -184,12 +194,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       )
 
     try do
-      {_transaction_count, result} = repo.update_all(query, [], timeout: timeout)
+      {_transaction_count, result} = repo.update_all(update_query, [], timeout: timeout)
 
       {:ok, result}
     rescue
       postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, transaction_hashes: ordered_transaction_hashes}}
+        {:error, %{exception: postgrex_error, transaction_hashes: transaction_hashes}}
     end
   end
 
