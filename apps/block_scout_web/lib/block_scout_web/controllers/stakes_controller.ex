@@ -23,12 +23,13 @@ defmodule BlockScoutWeb.StakesController do
 
     account =
       if account_address = conn.assigns[:account] do
-        %{
+        account_address
+        |> Chain.get_total_staked()
+        |> Map.merge(%{
           address: account_address,
           balance: Chain.fetch_last_token_balance(account_address, token.contract_address_hash),
-          staked: Chain.get_total_staked(account_address),
           pool: Chain.staking_pool(account_address)
-        }
+        })
       end
 
     View.render_to_string(StakesView, "_stakes_top.html",
