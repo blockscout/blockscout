@@ -4748,7 +4748,9 @@ defmodule Explorer.Chain do
       if delegator_address_hash do
         base_query
         |> join(:left, [p], pd in StakingPoolsDelegator,
-          on: p.staking_address_hash == pd.pool_address_hash and pd.delegator_address_hash == ^delegator_address_hash
+          on:
+            p.staking_address_hash == pd.pool_address_hash and pd.delegator_address_hash == ^delegator_address_hash and
+              not pd.is_deleted
         )
         |> select([p, pd], %{pool: p, delegator: pd})
       else
@@ -4830,19 +4832,19 @@ defmodule Explorer.Chain do
   def staking_pool_delegator(pool_address_hash, delegator_address_hash) do
     Repo.get_by(StakingPoolsDelegator,
       pool_address_hash: pool_address_hash,
-      delegator_address_hash: delegator_address_hash
+      delegator_address_hash: delegator_address_hash,
+      is_deleted: false
     )
   end
 
   def get_total_staked(address_hash) do
-    staked_query =
-      from(
-        delegator in StakingPoolsDelegator,
-        where: delegator.delegator_address_hash == ^address_hash and delegator.is_active,
-        select: sum(delegator.stake_amount)
-      )
-
-    Repo.one(staked_query) || Decimal.new(0)
+    StakingPoolsDelegator
+    |> where([delegator], delegator.delegator_address_hash == ^address_hash and not delegator.is_deleted)
+    |> select([delegator], %{
+      stake_amount: coalesce(sum(delegator.stake_amount), 0),
+      ordered_withdraw: coalesce(sum(delegator.ordered_withdraw), 0)
+    })
+    |> Repo.one()
   end
 
   defp with_decompiled_code_flag(query, _hash, false), do: query

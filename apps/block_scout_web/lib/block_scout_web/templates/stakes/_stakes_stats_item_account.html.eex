@@ -20,7 +20,12 @@
       <%= format_according_to_decimals(@account[:balance], @token.decimals) %> <%= @token.symbol %>
     </span>
     <span class="stakes-top-stats-label-item"><%= gettext "Staked" %>:
-      <%= format_according_to_decimals(@account[:staked], @token.decimals) %> <%= @token.symbol %>
+      <%= format_according_to_decimals(@account[:stake_amount], @token.decimals) %> <%= @token.symbol %>
     </span>
+    <%= if @account[:ordered_withdraw] && @account[:ordered_withdraw] > 0 do %>
+      <span class="stakes-top-stats-label-item"><%= gettext "Ordered" %>:
+        <%= format_according_to_decimals(@account[:ordered_withdraw], @token.decimals) %> <%= @token.symbol %>
+      </span>
+    <% end %>
   </span>
 </div>
