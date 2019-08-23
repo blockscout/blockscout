@@ -24,23 +24,7 @@
           </thead>
 
           <tbody>
-            <tr>
-              <td class="stakes-td"><div class="stakes-td-order">1</div></td>
-              <td class="stakes-td">
-                <%=
-                  tooltip = if @pool.is_validator do "This is a validator" else false end
-
-                  render BlockScoutWeb.StakesView,
-                    "_stakes_address.html",
-                    address: @pool.staking_address_hash,
-                    tooltip: tooltip
-                %>
-              </td>
-              <td class="stakes-td"><%= format_according_to_decimals(@pool.self_staked_amount, @token.decimals) %></td>
-              <td class="stakes-td"><%= @pool.block_reward_ratio %>%</td>
-            </tr>
-
-            <%= for {delegator, index} <- Enum.with_index(@delegators, 2) do %>
+            <%= for {delegator, index} <- Enum.with_index(@delegators, 1) do %>
               <tr>
                 <td class="stakes-td"><div class="stakes-td-order"><%= index %></div></td>
                 <td class="stakes-td">
@@ -48,6 +32,9 @@
                     <span class="stakes-address">
                       <%= BlockScoutWeb.AddressView.trimmed_hash(delegator.delegator_address_hash) %>
                     </span>
+                    <%= if delegator.delegator_address_hash == @pool.staking_address_hash and @pool.is_validator do %>
+                      <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: "This is a validator" %>
+                    <% end %>
                     <%= if to_string(delegator.delegator_address_hash) == @account do %>
                       <div
                           class="me-tooltip"
