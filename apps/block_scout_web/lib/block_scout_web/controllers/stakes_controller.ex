@@ -148,8 +148,9 @@ defmodule BlockScoutWeb.StakesController do
   defp withdraw_allowed?(nil, _epoch_number), do: false
 
   defp withdraw_allowed?(delegator, epoch_number) do
-    (delegator.is_active and Decimal.positive?(delegator.max_withdraw_allowed)) or
-      (delegator.is_active and Decimal.positive?(delegator.max_ordered_withdraw_allowed)) or
+    Decimal.positive?(delegator.max_withdraw_allowed) or
+      Decimal.positive?(delegator.max_ordered_withdraw_allowed) or
+      Decimal.positive?(delegator.ordered_withdraw) or
       (Decimal.positive?(delegator.ordered_withdraw) and delegator.ordered_withdraw_epoch < epoch_number)
   end
 end
