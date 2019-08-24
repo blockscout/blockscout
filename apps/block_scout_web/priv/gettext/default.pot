@@ -1915,7 +1915,7 @@ msgid "Next epoch in"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:36
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:45
 msgid "Order Withdrawal"
 msgstr ""
 
@@ -1966,7 +1966,7 @@ msgid "Withdraw"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:28
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:32
 msgid "Withdraw Now"
 msgstr ""
 
