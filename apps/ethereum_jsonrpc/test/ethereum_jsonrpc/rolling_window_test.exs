@@ -29,7 +29,7 @@ defmodule EthereumJSONRPC.RollingWindowTest do
   describe "init/1" do
     test "raises when duration isn't evenly divisble by window_count" do
       assert_raise ArgumentError, ~r"evenly divisible", fn ->
-        RollingWindow.init(table: @table, duration: :timer.seconds(2), window_count: 3)
+        RollingWindow.init(table: :init_test_table, duration: :timer.seconds(2), window_count: 3)
       end
     end
 
