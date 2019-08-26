@@ -5,7 +5,7 @@
       <%= {:error, :contract_not_verified, _cadidates} -> %>
         <div class="alert alert-info">
         <%= gettext "To see accurate decoded input data, the contract must be verified." %>
-        <%= case @transaction do %>
+        <%= case @log.transaction do %>
           <% %{to_address: %{hash: hash}} -> %>
             <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
           <% _ -> %>
