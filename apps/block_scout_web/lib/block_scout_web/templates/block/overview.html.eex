@@ -8,15 +8,20 @@
             <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
           </h1>
           <!-- Block Height -->
-          <h3 data-test="block_detail_number" style="width: 170px;" data-toggle="tooltip" data-placement="right" data-offset="0 0" title="" data-original-title="The block number in which transactions were recorded.">
+          
+             
+          <h3 data-test="block_detail_number" style="width: 25%;" data-toggle="tooltip" data-placement="top"  title="" data-original-title="The SHA256 hash of the parent block.">
+            
             <%= if block_type(@block) == "Block" do %>
+                
               <%= gettext("Block Height: %{height}", height: @block.number) %> <%= if @block.number == 0, do: "- " <> gettext("Genesis Block")%>
             <% else %>
               <%= gettext("%{block_type} Height:", block_type: block_type(@block)) %>
               <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
             <% end %>
+                
           </h3>
-  
+          
           <div class="d-flex justify-content-start text-muted block-details-row">
             <!-- # of Transactions -->
             <span class="mr-4 block-detail-el"> <%= gettext "%{count} Transactions", count: @block_transaction_count %> </span>
@@ -36,10 +41,13 @@
 
           <!-- Block Hash -->
           <dl class="row">
+                
             <dt class="col-sm-3 text-muted"><%= gettext "Hash" %></dt>
             
-            <dd class="col-sm-9"><a class="transaction__link" data-toggle="tooltip" data-placement="top"  title="" data-original-title="The SHA256 hash of the block."><%= to_string(@block.hash) %></a></dd>
+            <dd class="col-sm-9"><a class="transaction__link"  data-toggle="tooltip" data-placement="top"  title="" data-original-title="The SHA256 hash of the block."><%= to_string(@block.hash) %></a></dd>
+             
           </dl>
+                       
 
           <%= unless @block.number == 0 do %>
               <!-- Parent Hash -->
@@ -123,9 +131,12 @@
       <div class="card card-background-1 flex-grow-1">
         <div class="card-body card-body-flex-column-space-between">
           <h2 class="card-title balance-card-title"><%= gettext "Miner" %></h2>
-          <div class="text-right">
+          <div class="text-right tooltipCustom">
             <!-- Validator's Name -->
-            <h3 class="address-balance-text text-truncate"  data-toggle="tooltip" data-offset ="0 20" data-placement="left" title="" data-original-title="Block Miner / Validator Address">
+            <span class="tooltiptextTopMiner"> Validator's Name</span>
+
+            <h3 class="address-balance-text text-truncate" >
+
               <%= render BlockScoutWeb.AddressView,
                 "_link.html",
                 address: @block.miner,
@@ -135,17 +146,18 @@
           </div>
         </div>
       </div>
-
       <!-- Validator Reward or Gas-->
       <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0" >
-        <div class="card-body card-body-flex-column-space-between" data-toggle="tooltip" data-offset ="0 0" data-animation="true" data-placement="left" title="" data-original-title="If Miner : Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees.
-If POA : Amount of distributed reward. Currently validators receive 1 POA token + TX fees, and the Emission fund receives 1 POA per validated block.
-If xDai : Validators receive Tx fees if collected (If transactions exist in the block)">
+        <div class="card-body card-body-flex-column-space-between">
+        
           <%= if show_reward?(@block.rewards) do %>
             <h2 class="card-title balance-card-title"><%= gettext "Block Rewards" %></h2>
-            <div class="text-right">
+            <div class="text-right tooltipCustom">
+                            <span class="tooltiptextTopR">  Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees. </span>
               <%= for block_reward <- @block.rewards do %>
-                <p class="address-current-balance"><%= block_reward_text(block_reward) %> <span class="text-muted"><%= format_wei_value(block_reward.reward, :ether) %></span></p>
+            
+                <p class="address-current-balance "><%= block_reward_text(block_reward) %> <span class="text-muted"><%= format_wei_value(block_reward.reward, :ether) %></span></p>
+                
               <% end %>
             </div>
           <% else %>
@@ -156,6 +168,7 @@ If xDai : Validators receive Tx fees if collected (If transactions exist in the 
                 <span class="text-muted">(<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%") %>)</span>
               </h3>
               <p class="address-current-balance"><%= @block.gas_limit |> BlockScoutWeb.Cldr.Number.to_string! %><%= gettext "Gas Limit" %></p>
+             
             </div>
           <% end %>
         </div>
