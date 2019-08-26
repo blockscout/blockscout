@@ -1,5 +1,4 @@
 <div data-test="address_log" class="tile tile-muted" data-identifier-log="<%= "#{to_string(@log.transaction.hash)}#{@log.index}" %>">
-  <dl class="row">
     <% decoded_result = decode(@log, @log.transaction) %>
     <%= case decoded_result do %>
       <%= {:error, :contract_not_verified, _cadidates} -> %>
@@ -15,6 +14,7 @@
       <% _ -> %>
         <%= nil %>
     <% end %>
+  <dl class="row">
     <dt class="col-md-2"> <%= gettext "Transaction" %> </dt>
     <dd class="col-md-10">
       <h3 class="">
