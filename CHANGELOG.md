@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2636](https://github.com/poanetwork/blockscout/pull/2636) - Execute all address' transactions page queries in parallel
 - [#2596](https://github.com/poanetwork/blockscout/pull/2596) - support AuRa's empty step reward type
 - [#2561](https://github.com/poanetwork/blockscout/pull/2561) - Add token's type to the response of tokenlist method
 - [#2499](https://github.com/poanetwork/blockscout/pull/2499) - import emission reward ranges
