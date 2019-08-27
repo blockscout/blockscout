@@ -27,7 +27,7 @@ defmodule Explorer.Chain.TokenTransfer do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2, limit: 2, where: 3]
 
-  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Hash, TokenTransfer, Transaction}
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
