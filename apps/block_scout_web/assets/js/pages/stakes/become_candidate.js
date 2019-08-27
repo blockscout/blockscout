@@ -17,6 +17,15 @@ export function openBecomeCandidateModal (store) {
         becomeCandidate($modal, store, msg)
         return false
       })
+
+      $modal.find('[candidate-stake]').blur((event) => {
+        validateCandidateStakeInput(event.target, store, msg)
+      })
+
+      $modal.find('[mining-address]').blur((event) => {
+        validateMiningAddressInput(event.target, store)
+      })
+
       openModal($modal)
     })
 }
@@ -24,27 +33,11 @@ export function openBecomeCandidateModal (store) {
 async function becomeCandidate ($modal, store, msg) {
   lockModal($modal)
 
-  const web3 = store.getState().web3
   const stakingContract = store.getState().stakingContract
   const blockRewardContract = store.getState().blockRewardContract
   const decimals = store.getState().tokenDecimals
-
-  const minStake = new BigNumber(msg.min_candidate_stake)
-  const balance = new BigNumber(msg.balance)
   const stake = new BigNumber($modal.find('[candidate-stake]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
-  if (!stake.isPositive() || stake.isLessThan(minStake)) {
-    openErrorModal('Error', `You cannot stake less than ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
-    return false
-  } else if (stake.isGreaterThan(balance)) {
-    openErrorModal('Error', `You cannot stake more than ${balance.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
-    return false
-  }
-
   const miningAddress = $modal.find('[mining-address]').val().trim().toLowerCase()
-  if (miningAddress === store.getState().account || !web3.utils.isAddress(miningAddress)) {
-    openErrorModal('Error', 'Invalid Mining Address')
-    return false
-  }
 
   try {
     if (!await stakingContract.methods.areStakeAndWithdrawAllowed().call()) {
@@ -64,4 +57,54 @@ async function becomeCandidate ($modal, store, msg) {
   } catch (err) {
     openErrorModal('Error', err.message)
   }
+}
+
+function validateCandidateStakeInput(input, store, msg) {
+  if (!$(input).val()) {
+    hideInputError(input)
+    return
+  }
+
+  const decimals = store.getState().tokenDecimals
+  const minStake = new BigNumber(msg.min_candidate_stake)
+  const balance = new BigNumber(msg.balance)
+  const stake = new BigNumber($(input).val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
+
+  if (!stake.isPositive() || stake.isLessThan(minStake)) {
+    displayInputError(input, `You cannot stake less than ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
+  } else if (stake.isGreaterThan(balance)) {
+    displayInputError(input, `You cannot stake more than ${balance.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
+  }
+  else {
+    hideInputError(input)
+  }
+}
+
+function validateMiningAddressInput(input, store) {
+  if (!$(input).val()) {
+    hideInputError(input)
+    return
+  }
+
+  const web3 = store.getState().web3
+  const miningAddress = $(input).val().trim().toLowerCase()
+
+  if (miningAddress === store.getState().account || !web3.utils.isAddress(miningAddress)) {
+    displayInputError(input, 'Invalid Mining Address')
+  }
+  else {
+    hideInputError(input)
+  }
+}
+
+function displayInputError(input, message) {
+  const group = $(input).parent('.input-group')
+  group.addClass('input-status-error')
+  group.find('.input-group-message').html(message)
+}
+
+function hideInputError(input) {
+  const group = $(input).parent('.input-group')
+  group.removeClass('input-status-error')
+  group.find('.input-group-message').html('')
 }
