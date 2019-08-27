@@ -135,6 +135,7 @@ defmodule Explorer.Chain.OrderedCache do
       opts
       |> Keyword.drop([:ids_list_key, :max_size, :preloads, :preload])
       |> Keyword.put_new(:ttl_check_interval, false)
+      |> Keyword.put_new(:callback, &update_index_on_deletion(&1))
 
     # credo:disable-for-next-line Credo.Check.Refactor.LongQuoteBlocks
     quote do
@@ -300,6 +301,18 @@ defmodule Explorer.Chain.OrderedCache do
         # and it only gets called inside `update`, which works isolated
         ConCache.dirty_put(cache_name(), element_id, full_element)
       end
+
+      defp update_index_on_deletion({:delete, _cache_pid, key}) do
+        # Callback used so that the index list is updated in case of TTL usage.
+        # It check if the key is in the list first because ConCache's get is
+        # not locking and much faster, so it does not take much in case the
+        # callback is executed for an item that has already been removed.
+        if Enum.member?(ids_list(), id) do
+          ConCache.update(cache_name(), ids_list_key(), &List.delete(&1, id))
+        end
+      end
+
+      defp update_index_on_deletion(_data), do: nil
 
       ### Supervisor's child specification
 
