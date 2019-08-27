@@ -248,7 +248,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp address_to_transactions_without_rewards(address_hash, paging_options, options) do
+  def address_to_transactions_without_rewards(address_hash, paging_options, options) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
