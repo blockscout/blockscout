@@ -56,6 +56,33 @@ defmodule Explorer.SmartContract.VerifierTest do
       assert abi != nil
     end
 
+    test "verifies smart contract with new `whisper` metadata (bzz0 => bzz1) in solidity 0.5.11" do
+      contract_data =
+        "#{File.cwd!()}/test/support/fixture/smart_contract/solidity_5.11_new_whisper_metadata.json"
+        |> File.read!()
+        |> Jason.decode!()
+
+      compiler_version = contract_data["compiler_version"]
+      name = contract_data["name"]
+      optimize = false
+      contract = contract_data["contract"]
+      expected_bytecode = contract_data["bytecode"]
+      evm_version = contract_data["evm_version"]
+
+      contract_address = insert(:contract_address, contract_code: "0x" <> expected_bytecode)
+
+      params = %{
+        "contract_source_code" => contract,
+        "compiler_version" => compiler_version,
+        "evm_version" => evm_version,
+        "name" => name,
+        "optimization" => optimize
+      }
+
+      assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert abi != nil
+    end
+
     test "verifies smart contract with constructor arguments", %{
       contract_code_info: contract_code_info
     } do

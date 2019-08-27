@@ -243,6 +243,43 @@ $network-selector-item-icon-dimensions: 30px !default;
   height: $network-selector-item-icon-dimensions;
   margin: 0 15px 0 0;
   width: $network-selector-item-icon-dimensions;
+
+  &-callisto-mainnet {
+    background-image: url(/images/network-selector-icons/callisto-mainnet.png)
+  }
+  &-ethereum-mainnet {
+    background-image: url(/images/network-selector-icons/ethereum-mainnet.png)
+  }
+  &-ethereum-classic {
+    background-image: url(/images/network-selector-icons/ethereum-classic.png)
+  }
+  &-goerli-testnet {
+    background-image: url(/images/network-selector-icons/goerli-testnet.png)
+  }
+  &-kovan-testnet {
+    background-image: url(/images/network-selector-icons/kovan-testnet.png)
+  }
+  &-poa-core {
+    background-image: url(/images/network-selector-icons/poa-core.png)
+  }
+  &-poa-sokol {
+    background-image: url(/images/network-selector-icons/poa-sokol.png)
+  }
+  &-rinkeby-testnet {
+    background-image: url(/images/network-selector-icons/rinkeby-testnet.png)
+  }
+  &-rsk-mainnet {
+    background-image: url(/images/network-selector-icons/rsk-mainnet.png)
+  }
+  &-ropsten-testnet {
+    background-image: url(/images/network-selector-icons/ropsten-testnet.png)
+  }
+  &-xdai-chain {
+    background-image: url(/images/network-selector-icons/xdai-chain.png)
+  }
+  &-lukso-l14-testnet {
+    background-image: url(/images/network-selector-icons/lukso-l14-testnet.png)
+  }
 }
 
 .network-selector-item-title {
