@@ -1151,14 +1151,14 @@ msgid "Transaction Inputs"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:10
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:9
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:11
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:9
 msgid "Verify the contract "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:10
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:9
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:11
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:9
 msgid "here"
@@ -1314,7 +1314,7 @@ msgid "To have guaranteed accuracy, use the link above to verify the contract's 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:7
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:6
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:8
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:6
 msgid "To see accurate decoded input data, the contract must be verified."
