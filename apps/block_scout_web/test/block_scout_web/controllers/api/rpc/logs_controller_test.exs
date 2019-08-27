@@ -22,6 +22,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "without fromBlock", %{conn: conn} do
@@ -43,6 +44,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "without toBlock", %{conn: conn} do
@@ -64,6 +66,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "without address and topic{x}", %{conn: conn} do
@@ -85,6 +88,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "without topic{x}_{x}_opr", %{conn: conn} do
@@ -118,6 +122,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         assert response["status"] == "0"
         assert Map.has_key?(response, "result")
         refute response["result"]
+        assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
       end
     end
 
@@ -146,6 +151,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "with invalid fromBlock", %{conn: conn} do
@@ -166,6 +172,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "with invalid toBlock", %{conn: conn} do
@@ -186,6 +193,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "with an invalid address hash", %{conn: conn} do
@@ -206,6 +214,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "with invalid topic{x}_{x}_opr", %{conn: conn} do
@@ -238,6 +247,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
         assert response["status"] == "0"
         assert Map.has_key?(response, "result")
         refute response["result"]
+        assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
       end
     end
 
@@ -258,6 +268,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert response["result"] == []
       assert response["status"] == "0"
       assert response["message"] == "No logs found"
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "with a valid contract address", %{conn: conn} do
@@ -302,6 +313,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "ignores logs with block below fromBlock", %{conn: conn} do
@@ -340,6 +352,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
 
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
 
       [found_log] = response["result"]
 
@@ -383,6 +396,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
 
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
 
       [found_log] = response["result"]
 
@@ -445,6 +459,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "with a topic{x} AND another", %{conn: conn} do
@@ -493,6 +508,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert found_log["topics"] == get_topics(log1)
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "with a topic{x} OR another", %{conn: conn} do
@@ -540,6 +556,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert length(result) == 2
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
 
     test "with all available 'topic{x}'s and 'topic{x}_{x}_opr's", %{conn: conn} do
@@ -598,6 +615,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       assert length(result) == 2
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(getlogs_schema(), response)
     end
   end
 
@@ -770,5 +788,33 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
     datetime
     |> DateTime.to_unix()
     |> integer_to_hex()
+  end
+
+  defp getlogs_schema do
+    ExJsonSchema.Schema.resolve(%{
+      "type" => "object",
+      "properties" => %{
+        "message" => %{"type" => "string"},
+        "status" => %{"type" => "string"},
+        "result" => %{
+          "type" => ["array", "null"],
+          "items" => %{
+            "type" => "object",
+            "properties" => %{
+              "address" => %{"type" => "string"},
+              "topics" => %{"type" => "array", "items" => %{"type" => ["string", "null"]}},
+              "data" => %{"type" => "string"},
+              "blockNumber" => %{"type" => "string"},
+              "timeStamp" => %{"type" => "string"},
+              "gasPrice" => %{"type" => "string"},
+              "gasUsed" => %{"type" => "string"},
+              "logIndex" => %{"type" => "string"},
+              "transactionHash" => %{"type" => "string"},
+              "transactionIndex" => %{"type" => "string"}
+            }
+          }
+        }
+      }
+    })
   end
 end
