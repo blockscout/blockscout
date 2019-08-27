@@ -14,6 +14,8 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      schema = resolve_schema()
+      assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
 
     test "with an invalid block number", %{conn: conn} do
@@ -26,6 +28,8 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      schema = resolve_schema()
+      assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
 
     test "with a block that doesn't exist", %{conn: conn} do
@@ -38,6 +42,8 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
+      schema = resolve_schema()
+      assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
 
     test "with a valid block", %{conn: conn} do
@@ -71,6 +77,29 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      schema = resolve_schema()
+      assert :ok = ExJsonSchema.Validator.validate(schema, response)
     end
+  end
+
+  defp resolve_schema() do
+    ExJsonSchema.Schema.resolve(%{
+      "type" => "object",
+      "properties" => %{
+        "message" => %{"type" => "string"},
+        "status" => %{"type" => "string"},
+        "result" => %{
+          "type" => ["object", "null"],
+          "properties" => %{
+            "blockNumber" => %{"type" => "string"},
+            "timeStamp" => %{"type" => "number"},
+            "blockMiner" => %{"type" => "string"},
+            "blockReward" => %{"type" => "string"},
+            "uncles" => %{"type" => "null"},
+            "uncleInclusionReward" => %{"type" => "null"}
+          }
+        }
+      }
+    })
   end
 end
