@@ -182,4 +182,5 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiaries do
   defp get_address_type(reward_type, index) when reward_type == "external" and index == 10, do: :validator
   defp get_address_type(reward_type, _index) when reward_type == "block", do: :validator
   defp get_address_type(reward_type, _index) when reward_type == "uncle", do: :uncle
+  defp get_address_type(reward_type, _index) when reward_type == "emptyStep", do: :validator
 end
