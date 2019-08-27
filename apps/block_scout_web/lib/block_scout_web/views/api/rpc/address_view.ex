@@ -157,8 +157,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   defp prepare_block(block) do
     %{
       "blockNumber" => to_string(block.number),
-      "timeStamp" => to_string(block.timestamp),
-      "blockReward" => to_string(block.reward.value)
+      "timeStamp" => to_string(block.timestamp)
     }
   end
 
