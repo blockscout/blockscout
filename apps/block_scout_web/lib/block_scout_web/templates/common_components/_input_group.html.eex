@@ -1,5 +1,6 @@
 <div class="input-group <%= if assigns[:classes] do @classes end %>">
   <input
+    id="<%= if assigns[:id] do @id end %>"
     <%= if assigns[:attributes] do @attributes end %>
     type="<%= if assigns[:type] do @type end %>"
     class="<%= if assigns[:input_classes] do @input_classes end %>"
