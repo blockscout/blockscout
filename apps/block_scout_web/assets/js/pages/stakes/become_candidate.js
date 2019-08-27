@@ -13,17 +13,20 @@ export function openBecomeCandidateModal (store) {
     .push('render_become_candidate')
     .receive('ok', msg => {
       const $modal = $(msg.html)
+      let errors = new Map()
       $modal.find('form').submit(() => {
         becomeCandidate($modal, store, msg)
         return false
       })
 
       $modal.find('[candidate-stake]').blur((event) => {
-        validateCandidateStakeInput(event.target, store, msg)
+        const isValid = validateCandidateStakeInput(event.target, store, msg)
+        updateErrors(errors, isValid, event.target)
       })
 
       $modal.find('[mining-address]').blur((event) => {
-        validateMiningAddressInput(event.target, store)
+        const isValid = validateMiningAddressInput(event.target, store)
+        updateErrors(errors, isValid, event.target)
       })
 
       openModal($modal)
@@ -59,10 +62,10 @@ async function becomeCandidate ($modal, store, msg) {
   }
 }
 
-function validateCandidateStakeInput(input, store, msg) {
+function validateCandidateStakeInput (input, store, msg) {
   if (!$(input).val()) {
     hideInputError(input)
-    return
+    return true
   }
 
   const decimals = store.getState().tokenDecimals
@@ -72,18 +75,20 @@ function validateCandidateStakeInput(input, store, msg) {
 
   if (!stake.isPositive() || stake.isLessThan(minStake)) {
     displayInputError(input, `You cannot stake less than ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
+    return false
   } else if (stake.isGreaterThan(balance)) {
     displayInputError(input, `You cannot stake more than ${balance.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
+    return false
   }
-  else {
-    hideInputError(input)
-  }
+
+  hideInputError(input)
+  return true
 }
 
-function validateMiningAddressInput(input, store) {
+function validateMiningAddressInput (input, store) {
   if (!$(input).val()) {
     hideInputError(input)
-    return
+    return true
   }
 
   const web3 = store.getState().web3
@@ -91,20 +96,45 @@ function validateMiningAddressInput(input, store) {
 
   if (miningAddress === store.getState().account || !web3.utils.isAddress(miningAddress)) {
     displayInputError(input, 'Invalid Mining Address')
+    return false
   }
-  else {
-    hideInputError(input)
-  }
+
+  hideInputError(input)
+  return true
 }
 
-function displayInputError(input, message) {
+function displayInputError (input, message) {
   const group = $(input).parent('.input-group')
+
   group.addClass('input-status-error')
   group.find('.input-group-message').html(message)
 }
 
-function hideInputError(input) {
+function hideInputError (input) {
   const group = $(input).parent('.input-group')
+
   group.removeClass('input-status-error')
   group.find('.input-group-message').html('')
+}
+
+function updateErrors (errors, isValid, input) {
+  if (isValid) {
+    errors.delete($(input).attr('id'))
+
+    if (errors.size) {
+      disableSubmit(input, true)
+    } else {
+      disableSubmit(input, false)
+    }
+
+    return errors
+  }
+
+  errors.set($(input).attr('id'), input)
+  disableSubmit(input, true)
+  return errors
+}
+
+function disableSubmit (input, disabled) {
+  $(input).closest('form').find('button').attr('disabled', disabled)
 }
