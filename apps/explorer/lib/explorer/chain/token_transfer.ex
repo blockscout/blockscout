@@ -238,12 +238,8 @@ defmodule Explorer.Chain.TokenTransfer do
   def address_to_unique_tokens(contract_address_hash) do
     from(
       tt in TokenTransfer,
-      join: t in Token,
-      on: tt.token_contract_address_hash == t.contract_address_hash,
-      join: ts in Transaction,
-      on: tt.transaction_hash == ts.hash,
-      where: t.contract_address_hash == ^contract_address_hash and t.type == "ERC-721",
-      order_by: [desc: ts.block_number],
+      where: tt.token_contract_address_hash == ^contract_address_hash,
+      order_by: [desc: tt.block_number],
       distinct: tt.token_id,
       preload: [:to_address],
       select: tt
