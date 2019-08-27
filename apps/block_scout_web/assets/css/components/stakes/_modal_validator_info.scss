@@ -1,6 +1,6 @@
 .modal-validator-info {
-  max-width: 100% !important;
-  width: 660px !important;
+  max-width: 100%;
+  width: 660px;
 
   @include media-breakpoint-down(sm) {
     margin-left: auto;
