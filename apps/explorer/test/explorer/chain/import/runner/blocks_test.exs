@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
-  alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain.{Address, Block, Transaction, TokenTransfer}
   alias Explorer.Chain
   alias Explorer.Repo
 
@@ -111,6 +111,39 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
               }} = run_block_consensus_change(block, false, options)
 
       assert count(Address.CurrentTokenBalance) == count
+    end
+
+    test "delete_token_transfers deletes rows with matching block number when consensus is true",
+         %{consensus_block: %Block{number: block_number} = block, options: options} do
+      %TokenTransfer{transaction_hash: transaction_hash, log_index: log_index} =
+        insert(:token_transfer, block_number: block_number, transaction: insert(:transaction))
+
+      assert count(TokenTransfer) == 1
+
+      assert {:ok,
+              %{
+                delete_token_transfers: [
+                  %{transaction_hash: ^transaction_hash, log_index: ^log_index}
+                ]
+              }} = run_block_consensus_change(block, true, options)
+
+      assert count(TokenTransfer) == 0
+    end
+
+    test "delete_token_transfers does not delete rows with matching block number when consensus is false",
+         %{consensus_block: %Block{number: block_number} = block, options: options} do
+      insert(:token_transfer, block_number: block_number, transaction: insert(:transaction))
+
+      count = 1
+
+      assert count(TokenTransfer) == count
+
+      assert {:ok,
+              %{
+                delete_token_transfers: []
+              }} = run_block_consensus_change(block, false, options)
+
+      assert count(TokenTransfer) == count
     end
 
     test "derive_address_current_token_balances inserts rows if there is an address_token_balance left for the rows deleted by delete_address_current_token_balances",
