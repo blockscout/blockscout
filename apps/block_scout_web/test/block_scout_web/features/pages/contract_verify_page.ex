@@ -48,6 +48,10 @@ defmodule BlockScoutWeb.ContractVerifyPage do
     css("[data-test='contract-source-code-error']")
   end
 
+  def has_message?(session, message) do
+    String.contains?(page_source(session), message)
+  end
+
   def verify_and_publish(session) do
     click(session, button("Verify & publish"))
   end
