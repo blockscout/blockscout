@@ -2,6 +2,7 @@ body:after {
 	position:absolute; width:0; height:0; overflow:hidden; z-index:-1;
 	content:
 		url(/images/network-selector-icons/callisto-mainnet.png)
+		url(/images/network-selector-icons/ethereum-mainnet.png)
 		url(/images/network-selector-icons/ethereum-classic.png)
 		url(/images/network-selector-icons/goerli-testnet.png)
 		url(/images/network-selector-icons/kovan-testnet.png)
@@ -11,4 +12,5 @@ body:after {
 		url(/images/network-selector-icons/rsk-mainnet.png)
 		url(/images/network-selector-icons/ropsten-testnet.png)
 		url(/images/network-selector-icons/xdai-chain.png)
+		url(/images/network-selector-icons/lukso-l14-testnet.png)
 };

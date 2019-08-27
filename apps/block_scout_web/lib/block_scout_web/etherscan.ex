@@ -713,11 +713,6 @@ defmodule BlockScoutWeb.Etherscan do
         type: "timestamp",
         definition: "When the block was collated.",
         example: ~s("1480072029")
-      },
-      blockReward: %{
-        type: "block reward",
-        definition: "The reward given to the miner of a block.",
-        example: ~s("5003251945421042780")
       }
     }
   }
