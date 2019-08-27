@@ -12,10 +12,10 @@
             <div class="col-4">
               <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: "Staker's Address", tooltip: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut." %>
             </div>
-            <div class="col-4">
+            <div class="col-3">
               <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: "Total Stake Amount", tooltip: "Lorem ipsum dolor sit iusmod tempor incididunt ut." %>
             </div>
-            <div class="col-3">
+            <div class="col-4">
               <%=
                 title = if @pool.is_validator do "Reward Percent" else "Potential Reward Percent" end
                 render BlockScoutWeb.StakesView,
@@ -51,8 +51,8 @@
                   <% end %>
                 </div>
               </div>
-              <div class="col-4 stakes-td"><%= format_token_amount(delegator.stake_amount, @token, symbol: false) %></div>
-              <div class="col-3 stakes-td"><%= if delegator.reward_ratio do "#{delegator.reward_ratio}%" else "-" end %></div>
+              <div class="col-3 stakes-td"><%= format_token_amount(delegator.stake_amount, @token, symbol: false) %></div>
+              <div class="col-4 stakes-td"><%= if delegator.reward_ratio do "#{delegator.reward_ratio}%" else "-" end %></div>
             </div>
           <% end %>
         </div>
