@@ -82,6 +82,25 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "ERC721_token_instance_from_token_id_and_token_address/2" do
+    test "return ERC721 token instance" do
+      contract_address = insert(:address)
+
+      token_id = 10
+
+      insert(:token_transfer,
+        from_address: contract_address,
+        token_contract_address: contract_address,
+        token_id: token_id
+      )
+
+      assert {:ok, result} =
+               Chain.erc721_token_instance_from_token_id_and_token_address(token_id, contract_address.hash)
+
+      assert result.token_id == Decimal.new(token_id)
+    end
+  end
+
   describe "address_to_logs/2" do
     test "fetches logs" do
       %Address{hash: address_hash} = address = insert(:address)

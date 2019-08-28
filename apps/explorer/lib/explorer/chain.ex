@@ -2959,6 +2959,21 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  @spec erc721_token_instance_from_token_id_and_token_address(binary(), Hash.Address.t()) :: TokenTransfer.t() | nil
+  def erc721_token_instance_from_token_id_and_token_address(token_id, token_contract_address) do
+    query =
+      from(tt in TokenTransfer,
+        where: tt.token_contract_address_hash == ^token_contract_address and tt.token_id == ^token_id,
+        order_by: [desc: tt.block_number],
+        limit: 1
+      )
+
+    case Repo.one(query) do
+      nil -> {:error, :not_found}
+      token_instance -> {:ok, token_instance}
+    end
+  end
+
   @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []
   def address_to_coin_balances(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
