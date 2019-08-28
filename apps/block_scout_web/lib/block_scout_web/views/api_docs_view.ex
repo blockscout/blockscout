@@ -34,30 +34,30 @@ defmodule BlockScoutWeb.APIDocsView do
     end)
   end
 
-  def blockscout_url do
+  defp blockscout_url(opts) do
     url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
     host = url_params[:host]
     path = url_params[:path]
+    scheme =
+      if Keyword.get(opts, :with_scheme, false) do
+        url_params[:scheme] <> "://"
+      end
 
     if host != "localhost" do
-      "#{host}#{path}"
+      "#{scheme}#{host}#{path}"
     else
       port = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:http][:port]
-      "#{host}:#{to_string(port)}"
+      "#{scheme}#{host}:#{to_string(port)}"
     end
   end
 
-  def api_url do
-    handle_slash("api")
+  def api_url(opts \\ []) do
+    base_url = blockscout_url(opts)
+    Path.join(base_url, "api")
   end
 
-  def eth_rpc_api_url do
-    handle_slash("api/eth_rpc")
-  end
-
-  defp handle_slash(path) do
-    base_url = blockscout_url()
-
-    Path.join(base_url, path)
+  def eth_rpc_api_url(opts \\ []) do
+    base_url = blockscout_url(opts)
+    Path.join(base_url, "api/eth_rpc")
   end
 end
