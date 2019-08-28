@@ -57,6 +57,8 @@ defmodule Explorer.ChainSpec.Parity.Importer do
       parse_accounts(accounts)
     else
       Logger.warn(fn -> "No accounts are defined in chain spec" end)
+
+      []
     end
   end
 
@@ -69,6 +71,8 @@ defmodule Explorer.ChainSpec.Parity.Importer do
       |> format_ranges()
     else
       Logger.warn(fn -> "No rewards are defined in chain spec" end)
+
+      []
     end
   end
 
@@ -79,7 +83,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     end)
     |> Stream.map(fn {address, %{"balance" => value}} ->
       {:ok, address_hash} = AddressHash.cast(address)
-      balance = parse_hex_number(value)
+      balance = parse_number(value)
 
       %{address_hash: address_hash, value: balance}
     end)
@@ -112,15 +116,21 @@ defmodule Explorer.ChainSpec.Parity.Importer do
 
   defp parse_hex_numbers(rewards) do
     Enum.map(rewards, fn {hex_block_number, hex_reward} ->
-      block_number = parse_hex_number(hex_block_number)
-      {:ok, reward} = hex_reward |> parse_hex_number() |> Wei.cast()
+      block_number = parse_number(hex_block_number)
+      {:ok, reward} = hex_reward |> parse_number() |> Wei.cast()
 
       {block_number, reward}
     end)
   end
 
-  defp parse_hex_number("0x" <> hex_number) do
+  defp parse_number("0x" <> hex_number) do
     {number, ""} = Integer.parse(hex_number, 16)
+
+    number
+  end
+
+  defp parse_number(string_number) do
+    {number, ""} = Integer.parse(string_number, 10)
 
     number
   end
