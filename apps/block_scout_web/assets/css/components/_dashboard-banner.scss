@@ -136,7 +136,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     width: 750px;
     position: relative;
     @include media-breakpoint-down(lg) {
-        margin-top: 15px;
+        margin-top: 50px;
         width: 550px;
     }
     @include media-breakpoint-down(md) {
