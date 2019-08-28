@@ -1,6 +1,7 @@
 import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
 import { openModal, openErrorModal, openWarningModal, lockModal } from '../../lib/modals'
+import { updateValidation, hideInputError, updateSubmit } from '../../lib/validation'
 import { makeContractCall } from './utils'
 
 export function openBecomeCandidateModal (store) {
@@ -13,20 +14,48 @@ export function openBecomeCandidateModal (store) {
     .push('render_become_candidate')
     .receive('ok', msg => {
       const $modal = $(msg.html)
-      let errors = new Map()
+      let errors = new Map([
+        ['candidate-stake', null],
+        ['mining-address', null]
+      ])
+
+      updateSubmit($modal.find('form'), errors)
+
+      $modal.find('[candidate-stake]')
+        .focus((event) => {
+          hideInputError(event.target)
+        })
+        .on('input', (event) => {
+          if (!$(event.target).val()) {
+            errors.set($(event.target).prop('id'), null)
+            updateSubmit($modal.find('form'), errors)
+          }
+        })
+        .blur((event) => {
+          const validation = validateCandidateStakeInput(event.target, store, msg)
+          updateValidation(validation, errors, event.target)
+          updateSubmit($modal.find('form'), errors)
+        })
+
+      $modal.find('[mining-address]')
+        .focus((event) => {
+          hideInputError(event.target)
+        })
+        .on('input', (event) => {
+          if (!$(event.target).val()) {
+            errors.set($(event.target).prop('id'), null)
+            updateSubmit($modal.find('form'), errors)
+          }
+        })
+        .blur((event) => {
+          const validation = validateMiningAddressInput(event.target, store)
+          updateValidation(validation, errors, event.target)
+          updateSubmit($modal.find('form'), errors)
+        })
+
       $modal.find('form').submit(() => {
         becomeCandidate($modal, store, msg)
         return false
-      })
-
-      $modal.find('[candidate-stake]').blur((event) => {
-        const isValid = validateCandidateStakeInput(event.target, store, msg)
-        updateErrors(errors, isValid, event.target)
-      })
-
-      $modal.find('[mining-address]').blur((event) => {
-        const isValid = validateMiningAddressInput(event.target, store)
-        updateErrors(errors, isValid, event.target)
       })
 
       openModal($modal)
@@ -64,8 +93,7 @@ async function becomeCandidate ($modal, store, msg) {
 
 function validateCandidateStakeInput (input, store, msg) {
   if (!$(input).val()) {
-    hideInputError(input)
-    return true
+    return {state: null}
   }
 
   const decimals = store.getState().tokenDecimals
@@ -73,68 +101,28 @@ function validateCandidateStakeInput (input, store, msg) {
   const balance = new BigNumber(msg.balance)
   const stake = new BigNumber($(input).val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
 
-  if (!stake.isPositive() || stake.isLessThan(minStake)) {
-    displayInputError(input, `You cannot stake less than ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
-    return false
+  if (!stake.isPositive()) {
+    return {state: false, message: 'Invalid stake amount entered'}
+  } else if (stake.isLessThan(minStake)) {
+    return {state: false, message: `You cannot stake less than ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`}
   } else if (stake.isGreaterThan(balance)) {
-    displayInputError(input, `You cannot stake more than ${balance.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
-    return false
+    return {state: false, message: 'Not enough funds'}
   }
 
-  hideInputError(input)
-  return true
+  return {state: true}
 }
 
 function validateMiningAddressInput (input, store) {
   if (!$(input).val()) {
-    hideInputError(input)
-    return true
+    return {state: null}
   }
 
   const web3 = store.getState().web3
   const miningAddress = $(input).val().trim().toLowerCase()
 
   if (miningAddress === store.getState().account || !web3.utils.isAddress(miningAddress)) {
-    displayInputError(input, 'Invalid Mining Address')
-    return false
+    return {state: false, message: 'Invalid Mining Address'}
   }
 
-  hideInputError(input)
-  return true
-}
-
-function displayInputError (input, message) {
-  const group = $(input).parent('.input-group')
-
-  group.addClass('input-status-error')
-  group.find('.input-group-message').html(message)
-}
-
-function hideInputError (input) {
-  const group = $(input).parent('.input-group')
-
-  group.removeClass('input-status-error')
-  group.find('.input-group-message').html('')
-}
-
-function updateErrors (errors, isValid, input) {
-  if (isValid) {
-    errors.delete($(input).attr('id'))
-
-    if (errors.size) {
-      disableSubmit(input, true)
-    } else {
-      disableSubmit(input, false)
-    }
-
-    return errors
-  }
-
-  errors.set($(input).attr('id'), input)
-  disableSubmit(input, true)
-  return errors
-}
-
-function disableSubmit (input, disabled) {
-  $(input).closest('form').find('button').attr('disabled', disabled)
+  return {state: true}
 }
