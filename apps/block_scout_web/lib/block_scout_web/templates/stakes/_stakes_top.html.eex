@@ -12,7 +12,12 @@
             <%= render BlockScoutWeb.StakesView, "_stakes_btn_remove_pool.html", text: gettext("Remove My Pool"), extra_class: "js-remove-pool" %>
           <% end %>
         <% else %>
-          <%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become a Candidate"), extra_class: "js-become-candidate" %>
+          <%=
+            render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html",
+              text: gettext("Become a Candidate"),
+              extra_class: "js-become-candidate",
+              disabled: @account[:pool] && @account.pool.is_banned
+          %>
         <% end %>
       </div>
     </div>
