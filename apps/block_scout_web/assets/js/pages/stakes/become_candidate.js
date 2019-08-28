@@ -52,7 +52,11 @@ async function becomeCandidate ($modal, store, msg) {
       return false
     }
 
-    makeContractCall(stakingContract.methods.addPool(stake.toString(), miningAddress), store)
+    if (msg.pool_exists) {
+      makeContractCall(stakingContract.methods.stake(store.getState().account, stake.toString()), store)
+    } else {
+      makeContractCall(stakingContract.methods.addPool(stake.toString(), miningAddress), store)
+    }
   } catch (err) {
     openErrorModal('Error', err.message)
   }
