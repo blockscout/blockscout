@@ -155,6 +155,7 @@ defmodule Explorer.Chain.Log do
             []
         end
       end)
+      |> Enum.take(1)
 
     {:error, :contract_not_verified, candidates}
   end
