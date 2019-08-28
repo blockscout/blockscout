@@ -99,7 +99,7 @@
             </div>
           </li>
         <% end %>
-        <li class="nav-item dropdown nav-item-networks">
+        <li class="nav-item dropdown">
           <a class="nav-link topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
@@ -116,7 +116,7 @@
       </button>
       <!-- Search navbar -->
       <%= if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter)[:enabled] do %>
-        <div class="search-form d-lg-flex d-inline-block" style="background-color: #22223a">
+        <div class="search-form d-lg-flex d-inline-block">
           <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
           <div class="input-group" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
                 <%= awesomplete(f, :q,
