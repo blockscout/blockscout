@@ -28,7 +28,7 @@ $ export NETWORK=POA
 | `SECRET_KEY_BASE` | :white_check_mark: | Use mix phx.gen.secret to generate a new Secret Key Base string to protect production assets. | (empty) | all | | |
 | `CHECK_ORIGIN` | | Used to check the origin of requests when the origin header is present. It defaults to false. In case of true, it will check against the host value. | false | all | | |
 | `PORT` | :white_check_mark: | Default port the application runs on is 4000 | 4000 | all | | |
-| `COIN` | :white_check_mark: | The coin here is checked via the Coinmarketcap API to obtain USD prices on graphs and other areas of the UI | POA | all | | |
+| `COIN` | :white_check_mark: | The coin here is checked via the CoinGecko API to obtain USD prices on graphs and other areas of the UI | POA | all | | |
 | `METADATA_CONTRACT` | | This environment variable is specifically used by POA Network to obtain Validators information to display in the UI. | (empty) | all | | |
 | `VALIDATORS_CONTRACT` | | This environment variable is specifically used by POA Network to obtain the Emission Fund contract. | (empty) | all | | |
 | `SUPPLY_MODULE` | | This environment variable is used by the xDai Chain in order to tell the application how to calculate the total supply of the chain. | false | all | | |
