@@ -105,7 +105,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/index.html.eex:4
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:60
 msgid "Addresses"
 msgstr ""
 
@@ -213,8 +212,6 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
 #: lib/block_scout_web/templates/address/overview.html.eex:145
 #: lib/block_scout_web/templates/address/overview.html.eex:153
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:94
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:102
 msgid "Close"
 msgstr ""
 
@@ -307,8 +304,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:13
 #: lib/block_scout_web/templates/address/overview.html.eex:17
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:16
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:20
 msgid "Copy Address"
 msgstr ""
 
@@ -636,8 +631,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:33
 #: lib/block_scout_web/templates/address/overview.html.eex:144
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:93
 msgid "QR Code"
 msgstr ""
 
@@ -697,7 +690,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:34
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:37
 msgid "Show QR Code"
 msgstr ""
 
@@ -786,11 +778,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:20
 msgid "Toggle navigation"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:10
-msgid "Token Details"
 msgstr ""
 
 #, elixir-format
@@ -883,11 +870,6 @@ msgid "Transactions sent"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:61
-msgid "Transfers"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:40
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:47
 msgid "Try it out"
@@ -944,11 +926,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:249
 msgid "Verify & publish"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:55
-msgid "View Contract"
 msgstr ""
 
 #, elixir-format
@@ -1043,11 +1020,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/internal_transaction_view.ex:27
 msgid "Self-Destruct"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:63
-msgid "Decimals"
 msgstr ""
 
 #, elixir-format
