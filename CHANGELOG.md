@@ -8,6 +8,7 @@
 
 ### Fixes
 - [#2640](https://github.com/poanetwork/blockscout/pull/2640) - SVG network icons
+- [#2626](https://github.com/poanetwork/blockscout/pull/2626) - Fixing 2 Mobile UI Issues
 - [#2623](https://github.com/poanetwork/blockscout/pull/2623) - fix a blinking test
 - [#2616](https://github.com/poanetwork/blockscout/pull/2616) - deduplicate coin history records by delta
 - [#2613](https://github.com/poanetwork/blockscout/pull/2613) - fix getminedblocks rpc endpoint
