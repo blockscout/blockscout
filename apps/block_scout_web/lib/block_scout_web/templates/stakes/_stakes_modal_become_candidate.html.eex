@@ -14,7 +14,14 @@
             </div>
           </div>
           <div class="form-group">
-            <input mining-address type="text" class="form-control" placeholder="<%= gettext("Your Mining Address") %>">
+            <input
+              mining-address
+              type="text"
+              class="form-control"
+              placeholder="<%= gettext("Your Mining Address") %>"
+              value="<%= @pool && @pool.mining_address_hash %>"
+              <%= if @pool do "disabled" end %>
+            />
           </div>
           <p class="form-p m-b-0">Minimum Stake:
             <span class="text-dark">
