@@ -38,6 +38,7 @@ defmodule BlockScoutWeb.APIDocsView do
     url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
     host = url_params[:host]
     path = url_params[:path]
+
     scheme =
       if Keyword.get(opts, :with_scheme, false) do
         url_params[:scheme] <> "://"

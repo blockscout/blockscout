@@ -1,7 +1,8 @@
 import $ from 'jquery'
 
 function composeCurlCommand (data) {
-  return `curl -H "content-type: application/json" -X POST --data '${JSON.stringify(data)}'`
+  const url = $('[data-endpoint-url]').attr('data-endpoint-url')
+  return `curl ${url} -H "content-type: application/json" -X POST --data '${JSON.stringify(data)}'`
 }
 
 function handleResponse (data, xhr, clickedButton) {
