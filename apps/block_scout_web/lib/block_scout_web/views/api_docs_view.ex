@@ -40,8 +40,8 @@ defmodule BlockScoutWeb.APIDocsView do
     path = url_params[:path]
 
     scheme =
-      if Keyword.get(opts, :with_scheme, false) do
-        url_params[:scheme] <> "://"
+      if Keyword.get(opts, :with_scheme, false) && url_params[:scheme] do
+        "#{url_params[:scheme]}://"
       end
 
     if host != "localhost" do
