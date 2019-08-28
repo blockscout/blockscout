@@ -390,6 +390,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       from(token_transfer in TokenTransfer,
         where: token_transfer.block_number in ^ordered_consensus_block_numbers,
         select: map(token_transfer, [:transaction_hash, :log_index, :block_number]),
+        # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
         order_by: [
           token_transfer.transaction_hash,
           token_transfer.log_index,
