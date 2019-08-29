@@ -99,7 +99,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:logger_file_backend, "~> 0.0.10"},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:phoenix, "~> 1.4"},
+      {:phoenix, "== 1.4.0"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},

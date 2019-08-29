@@ -10,7 +10,7 @@
           <!-- Block Height -->
           
              
-          <h3 data-test="block_detail_number" style="width: 25%;" data-toggle="tooltip" data-placement="top"  title="" data-original-title="The SHA256 hash of the parent block.">
+          <h3 data-test="block_detail_number" style="width: 25%;" data-toggle="tooltip" data-placement="top"  title="" data-original-title="The block number in which transactions were recorded.">
             
             <%= if block_type(@block) == "Block" do %>
                 
