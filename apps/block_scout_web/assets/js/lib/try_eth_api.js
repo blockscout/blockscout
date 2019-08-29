@@ -45,7 +45,7 @@ function parseInput (input) {
 }
 
 function dropDomain (url) {
-  return url.split('/').slice(1).join('/')
+  return new URL(url).pathname
 }
 
 $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
@@ -67,7 +67,7 @@ $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
   const url = $('[data-endpoint-url]').attr('data-endpoint-url')
 
   $.ajax({
-    url: '/' + dropDomain(url),
+    url: dropDomain(url),
     type: 'POST',
     data: JSON.stringify(formData),
     dataType: 'json',

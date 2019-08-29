@@ -56,7 +56,7 @@ function handleSuccess (query, xhr, clickedButton) {
 }
 
 function dropDomain (url) {
-  return url.split('/').slice(1).join('/')
+  return new URL(url).pathname
 }
 
 // Show 'Try it out' UI for a module/action.
@@ -128,7 +128,7 @@ $('button[data-try-api-ui-button-type="execute"]').click(event => {
   }
 
   $.ajax({
-    url: '/' + dropDomain(composeRequestUrl(query)),
+    url: dropDomain(composeRequestUrl(query)),
     success: (_data, _status, xhr) => {
       handleSuccess(query, xhr, clickedButton)
     },
