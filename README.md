@@ -16,9 +16,9 @@ BlockScout provides a comprehensive, easy-to-use interface for users to view, co
 
 See our [project documentation](https://poanetwork.github.io/blockscout) for detailed information and setup instructions.
 
-Visit the [POA BlockScout forum](https://forum.poa.network/c/blockscout) for FAQs, troubleshooting, and other BlockScout related items. You can also post and answer questions here. 
+Visit the [POA BlockScout forum](https://forum.poa.network/c/blockscout) for FAQs, troubleshooting, and other BlockScout related items. You can also post and answer questions here.
 
-You can also access the dev chatroom on our [Gitter Channel](https://gitter.im/poanetwork/blockscout). 
+You can also access the dev chatroom on our [Gitter Channel](https://gitter.im/poanetwork/blockscout).
 
 ## About BlockScout
 
@@ -42,9 +42,10 @@ Currently available full-featured block explorers (Etherscan, Etherchain, Blockc
 |  |  | [Loom](http://plasma-blockexplorer.dappchains.com/) |
 |  |  | [Tenda](https://tenda.network) |
 |  |  | [GoJoy Chain](https://gojoychain.com/) |
+|  |  | [Xerom](https://blocks.xerom.org/) |
 
 
-Current BlockScout versions for hosted projects are available [on the forum](https://forum.poa.network/t/deployed-instances-on-blockscout-com/1938). 
+Current BlockScout versions for hosted projects are available [on the forum](https://forum.poa.network/t/deployed-instances-on-blockscout-com/1938).
 
 ## Getting Started
 
