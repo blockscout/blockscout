@@ -85,7 +85,8 @@ $modal-status-graph-success: $secondary;
 		border-color: $primary;
 		color: $primary;
 		&:hover {
-			background-color: $primary
+			background-color: $primary;
+			color: $btn-line-bg;
 		}
 	}
 }
