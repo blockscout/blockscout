@@ -3434,7 +3434,9 @@ defmodule Explorer.Chain do
   def staking_pool_delegators(staking_address_hash) do
     StakingPoolsDelegator
     |> where(pool_address_hash: ^staking_address_hash, is_active: true)
+    |> join(:left, [d], p in StakingPool, on: d.delegator_address_hash == p.staking_address_hash)
     |> order_by(desc: :stake_amount)
+    |> select([d, p], %{d | has_staking_pool: not is_nil(p)})
     |> Repo.all()
   end
 

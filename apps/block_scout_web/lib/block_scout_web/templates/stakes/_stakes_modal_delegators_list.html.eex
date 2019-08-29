@@ -30,7 +30,7 @@
               <div class="col-1 stakes-td"><div class="stakes-td-order"><%= index %></div></div>
               <div class="col-4 stakes-td">
                 <div class="stakes-address-container">
-                  <span class="stakes-address">
+                  <span class="<%= if delegator.has_staking_pool, do: "stakes-address js-validator-info" %>" data-address="<%= to_string(delegator.delegator_address_hash) %>">
                     <%= BlockScoutWeb.AddressView.trimmed_hash(delegator.delegator_address_hash) %>
                   </span>
                   <%= if delegator.delegator_address_hash == @pool.staking_address_hash and @pool.is_validator do %>

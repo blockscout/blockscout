@@ -46,6 +46,7 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
     field(:reward_ratio, :decimal)
     field(:is_active, :boolean, default: true)
     field(:is_deleted, :boolean, default: false)
+    field(:has_staking_pool, :boolean, virtual: true, default: false)
 
     belongs_to(
       :staking_pool,
