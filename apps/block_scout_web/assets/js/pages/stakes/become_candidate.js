@@ -1,7 +1,7 @@
 import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
 import { openModal, openErrorModal, openWarningModal, lockModal } from '../../lib/modals'
-import { updateValidation, hideInputError, updateSubmit } from '../../lib/validation'
+import { setupValidation } from '../../lib/validation'
 import { makeContractCall } from './utils'
 
 export function openBecomeCandidateModal (store) {
@@ -14,44 +14,15 @@ export function openBecomeCandidateModal (store) {
     .push('render_become_candidate')
     .receive('ok', msg => {
       const $modal = $(msg.html)
-      let errors = new Map([
-        ['candidate-stake', null],
-        ['mining-address', null]
-      ])
 
-      updateSubmit($modal.find('form'), errors)
-
-      $modal.find('[candidate-stake]')
-        .focus((event) => {
-          hideInputError(event.target)
-        })
-        .on('input', (event) => {
-          if (!$(event.target).val()) {
-            errors.set($(event.target).prop('id'), null)
-            updateSubmit($modal.find('form'), errors)
-          }
-        })
-        .blur((event) => {
-          const validation = validateCandidateStakeInput(event.target, store, msg)
-          updateValidation(validation, errors, event.target)
-          updateSubmit($modal.find('form'), errors)
-        })
-
-      $modal.find('[mining-address]')
-        .focus((event) => {
-          hideInputError(event.target)
-        })
-        .on('input', (event) => {
-          if (!$(event.target).val()) {
-            errors.set($(event.target).prop('id'), null)
-            updateSubmit($modal.find('form'), errors)
-          }
-        })
-        .blur((event) => {
-          const validation = validateMiningAddressInput(event.target, store)
-          updateValidation(validation, errors, event.target)
-          updateSubmit($modal.find('form'), errors)
-        })
+      setupValidation(
+        $modal.find('form'),
+        {
+          'candidate-stake': value => isCandidateStakeValid(value, store, msg),
+          'mining-address': value => isMiningAddressValid(value, store)
+        },
+        $modal.find('form button')
+      )
 
       $modal.find('form').submit(() => {
         becomeCandidate($modal, store, msg)
@@ -91,38 +62,30 @@ async function becomeCandidate ($modal, store, msg) {
   }
 }
 
-function validateCandidateStakeInput (input, store, msg) {
-  if (!$(input).val()) {
-    return {state: null}
-  }
-
+function isCandidateStakeValid (value, store, msg) {
   const decimals = store.getState().tokenDecimals
   const minStake = new BigNumber(msg.min_candidate_stake)
   const balance = new BigNumber(msg.balance)
-  const stake = new BigNumber($(input).val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
+  const stake = new BigNumber(value.replace(',', '.').trim()).shiftedBy(decimals).integerValue()
 
   if (!stake.isPositive()) {
-    return {state: false, message: 'Invalid stake amount entered'}
+    return 'Invalid stake amount entered'
   } else if (stake.isLessThan(minStake)) {
-    return {state: false, message: `You cannot stake less than ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`}
+    return `You cannot stake less than ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`
   } else if (stake.isGreaterThan(balance)) {
-    return {state: false, message: 'Not enough funds'}
+    return 'Not enough funds'
   }
 
-  return {state: true}
+  return true
 }
 
-function validateMiningAddressInput (input, store) {
-  if (!$(input).val()) {
-    return {state: null}
-  }
-
+function isMiningAddressValid (value, store) {
   const web3 = store.getState().web3
-  const miningAddress = $(input).val().trim().toLowerCase()
+  const miningAddress = value.trim().toLowerCase()
 
   if (miningAddress === store.getState().account || !web3.utils.isAddress(miningAddress)) {
-    return {state: false, message: 'Invalid Mining Address'}
+    return 'Invalid Mining Address'
   }
 
-  return {state: true}
+  return true
 }

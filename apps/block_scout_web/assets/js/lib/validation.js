@@ -1,42 +1,64 @@
 import $ from 'jquery'
 
-export function updateValidation (validation, errors, input) {
-  if (validation.state === false) {
-    errors.set($(input).prop('id'), input)
-    displayInputError(input, validation.message)
-    return errors
-  }
+export function setupValidation ($form, validators, $submit) {
+  const errors = {}
 
-  if (validation.state !== null) {
-    errors.delete($(input).prop('id'))
-  }
+  disableSubmit($submit, true)
 
-  hideInputError(input)
-  return errors
+  for (let [key, callback] of Object.entries(validators)) {
+    const $input = $form.find('[' + key + ']')
+    errors[key] = null
+
+    $input
+      .focus(() => {
+        hideInputError($input)
+      })
+      .blur(() => {
+        if (errors[key]) {
+          displayInputError($input, errors[key])
+        }
+      })
+      .on('input', () => {
+        if (!$input.val()) {
+          errors[key] = null
+          return
+        }
+
+        const validation = callback($input.val())
+        if (validation === true) {
+          delete errors[key]
+        } else {
+          errors[key] = validation
+        }
+
+        updateSubmit($submit, errors)
+      })
+  }
 }
 
-export function displayInputError (input, message) {
-  const group = $(input).parent('.input-group')
+function updateSubmit ($submit, errors) {
+  if ($.isEmptyObject(errors)) {
+    disableSubmit($submit, false)
+    return
+  }
+
+  disableSubmit($submit, true)
+}
+
+function displayInputError ($input, message) {
+  const group = $input.parent('.input-group')
 
   group.addClass('input-status-error')
   group.find('.input-group-message').html(message)
 }
 
-export function hideInputError (input) {
-  const group = $(input).parent('.input-group')
+function hideInputError ($input) {
+  const group = $input.parent('.input-group')
 
   group.removeClass('input-status-error')
   group.find('.input-group-message').html('')
 }
 
-export function updateSubmit ($form, errors) {
-  if (errors.size) {
-    disableSubmit($form, true)
-  } else {
-    disableSubmit($form, false)
-  }
-}
-
-export function disableSubmit ($form, disabled) {
-  $form.find('button').prop('disabled', disabled)
+function disableSubmit ($submit, disabled) {
+  $submit.prop('disabled', disabled)
 }
