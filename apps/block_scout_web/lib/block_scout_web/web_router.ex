@@ -184,7 +184,14 @@ defmodule BlockScoutWeb.WebRouter do
         Tokens.InstanceController,
         only: [:show],
         as: :instance
-      )
+      ) do
+        resources(
+          "/token_transfers",
+          Tokens.Instance.TransferController,
+          only: [:index],
+          as: :transfer
+        )
+      end
     end
 
     resources(
