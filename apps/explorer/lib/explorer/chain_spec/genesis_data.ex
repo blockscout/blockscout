@@ -18,7 +18,6 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   @impl GenServer
   def init(_) do
-    :timer.send_interval(@interval, :import)
     Process.send_after(self(), :import, @interval)
 
     {:ok, %{}}

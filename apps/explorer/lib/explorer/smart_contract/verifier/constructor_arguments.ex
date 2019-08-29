@@ -48,6 +48,16 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
           extract_constructor_arguments(constructor_arguments, passed_constructor_arguments)
         end
 
+      # Solidity >= 0.5.11 https://github.com/ethereum/solidity/blob/develop/Changelog.md#0511-2019-08-12
+      # Metadata: Update the swarm hash to the current specification, changes bzzr0 to bzzr1 and urls to use bzz-raw://
+      "a265627a7a72315820" <>
+          <<_::binary-size(64)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
+        if passed_constructor_arguments == constructor_arguments do
+          true
+        else
+          extract_constructor_arguments(constructor_arguments, passed_constructor_arguments)
+        end
+
       <<>> ->
         passed_constructor_arguments == ""
 
