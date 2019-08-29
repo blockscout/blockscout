@@ -29,8 +29,8 @@
 
 -   [#2646](https://github.com/poanetwork/blockscout/pull/2646) - Added Xerom to list of Additional Chains using BlockScout
 -   [#2634](https://github.com/poanetwork/blockscout/pull/2634) - add Lukso to networks dropdown
--   [#2611](https://github.com/poanetwork/blockscout/pull/2611) - fix js dependency vulnerabilities
 -   [#2617](https://github.com/poanetwork/blockscout/pull/2617) - skip cache update if there are no blocks inserted
+-   [#2611](https://github.com/poanetwork/blockscout/pull/2611) - fix js dependency vulnerabilities
 -   [#2594](https://github.com/poanetwork/blockscout/pull/2594) - do not start genesis data fetching periodically
 -   [#2590](https://github.com/poanetwork/blockscout/pull/2590) - restore backward compatablity with old releases
 -   [#2577](https://github.com/poanetwork/blockscout/pull/2577) - Need recompile column in the env vars table
