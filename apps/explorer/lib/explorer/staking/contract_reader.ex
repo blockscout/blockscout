@@ -13,6 +13,7 @@ defmodule Explorer.Staking.ContractReader do
       epoch_number: {:staking, "stakingEpoch", []},
       epoch_start_block: {:staking, "stakingEpochStartBlock", []},
       epoch_end_block: {:staking, "stakingEpochEndBlock", []},
+      staking_allowed: {:staking, "areStakeAndWithdrawAllowed", []},
       active_pools: {:staking, "getPools", []},
       inactive_pools: {:staking, "getPoolsInactive", []},
       pools_likely: {:staking, "getPoolsToBeElected", []},
