@@ -180,7 +180,7 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
-        "/token_instance",
+        "/instance",
         Tokens.InstanceController,
         only: [:show],
         as: :instance
