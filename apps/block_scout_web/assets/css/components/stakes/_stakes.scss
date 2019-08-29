@@ -49,6 +49,7 @@ $stakes-stats-item-border-color: #fff !default;
   }
 
   .copy-icon {
+    min-width: 18px;
     margin-left: 20px;
     path {
       fill: $stakes-dashboard-copy-icon-color;
@@ -59,6 +60,17 @@ $stakes-stats-item-border-color: #fff !default;
 .stakes-top-stats-value {
   align-items: center;
   display: flex;
+  div:nth-child(1) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+}
+
+.stakes-top-stats-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .stakes-top-stats-login {
