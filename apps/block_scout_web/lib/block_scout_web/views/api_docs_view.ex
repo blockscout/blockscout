@@ -49,12 +49,12 @@ defmodule BlockScoutWeb.APIDocsView do
   end
 
   def api_url do
-    base_url = blockscout_url()
-    Path.join(base_url, "api")
+    blockscout_url()
+    |> Path.join("api")
   end
 
   def eth_rpc_api_url do
-    base_url = blockscout_url()
-    Path.join(base_url, "api/eth_rpc")
+    blockscout_url()
+    |> Path.join("api/eth_rpc")
   end
 end
