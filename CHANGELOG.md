@@ -15,6 +15,7 @@
 - [#2616](https://github.com/poanetwork/blockscout/pull/2616) - deduplicate coin history records by delta
 - [#2613](https://github.com/poanetwork/blockscout/pull/2613) - fix getminedblocks rpc endpoint
 - [#2592](https://github.com/poanetwork/blockscout/pull/2592) - process new metadata format for whisper
+- [#2591](https://github.com/poanetwork/blockscout/pull/2591) - Fix url error in API page
 - [#2572](https://github.com/poanetwork/blockscout/pull/2572) - Ease non-critical css
 - [#2570](https://github.com/poanetwork/blockscout/pull/2570) - Network icons preload
 - [#2569](https://github.com/poanetwork/blockscout/pull/2569) - do not fetch emission rewards for transactions csv exporter

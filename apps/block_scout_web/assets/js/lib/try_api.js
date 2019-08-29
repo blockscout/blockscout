@@ -55,6 +55,10 @@ function handleSuccess (query, xhr, clickedButton) {
   clickedButton.prop('disabled', false)
 }
 
+function dropDomain (url) {
+  return new URL(url).pathname
+}
+
 // Show 'Try it out' UI for a module/action.
 $('button[data-selector*="btn-try-api"]').click(event => {
   const clickedButton = $(event.target)
@@ -124,7 +128,7 @@ $('button[data-try-api-ui-button-type="execute"]').click(event => {
   }
 
   $.ajax({
-    url: `/api${query}`,
+    url: dropDomain(composeRequestUrl(query)),
     success: (_data, _status, xhr) => {
       handleSuccess(query, xhr, clickedButton)
     },
