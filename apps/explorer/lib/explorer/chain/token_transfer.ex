@@ -140,6 +140,26 @@ defmodule Explorer.Chain.TokenTransfer do
     |> Repo.all()
   end
 
+  @spec fetch_token_transfers_from_token_hash_and_token_id(Hash.t(), binary(), [paging_options]) :: []
+  def fetch_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    query =
+      from(
+        tt in TokenTransfer,
+        where:
+          tt.token_contract_address_hash == ^token_address_hash and tt.token_id == ^token_id and
+            not is_nil(tt.block_number),
+        preload: [{:transaction, :block}, :token, :from_address, :to_address],
+        order_by: [desc: tt.block_number, desc: tt.log_index]
+      )
+
+    query
+    |> page_token_transfer(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
   @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
   def count_token_transfers_from_token_hash(token_address_hash) do
     query =
