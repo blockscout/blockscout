@@ -3,15 +3,16 @@ import $ from 'jquery'
 export function setupValidation ($form, validators, $submit) {
   const errors = {}
 
-  disableSubmit($submit, true)
+  updateSubmit($submit, errors)
 
   for (let [key, callback] of Object.entries(validators)) {
     const $input = $form.find('[' + key + ']')
     errors[key] = null
 
     $input
-      .focus(() => {
-        hideInputError($input)
+      .ready(() => {
+        validateInput($input, callback, errors)
+        updateSubmit($submit, errors)
       })
       .blur(() => {
         if (errors[key]) {
@@ -19,30 +20,30 @@ export function setupValidation ($form, validators, $submit) {
         }
       })
       .on('input', () => {
-        if (!$input.val()) {
-          errors[key] = null
-          return
-        }
-
-        const validation = callback($input.val())
-        if (validation === true) {
-          delete errors[key]
-        } else {
-          errors[key] = validation
-        }
-
+        hideInputError($input)
+        validateInput($input, callback, errors)
         updateSubmit($submit, errors)
       })
   }
 }
 
-function updateSubmit ($submit, errors) {
-  if ($.isEmptyObject(errors)) {
-    disableSubmit($submit, false)
+function validateInput ($input, callback, errors) {
+  if (!$input.val()) {
+    errors[$input.prop('id')] = null
     return
   }
 
-  disableSubmit($submit, true)
+  const validation = callback($input.val())
+  if (validation === true) {
+    delete errors[$input.prop('id')]
+    return
+  }
+
+  errors[$input.prop('id')] = validation
+}
+
+function updateSubmit ($submit, errors) {
+  $submit.prop('disabled', !$.isEmptyObject(errors))
 }
 
 function displayInputError ($input, message) {
@@ -57,8 +58,4 @@ function hideInputError ($input) {
 
   group.removeClass('input-status-error')
   group.find('.input-group-message').html('')
-}
-
-function disableSubmit ($submit, disabled) {
-  $submit.prop('disabled', disabled)
 }
