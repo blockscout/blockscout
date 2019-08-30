@@ -8,6 +8,7 @@
 - [#2497](https://github.com/poanetwork/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
 
 ### Fixes
+- [#2654](https://github.com/poanetwork/blockscout/pull/2654) - add an index on block_number for token transfers
 - [#2640](https://github.com/poanetwork/blockscout/pull/2640) - SVG network icons
 - [#2635](https://github.com/poanetwork/blockscout/pull/2635) - optimize ERC721 inventory query
 - [#2626](https://github.com/poanetwork/blockscout/pull/2626) - Fixing 2 Mobile UI Issues
