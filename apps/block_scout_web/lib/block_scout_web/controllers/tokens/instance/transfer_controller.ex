@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
         token_instance: token_transfer,
         current_path: current_path(conn),
         token: Market.add_price(token),
-        total_token_transfers: Chain.count_token_transfers_from_token_hash(hash)
+        total_token_transfers: Chain.count_token_transfers_from_token_hash_and_token_id(hash, token_id)
       )
     else
       _ ->

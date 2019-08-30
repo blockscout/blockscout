@@ -172,6 +172,18 @@ defmodule Explorer.Chain.TokenTransfer do
     Repo.one(query)
   end
 
+  @spec count_token_transfers_from_token_hash_and_token_id(Hash.t(), binary()) :: non_neg_integer()
+  def count_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id) do
+    query =
+      from(
+        tt in TokenTransfer,
+        where: tt.token_contract_address_hash == ^token_address_hash and tt.token_id == ^token_id,
+        select: fragment("COUNT(*)")
+      )
+
+    Repo.one(query)
+  end
+
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
 
   def page_token_transfer(query, %PagingOptions{key: {token_id}}) do
