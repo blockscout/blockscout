@@ -2,8 +2,10 @@ defmodule BlockScoutWeb.Tokens.InstanceControllerTest do
   use BlockScoutWeb.ConnCase, async: false
 
   describe "GET show/2" do
-    test "returns erc721 token with valid params", %{conn: conn} do
+    test "redirects  with valid params", %{conn: conn} do
       contract_address = insert(:address)
+
+      insert(:token, contract_address: contract_address)
 
       token_id = 10
 
@@ -15,7 +17,7 @@ defmodule BlockScoutWeb.Tokens.InstanceControllerTest do
 
       conn = get(conn, token_instance_path(BlockScoutWeb.Endpoint, :show, token_id, to_string(contract_address.hash)))
 
-      assert conn.status == 200
+      assert conn.status == 302
     end
   end
 end

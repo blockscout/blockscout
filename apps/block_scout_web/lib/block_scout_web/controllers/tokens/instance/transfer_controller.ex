@@ -3,9 +3,11 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
 
   alias Explorer.{Chain, Market}
 
-  def show(conn, %{"token_id" => token_id, "id" => token_address_hash}) do
+  def index(conn, %{"token_id" => token_id, "instance_id" => token_address_hash}) do
+    options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
+
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
-         {:ok, token} <- Chain.token_from_address_hash(hash),
+         {:ok, token} <- Chain.token_from_address_hash(hash, options),
          {:ok, token_transfer} <-
            Chain.erc721_token_instance_from_token_id_and_token_address(token_id, hash) do
       render(
