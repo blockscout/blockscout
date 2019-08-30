@@ -2979,6 +2979,13 @@ defmodule Explorer.Chain do
     |> CoinBalance.fetch_coin_balances(paging_options)
     |> page_coin_balances(paging_options)
     |> Repo.all()
+    |> Enum.dedup_by(fn record ->
+      if record.delta == Decimal.new(0) do
+        :dup
+      else
+        System.unique_integer()
+      end
+    end)
   end
 
   def get_coin_balance(address_hash, block_number) do
