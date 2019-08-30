@@ -75,35 +75,10 @@ $progress-from-to-progress-background: $secondary;
 $stakes-stats-item-border-color: rgba(#fff, .5);
 $check-color: $secondary;
 $modal-status-graph-success: $secondary;
-.modal-content {
-	.form-control {
-		box-shadow: none !important;
-		outline: none !important;
-		border-color: #e2e5ec !important;
-	}
-	.btn-line {
-		border-color: $primary;
-		color: $primary;
-		&:hover {
-			background-color: $primary;
-			color: $btn-line-bg;
-		}
-	}
-}
-.stakes-table-th-content {
-	.i-tooltip {
-		position: relative;
-		top: -2px;
-	}
-}
-.stakes-address-container {
-	.check-tooltip {
-		position: relative;
-		top: -1px;
-	}
-}
 
 // Dark theme
 $dark-primary: #15bba6;
 $dark-secondary: #93d7ff;
 $dark-primary-alternate: #15bba6;
+$modal-gray-background: #313355;
+$base-border-color: #313355;

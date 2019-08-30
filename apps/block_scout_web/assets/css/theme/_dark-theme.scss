@@ -778,4 +778,12 @@ $labels-dark: #8a8dba; // header nav, labels
 			color: #fff;
 		}
 	}
+
+	.modal-title {
+		color: #fff;
+	}
+
+	.modal-content {
+		background-color: $dark-light-bg;
+	}
 }
