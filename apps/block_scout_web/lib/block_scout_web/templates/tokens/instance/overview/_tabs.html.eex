@@ -1,0 +1,15 @@
+<div class="card-tabs js-card-tabs">
+  <%= link(
+        gettext("Token Transfers"),
+        class: "card-tab #{tab_status("token_transfers", @conn.request_path)}",
+        to: token_path(@conn, :show, @token.contract_address_hash)
+      )
+    %>
+  <%= if smart_contract_with_read_only_functions?(@token) do %>
+    <%= link(
+        gettext("Read Contract"),
+        to: token_read_contract_path(@conn, :index, @token.contract_address_hash),
+        class: "card-tab #{tab_status("read_contract", @conn.request_path)}")
+      %>
+  <% end %>
+</div>
