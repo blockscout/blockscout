@@ -26,4 +26,11 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   end
 
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
+
+  def qr_code(conn, token_id, hash) do
+    conn
+    |> token_instance_url(:show, to_string(token_id), to_string(hash))
+    |> QRCode.to_png()
+    |> Base.encode64()
+  end
 end
