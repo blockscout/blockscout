@@ -4,50 +4,35 @@
       <!-- Block Details -->
       <div class="card card-mr-50-md">
         <div class="card-body">
-          <h1 class="card-title" data-test="detail_type" >
+          <h1 class="card-title" data-test="detail_type">
             <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
           </h1>
-          <!-- Block Height -->
-          
-             
-          <h3 data-test="block_detail_number" style="width: 25%;" data-toggle="tooltip" data-placement="top"  title="" data-original-title="The block number in which transactions were recorded.">
-            
-            <%= if block_type(@block) == "Block" do %>
-                
+          <!-- Block Height -->     
+          <h3 class="block-detail-number" data-test="block_detail_number" data-toggle="tooltip" data-placement="top"  title="" data-original-title="The block number in which transactions were recorded.">     
+            <%= if block_type(@block) == "Block" do %>    
               <%= gettext("Block Height: %{height}", height: @block.number) %> <%= if @block.number == 0, do: "- " <> gettext("Genesis Block")%>
             <% else %>
               <%= gettext("%{block_type} Height:", block_type: block_type(@block)) %>
               <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
-            <% end %>
-                
+            <% end %>     
           </h3>
-          
           <div class="d-flex justify-content-start text-muted block-details-row">
             <!-- # of Transactions -->
             <span class="mr-4 block-detail-el"> <%= gettext "%{count} Transactions", count: @block_transaction_count %> </span>
-
             <%= if @block.size do %>
             <!-- Block Size -->
               <span class="mr-4 block-detail-el"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
             <% end %>
-
             <!-- Block Age -->
             <span class="mr-4 block-detail-el" data-from-now="<%= @block.timestamp %>"></span>
           </div>
-
           <hr>
-
           <!-- Block details description list -->
-
           <!-- Block Hash -->
-          <dl class="row">
-                
-            <dt class="col-sm-3 text-muted"><%= gettext "Hash" %></dt>
-            
+          <dl class="row">               
+            <dt class="col-sm-3 text-muted"><%= gettext "Hash" %></dt>            
             <dd class="col-sm-9"><a class="transaction__link"  data-toggle="tooltip" data-placement="top"  title="" data-original-title="The SHA256 hash of the block."><%= to_string(@block.hash) %></a></dd>
-             
           </dl>
-                       
 
           <%= unless @block.number == 0 do %>
               <!-- Parent Hash -->
@@ -95,6 +80,9 @@
                     <%= link(
                         gettext("Position %{index}", index: index),
                         class: "transaction__link",
+                        "data-toggle": "tooltip",
+                        "data-placement": "top" ,
+                        "data-original-title": "Index position(s) of referenced stale blocks." ,
                         "data-test": "uncle_link",
                         "data-uncle-hash": to_string(relation.uncle_hash),
                         to: block_path(@conn, :show, relation.uncle_hash)
@@ -103,14 +91,13 @@
                 </dd>
               </dl>
             <% end %>
-
             <!-- Otherwise it will be displayed in its own block -->
             <%= if show_reward?(@block.rewards) do %>
-              <dl class="row" >
+              <dl class="row">
                 <dt class="col-sm-3 text-muted"><%= gettext "Gas Used" %></dt>
                 <dd class="col-sm-9">
-                  <span><%= @block.gas_used |> BlockScoutWeb.Cldr.Number.to_string! %></span>
-                  <span class="text-muted" data-toggle="tooltip" data-placement="top" title="" data-original-title="Total gas used by all transactions in this block (% used / limit).">(<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%") %>)</span>
+                  <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Total gas used by all transactions in this block (limit)."><%= @block.gas_used |> BlockScoutWeb.Cldr.Number.to_string! %></span>
+                  <span class="text-muted" data-toggle="tooltip" data-placement="top" title="" data-original-title="Total gas used by all transactions in this block (% used).">(<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%") %>)</span>
                 </dt>
               </dl>
               <dl class="row mb-0">
@@ -153,8 +140,8 @@
         
           <%= if show_reward?(@block.rewards) do %>
             <h2 class="card-title balance-card-title"><%= gettext "Block Rewards" %></h2>
-            <div class="text-right tooltipCustom">
-                            <span class="tooltiptextTopR">  Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees. </span>
+            <div class="text-right" style="margin-left: 50%;" data-toggle="tooltip" data-placement="top" title="" data-original-title="Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees.">
+                            
               <%= for block_reward <- @block.rewards do %>
             
                 <p class="address-current-balance "><%= block_reward_text(block_reward) %> <span class="text-muted"><%= format_wei_value(block_reward.reward, :ether) %></span></p>
