@@ -2,7 +2,10 @@ defmodule BlockScoutWeb.StakesHelpers do
   @moduledoc """
   Helpers for staking templates
   """
+  alias BlockScoutWeb.CldrHelper.Number
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Token
+  alias Phoenix.HTML
   alias Timex.Duration
 
   def amount_ratio(pool) do
@@ -37,4 +40,31 @@ defmodule BlockScoutWeb.StakesHelpers do
   def list_title(:validator), do: "Validators"
   def list_title(:active), do: "Active Pools"
   def list_title(:inactive), do: "Inactive Pools"
+
+  def format_token_amount(amount, token, options \\ [])
+  def format_token_amount(nil, _token, _options), do: "-"
+
+  def format_token_amount(%Decimal{} = amount, %Token{} = token, options) do
+    symbol = if Keyword.get(options, :symbol, true), do: " #{token.symbol}"
+    digits = Keyword.get(options, :digits, 5)
+    ellipsize = Keyword.get(options, :ellipsize, true)
+
+    reduced =
+      amount.sign
+      |> Decimal.new(amount.coef, amount.exp - Decimal.to_integer(token.decimals))
+      |> Decimal.reduce()
+
+    if digits >= -reduced.exp or not ellipsize do
+      "#{Number.to_string!(reduced, fractional_digits: min(digits, -reduced.exp))}#{symbol}"
+    else
+      HTML.raw(~s"""
+        <span
+          data-placement="top"
+          data-toggle="tooltip"
+          title="#{Number.to_string!(reduced, fractional_digits: -reduced.exp)}#{symbol}">
+          #{Number.to_string!(reduced, fractional_digits: digits)}...#{symbol}
+        </span>
+      """)
+    end
+  end
 end
