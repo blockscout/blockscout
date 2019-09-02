@@ -3,8 +3,8 @@ $dashboard-banner-gradient-end: lighten(
   $dashboard-banner-gradient-start,
   5%
 ) !default;
-$dashboard-banner-network-plain-container-background-color: lighten( $dashboard-banner-gradient-end, 5%) !default;
-$dashboard-line-color-price: lighten( $dashboard-banner-gradient-end, 5%) !default;
+$dashboard-banner-network-plain-container-background-color: lighten($dashboard-banner-gradient-end, 5%) !default;
+$dashboard-line-color-price: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-market: $secondary !default;
 $dashboard-stats-item-label-color: #fff !default;
 $dashboard-stats-item-value-color: rgba(#fff, 0.8) !default;
