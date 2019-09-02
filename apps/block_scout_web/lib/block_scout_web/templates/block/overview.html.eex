@@ -34,7 +34,7 @@
 
           <!-- Block Hash -->
           <dl class="row">
-            <dt class="col-sm-3 text-muted"><%= gettext "Hash" %></dt>            
+            <dt class="col-sm-3 text-muted"><%= gettext "Hash" %></dt>
             <dd class="col-sm-9"><a class="transaction__link"  data-toggle="tooltip" data-placement="top"  title="" data-original-title="The SHA256 hash of the block."><%= to_string(@block.hash) %></a></dd>
           </dl>
 
@@ -57,7 +57,7 @@
           <!-- Difficulty value -->
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Difficulty" %></dt>
-            <dd class="col-sm-9" >
+            <dd class="col-sm-9">
               <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Block difficulty for miner, used to calibrate block generation time (Note: constant in POA based networks)."><%= @block.difficulty |> BlockScoutWeb.Cldr.Number.to_string! %></span>
             </dd>
           </dl>
@@ -146,7 +146,7 @@
             <h2 class="card-title balance-card-title"><%= gettext "Block Rewards" %></h2>
             <div class="text-right" style="margin-left: 50%;" data-toggle="tooltip" data-placement="top" title="" data-original-title="Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees.">
               <%= for block_reward <- @block.rewards do %>
-                <p class="address-current-balance "><%= block_reward_text(block_reward) %> <span class="text-muted"><%= format_wei_value(block_reward.reward, :ether) %></span></p>
+                <p class="address-current-balance"><%= block_reward_text(block_reward) %> <span class="text-muted"><%= format_wei_value(block_reward.reward, :ether) %></span></p>
               <% end %>
             </div>
           <% else %>
@@ -157,7 +157,6 @@
                 <span class="text-muted">(<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%") %>)</span>
               </h3>
               <p class="address-current-balance"><%= @block.gas_limit |> BlockScoutWeb.Cldr.Number.to_string! %><%= gettext "Gas Limit" %></p>
-             
             </div>
           <% end %>
         </div>
