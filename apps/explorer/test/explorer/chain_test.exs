@@ -1121,23 +1121,31 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "fetch_min_and_max_block_numbers/0" do
-    test "fetches min and max block numbers" do
+  describe "fetch_min_block_number/0" do
+    test "fetches min block numbers" do
       for index <- 5..9 do
         insert(:block, number: index)
       end
 
-      assert {5, 9} = Chain.fetch_min_and_max_block_numbers()
+      assert 5 = Chain.fetch_min_block_number()
     end
 
-    test "fetches min and max when there are no blocks" do
-      assert {0, 0} = Chain.fetch_min_and_max_block_numbers()
+    test "fetches min when there are no blocks" do
+      assert 0 = Chain.fetch_min_block_number()
+    end
+  end
+
+  describe "fetch_max_block_number/0" do
+    test "fetches max block numbers" do
+      for index <- 5..9 do
+        insert(:block, number: index)
+      end
+
+      assert 9 = Chain.fetch_max_block_number()
     end
 
-    test "fetches min and max where there is only one block" do
-      insert(:block, number: 1)
-
-      assert {1, 1} = Chain.fetch_min_and_max_block_numbers()
+    test "fetches max when there are no blocks" do
+      assert 0 = Chain.fetch_max_block_number()
     end
   end
 
@@ -3896,8 +3904,8 @@ defmodule Explorer.ChainTest do
       balances = Chain.address_to_balances_by_day(address.hash)
 
       assert balances == [
-               %{date: today |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")},
-               %{date: yesterday |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")}
+               %{date: yesterday |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")},
+               %{date: today |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")}
              ]
     end
   end
@@ -4157,6 +4165,32 @@ defmodule Explorer.ChainTest do
       insert(:staking_pool, is_active: false)
 
       assert Chain.staking_pools_count(:inactive) == 1
+    end
+  end
+
+  describe "address_to_coin_balances/2" do
+    test "deduplicates records by zero delta" do
+      address = insert(:address)
+
+      1..5
+      |> Enum.each(fn block_number ->
+        insert(:block, number: block_number)
+        insert(:fetched_balance, value: 1, block_number: block_number, address_hash: address.hash)
+      end)
+
+      insert(:block, number: 6)
+      insert(:fetched_balance, value: 2, block_number: 6, address_hash: address.hash)
+
+      assert [first, second, third] = Chain.address_to_coin_balances(address.hash, [])
+
+      assert first.block_number == 6
+      assert first.delta == Decimal.new(1)
+
+      assert second.block_number == 5
+      assert second.delta == Decimal.new(0)
+
+      assert third.block_number == 1
+      assert third.delta == Decimal.new(1)
     end
   end
 end

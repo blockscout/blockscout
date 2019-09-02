@@ -3,14 +3,14 @@ defmodule BlockScoutWeb.ChainControllerTest do
     # ETS table is shared in `Explorer.Counters.AddressesWithBalanceCounter`
     async: false
 
-  import BlockScoutWeb.Router.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
+  import BlockScoutWeb.WebRouter.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
 
   alias Explorer.Chain.Block
   alias Explorer.Counters.AddressesWithBalanceCounter
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, :blocks})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, :blocks})
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     start_supervised!(AddressesWithBalanceCounter)
     AddressesWithBalanceCounter.consolidate()
 

@@ -183,14 +183,15 @@ defmodule Indexer.Block.Fetcher do
     end
   end
 
-  defp update_block_cache(blocks) do
-    max_block = Enum.max_by(blocks, fn block -> block.number end)
-    min_block = Enum.min_by(blocks, fn block -> block.number end)
+  defp update_block_cache(blocks) when is_list(blocks) do
+    {min_block, max_block} = Enum.min_max_by(blocks, & &1.number)
 
-    BlockNumber.update(max_block.number)
-    BlockNumber.update(min_block.number)
-    BlocksCache.update_blocks(blocks)
+    BlockNumber.update_all(max_block.number)
+    BlockNumber.update_all(min_block.number)
+    BlocksCache.update(blocks)
   end
+
+  defp update_block_cache(_), do: :ok
 
   defp update_transactions_cache(transactions) do
     Transactions.update(transactions)
@@ -267,7 +268,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_internal_transactions(%{transactions: transactions}, EthereumJSONRPC.Geth) do
-    {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
+    max_block_number = Chain.fetch_max_block_number()
 
     transactions
     |> Enum.flat_map(fn

@@ -4,7 +4,7 @@ defmodule Explorer.EtherscanTest do
   import Explorer.Factory
 
   alias Explorer.{Etherscan, Chain}
-  alias Explorer.Chain.{Transaction, Wei}
+  alias Explorer.Chain.Transaction
 
   describe "list_transactions/2" do
     test "with empty db" do
@@ -1170,7 +1170,7 @@ defmodule Explorer.EtherscanTest do
 
   describe "list_blocks/1" do
     test "it returns all required fields" do
-      %{block_range: range} = emission_reward = insert(:emission_reward)
+      %{block_range: range} = insert(:emission_reward)
 
       block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
 
@@ -1181,17 +1181,10 @@ defmodule Explorer.EtherscanTest do
       |> insert(gas_price: 1)
       |> with_block(block, gas_used: 1)
 
-      expected_reward =
-        emission_reward.reward
-        |> Wei.to(:wei)
-        |> Decimal.add(Decimal.new(1))
-        |> Wei.from(:wei)
-
       expected = [
         %{
           number: block.number,
-          timestamp: block.timestamp,
-          reward: expected_reward
+          timestamp: block.timestamp
         }
       ]
 
@@ -1199,32 +1192,14 @@ defmodule Explorer.EtherscanTest do
     end
 
     test "with block containing multiple transactions" do
-      %{block_range: range} = emission_reward = insert(:emission_reward)
+      %{block_range: range} = insert(:emission_reward)
 
       block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
-
-      # irrelevant transaction
-      insert(:transaction)
-
-      :transaction
-      |> insert(gas_price: 1)
-      |> with_block(block, gas_used: 1)
-
-      :transaction
-      |> insert(gas_price: 1)
-      |> with_block(block, gas_used: 2)
-
-      expected_reward =
-        emission_reward.reward
-        |> Wei.to(:wei)
-        |> Decimal.add(Decimal.new(3))
-        |> Wei.from(:wei)
 
       expected = [
         %{
           number: block.number,
-          timestamp: block.timestamp,
-          reward: expected_reward
+          timestamp: block.timestamp
         }
       ]
 
@@ -1232,7 +1207,7 @@ defmodule Explorer.EtherscanTest do
     end
 
     test "with block without transactions" do
-      %{block_range: range} = emission_reward = insert(:emission_reward)
+      %{block_range: range} = insert(:emission_reward)
 
       block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
 
@@ -1242,8 +1217,7 @@ defmodule Explorer.EtherscanTest do
       expected = [
         %{
           number: block.number,
-          timestamp: block.timestamp,
-          reward: emission_reward.reward
+          timestamp: block.timestamp
         }
       ]
 
@@ -1251,7 +1225,7 @@ defmodule Explorer.EtherscanTest do
     end
 
     test "with multiple blocks" do
-      %{block_range: range} = emission_reward = insert(:emission_reward)
+      %{block_range: range} = insert(:emission_reward)
 
       block_numbers = Range.new(range.from, range.to)
 
@@ -1262,47 +1236,14 @@ defmodule Explorer.EtherscanTest do
       block1 = insert(:block, number: block_number1, miner: address)
       block2 = insert(:block, number: block_number2, miner: address)
 
-      # irrelevant transaction
-      insert(:transaction)
-
-      :transaction
-      |> insert(gas_price: 2)
-      |> with_block(block1, gas_used: 2)
-
-      :transaction
-      |> insert(gas_price: 2)
-      |> with_block(block1, gas_used: 2)
-
-      :transaction
-      |> insert(gas_price: 3)
-      |> with_block(block2, gas_used: 3)
-
-      :transaction
-      |> insert(gas_price: 3)
-      |> with_block(block2, gas_used: 3)
-
-      expected_reward_block1 =
-        emission_reward.reward
-        |> Wei.to(:wei)
-        |> Decimal.add(Decimal.new(8))
-        |> Wei.from(:wei)
-
-      expected_reward_block2 =
-        emission_reward.reward
-        |> Wei.to(:wei)
-        |> Decimal.add(Decimal.new(18))
-        |> Wei.from(:wei)
-
       expected = [
         %{
           number: block2.number,
-          timestamp: block2.timestamp,
-          reward: expected_reward_block2
+          timestamp: block2.timestamp
         },
         %{
           number: block1.number,
-          timestamp: block1.timestamp,
-          reward: expected_reward_block1
+          timestamp: block1.timestamp
         }
       ]
 
@@ -1310,7 +1251,7 @@ defmodule Explorer.EtherscanTest do
     end
 
     test "with pagination options" do
-      %{block_range: range} = emission_reward = insert(:emission_reward)
+      %{block_range: range} = insert(:emission_reward)
 
       block_numbers = Range.new(range.from, range.to)
 
@@ -1321,29 +1262,17 @@ defmodule Explorer.EtherscanTest do
       block1 = insert(:block, number: block_number1, miner: address)
       block2 = insert(:block, number: block_number2, miner: address)
 
-      :transaction
-      |> insert(gas_price: 2)
-      |> with_block(block1, gas_used: 2)
-
-      expected_reward =
-        emission_reward.reward
-        |> Wei.to(:wei)
-        |> Decimal.add(Decimal.new(4))
-        |> Wei.from(:wei)
-
       expected1 = [
         %{
           number: block2.number,
-          timestamp: block2.timestamp,
-          reward: emission_reward.reward
+          timestamp: block2.timestamp
         }
       ]
 
       expected2 = [
         %{
           number: block1.number,
-          timestamp: block1.timestamp,
-          reward: expected_reward
+          timestamp: block1.timestamp
         }
       ]
 
@@ -1421,7 +1350,8 @@ defmodule Explorer.EtherscanTest do
           contract_address_hash: token_balance.token_contract_address_hash,
           name: token_balance.token.name,
           decimals: token_balance.token.decimals,
-          symbol: token_balance.token.symbol
+          symbol: token_balance.token.symbol,
+          type: token_balance.token.type
         }
       ]
 
@@ -1468,7 +1398,8 @@ defmodule Explorer.EtherscanTest do
           contract_address_hash: token_balance.token_contract_address_hash,
           name: token_balance.token.name,
           decimals: token_balance.token.decimals,
-          symbol: token_balance.token.symbol
+          symbol: token_balance.token.symbol,
+          type: token_balance.token.type
         }
       ]
 
