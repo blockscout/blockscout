@@ -4,9 +4,9 @@
       <h3 class="api-doc-list-item-title"><%= @action %></h3>
       <p class="api-doc-list-item-contents"><%= raw @info.notes %></p>
       <span class="api-doc-list-item-query api-text-monospace api-text-monospace-background btn" 
-        data-clipboard-text="curl -X POST --data '{&quot;id&quot;:0,&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;method&quot;: &quot;<%= @action %>&quot;, params: []}'"
+        data-clipboard-text="curl -X POST --data '{&quot;id&quot;:0,&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;method&quot;: &quot;<%= @action %>&quot;,&quot;params&quot;: []}'"
       >
-        curl -X POST --data '{"id":0,"jsonrpc":"2.0","method": "<%= @action %>", params: []}'
+        curl -X POST --data '{"id":0,"jsonrpc":"2.0","method": "<%= @action %>", "params": []}'
       </span>
       <p class="api-doc-list-item-text">
         <div class="tile tile-muted p-1">
