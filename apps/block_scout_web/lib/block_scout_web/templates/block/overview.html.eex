@@ -7,29 +7,33 @@
           <h1 class="card-title" data-test="detail_type">
             <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
           </h1>
-          <!-- Block Height -->     
-          <h3 class="block-detail-number" data-test="block_detail_number" data-toggle="tooltip" data-placement="top"  title="" data-original-title="The block number in which transactions were recorded.">     
-            <%= if block_type(@block) == "Block" do %>    
+          <!-- Block Height -->
+          <h3 class="block-detail-number" data-test="block_detail_number" data-toggle="tooltip" data-placement="top"  title="" data-original-title="The block number in which transactions were recorded.">
+            <%= if block_type(@block) == "Block" do %>
               <%= gettext("Block Height: %{height}", height: @block.number) %> <%= if @block.number == 0, do: "- " <> gettext("Genesis Block")%>
             <% else %>
               <%= gettext("%{block_type} Height:", block_type: block_type(@block)) %>
               <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
-            <% end %>     
+            <% end %>
           </h3>
           <div class="d-flex justify-content-start text-muted block-details-row">
             <!-- # of Transactions -->
             <span class="mr-4 block-detail-el"> <%= gettext "%{count} Transactions", count: @block_transaction_count %> </span>
+
             <%= if @block.size do %>
             <!-- Block Size -->
               <span class="mr-4 block-detail-el"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
             <% end %>
+
             <!-- Block Age -->
             <span class="mr-4 block-detail-el" data-from-now="<%= @block.timestamp %>"></span>
           </div>
+
           <hr>
           <!-- Block details description list -->
+
           <!-- Block Hash -->
-          <dl class="row">               
+          <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Hash" %></dt>            
             <dd class="col-sm-9"><a class="transaction__link"  data-toggle="tooltip" data-placement="top"  title="" data-original-title="The SHA256 hash of the block."><%= to_string(@block.hash) %></a></dd>
           </dl>
@@ -91,6 +95,7 @@
                 </dd>
               </dl>
             <% end %>
+
             <!-- Otherwise it will be displayed in its own block -->
             <%= if show_reward?(@block.rewards) do %>
               <dl class="row">
@@ -135,17 +140,13 @@
       </div>
 
       <!-- Validator Reward or Gas-->
-      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0" >
+      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
         <div class="card-body card-body-flex-column-space-between">
-        
           <%= if show_reward?(@block.rewards) do %>
             <h2 class="card-title balance-card-title"><%= gettext "Block Rewards" %></h2>
             <div class="text-right" style="margin-left: 50%;" data-toggle="tooltip" data-placement="top" title="" data-original-title="Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees.">
-                            
               <%= for block_reward <- @block.rewards do %>
-            
                 <p class="address-current-balance "><%= block_reward_text(block_reward) %> <span class="text-muted"><%= format_wei_value(block_reward.reward, :ether) %></span></p>
-                
               <% end %>
             </div>
           <% else %>
