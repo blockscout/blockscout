@@ -389,11 +389,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     ordered_query =
       from(token_transfer in TokenTransfer,
         where: token_transfer.block_number in ^ordered_consensus_block_numbers,
-        select: map(token_transfer, [:transaction_hash, :log_index, :block_number]),
+        select: map(token_transfer, [:block_number]),
         # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
         order_by: [
-          token_transfer.transaction_hash,
-          token_transfer.log_index,
           token_transfer.block_number
         ],
         lock: "FOR UPDATE"
@@ -401,12 +399,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     query =
       from(token_transfer in TokenTransfer,
-        select: map(token_transfer, [:transaction_hash, :log_index, :block_number]),
+        select: map(token_transfer, [:block_number, :transaction_hash, :log_index]),
         inner_join: ordered_token_transfer in subquery(ordered_query),
-        on:
-          ordered_token_transfer.transaction_hash == token_transfer.transaction_hash and
-            ordered_token_transfer.log_index == token_transfer.log_index and
-            ordered_token_transfer.block_number == token_transfer.block_number
+        on: ordered_token_transfer.block_number == token_transfer.block_number
       )
 
     try do
