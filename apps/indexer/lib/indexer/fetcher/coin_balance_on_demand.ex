@@ -162,7 +162,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   end
 
   defp latest_block_number do
-    BlockNumber.max_number()
+    BlockNumber.get_max()
   end
 
   defp stale_balance_window(block_number) do
