@@ -279,17 +279,34 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   def add_submitted_comment(contract_lines, inserted_at) when is_list(contract_lines) do
-    index =
+    etherscan_index =
       Enum.find(contract_lines, fn line ->
         String.contains?(line, "Submitted for verification at Etherscan.io")
       end)
 
-    if index do
-      List.replace_at(contract_lines, index, "* Submitted for verification at blockscout.com on #{inserted_at}")
-    else
-      header = ["/**", "* Submitted for verification at blockscout.com on #{inserted_at}", "*/"]
+    blockscout_index =
+      Enum.find(contract_lines, fn line ->
+        String.contains?(line, "Submitted for verification at blockscout.com")
+      end)
 
-      header ++ contract_lines
+    cond do
+      etherscan_index && blockscout_index ->
+        List.replace_at(contract_lines, etherscan_index, "*")
+
+      etherscan_index && !blockscout_index ->
+        List.replace_at(
+          contract_lines,
+          etherscan_index,
+          "* Submitted for verification at blockscout.com on #{inserted_at}"
+        )
+
+      !etherscan_index && !blockscout_index ->
+        header = ["/**", "* Submitted for verification at blockscout.com on #{inserted_at}", "*/"]
+
+        header ++ contract_lines
+
+      true ->
+        contract_lines
     end
   end
 
