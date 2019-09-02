@@ -13,6 +13,9 @@ export function setupValidation ($form, validators, $submit) {
       .ready(() => {
         validateInput($input, callback, errors)
         updateSubmit($submit, errors)
+        if (errors[key]) {
+          displayInputError($input, errors[key])
+        }
       })
       .blur(() => {
         if (errors[key]) {
