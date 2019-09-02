@@ -9,8 +9,8 @@ defmodule BlockScoutWeb.ChainControllerTest do
   alias Explorer.Counters.AddressesWithBalanceCounter
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, :blocks})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, :blocks})
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     start_supervised!(AddressesWithBalanceCounter)
     AddressesWithBalanceCounter.consolidate()
 
