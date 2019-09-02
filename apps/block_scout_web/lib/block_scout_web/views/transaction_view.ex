@@ -135,14 +135,11 @@ defmodule BlockScoutWeb.TransactionView do
 
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
-      nil ->
-        0
-
       %Block{consensus: true} ->
         {:ok, confirmations} = Chain.confirmations(block, named_arguments)
         BlockScoutWeb.Cldr.Number.to_string!(confirmations, format: "#,###")
 
-      %Block{consensus: false} ->
+      _ ->
         0
     end
   end
