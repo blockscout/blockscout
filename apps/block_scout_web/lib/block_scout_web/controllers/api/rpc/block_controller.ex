@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
 
   def eth_block_number(conn, params) do
     id = Map.get(params, "id", 1)
-    max_block_number = BlockNumber.max_number()
+    max_block_number = BlockNumber.get_max()
 
     render(conn, :eth_block_number, number: max_block_number, id: id)
   end

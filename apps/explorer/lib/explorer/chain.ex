@@ -267,7 +267,7 @@ defmodule Explorer.Chain do
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
-    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.max_number(), 0, 0}
+    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
     base_query =
       from(log in Log,
@@ -1176,7 +1176,7 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio() :: Decimal.t()
   def indexed_ratio do
-    {min, max} = BlockNumber.min_and_max_numbers()
+    %{min: min, max: max} = BlockNumber.get_all()
 
     case {min, max} do
       {0, 0} ->
@@ -1189,20 +1189,30 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer, non_neg_integer}
-  def fetch_min_and_max_block_numbers do
+  @spec fetch_min_block_number() :: non_neg_integer
+  def fetch_min_block_number do
     query =
       from(block in Block,
-        select: {min(block.number), max(block.number)},
-        where: block.consensus == true
+        select: block.number,
+        where: block.consensus == true,
+        order_by: [asc: block.number],
+        limit: 1
       )
 
-    result = Repo.one!(query)
+    Repo.one(query) || 0
+  end
 
-    case result do
-      {nil, nil} -> {0, 0}
-      _ -> result
-    end
+  @spec fetch_max_block_number() :: non_neg_integer
+  def fetch_max_block_number do
+    query =
+      from(block in Block,
+        select: block.number,
+        where: block.consensus == true,
+        order_by: [desc: block.number],
+        limit: 1
+      )
+
+    Repo.one(query) || 0
   end
 
   @spec fetch_count_consensus_block() :: non_neg_integer
@@ -2195,7 +2205,7 @@ defmodule Explorer.Chain do
   """
   @spec transaction_estimated_count() :: non_neg_integer()
   def transaction_estimated_count do
-    cached_value = TransactionCount.value()
+    cached_value = TransactionCount.get_count()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[rows]]} =
@@ -2214,7 +2224,7 @@ defmodule Explorer.Chain do
   """
   @spec block_estimated_count() :: non_neg_integer()
   def block_estimated_count do
-    cached_value = BlockCount.count()
+    cached_value = BlockCount.get_count()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
@@ -2735,7 +2745,7 @@ defmodule Explorer.Chain do
   end
 
   defp supply_module do
-    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.CoinMarketCap)
+    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.ExchangeRate)
   end
 
   @doc """
@@ -2985,6 +2995,13 @@ defmodule Explorer.Chain do
     |> CoinBalance.fetch_coin_balances(paging_options)
     |> page_coin_balances(paging_options)
     |> Repo.all()
+    |> Enum.dedup_by(fn record ->
+      if record.delta == Decimal.new(0) do
+        :dup
+      else
+        System.unique_integer()
+      end
+    end)
   end
 
   def get_coin_balance(address_hash, block_number) do
