@@ -13,9 +13,16 @@
           <% end %>
         <% else %>
           <%=
+            button_class =
+              if @account[:pool] do
+                "js-make-stake"
+              else
+                "js-become-candidate"
+              end
+
             render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html",
               text: gettext("Become a Candidate"),
-              extra_class: "js-become-candidate",
+              extra_class: button_class,
               disabled: @account[:pool] && @account.pool.is_banned
           %>
         <% end %>
