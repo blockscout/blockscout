@@ -12,15 +12,10 @@
           </div>
           <div class="modal-body">
             <form>
-              <div class="input-group form-group">
-                <input move-amount type="text" class="form-control n-b-r" placeholder="<%= gettext("Amount") %>" value="<%= @amount %>">
-                <div class="input-group-prepend last">
-                  <div class="input-group-text"><%= @token.symbol %></div>
-                </div>
-              </div>
+              <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "move-amount", classes: "form-group", input_classes: "form-control n-b-r", attributes: "move-amount", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol, value: @amount %>
               <p class="form-p">You Staked:
                 <span class="text-dark">
-                  <%= format_according_to_decimals(@delegator.stake_amount, @token.decimals) %> <%= @token.symbol %>
+                  <%= format_according_to_decimals(@delegator_from.stake_amount, @token.decimals) %> <%= @token.symbol %>
                 </span>
               </p>
               <div class="input-group form-group">
@@ -28,7 +23,7 @@
                   <option disabled <%= unless @pool_to do "selected" end %>><%= gettext("Choose Pool") %></option>
                   <%= for %{pool: pool} <- @pools,
                         pool.staking_address_hash != @pool_from.staking_address_hash,
-                        Decimal.positive?(pool.self_staked_amount) or pool.staking_address_hash == @delegator.delegator_address_hash do %>
+                        Decimal.positive?(pool.self_staked_amount) or pool.staking_address_hash == @delegator_from.delegator_address_hash do %>
                     <option
                       value="<%= pool.staking_address_hash %>"
                       <%= if @pool_to && pool.staking_address_hash == @pool_to.staking_address_hash do "selected" end %>
@@ -38,9 +33,16 @@
                   <% end %>
                 </select>
               </div>
+              <%= if @delegator_to && Decimal.positive?(@delegator_to.stake_amount) do %>
+                <p class="form-p m-b-0">Current stake:
+                  <span class="text-dark">
+                    <%= format_according_to_decimals(@delegator_to.stake_amount, @token.decimals) %> <%= @token.symbol %>
+                  </span>
+                </p>
+              <% end %>
               <p class="form-p">Max Amount to Move:
                 <span class="text-dark">
-                  <%= format_according_to_decimals(@delegator.max_withdraw_allowed, @token.decimals) %> <%= @token.symbol %>
+                  <%= format_according_to_decimals(@delegator_from.max_withdraw_allowed, @token.decimals) %> <%= @token.symbol %>
                 </span>
               </p>
               <div class="form-buttons">
