@@ -65,4 +65,3 @@ $ export NETWORK=POA
 | `WEBAPP_URL` | | Link to web application instance, e.g. `http://host/path` | (empty) | v2.0.3+ | | |
 | `API_URL` | | Link to API instance, e.g. `http://host/path` | (empty) | v2.0.3+ | | |
 | `CHAIN_SPEC_PATH` | | Chain specification path (absolute file system path or url) to import block emission reward ranges and genesis account balances from | (empty) | master | | |
-| `COIN_GECKO_ID` | | CoinGecko coin id required for fetching an exchange rate | poa-network | master | | |

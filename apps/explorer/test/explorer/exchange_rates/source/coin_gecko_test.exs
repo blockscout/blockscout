@@ -18,6 +18,26 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
   }
   """
 
+  @coins_list """
+  [
+    {
+      "id": "poa-network",
+      "symbol": "poa",
+      "name": "POA Network"
+    },
+    {
+      "id": "poc-chain",
+      "symbol": "pocc",
+      "name": "POC Chain"
+    },
+    {
+      "id": "pocket-arena",
+      "symbol": "poc",
+      "name": "Pocket Arena"
+    }
+  ]
+  """
+
   describe "format_data/1" do
     setup do
       bypass = Bypass.open()
@@ -60,6 +80,23 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
       """
 
       assert [] = CoinGecko.format_data(bad_data)
+    end
+  end
+
+  describe "coin_id/0" do
+    setup do
+      bypass = Bypass.open()
+      Application.put_env(:explorer, CoinGecko, base_url: "http://localhost:#{bypass.port}")
+
+      {:ok, bypass: bypass}
+    end
+
+    test "fetches coin id", %{bypass: bypass} do
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, @coins_list)
+      end)
+
+      assert CoinGecko.coin_id() == {:ok, "poa-network"}
     end
   end
 end
