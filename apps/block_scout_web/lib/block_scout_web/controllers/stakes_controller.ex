@@ -95,7 +95,8 @@ defmodule BlockScoutWeb.StakesController do
           buttons: %{
             stake: stake_allowed?(pool, delegator),
             move: move_allowed?(delegator),
-            withdraw: withdraw_allowed?(delegator, epoch_number)
+            withdraw: withdraw_allowed?(delegator),
+            claim: claim_allowed?(delegator, epoch_number)
           }
         )
       end)
@@ -145,12 +146,17 @@ defmodule BlockScoutWeb.StakesController do
     Decimal.positive?(delegator.max_withdraw_allowed)
   end
 
-  defp withdraw_allowed?(nil, _epoch_number), do: false
+  defp withdraw_allowed?(nil), do: false
 
-  defp withdraw_allowed?(delegator, epoch_number) do
+  defp withdraw_allowed?(delegator) do
     Decimal.positive?(delegator.max_withdraw_allowed) or
       Decimal.positive?(delegator.max_ordered_withdraw_allowed) or
-      Decimal.positive?(delegator.ordered_withdraw) or
-      (Decimal.positive?(delegator.ordered_withdraw) and delegator.ordered_withdraw_epoch < epoch_number)
+      Decimal.positive?(delegator.ordered_withdraw)
+  end
+
+  defp claim_allowed?(nil, _epoch_number), do: false
+
+  defp claim_allowed?(delegator, epoch_number) do
+    Decimal.positive?(delegator.ordered_withdraw) and delegator.ordered_withdraw_epoch < epoch_number
   end
 end
