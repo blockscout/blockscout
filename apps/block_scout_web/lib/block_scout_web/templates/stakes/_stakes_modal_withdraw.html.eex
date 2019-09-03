@@ -12,20 +12,20 @@
               <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "amount", classes: "form-group", input_classes: "form-control n-b-r", attributes: "amount", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
               <p class="form-p m-b-0">You Staked:
                 <span class="text-dark">
-                  <%= format_according_to_decimals(@delegator.stake_amount, @token.decimals) %> <%= @token.symbol %>
+                  <%= format_token_amount(@delegator.stake_amount, @token) %>
                 </span>
               </p>
               <%= if Decimal.positive?(@delegator.ordered_withdraw) do %>
                 <p class="form-p m-b-0">Already ordered:
                   <span class="text-dark">
-                    <%= format_according_to_decimals(@delegator.ordered_withdraw, @token.decimals) %> <%= @token.symbol %>
+                    <%= format_token_amount(@delegator.ordered_withdraw, @token) %>
                   </span>
                 </p>
               <% end %>
               <%= if Decimal.positive?(@delegator.max_withdraw_allowed) do %>
                 <p class="form-p m-b-0">Available now:
                   <span class="text-dark">
-                    <%= format_according_to_decimals(@delegator.max_withdraw_allowed, @token.decimals) %> <%= @token.symbol %>
+                    <%= format_token_amount(@delegator.max_withdraw_allowed, @token) %>
                   </span>
                 </p>
                 <%=
@@ -38,7 +38,7 @@
               <%= if Decimal.positive?(@delegator.max_ordered_withdraw_allowed) or Decimal.positive?(@delegator.ordered_withdraw) do %>
                 <p class="form-p m-b-0">Available after the current epoch:
                   <span class="text-dark">
-                    <%= format_according_to_decimals(@delegator.max_ordered_withdraw_allowed, @token.decimals) %> <%= @token.symbol %>
+                    <%= format_token_amount(@delegator.max_ordered_withdraw_allowed, @token) %>
                   </span>
                 </p>
                 <%=
