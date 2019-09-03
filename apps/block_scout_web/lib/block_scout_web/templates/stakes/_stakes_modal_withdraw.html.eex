@@ -9,12 +9,7 @@
           </div>
           <div class="modal-body">
             <form>
-              <div class="input-group form-group">
-                <input amount type="text" class="form-control n-b-r" placeholder="<%= gettext("Amount") %>">
-                <div class="input-group-prepend last">
-                  <div class="input-group-text"><%= @token.symbol %></div>
-                </div>
-              </div>
+              <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "amount", classes: "form-group", input_classes: "form-control n-b-r", attributes: "amount", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
               <p class="form-p m-b-0">You Staked:
                 <span class="text-dark">
                   <%= format_according_to_decimals(@delegator.stake_amount, @token.decimals) %> <%= @token.symbol %>
