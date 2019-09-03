@@ -25,7 +25,8 @@ export const initialState = {
   tokenSymbol: '',
   refreshInterval: null,
   lastEpochNumber: 0,
-  lastBlockNumber: 0
+  lastBlockNumber: 0,
+  stakingAllowed: false
 }
 
 export function reducer (state = initialState, action) {
@@ -59,7 +60,8 @@ export function reducer (state = initialState, action) {
     case 'RECEIVED_UPDATE': {
       return Object.assign({}, state, {
         lastEpochNumber: action.lastEpochNumber,
-        lastBlockNumber: action.lastBlockNumber
+        lastBlockNumber: action.lastBlockNumber,
+        stakingAllowed: action.stakingAllowed
       })
     }
     case 'RECEIVED_CONTRACTS': {
@@ -103,13 +105,15 @@ if ($stakesPage.length) {
 
     const state = store.getState()
     if (
+      msg.staking_allowed !== state.stakingAllowed ||
       msg.epoch_number > state.lastEpochNumber ||
       (state.refreshInterval && msg.block_number >= state.lastBlockNumber + state.refreshInterval)
     ) {
       store.dispatch({
         type: 'RECEIVED_UPDATE',
         lastEpochNumber: msg.epoch_number,
-        lastBlockNumber: msg.block_number
+        lastBlockNumber: msg.block_number,
+        stakingAllowed: msg.staking_allowed
       })
       refreshPage(store)
     }
