@@ -3908,6 +3908,22 @@ defmodule Explorer.ChainTest do
                %{date: today |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")}
              ]
     end
+
+    test "uses last block value if there a couple of change in the same day" do
+      address = insert(:address)
+      today = NaiveDateTime.utc_now()
+      past = Timex.shift(today, hours: -1)
+
+      block_now = insert(:block, timestamp: today)
+      insert(:fetched_balance, address_hash: address.hash, value: 1, block_number: block_now.number)
+
+      block_past = insert(:block, timestamp: past)
+      insert(:fetched_balance, address_hash: address.hash, value: 0, block_number: block_past.number)
+
+      [balance] = Chain.address_to_balances_by_day(address.hash)
+
+      assert balance.value == Decimal.new(0)
+    end
   end
 
   describe "block_combined_rewards/1" do
