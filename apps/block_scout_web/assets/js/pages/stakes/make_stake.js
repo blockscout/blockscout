@@ -10,7 +10,7 @@ export function openMakeStakeModal (event, store) {
     return
   }
 
-  const address = $(event.target).closest('[data-address]').data('address')
+  const address = $(event.target).closest('[data-address]').data('address') || store.getState().account
 
   store.getState().channel
     .push('render_make_stake', { address })
