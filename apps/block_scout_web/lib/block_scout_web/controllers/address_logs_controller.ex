@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressLogsController do
   Manages events logs tab.
   """
 
-  import BlockScoutWeb.AddressController, only: [transaction_count_and_validation_count: 1]
+  import BlockScoutWeb.AddressController, only: [transaction_and_validation_count: 1]
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.AddressLogsView
