@@ -12,7 +12,7 @@
               <p class="form-p">Your ordered amount</p>
               <p class="form-p">
                 <span class="text-dark">
-                  <%= format_according_to_decimals(@delegator.ordered_withdraw, @token.decimals) %> <%= @token.symbol %>
+                  <%= format_token_amount(@delegator.ordered_withdraw, @token) %>
                 </span>
               </p>
               <div class="form-buttons">
