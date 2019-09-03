@@ -7,22 +7,9 @@
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-body">
         <form>
-          <div class="input-group form-group">
-            <input candidate-stake type="text" class="form-control n-b-r" placeholder="<%= gettext("Amount") %>">
-            <div class="input-group-prepend last">
-              <div class="input-group-text"><%= @token.symbol %></div>
-            </div>
-          </div>
-          <div class="form-group">
-            <input
-              mining-address
-              type="text"
-              class="form-control"
-              placeholder="<%= gettext("Your Mining Address") %>"
-              value="<%= @pool && @pool.mining_address_hash %>"
-              <%= if @pool do "disabled" end %>
-            />
-          </div>
+          <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "candidate-stake", classes: "form-group", input_classes: "form-control n-b-r", attributes: "candidate-stake", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
+
+          <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "mining-address", classes: "form-group", input_classes: "form-control", attributes: "mining-address", type: "text", placeholder: gettext("Your Mining Address"), value: @pool && @pool.mining_address_hash, disabled: @pool %>
           <p class="form-p m-b-0">Minimum Stake:
             <span class="text-dark">
               <%= format_according_to_decimals(@min_candidate_stake, @token.decimals) %> <%= @token.symbol %>
