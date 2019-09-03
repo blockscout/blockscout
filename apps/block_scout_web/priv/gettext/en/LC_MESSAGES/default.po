@@ -1906,7 +1906,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:11
-#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:50
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:57
 msgid "Move Stake"
 msgstr ""
 
@@ -1916,7 +1916,7 @@ msgid "Next epoch in"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:36
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:45
 msgid "Order Withdrawal"
 msgstr ""
 
@@ -1936,7 +1936,7 @@ msgid "Stake"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:29
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:40
 msgid "Stake More"
 msgstr ""
 
@@ -1967,7 +1967,7 @@ msgid "Withdraw"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:28
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:32
 msgid "Withdraw Now"
 msgstr ""
 
@@ -1980,4 +1980,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:26
 msgid "Ordered"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:42
+msgid "Place stake"
 msgstr ""
