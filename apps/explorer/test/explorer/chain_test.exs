@@ -3914,10 +3914,10 @@ defmodule Explorer.ChainTest do
       today = NaiveDateTime.utc_now()
       past = Timex.shift(today, hours: -1)
 
-      block_now = insert(:block, timestamp: today)
+      block_now = insert(:block, timestamp: today, number: 1)
       insert(:fetched_balance, address_hash: address.hash, value: 1, block_number: block_now.number)
 
-      block_past = insert(:block, timestamp: past)
+      block_past = insert(:block, timestamp: past, number: 2)
       insert(:fetched_balance, address_hash: address.hash, value: 0, block_number: block_past.number)
 
       [balance] = Chain.address_to_balances_by_day(address.hash)
