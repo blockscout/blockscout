@@ -1,6 +1,7 @@
 import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
-import { openModal, openErrorModal, lockModal } from '../../lib/modals'
+import { openModal, lockModal } from '../../lib/modals'
+import { setupValidation } from '../../lib/validation'
 import { makeContractCall, setupChart } from './utils'
 
 export function openMoveStakeModal (event, store) {
@@ -16,9 +17,17 @@ export function openMoveStakeModal (event, store) {
 }
 
 function setupModal ($modal, fromAddress, store, msg) {
-  setupChart($modal.find('.js-pool-from-progress'), msg.from_self_staked_amount, msg.from_staked_amount)
-  if ($modal.find('.js-pool-to-progress').length) {
-    setupChart($modal.find('.js-pool-to-progress'), msg.to_self_staked_amount, msg.to_staked_amount)
+  setupChart($modal.find('.js-pool-from-progress'), msg.from.self_staked_amount, msg.from.staked_amount)
+  if (msg.to) {
+    setupChart($modal.find('.js-pool-to-progress'), msg.to.self_staked_amount, msg.to.staked_amount)
+
+    setupValidation(
+      $modal.find('form'),
+      {
+        'move-amount': value => isMoveAmountValid(value, store, msg)
+      },
+      $modal.find('form button')
+    )
   }
 
   $modal.find('form').submit(() => {
@@ -44,16 +53,30 @@ function moveStake ($modal, fromAddress, store, msg) {
 
   const stakingContract = store.getState().stakingContract
   const decimals = store.getState().tokenDecimals
-
-  const minStake = new BigNumber(msg.min_delegator_stake)
-  const maxAllowed = new BigNumber(msg.max_withdraw_allowed)
   const stake = new BigNumber($modal.find('[move-amount]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
-
-  if (!stake.isPositive() || stake.isLessThan(minStake) || stake.isGreaterThan(maxAllowed)) {
-    openErrorModal('Error', `You cannot stake less than ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol} and more than ${maxAllowed.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`)
-    return false
-  }
 
   const toAddress = $modal.find('[pool-select]').val()
   makeContractCall(stakingContract.methods.moveStake(fromAddress, toAddress, stake.toString()), store)
+}
+
+function isMoveAmountValid (value, store, msg) {
+  const decimals = store.getState().tokenDecimals
+  const minFromStake = new BigNumber(msg.from.min_stake)
+  const minToStake = (msg.to) ? new BigNumber(msg.to.min_stake) : null
+  const maxAllowed = new BigNumber(msg.max_withdraw_allowed)
+  const currentFromStake = new BigNumber(msg.from.stake_amount)
+  const currentToStake = (msg.to) ? new BigNumber(msg.to.stake_amount) : null
+  const stake = new BigNumber(value.replace(',', '.').trim()).shiftedBy(decimals).integerValue()
+
+  if (!stake.isPositive()) {
+    return 'Invalid amount'
+  } else if (stake.plus(currentToStake).isLessThan(minToStake)) {
+    return `You must move at least ${minToStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol} to the selected pool`
+  } else if (stake.isGreaterThan(maxAllowed)) {
+    return `You have ${maxAllowed.shiftedBy(-decimals)} ${store.getState().tokenSymbol} available to move`
+  } else if (stake.isLessThan(currentFromStake) && currentFromStake.minus(stake).isLessThan(minFromStake)) {
+    return `A minimum of ${minFromStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol} is required to remain in the current pool, or move the entire amount to leave this pool`
+  }
+
+  return true
 }

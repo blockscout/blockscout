@@ -102,21 +102,31 @@ defmodule BlockScoutWeb.StakesChannel do
 
   def handle_in("render_make_stake", %{"address" => staking_address}, socket) do
     pool = Chain.staking_pool(staking_address)
-    min_delegator_stake = ContractState.get(:min_delegator_stake)
+    delegator = Chain.staking_pool_delegator(staking_address, socket.assigns.account)
     token = ContractState.get(:token)
     balance = Chain.fetch_last_token_balance(socket.assigns.account, token.contract_address_hash)
 
+    min_stake =
+      if staking_address == socket.assigns.account do
+        ContractState.get(:min_candidate_stake)
+      else
+        ContractState.get(:min_delegator_stake)
+      end
+
     html =
       View.render_to_string(StakesView, "_stakes_modal_stake.html",
-        min_delegator_stake: min_delegator_stake,
+        min_stake: min_stake,
         balance: balance,
         token: token,
-        pool: pool
+        pool: pool,
+        delegator: delegator
       )
 
     result = %{
       html: html,
-      min_delegator_stake: min_delegator_stake,
+      balance: balance,
+      delegator_staked: (delegator && delegator.stake_amount) || 0,
+      min_stake: min_stake,
       self_staked_amount: pool.self_staked_amount,
       staked_amount: pool.staked_amount
     }
@@ -128,9 +138,23 @@ defmodule BlockScoutWeb.StakesChannel do
     pool_from = Chain.staking_pool(from_address)
     pool_to = to_address && Chain.staking_pool(to_address)
     pools = Chain.staking_pools(:active, :all)
-    delegator = Chain.staking_pool_delegator(from_address, socket.assigns.account)
-    min_delegator_stake = ContractState.get(:min_delegator_stake)
+    delegator_from = Chain.staking_pool_delegator(from_address, socket.assigns.account)
+    delegator_to = to_address && Chain.staking_pool_delegator(to_address, socket.assigns.account)
     token = ContractState.get(:token)
+
+    min_from_stake =
+      if delegator_from.delegator_address_hash == delegator_from.pool_address_hash do
+        ContractState.get(:min_candidate_stake)
+      else
+        ContractState.get(:min_delegator_stake)
+      end
+
+    min_to_stake =
+      if to_address == socket.assigns.account do
+        ContractState.get(:min_candidate_stake)
+      else
+        ContractState.get(:min_delegator_stake)
+      end
 
     html =
       View.render_to_string(StakesView, "_stakes_modal_move.html",
@@ -138,18 +162,29 @@ defmodule BlockScoutWeb.StakesChannel do
         pools: pools,
         pool_from: pool_from,
         pool_to: pool_to,
-        delegator: delegator,
+        delegator_from: delegator_from,
+        delegator_to: delegator_to,
         amount: amount
       )
 
     result = %{
       html: html,
-      min_delegator_stake: min_delegator_stake,
-      max_withdraw_allowed: delegator.max_withdraw_allowed,
-      from_self_staked_amount: pool_from.self_staked_amount,
-      from_staked_amount: pool_from.staked_amount,
-      to_self_staked_amount: pool_to && pool_to.self_staked_amount,
-      to_staked_amount: pool_to && pool_to.staked_amount
+      max_withdraw_allowed: delegator_from.max_withdraw_allowed,
+      from: %{
+        stake_amount: delegator_from.stake_amount,
+        min_stake: min_from_stake,
+        self_staked_amount: pool_from.self_staked_amount,
+        staked_amount: pool_from.staked_amount
+      },
+      to:
+        if pool_to do
+          %{
+            stake_amount: (delegator_to && delegator_to.stake_amount) || 0,
+            min_stake: min_to_stake,
+            self_staked_amount: pool_to.self_staked_amount,
+            staked_amount: pool_to.staked_amount
+          }
+        end
     }
 
     {:reply, {:ok, result}, socket}
@@ -161,6 +196,13 @@ defmodule BlockScoutWeb.StakesChannel do
     delegator = Chain.staking_pool_delegator(staking_address, socket.assigns.account)
     epoch_number = ContractState.get(:epoch_number, 0)
 
+    min_stake =
+      if delegator.delegator_address_hash == delegator.pool_address_hash do
+        ContractState.get(:min_candidate_stake)
+      else
+        ContractState.get(:min_delegator_stake)
+      end
+
     claim_html =
       if Decimal.positive?(delegator.ordered_withdraw) and delegator.ordered_withdraw_epoch < epoch_number do
         View.render_to_string(StakesView, "_stakes_modal_claim.html",
@@ -170,18 +212,27 @@ defmodule BlockScoutWeb.StakesChannel do
         )
       end
 
-    html =
-      View.render_to_string(StakesView, "_stakes_modal_withdraw.html",
-        token: token,
-        delegator: delegator,
-        pool: pool
-      )
+    withdraw_html =
+      if Decimal.positive?(delegator.ordered_withdraw) or
+           Decimal.positive?(delegator.max_withdraw_allowed) or
+           Decimal.positive?(delegator.max_ordered_withdraw_allowed) do
+        View.render_to_string(StakesView, "_stakes_modal_withdraw.html",
+          token: token,
+          delegator: delegator,
+          pool: pool
+        )
+      end
 
     result = %{
       claim_html: claim_html,
-      html: html,
+      withdraw_html: withdraw_html,
       self_staked_amount: pool.self_staked_amount,
-      staked_amount: pool.staked_amount
+      staked_amount: pool.staked_amount,
+      delegator_staked: delegator.stake_amount,
+      ordered_withdraw: delegator.ordered_withdraw,
+      max_withdraw_allowed: delegator.max_withdraw_allowed,
+      max_ordered_withdraw_allowed: delegator.max_ordered_withdraw_allowed,
+      min_stake: min_stake
     }
 
     {:reply, {:ok, result}, socket}
