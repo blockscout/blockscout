@@ -9,24 +9,37 @@
           </div>
           <div class="modal-body">
             <form>
-              <div class="input-group form-group">
-                <input delegator-stake type="text" class="form-control n-b-r" placeholder="<%= gettext("Amount") %>">
-                <div class="input-group-prepend last">
-                  <div class="input-group-text"><%= @token.symbol %></div>
-                </div>
-              </div>
-              <p class="form-p m-b-0">Minimum Stake:
-                <span class="text-dark">
-                  <%= format_according_to_decimals(@min_delegator_stake, @token.decimals) %> <%= @token.symbol %>
-                </span>
-              </p>
+              <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "delegator-stake", classes: "form-group", input_classes: "form-control n-b-r", attributes: "delegator-stake", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
+
+              <%= if @delegator && Decimal.positive?(@delegator.stake_amount) do %>
+                <p class="form-p m-b-0">Current stake:
+                  <span class="text-dark">
+                    <%= format_according_to_decimals(@delegator.stake_amount, @token.decimals) %> <%= @token.symbol %>
+                  </span>
+                </p>
+              <% else %>
+                <p class="form-p m-b-0">Minimum Stake:
+                  <span class="text-dark">
+                    <%= format_according_to_decimals(@min_stake, @token.decimals) %> <%= @token.symbol %>
+                  </span>
+                </p>
+              <% end %>
               <p class="form-p">Your Balance:
                 <span class="text-dark">
                   <%= format_according_to_decimals(@balance, @token.decimals) %> <%= @token.symbol %>
                 </span>
               </p>
               <div class="form-buttons">
-                <%= render BlockScoutWeb.StakesView, "_stakes_btn_stake.html", text: gettext("Stake More"), extra_class: "full-width btn-add-full" %>
+                <%=
+                  label =
+                    if @delegator && Decimal.positive?(@delegator.stake_amount) do
+                      gettext("Stake More")
+                    else
+                      gettext("Place stake")
+                    end
+
+                  render BlockScoutWeb.StakesView, "_stakes_btn_stake.html", text: label, extra_class: "full-width btn-add-full"
+                %>
               </div>
             </form>
           </div>
