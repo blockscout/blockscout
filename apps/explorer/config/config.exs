@@ -31,9 +31,6 @@ config :explorer, Explorer.ChainSpec.GenesisData, enabled: false, chain_spec_pat
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
 
-config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
-  pages: String.to_integer(System.get_env("COINMARKETCAP_PAGES") || "10")
-
 balances_update_interval =
   if System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
     case Integer.parse(System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL")) do
