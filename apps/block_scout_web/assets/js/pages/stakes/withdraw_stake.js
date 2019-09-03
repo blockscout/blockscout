@@ -1,6 +1,6 @@
 import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
-import { openModal, openErrorModal, openQuestionModal, lockModal } from '../../lib/modals'
+import { openModal, openErrorModal, lockModal } from '../../lib/modals'
 import { setupValidation } from '../../lib/validation'
 import { makeContractCall, setupChart } from './utils'
 
@@ -9,34 +9,11 @@ export function openWithdrawStakeModal (event, store) {
 
   store.getState().channel
     .push('render_withdraw_stake', { address })
-    .receive('ok', msg => {
-      if (msg.claim_html && msg.withdraw_html) {
-        openQuestionModal(
-          'Claim or order', 'Do you want withdraw or claim ordered withdraw?',
-          () => setupClaimWithdrawModal(address, store, msg),
-          () => setupWithdrawStakeModal(address, store, msg),
-          'Claim', 'Withdraw'
-        )
-      } else if (msg.claim_html) {
-        setupClaimWithdrawModal(address, store, msg)
-      } else {
-        setupWithdrawStakeModal(address, store, msg)
-      }
-    })
-}
-
-function setupClaimWithdrawModal (address, store, msg) {
-  const $modal = $(msg.claim_html)
-  setupChart($modal.find('.js-stakes-progress'), msg.self_staked_amount, msg.staked_amount)
-  $modal.find('form').submit(() => {
-    claimWithdraw($modal, address, store)
-    return false
-  })
-  openModal($modal)
+    .receive('ok', msg => setupWithdrawStakeModal(address, store, msg))
 }
 
 function setupWithdrawStakeModal (address, store, msg) {
-  const $modal = $(msg.withdraw_html)
+  const $modal = $(msg.html)
   setupChart($modal.find('.js-stakes-progress'), msg.self_staked_amount, msg.staked_amount)
   setupValidation(
     $modal.find('form'),
@@ -71,13 +48,6 @@ function setupWithdrawStakeModal (address, store, msg) {
     return false
   })
   openModal($modal)
-}
-
-function claimWithdraw ($modal, address, store) {
-  lockModal($modal)
-
-  const stakingContract = store.getState().stakingContract
-  makeContractCall(stakingContract.methods.claimOrderedWithdraw(address), store)
 }
 
 function withdrawStake ($modal, address, store, msg) {
