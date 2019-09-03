@@ -13,6 +13,7 @@ import { openRemovePoolModal } from './stakes/remove_pool'
 import { openMakeStakeModal } from './stakes/make_stake'
 import { openMoveStakeModal } from './stakes/move_stake'
 import { openWithdrawStakeModal } from './stakes/withdraw_stake'
+import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
 
 export const initialState = {
   channel: null,
@@ -138,6 +139,7 @@ if ($stakesPage.length) {
     .on('click', '.js-make-stake', event => openMakeStakeModal(event, store))
     .on('click', '.js-move-stake', event => openMoveStakeModal(event, store))
     .on('click', '.js-withdraw-stake', event => openWithdrawStakeModal(event, store))
+    .on('click', '.js-claim-withdrawal', event => openClaimWithdrawalModal(event, store))
 
   $stakesPage
     .on('change', '[pool-filter-banned]', () => updateFilters(store))
