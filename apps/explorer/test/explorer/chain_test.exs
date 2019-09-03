@@ -3879,9 +3879,9 @@ defmodule Explorer.ChainTest do
       address = insert(:address)
       today = NaiveDateTime.utc_now()
       noon = Timex.set(today, hour: 12)
-      block = insert(:block, timestamp: noon)
+      block = insert(:block, timestamp: noon, number: 50)
       yesterday = Timex.shift(noon, days: -1)
-      block_one_day_ago = insert(:block, timestamp: yesterday)
+      block_one_day_ago = insert(:block, timestamp: yesterday, number: 49)
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
       insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_one_day_ago.number)
 
