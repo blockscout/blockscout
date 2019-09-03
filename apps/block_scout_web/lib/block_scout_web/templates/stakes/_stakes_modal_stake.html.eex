@@ -14,19 +14,19 @@
               <%= if @delegator && Decimal.positive?(@delegator.stake_amount) do %>
                 <p class="form-p m-b-0">Current stake:
                   <span class="text-dark">
-                    <%= format_according_to_decimals(@delegator.stake_amount, @token.decimals) %> <%= @token.symbol %>
+                    <%= format_token_amount(@delegator.stake_amount, @token) %>
                   </span>
                 </p>
               <% else %>
                 <p class="form-p m-b-0">Minimum Stake:
                   <span class="text-dark">
-                    <%= format_according_to_decimals(@min_stake, @token.decimals) %> <%= @token.symbol %>
+                    <%= format_token_amount(@min_stake, @token) %>
                   </span>
                 </p>
               <% end %>
               <p class="form-p">Your Balance:
                 <span class="text-dark">
-                  <%= format_according_to_decimals(@balance, @token.decimals) %> <%= @token.symbol %>
+                  <%= format_token_amount(@balance, @token) %>
                 </span>
               </p>
               <div class="form-buttons">
