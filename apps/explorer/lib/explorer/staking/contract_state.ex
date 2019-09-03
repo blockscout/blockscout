@@ -22,6 +22,7 @@ defmodule Explorer.Staking.ContractState do
     :epoch_number,
     :epoch_start_block,
     :epoch_end_block,
+    :staking_allowed,
     :staking_contract,
     :validator_set_contract,
     :block_reward_contract
@@ -120,7 +121,8 @@ defmodule Explorer.Staking.ContractState do
         :min_delegator_stake,
         :epoch_number,
         :epoch_start_block,
-        :epoch_end_block
+        :epoch_end_block,
+        :staking_allowed
       ])
       |> Map.to_list()
       |> Enum.concat(token: token)

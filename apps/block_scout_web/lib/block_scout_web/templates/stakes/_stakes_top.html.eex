@@ -7,24 +7,26 @@
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item_account.html", account: @account, token: @token %>
       <!-- Buttons -->
       <div class="stakes-top-buttons">
-        <%= if @account[:pool] && @account.pool.is_active do %>
-          <%= unless @account.pool.is_unremovable do %>
-            <%= render BlockScoutWeb.StakesView, "_stakes_btn_remove_pool.html", text: gettext("Remove My Pool"), extra_class: "js-remove-pool" %>
-          <% end %>
-        <% else %>
-          <%=
-            button_class =
-              if @account[:pool] do
-                "js-make-stake"
-              else
-                "js-become-candidate"
-              end
+        <%= if @staking_allowed do %>
+          <%= if @account[:pool] && @account.pool.is_active do %>
+            <%= unless @account.pool.is_unremovable do %>
+              <%= render BlockScoutWeb.StakesView, "_stakes_btn_remove_pool.html", text: gettext("Remove My Pool"), extra_class: "js-remove-pool" %>
+            <% end %>
+          <% else %>
+            <%=
+              button_class =
+                if @account[:pool] do
+                  "js-make-stake"
+                else
+                  "js-become-candidate"
+                end
 
-            render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html",
-              text: gettext("Become a Candidate"),
-              extra_class: button_class,
-              disabled: @account[:pool] && @account.pool.is_banned
-          %>
+              render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html",
+                text: gettext("Become a Candidate"),
+                extra_class: button_class,
+                disabled: @account[:pool] && @account.pool.is_banned
+            %>
+          <% end %>
         <% end %>
       </div>
     </div>

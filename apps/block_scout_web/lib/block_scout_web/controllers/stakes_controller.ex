@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.StakesController do
     epoch_end_block = ContractState.get(:epoch_end_block, 0)
     block_number = BlockNumber.get_max()
     token = ContractState.get(:token, %Token{})
+    staking_allowed = ContractState.get(:staking_allowed, false)
 
     account =
       if account_address = conn.assigns[:account] do
@@ -35,6 +36,7 @@ defmodule BlockScoutWeb.StakesController do
     View.render_to_string(StakesView, "_stakes_top.html",
       epoch_number: epoch_number,
       epoch_end_in: epoch_end_block - block_number,
+      staking_allowed: staking_allowed,
       block_number: block_number,
       account: account,
       token: token
@@ -79,6 +81,7 @@ defmodule BlockScoutWeb.StakesController do
     average_block_time = AverageBlockTime.average_block_time()
     token = ContractState.get(:token, %Token{})
     epoch_number = ContractState.get(:epoch_number, 0)
+    staking_allowed = ContractState.get(:staking_allowed, false)
 
     items =
       pools
@@ -93,10 +96,10 @@ defmodule BlockScoutWeb.StakesController do
           average_block_time: average_block_time,
           pools_type: filter,
           buttons: %{
-            stake: stake_allowed?(pool, delegator),
-            move: move_allowed?(delegator),
-            withdraw: withdraw_allowed?(delegator),
-            claim: claim_allowed?(delegator, epoch_number)
+            stake: staking_allowed and stake_allowed?(pool, delegator),
+            move: staking_allowed and move_allowed?(delegator),
+            withdraw: staking_allowed and withdraw_allowed?(delegator),
+            claim: staking_allowed and claim_allowed?(delegator, epoch_number)
           }
         )
       end)
