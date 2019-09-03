@@ -44,6 +44,32 @@ $form-control-border-color: #e2e5ec !default;
   }
 }
 
+.input-group.input-status-error  {
+  input {
+    border-color: #FF7884 !important;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .input-group-prepend {
+    margin-right: 0;
+  }
+
+  .input-group-prepend.last {
+    .input-group-text {
+      border-color: #FF7884;
+      border-radius: 0 2px 0 0;
+    }
+  }
+
+  .input-group-message {
+    width: 100%;
+    padding: 10px;
+    color: white;
+    background: #FF7884;
+    border-radius: 0 0 2px 2px;
+  }
+}
+
 .form-buttons {
   [class*="btn-"] {
     margin-bottom: 20px;
