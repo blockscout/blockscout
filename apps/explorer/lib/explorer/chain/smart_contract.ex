@@ -280,12 +280,12 @@ defmodule Explorer.Chain.SmartContract do
 
   def add_submitted_comment(contract_lines, inserted_at) when is_list(contract_lines) do
     etherscan_index =
-      Enum.find(contract_lines, fn line ->
+      Enum.find_index(contract_lines, fn line ->
         String.contains?(line, "Submitted for verification at Etherscan.io")
       end)
 
     blockscout_index =
-      Enum.find(contract_lines, fn line ->
+      Enum.find_index(contract_lines, fn line ->
         String.contains?(line, "Submitted for verification at blockscout.com")
       end)
 
