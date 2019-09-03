@@ -9,7 +9,7 @@
         <form>
           <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "candidate-stake", classes: "form-group", input_classes: "form-control n-b-r", attributes: "candidate-stake", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
 
-          <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "mining-address", classes: "form-group", input_classes: "form-control", attributes: "mining-address", type: "text", placeholder: gettext("Your Mining Address"), value: @pool && @pool.mining_address_hash, disabled: @pool %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "mining-address", classes: "form-group", input_classes: "form-control", attributes: "mining-address", type: "text", placeholder: gettext("Your Mining Address") %>
           <p class="form-p m-b-0">Minimum Stake:
             <span class="text-dark">
               <%= format_according_to_decimals(@min_candidate_stake, @token.decimals) %> <%= @token.symbol %>
