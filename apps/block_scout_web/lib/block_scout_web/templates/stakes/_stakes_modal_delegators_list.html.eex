@@ -50,7 +50,7 @@
                     <% end %>
                   </div>
                 </td>
-                <td class="stakes-td"><%= format_according_to_decimals(delegator.stake_amount, @token.decimals) %></td>
+                <td class="stakes-td"><%= format_token_amount(delegator.stake_amount, @token, symbol: false) %></td>
                 <td class="stakes-td"><%= if delegator.reward_ratio do "#{delegator.reward_ratio}%" else "-" end %></td>
               </tr>
             <% end %>
