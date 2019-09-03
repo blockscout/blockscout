@@ -12,12 +12,12 @@
           <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "mining-address", classes: "form-group", input_classes: "form-control", attributes: "mining-address", type: "text", placeholder: gettext("Your Mining Address") %>
           <p class="form-p m-b-0">Minimum Stake:
             <span class="text-dark">
-              <%= format_according_to_decimals(@min_candidate_stake, @token.decimals) %> <%= @token.symbol %>
+              <%= format_token_amount(@min_candidate_stake, @token) %>
             </span>
           </p>
           <p class="form-p">Your Balance:
             <span class="text-dark">
-              <%= format_according_to_decimals(@balance, @token.decimals) %> <%= @token.symbol %>
+              <%= format_token_amount(@balance, @token) %>
             </span>
           </p>
           <div class="form-buttons"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become a Candidate"), extra_class: "full-width" %></div>
