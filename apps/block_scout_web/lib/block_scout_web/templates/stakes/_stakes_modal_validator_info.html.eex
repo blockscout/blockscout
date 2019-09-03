@@ -16,13 +16,13 @@
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "Candidate’s Staked Amount",
-          value: "#{format_according_to_decimals(@validator.self_staked_amount, @token.decimals)} #{@token.symbol}"
+          value: format_token_amount(@validator.self_staked_amount, @token)
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: "Delegators’ Staked Amount",
-          value: "#{format_according_to_decimals(Decimal.sub(@validator.staked_amount, @validator.self_staked_amount), @token.decimals)} #{@token.symbol}"
+          value: format_token_amount(Decimal.sub(@validator.staked_amount, @validator.self_staked_amount), @token)
         %>
         <%=
           render BlockScoutWeb.StakesView,
