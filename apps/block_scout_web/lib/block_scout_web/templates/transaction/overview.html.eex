@@ -193,9 +193,9 @@
             <div class="text-right">
             <%= for transfer  <- aggregate_token_transfers(transaction_with_transfers.token_transfers) do %>
               <h3 class="address-balance-text">
-                 <%= case token_transfer_amount(@token_transfer) do %>
+                 <%= case token_transfer_amount(transfer) do %>
                    <% {:ok, :erc721_instance} -> %>
-                     <%= "TokenID ["%><%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, to_string(@token_transfer.token_id), @token_transfer.token.contract_address_hash)) %><%= "]" %>
+                     <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, to_string(transfer.token_id), transfer.token.contract_address_hash)) %><%= "]" %>
                    <% {:ok, value} -> %>
                      <%= value %>
                  <% end %>
