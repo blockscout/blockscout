@@ -1,6 +1,6 @@
-defmodule Explorer.Chain.Supply.CoinMarketCap do
+defmodule Explorer.Chain.Supply.ExchangeRate do
   @moduledoc """
-  Defines the supply API for calculating supply for coins from coinmarketcap.
+  Defines the supply API for calculating supply for coins from exchange_rate..
   """
 
   use Explorer.Chain.Supply

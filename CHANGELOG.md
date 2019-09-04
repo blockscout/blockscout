@@ -1,13 +1,18 @@
 ## Current
 
 ### Features
-- [#2555](https://github.com/poanetwork/blockscout/pull/2555) - find and show decoding candidates for logs
+- [#2636](https://github.com/poanetwork/blockscout/pull/2636) - Execute all address' transactions page queries in parallel
 - [#2596](https://github.com/poanetwork/blockscout/pull/2596) - support AuRa's empty step reward type
+- [#2581](https://github.com/poanetwork/blockscout/pull/2581) - Add generic Map-like Cache behaviour and implementation
 - [#2561](https://github.com/poanetwork/blockscout/pull/2561) - Add token's type to the response of tokenlist method
+- [#2555](https://github.com/poanetwork/blockscout/pull/2555) - find and show decoding candidates for logs
 - [#2499](https://github.com/poanetwork/blockscout/pull/2499) - import emission reward ranges
 - [#2497](https://github.com/poanetwork/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
 
 ### Fixes
+- [#2659](https://github.com/poanetwork/blockscout/pull/2659) - Multipurpose front-end part update
+- [#2468](https://github.com/poanetwork/blockscout/pull/2468) - fix confirmations for non consensus blocks
+- [#2610](https://github.com/poanetwork/blockscout/pull/2610) - use CoinGecko instead of CoinMarketcap for exchange rates
 - [#2640](https://github.com/poanetwork/blockscout/pull/2640) - SVG network icons
 - [#2635](https://github.com/poanetwork/blockscout/pull/2635) - optimize ERC721 inventory query
 - [#2626](https://github.com/poanetwork/blockscout/pull/2626) - Fixing 2 Mobile UI Issues
@@ -15,6 +20,7 @@
 - [#2616](https://github.com/poanetwork/blockscout/pull/2616) - deduplicate coin history records by delta
 - [#2613](https://github.com/poanetwork/blockscout/pull/2613) - fix getminedblocks rpc endpoint
 - [#2592](https://github.com/poanetwork/blockscout/pull/2592) - process new metadata format for whisper
+- [#2591](https://github.com/poanetwork/blockscout/pull/2591) - Fix url error in API page
 - [#2572](https://github.com/poanetwork/blockscout/pull/2572) - Ease non-critical css
 - [#2570](https://github.com/poanetwork/blockscout/pull/2570) - Network icons preload
 - [#2569](https://github.com/poanetwork/blockscout/pull/2569) - do not fetch emission rewards for transactions csv exporter
@@ -24,9 +30,10 @@
 - [#2538](https://github.com/poanetwork/blockscout/pull/2538) - fetch the last not empty coin balance records
 
 ### Chore
+- [#2646](https://github.com/poanetwork/blockscout/pull/2646) - Added Xerom to list of Additional Chains using BlockScout
 - [#2634](https://github.com/poanetwork/blockscout/pull/2634) - add Lukso to networks dropdown
-- [#2611](https://github.com/poanetwork/blockscout/pull/2611) - fix js dependency vulnerabilities
 - [#2617](https://github.com/poanetwork/blockscout/pull/2617) - skip cache update if there are no blocks inserted
+- [#2611](https://github.com/poanetwork/blockscout/pull/2611) - fix js dependency vulnerabilities
 - [#2594](https://github.com/poanetwork/blockscout/pull/2594) - do not start genesis data fetching periodically
 - [#2590](https://github.com/poanetwork/blockscout/pull/2590) - restore backward compatablity with old releases
 - [#2577](https://github.com/poanetwork/blockscout/pull/2577) - Need recompile column in the env vars table
