@@ -49,6 +49,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Block.{EmissionReward, Reward}
 
   alias Explorer.Chain.Cache.{
+    Accounts,
     BlockCount,
     BlockNumber,
     Blocks,
@@ -1379,6 +1380,36 @@ defmodule Explorer.Chain do
   def list_top_addresses(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
+    if is_nil(paging_options.key) do
+      paging_options.page_size
+      |> Accounts.take_enough()
+      |> case do
+        nil ->
+          accounts_with_n = fetch_top_addresses(paging_options)
+
+          accounts_with_n
+          |> Enum.map(fn {address, _n} -> address end)
+          |> Accounts.update()
+
+          accounts_with_n
+
+        accounts ->
+          Enum.map(
+            accounts,
+            &{&1,
+             if is_nil(&1.nonce) do
+               0
+             else
+               &1.nonce + 1
+             end}
+          )
+      end
+    else
+      fetch_top_addresses(paging_options)
+    end
+  end
+
+  defp fetch_top_addresses(paging_options) do
     base_query =
       from(a in Address,
         where: a.fetched_coin_balance > ^0,
