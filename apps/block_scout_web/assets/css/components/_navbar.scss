@@ -132,7 +132,7 @@ $navbar-logo-width: auto !default;
         position: relative;
         width: 100%;
         z-index: 1;
-   
+
         &[placeholder]{
             text-overflow: ellipsis !important;
           }
@@ -262,6 +262,7 @@ $navbar-logo-width: auto !default;
         transition: none !important;
     }
 }
+
 .nav-link-new {
     margin-left: auto;
     border-right: 1px solid #828ba0a1;
