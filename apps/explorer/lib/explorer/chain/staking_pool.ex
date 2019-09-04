@@ -15,7 +15,7 @@ defmodule Explorer.Chain.StakingPool do
   @type t :: %__MODULE__{
           staking_address_hash: Hash.Address.t(),
           mining_address_hash: Hash.Address.t(),
-          banned_until: boolean,
+          banned_until: integer,
           delegators_count: integer,
           is_active: boolean,
           is_banned: boolean,
