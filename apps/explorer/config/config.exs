@@ -35,8 +35,7 @@ config :explorer, Explorer.ChainSpec.GenesisData,
 
 config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
 
-config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
-  pages: String.to_integer(System.get_env("COINMARKETCAP_PAGES") || "10")
+config :explorer, Explorer.ExchangeRates.Source.CoinGecko, coin_id: System.get_env("COIN_GECKO_ID", "poa-network")
 
 balances_update_interval =
   if System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
