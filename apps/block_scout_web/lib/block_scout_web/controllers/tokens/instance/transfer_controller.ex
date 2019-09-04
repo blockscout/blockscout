@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
             "_token_transfer.html",
             conn: conn,
             token: token,
-            transfer: transfer
+            token_transfer: transfer
           )
         end)
 
