@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   alias BlockScoutWeb.CurrencyHelpers
   alias Explorer.Chain.{Address, SmartContract, Token}
 
+  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 0]
+
   def token_name?(%Token{name: nil}), do: false
   def token_name?(%Token{name: _}), do: true
 
@@ -28,8 +30,11 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
 
   def qr_code(conn, token_id, hash) do
-    conn
-    |> token_instance_url(:show, to_string(token_id), to_string(hash))
+    token_instance_path = token_instance_path(conn, :show, to_string(token_id), to_string(hash))
+
+    url = blockscout_url() <> token_instance_path
+
+    url
     |> QRCode.to_png()
     |> Base.encode64()
   end
