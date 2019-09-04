@@ -1140,23 +1140,31 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "fetch_min_and_max_block_numbers/0" do
-    test "fetches min and max block numbers" do
+  describe "fetch_min_block_number/0" do
+    test "fetches min block numbers" do
       for index <- 5..9 do
         insert(:block, number: index)
       end
 
-      assert {5, 9} = Chain.fetch_min_and_max_block_numbers()
+      assert 5 = Chain.fetch_min_block_number()
     end
 
-    test "fetches min and max when there are no blocks" do
-      assert {0, 0} = Chain.fetch_min_and_max_block_numbers()
+    test "fetches min when there are no blocks" do
+      assert 0 = Chain.fetch_min_block_number()
+    end
+  end
+
+  describe "fetch_max_block_number/0" do
+    test "fetches max block numbers" do
+      for index <- 5..9 do
+        insert(:block, number: index)
+      end
+
+      assert 9 = Chain.fetch_max_block_number()
     end
 
-    test "fetches min and max where there is only one block" do
-      insert(:block, number: 1)
-
-      assert {1, 1} = Chain.fetch_min_and_max_block_numbers()
+    test "fetches max when there are no blocks" do
+      assert 0 = Chain.fetch_max_block_number()
     end
   end
 

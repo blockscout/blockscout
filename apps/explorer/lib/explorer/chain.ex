@@ -230,9 +230,8 @@ defmodule Explorer.Chain do
           Reward.fetch_emission_rewards_tuples(address_hash, paging_options)
         end)
 
-      address_hash
-      |> address_to_transactions_without_rewards(paging_options, options)
-      |> Enum.concat(Task.await(rewards_task, :timer.seconds(20)))
+      [rewards_task | address_to_transactions_tasks(address_hash, options)]
+      |> wait_for_address_transactions()
       |> Enum.sort_by(fn item ->
         case item do
           {%Reward{} = emission_reward, _} ->
@@ -242,32 +241,83 @@ defmodule Explorer.Chain do
             {-item.block_number, -item.index}
         end
       end)
+      |> Enum.dedup_by(fn item ->
+        case item do
+          {%Reward{} = emission_reward, _} ->
+            {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
+
+          transaction ->
+            transaction.hash
+        end
+      end)
       |> Enum.take(paging_options.page_size)
     else
-      address_to_transactions_without_rewards(address_hash, paging_options, options)
+      address_to_transactions_without_rewards(address_hash, options)
     end
   end
 
-  def address_to_transactions_without_rewards(address_hash, paging_options, options) do
+  def address_to_transactions_without_rewards(address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    address_hash
+    |> address_to_transactions_tasks(options)
+    |> wait_for_address_transactions()
+    |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
+    |> Enum.dedup_by(& &1.hash)
+    |> Enum.take(paging_options.page_size)
+  end
+
+  defp address_to_transactions_tasks(address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    transaction_hashes_from_token_transfers =
-      TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
+    base_query =
+      paging_options
+      |> fetch_transactions()
+      |> join_associations(necessity_by_association)
+      |> Transaction.preload_token_transfers(address_hash)
 
-    paging_options
-    |> fetch_transactions()
-    |> Transaction.where_transaction_matches(transaction_hashes_from_token_transfers, direction, address_hash)
-    |> join_associations(necessity_by_association)
-    |> Transaction.preload_token_transfers(address_hash)
-    |> Repo.all()
+    direction_tasks =
+      base_query
+      |> Transaction.matching_address_queries_list(direction, address_hash)
+      |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
+
+    token_transfers_task =
+      Task.async(fn ->
+        transaction_hashes_from_token_transfers =
+          TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
+
+        final_query = where(base_query, [t], t.hash in ^transaction_hashes_from_token_transfers)
+
+        Repo.all(final_query)
+      end)
+
+    [token_transfers_task | direction_tasks]
+  end
+
+  defp wait_for_address_transactions(tasks) do
+    tasks
+    |> Task.yield_many(:timer.seconds(20))
+    |> Enum.flat_map(fn {_task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          raise "Query fetching address transactions terminated: #{inspect(reason)}"
+
+        nil ->
+          raise "Query fetching address transactions timed out."
+      end
+    end)
   end
 
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
-    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.max_number(), 0, 0}
+    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
     base_query =
       from(log in Log,
@@ -1176,7 +1226,7 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio() :: Decimal.t()
   def indexed_ratio do
-    {min, max} = BlockNumber.min_and_max_numbers()
+    %{min: min, max: max} = BlockNumber.get_all()
 
     case {min, max} do
       {0, 0} ->
@@ -1189,20 +1239,30 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer, non_neg_integer}
-  def fetch_min_and_max_block_numbers do
+  @spec fetch_min_block_number() :: non_neg_integer
+  def fetch_min_block_number do
     query =
       from(block in Block,
-        select: {min(block.number), max(block.number)},
-        where: block.consensus == true
+        select: block.number,
+        where: block.consensus == true,
+        order_by: [asc: block.number],
+        limit: 1
       )
 
-    result = Repo.one!(query)
+    Repo.one(query) || 0
+  end
 
-    case result do
-      {nil, nil} -> {0, 0}
-      _ -> result
-    end
+  @spec fetch_max_block_number() :: non_neg_integer
+  def fetch_max_block_number do
+    query =
+      from(block in Block,
+        select: block.number,
+        where: block.consensus == true,
+        order_by: [desc: block.number],
+        limit: 1
+      )
+
+    Repo.one(query) || 0
   end
 
   @spec fetch_count_consensus_block() :: non_neg_integer
@@ -2195,7 +2255,7 @@ defmodule Explorer.Chain do
   """
   @spec transaction_estimated_count() :: non_neg_integer()
   def transaction_estimated_count do
-    cached_value = TransactionCount.value()
+    cached_value = TransactionCount.get_count()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[rows]]} =
@@ -2214,7 +2274,7 @@ defmodule Explorer.Chain do
   """
   @spec block_estimated_count() :: non_neg_integer()
   def block_estimated_count do
-    cached_value = BlockCount.count()
+    cached_value = BlockCount.get_count()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
@@ -2717,7 +2777,7 @@ defmodule Explorer.Chain do
   end
 
   defp supply_module do
-    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.CoinMarketCap)
+    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.ExchangeRate)
   end
 
   @doc """
