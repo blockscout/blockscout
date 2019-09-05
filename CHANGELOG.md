@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2665](https://github.com/poanetwork/blockscout/pull/2665) - New layout for mobile menu
 - [#2636](https://github.com/poanetwork/blockscout/pull/2636) - Execute all address' transactions page queries in parallel
 - [#2596](https://github.com/poanetwork/blockscout/pull/2596) - support AuRa's empty step reward type
 - [#2581](https://github.com/poanetwork/blockscout/pull/2581) - Add generic Map-like Cache behaviour and implementation
