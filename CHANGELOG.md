@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2588](https://github.com/poanetwork/blockscout/pull/2588) - add verification submission comment
 - [#2505](https://github.com/poanetwork/blockscout/pull/2505) - support POA Network emission rewards
 - [#2636](https://github.com/poanetwork/blockscout/pull/2636) - Execute all address' transactions page queries in parallel
 - [#2596](https://github.com/poanetwork/blockscout/pull/2596) - support AuRa's empty step reward type

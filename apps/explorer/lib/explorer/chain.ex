@@ -2592,8 +2592,26 @@ defmodule Explorer.Chain do
   @spec address_hash_to_address_with_source_code(Hash.Address.t()) :: Address.t() | nil
   def address_hash_to_address_with_source_code(address_hash) do
     case Repo.get(Address, address_hash) do
-      nil -> nil
-      address -> Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
+      nil ->
+        nil
+
+      address ->
+        address_with_smart_contract = Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
+
+        if address_with_smart_contract.smart_contract do
+          formatted_code =
+            SmartContract.add_submitted_comment(
+              address_with_smart_contract.smart_contract.contract_source_code,
+              address_with_smart_contract.smart_contract.inserted_at
+            )
+
+          %{
+            address_with_smart_contract
+            | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
+          }
+        else
+          address_with_smart_contract
+        end
     end
   end
 
