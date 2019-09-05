@@ -4,10 +4,10 @@ $secondary: #20745a;
 $tertiary: #fff;
 $additional-font: #fff;
 
-$tile-body-a-color: $secondary;
-$tile-type-block-color: $secondary;
-$tile-type-progress-bar-color: $secondary;
-a.tile-title { color: $secondary !important; }
+$tile-body-a-color: $primary;
+$tile-type-block-color: $primary;
+$tile-type-progress-bar-color: $primary;
+a.tile-title { color: $primary !important; }
 
 // footer
 $footer-background-color: #282d31;
@@ -83,3 +83,15 @@ $api-text-monospace-color: $primary;
 $dark-primary: #2b9f7a;
 $dark-secondary: #20745a;
 $dark-primary-alternate: #2b9f7a; 
+
+.dark-theme-applied .dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(1)::before {
+    background-color: white!important;
+}
+
+.dark-theme-applied .dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(2)::before {
+    background-color: $primary!important;
+}
+
+.dark-theme-applied .tile .tile-body a, .dark-theme-applied .tile span[data-address-hash] {
+    color: #2b9f7a;
+}
