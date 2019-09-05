@@ -44,7 +44,7 @@
               </span>
               <%= gettext("Blocks") %>
             </a>
-            <div class="dropdown-menu" id="checkIfSmall" aria-labelledby="navbarBlocksDropdown">        
+            <div class="dropdown-menu" id="checkIfSmall" aria-labelledby="navbarBlocksDropdown">
               <%= link to: block_path(@conn, :index), class: "dropdown-item #{tab_status("blocks", @conn.request_path)}" do %>
                 <%= gettext("Blocks") %>
               <% end %>

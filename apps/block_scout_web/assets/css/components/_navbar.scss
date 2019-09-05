@@ -262,8 +262,6 @@ $navbar-logo-width: auto !default;
 
 .nav-link-new {
   margin-left: auto;
-  border-right: 1px solid #828ba0a1;
-  padding: 0px 11px 0px 5px;
   font-size: 14px;
   color: #333333;
   @include media-breakpoint-up(lg) {
@@ -272,7 +270,10 @@ $navbar-logo-width: auto !default;
 }
 
 .new-button {
-  margin-right: -10px!important;
+  margin-right: -7px !important;
+  padding-right: 0px;
+  height: 20px!important;
+  border-left: 1px solid #828ba0a1!important;
   @include media-breakpoint-up(lg) {
       display: none!important;
   }
@@ -326,17 +327,19 @@ $navbar-logo-width: auto !default;
   .navbar.navbar-primary .navbar-nav .nav-link:focus {
       background-image: linear-gradient(to right, #f5f6fa, rgba(245, 246, 250, 0));
       width: 100%;
-      border-left: 2px solid #5c33a2;
+      
   }
   .navbar.navbar-primary .navbar-nav .nav-link:hover:before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0;
-      height: 50px;
-      width: 50%;
-      border-left: 5px solid #726E97;
+    content: "|";
+    height: 50px;
+    width: 50%;
+    opacity: 1;
+    background: none;
+    left: 24%;
+    top: 14%;
+    color: $primary;
   }
+
   .navbar {
       padding: 0.5rem 0rem!important;
   }
@@ -349,8 +352,17 @@ $navbar-logo-width: auto !default;
   .dropdown-item:focus {
       background-image: linear-gradient(to right, #f5f6fa, rgba(245, 246, 250, 0));
       width: 100%;
-      border-left: 2px solid #5c33a2;
       background-color: white!important;
+  }
+  .dropdown-item:hover:before {
+    content: "|";
+      height: 50px;
+      width: 50%;
+      opacity: 1;
+      background: none;
+      right: 17%;
+      color: $primary;
+      position: relative;
   }
   .dark-mode-changer svg path {
       fill: #a3a9b5!important;
@@ -363,5 +375,10 @@ $navbar-logo-width: auto !default;
   #toggleImage2 {
     display: none;
     outline: none;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  #toggleImage1 {
+    width: 27px!important;
   }
 }
