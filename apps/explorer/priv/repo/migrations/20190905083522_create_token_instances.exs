@@ -13,6 +13,8 @@ defmodule Explorer.Repo.Migrations.CreateTokenInstances do
       )
 
       add(:metadata, :jsonb)
+
+      timestamps(null: false, type: :utc_datetime_usec)
     end
   end
 end

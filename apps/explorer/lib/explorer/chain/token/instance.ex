@@ -20,6 +20,7 @@ defmodule Explorer.Chain.Token.Instance do
           metadata: Map.t()
         }
 
+  @primary_key false
   schema "token_instances" do
     field(:token_id, :decimal, primary_key: true)
     field(:metadata, :map)
@@ -32,12 +33,14 @@ defmodule Explorer.Chain.Token.Instance do
       type: Hash.Address,
       primary_key: true
     )
+
+    timestamps()
   end
 
-  # def changeset(%Instance{} = instance, params \\ %{}) do
-  #   instance
-  #   |> cast([:token_id, :metadata, :token_contract_address_hash])
-  #   |> validate_required([:token_id, :token_contract_address_hash])
-  #   |> foreign_key_constraint(:token_contract_address_hash)
-  # end
+  def changeset(%Instance{} = instance, params \\ %{}) do
+    instance
+    |> cast(params, [:token_id, :metadata, :token_contract_address_hash])
+    |> validate_required([:token_id, :token_contract_address_hash])
+    |> foreign_key_constraint(:token_contract_address_hash)
+  end
 end

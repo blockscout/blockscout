@@ -40,6 +40,7 @@ defmodule Explorer.Chain do
     SmartContract,
     StakingPool,
     Token,
+    Token.Instance,
     TokenTransfer,
     Transaction,
     Wei
@@ -2971,6 +2972,16 @@ defmodule Explorer.Chain do
 
       Repo.update_all(update_query, [], timeout: timeout)
     end
+  end
+
+  @spec upsert_token_instance(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
+  def upsert_token_instance(params) do
+    changeset = Instance.changeset(%Instance{}, params)
+
+    Repo.insert(changeset,
+      on_conflict: :replace_all,
+      conflict_target: [:token_id, :token_contract_address_hash]
+    )
   end
 
   @doc """

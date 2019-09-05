@@ -101,6 +101,63 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "upsert_token_instance/1" do
+    test "insert a new token instance with valid params" do
+      token = insert(:token)
+
+      params = %{
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{uri: "http://example.com"}
+      }
+
+      {:ok, result} = Chain.upsert_token_instance(params)
+
+      assert result.token_id == Decimal.new(1)
+      assert result.metadata == params.metadata
+      assert result.token_contract_address_hash == token.contract_address_hash
+    end
+
+    test "replaces existing token instance record" do
+      token = insert(:token)
+
+      params = %{
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{uri: "http://example.com"}
+      }
+
+      {:ok, _} = Chain.upsert_token_instance(params)
+
+      params1 = %{
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{uri: "http://example1.com"}
+      }
+
+      {:ok, result} = Chain.upsert_token_instance(params1)
+
+      assert result.token_id == Decimal.new(1)
+      assert result.metadata == params1.metadata
+      assert result.token_contract_address_hash == token.contract_address_hash
+    end
+
+    test "fails to import with invalid params" do
+      params = %{
+        token_id: 1,
+        metadata: %{uri: "http://example.com"}
+      }
+
+      {:error,
+       %{
+         errors: [
+           token_contract_address_hash: {"can't be blank", [validation: :required]}
+         ],
+         valid?: false
+       }} = Chain.upsert_token_instance(params)
+    end
+  end
+
   describe "address_to_logs/2" do
     test "fetches logs" do
       %Address{hash: address_hash} = address = insert(:address)
