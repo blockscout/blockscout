@@ -44,3 +44,4 @@ function switchVisible () {
 document
   .getElementById('toggleButton')
   .addEventListener('click', switchVisible)
+  
