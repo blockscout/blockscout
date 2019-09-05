@@ -68,7 +68,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		}
 	}
 	.navbar.navbar-primary .navbar-toggler .navbar-toggler-icon {
-		filter: invert(1);	
+		filter: invert(1);
 	}
 
 	// footer
@@ -779,6 +779,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		}
 	}
 }
+
 .navbar-dark .navbar-toggler {
 	color: rgba(255, 255, 255, 0.5);
 	border: none;
