@@ -2,6 +2,8 @@
 
 ### Features
 - [#2665](https://github.com/poanetwork/blockscout/pull/2665) - New layout for mobile menu
+- [#2588](https://github.com/poanetwork/blockscout/pull/2588) - add verification submission comment
+- [#2505](https://github.com/poanetwork/blockscout/pull/2505) - support POA Network emission rewards
 - [#2636](https://github.com/poanetwork/blockscout/pull/2636) - Execute all address' transactions page queries in parallel
 - [#2596](https://github.com/poanetwork/blockscout/pull/2596) - support AuRa's empty step reward type
 - [#2581](https://github.com/poanetwork/blockscout/pull/2581) - Add generic Map-like Cache behaviour and implementation
@@ -11,6 +13,7 @@
 - [#2497](https://github.com/poanetwork/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
 
 ### Fixes
+- [#2612](https://github.com/poanetwork/blockscout/pull/2612) - Add cache updating independently from Indexer
 - [#2659](https://github.com/poanetwork/blockscout/pull/2659) - Multipurpose front-end part update
 - [#2468](https://github.com/poanetwork/blockscout/pull/2468) - fix confirmations for non consensus blocks
 - [#2610](https://github.com/poanetwork/blockscout/pull/2610) - use CoinGecko instead of CoinMarketcap for exchange rates
