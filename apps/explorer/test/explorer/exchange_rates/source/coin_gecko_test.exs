@@ -34,6 +34,26 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
       "id": "pocket-arena",
       "symbol": "poc",
       "name": "Pocket Arena"
+    },
+    {
+    "id": "ethereum",
+    "symbol": "eth",
+    "name": "Ethereum"
+    },
+    {
+      "id": "rootstock",
+      "symbol": "rbtc",
+      "name": "Rootstock RSK"
+    },
+    {
+      "id": "dai",
+      "symbol": "dai",
+      "name": "Dai"
+    },
+    {
+      "id": "callisto",
+      "symbol": "clo",
+      "name": "Callisto Network"
     }
   ]
   """
@@ -88,15 +108,59 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
       bypass = Bypass.open()
       Application.put_env(:explorer, CoinGecko, base_url: "http://localhost:#{bypass.port}")
 
+      on_exit(fn ->
+        Application.put_env(:explorer, :coin, "POA")
+      end)
+
       {:ok, bypass: bypass}
     end
 
-    test "fetches coin id", %{bypass: bypass} do
+    test "fetches poa coin id by default", %{bypass: bypass} do
       Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
         Conn.resp(conn, 200, @coins_list)
       end)
 
       assert CoinGecko.coin_id() == {:ok, "poa-network"}
+    end
+
+    test "fetches eth coin id", %{bypass: bypass} do
+      Application.put_env(:explorer, :coin, "ETH")
+
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, @coins_list)
+      end)
+
+      assert CoinGecko.coin_id() == {:ok, "ethereum"}
+    end
+
+    test "fetches rbtc coin id", %{bypass: bypass} do
+      Application.put_env(:explorer, :coin, "RBTC")
+
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, @coins_list)
+      end)
+
+      assert CoinGecko.coin_id() == {:ok, "rootstock"}
+    end
+
+    test "fetches dai coin id", %{bypass: bypass} do
+      Application.put_env(:explorer, :coin, "DAI")
+
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, @coins_list)
+      end)
+
+      assert CoinGecko.coin_id() == {:ok, "dai"}
+    end
+
+    test "fetches callisto coin id", %{bypass: bypass} do
+      Application.put_env(:explorer, :coin, "CLO")
+
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, @coins_list)
+      end)
+
+      assert CoinGecko.coin_id() == {:ok, "callisto"}
     end
   end
 end
