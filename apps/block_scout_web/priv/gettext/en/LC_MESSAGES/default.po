@@ -580,16 +580,11 @@ msgid "Delegate Call"
 msgstr ""
 
 #, elixir-format
-<<<<<<< HEAD
-#: lib/block_scout_web/templates/block/overview.html.eex:37
-msgid "Hash"
-=======
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:53
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:188
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:60
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:150
 msgid "Description"
->>>>>>> 27ce90c57158f230e41c6ff4905857f243163baa
 msgstr ""
 
 #, elixir-format
@@ -749,13 +744,8 @@ msgid "Fetching tokens..."
 msgstr ""
 
 #, elixir-format
-<<<<<<< HEAD
-#: lib/block_scout_web/templates/block/overview.html.eex:44
-msgid "Parent Hash"
-=======
 #: lib/block_scout_web/templates/admin/dashboard/index.html.eex:16
 msgid "For any existing contracts in the database, insert all ABI entries into the contract_methods table. Use this in case you have verified smart contracts before early March 2019 and you want other contracts with the same functions to show those ABI's as candidate matches."
->>>>>>> 27ce90c57158f230e41c6ff4905857f243163baa
 msgstr ""
 
 #, elixir-format
@@ -772,13 +762,8 @@ msgid "From"
 msgstr ""
 
 #, elixir-format
-<<<<<<< HEAD
-#: lib/block_scout_web/templates/block/overview.html.eex:85
-msgid "Position %{index}"
-=======
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:18
 msgid "GET"
->>>>>>> 27ce90c57158f230e41c6ff4905857f243163baa
 msgstr ""
 
 #, elixir-format
@@ -1013,118 +998,8 @@ msgid "Indexed?"
 msgstr ""
 
 #, elixir-format
-<<<<<<< HEAD
-#: lib/block_scout_web/templates/address/_tabs.html.eex:3
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:15
-#: lib/block_scout_web/templates/block_transaction/index.html.eex:10
-#: lib/block_scout_web/templates/block_transaction/index.html.eex:18
-#: lib/block_scout_web/templates/chain/show.html.eex:108
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:50
-#: lib/block_scout_web/views/address_view.ex:305
-msgid "Transactions"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/_tile.html.eex:31
-msgid "Transactions sent"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:61
-msgid "Transfers"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:40
-#: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:47
-msgid "Try it out"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:22
-msgid "Twitter"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:81
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:38
-msgid "Uncles"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/tokens/inventory/_token.html.eex:6
-msgid "Unique Token"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:231
-msgid "Used"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:54
-msgid "Validated"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/index.html.eex:4
-msgid "Validated Transactions"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/_tile.html.eex:35
-msgid "Validations"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:179
-#: lib/block_scout_web/templates/transaction/overview.html.eex:209
-msgid "Value"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:11
-#: lib/block_scout_web/templates/address_contract/index.html.eex:16
-msgid "Verify & Publish"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:249
-msgid "Verify & publish"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:55
-msgid "View Contract"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:53
-msgid "View Less Transfers"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_tile.html.eex:52
-msgid "View More Transfers"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/_metatags.html.eex:9
-msgid "View the account balance, transactions, and other data for %{address} on the %{network}"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/_metatags.html.eex:10
-msgid "View the transactions, token transfers, and uncles for block number %{block_number}"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_metatags.html.eex:10
-msgid "View transaction %{transaction} on %{subnetwork}"
-=======
 #: lib/block_scout_web/templates/layout/app.html.eex:58
 msgid "Indexing Tokens"
->>>>>>> 27ce90c57158f230e41c6ff4905857f243163baa
 msgstr ""
 
 #, elixir-format
@@ -1377,15 +1252,10 @@ msgid "Parent Hash"
 msgstr ""
 
 #, elixir-format
-<<<<<<< HEAD
-#: lib/block_scout_web/templates/block/overview.html.eex:146
-msgid "Block Rewards"
-=======
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:59
 #: lib/block_scout_web/views/transaction_view.ex:183
 #: lib/block_scout_web/views/transaction_view.ex:217
 msgid "Pending"
->>>>>>> 27ce90c57158f230e41c6ff4905857f243163baa
 msgstr ""
 
 #, elixir-format
