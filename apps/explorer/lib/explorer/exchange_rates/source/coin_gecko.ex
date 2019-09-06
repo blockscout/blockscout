@@ -70,7 +70,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
         if symbol_data do
           {:ok, symbol_data["id"]}
         else
-          {:errpr, :not_found}
+          {:error, :not_found}
         end
 
       {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
