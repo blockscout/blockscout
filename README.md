@@ -16,9 +16,9 @@ BlockScout provides a comprehensive, easy-to-use interface for users to view, co
 
 See our [project documentation](https://poanetwork.github.io/blockscout) for detailed information and setup instructions.
 
-Visit the [POA BlockScout forum](https://forum.poa.network/c/blockscout) for FAQs, troubleshooting, and other BlockScout related items. You can also post and answer questions here. 
+Visit the [POA BlockScout forum](https://forum.poa.network/c/blockscout) for FAQs, troubleshooting, and other BlockScout related items. You can also post and answer questions here.
 
-You can also access the dev chatroom on our [Gitter Channel](https://gitter.im/poanetwork/blockscout). 
+You can also access the dev chatroom on our [Gitter Channel](https://gitter.im/poanetwork/blockscout).
 
 ## About BlockScout
 
@@ -28,23 +28,24 @@ Currently available full-featured block explorers (Etherscan, Etherchain, Blockc
 
 ## Supported Projects
 
-| **Hosted Mainnets** | **Hosted Testnets** | **Additional Chains using BlockScout** |
-|--------------------------------------------------------|-------------------------------------------------------|----------------------------------------------------|
-| [Aerum](https://blockscout.com/aerum/mainnet) | [Goerli Testnet](https://blockscout.com/eth/goerli) | [ARTIS](https://explorer.sigma1.artis.network) |
-| [Callisto](https://blockscout.com/callisto/mainnet) | [Kovan Testnet](https://blockscout.com/eth/kovan) | [Ether-1](https://blocks.ether1.wattpool.net/) |
-| [Ethereum Classic](https://blockscout.com/etc/mainnet) | [POA Sokol Testnet](https://blockscout.com/poa/sokol) | [Fuse Network](https://explorer.fuse.io/) |
-| [Ethereum Mainnet](https://blockscout.com/eth/mainnet) | [Rinkeby Testnet](https://blockscout.com/eth/rinkeby) | [Oasis Labs](https://blockexplorer.oasiscloud.io/) |
-| [POA Core Network](https://blockscout.com/poa/core) | [Ropsten Testnet](https://blockscout.com/eth/ropsten) | [Petrichor](https://explorer.petrachor.com/) |
-| [RSK](https://blockscout.com/rsk/mainnet) |  | [PIRL](http://pirl.es/) |
-| [xDai Chain](https://blockscout.com/poa/dai) |  | [SafeChain](https://explorer.safechain.io) |
-|  |  | [SpringChain](https://explorer.springrole.com/) |
-|  |  | [Kotti Testnet](https://kottiexplorer.ethernode.io/) |
-|  |  | [Loom](http://plasma-blockexplorer.dappchains.com/) |
-|  |  | [Tenda](https://tenda.network) |
-|  |  | [GoJoy Chain](https://gojoychain.com/) |
+| **Hosted Mainnets** | **Hosted Testnets** | **Additional Chains using BlockScout** | **Additional Chains using BlockScout** |
+|--------------------------------------------------------|-------------------------------------------------------|------------------------------------------------------|----------------------------------------------------------------|
+| [Callisto](https://blockscout.com/callisto/mainnet) | [Goerli Testnet](https://blockscout.com/eth/goerli) | [ARTIS](https://explorer.sigma1.artis.network) | [Celo Testnet](https://alfajores-blockscout.celo-testnet.org/) |
+| [Ethereum Classic](https://blockscout.com/etc/mainnet) | [Kovan Testnet](https://blockscout.com/eth/kovan) | [Ether-1](https://blocks.ether1.wattpool.net/) | [Matic Testnet](https://explorer.testnet2.matic.network/) |
+| [Ethereum Mainnet](https://blockscout.com/eth/mainnet) | [LUKSO L14 Testnet](https://blockscout.com/lukso/l14) | [Kotti Testnet](https://kottiexplorer.ethernode.io/) |  |
+| [POA Core Network](https://blockscout.com/poa/core) | [POA Sokol Testnet](https://blockscout.com/poa/sokol) | [Fuse Network](https://explorer.fuse.io/) |  |
+| [RSK](https://blockscout.com/rsk/mainnet) | [Rinkeby Testnet](https://blockscout.com/eth/rinkeby) | [Oasis Labs](https://blockexplorer.oasiscloud.io/) |  |
+| [xDai Chain](https://blockscout.com/poa/dai) | [Ropsten Testnet](https://blockscout.com/eth/ropsten) | [Petrichor](https://explorer.petrachor.com/) |  |
+|  |  | [PIRL](http://pirl.es/) |  |
+|  |  | [SafeChain](https://explorer.safechain.io) |  |
+|  |  | [SpringChain](https://explorer.springrole.com/) |  |
+|  |  | [Tenda](https://tenda.network) |  |
+|  |  | [Loom](http://plasma-blockexplorer.dappchains.com/) |  |
+|  |  | [GoJoy Chain](https://gojoychain.com/) |  |
+|  |  | [Xerom](https://blocks.xerom.org/) |  |
 
 
-Current BlockScout versions for hosted projects are available [on the forum](https://forum.poa.network/t/deployed-instances-on-blockscout-com/1938). 
+Current BlockScout versions for hosted projects are available [on the forum](https://forum.poa.network/t/deployed-instances-on-blockscout-com/1938).
 
 ## Getting Started
 

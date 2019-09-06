@@ -170,7 +170,7 @@ defmodule Explorer.Chain.Address do
   end
 
   def rsk_checksum(hash) do
-    chain_id = NetVersion.version()
+    chain_id = NetVersion.get_version()
 
     string_hash =
       hash
