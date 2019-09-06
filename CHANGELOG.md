@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2672](https://github.com/poanetwork/blockscout/pull/2672) - added new theme for xUSDT 
 - [#2555](https://github.com/poanetwork/blockscout/pull/2555) - find and show decoding candidates for logs
 - [#2596](https://github.com/poanetwork/blockscout/pull/2596) - support AuRa's empty step reward type
 - [#2561](https://github.com/poanetwork/blockscout/pull/2561) - Add token's type to the response of tokenlist method
