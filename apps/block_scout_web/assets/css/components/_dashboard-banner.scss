@@ -1,7 +1,10 @@
 $dashboard-banner-gradient-start: $primary !default;
-$dashboard-banner-gradient-end: lighten( $dashboard-banner-gradient-start, 5%) !default;
-$dashboard-banner-network-plain-container-background-color: lighten( $dashboard-banner-gradient-end, 5%) !default;
-$dashboard-line-color-price: lighten( $dashboard-banner-gradient-end, 5%) !default;
+$dashboard-banner-gradient-end: lighten(
+  $dashboard-banner-gradient-start,
+  5%
+) !default;
+$dashboard-banner-network-plain-container-background-color: lighten($dashboard-banner-gradient-end, 5%) !default;
+$dashboard-line-color-price: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-market: $secondary !default;
 $dashboard-stats-item-label-color: #fff !default;
 $dashboard-stats-item-value-color: rgba(#fff, 0.8) !default;
@@ -10,192 +13,218 @@ $dashboard-banner-chart-legend-value-color: $dashboard-stats-item-value-color !d
 $dashboard-stats-item-border-color: $primary !default;
 $dashboard-banner-network-plain-container-height: 205px;
 $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !default;
+
 .dashboard-banner-container {
-    @include gradient-container();
-    margin-bottom: 3rem;
-    overflow: hidden;
-    padding: 0;
-    position: relative;
-    height: 249px;
-    @include media-breakpoint-down(sm) {
-        height: auto;
-    }
-    @include media-breakpoint-down(md) {
-        height: auto;
-    }
+  @include gradient-container();
+  margin-bottom: 3rem;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  height: 249px;
+  @include media-breakpoint-down(sm) {
+      height: auto;
+  }
+  @include media-breakpoint-down(md) {
+      height: auto;
+  }
 }
 
 .dashboard-banner {
-    display: flex;
-    justify-content: space-between;
-    position: relative;
-    z-index: 9;
-    @include media-breakpoint-down(sm) {
-        flex-direction: column;
-    }
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 9;
+
+  @include media-breakpoint-down(sm) {
+    flex-direction: column;
+  }
 }
 
 .dashboard-banner-network-graph {
-    flex-grow: 1;
-    padding: 15px 0 0 0;
-    @include media-breakpoint-down(md) {
-        display: flex;
-        flex-direction: column;
-        padding-top: 20px;
-    }
+  flex-grow: 1;
+  padding: 15px 0 0 0;
+
+  @include media-breakpoint-down(md) {
+    display: flex;
+    flex-direction: column;
+    padding-top: 20px;
+  }
 }
 
 .dashboard-banner-chart {
-    flex-grow: 1;
-    margin: 0 0 35px 0;
-    max-width: 350px;
-    position: relative;
-    @include media-breakpoint-down(md) {
-        flex-grow: 0;
-        margin-bottom: 20px;
-        margin-top: auto;
-        max-width: 100%;
-    }
-    >canvas {
-        max-height: 100%;
-        max-width: 100%;
-        width: 100%;
-    }
+  flex-grow: 1;
+  margin: 0 0 35px 0;
+  max-width: 350px;
+  position: relative;
+
+  @include media-breakpoint-down(md) {
+    flex-grow: 0;
+    margin-bottom: 20px;
+    margin-top: auto;
+    max-width: 100%;
+  }
+
+  > canvas {
+    max-height: 100%;
+    max-width: 100%;
+    width: 100%;
+  }
 }
 
 .dashboard-banner-chart-legend {
-    display: flex;
-    /* grid-template-columns: 1fr 1fr; */
-    padding-bottom: 12px;
-    .dashboard-banner-chart-legend-item {
-        padding-bottom: 3px;
-        padding-left: 12px;
-        padding-top: 3px;
-        position: relative;
-        padding-right: 60px;
-        @include media-breakpoint-down(md) {
-            display: flex;
-            flex-direction: row;
-        }
-        @media (max-width: 599px) {
-            padding-top: 0;
-            padding-bottom: 0;
-            flex-direction: column;
-        }
-        &::before {
-            border-radius: 2px;
-            content: "";
-            height: 100%;
-            left: 0;
-            position: absolute;
-            top: 0;
-            width: 4px;
-        }
-        &:nth-child(1)::before {
-            background-color: $dashboard-line-color-price;
-        }
-        &:nth-child(2)::before {
-            background-color: $dashboard-line-color-market;
-        }
+  display: flex;
+  grid-template-columns: 1fr 1fr;
+  padding-bottom: 12px;
+
+  .dashboard-banner-chart-legend-item {
+    padding-bottom: 3px;
+    padding-left: 12px;
+    padding-top: 3px;
+    position: relative;
+    padding-right: 60px;
+
+    @include media-breakpoint-down(md) {
+      display: flex;
+      flex-direction: row;
     }
-    .dashboard-banner-chart-legend-label {
-        color: $dashboard-banner-chart-legend-label-color;
-        display: block;
-        font-size: 12px;
-        font-weight: 600;
-        line-height: 1.2;
-        margin: 0 0 5px;
-        @media (max-width: 374px) {
-            position: relative;
-            top: -2px;
-        }
-        @include media-breakpoint-down(md) {
-            margin: 0 5px 0 0;
-        }
+
+    @media (max-width: 599px) {
+      padding-top: 0;
+      padding-bottom: 0;
+      flex-direction: column;
     }
-    .dashboard-banner-chart-legend-value {
-        color: $dashboard-banner-chart-legend-value-color;
-        display: block;
-        font-size: 12px;
-        font-weight: normal;
-        line-height: 1.2;
+
+    &::before {
+      border-radius: 2px;
+      content: "";
+      height: 100%;
+      left: 0;
+      position: absolute;
+      top: 0;
+      width: 4px;
     }
+
+    &:nth-child(1)::before {
+      background-color: $dashboard-line-color-price;
+    }
+
+    &:nth-child(2)::before {
+      background-color: $dashboard-line-color-market;
+    }
+  }
+
+  .dashboard-banner-chart-legend-label {
+    color: $dashboard-banner-chart-legend-label-color;
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 0 0 5px;
+
+    @media (max-width: 374px) {
+      position: relative;
+      top: -2px;
+    }
+
+    @include media-breakpoint-down(md) {
+      margin: 0 5px 0 0;
+    }
+  }
+
+  .dashboard-banner-chart-legend-value {
+    color: $dashboard-banner-chart-legend-value-color;
+    display: block;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 1.2;
+  }
 }
 
 .dashboard-banner-network-plain-container {
-    align-items: center;
-    align-self: flex-end;
-    background-color: $dashboard-banner-network-plain-container-background-color;
-    border-top-left-radius: 10px;
-    display: flex;
-    height: $dashboard-banner-network-plain-container-height;
-    justify-content: center;
-    margin: 45px 0 0 30px;
+  align-items: center;
+  align-self: flex-end;
+  background-color: $dashboard-banner-network-plain-container-background-color;
+  border-top-left-radius: 10px;
+  display: flex;
+  height: $dashboard-banner-network-plain-container-height;
+  justify-content: center;
+  margin: 0 0 0 30px;
+  max-width: 100%;
+  padding: 30px 0 30px 60px;
+  width: 750px;
+  position: relative;
+
+  @include media-breakpoint-down(lg) {
+    margin-top: 15px;
+    width: 550px;
+  }
+
+  @include media-breakpoint-down(md) {
+    border-top-right-radius: 10px;
+    height: auto;
+    justify-content: flex-start;
+    margin-left: 0;
     max-width: 100%;
-    padding: 30px 0 30px 60px;
-    width: 750px;
-    position: relative;
-    @include media-breakpoint-down(lg) {
-        margin-top: 50px;
-        width: 550px;
-    }
+    padding: 20px 0 20px 20px;
+    width: 250px;
+    box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  @include media-breakpoint-down(sm) {
+    width: 100%;
+  }
+
+  &::after {
+    background-color: $dashboard-banner-network-plain-container-background-color;
+    bottom: 0;
+    content: "";
+    display: block;
+    height: $dashboard-banner-network-plain-container-height;
+    left: 0;
+    position: absolute;
+    width: 9999px;
+    z-index: -1;
+    box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
+    border-top-left-radius: 10px;
+
     @include media-breakpoint-down(md) {
-        border-top-right-radius: 10px;
-        height: auto;
-        justify-content: flex-start;
-        margin-left: 0;
-        max-width: 100%;
-        padding: 20px 0 20px 20px;
-        width: 250px;
-        box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
+      display: none;
     }
-    @include media-breakpoint-down(sm) {
-        width: 100%;
-    }
-    &::after {
-        background-color: $dashboard-banner-network-plain-container-background-color;
-        bottom: 0;
-        content: "";
-        display: block;
-        height: $dashboard-banner-network-plain-container-height;
-        left: 0;
-        position: absolute;
-        width: 9999px;
-        z-index: -1;
-        box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
-        border-top-left-radius: 10px;
-        @include media-breakpoint-down(md) {
-            display: none;
-        }
-    }
+  }
 }
 
 .dashboard-banner-network-stats {
-    column-gap: 25px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
-    @include media-breakpoint-down(lg) {
-        grid-template-columns: 1fr 1fr;
-        row-gap: 20px;
+  column-gap: 25px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+
+  @include media-breakpoint-down(lg) {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 20px;
+  }
+
+  @include media-breakpoint-down(md) {
+    grid-template-columns: 1fr;
+    row-gap: 20px;
+  }
+
+  @include media-breakpoint-down(sm) {
+    column-gap: 10px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @include stats-item($dashboard-stats-item-border-color, $dashboard-stats-item-label-color, $dashboard-stats-item-value-color);
+
+  .dashboard-banner-network-stats-item {
+    @media (max-width: 374px) {
+      padding-left: calc(0.6rem + 4px);
+      padding-right: 0.5rem;
     }
-    @include media-breakpoint-down(md) {
-        grid-template-columns: 1fr;
-        row-gap: 20px;
+  }
+
+  .dashboard-banner-network-stats-value {
+    @media (max-width: 374px) {
+      font-size: 0.9rem;
     }
-    @include media-breakpoint-down(sm) {
-        column-gap: 10px;
-        grid-template-columns: 1fr 1fr;
-    }
-    @include stats-item( $dashboard-stats-item-border-color, $dashboard-stats-item-label-color, $dashboard-stats-item-value-color);
-    .dashboard-banner-network-stats-item {
-        @media (max-width: 374px) {
-            padding-left: calc(0.6rem + 4px);
-            padding-right: 0.5rem;
-        }
-    }
-    .dashboard-banner-network-stats-value {
-        @media (max-width: 374px) {
-            font-size: 0.9rem;
-        }
-    }
+  }
 }
