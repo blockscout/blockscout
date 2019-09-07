@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2678](https://github.com/poanetwork/blockscout/pull/2678) - fixed dashboard banner height bug
 - [#2672](https://github.com/poanetwork/blockscout/pull/2672) - added new theme for xUSDT 
 
 ### Fixes
