@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2679](https://github.com/poanetwork/blockscout/pull/2679) - added fixed height for card chain blocks and card chain transactions 
 - [#2672](https://github.com/poanetwork/blockscout/pull/2672) - added new theme for xUSDT 
 
 ### Fixes
