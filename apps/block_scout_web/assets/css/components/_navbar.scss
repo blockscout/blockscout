@@ -224,7 +224,7 @@ $navbar-logo-width: auto !default;
 }
 
 .navbar-logo {
-  max-height: $navbar-logo-height;
+  height: $navbar-logo-height;
   width: $navbar-logo-width;
 }
 
@@ -273,7 +273,17 @@ $navbar-logo-width: auto !default;
   margin-right: -7px !important;
   padding-right: 0px;
   height: 20px!important;
-  border-left: 1px solid #828ba0a1!important;
+  border-left: 1px solid #a3a9b5!important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: .2s ease-in;
   @include media-breakpoint-up(lg) {
       display: none!important;
   }
@@ -380,5 +390,8 @@ $navbar-logo-width: auto !default;
   }
   #toggleImage1 {
     width: 27px!important;
+  }
+  .dark-mode-changer {
+    display: none!important;
   }
 }
