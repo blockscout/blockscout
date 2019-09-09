@@ -58,7 +58,7 @@ See the [project documentation](https://poanetwork.github.io/blockscout) for ins
 
 ## Post Install Configuration
 
-1. Copy [systemd service file for blockskout](https://github.com/maticnetwork/blockscout/blob/update_configs/explorer.service) to `/etc/systemd/system/`
+1. Copy [systemd service file for blockskout](https://github.com/maticnetwork/blockscout/blob/update_configs/explorer.service.sample) to `/etc/systemd/system/` as `explorer.service`
 
 2. Copy [Logrotate files](https://github.com/maticnetwork/blockscout/tree/update_configs/logrotate) to `/etc/logrotate.d/`
 
