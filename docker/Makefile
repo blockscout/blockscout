@@ -63,7 +63,6 @@ start: build
 	@echo "==> Starting blockscout"
 	@docker run \
 					--detach \
-					--rm \
 					--name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINNER_PARAMS) \
 					-p 4000:4000 \
