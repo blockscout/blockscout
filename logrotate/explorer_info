@@ -1,0 +1,12 @@
+/home/ubuntu/blockscout/info/*.log {
+daily
+missingok
+rotate 18
+compress
+delaycompress
+notifempty
+create 660 ubuntu ubuntu    
+dateext
+dateformat -%Y-%m-%d-%s    
+su ubuntu ubuntu
+}
