@@ -52,7 +52,7 @@ $ export NETWORK=POA
 | `TXS_COUNT_CACHE_PERIOD` | | Interval in seconds to restart the task, which calculates the total txs count. | 60 * 60 * 2 |  v1.3.9+ | | |
 | `ADDRESS_WITH_BALANCES` <br /> `_UPDATE_INTERVAL`|  | Interval in seconds to restart the task, which calculates addresses with balances. | 30 * 60 |  v1.3.9+ | | |
 | `LINK_TO_OTHER_EXPLORERS` | | true/false. If true, links to other explorers are added in the footer  | (empty)  |  v1.3.0+ | | |
-| `COINMARKETCAP_PAGES` | | the number of pages on coinmarketcap to list in order to find token's price  | 10 |  v1.3.10+ | | master |
+| `COINMARKETCAP_PAGES` | | the number of pages on coinmarketcap to list in order to find token's price  | 10 |  v1.3.10+ | | v2.0.4 |
 | `SUPPORTED_CHAINS` | | Array of supported chains that displays in the footer and in the chains dropdown. This var was introduced in this PR [#1900](https://github.com/poanetwork/blockscout/pull/1900) and looks like an array of JSON objects.  | (empty) |  v2.0.0+ | | |
 | `BLOCK_COUNT_CACHE_PERIOD ` | | time to live of cache in seconds. This var was introduced in [#1876](https://github.com/poanetwork/blockscout/pull/1876)  | 600 |  v2.0.0+ | | |
 | `ALLOWED_EVM_VERSIONS ` | | the comma-separated list of allowed EVM versions for contracts verification. This var was introduced in [#1964](https://github.com/poanetwork/blockscout/pull/1964)  | "homestead, tangerineWhistle, spuriousDragon, byzantium, constantinople, petersburg" |  v2.0.0+ | | |
@@ -64,5 +64,7 @@ $ export NETWORK=POA
 | `DISABLE_INDEXER` | | If `true`, indexer application doesn't run | `false` | v2.0.3+ | :white_check_mark: | |
 | `WEBAPP_URL` | | Link to web application instance, e.g. `http://host/path` | (empty) | v2.0.3+ | | |
 | `API_URL` | | Link to API instance, e.g. `http://host/path` | (empty) | v2.0.3+ | | |
-| `CHAIN_SPEC_PATH` | | Chain specification path (absolute file system path or url) to import block emission reward ranges and genesis account balances from | (empty) | master | | |
-| `COIN_GECKO_ID` | | CoinGecko coin id required for fetching an exchange rate | poa-network | master | | |
+| `CHAIN_SPEC_PATH` | | Chain specification path (absolute file system path or url) to import block emission reward ranges and genesis account balances from | (empty) | v2.0.4+ | | |
+| `COIN_GECKO_ID` | | CoinGecko coin id required for fetching an exchange rate | poa-network | v2.0.4+ | | |
+| `EMISSION_FORMAT` | | Should be set to `POA` if you have block emission indentical to POA Network. This env var is used only if `CHAIN_SPEC_PATH` is set | `STANDARD` | v2.0.4+ | | |
+| `REWARDS_CONTRACT_ADDRESS` | | Emission rewards contract address. This env var is used only if `EMISSION_FORMAT` is set to `POA` | `0xeca443e8e1ab29971a45a9c57a6a9875701698a5` | v2.0.4+ | | |
