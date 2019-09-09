@@ -56,6 +56,14 @@ See the [project documentation](https://poanetwork.github.io/blockscout) for ins
 - [Configuration options](https://poanetwork.github.io/blockscout/#/dev-env)
 
 
+## Post Install Configuration
+
+1. Copy [systemd service file for blockskout](https://github.com/maticnetwork/blockscout/blob/update_configs/explorer.service) to `/etc/systemd/system/`
+
+2. Copy [Logrotate files](https://github.com/maticnetwork/blockscout/tree/update_configs/logrotate) to `/etc/logrotate.d/`
+
+3. To start/stop/restart blockskout use `sudo systemctl start explorer, sudo systemctl stop explorer, sudo systemctl restart explorer`
+
 ## Acknowledgements
 
 We would like to thank the [EthPrize foundation](http://ethprize.io/) for their funding support.
