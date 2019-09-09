@@ -57,12 +57,6 @@
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
-          title: "The Block Number and Approximate Date When the Address Will be Unbanned",
-          value: if(@validator.is_banned, do: "##{@validator.banned_until} (#{estimated_unban_day(@validator.banned_until, @average_block_time)})")
-        %>
-        <%=
-          render BlockScoutWeb.StakesView,
-          "_stakes_validator_info_item.html",
           title: "Likelihood of Becoming a Validator on the Next Epoch",
           value: "#{@validator.likelihood}%"
         %>
