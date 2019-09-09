@@ -10,6 +10,12 @@
           </div>
         </div>
       </div>
+      <%= if @validator.is_banned do %>
+        <div class="modal-validator-alert">
+          This pool is banned until block <%= "##{@validator.banned_until} (#{estimated_unban_day(@validator.banned_until, @average_block_time)})" %><br />
+          Reason for Ban: <%= String.capitalize(@validator.ban_reason) %>
+        </div>
+      <% end %>
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-validator-info-content">
         <%=
