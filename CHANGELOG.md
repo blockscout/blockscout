@@ -3,6 +3,7 @@
 ### Features
 - [#2678](https://github.com/poanetwork/blockscout/pull/2678) - fixed dashboard banner height bug
 - [#2672](https://github.com/poanetwork/blockscout/pull/2672) - added new theme for xUSDT 
+- [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
 
 ### Fixes
 - [#2682](https://github.com/poanetwork/blockscout/pull/2682) - Use Task.start instead of Task.async in caches

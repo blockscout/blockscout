@@ -69,6 +69,34 @@ defmodule BlockScoutWeb.AddressController do
     redirect(conn, to: address_transaction_path(conn, :index, id))
   end
 
+  def transaction_and_validation_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
+    transaction_count_task =
+      Task.async(fn ->
+        transaction_count(address_hash)
+      end)
+
+    validation_count_task =
+      Task.async(fn ->
+        validation_count(address_hash)
+      end)
+
+    [transaction_count_task, validation_count_task]
+    |> Task.yield_many(:timer.seconds(30))
+    |> Enum.map(fn {_task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          raise "Query fetching address counters terminated: #{inspect(reason)}"
+
+        nil ->
+          raise "Query fetching address counters timed out."
+      end
+    end)
+    |> List.to_tuple()
+  end
+
   def transaction_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
     Chain.total_transactions_sent_by_address(address_hash)
   end
