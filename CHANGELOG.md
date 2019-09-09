@@ -2,9 +2,10 @@
 
 ### Features
 - [#2678](https://github.com/poanetwork/blockscout/pull/2678) - fixed dashboard banner height bug
-- [#2672](https://github.com/poanetwork/blockscout/pull/2672) - added new theme for xUSDT 
+- [#2672](https://github.com/poanetwork/blockscout/pull/2672) - added new theme for xUSDT
 
 ### Fixes
+- [#2684](https://github.com/poanetwork/blockscout/pull/2684) - do not filter pending logs
 
 ### Chore
 
@@ -232,6 +233,7 @@
 - [#2123](https://github.com/poanetwork/blockscout/pull/2123) - fix coins percentage view
 - [#2119](https://github.com/poanetwork/blockscout/pull/2119) - fix map logging
 - [#2130](https://github.com/poanetwork/blockscout/pull/2130) - fix navigation
+- [#2148](https://github.com/poanetwork/blockscout/pull/2148) - filter pending logs
 - [#2147](https://github.com/poanetwork/blockscout/pull/2147) - add rsk format of checksum
 - [#2149](https://github.com/poanetwork/blockscout/pull/2149) - remove pending transaction count
 - [#2177](https://github.com/poanetwork/blockscout/pull/2177) - remove duplicate entries from UncleBlock's Fetcher
