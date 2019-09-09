@@ -5,6 +5,7 @@
 - [#2672](https://github.com/poanetwork/blockscout/pull/2672) - added new theme for xUSDT 
 
 ### Fixes
+- [#2682](https://github.com/poanetwork/blockscout/pull/2682) - Use Task.start instead of Task.async in caches
 
 ### Chore
 
