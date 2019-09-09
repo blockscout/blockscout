@@ -10,7 +10,7 @@
     position: absolute;
     width: 50%;
     background-color: white;
-    color: #5c34a2;
+    color: black;
     text-align: center;
     border-radius: 6px;
     left: 25%;
@@ -22,7 +22,7 @@
     margin-bottom: 15px;
     opacity: 0;
     transition: opacity 0.5s;
-    @include media-breakpoint-down(sm) {
+    @include media-breakpoint-down(lg) {
         left: 60%;
     }
 }
@@ -60,9 +60,9 @@
     margin-bottom: 15px;
     opacity: 0;
     transition: opacity 0.5s;
-    @include media-breakpoint-down(sm) {
-        padding: 9px 10px;
+    @include media-breakpoint-down(lg) {
         bottom: 100%;
+        padding: 9px 10px;
     }
 }
 
