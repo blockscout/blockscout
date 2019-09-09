@@ -114,6 +114,12 @@ $stakes-table-cell-separation: 25px !default;
     background-color: $stakes-banned-background;
     color: $stakes-banned-color;
   }
+
+  .stakes-td-banned-info {
+    display: block;
+    float: left;
+    padding-right: 30px;
+  }
 }
 
 .stakes-td-order {

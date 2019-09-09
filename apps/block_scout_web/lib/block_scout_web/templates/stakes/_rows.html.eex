@@ -34,9 +34,16 @@
   <td class="stakes-td">
     <%= if @pool.is_banned do %>
       <span class="stakes-td-banned-info">
-        Banned until block #<%= @pool.banned_until %> (<%= estimated_unban_day(@pool.banned_until, @average_block_time) %>)
+        <%= # if @pool.banned_until != @pool.banned_delegators_until &&
+         if @pool.banned_until == @pool.banned_delegators_until do %>
+          Banned until block #<%= @pool.banned_until %> (<%= estimated_unban_day(@pool.banned_until, @average_block_time) %>).
+          You will be able to withdraw after block #<%= @pool.banned_delegators_until %> (<%= estimated_unban_day(@pool.banned_until, @average_block_time) %>)
+        <% else %>
+          Banned until block #<%= @pool.banned_until %> (<%= estimated_unban_day(@pool.banned_until, @average_block_time) %>)
+        <% end %>
       </span>
-    <% else %>
+    <% end %>
+    <%= if to_string(@pool.staking_address_hash) != @account_address && !@pool.are_delegators_banned do %>
       <div class="stakes-controls">
         <%= if @buttons.move do %>
           <%= render BlockScoutWeb.StakesView, "_stakes_control_move.html", address: @pool.staking_address_hash %>
