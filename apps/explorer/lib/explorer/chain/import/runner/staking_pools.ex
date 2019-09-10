@@ -40,7 +40,11 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
+    |> Multi.run(:acquire_all_staking_pools, fn repo, _ ->
+      acquire_all_staking_pools(repo)
+    end)
     |> Multi.run(:mark_as_deleted, fn repo, _ ->
       mark_as_deleted(repo, changes_list, insert_options)
     end)
@@ -55,6 +59,20 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
   @impl Import.Runner
   def timeout, do: @timeout
 
+  defp acquire_all_staking_pools(repo) do
+    query =
+      from(
+        pool in StakingPool,
+        # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
+        order_by: pool.staking_address_hash,
+        lock: "FOR UPDATE"
+      )
+
+    pools = repo.all(query)
+
+    {:ok, pools}
+  end
+
   defp mark_as_deleted(repo, changes_list, %{timeout: timeout}) when is_list(changes_list) do
     addresses = Enum.map(changes_list, & &1.staking_address_hash)
 
@@ -62,18 +80,12 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
       from(
         pool in StakingPool,
         where: pool.staking_address_hash not in ^addresses,
-        # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
-        order_by: pool.staking_address_hash,
-        lock: "FOR UPDATE"
+        # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
+        update: [set: [is_deleted: true, is_active: false]]
       )
 
     try do
-      {_, result} =
-        repo.update_all(
-          from(p in StakingPool, join: s in subquery(query), on: p.staking_address_hash == s.staking_address_hash),
-          [set: [is_deleted: true, is_active: false]],
-          timeout: timeout
-        )
+      {_, result} = repo.update_all(query, [], timeout: timeout)
 
       {:ok, result}
     rescue
@@ -143,19 +155,11 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
     total = repo.one!(total_query)
 
     if total > Decimal.new(0) do
-      query =
+      update_query =
         from(
           p in StakingPool,
           where: p.is_active == true,
-          # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
-          order_by: p.staking_address_hash,
-          lock: "FOR UPDATE"
-        )
-
-      update_query =
-        from(p in StakingPool,
-          join: s in subquery(query),
-          on: p.staking_address_hash == s.staking_address_hash,
+          # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
           update: [
             set: [
               staked_ratio: p.staked_amount / ^total * 100,

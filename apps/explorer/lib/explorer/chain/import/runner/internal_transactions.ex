@@ -47,12 +47,16 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
     update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
+    |> Multi.run(:acquire_transactions, fn repo, _ ->
+      acquire_transactions(repo, changes_list)
+    end)
     |> Multi.run(:internal_transactions, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
-    |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo, _ ->
-      update_transactions(repo, changes_list, update_transactions_options)
+    |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo, %{acquire_transactions: transaction_hashes} ->
+      update_transactions(repo, transaction_hashes, update_transactions_options)
     end)
   end
 
@@ -144,11 +148,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     )
   end
 
-  defp update_transactions(repo, internal_transactions, %{
-         timeout: timeout,
-         timestamps: timestamps
-       })
-       when is_list(internal_transactions) do
+  defp acquire_transactions(repo, internal_transactions) do
     transaction_hashes =
       internal_transactions
       |> MapSet.new(& &1.transaction_hash)
@@ -159,16 +159,27 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         t in Transaction,
         where: t.hash in ^transaction_hashes,
         where: not is_nil(t.block_hash),
+        select: t.hash,
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: t.hash,
         lock: "FOR UPDATE"
       )
 
+    hashes = repo.all(query)
+
+    {:ok, hashes}
+  end
+
+  defp update_transactions(repo, transaction_hashes, %{
+         timeout: timeout,
+         timestamps: timestamps
+       })
+       when is_list(transaction_hashes) do
     update_query =
       from(
         t in Transaction,
-        join: s in subquery(query),
-        on: t.hash == s.hash,
+        where: t.hash in ^transaction_hashes,
+        # ShareLocks order already enforced by `acquire_transactions` (see docs: sharelocks.md)
         update: [
           set: [
             internal_transactions_indexed_at: ^timestamps.updated_at,

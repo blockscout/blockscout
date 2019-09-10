@@ -21,10 +21,26 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
   @type holder_count :: non_neg_integer()
   @type token_holder_count :: %{contract_address_hash: Hash.Address.t(), count: holder_count()}
 
+  def acquire_contract_address_tokens(repo, contract_address_hashes) do
+    token_query =
+      from(
+        token in Token,
+        where: token.contract_address_hash in ^contract_address_hashes,
+        # Enforce Token ShareLocks order (see docs: sharelocks.md)
+        order_by: token.contract_address_hash,
+        lock: "FOR UPDATE"
+      )
+
+    tokens = repo.all(token_query)
+
+    {:ok, tokens}
+  end
+
   def update_holder_counts_with_deltas(repo, token_holder_count_deltas, %{
         timeout: timeout,
         timestamps: %{updated_at: updated_at}
       }) do
+    # NOTE that acquire_contract_address_tokens needs to be called before this
     {hashes, deltas} =
       token_holder_count_deltas
       |> Enum.map(fn %{contract_address_hash: contract_address_hash, delta: delta} ->
@@ -43,35 +59,21 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             ^deltas
           ),
         on: token.contract_address_hash == deltas.contract_address_hash,
-        select: %{
-          contract_address_hash: token.contract_address_hash,
-          delta: deltas.delta
-        },
         where: not is_nil(token.holder_count),
-        # Enforce Token ShareLocks order (see docs: sharelocks.md)
-        order_by: token.contract_address_hash,
-        # NOTE: find a better way to know the alias that ecto gives to token
-        lock: "FOR UPDATE OF t0"
-      )
-
-    update_query =
-      from(
-        t in Token,
-        join: s in subquery(query),
-        on: t.contract_address_hash == s.contract_address_hash,
+        # ShareLocks order already enforced by `acquire_contract_address_tokens` (see docs: sharelocks.md)
         update: [
           set: [
-            holder_count: t.holder_count + s.delta,
+            holder_count: token.holder_count + deltas.delta,
             updated_at: ^updated_at
           ]
         ],
         select: %{
-          contract_address_hash: t.contract_address_hash,
-          holder_count: t.holder_count
+          contract_address_hash: token.contract_address_hash,
+          holder_count: token.holder_count
         }
       )
 
-    {_total, result} = repo.update_all(update_query, [], timeout: timeout)
+    {_total, result} = repo.update_all(query, [], timeout: timeout)
 
     {:ok, result}
   end

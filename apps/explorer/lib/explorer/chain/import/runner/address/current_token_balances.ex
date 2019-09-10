@@ -106,7 +106,12 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
+    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
+      contract_address_hashes = changes_list |> Enum.map(& &1.token_contract_address_hash) |> Enum.uniq()
+      Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
+    end)
     |> Multi.run(:address_current_token_balances, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
@@ -117,6 +122,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
                                                                                 } ->
       token_holder_count_deltas = upserted_balances_to_holder_count_deltas(upserted_balances)
 
+      # ShareLocks order already enforced by `acquire_contract_address_tokens` (see docs: sharelocks.md)
       Tokens.update_holder_counts_with_deltas(
         repo,
         token_holder_count_deltas,

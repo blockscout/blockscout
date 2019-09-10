@@ -42,12 +42,13 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       |> Map.put(:timestamps, timestamps)
       |> Map.put(:token_transfer_transaction_hash_set, token_transfer_transaction_hash_set(options))
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
+    |> Multi.run(:recollated_transactions, fn repo, _ ->
+      discard_blocks_for_recollated_transactions(repo, changes_list, insert_options)
+    end)
     |> Multi.run(:transactions, fn repo, _ ->
       insert(repo, changes_list, insert_options)
-    end)
-    |> Multi.run(:recollated_transactions, fn repo, %{transactions: transactions} ->
-      discard_blocks_for_recollated_transactions(repo, transactions, insert_options)
     end)
   end
 
@@ -186,18 +187,39 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
 
   defp put_internal_transactions_indexed_at?(_, _), do: false
 
-  defp discard_blocks_for_recollated_transactions(repo, transactions, %{
+  defp discard_blocks_for_recollated_transactions(repo, changes_list, %{
          timeout: timeout,
          timestamps: %{updated_at: updated_at}
        })
-       when is_list(transactions) do
-    block_hashes =
-      transactions
-      |> Enum.filter(fn %{block_hash: block_hash, old_block_hash: old_block_hash} ->
-        not is_nil(old_block_hash) and block_hash != old_block_hash
+       when is_list(changes_list) do
+    {transactions_hashes, transactions_block_hashes} =
+      changes_list
+      |> Enum.filter(&Map.has_key?(&1, :block_hash))
+      |> Enum.map(fn %{hash: hash, block_hash: block_hash} ->
+        {:ok, hash_bytes} = Hash.Full.dump(hash)
+        {:ok, block_hash_bytes} = Hash.Full.dump(block_hash)
+        {hash_bytes, block_hash_bytes}
       end)
-      |> MapSet.new(& &1.old_block_hash)
-      |> MapSet.to_list()
+      |> Enum.unzip()
+
+    blocks_with_recollated_transactions =
+      from(
+        transaction in Transaction,
+        join:
+          new_transaction in fragment(
+            "(SELECT unnest(?::bytea[]) as hash, unnest(?::bytea[]) as block_hash)",
+            ^transactions_hashes,
+            ^transactions_block_hashes
+          ),
+        on: transaction.hash == new_transaction.hash,
+        where: transaction.block_hash != new_transaction.block_hash,
+        select: transaction.block_hash
+      )
+
+    block_hashes =
+      blocks_with_recollated_transactions
+      |> repo.all()
+      |> Enum.uniq()
 
     if Enum.empty?(block_hashes) do
       {:ok, []}

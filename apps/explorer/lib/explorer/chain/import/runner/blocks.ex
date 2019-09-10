@@ -5,10 +5,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   require Ecto.Query
 
-  import Ecto.Query, only: [from: 2, lock: 2, order_by: 2, subquery: 1]
+  import Ecto.Query, only: [from: 2, subquery: 1]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Address, Block, Hash, Import, InternalTransaction, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, Import, InternalTransaction, Log, TokenTransfer, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
@@ -44,58 +44,100 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    ordered_consensus_block_numbers = ordered_consensus_block_numbers(changes_list)
+    hashes = Enum.map(changes_list, & &1.hash)
+    consensus_block_numbers = consensus_block_numbers(changes_list)
     where_invalid_neighbour = where_invalid_neighbour(changes_list)
-    where_forked = where_forked(changes_list)
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
-    |> Multi.run(:derive_transaction_forks, fn repo, _ ->
-      derive_transaction_forks(%{
-        repo: repo,
-        timeout: options[Runner.Transaction.Forks.option_key()][:timeout] || Runner.Transaction.Forks.timeout(),
-        timestamps: timestamps,
-        where_forked: where_forked
-      })
+    |> Multi.run(:acquire_blocks, fn repo, _ ->
+      acquire_blocks(repo, hashes, consensus_block_numbers, where_invalid_neighbour)
     end)
     |> Multi.run(:lose_consensus, fn repo, _ ->
-      lose_consensus(repo, ordered_consensus_block_numbers, insert_options)
+      lose_consensus(repo, consensus_block_numbers, insert_options)
     end)
     |> Multi.run(:lose_invalid_neighbour_consensus, fn repo, _ ->
       lose_invalid_neighbour_consensus(repo, where_invalid_neighbour, insert_options)
     end)
-    |> Multi.run(:remove_nonconsensus_data, fn repo,
-                                               %{
-                                                 lose_consensus: lost_consensus_blocks,
-                                                 lose_invalid_neighbour_consensus: lost_consensus_neighbours
-                                               } ->
+    |> Multi.run(:nonconsensus_block_numbers, fn _repo,
+                                                 %{
+                                                   lose_consensus: lost_consensus_blocks,
+                                                   lose_invalid_neighbour_consensus: lost_consensus_neighbours
+                                                 } ->
       nonconsensus_block_numbers =
         (lost_consensus_blocks ++ lost_consensus_neighbours)
-        |> Enum.map(fn %{number: number} ->
-          number
-        end)
         |> Enum.sort()
         |> Enum.dedup()
 
-      remove_nonconsensus_data(
-        repo,
-        nonconsensus_block_numbers,
-        insert_options
-      )
+      {:ok, nonconsensus_block_numbers}
     end)
-    # MUST be after `:derive_transaction_forks`, which depends on values in `transactions` table
+    |> Multi.run(:blocks, fn repo, _ ->
+      insert(repo, changes_list, insert_options)
+    end)
+    |> Multi.run(:uncle_fetched_block_second_degree_relations, fn repo, %{blocks: blocks} when is_list(blocks) ->
+      update_block_second_degree_relations(repo, hashes, %{
+        timeout:
+          options[Runner.Block.SecondDegreeRelations.option_key()][:timeout] ||
+            Runner.Block.SecondDegreeRelations.timeout(),
+        timestamps: timestamps
+      })
+    end)
+    |> Multi.run(:delete_rewards, fn repo, _ ->
+      delete_rewards(repo, changes_list, insert_options)
+    end)
     |> Multi.run(:fork_transactions, fn repo, _ ->
       fork_transactions(%{
         repo: repo,
         timeout: options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout(),
         timestamps: timestamps,
-        where_forked: where_forked
+        blocks_changes: changes_list
       })
     end)
+    |> Multi.run(:derive_transaction_forks, fn repo, %{fork_transactions: transactions} ->
+      derive_transaction_forks(%{
+        repo: repo,
+        timeout: options[Runner.Transaction.Forks.option_key()][:timeout] || Runner.Transaction.Forks.timeout(),
+        timestamps: timestamps,
+        transactions: transactions
+      })
+    end)
+    |> Multi.run(:remove_nonconsensus_logs, fn repo,
+                                               %{
+                                                 nonconsensus_block_numbers: nonconsensus_block_numbers,
+                                                 fork_transactions: transactions
+                                               } ->
+      remove_nonconsensus_logs(repo, nonconsensus_block_numbers, transactions, insert_options)
+    end)
+    |> Multi.run(:acquire_internal_transactions, fn repo,
+                                                    %{
+                                                      nonconsensus_block_numbers: nonconsensus_block_numbers,
+                                                      fork_transactions: transactions
+                                                    } ->
+      acquire_internal_transactions(repo, nonconsensus_block_numbers, hashes, transactions)
+    end)
+    |> Multi.run(:remove_nonconsensus_internal_transactions, fn repo,
+                                                                %{
+                                                                  nonconsensus_block_numbers:
+                                                                    nonconsensus_block_numbers,
+                                                                  fork_transactions: transactions
+                                                                } ->
+      remove_nonconsensus_internal_transactions(repo, nonconsensus_block_numbers, transactions, insert_options)
+    end)
+    |> Multi.run(:internal_transaction_transaction_block_number, fn repo, _ ->
+      update_internal_transaction_block_number(repo, hashes)
+    end)
+    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
+      acquire_contract_address_tokens(repo, consensus_block_numbers)
+    end)
+    |> Multi.run(:remove_nonconsensus_token_transfers, fn repo,
+                                                          %{nonconsensus_block_numbers: nonconsensus_block_numbers} ->
+      remove_nonconsensus_token_transfers(repo, nonconsensus_block_numbers, insert_options)
+    end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
-      delete_address_token_balances(repo, ordered_consensus_block_numbers, insert_options)
+      delete_address_token_balances(repo, consensus_block_numbers, insert_options)
     end)
     |> Multi.run(:delete_address_current_token_balances, fn repo, _ ->
-      delete_address_current_token_balances(repo, ordered_consensus_block_numbers, insert_options)
+      delete_address_current_token_balances(repo, consensus_block_numbers, insert_options)
     end)
     |> Multi.run(:derive_address_current_token_balances, fn repo,
                                                             %{
@@ -112,99 +154,89 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
       Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
     end)
-    |> Multi.run(:delete_rewards, fn repo, _ ->
-      delete_rewards(repo, changes_list, insert_options)
-    end)
-    |> Multi.run(:blocks, fn repo, _ ->
-      insert(repo, changes_list, insert_options)
-    end)
-    |> Multi.run(:uncle_fetched_block_second_degree_relations, fn repo, %{blocks: blocks} when is_list(blocks) ->
-      update_block_second_degree_relations(
-        repo,
-        blocks,
-        %{
-          timeout:
-            options[Runner.Block.SecondDegreeRelations.option_key()][:timeout] ||
-              Runner.Block.SecondDegreeRelations.timeout(),
-          timestamps: timestamps
-        }
-      )
-    end)
-    |> Multi.run(:internal_transaction_transaction_block_number, fn repo, %{blocks: blocks} when is_list(blocks) ->
-      update_internal_transaction_block_number(repo, blocks)
-    end)
   end
 
   @impl Runner
   def timeout, do: @timeout
 
-  defp derive_transaction_forks(%{
-         repo: repo,
-         timeout: timeout,
-         timestamps: %{inserted_at: inserted_at, updated_at: updated_at},
-         where_forked: where_forked
-       }) do
-    multi =
-      Multi.new()
-      |> Multi.run(:get_forks, fn repo, _ ->
-        query =
-          from(transaction in where_forked,
-            select: %{
-              uncle_hash: transaction.block_hash,
-              index: transaction.index,
-              hash: transaction.hash,
-              inserted_at: type(^inserted_at, transaction.inserted_at),
-              updated_at: type(^updated_at, transaction.updated_at)
-            }
-          )
+  defp acquire_blocks(repo, hashes, consensus_block_numbers, where_invalid_neighbour) do
+    query =
+      from(
+        block in where_invalid_neighbour,
+        or_where: block.number in ^consensus_block_numbers,
+        or_where: block.hash in ^hashes,
+        select: block.hash,
+        # Enforce Block ShareLocks order (see docs: sharelocks.md)
+        order_by: [asc: block.hash],
+        lock: "FOR UPDATE"
+      )
 
-        transactions = repo.all(query)
-        {:ok, transactions}
-      end)
-      |> Multi.run(:insert_transaction_forks, fn repo, %{get_forks: transactions} ->
-        # Enforce Fork ShareLocks order (see docs: sharelocks.md)
-        ordered_forks = Enum.sort_by(transactions, &{&1.uncle_hash, &1.index})
+    blocks = repo.all(query)
+    {:ok, blocks}
+  end
 
-        {_total, result} =
-          repo.insert_all(
-            Transaction.Fork,
-            ordered_forks,
-            conflict_target: [:uncle_hash, :index],
-            on_conflict:
-              from(
-                transaction_fork in Transaction.Fork,
-                update: [set: [hash: fragment("EXCLUDED.hash")]],
-                where: fragment("EXCLUDED.hash <> ?", transaction_fork.hash)
-              ),
-            returning: [:uncle_hash, :hash]
-          )
+  defp acquire_contract_address_tokens(repo, consensus_block_numbers) do
+    query =
+      from(address_current_token_balance in Address.CurrentTokenBalance,
+        where: address_current_token_balance.block_number in ^consensus_block_numbers,
+        select: address_current_token_balance.token_contract_address_hash
+      )
 
-        {:ok, result}
-      end)
+    contract_address_hashes = repo.all(query)
 
-    with {:ok, %{insert_transaction_forks: rows}} <- repo.transaction(multi, timeout: timeout) do
-      derived_transaction_forks = Enum.map(rows, &Map.take(&1, [:uncle_hash, :hash]))
+    Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
+  end
 
-      {:ok, derived_transaction_forks}
-    end
+  defp acquire_internal_transactions(repo, nonconsensus_block_numbers, hashes, forked_transactions) do
+    forked_transaction_hashes = Enum.map(forked_transactions, & &1.hash)
+
+    query =
+      from(internal_transaction in InternalTransaction,
+        join: transaction in Transaction,
+        on: internal_transaction.transaction_hash == transaction.hash,
+        where: transaction.block_number in ^nonconsensus_block_numbers,
+        or_where: transaction.block_hash in ^hashes,
+        or_where: transaction.hash in ^forked_transaction_hashes,
+        select: {internal_transaction.transaction_hash, internal_transaction.index},
+        # Enforce InternalTransaction ShareLocks order (see docs: sharelocks.md)
+        order_by: [
+          internal_transaction.transaction_hash,
+          internal_transaction.index
+        ],
+        # NOTE: find a better way to know the alias that ecto gives to token
+        lock: "FOR UPDATE OF i0"
+      )
+
+    {:ok, repo.all(query)}
   end
 
   defp fork_transactions(%{
          repo: repo,
          timeout: timeout,
          timestamps: %{updated_at: updated_at},
-         where_forked: where_forked
+         blocks_changes: blocks_changes
        }) do
     query =
-      where_forked
-      # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
-      |> order_by(asc: :hash)
-      |> lock("FOR UPDATE")
+      from(
+        transaction in where_forked(blocks_changes),
+        select: %{
+          block_hash: transaction.block_hash,
+          index: transaction.index,
+          hash: transaction.hash
+        },
+        # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+        order_by: [asc: :hash],
+        lock: "FOR UPDATE"
+      )
+
+    transactions = repo.all(query)
+
+    hashes = Enum.map(transactions, & &1.hash)
 
     update_query =
-      from(t in Transaction,
-        join: s in subquery(query),
-        on: t.hash == s.hash,
+      from(
+        t in Transaction,
+        where: t.hash in ^hashes,
         update: [
           set: [
             block_hash: nil,
@@ -222,13 +254,51 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       )
 
     try do
-      {_, result} = repo.update_all(update_query, [], timeout: timeout)
+      {_num, _res} = repo.update_all(update_query, [], timeout: timeout)
 
-      {:ok, result}
+      {:ok, transactions}
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error}}
     end
+  end
+
+  defp derive_transaction_forks(%{
+         repo: repo,
+         timeout: timeout,
+         timestamps: %{inserted_at: inserted_at, updated_at: updated_at},
+         transactions: transactions
+       }) do
+    transaction_forks =
+      transactions
+      |> Enum.map(fn transaction ->
+        %{
+          uncle_hash: transaction.block_hash,
+          index: transaction.index,
+          hash: transaction.hash,
+          inserted_at: inserted_at,
+          updated_at: updated_at
+        }
+      end)
+      # Enforce Fork ShareLocks order (see docs: sharelocks.md)
+      |> Enum.sort_by(&{&1.uncle_hash, &1.index})
+
+    {_total, result} =
+      repo.insert_all(
+        Transaction.Fork,
+        transaction_forks,
+        conflict_target: [:uncle_hash, :index],
+        on_conflict:
+          from(
+            transaction_fork in Transaction.Fork,
+            update: [set: [hash: fragment("EXCLUDED.hash")]],
+            where: fragment("EXCLUDED.hash <> ?", transaction_fork.hash)
+          ),
+        returning: [:uncle_hash, :hash],
+        timeout: timeout
+      )
+
+    {:ok, result}
   end
 
   @spec insert(Repo.t(), [map()], %{
@@ -288,90 +358,46 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     )
   end
 
-  defp ordered_consensus_block_numbers(blocks_changes) when is_list(blocks_changes) do
+  defp consensus_block_numbers(blocks_changes) when is_list(blocks_changes) do
     blocks_changes
-    |> Enum.reduce(MapSet.new(), fn
-      %{consensus: true, number: number}, acc ->
-        MapSet.put(acc, number)
-
-      %{consensus: false}, acc ->
-        acc
-    end)
-    |> Enum.sort()
+    |> Enum.filter(& &1.consensus)
+    |> Enum.map(& &1.number)
   end
 
   defp lose_consensus(_, [], _), do: {:ok, []}
 
-  defp lose_consensus(repo, ordered_consensus_block_number, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
-       when is_list(ordered_consensus_block_number) do
-    query =
-      from(
-        block in Block,
-        where: block.number in ^ordered_consensus_block_number,
-        # Enforce Block ShareLocks order (see docs: sharelocks.md)
-        order_by: [asc: block.hash],
-        lock: "FOR UPDATE"
+  defp lose_consensus(repo, consensus_block_number, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
+       when is_list(consensus_block_number) do
+    # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+    {_, result} =
+      repo.update_all(
+        from(block in Block, where: block.number in ^consensus_block_number, select: block.number),
+        [set: [consensus: false, updated_at: updated_at]],
+        timeout: timeout
       )
 
-    try do
-      {_, result} =
-        repo.update_all(
-          from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: [:hash, :number]),
-          [set: [consensus: false, updated_at: updated_at]],
-          timeout: timeout
-        )
-
-      {:ok, result}
-    rescue
-      postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, consensus_block_numbers: ordered_consensus_block_number}}
-    end
+    {:ok, result}
+  rescue
+    postgrex_error in Postgrex.Error ->
+      {:error, %{exception: postgrex_error, consensus_block_numbers: consensus_block_number}}
   end
 
   defp lose_invalid_neighbour_consensus(repo, where_invalid_neighbour, %{
          timeout: timeout,
          timestamps: %{updated_at: updated_at}
        }) do
-    query =
-      from(
-        block in where_invalid_neighbour,
-        # Enforce Block ShareLocks order (see docs: sharelocks.md)
-        order_by: [asc: block.hash],
-        lock: "FOR UPDATE"
+    # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+    {_, result} =
+      repo.update_all(
+        from(block in where_invalid_neighbour, select: block.number),
+        [set: [consensus: false, updated_at: updated_at]],
+        timeout: timeout
       )
 
-    try do
-      {_, result} =
-        repo.update_all(
-          from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: [:hash, :number]),
-          [set: [consensus: false, updated_at: updated_at]],
-          timeout: timeout
-        )
-
-      {:ok, result}
-    rescue
-      postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, where_invalid_neighbour: where_invalid_neighbour}}
-    end
-  end
-
-  defp remove_nonconsensus_data(
-         repo,
-         nonconsensus_block_numbers,
-         insert_options
-       ) do
-    with {:ok, deleted_token_transfers} <-
-           remove_nonconsensus_token_transfers(repo, nonconsensus_block_numbers, insert_options),
-         {:ok, deleted_logs} <- remove_nonconsensus_logs(repo, nonconsensus_block_numbers, insert_options),
-         {:ok, deleted_internal_transactions} <-
-           remove_nonconsensus_internal_transactions(repo, nonconsensus_block_numbers, insert_options) do
-      {:ok,
-       %{
-         token_transfers: deleted_token_transfers,
-         logs: deleted_logs,
-         internal_transactions: deleted_internal_transactions
-       }}
-    end
+    {:ok, result}
+  rescue
+    postgrex_error in Postgrex.Error ->
+      {:error, %{exception: postgrex_error, where_invalid_neighbour: where_invalid_neighbour}}
   end
 
   defp remove_nonconsensus_token_transfers(repo, nonconsensus_block_numbers, %{timeout: timeout}) do
@@ -407,37 +433,27 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end
   end
 
-  defp remove_nonconsensus_internal_transactions(repo, nonconsensus_block_numbers, %{timeout: timeout}) do
+  defp remove_nonconsensus_internal_transactions(repo, nonconsensus_block_numbers, forked_transactions, %{
+         timeout: timeout
+       }) do
+    forked_transaction_hashes = Enum.map(forked_transactions, & &1.hash)
+
     transaction_query =
       from(transaction in Transaction,
         where: transaction.block_number in ^nonconsensus_block_numbers,
-        select: map(transaction, [:hash]),
-        order_by: transaction.hash
-      )
-
-    ordered_internal_transactions =
-      from(internal_transaction in InternalTransaction,
-        inner_join: transaction in subquery(transaction_query),
-        on: internal_transaction.transaction_hash == transaction.hash,
-        select: map(internal_transaction, [:transaction_hash, :index]),
-        # Enforce InternalTransaction ShareLocks order (see docs: sharelocks.md)
-        order_by: [
-          internal_transaction.transaction_hash,
-          internal_transaction.index
-        ],
-        lock: "FOR UPDATE OF i0"
+        or_where: transaction.hash in ^forked_transaction_hashes,
+        select: map(transaction, [:hash])
       )
 
     query =
       from(internal_transaction in InternalTransaction,
-        select: map(internal_transaction, [:transaction_hash, :index]),
-        inner_join: ordered_internal_transaction in subquery(ordered_internal_transactions),
-        on:
-          ordered_internal_transaction.transaction_hash == internal_transaction.transaction_hash and
-            ordered_internal_transaction.index == internal_transaction.index
+        inner_join: transaction in subquery(transaction_query),
+        on: internal_transaction.transaction_hash == transaction.hash,
+        select: map(internal_transaction, [:transaction_hash, :index])
       )
 
     try do
+      # ShareLocks order already enforced by `acquire_internal_transactions` (see docs: sharelocks.md)
       {_count, deleted_internal_transactions} = repo.delete_all(query, timeout: timeout)
 
       {:ok, deleted_internal_transactions}
@@ -447,10 +463,13 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end
   end
 
-  defp remove_nonconsensus_logs(repo, nonconsensus_block_numbers, %{timeout: timeout}) do
+  defp remove_nonconsensus_logs(repo, nonconsensus_block_numbers, forked_transactions, %{timeout: timeout}) do
+    forked_transaction_hashes = Enum.map(forked_transactions, & &1.hash)
+
     transaction_query =
       from(transaction in Transaction,
         where: transaction.block_number in ^nonconsensus_block_numbers,
+        or_where: transaction.hash in ^forked_transaction_hashes,
         select: map(transaction, [:hash]),
         order_by: transaction.hash
       )
@@ -487,10 +506,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   defp delete_address_token_balances(_, [], _), do: {:ok, []}
 
-  defp delete_address_token_balances(repo, ordered_consensus_block_numbers, %{timeout: timeout}) do
+  defp delete_address_token_balances(repo, consensus_block_numbers, %{timeout: timeout}) do
     ordered_query =
       from(address_token_balance in Address.TokenBalance,
-        where: address_token_balance.block_number in ^ordered_consensus_block_numbers,
+        where: address_token_balance.block_number in ^consensus_block_numbers,
         select: map(address_token_balance, [:address_hash, :token_contract_address_hash, :block_number]),
         # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
         order_by: [
@@ -518,16 +537,16 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       {:ok, deleted_address_token_balances}
     rescue
       postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, block_numbers: ordered_consensus_block_numbers}}
+        {:error, %{exception: postgrex_error, block_numbers: consensus_block_numbers}}
     end
   end
 
   defp delete_address_current_token_balances(_, [], _), do: {:ok, []}
 
-  defp delete_address_current_token_balances(repo, ordered_consensus_block_numbers, %{timeout: timeout}) do
+  defp delete_address_current_token_balances(repo, consensus_block_numbers, %{timeout: timeout}) do
     ordered_query =
       from(address_current_token_balance in Address.CurrentTokenBalance,
-        where: address_current_token_balance.block_number in ^ordered_consensus_block_numbers,
+        where: address_current_token_balance.block_number in ^consensus_block_numbers,
         select: map(address_current_token_balance, [:address_hash, :token_contract_address_hash]),
         # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
         order_by: [
@@ -561,7 +580,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       {:ok, deleted_address_current_token_balances}
     rescue
       postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, block_numbers: ordered_consensus_block_numbers}}
+        {:error, %{exception: postgrex_error, block_numbers: consensus_block_numbers}}
     end
   end
 
@@ -613,41 +632,26 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         ]
       )
 
-    multi =
-      Multi.new()
-      |> Multi.run(:new_current_token_balance, fn repo, _ ->
-        new_current_token_balances = repo.all(new_current_token_balance_query)
-        {:ok, new_current_token_balances}
-      end)
-      |> Multi.run(
-        :insert_new_current_token_balance,
-        fn repo, %{new_current_token_balance: new_current_token_balance} ->
-          # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
-          ordered_current_token_balance =
-            Enum.sort_by(
-              new_current_token_balance,
-              &{&1.address_hash, &1.token_contract_address_hash}
-            )
+    ordered_current_token_balance =
+      new_current_token_balance_query
+      |> repo.all()
+      # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
+      |> Enum.sort_by(&{&1.address_hash, &1.token_contract_address_hash})
 
-          {_total, result} =
-            repo.insert_all(
-              Address.CurrentTokenBalance,
-              ordered_current_token_balance,
-              # No `ON CONFLICT` because `delete_address_current_token_balances`
-              # should have removed any conflicts.
-              returning: [:address_hash, :token_contract_address_hash, :block_number, :value]
-            )
-
-          {:ok, result}
-        end
+    {_total, result} =
+      repo.insert_all(
+        Address.CurrentTokenBalance,
+        ordered_current_token_balance,
+        # No `ON CONFLICT` because `delete_address_current_token_balances`
+        # should have removed any conflicts.
+        returning: [:address_hash, :token_contract_address_hash, :block_number, :value],
+        timeout: timeout
       )
 
-    with {:ok, %{insert_new_current_token_balance: rows}} <- repo.transaction(multi, timeout: timeout) do
-      derived_address_current_token_balances =
-        Enum.map(rows, &Map.take(&1, [:address_hash, :token_contract_address_hash, :block_number, :value]))
+    derived_address_current_token_balances =
+      Enum.map(result, &Map.take(&1, [:address_hash, :token_contract_address_hash, :block_number, :value]))
 
-      {:ok, derived_address_current_token_balances}
-    end
+    {:ok, derived_address_current_token_balances}
   end
 
   # `block_rewards` are linked to `blocks.hash`, but fetched by `blocks.number`, so when a block with the same number is
@@ -691,13 +695,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end
   end
 
-  defp update_block_second_degree_relations(repo, blocks, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
-       when is_list(blocks) do
-    uncle_hashes =
-      blocks
-      |> MapSet.new(& &1.hash)
-      |> MapSet.to_list()
-
+  defp update_block_second_degree_relations(repo, uncle_hashes, %{
+         timeout: timeout,
+         timestamps: %{updated_at: updated_at}
+       })
+       when is_list(uncle_hashes) do
     query =
       from(
         bsdr in Block.SecondDegreeRelation,
@@ -725,9 +727,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end
   end
 
-  defp update_internal_transaction_block_number(repo, blocks) when is_list(blocks) do
-    blocks_hashes = Enum.map(blocks, & &1.hash)
-
+  defp update_internal_transaction_block_number(repo, blocks_hashes) when is_list(blocks_hashes) do
     query =
       from(
         internal_transaction in InternalTransaction,
@@ -736,26 +736,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         join: block in Block,
         on: block.hash == transaction.block_hash,
         where: block.hash in ^blocks_hashes,
-        select: %{
-          transaction_hash: internal_transaction.transaction_hash,
-          index: internal_transaction.index,
-          block_number: block.number
-        },
-        # Enforce InternalTransaction ShareLocks order (see docs: sharelocks.md)
-        order_by: [asc: :transaction_hash, asc: :index],
-        # NOTE: find a better way to know the alias that ecto gives to internal_transaction
-        lock: "FOR UPDATE OF i0"
+        update: [set: [block_number: block.number]]
       )
 
-    update_query =
-      from(
-        i in InternalTransaction,
-        join: s in subquery(query),
-        on: i.transaction_hash == s.transaction_hash and i.index == s.index,
-        update: [set: [block_number: s.block_number]]
-      )
-
-    {total, _} = repo.update_all(update_query, [])
+    # ShareLocks order already enforced by `acquire_internal_transactions` (see docs: sharelocks.md)
+    {total, _} = repo.update_all(query, [])
 
     {:ok, total}
   end
