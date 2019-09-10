@@ -19,7 +19,7 @@
             </div>
           <% end %>
 
-          <input type="submit" value='<%= gettext("Query")%>' class="button button-secondary button-xs py-0 mt-2" />
+          <input type="submit" value='<%= gettext("Query")%>' class="button btn-line button-xs py-0 mt-2" style="padding: 6px 8px!important;height: 26px;font-size: 11px;" />
         </form>
 
         <div class='p-2 text-muted <%= if (queryable?(function["inputs"]) == true), do: "w-100" %>'>
