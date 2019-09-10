@@ -29,8 +29,8 @@ defmodule Explorer.Chain.Cache.TransactionCount do
   defp handle_fallback(:async_task) do
     # If this gets called it means an async task was requested, but none exists
     # so a new one needs to be launched
-    task =
-      Task.async(fn ->
+    {:ok, task} =
+      Task.start(fn ->
         try do
           result = Repo.aggregate(Transaction, :count, :hash, timeout: :infinity)
 

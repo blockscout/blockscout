@@ -26,7 +26,10 @@ defmodule Explorer.Chain.OrderedCache do
       preload: [transaction: :hash]
   ```
   Additionally all of the options accepted by `ConCache.start_link/1` can be
-  provided as well. By default only `ttl_check_interval:` is set (to `false`).
+  provided as well. Unless specified, only these values have defaults:
+  - `:ttl_check_interval` is set (to `false`).
+  - `:callback` is only set if `:ttl_check_interval` is not `false` to call the
+    `remove_deleted_from_index` function, that removes expired values from the index.
 
   It's also possible, and advised, to override the implementation of the `c:prevails?/2`
   and `c:element_to_id/1` callbacks.
@@ -131,10 +134,7 @@ defmodule Explorer.Chain.OrderedCache do
     max_size = Keyword.get(opts, :max_size, 100)
     preloads = Keyword.get(opts, :preloads) || Keyword.get_values(opts, :preload)
 
-    concache_params =
-      opts
-      |> Keyword.drop([:ids_list_key, :max_size, :preloads, :preload])
-      |> Keyword.put_new(:ttl_check_interval, false)
+    concache_params = Keyword.drop(opts, [:ids_list_key, :max_size, :preloads, :preload])
 
     # credo:disable-for-next-line Credo.Check.Refactor.LongQuoteBlocks
     quote do
@@ -206,6 +206,19 @@ defmodule Explorer.Chain.OrderedCache do
 
       ### Updating function
 
+      def remove_deleted_from_index({:delete, _cache_pid, id}) do
+        # simply check with `ConCache.get` because it is faster
+        if Enum.member?(ids_list(), id) do
+          ConCache.update(cache_name(), ids_list_key(), fn ids ->
+            updated_list = List.delete(ids || [], id)
+            # ids_list is set to never expire
+            {:ok, %ConCache.Item{value: updated_list, ttl: :infinity}}
+          end)
+        end
+      end
+
+      def remove_deleted_from_index(_), do: nil
+
       @impl OrderedCache
       def update(elements) when is_nil(elements), do: :ok
 
@@ -217,7 +230,8 @@ defmodule Explorer.Chain.OrderedCache do
             |> Enum.sort(&prevails?(&1, &2))
             |> merge_and_update(ids || [], max_size())
 
-          {:ok, updated_list}
+          # ids_list is set to never expire
+          {:ok, %ConCache.Item{value: updated_list, ttl: :infinity}}
         end)
       end
 
@@ -308,7 +322,21 @@ defmodule Explorer.Chain.OrderedCache do
       provided to this function will override the ones set by using the macro
       """
       def child_spec(params) do
-        params = Keyword.merge(unquote(concache_params), params)
+        # params specified in `use`
+        merged_params =
+          unquote(concache_params)
+          # params specified in `child_spec`
+          |> Keyword.merge(params)
+          # `:ttl_check_interval` needs to be specified, defaults to `false`
+          |> Keyword.put_new(:ttl_check_interval, false)
+
+        # if `:ttl_check_interval` is not `false` the expired values need to be
+        # removed from the cache's index
+        params =
+          case merged_params[:ttl_check_interval] do
+            false -> merged_params
+            _ -> Keyword.put_new(merged_params, :callback, &remove_deleted_from_index/1)
+          end
 
         Supervisor.child_spec({ConCache, params}, id: child_id())
       end
