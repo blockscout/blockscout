@@ -1838,11 +1838,6 @@ msgid "Gas"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:19
-msgid "Github"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:26
 msgid "If it still does not show up after 1 hour, please check with your sender/exchange/wallet/transaction provider for additional information."
 msgstr ""
