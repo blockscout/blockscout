@@ -79,7 +79,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
       remove_nonconsensus_data(
         repo,
-        nonconsensus_block_numbers,
+        %{nonconsensus_block_numbers: nonconsensus_block_numbers, forked_transactions_query: where_forked},
         insert_options
       )
     end)
@@ -363,12 +363,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   defp remove_nonconsensus_data(
          repo,
-         nonconsensus_block_numbers,
+         %{
+           nonconsensus_block_numbers: nonconsensus_block_numbers,
+           forked_transactions_query: forked_transactions_query
+         },
          insert_options
        ) do
     with {:ok, deleted_token_transfers} <-
            remove_nonconsensus_token_transfers(repo, nonconsensus_block_numbers, insert_options),
-         {:ok, deleted_logs} <- remove_nonconsensus_logs(repo, nonconsensus_block_numbers, insert_options) do
+         {:ok, deleted_logs} <- remove_nonconsensus_logs(repo, forked_transactions_query, insert_options) do
       {:ok, %{token_transfers: deleted_token_transfers, logs: deleted_logs}}
     end
   end
@@ -405,11 +408,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end
   end
 
-  defp remove_nonconsensus_logs(repo, nonconsensus_block_numbers, %{timeout: timeout}) do
+  defp remove_nonconsensus_logs(repo, forked_transactions_query, %{timeout: timeout}) do
     transaction_query =
-      from(transaction in Transaction,
-        where: transaction.block_number in ^nonconsensus_block_numbers,
-        select: map(transaction, [:hash]),
+      from(transaction in subquery(forked_transactions_query),
         order_by: transaction.hash
       )
 
@@ -438,7 +439,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       {:ok, deleted_logs}
     rescue
       postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, block_numbers: nonconsensus_block_numbers}}
+        {:error, %{exception: postgrex_error, forked_transactions_query: forked_transactions_query}}
     end
   end
 
