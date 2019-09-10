@@ -70,8 +70,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
                                                  lose_invalid_neighbour_consensus: lost_consensus_neighbours
                                                } ->
       nonconsensus_block_numbers =
-        lost_consensus_blocks
-        |> Kernel.++(lost_consensus_neighbours)
+        (lost_consensus_blocks ++ lost_consensus_neighbours)
         |> Enum.map(fn %{number: number} ->
           number
         end)
@@ -378,6 +377,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       from(token_transfer in TokenTransfer,
         where: token_transfer.block_number in ^nonconsensus_block_numbers,
         select: map(token_transfer, [:transaction_hash, :log_index]),
+        # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
         order_by: [
           token_transfer.transaction_hash,
           token_transfer.log_index
@@ -418,11 +418,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         inner_join: transaction in subquery(transaction_query),
         on: log.transaction_hash == transaction.hash,
         select: map(log, [:transaction_hash, :index]),
+        # Enforce Log ShareLocks order (see docs: sharelocks.md)
         order_by: [
           log.transaction_hash,
           log.index
         ],
-        lock: "FOR UPDATE"
+        lock: "FOR UPDATE OF l0"
       )
 
     query =
