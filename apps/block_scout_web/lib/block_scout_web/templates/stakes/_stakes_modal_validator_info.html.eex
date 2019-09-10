@@ -12,8 +12,14 @@
       </div>
       <%= if @validator.is_banned do %>
         <div class="modal-validator-alert">
-          This pool is banned until block <%= "##{@validator.banned_until} (#{estimated_unban_day(@validator.banned_until, @average_block_time)})" %><br />
-          Reason for Ban: <%= String.capitalize(@validator.ban_reason) %>
+          <%= if @validator.banned_until != @validator.banned_delegators_until do %>
+            This pool is banned until block <%= "##{@validator.banned_until} (#{estimated_unban_day(@validator.banned_until, @average_block_time)})" %><br />
+            You will be able to withdraw after block #<%= @validator.banned_delegators_until %> (<%= estimated_unban_day(@validator.banned_delegators_until, @average_block_time) %>)<br />
+            Reason for Ban: <%= String.capitalize(@validator.ban_reason) %>
+          <% else %>
+            This pool is banned until block <%= "##{@validator.banned_until} (#{estimated_unban_day(@validator.banned_until, @average_block_time)})" %><br />
+            Reason for Ban: <%= String.capitalize(@validator.ban_reason) %>
+          <% end %>
         </div>
       <% end %>
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
