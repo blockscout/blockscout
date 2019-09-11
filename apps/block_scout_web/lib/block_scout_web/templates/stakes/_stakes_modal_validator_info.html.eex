@@ -10,6 +10,19 @@
           </div>
         </div>
       </div>
+      <%= if @validator.is_banned do %>
+        <div class="modal-validator-alert">
+          This pool is banned until block <%= "##{@validator.banned_until} (#{estimated_unban_day(@validator.banned_until, @average_block_time)})" %><br />
+          Reason for Ban: <%= String.capitalize(@validator.ban_reason) %>
+          <%= if @delegator &&
+                 @delegator.delegator_address_hash != @validator.staking_address_hash &&
+                 @validator.are_delegators_banned &&
+                 @validator.banned_until != @validator.banned_delegators_until do %>
+            <br />
+            You will be able to withdraw after block #<%= @validator.banned_delegators_until %> (<%= estimated_unban_day(@validator.banned_delegators_until, @average_block_time) %>)
+          <% end %>
+        </div>
+      <% end %>
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-validator-info-content">
         <%=
@@ -47,12 +60,6 @@
           "_stakes_validator_info_item.html",
           title: "How Many Times this Address has been Banned",
           value: @validator.was_banned_count
-        %>
-        <%=
-          render BlockScoutWeb.StakesView,
-          "_stakes_validator_info_item.html",
-          title: "The Block Number and Approximate Date When the Address Will be Unbanned",
-          value: if(@validator.is_banned, do: "##{@validator.banned_until} (#{estimated_unban_day(@validator.banned_until, @average_block_time)})")
         %>
         <%=
           render BlockScoutWeb.StakesView,

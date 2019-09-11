@@ -128,15 +128,18 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           is_banned: fragment("EXCLUDED.is_banned"),
           is_validator: fragment("EXCLUDED.is_validator"),
           is_unremovable: fragment("EXCLUDED.is_unremovable"),
+          are_delegators_banned: fragment("EXCLUDED.are_delegators_banned"),
           likelihood: fragment("EXCLUDED.likelihood"),
           block_reward_ratio: fragment("EXCLUDED.block_reward_ratio"),
           staked_ratio: fragment("EXCLUDED.staked_ratio"),
           self_staked_amount: fragment("EXCLUDED.self_staked_amount"),
           staked_amount: fragment("EXCLUDED.staked_amount"),
+          ban_reason: fragment("EXCLUDED.ban_reason"),
           was_banned_count: fragment("EXCLUDED.was_banned_count"),
           was_validator_count: fragment("EXCLUDED.was_validator_count"),
           is_deleted: fragment("EXCLUDED.is_deleted"),
           banned_until: fragment("EXCLUDED.banned_until"),
+          banned_delegators_until: fragment("EXCLUDED.banned_delegators_until"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", pool.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", pool.updated_at)
         ]
