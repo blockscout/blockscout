@@ -26,6 +26,7 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
+    MissingTokenTransfers,
     UncatalogedTokenTransfers,
     UnclesWithoutIndex
   }
@@ -130,6 +131,8 @@ defmodule Indexer.Supervisor do
         {UnclesWithoutIndex.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {BlocksTransactionsMismatch.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {MissingTokenTransfers.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
       ],
       strategy: :one_for_one

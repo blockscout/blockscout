@@ -717,6 +717,18 @@ defmodule Indexer.Block.FetcherTest do
     end
   end
 
+  describe "numbers_to_ranges/1" do
+    test "returns an empty list when the list of number is empty" do
+      assert [] == Indexer.Block.Fetcher.numbers_to_ranges([])
+    end
+
+    test "returns one range when the numbers in the list follow each other" do
+      range = 1..15
+
+      assert [range] == Indexer.Block.Fetcher.numbers_to_ranges(Enum.to_list(range))
+    end
+  end
+
   defp wait_until(timeout, producer) do
     parent = self()
     ref = make_ref()
