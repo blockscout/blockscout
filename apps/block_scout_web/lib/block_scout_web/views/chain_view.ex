@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.ChainView do
   alias BlockScoutWeb.LayoutView
 
   defp market_cap(:standard, exchange_rate) do
-    exchange_rate.market_cap_usd
+    Decimal.mult(exchange_rate.available_supply, exchange_rate.usd_value)
   end
 
   defp market_cap(module, exchange_rate) do
