@@ -75,7 +75,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           number
         end)
         |> Enum.sort()
-        |> Enum.uniq()
+        |> Enum.dedup()
 
       remove_nonconsensus_data(
         repo,
