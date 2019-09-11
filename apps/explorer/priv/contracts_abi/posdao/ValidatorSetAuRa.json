@@ -134,7 +134,45 @@
         "type": "address"
       }
     ],
+    "name": "banReason",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
     "name": "bannedUntil",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "bannedDelegatorsUntil",
     "outputs": [
       {
         "name": "",
@@ -620,6 +658,25 @@
       }
     ],
     "name": "isValidatorBanned",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_miningAddress",
+        "type": "address"
+      }
+    ],
+    "name": "areDelegatorsBanned",
     "outputs": [
       {
         "name": "",
