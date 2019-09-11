@@ -186,7 +186,8 @@ defmodule Explorer.Staking.ContractState do
           block_reward_ratio: staking_response.block_reward / 10_000,
           is_deleted: false,
           is_validator: is_validator[staking_response.mining_address_hash] || false,
-          is_unremovable: hash_to_string(staking_address) == unremovable_validator
+          is_unremovable: hash_to_string(staking_address) == unremovable_validator,
+          ban_reason: binary_to_string(mining_response.ban_reason)
         }
         |> Map.merge(
           Map.take(staking_response, [
@@ -200,7 +201,9 @@ defmodule Explorer.Staking.ContractState do
           Map.take(mining_response, [
             :was_validator_count,
             :is_banned,
+            :are_delegators_banned,
             :banned_until,
+            :banned_delegators_until,
             :was_banned_count
           ])
         )
@@ -317,5 +320,12 @@ defmodule Explorer.Staking.ContractState do
     |> Application.app_dir("priv/contracts_abi/posdao/#{file_name}.json")
     |> File.read!()
     |> Jason.decode!()
+  end
+
+  defp binary_to_string(binary) do
+    binary
+    |> :binary.bin_to_list()
+    |> Enum.filter(fn x -> x != 0 end)
+    |> List.to_string()
   end
 end
