@@ -62,6 +62,7 @@ migrate: build
 start: build
 	@echo "==> Starting blockscout"
 	@docker run \
+					--log-opt max-size=10m --log-opt max-file=100 --log-opt compress=true \
 					--detach \
 					--name $(BS_CONTAINER_NAME) \
 					$(BLOCKSCOUT_CONTAINNER_PARAMS) \
