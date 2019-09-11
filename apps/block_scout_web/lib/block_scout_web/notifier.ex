@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.{AddressContractVerificationView, Endpoint}
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
+  alias Explorer.Chain.Supply.RSK
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.SmartContract.{Solidity.CodeCompiler, Solidity.CompilerVersion}
@@ -76,8 +77,17 @@ defmodule BlockScoutWeb.Notifier do
         data -> data
       end
 
+    exchange_rate_with_available_supply =
+      case Application.get_env(:explorer, :supply) do
+        RSK ->
+          %{exchange_rate | available_supply: RSK.circulating(), market_cap_usd: RSK.market_cap(exchange_rate)}
+
+        _ ->
+          exchange_rate
+      end
+
     Endpoint.broadcast("exchange_rate:new_rate", "new_rate", %{
-      exchange_rate: exchange_rate,
+      exchange_rate: exchange_rate_with_available_supply,
       market_history_data: Enum.map(market_history_data, fn day -> Map.take(day, [:closing_price, :date]) end)
     })
   end
