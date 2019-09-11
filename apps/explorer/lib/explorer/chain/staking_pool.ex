@@ -15,17 +15,20 @@ defmodule Explorer.Chain.StakingPool do
   @type t :: %__MODULE__{
           staking_address_hash: Hash.Address.t(),
           mining_address_hash: Hash.Address.t(),
-          banned_until: boolean,
+          banned_until: integer,
+          banned_delegators_until: integer,
           delegators_count: integer,
           is_active: boolean,
           is_banned: boolean,
           is_validator: boolean,
           is_unremovable: boolean,
+          are_delegators_banned: boolean,
           likelihood: Decimal.t(),
           block_reward_ratio: Decimal.t(),
           staked_ratio: Decimal.t(),
           self_staked_amount: Decimal.t(),
           staked_amount: Decimal.t(),
+          ban_reason: String.t(),
           was_banned_count: integer,
           was_validator_count: integer,
           is_deleted: boolean
@@ -33,7 +36,7 @@ defmodule Explorer.Chain.StakingPool do
 
   @attrs ~w(
     is_active delegators_count staked_amount self_staked_amount is_validator
-    was_validator_count is_banned was_banned_count banned_until likelihood
+    was_validator_count is_banned are_delegators_banned ban_reason was_banned_count banned_until banned_delegators_until likelihood
     staked_ratio staking_address_hash mining_address_hash block_reward_ratio
     is_unremovable
   )a
@@ -45,16 +48,19 @@ defmodule Explorer.Chain.StakingPool do
 
   schema "staking_pools" do
     field(:banned_until, :integer)
+    field(:banned_delegators_until, :integer)
     field(:delegators_count, :integer)
     field(:is_active, :boolean, default: false)
     field(:is_banned, :boolean, default: false)
     field(:is_validator, :boolean, default: false)
     field(:is_unremovable, :boolean, default: false)
+    field(:are_delegators_banned, :boolean, default: false)
     field(:likelihood, :decimal)
     field(:block_reward_ratio, :decimal)
     field(:staked_ratio, :decimal)
     field(:self_staked_amount, :decimal)
     field(:staked_amount, :decimal)
+    field(:ban_reason, :string)
     field(:was_banned_count, :integer)
     field(:was_validator_count, :integer)
     field(:is_deleted, :boolean, default: false)

@@ -36,12 +36,14 @@ defmodule BlockScoutWeb.StakesChannel do
 
   def handle_in("render_validator_info", %{"address" => staking_address}, socket) do
     pool = Chain.staking_pool(staking_address)
+    delegator = socket.assigns[:account] && Chain.staking_pool_delegator(staking_address, socket.assigns.account)
     average_block_time = AverageBlockTime.average_block_time()
     token = ContractState.get(:token)
 
     html =
       View.render_to_string(StakesView, "_stakes_modal_validator_info.html",
         validator: pool,
+        delegator: delegator,
         average_block_time: average_block_time,
         token: token
       )
