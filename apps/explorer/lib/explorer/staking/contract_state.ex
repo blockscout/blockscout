@@ -65,8 +65,14 @@ defmodule Explorer.Staking.ContractState do
 
     staking_contract_address = Application.get_env(:explorer, __MODULE__)[:staking_contract_address]
 
-    %{"validatorSetContract" => {:ok, [validator_set_contract_address]}} =
-      Reader.query_contract(staking_contract_address, staking_abi, %{"validatorSetContract" => []})
+    %{
+      "validatorSetContract" => {:ok, [validator_set_contract_address]},
+      "erc20TokenContract" => {:ok, [token_contract_address]}
+    } =
+      Reader.query_contract(staking_contract_address, staking_abi, %{
+        "validatorSetContract" => [],
+        "erc20TokenContract" => []
+      })
 
     %{"blockRewardContract" => {:ok, [block_reward_contract_address]}} =
       Reader.query_contract(validator_set_contract_address, validator_set_abi, %{"blockRewardContract" => []})
@@ -84,7 +90,9 @@ defmodule Explorer.Staking.ContractState do
     :ets.insert(@table_name,
       staking_contract: %{abi: staking_abi, address: staking_contract_address},
       validator_set_contract: %{abi: validator_set_abi, address: validator_set_contract_address},
-      block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address}
+      block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address},
+      token_contract_address: token_contract_address,
+      token: get_token(token_contract_address)
     )
 
     {:ok, state, {:continue, []}}
