@@ -56,8 +56,13 @@ defmodule Explorer.Staking.ContractStateTest do
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn requests, _opts ->
-        assert length(requests) == 1
-        {:ok, format_responses(["0x0000000000000000000000001000000000000000000000000000000000000001"])}
+        assert length(requests) == 2
+
+        {:ok,
+         format_responses([
+           "0x0000000000000000000000001000000000000000000000000000000000000001",
+           "0x0000000000000000000000006f7a73c96bd56f8b0debc795511eda135e105ea3"
+         ])}
       end
     )
 
