@@ -101,6 +101,7 @@ if ($stakesPage.length) {
   store.dispatch({ type: 'CHANNEL_CONNECTED', channel })
 
   channel.on('staking_update', msg => {
+    $('.tooltip').hide()
     $stakesTop.html(msg.top_html)
 
     const state = store.getState()
