@@ -27,11 +27,16 @@ config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
   period: average_block_period
 
-config :explorer, Explorer.ChainSpec.GenesisData, enabled: false, chain_spec_path: System.get_env("CHAIN_SPEC_PATH")
+config :explorer, Explorer.ChainSpec.GenesisData,
+  enabled: true,
+  chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
+  emission_format: System.get_env("EMISSION_FORMAT", "DEFAULT"),
+  rewards_contract_address: System.get_env("REWARDS_CONTRACT_ADDRESS", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5")
 
-config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
-
-config :explorer, Explorer.ExchangeRates.Source.CoinGecko, coin_id: System.get_env("COIN_GECKO_ID", "poa-network")
+config :explorer, Explorer.Chain.Cache.BlockNumber,
+  enabled: true,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 balances_update_interval =
   if System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
@@ -122,6 +127,14 @@ market_history_cache_period =
   end
 
 config :explorer, Explorer.Market.MarketHistoryCache, period: market_history_cache_period
+
+config :explorer, Explorer.Chain.Cache.Blocks,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
+config :explorer, Explorer.Chain.Cache.Transactions,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
