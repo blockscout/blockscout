@@ -51,6 +51,7 @@
 - [#2468](https://github.com/poanetwork/blockscout/pull/2468) - fix confirmations for non consensus blocks
 
 ### Chore
+- [#2662](https://github.com/poanetwork/blockscout/pull/2662) - fetch coin gecko id based on the coin symbol
 - [#2646](https://github.com/poanetwork/blockscout/pull/2646) - Added Xerom to list of Additional Chains using BlockScout
 - [#2634](https://github.com/poanetwork/blockscout/pull/2634) - add Lukso to networks dropdown
 - [#2617](https://github.com/poanetwork/blockscout/pull/2617) - skip cache update if there are no blocks inserted
