@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2697](https://github.com/poanetwork/blockscout/pull/2697) - Add temporary indexer to trigger refetching of blocks where internal transactions number doesn't match
 - [#2733](https://github.com/poanetwork/blockscout/pull/2733) - Add cache for first page of uncles
 - [#2735](https://github.com/poanetwork/blockscout/pull/2735) - Add pending transactions cache
 - [#2726](https://github.com/poanetwork/blockscout/pull/2726) - Remove internal_transaction block_number setting from blocks runner
