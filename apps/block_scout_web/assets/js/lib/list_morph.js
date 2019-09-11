@@ -29,11 +29,10 @@ import { updateAllAges } from './from_now'
 //               animations
 export default function (container, newElements, { key, horizontal } = {}) {
   if (!container) return
-  const oldElements = $(container).children().get()
+  const oldElements = $(container).children().not('.shrink-out').get()
   let currentList = map(oldElements, (el) => ({ id: get(el, key), el }))
   const newList = map(newElements, (el) => ({ id: get(el, key), el }))
   const overlap = intersectionBy(newList, currentList, 'id').map(({ id, el }) => ({ id, el: updateAllAges($(el))[0] }))
-
   // remove old items
   const removals = differenceBy(currentList, newList, 'id')
   let canAnimate = !horizontal && removals.length <= 1
@@ -57,7 +56,6 @@ export default function (container, newElements, { key, horizontal } = {}) {
   finalList.forEach((el, i) => {
     if (el.parentElement) return
     if (!canAnimate) return container.insertBefore(el, get(finalList, `[${i - 1}]`))
-    canAnimate = false
     if (!get(finalList, `[${i - 1}]`)) return slideDownAppend($(container), el)
     slideDownBefore($(get(finalList, `[${i - 1}]`)), el)
   })
