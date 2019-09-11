@@ -35,7 +35,7 @@ export default function (container, newElements, { key, horizontal } = {}) {
   const overlap = intersectionBy(newList, currentList, 'id').map(({ id, el }) => ({ id, el: updateAllAges($(el))[0] }))
   // remove old items
   const removals = differenceBy(currentList, newList, 'id')
-  let canAnimate = !horizontal && removals.length <= 1
+  let canAnimate = !horizontal && newList.length > 0
   removals.forEach(({ el }) => {
     if (!canAnimate) return el.remove()
     const $el = $(el)
