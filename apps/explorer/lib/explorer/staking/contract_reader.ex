@@ -41,7 +41,10 @@ defmodule Explorer.Staking.ContractReader do
     [
       was_validator_count: {:validator_set, "validatorCounter", [mining_address]},
       is_banned: {:validator_set, "isValidatorBanned", [mining_address]},
+      are_delegators_banned: {:validator_set, "areDelegatorsBanned", [mining_address]},
+      ban_reason: {:validator_set, "banReason", [mining_address]},
       banned_until: {:validator_set, "bannedUntil", [mining_address]},
+      banned_delegators_until: {:validator_set, "bannedDelegatorsUntil", [mining_address]},
       was_banned_count: {:validator_set, "banCounter", [mining_address]}
     ]
   end

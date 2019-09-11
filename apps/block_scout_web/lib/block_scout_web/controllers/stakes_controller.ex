@@ -92,6 +92,7 @@ defmodule BlockScoutWeb.StakesController do
           "_rows.html",
           token: token,
           pool: pool,
+          delegator: delegator,
           index: index,
           average_block_time: average_block_time,
           pools_type: filter,
