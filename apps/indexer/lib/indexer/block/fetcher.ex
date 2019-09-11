@@ -336,6 +336,83 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_replaced_transactions(_), do: :ok
 
+  def numbers_to_ranges([]), do: []
+
+  def numbers_to_ranges(numbers) when is_list(numbers) do
+    numbers
+    |> Enum.sort()
+    |> Enum.chunk_while(
+      nil,
+      fn
+        number, nil ->
+          {:cont, number..number}
+
+        number, first..last when number == last + 1 ->
+          {:cont, first..number}
+
+        number, range ->
+          {:cont, range, number..number}
+      end,
+      fn
+        nil -> {:cont, nil}
+        range -> {:cont, range, nil}
+      end
+    )
+  end
+
+  @doc """
+  Refetches and imports a list of blocks. Retries in case of failure.
+  """
+  def refetch_and_import_blocks(_block_fetcher, []), do: :ok
+
+  def refetch_and_import_blocks(block_numbers, block_fetcher) when is_list(block_numbers) do
+    block_numbers
+    |> numbers_to_ranges()
+    |> Enum.map(&refefetch_and_import_range(block_fetcher, &1))
+    |> Enum.reduce([], fn
+      :ok, acc -> acc
+      {:retry, range}, numbers -> Enum.concat(numbers, range)
+    end)
+    |> refetch_and_import_blocks(block_fetcher)
+  end
+
+  defp refefetch_and_import_range(block_fetcher, range) do
+    case fetch_and_import_range(block_fetcher, range) do
+      {:ok, %{inserted: _, errors: []}} ->
+        Logger.debug(fn -> ["range re-fetched: ", inspect(range)] end)
+        :ok
+
+      {:ok, %{inserted: _, errors: errors}} ->
+        Logger.error(
+          fn ->
+            [
+              "failed to re-fetch blocks in range: ",
+              inspect(range),
+              ". Retrying."
+            ]
+          end,
+          errors: errors
+        )
+
+        {:retry, range}
+
+      {:error, {step, reason}} ->
+        Logger.error(
+          fn ->
+            [
+              "failed to re-fetch blocks in range: ",
+              inspect(range),
+              ". Retrying."
+            ]
+          end,
+          step: step,
+          reason: reason
+        )
+
+        {:retry, range}
+    end
+  end
+
   defp block_reward_errors_to_block_numbers(block_reward_errors) when is_list(block_reward_errors) do
     Enum.map(block_reward_errors, &block_reward_error_to_block_number/1)
   end

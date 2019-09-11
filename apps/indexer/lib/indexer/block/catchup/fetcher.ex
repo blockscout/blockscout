@@ -17,7 +17,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_tokens: 1,
       async_import_token_balances: 1,
       async_import_uncles: 1,
-      fetch_and_import_range: 2
+      fetch_and_import_range: 2,
+      numbers_to_ranges: 1
     ]
 
   alias Ecto.Changeset
@@ -285,27 +286,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
   end
 
   defp block_error_to_number(%{data: %{number: number}}) when is_integer(number), do: number
-
-  defp numbers_to_ranges([]), do: []
-
-  defp numbers_to_ranges(numbers) when is_list(numbers) do
-    numbers
-    |> Enum.sort()
-    |> Enum.chunk_while(
-      nil,
-      fn
-        number, nil ->
-          {:cont, number..number}
-
-        number, first..last when number == last + 1 ->
-          {:cont, first..number}
-
-        number, range ->
-          {:cont, range, number..number}
-      end,
-      fn range -> {:cont, range} end
-    )
-  end
 
   defp put_memory_monitor(sequence_options, %__MODULE__{memory_monitor: nil}) when is_list(sequence_options),
     do: sequence_options
