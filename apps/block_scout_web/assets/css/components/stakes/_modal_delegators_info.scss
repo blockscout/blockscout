@@ -1,0 +1,24 @@
+.modal-delegators-info {
+  max-width: map-get($container-max-widths, "xl");
+  min-width: map-get($container-max-widths, "md");
+  width: 100%;
+
+  @include media-breakpoint-down(lg) {
+    max-width: map-get($container-max-widths, "lg");
+  }
+
+  @include media-breakpoint-down(md) {
+    max-width: map-get($container-max-widths, "md");
+  }
+
+  @include media-breakpoint-down(sm) {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .container {
+    @include media-breakpoint-down(sm) {
+      max-width: map-get($container-max-widths, "md");
+    }
+  }
+}

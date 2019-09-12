@@ -1,6 +1,7 @@
 import '../../css/stakes.scss'
 
 import $ from 'jquery'
+import 'bootstrap'
 import _ from 'lodash'
 import { subscribeChannel } from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
