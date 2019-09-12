@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.Notifier do
     exchange_rate_with_available_supply =
       case Application.get_env(:explorer, :supply) do
         RSK ->
-          %{exchange_rate | available_supply: RSK.circulating(), market_cap_usd: RSK.market_cap(exchange_rate)}
+          %{exchange_rate | available_supply: nil, market_cap_usd: RSK.market_cap(exchange_rate)}
 
         _ ->
           exchange_rate
