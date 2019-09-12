@@ -177,7 +177,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       assert count(Log) == 0
     end
 
-    test "remove_nonconsensus_date deletes nonconsensus internal transactions", %{
+    test "remove_nonconsensus_data deletes nonconsensus internal transactions", %{
       consensus_block: %{number: block_number} = block,
       options: options
     } do
