@@ -88,9 +88,12 @@ $stakes-stats-item-border-color: #fff !default;
   cursor: pointer;
   justify-content: flex-start;
 
+  span {
+    margin-right: 10px;
+  }
+
   .stakes-address {
     color: $stakes-address-color;
-    margin-right: 10px;
 
     .stakes-tr-banned & {
       color: $stakes-banned-color;
