@@ -131,6 +131,31 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         }
       )
     end)
+    |> Multi.run(
+      :internal_transaction_transaction_block_number,
+      fn repo, %{blocks: blocks} ->
+        blocks_hashes = Enum.map(blocks, & &1.hash)
+
+        query =
+          from(
+            internal_transaction in InternalTransaction,
+            join: transaction in Transaction,
+            on: internal_transaction.transaction_hash == transaction.hash,
+            join: block in Block,
+            on: block.hash == transaction.block_hash,
+            where: block.hash in ^blocks_hashes,
+            update: [
+              set: [
+                block_number: block.number
+              ]
+            ]
+          )
+
+        {total, _} = repo.update_all(query, [])
+
+        {:ok, total}
+      end
+    )
   end
 
   @impl Runner
