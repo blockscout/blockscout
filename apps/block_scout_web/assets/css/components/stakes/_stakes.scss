@@ -85,19 +85,19 @@ $stakes-stats-item-border-color: #fff !default;
 
 .stakes-address-container {
   display: flex;
-  cursor: pointer;
   justify-content: flex-start;
 
-  span {
-    margin-right: 10px;
-  }
-
   .stakes-address {
-    color: $stakes-address-color;
+    margin-right: 10px;
 
     .stakes-tr-banned & {
       color: $stakes-banned-color;
     }
+  }
+
+  .stakes-address-active {
+    color: $stakes-address-color;
+    cursor: pointer;
   }
 }
 
