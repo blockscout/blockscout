@@ -104,13 +104,15 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
           fetched_coin_balance:
             fragment(
               """
-              CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
-                        (? IS NULL OR
+              CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL
+                    AND EXCLUDED.fetched_coin_balance IS NOT NULL AND
+                        (? IS NULL OR ? IS NULL OR
                          EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
                           EXCLUDED.fetched_coin_balance
                    ELSE ?
               END
               """,
+              address.fetched_coin_balance,
               address.fetched_coin_balance_block_number,
               address.fetched_coin_balance_block_number,
               address.fetched_coin_balance
