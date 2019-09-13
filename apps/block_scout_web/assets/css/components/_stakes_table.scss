@@ -96,6 +96,7 @@ $stakes-table-cell-separation: 25px !default;
 }
 
 .stakes-td {
+  display: flex;
   border-bottom: 1px solid #f5f6fa;
   font-size: 14px;
   font-weight: normal;
@@ -103,7 +104,7 @@ $stakes-table-cell-separation: 25px !default;
   line-height: 1.2;
   padding-right: $stakes-table-cell-separation;
   text-align: left;
-  vertical-align: middle;
+  align-items: center;
   white-space: nowrap;
 
   &:last-child {
