@@ -1,5 +1,5 @@
 <div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered <%= if @pool_to do "modal-stake-move" end %>" role="document">
+  <div class="modal-dialog modal-dialog-centered <%= if @pool_to do "modal-stake-move" else "modal-stake" end %>" role="document">
     <div class="modal-content">
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-stake-two-cols">

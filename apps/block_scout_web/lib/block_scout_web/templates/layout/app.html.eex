@@ -7,7 +7,8 @@
 
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
     <link rel="preload" href="<%= static_path(@conn, "/css/non-critical.css") %>" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="stylesheet" href="<%= static_path(@conn, "/css/non-critical.css") %>">
+    <noscript><link rel="stylesheet" href="<%= static_path(@conn, "/css/non-critical.css") %>"></noscript>
+    <%= render_existing(@view_module, "styles.html", assigns) %>
 
     <link rel="apple-touch-icon" sizes="180x180" href="<%= static_path(@conn, "/apple-touch-icon.png") %>">
     <link rel="icon" type="image/png" sizes="32x32" href="<%= static_path(@conn, "/images/favicon-32x32.png") %>">

@@ -13,8 +13,9 @@
 }
 
 .modal-stake-move {
-  max-width: 100%;
-  width: 680px;
+  max-width: 640px;
+  min-width: 640px;
+  width: 100%;
 
   @include media-breakpoint-down(sm) {
     margin-left: auto;
@@ -24,7 +25,6 @@
 
 .modal-stake-middle {
   border-left: 1px solid $base-border-color;
-
   height: 100%;
 }
 
