@@ -17,7 +17,7 @@ Environment=NETWORK="MATIC NETWORK"
 Environment=SUBNETWORK=TESTNET
 Environment=LINK_TO_OTHER_EXPLORERS=false
 Environment=HEART_COMMAND=systemctl restart explorer
-WorkingDirectory=/home/ubuntu/blockscout
+WorkingDirectory=/home/ubuntu/blockskout
 ExecStart=/usr/bin/mix phx.server
 
 [Install]
