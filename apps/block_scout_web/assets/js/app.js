@@ -39,7 +39,6 @@ import './pages/network-search'
 import './pages/layout'
 import './pages/verification_form'
 import './pages/dark-mode-switcher'
-import './pages/stakes'
 
 import './pages/admin/tasks.js'
 
