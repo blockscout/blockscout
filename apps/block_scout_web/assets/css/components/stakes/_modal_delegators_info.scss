@@ -1,0 +1,11 @@
+.modal-delegators-info {
+  max-width: map-get($container-max-widths, "md");
+  min-width: map-get($container-max-widths, "md");
+  width: 100%;
+
+  .container {
+    @include media-breakpoint-down(sm) {
+      max-width: map-get($container-max-widths, "md");
+    }
+  }
+}

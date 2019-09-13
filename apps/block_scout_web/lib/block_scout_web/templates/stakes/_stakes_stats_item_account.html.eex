@@ -4,7 +4,7 @@
   <span class="stakes-top-stats-value">
     <%= if @account do %>
       <div data-placement="top" data-toggle="tooltip" title=<%= @account.address %>>
-        <%= binary_part(@account.address, 0, 13) %>...
+        <%= @account.address %>
       </div>
       <div class="copy-icon" data-clipboard-text="<%= @account.address %>">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
