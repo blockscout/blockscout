@@ -1,6 +1,7 @@
 import '../../css/stakes.scss'
 
 import $ from 'jquery'
+import 'bootstrap'
 import _ from 'lodash'
 import { subscribeChannel } from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
@@ -101,6 +102,7 @@ if ($stakesPage.length) {
   store.dispatch({ type: 'CHANNEL_CONNECTED', channel })
 
   channel.on('staking_update', msg => {
+    $('.tooltip').hide()
     $stakesTop.html(msg.top_html)
 
     const state = store.getState()
