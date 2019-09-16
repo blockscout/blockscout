@@ -304,8 +304,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
 #: lib/block_scout_web/templates/address/overview.html.eex:145
 #: lib/block_scout_web/templates/address/overview.html.eex:153
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:105
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:113
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:87
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:95
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:106
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:114
 msgid "Close"
@@ -887,7 +887,7 @@ msgid "There are no transactions for this block."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:25
+#: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:26
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:25
 msgid "There are no transfers for this Token."
 msgstr ""
@@ -937,7 +937,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:3
-#: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:15
+#: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:16
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:3
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:15
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
@@ -1253,7 +1253,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:33
 #: lib/block_scout_web/templates/address/overview.html.eex:144
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:36
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:104
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:86
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:105
 msgid "QR Code"
@@ -1400,7 +1400,7 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:91
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:19
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:21
-#: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:20
+#: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:20
 #: lib/block_scout_web/templates/transaction/index.html.eex:20
@@ -1535,7 +1535,6 @@ msgid "Topics"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:74
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:75
 msgid "Total Supply"
 msgstr ""
