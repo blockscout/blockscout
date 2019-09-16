@@ -830,6 +830,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		}
 	}
 
+	//stakes
 	.modal-stake-right {
 		.stakes-progress {
 		  border-left-color: darken($labels-dark, 30);
@@ -842,6 +843,14 @@ $labels-dark: #8a8dba; // header nav, labels
 
 	.stakes-progress-data-progress, .stakes-progress-info-value {
 		color: #fff;
+	}
+
+	.stakes-empty-content-text {
+		color: $labels-dark;
+	}
+
+	.stakes-empty-content-pic-svg-path {
+		fill: $dark-primary;
 	}
 
 	.check-tooltip {
