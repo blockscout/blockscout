@@ -8,6 +8,7 @@
 - [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
 
 ### Fixes
+- [#2701](https://github.com/poanetwork/blockscout/pull/2701) - Exclude nonconsensus blocks from avg block time calculation by default
 - [#2687](https://github.com/poanetwork/blockscout/pull/2687) - remove non-consensus token transfers, logs when inserting new consensus blocks
 - [#2684](https://github.com/poanetwork/blockscout/pull/2684) - do not filter pending logs
 - [#2682](https://github.com/poanetwork/blockscout/pull/2682) - Use Task.start instead of Task.async in caches
