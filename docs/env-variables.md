@@ -19,7 +19,7 @@ $ export NETWORK=POA
 | `NETWORK`| :white_check_mark:  | Environment variable for the main EVM network such as Ethereum Network or POA Network | POA Network | all | | |
 | `SUBNETWORK` | :white_check_mark: | Environment variable for the subnetwork such as Core or Sokol Network | Sokol Testnet | all | | |
 | `NETWORK_ICON` | :white_check_mark: | Environment variable for the main network icon or testnet icon. Two options are  `_test_network_icon.html` and `_network_icon.html` | `_test_network_icon.html` | all | | |
-| `LOGO` | :white_check_mark: | Environment variable for the logo image location. The logo files names for different chains can be found [here](https://github.com/poanetwork/blockscout/tree/master/apps/block_scout_web/assets/static/images) | /images/blockscout_logo.svg | all | | |
+| `LOGO` | :white_check_mark: | Environment variable for the logo image location. The logo files names for different chains can be found [here](https://github.com/poanetwork/blockscout/tree/master/apps/block_scout_web/assets/static/images) | /images/enix.png | all | | |
 | `ETHEREUM_JSONRPC_VARIANT` | :white_check_mark: | This environment variable is used to tell the application which RPC Client the node is using (i.e. Geth, Parity, or Ganache) | parity | all | | |
 | `ETHEREUM_JSONRPC_HTTP_URL` | :white_check_mark: | The RPC endpoint used to fetch blocks, transactions, receipts, tokens. | localhost:8545 | all | | |
 | `ETHEREUM_JSONRPC_TRACE_URL` | | The RPC endpoint specifically for the Geth/Parity client used by trace_block and trace_replayTransaction. This can be used to designate a tracing node. | localhost:8545 | all | | |
