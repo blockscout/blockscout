@@ -5,7 +5,7 @@
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <script>
     if (localStorage.getItem("current-color-mode") === "dark") {
-      document.getElementById("top-navbar").style.backgroundColor = "#282945";
+      document.getElementById("top-navbar").style.backgroundColor = "#37373a";
     }
   </script>
   <div class="container-fluid navbar-container">
@@ -145,8 +145,8 @@
             <button class="btn btn-outline-success my-2 my-sm-0 sr-only hidden" type="submit"><%= gettext "Search" %></button>
             <script>
               if (localStorage.getItem("current-color-mode") === "dark") {
-                document.getElementById("q").style.backgroundColor = "#22223a";
-                document.getElementById("q").style.borderColor = "#22223a";
+                document.getElementById("q").style.backgroundColor = "#161617";
+                document.getElementById("q").style.borderColor = "#161617";
               }
             </script>
           <% end %>
