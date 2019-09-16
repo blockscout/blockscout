@@ -10,7 +10,6 @@
         <p class="address-current-balance">
           <span
             data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
-            data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
           </span>
         </p>
       <% end %>
