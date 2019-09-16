@@ -616,7 +616,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:50
-msgid "ENIX"
+msgid "enix"
 msgstr ""
 
 #, elixir-format
