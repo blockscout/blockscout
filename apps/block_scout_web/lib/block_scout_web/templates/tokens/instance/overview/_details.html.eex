@@ -67,34 +67,16 @@
       </div>
     </div>
 
-    <%= if total_supply?(@token) do %>
-      <div class="card-section col-md-12 col-lg-4 pl-0-md">
-        <div class="card card-background-1">
-          <div class="card-body">
-            <h2 class="card-title balance-card-title"><%= gettext "Total Supply" %></h2>
-            <div class="text-right">
-              <h3 class="text-uppercase">
-                <%= if decimals?(@token) do %>
-                  <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
-                <% else %>
-                  <%= format_integer_to_currency(@token.total_supply) %>
-                <% end %> <%= @token.symbol %>
-              </h3>
-              <%= if @token.usd_value do %>
-                <div class="text-uppercase">
-                  <span data-selector="token-supply-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
-                  |
-                  <span data-selector="token-price" data-token-usd-value="<%= @token.usd_value %>"></span>
-                </div>
-              <% else %>
-                <br />
-              <% end %>
-            </div>
+    <div class="card-section col-md-12 col-lg-4 pl-0-md">
+      <div class="card card-background-1">
+        <div class="card-body">
+          <div class="erc721-image" >
+            <img src=<%=image_src(@token_instance.instance)%> />
           </div>
         </div>
       </div>
     </div>
-  <% end %>
+  </div>
 </section>
 <!-- Modal -->
 <div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel" aria-hidden="true">

@@ -3086,6 +3086,7 @@ defmodule Explorer.Chain do
       from(tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_contract_address and tt.token_id == ^token_id,
         order_by: [desc: tt.block_number],
+        preload: [:instance],
         limit: 1
       )
 

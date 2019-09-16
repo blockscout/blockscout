@@ -15,6 +15,16 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def total_supply?(%Token{total_supply: nil}), do: false
   def total_supply?(%Token{total_supply: _}), do: true
 
+  def image_src(nil), do: "/images/ether1_logo.svg"
+
+  def image_src(instance) do
+    if instance.metadata && instance.metadata["image"] do
+      instance.metadata["image"]
+    else
+      image_src(nil)
+    end
+  end
+
   def total_supply_usd(token) do
     tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
     price = token.usd_value

@@ -5,6 +5,7 @@
     token: @token,
     total_token_transfers: @total_token_transfers,
     token_id: @token_instance.token_id,
+    token_instance: @token_instance,
     conn: @conn
   ) %>
 
