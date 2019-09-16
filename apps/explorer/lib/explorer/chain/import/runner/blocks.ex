@@ -426,7 +426,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         inner_join: transaction in subquery(transaction_query),
         on: internal_transaction.transaction_hash == transaction.hash,
         select: map(internal_transaction, [:transaction_hash, :index]),
-        # Enforce Log ShareLocks order (see docs: sharelocks.md)
+        # Enforce InternalTransaction ShareLocks order (see docs: sharelocks.md)
         order_by: [
           internal_transaction.transaction_hash,
           internal_transaction.index
