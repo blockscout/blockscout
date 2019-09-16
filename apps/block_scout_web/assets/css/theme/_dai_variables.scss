@@ -81,13 +81,6 @@ $modal-status-graph-success: $secondary;
 		outline: none !important;
 		border-color: #e2e5ec !important;
 	}
-	.btn-line {
-		border-color: $primary;
-		color: $primary;
-		&:hover {
-			background-color: $primary
-		}
-	}
 }
 .stakes-table-th-content {
 	.i-tooltip {

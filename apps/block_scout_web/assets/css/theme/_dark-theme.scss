@@ -504,7 +504,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		border-top-color: darken($labels-dark, 30);
 		border-bottom-color: darken($labels-dark, 30);
 	}
-	
+
 	// Form Controlls
 	.form-control {
 		background-color: $dark-light;
@@ -749,7 +749,17 @@ $labels-dark: #8a8dba; // header nav, labels
 			color: #fff;
 		}
 	}
-    
+
+	.modal-status .modal-status-button-wrapper .btn-line {
+		border-color: $dark-primary-alternate;
+		color: $dark-primary-alternate;
+
+		&:hover {
+			background-color: $dark-primary-alternate;
+			color: $additional-font;
+		}
+	}
+
 	// alerts
 	.alert-link {
 		color: $labels-dark;
