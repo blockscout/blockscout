@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.TokenInstance do
     flush_interval: 300,
     max_batch_size: 1,
     max_concurrency: 10,
-    task_supervisor: Indexer.Fetcher.TokenInstacne.TaskSupervisor
+    task_supervisor: Indexer.Fetcher.TokenInstance.TaskSupervisor
   ]
 
   @doc false
@@ -48,16 +48,20 @@ defmodule Indexer.Fetcher.TokenInstance do
   end
 
   @impl BufferedTask
-  def run([%{token_contract_address_hash: token_contract_address_hash, token_id: token_id}], _json_rpc_named_arguments) do
-    {:ok, metadata} = InstanceMetadataRetriever.fetch_metadata(token_contract_address_hash, token_id)
+  def run([%{contract_address_hash: token_contract_address_hash, token_id: token_id}], _json_rpc_named_arguments) do
+    case InstanceMetadataRetriever.fetch_metadata(token_contract_address_hash, Decimal.to_integer(token_id)) do
+      {:ok, metadata} ->
+        params = %{
+          token_id: token_id,
+          token_contract_address_hash: token_contract_address_hash,
+          metadata: metadata
+        }
 
-    params = %{
-      token_id: token_id,
-      token_contract_address_hash: token_contract_address_hash,
-      metadata: metadata
-    }
+        {:ok, _result} = Chain.upsert_token_instance(params)
 
-    {:ok, _result} = Chain.upsert_token_instance(params)
+      _other ->
+        :ok
+    end
 
     :ok
   end

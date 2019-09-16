@@ -39,12 +39,14 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     Reader.query_contract(contract_address_hash, @abi, contract_functions)
   end
 
+  defp fetch_json(%{"tokenURI" => {:ok, [""]}}) do
+    {:error, :no_uri}
+  end
+
   defp fetch_json(%{"tokenURI" => {:ok, [token_uri]}}) do
     case HTTPoison.get(token_uri) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        data = Jason.decode(body)
-
-        {:ok, data}
+        Jason.decode(body)
 
       {:ok, %Response{body: body}} ->
         {:error, body}
