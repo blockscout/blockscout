@@ -12,16 +12,11 @@
     <%= link to: webapp_url(@conn), class: "navbar-brand", "data-test": "header_logo" do %>
       <img class="navbar-logo" id="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
     <% end %>
-    <a class="nav-link-new nav-link topnav-nav-link active-icon dropdown-toggle js-show-network-selector" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-         <span class="nav-link-icon">
-         <svg xmlns="http://www.w3.org/2000/svg" width="6" height="6">
-         <circle cx="3" cy="3" r="3" fill="#80d6a1"></circle>
-         </svg> </span>Sokol Testnet</a>
      <button class="new-button" id="dark-mode-changer">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="16">
             <path fill="#a3a9b5" fill-rule="evenodd" d="M14.88 11.578a.544.544 0 0 0-.599-.166 5.7 5.7 0 0 1-1.924.321c-3.259 0-5.91-2.632-5.91-5.866 0-1.947.968-3.759 2.59-4.849a.534.534 0 0 0-.225-.97A5.289 5.289 0 0 0 8.059 0C3.615 0 0 3.588 0 8s3.615 8 8.059 8c2.82 0 5.386-1.423 6.862-3.806a.533.533 0 0 0-.041-.616z"></path>
         </svg>
-      </button>    
+      </button>
     <script>
       if (localStorage.getItem("current-color-mode") === "dark") {
         document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
@@ -113,14 +108,6 @@
             </div>
           </li>
         <% end %>
-        <li class="nav-item dropdown">
-          <a class="nav-link last-child topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <span class="nav-link-icon">
-              <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
-            </span>
-            <%= subnetwork_title() %>
-          </a>
-        </li>
       </ul>
       <!-- Dark mode changer was there -->
       <button class="dark-mode-changer" id="dark-mode-changer">
@@ -174,4 +161,4 @@
     var modeChanger = document.getElementById("dark-mode-changer");
     modeChanger.className += " " + "dark-mode-changer--dark";
   }
-</script> 
+</script>
