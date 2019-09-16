@@ -294,6 +294,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		background-color: $dark-light;
 		color: $labels-dark;
 	}
+
 	.stakes-td {
 		border-bottom-color: darken($labels-dark, 30);
 	}
@@ -305,13 +306,21 @@ $labels-dark: #8a8dba; // header nav, labels
 	}
 
 	.i-tooltip {
-		path {
+		.i-tooltip-circle {
 			fill: $labels-dark;
 		}
 
+		.i-tooltip-info {
+			fill: $dark-light-bg;
+		}
+
 		&:hover {
-			path {
+			.i-tooltip-circle {
 			  fill: $dark-primary;
+			}
+
+			.i-tooltip-info {
+				fill: #fff;
 			}
 		}
 	}
@@ -557,6 +566,10 @@ $labels-dark: #8a8dba; // header nav, labels
 	}
 	.radio-big .radio-text {
 		color: #fff;
+	}
+
+	.check input[type="checkbox"]:checked + .check-icon::before {
+		background: $dark-primary;
 	}
 
 	// Content loading placeholders
@@ -851,6 +864,26 @@ $labels-dark: #8a8dba; // header nav, labels
 
 	.stakes-empty-content-pic-svg-path {
 		fill: $dark-primary;
+	}
+
+	.stakes-address-container .stakes-address-active {
+		color: $dark-primary;
+	}
+
+	.stakes-td-link-style {
+		color: $dark-primary;
+	}
+
+	.stakes-control-icon path {
+		fill: $dark-primary;
+	}
+
+	.progress-from-to-value {
+		color: #fff;
+	}
+
+	.progress-from-to-background {
+		background-color: $dark-bg;
 	}
 
 	.check-tooltip {

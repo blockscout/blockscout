@@ -74,23 +74,11 @@ $stakes-dashboard-copy-icon-color: $secondary;
 $btn-full-primary-bg: $secondary;
 $stakes-address-color: $secondary;
 $stakes-control-color: $secondary;
+$stakes-link-color: $secondary;
 $progress-from-to-progress-background: $secondary;
 $stakes-stats-item-border-color: rgba(#fff, .5);
 $check-color: $secondary;
 $modal-status-graph-success: $secondary;
-
-.stakes-table-th-content {
-	.i-tooltip {
-		position: relative;
-		top: -2px;
-	}
-}
-.stakes-address-container {
-	.check-tooltip {
-		position: relative;
-		top: -1px;
-	}
-}
 
 // Dark theme
 $dark-primary: #15bba6;
