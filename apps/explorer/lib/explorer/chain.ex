@@ -2823,6 +2823,27 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
+  @spec stream_unfetched_token_instances(
+          initial :: accumulator,
+          reducer :: (entry :: map(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_unfetched_token_instances(initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(
+        token_transfer in TokenTransfer,
+        inner_join: token in Token,
+        on: token.contract_address_hash == token_transfer.token_contract_address_hash,
+        left_join: instance in Instance,
+        on: token_transfer.token_id == instance.token_id,
+        where: token.type == ^"ERC-721" and is_nil(instance.token_id),
+        distinct: token_transfer.token_id,
+        select: %{contract_address_hash: token_transfer.token_contract_address_hash, token_id: token_transfer.token_id}
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
   @doc """
   Streams a list of token contract addresses that have been cataloged.
   """

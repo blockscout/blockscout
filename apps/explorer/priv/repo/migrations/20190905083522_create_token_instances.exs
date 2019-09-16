@@ -16,5 +16,7 @@ defmodule Explorer.Repo.Migrations.CreateTokenInstances do
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
+
+    create_if_not_exists(index(:token_instances, [:token_id]))
   end
 end

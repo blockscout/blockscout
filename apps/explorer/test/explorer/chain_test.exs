@@ -3602,6 +3602,61 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "stream_unfetched_token_instances/2" do
+    test "reduces wuth given reducer and accumulator" do
+      token_contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 1))
+
+      token_transfer =
+        insert(
+          :token_transfer,
+          block_number: 1000,
+          to_address: build(:address),
+          transaction: transaction,
+          token_contract_address: token_contract_address,
+          token: token,
+          token_id: 11
+        )
+
+      assert {:ok, [result]} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
+      assert result.token_id == token_transfer.token_id
+      assert result.contract_address_hash == token_transfer.token_contract_address_hash
+    end
+
+    test "do not fetch records with token instances" do
+      token_contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 1))
+
+      token_transfer =
+        insert(
+          :token_transfer,
+          block_number: 1000,
+          to_address: build(:address),
+          transaction: transaction,
+          token_contract_address: token_contract_address,
+          token: token,
+          token_id: 11
+        )
+
+      insert(:token_instance,
+        token_id: token_transfer.token_id,
+        token_contract_address_hash: token_transfer.token_contract_address_hash
+      )
+
+      assert {:ok, []} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
+    end
+  end
+
   describe "search_token/1" do
     test "finds by part of the name" do
       token = insert(:token, name: "magic token", symbol: "MAGIC")
