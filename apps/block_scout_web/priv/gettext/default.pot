@@ -696,7 +696,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:179
 #: lib/block_scout_web/templates/transaction/overview.html.eex:209
 #: lib/block_scout_web/views/wei_helpers.ex:78
-msgid "Ether"
+msgid "Enix"
 msgstr ""
 
 #, elixir-format
