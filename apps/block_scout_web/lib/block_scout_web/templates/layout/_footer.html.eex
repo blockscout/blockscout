@@ -28,10 +28,6 @@
         </div>
       </div>
 
-      <% main_nets = main_nets(other_networks()) %>
-
-      <%= unless Enum.empty?(main_nets) do %>
-
     <% version = version() %>
 
     <%= unless ignore_version?(version) do %>
