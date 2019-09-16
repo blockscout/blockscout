@@ -1,4 +1,4 @@
-$body-dark: #1c1d31; // body background
+$body-dark: #161617; // body background
 $dark-bg: #161617; // hero shade
 $dark-light-bg: #37373a; // pills bg shade
 $dark-light: #313355; // tile light top share
@@ -156,10 +156,10 @@ $labels-dark: #8a8dba; // header nav, labels
 	}
 
 	.tile {
-		border-top-color: $dark-light;
-		border-bottom-color: $dark-light;
-		border-right-color: $dark-light;
-		background-color: $dark-light;
+		border-top-color: #000;
+		border-bottom-color: #000;
+		border-right-color: #000;
+		background-color: #1c1d25;
 		color: $labels-dark;
 		&:not([class^="tile tile-type"]) {
 			border-left-color: $dark-light;
@@ -504,7 +504,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		border-top-color: darken($labels-dark, 30);
 		border-bottom-color: darken($labels-dark, 30);
 	}
-	
+
 	// Form Controlls
 	.form-control {
 		background-color: $dark-light;
@@ -749,7 +749,7 @@ $labels-dark: #8a8dba; // header nav, labels
 			color: #fff;
 		}
 	}
-    
+
 	// alerts
 	.alert-link {
 		color: $labels-dark;
