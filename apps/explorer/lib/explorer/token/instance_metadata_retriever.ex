@@ -27,6 +27,13 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     }
   ]
 
+  @cryptokitties_address_hash "0x06012c8cf97bead5deae237070f9587f8e7a266d"
+
+  def fetch_metadata(unquote(@cryptokitties_address_hash), token_id) do
+    %{"tokenURI" => {:ok, ["https://api.cryptokitties.co/kitties/#{token_id}"]}}
+    |> fetch_json()
+  end
+
   def fetch_metadata(contract_address_hash, token_id) do
     contract_functions = %{"tokenURI" => [token_id]}
 

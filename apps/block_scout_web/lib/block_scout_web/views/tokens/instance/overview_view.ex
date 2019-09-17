@@ -20,10 +20,10 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def image_src(nil), do: "/images/ether1_logo.svg"
 
   def image_src(instance) do
-    if instance.metadata && instance.metadata["image"] do
-      instance.metadata["image"]
-    else
-      image_src(nil)
+    cond do
+      instance.metadata && instance.metadata["image"] -> instance.metadata["image_url"]
+      instance.metadata && instance.metadata["image"] -> instance.metadata && instance.metadata["image"]
+      true -> image_src(nil)
     end
   end
 
