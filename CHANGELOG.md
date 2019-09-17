@@ -13,6 +13,7 @@
 - [#2684](https://github.com/poanetwork/blockscout/pull/2684) - do not filter pending logs
 - [#2682](https://github.com/poanetwork/blockscout/pull/2682) - Use Task.start instead of Task.async in caches
 - [#2671](https://github.com/poanetwork/blockscout/pull/2671) - fixed buttons color at smart contract section
+- [#2691](https://github.com/poanetwork/blockscout/pull/2691) - fix exchange rate websocket update for Rootstock
 
 ### Chore
 
