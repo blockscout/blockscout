@@ -368,8 +368,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
        ) do
     with {:ok, deleted_token_transfers} <-
            remove_nonconsensus_token_transfers(repo, nonconsensus_block_numbers, insert_options),
-         {:ok, deleted_logs} <- remove_nonconsensus_logs(repo, nonconsensus_block_numbers, insert_options) do
-      {:ok, %{token_transfers: deleted_token_transfers, logs: deleted_logs}}
+         {:ok, deleted_logs} <- remove_nonconsensus_logs(repo, nonconsensus_block_numbers, insert_options),
+         {:ok, deleted_internal_transactions} <-
+           remove_nonconsensus_internal_transactions(repo, nonconsensus_block_numbers, insert_options) do
+      {:ok,
+       %{
+         token_transfers: deleted_token_transfers,
+         logs: deleted_logs,
+         internal_transactions: deleted_internal_transactions
+       }}
     end
   end
 
@@ -400,6 +407,46 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       {_count, deleted_token_transfers} = repo.delete_all(query, timeout: timeout)
 
       {:ok, deleted_token_transfers}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, block_numbers: nonconsensus_block_numbers}}
+    end
+  end
+
+  defp remove_nonconsensus_internal_transactions(repo, nonconsensus_block_numbers, %{timeout: timeout}) do
+    transaction_query =
+      from(transaction in Transaction,
+        where: transaction.block_number in ^nonconsensus_block_numbers,
+        select: map(transaction, [:hash]),
+        order_by: transaction.hash
+      )
+
+    ordered_internal_transactions =
+      from(internal_transaction in InternalTransaction,
+        inner_join: transaction in subquery(transaction_query),
+        on: internal_transaction.transaction_hash == transaction.hash,
+        select: map(internal_transaction, [:transaction_hash, :index]),
+        # Enforce InternalTransaction ShareLocks order (see docs: sharelocks.md)
+        order_by: [
+          internal_transaction.transaction_hash,
+          internal_transaction.index
+        ],
+        lock: "FOR UPDATE OF i0"
+      )
+
+    query =
+      from(internal_transaction in InternalTransaction,
+        select: map(internal_transaction, [:transaction_hash, :index]),
+        inner_join: ordered_internal_transaction in subquery(ordered_internal_transactions),
+        on:
+          ordered_internal_transaction.transaction_hash == internal_transaction.transaction_hash and
+            ordered_internal_transaction.index == internal_transaction.index
+      )
+
+    try do
+      {_count, deleted_internal_transactions} = repo.delete_all(query, timeout: timeout)
+
+      {:ok, deleted_internal_transactions}
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, block_numbers: nonconsensus_block_numbers}}
