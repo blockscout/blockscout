@@ -53,7 +53,7 @@ export function createCoinBalanceHistoryChart (el) {
               },
               scaleLabel: {
                 display: true,
-                labelString: window.localized['Ether']
+                labelString: window.localized['Enix']
               }
             }]
           }

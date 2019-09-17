@@ -621,7 +621,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:4
-msgid "ETH RPC API Documentation"
+msgid "Enix RPC API Documentation"
 msgstr ""
 
 #, elixir-format
@@ -684,7 +684,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:109
-msgid "Eth RPC"
+msgid "Enix RPC"
 msgstr ""
 
 #, elixir-format
