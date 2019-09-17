@@ -5,7 +5,7 @@
     </div>
     <div class="block-not-found-content">
       <h1 class="card-title error-title">Page not found</h1>
-      <p class="error-descr">The requested path was not found on BlockScout.</p>
+      <p class="error-descr">The requested path was not found on the explorer.</p>
       <a class="error-btn btn-line" href="/">Back Home</a>
     </div>
   </div>
