@@ -9,6 +9,7 @@
 - [#2642](https://github.com/poanetwork/blockscout/pull/2642) - add ERC721 coin instance page
 
 ### Fixes
+- [#2693](https://github.com/poanetwork/blockscout/pull/2693) - remove non consensus internal transactions
 - [#2687](https://github.com/poanetwork/blockscout/pull/2687) - remove non-consensus token transfers, logs when inserting new consensus blocks
 - [#2684](https://github.com/poanetwork/blockscout/pull/2684) - do not filter pending logs
 - [#2682](https://github.com/poanetwork/blockscout/pull/2682) - Use Task.start instead of Task.async in caches
