@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
     end
   end
 
-  def show(conn, _) do
+  def index(conn, _) do
     not_found(conn)
   end
 end
