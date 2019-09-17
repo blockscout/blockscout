@@ -3,6 +3,7 @@ $dark-bg: #22223a; // hero shade
 $dark-light-bg: #282945; // pills bg shade
 $dark-light: #313355; // tile light top share
 $labels-dark: #8a8dba; // header nav, labels
+$dark-stakes-banned-background: #3e314c;
 
 // Switcher
 .dark-mode-changer {
@@ -298,6 +299,26 @@ $labels-dark: #8a8dba; // header nav, labels
 	.stakes-td {
 		border-bottom-color: darken($labels-dark, 30);
 	}
+
+	.stakes-tr-banned {
+		.stakes-td {
+			background-color: $dark-stakes-banned-background;
+			border-top: 1px solid $stakes-banned-color;
+			border-bottom-color: $stakes-banned-color;
+
+			.stakes-td-link-style {
+				color: $stakes-banned-color;
+			}
+		}
+
+	}
+
+	.modal-validator-alert {
+		background-color: $dark-stakes-banned-background;
+		border-top: 1px solid $stakes-banned-color;
+		border-bottom-color: $stakes-banned-color;
+	}
+
 	.table th, .table td {
 		border-top-color: darken($labels-dark, 30);
 	}
