@@ -25,17 +25,18 @@
           <a href="https://t.me/EnixAIBlockchain" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
             <i class="fab fa-telegram-plane"></i>
           </a>
+          
+          <% version = version() %>
+
+          <%= unless ignore_version?(version) do %>
+            <% release_link = release_link(version) %>
+            <center><div>
+              <%= gettext("Version") %>: <%= release_link %>
+            </div></center>
+          <% end %>
         </div>
       </div>
 
-      <% version = version() %>
 
-      <%= unless ignore_version?(version) do %>
-        <% release_link = release_link(version) %>
-        <center><div>
-          <%= gettext("Version") %>: <%= release_link %>
-        </div></center>
-      <% end %>
-      
   </div>
 </footer>
