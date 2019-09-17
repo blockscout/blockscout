@@ -42,6 +42,7 @@ $form-control-border-color-active: $primary !default;
     border-left: none;
     color: #a3a9b5;
     font-size: 14px;
+    transition: $input-transition;
   }
 }
 
