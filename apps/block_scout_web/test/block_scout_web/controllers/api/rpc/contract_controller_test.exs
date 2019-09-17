@@ -451,7 +451,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         %{
           "Address" => to_string(contract.address_hash),
           "SourceCode" =>
-            "/**\n* Submitted for verification at blockscout.com on #{contract.inserted_at}\n*/\n" <>
+            "/**\n* Submitted for verification at explorer.enix.ai on #{contract.inserted_at}\n*/\n" <>
               contract.contract_source_code,
           "ABI" => Jason.encode!(contract.abi),
           "ContractName" => contract.name,
@@ -503,7 +503,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       expected_result = %{
         "Address" => to_string(contract_address.hash),
         "SourceCode" =>
-          "/**\n* Submitted for verification at blockscout.com on #{verified_contract.inserted_at}\n*/\n" <>
+          "/**\n* Submitted for verification at explorer.enix.ai on #{verified_contract.inserted_at}\n*/\n" <>
             contract_code_info.source_code,
         "ABI" => Jason.encode!(contract_code_info.abi),
         "ContractName" => contract_code_info.name,
@@ -574,7 +574,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert result["Address"] == to_string(contract_address.hash)
 
       assert result["SourceCode"] ==
-               "/**\n* Submitted for verification at blockscout.com on #{verified_contract.inserted_at}\n*/\n" <>
+               "/**\n* Submitted for verification at explorer.enix.ai on #{verified_contract.inserted_at}\n*/\n" <>
                  contract_source_code
 
       assert result["ContractName"] == name
