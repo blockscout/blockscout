@@ -12,15 +12,6 @@
     <% other_explorers = other_explorers() %>
     <% col_size = if Enum.empty?(other_explorers), do: 3, else: 2 %>
 
-    <% version = version() %>
-
-    <%= unless ignore_version?(version) do %>
-      <% release_link = release_link(version) %>
-      <center><div>
-        <%= gettext("Version") %>: <%= release_link %>
-      </div></center>
-    <% end %>
-
     <div class="row">
       <div class="col-xs-12 col-lg-3">
         <p class="footer-info-text"><%= gettext("Enix Explorer is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Enix Network.") %></p>
@@ -36,5 +27,15 @@
           </a>
         </div>
       </div>
+
+      <% version = version() %>
+
+      <%= unless ignore_version?(version) do %>
+        <% release_link = release_link(version) %>
+        <center><div>
+          <%= gettext("Version") %>: <%= release_link %>
+        </div></center>
+      <% end %>
+      
   </div>
 </footer>
