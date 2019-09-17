@@ -552,6 +552,8 @@ $dark-stakes-banned-background: #3e314c;
 		background-color: $dark-light;
 		border-color: $dark-light;
 		color: #fff;
+		transition: border-color 0.15s ease-in-out;
+
 		&::placeholder {
 			color: $labels-dark;
 		}
@@ -559,6 +561,14 @@ $dark-stakes-banned-background: #3e314c;
 			background-color: $dark-light;
 			border-color: $dark-primary;
 			color: #fff;
+		}
+
+		&:-webkit-autofill,
+		&:-webkit-autofill:hover,
+		&:-webkit-autofill:focus {
+			caret-color: #fff;
+			-webkit-text-fill-color: #fff;
+			-webkit-box-shadow: 0 0 0px 1000px $dark-light inset;
 		}
 	}
 
