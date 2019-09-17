@@ -55,7 +55,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_default_title.html.eex:2
-msgid "%{subnetwork} Explorer - BlockScout"
+msgid "%{subnetwork} Explorer"
 msgstr ""
 
 #, elixir-format
@@ -108,7 +108,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_metatags.html.eex:2
-msgid "API for the %{subnetwork} - BlockScout"
+msgid "API for the %{subnetwork}"
 msgstr ""
 
 #, elixir-format
@@ -233,7 +233,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/_metatags.html.eex:4
-msgid "BlockScout provides analytics data, API, and Smart Contract tools for the %{subnetwork}"
+msgid "ENIX explorer provides analytics data, API, and Smart Contract tools for the %{subnetwork}"
 msgstr ""
 
 #, elixir-format
@@ -258,7 +258,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:17
-msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for ENIX Network."
+msgid "ENIX explorer is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for ENIX Network."
 msgstr ""
 
 #, elixir-format
@@ -1512,12 +1512,12 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/index.html.eex:6
-msgid "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests."
+msgid "This API supports GET and POST requests."
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
-msgid "This API is provided to support some rpc methods in the exact format specified for ethereum nodes, which can be found "
+msgid "This API is provided to support some rpc methods in the exact format specified for ENIX nodes, which can be found "
 msgstr ""
 
 #, elixir-format
@@ -1527,7 +1527,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:10
-msgid "This is useful to allow sending requests to blockscout without having to change anything about the request."
+msgid "This is useful to allow sending requests to The explorer without having to change anything about the request."
 msgstr ""
 
 #, elixir-format
