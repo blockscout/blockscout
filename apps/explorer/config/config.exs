@@ -14,7 +14,7 @@ config :explorer,
     System.get_env("ALLOWED_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,default",
   include_uncles_in_average_block_time:
-    if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "false", do: false, else: true),
+    if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
   healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5)
 
 average_block_period =
@@ -37,8 +37,6 @@ config :explorer, Explorer.Chain.Cache.BlockNumber,
   enabled: true,
   ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
-
-config :explorer, Explorer.ExchangeRates.Source.CoinGecko, coin_id: System.get_env("COIN_GECKO_ID", "poa-network")
 
 balances_update_interval =
   if System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
