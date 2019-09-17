@@ -191,6 +191,13 @@ defmodule BlockScoutWeb.WebRouter do
           only: [:index],
           as: :transfer
         )
+
+        resources(
+          "/metadata",
+          Tokens.Instance.MetadataController,
+          only: [:index],
+          as: :metadata
+        )
       end
     end
 

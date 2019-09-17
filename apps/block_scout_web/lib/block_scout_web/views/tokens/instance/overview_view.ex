@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 0]
 
+  @tabs ["token_transfers", "metadata"]
+
   def token_name?(%Token{name: nil}), do: false
   def token_name?(%Token{name: _}), do: true
 
@@ -48,4 +50,13 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     |> QRCode.to_png()
     |> Base.encode64()
   end
+
+  def current_tab_name(request_path) do
+    @tabs
+    |> Enum.filter(&tab_active?(&1, request_path))
+    |> tab_name()
+  end
+
+  defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
+  defp tab_name(["metadata"]), do: gettext("Metadata")
 end
