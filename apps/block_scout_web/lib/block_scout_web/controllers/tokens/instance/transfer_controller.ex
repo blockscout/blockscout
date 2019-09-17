@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
 
-  def index(conn, %{"token_id" => token_id, "instance_id" => token_address_hash, "type" => "JSON"} = params) do
+  def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id, "type" => "JSON"} = params) do
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),
          {:ok, token} <- Chain.token_from_address_hash(hash),
          token_transfers <-
@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
     end
   end
 
-  def index(conn, %{"token_id" => token_id, "instance_id" => token_address_hash}) do
+  def index(conn, %{"token_id" => token_address_hash, "instance_id" => token_id}) do
     options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
 
     with {:ok, hash} <- Chain.string_to_address_hash(token_address_hash),

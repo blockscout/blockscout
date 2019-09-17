@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
 
   def qr_code(conn, token_id, hash) do
-    token_instance_path = token_instance_path(conn, :show, to_string(token_id), to_string(hash))
+    token_instance_path = token_instance_path(conn, :show, to_string(hash), to_string(token_id))
 
     url = blockscout_url() <> token_instance_path
 

@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Tokens.InstanceControllerTest do
         token_id: token_id
       )
 
-      conn = get(conn, token_instance_path(BlockScoutWeb.Endpoint, :show, token_id, to_string(contract_address.hash)))
+      conn = get(conn, token_instance_path(BlockScoutWeb.Endpoint, :show, to_string(contract_address.hash), token_id))
 
       assert conn.status == 302
     end

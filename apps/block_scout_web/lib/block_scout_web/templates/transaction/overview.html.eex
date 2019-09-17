@@ -195,7 +195,7 @@
               <h3 class="address-balance-text">
                  <%= case token_transfer_amount(transfer) do %>
                    <% {:ok, :erc721_instance} -> %>
-                     <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, to_string(transfer.token_id), transfer.token.contract_address_hash)) %><%= "] " %>
+                     <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id))) %><%= "] " %>
                    <% {:ok, value} -> %>
                      <%= value %>
                  <% end %>
