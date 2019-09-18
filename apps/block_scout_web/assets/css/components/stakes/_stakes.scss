@@ -99,6 +99,11 @@ $stakes-stats-item-border-color: #fff !default;
     color: $stakes-address-color;
     cursor: pointer;
   }
+
+  .check-tooltip {
+		position: relative;
+		top: -1px;
+	}
 }
 
 .stakes-controls {
