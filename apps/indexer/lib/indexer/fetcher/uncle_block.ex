@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.UncleBlock do
   alias Ecto.Changeset
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.Hash
   alias Indexer.{Block, BufferedTask, Tracer}
   alias Indexer.Fetcher.UncleBlock
@@ -126,7 +127,8 @@ defmodule Indexer.Fetcher.UncleBlock do
            block_second_degree_relations: %{params: block_second_degree_relations_params},
            transactions: %{params: transactions_params, on_conflict: :nothing}
          }) do
-      {:ok, _} ->
+      {:ok, imported} ->
+        Accounts.drop(imported[:addresses])
         retry(errors)
 
       {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
