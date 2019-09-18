@@ -1841,3 +1841,8 @@ msgstr ""
 #: lib/block_scout_web/views/address_contract_view.ex:22
 msgid "true"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:189
+msgid "Log Index"
+msgstr ""

@@ -21,6 +21,7 @@
 - [#2619](https://github.com/poanetwork/blockscout/pull/2619) - Enforce DB transaction's order to prevent deadlocks
 
 ### Chore
+- [#2708](https://github.com/poanetwork/blockscout/pull/2708) - add log index to logs view
 
 
 ## 2.0.4-beta
