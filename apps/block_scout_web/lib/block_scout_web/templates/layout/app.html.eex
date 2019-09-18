@@ -8,7 +8,7 @@
     <link rel="preload" href="/css/non-critical.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="/css/non-critical.css"></noscript>
 
-    <link rel="icon" href="<%= static_path(@conn, "/favicon-32x32.png") %>">
+    <link rel="icon" content="image/png" href="<%= static_path(@conn, "/favicon-32x32.png") %>">
     <link rel="mask-icon" href="<%= static_path(@conn, "/enix-pinned-tab.png") %>">
     <link rel="shortcut icon" href="<%= static_path(@conn, "/favicon.ico") %>">
     <meta name="msapplication-TileColor" content="#7dd79f">
