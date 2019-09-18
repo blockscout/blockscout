@@ -233,7 +233,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/_metatags.html.eex:4
-msgid "ENIX explorer provides analytics data, API, and Smart Contract tools for the %{subnetwork}"
+msgid "ENIX explorer provides analytics data, API, and Smart Contract tools for %{subnetwork}"
 msgstr ""
 
 #, elixir-format

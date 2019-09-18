@@ -56,6 +56,7 @@ $ export NETWORK=POA
 | `SUPPORTED_CHAINS` | | Array of supported chains that displays in the footer and in the chains dropdown. This var was introduced in this PR [#1900](https://github.com/poanetwork/blockscout/pull/1900) and looks like an array of JSON objects.  | (empty) |  v2.0.0+ | | |
 | `BLOCK_COUNT_CACHE_PERIOD ` | | time to live of cache in seconds. This var was introduced in [#1876](https://github.com/poanetwork/blockscout/pull/1876)  | 600 |  v2.0.0+ | | |
 | `ALLOWED_EVM_VERSIONS ` | | the comma-separated list of allowed EVM versions for contracts verification. This var was introduced in [#1964](https://github.com/poanetwork/blockscout/pull/1964)  | "homestead, tangerineWhistle, spuriousDragon, byzantium, constantinople, petersburg" |  v2.0.0+ | | |
+| `UNCLES_IN_AVERAGE_BLOCK_TIME` | Include or exclude nonconsensus blocks in avg block time calculation. Exclude if `false`. | false | v2.0.1+ | | |
 | `AVERAGE_BLOCK_CACHE_PERIOD` | | Update of average block cache, in seconds | 30 minutes | v2.0.2+ | |
 | `MARKET_HISTORY_CACHE_PERIOD` | | Update of market history cache, in seconds | 6 hours | v2.0.2+ | |
 | `DISABLE_WEBAPP` | | If `true`, endpoints to webapp are hidden (compile-time) | `false` | v2.0.3+ | :white_check_mark: | |
