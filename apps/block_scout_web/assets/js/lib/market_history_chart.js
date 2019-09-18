@@ -87,6 +87,20 @@ function getMarketCapData (marketHistoryData, availableSupply) {
     return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply}))
   }
 }
+function getRetrievedPriceData(retrievedMarket) {
+      var retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
+  return retrievedMarket.map(({ date, closingPrice }) => ({x: date, y: closingPrice}))
+}
+
+function getRetrievedMarketData(retrievedMarket, retrievedSupply) {
+      var retrievedSupply = JSON.parse(localStorage.getItem('supplyStorage'))
+      var retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
+  if (retrievedSupply !== null && typeof retrievedSupply === 'object') {
+    return retrievedMarket.map(({ date, closingPrice }) => ({x: date, y: closingPrice * retrievedSupply[date]}))
+  } else {
+    return retrievedMarket.map(({ date, closingPrice }) => ({x: date, y: closingPrice * retrievedSupply}))
+  }
+}
 
 // colors for light and dark theme
 var priceLineColor
@@ -130,9 +144,11 @@ class MarketHistoryChart {
     if (this.availableSupply !== null && typeof this.availableSupply === 'object') {
       const today = new Date().toJSON().slice(0, 10)
       this.availableSupply[today] = availableSupply
-      this.marketCap.data = getMarketCapData(marketHistoryData, this.availableSupply)
+      var retrievedSupply = JSON.parse(localStorage.getItem('supplyStorage'))
+      var retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
+      this.marketCap.data = getRetrievedMarketData(retrievedMarket, this.retrievedSupply)
     } else {
-      this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
+      this.marketCap.data = getRetrievedMarketData(retrievedMarket, retrievedSupply)
     }
     this.chart.update()
   }
@@ -151,8 +167,12 @@ export function createMarketHistoryChart (el) {
     .done(data => {
       const availableSupply = JSON.parse(data.supply_data)
       const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
+      localStorage.setItem('supplyStorage', JSON.stringify(availableSupply))
+      localStorage.setItem('marketStorage', JSON.stringify(marketHistoryData))
+      var retrievedSupply = JSON.parse(localStorage.getItem('supplyStorage'))
+      var retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
       $(el).show()
-      chart.update(availableSupply, marketHistoryData)
+      chart.update(retrievedSupply, retrievedMarket)
     })
     .fail(() => {
       $chartError.show()
