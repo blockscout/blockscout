@@ -19,7 +19,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     port: port || 4000
   ],
   url: [
-    scheme: "http",
+    scheme: "https",
     host: System.get_env("BLOCKSCOUT_HOST") || "explorer.enix.ai",
     path: System.get_env("NETWORK_PATH") || "/"
   ],
