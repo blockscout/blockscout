@@ -8,6 +8,7 @@ defmodule Explorer.Chain do
       from: 2,
       join: 4,
       limit: 2,
+      lock: 2,
       order_by: 2,
       order_by: 3,
       offset: 2,
@@ -48,6 +49,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Block.{EmissionReward, Reward}
 
   alias Explorer.Chain.Cache.{
+    Accounts,
     BlockCount,
     BlockNumber,
     Blocks,
@@ -594,12 +596,15 @@ defmodule Explorer.Chain do
   def create_decompiled_smart_contract(attrs) do
     changeset = DecompiledSmartContract.changeset(%DecompiledSmartContract{}, attrs)
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     Multi.new()
+    |> Multi.run(:set_address_decompiled, fn repo, _ ->
+      set_address_decompiled(repo, Changeset.get_field(changeset, :address_hash))
+    end)
     |> Multi.insert(:decompiled_smart_contract, changeset,
       on_conflict: :replace_all,
       conflict_target: [:decompiler_version, :address_hash]
     )
-    |> Multi.run(:set_address_decompiled, &set_address_decompiled/2)
     |> Repo.transaction()
     |> case do
       {:ok, %{decompiled_smart_contract: decompiled_smart_contract}} -> {:ok, decompiled_smart_contract}
@@ -1375,6 +1380,36 @@ defmodule Explorer.Chain do
   def list_top_addresses(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
+    if is_nil(paging_options.key) do
+      paging_options.page_size
+      |> Accounts.take_enough()
+      |> case do
+        nil ->
+          accounts_with_n = fetch_top_addresses(paging_options)
+
+          accounts_with_n
+          |> Enum.map(fn {address, _n} -> address end)
+          |> Accounts.update()
+
+          accounts_with_n
+
+        accounts ->
+          Enum.map(
+            accounts,
+            &{&1,
+             if is_nil(&1.nonce) do
+               0
+             else
+               &1.nonce + 1
+             end}
+          )
+      end
+    else
+      fetch_top_addresses(paging_options)
+    end
+  end
+
+  defp fetch_top_addresses(paging_options) do
     base_query =
       from(a in Address,
         where: a.fetched_coin_balance > ^0,
@@ -2518,12 +2553,18 @@ defmodule Explorer.Chain do
       |> SmartContract.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
 
+    address_hash = Changeset.get_field(smart_contract_changeset, :address_hash)
+
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     insert_result =
       Multi.new()
+      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
+      |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
+      |> Multi.run(:insert_address_name, fn repo, _ ->
+        name = Changeset.get_field(smart_contract_changeset, :name)
+        create_address_name(repo, name, address_hash)
+      end)
       |> Multi.insert(:smart_contract, smart_contract_changeset)
-      |> Multi.run(:clear_primary_address_names, &clear_primary_address_names/2)
-      |> Multi.run(:insert_address_name, &create_address_name/2)
-      |> Multi.run(:set_address_verified, &set_address_verified/2)
       |> Repo.transaction()
 
     case insert_result do
@@ -2538,7 +2579,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp set_address_verified(repo, %{smart_contract: %SmartContract{address_hash: address_hash}}) do
+  defp set_address_verified(repo, address_hash) do
     query =
       from(
         address in Address,
@@ -2551,7 +2592,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp set_address_decompiled(repo, %{decompiled_smart_contract: %DecompiledSmartContract{address_hash: address_hash}}) do
+  defp set_address_decompiled(repo, address_hash) do
     query =
       from(
         address in Address,
@@ -2560,24 +2601,29 @@ defmodule Explorer.Chain do
 
     case repo.update_all(query, set: [decompiled: true]) do
       {1, _} -> {:ok, []}
-      _ -> {:error, "There was an error annotating that the address has been verified."}
+      _ -> {:error, "There was an error annotating that the address has been decompiled."}
     end
   end
 
-  defp clear_primary_address_names(repo, %{smart_contract: %SmartContract{address_hash: address_hash}}) do
-    clear_primary_query =
+  defp clear_primary_address_names(repo, address_hash) do
+    query =
       from(
         address_name in Address.Name,
         where: address_name.address_hash == ^address_hash,
-        update: [set: [primary: false]]
+        # Enforce Name ShareLocks order (see docs: sharelocks.md)
+        order_by: [asc: :address_hash, asc: :name],
+        lock: "FOR UPDATE"
       )
 
-    repo.update_all(clear_primary_query, [])
+    repo.update_all(
+      from(n in Address.Name, join: s in subquery(query), on: n.address_hash == s.address_hash),
+      set: [primary: false]
+    )
 
     {:ok, []}
   end
 
-  defp create_address_name(repo, %{smart_contract: %SmartContract{name: name, address_hash: address_hash}}) do
+  defp create_address_name(repo, name, address_hash) do
     params = %{
       address_hash: address_hash,
       name: name,
@@ -2924,14 +2970,20 @@ defmodule Explorer.Chain do
         ]) :: {integer(), nil | [term()]}
   def find_and_update_replaced_transactions(transactions, timeout \\ :infinity) do
     query =
-      Enum.reduce(transactions, Transaction, fn %{hash: hash, nonce: nonce, from_address_hash: from_address_hash},
-                                                query ->
-        from(t in query,
-          or_where:
-            t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and t.hash != ^hash and
-              not is_nil(t.block_number)
-        )
-      end)
+      transactions
+      |> Enum.reduce(
+        Transaction,
+        fn %{hash: hash, nonce: nonce, from_address_hash: from_address_hash}, query ->
+          from(t in query,
+            or_where:
+              t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and t.hash != ^hash and
+                not is_nil(t.block_number)
+          )
+        end
+      )
+      # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+      |> order_by(asc: :hash)
+      |> lock("FOR UPDATE")
 
     hashes = Enum.map(transactions, & &1.hash)
 
@@ -2974,10 +3026,15 @@ defmodule Explorer.Chain do
             or_where: t.nonce == ^nonce and t.from_address_hash == ^from_address and is_nil(t.block_hash)
           )
         end)
+        # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+        |> order_by(asc: :hash)
+        |> lock("FOR UPDATE")
 
-      update_query = from(t in query, update: [set: [status: ^:error, error: "dropped/replaced"]])
-
-      Repo.update_all(update_query, [], timeout: timeout)
+      Repo.update_all(
+        from(t in Transaction, join: s in subquery(query), on: t.hash == s.hash),
+        [set: [error: "dropped/replaced", status: :error]],
+        timeout: timeout
+      )
     end
   end
 
@@ -3004,8 +3061,15 @@ defmodule Explorer.Chain do
 
     address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     insert_result =
       Multi.new()
+      |> Multi.run(
+        :address_name,
+        fn repo, _ ->
+          {:ok, repo.insert(address_name_changeset, address_name_opts)}
+        end
+      )
       |> Multi.run(:token, fn repo, _ ->
         with {:error, %Changeset{errors: [{^stale_error_field, {^stale_error_message, []}}]}} <-
                repo.insert(token_changeset, token_opts) do
@@ -3013,12 +3077,6 @@ defmodule Explorer.Chain do
           {:ok, token}
         end
       end)
-      |> Multi.run(
-        :address_name,
-        fn repo, _ ->
-          {:ok, repo.insert(address_name_changeset, address_name_opts)}
-        end
-      )
       |> Repo.transaction()
 
     case insert_result do

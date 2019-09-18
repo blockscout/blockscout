@@ -11,6 +11,8 @@ defmodule Explorer.ChainSpec.POA.Importer do
   alias Explorer.Chain.Block.{EmissionReward, Range}
   alias Explorer.ChainSpec.GenesisData
 
+  import Ecto.Query
+
   @block_reward_amount_abi %{
     "type" => "function",
     "stateMutability" => "view",
@@ -51,8 +53,27 @@ defmodule Explorer.ChainSpec.POA.Importer do
         }
       ]
 
-      {_, nil} = Repo.delete_all(EmissionReward)
-      {_, nil} = Repo.insert_all(EmissionReward, rewards)
+      inner_delete_query =
+        from(
+          emission_reward in EmissionReward,
+          # Enforce EmissionReward ShareLocks order (see docs: sharelocks.md)
+          order_by: emission_reward.block_range,
+          lock: "FOR UPDATE"
+        )
+
+      delete_query =
+        from(
+          e in EmissionReward,
+          join: s in subquery(inner_delete_query),
+          # we join on reward because it's faster and we have to delete them all anyway
+          on: e.reward == s.reward
+        )
+
+      # Enforce EmissionReward ShareLocks order (see docs: sharelocks.md)
+      ordered_rewards = Enum.sort_by(rewards, & &1.block_range)
+
+      {_, nil} = Repo.delete_all(delete_query)
+      {_, nil} = Repo.insert_all(EmissionReward, ordered_rewards)
     end
   end
 
