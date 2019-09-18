@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.CSPHeader do
         default-src 'self';\
         script-src 'self' 'unsafe-inline' 'unsafe-eval';\
         style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com;\
-        img-src 'self' 'unsafe-inline' 'unsafe-eval' https://github.com, https://raw.githubusercontent.com data:;\
+        img-src 'self' 'unsafe-inline' 'unsafe-eval' data:;\
         font-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.gstatic.com data:;\
       "
     })
