@@ -10,6 +10,7 @@
 - [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
 
 ### Fixes
+- [#2709](https://github.com/poanetwork/blockscout/pull/2709) - Fix stuck label and value for uncle block height
 - [#2707](https://github.com/poanetwork/blockscout/pull/2707) - fix for dashboard banner chart legend items
 - [#2701](https://github.com/poanetwork/blockscout/pull/2701) - Exclude nonconsensus blocks from avg block time calculation by default
 - [#2696](https://github.com/poanetwork/blockscout/pull/2696) - do not update fetched_coin_balance with nil
