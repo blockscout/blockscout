@@ -2837,7 +2837,7 @@ defmodule Explorer.Chain do
         left_join: instance in Instance,
         on: token_transfer.token_id == instance.token_id,
         where: token.type == ^"ERC-721" and is_nil(instance.token_id),
-        distinct: token_transfer.token_id,
+        distinct: [token_transfer.token_contract_address_hash, token_transfer.token_id],
         select: %{contract_address_hash: token_transfer.token_contract_address_hash, token_id: token_transfer.token_id}
       )
 
