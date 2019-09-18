@@ -76,6 +76,13 @@ $modal-status-graph-question: #329ae9 !default;
   .btn-line {
     flex-grow: 1;
     margin-right: 20px;
+    border-color: $primary;
+    color: $primary;
+
+    &:hover {
+      background-color: $primary;
+      color: $additional-font;
+    }
 
     &:last-child {
       margin-right: 0;

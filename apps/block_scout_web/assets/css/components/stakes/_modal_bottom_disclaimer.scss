@@ -21,6 +21,10 @@
   .modal-bottom-disclaimer-graphic {
     flex-shrink: 0;
     padding-right: 15px;
+
+    svg {
+      fill: #333;
+    }
   }
 
   .modal-bottom-disclaimer-text {
