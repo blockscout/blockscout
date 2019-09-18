@@ -1,3 +1,5 @@
+$stakes-progress-graph-color: $primary !default;
+
 .stakes-progress {
   .modal-stake-right & {
     border-left: 1px solid $base-border-color;
@@ -39,7 +41,7 @@
 }
 
 .stakes-progress-info-link {
-  color: $secondary;
+  color: $primary;
   cursor: pointer;
 }
 
@@ -51,6 +53,10 @@
 .stakes-progress-graph-canvas {
   position: relative;
   z-index: 1;
+}
+
+.stakes-progress-graph-thing-for-getting-color {
+  color: $stakes-progress-graph-color;
 }
 
 .stakes-progress-data {

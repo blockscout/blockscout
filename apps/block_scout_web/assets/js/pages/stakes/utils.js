@@ -47,7 +47,7 @@ export async function makeContractCall (call, store) {
 }
 
 export function setupChart ($canvas, self, total) {
-  const primaryColor = $('.btn-full-primary').css('background-color')
+  const primaryColor = $('.stakes-progress-graph-thing-for-getting-color').css('color')
   const backgroundColors = [
     primaryColor,
     'rgba(202, 199, 226, 0.5)'

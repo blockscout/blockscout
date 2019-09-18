@@ -1,7 +1,7 @@
 <div class="modal-bottom-disclaimer <%= if assigns[:extra_class] do @extra_class end %>">
     <div class="modal-bottom-disclaimer-graphic">
         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="16">
-            <path fill="#333" fill-rule="evenodd" d="M9 16H1a1 1 0 0 1 0-2h3V6H1a1 1 0 0 1 0-2h4a1 1 0 0 1 1 1v9h3a1 1 0 0 1 0 2zM5 2H4a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2z"/>
+            <path fill-rule="evenodd" d="M9 16H1a1 1 0 0 1 0-2h3V6H1a1 1 0 0 1 0-2h4a1 1 0 0 1 1 1v9h3a1 1 0 0 1 0 2zM5 2H4a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2z"/>
         </svg>
     </div>
     <div class="modal-bottom-disclaimer-text"><%= if assigns[:text] do @text end %></div>

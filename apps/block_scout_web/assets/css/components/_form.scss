@@ -1,4 +1,5 @@
 $form-control-border-color: #e2e5ec !default;
+$form-control-border-color-active: $primary !default;
 
 .form-control {
   border-color: $form-control-border-color;
@@ -10,7 +11,7 @@ $form-control-border-color: #e2e5ec !default;
   }
 
   &:focus {
-    border-color: $secondary;
+    border-color: $form-control-border-color-active;
     box-shadow: none;
   }
 
@@ -41,8 +42,16 @@ $form-control-border-color: #e2e5ec !default;
     border-left: none;
     color: #a3a9b5;
     font-size: 14px;
+    transition: $input-transition;
   }
 }
+
+.form-control:focus ~ .input-group-prepend.last {
+  .input-group-text {
+    border-color: $form-control-border-color-active;
+  }
+}
+
 
 .input-group.input-status-error  {
   input {
