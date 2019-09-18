@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.Endpoint do
       favicon-16x16.png
       favicon-32x32.png
       mstile-150x150.png
-      safari-pinned-tab.svg
+      enix-pinned-tab.png
       site.manifest
       robots.txt
     )
