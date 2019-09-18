@@ -21,8 +21,8 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
 
   def image_src(instance) do
     cond do
-      instance.metadata && instance.metadata["image"] -> instance.metadata["image_url"]
-      instance.metadata && instance.metadata["image"] -> instance.metadata && instance.metadata["image"]
+      instance.metadata && instance.metadata["image_url"] -> instance.metadata["image_url"]
+      instance.metadata && instance.metadata["image"] -> instance.metadata["image"]
       true -> image_src(nil)
     end
   end
