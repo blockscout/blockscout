@@ -45,8 +45,16 @@ echo 'TXS_COUNT_CACHE_PERIOD=1 * 1 * 1'
 
 export 'CHAIN_SPEC_PATH=apps/explorer/test/support/fixture/chain_spec/foundation.json'
 
-echo 'Make sure you start get with the following flags'
+echo ''
+echo ''
+echo ''
+echo 'This instance has a built in system service running geth, to restart type systemctl restart enix - if you are still having problems after this contact @FallenGrav1ty on Twitter'
+echo ''
+echo ''
+echo ''
 
+
+echo 'If this is not a system by Fallen, Please Make sure you start geth with the following flags'
 echo './geth --rpc --rpcaddr "127.0.0.1" --port "30305" --rpcport "8547" --rpccorsdomain "*" --nat "any" --rpcapi "debug,net,eth,shh,web3,txpool,eth,web3,personal" --wsapi "debug,net,eth,shh,web3,txpool,eth,web3,personal" --ws --wsaddr "127.0.0.1" --wsport "8548" --wsorigins "*" --syncmode=full --gcmode=archive --rpcvhosts=* console'
 
 mix phx.server
