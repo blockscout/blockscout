@@ -14,7 +14,6 @@
     <meta name="msapplication-TileColor" content="#7dd79f">
     <meta name="msapplication-config" content="<%= static_path(@conn, "/browserconfig.xml") %>">
     <meta name="theme-color" content="#ffffff">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://github.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.github.com https://*.github.com; img-src 'self' 'unsafe-inline' 'unsafe-eval' data: https://*.github.com https://*.github.com; media-src *">
 
     <%= render_existing(@view_module, "_metatags.html", assigns) || render("_default_title.html") %>
   </head>
