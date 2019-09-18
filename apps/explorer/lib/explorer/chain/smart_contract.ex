@@ -271,6 +271,45 @@ defmodule Explorer.Chain.SmartContract do
     |> add_error(:contract_source_code, error_message(error))
   end
 
+  def add_submitted_comment(code, inserted_at) when is_binary(code) do
+    code
+    |> String.split("\n")
+    |> add_submitted_comment(inserted_at)
+    |> Enum.join("\n")
+  end
+
+  def add_submitted_comment(contract_lines, inserted_at) when is_list(contract_lines) do
+    etherscan_index =
+      Enum.find_index(contract_lines, fn line ->
+        String.contains?(line, "Submitted for verification at Etherscan.io")
+      end)
+
+    blockscout_index =
+      Enum.find_index(contract_lines, fn line ->
+        String.contains?(line, "Submitted for verification at blockscout.com")
+      end)
+
+    cond do
+      etherscan_index && blockscout_index ->
+        List.replace_at(contract_lines, etherscan_index, "*")
+
+      etherscan_index && !blockscout_index ->
+        List.replace_at(
+          contract_lines,
+          etherscan_index,
+          "* Submitted for verification at blockscout.com on #{inserted_at}"
+        )
+
+      !etherscan_index && !blockscout_index ->
+        header = ["/**", "* Submitted for verification at blockscout.com on #{inserted_at}", "*/"]
+
+        header ++ contract_lines
+
+      true ->
+        contract_lines
+    end
+  end
+
   defp upsert_contract_methods(%Ecto.Changeset{changes: %{abi: abi}} = changeset) do
     ContractMethod.upsert_from_abi(abi, get_field(changeset, :address_hash))
 
