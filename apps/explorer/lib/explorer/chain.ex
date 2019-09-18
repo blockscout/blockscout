@@ -3128,8 +3128,16 @@ defmodule Explorer.Chain do
     address_hash
     |> CoinBalance.balances_by_day(latest_block_timestamp)
     |> Repo.all()
+    |> replace_last_value(latest_block_timestamp)
     |> normalize_balances_by_day()
   end
+
+  # https://github.com/poanetwork/blockscout/issues/2658
+  defp replace_last_value(items, %{value: value, timestamp: timestamp}) do
+    List.replace_at(items, -1, %{date: Date.convert!(timestamp, Calendar.ISO), value: value})
+  end
+
+  defp replace_last_value(items, _), do: items
 
   defp normalize_balances_by_day(balances_by_day) do
     result =
