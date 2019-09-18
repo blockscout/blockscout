@@ -82,7 +82,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
       tb in TokenBalance,
       join: t in Token,
       on: tb.token_contract_address_hash == t.contract_address_hash,
-      where: is_nil(tb.value_fetched_at),
+      where: is_nil(tb.value_fetched_at) or is_nil(tb.value),
       where: (tb.address_hash != ^@burn_address_hash and t.type != "ERC-721") or t.type == "ERC-20"
     )
   end
