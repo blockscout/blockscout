@@ -8,9 +8,9 @@
     <link rel="preload" href="/css/non-critical.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="/css/non-critical.css"></noscript>
 
-    <link rel="icon" type="image/png" href="<%= static_path(@conn, "/favicon-32x32.png") %>">
-    <link rel="mask-icon" href="<%= static_path(@conn, "/enix-pinned-tab.png") %>">
-    <link rel="shortcut icon" href="<%= static_path(@conn, "/favicon.ico") %>">
+    <link rel="icon" type="image/png" href="https://github.com/Enix-Blockchain-Element/blockscout/blob/master/apps/block_scout_web/assets/static/favicon-32x32.png">
+    <link rel="mask-icon" href="https://raw.githubusercontent.com/Enix-Blockchain-Element/blockscout/master/apps/block_scout_web/assets/static/enix-pinned-tab.png">
+    <link rel="shortcut icon" href="https://raw.githubusercontent.com/Enix-Blockchain-Element/blockscout/master/apps/block_scout_web/assets/static/enix.ico">
     <meta name="msapplication-TileColor" content="#7dd79f">
     <meta name="msapplication-config" content="<%= static_path(@conn, "/browserconfig.xml") %>">
     <meta name="theme-color" content="#ffffff">
