@@ -105,19 +105,15 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
       end)
 
     unless Enum.empty?(matching_blocks_data) do
-      hashes = Enum.map(matching_blocks_data, fn {hash, _trans_num} -> hash end)
-
-      Block
-      |> where([block], block.hash in ^hashes)
-      |> Repo.update_all(set: [refetch_needed: false])
+      matching_blocks_data
+      |> Enum.map(fn {hash, _trans_num} -> hash end)
+      |> update_in_order(refetch_needed: false)
     end
 
     unless Enum.empty?(unmatching_blocks_data) do
-      hashes = Enum.map(unmatching_blocks_data, fn {hash, _trans_num} -> hash end)
-
-      Block
-      |> where([block], block.hash in ^hashes)
-      |> Repo.update_all(set: [refetch_needed: false, consensus: false])
+      unmatching_blocks_data
+      |> Enum.map(fn {hash, _trans_num} -> hash end)
+      |> update_in_order(refetch_needed: false, consensus: false)
     end
 
     if Enum.empty?(missing_blocks_data) do
@@ -125,5 +121,20 @@ defmodule Indexer.Temporary.BlocksTransactionsMismatch do
     else
       {:retry, missing_blocks_data}
     end
+  end
+
+  defp update_in_order(hashes, fields_to_set) do
+    query =
+      from(block in Block,
+        where: block.hash in ^hashes,
+        # Enforce Block ShareLocks order (see docs: sharelocks.md)
+        order_by: [asc: block.hash],
+        lock: "FOR UPDATE"
+      )
+
+    Repo.update_all(
+      from(b in Block, join: s in subquery(query), on: b.hash == s.hash),
+      set: fields_to_set
+    )
   end
 end

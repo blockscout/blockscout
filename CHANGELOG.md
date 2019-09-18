@@ -4,18 +4,22 @@
 - [#2679](https://github.com/poanetwork/blockscout/pull/2679) - added fixed height for card chain blocks and card chain transactions
 - [#2678](https://github.com/poanetwork/blockscout/pull/2678) - fixed dashboard banner height bug
 - [#2672](https://github.com/poanetwork/blockscout/pull/2672) - added new theme for xUSDT
+- [#2666](https://github.com/poanetwork/blockscout/pull/2666) - fetch token counters in parallel
 - [#2665](https://github.com/poanetwork/blockscout/pull/2665) - new menu layout for mobile devices
 - [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
 - [#2642](https://github.com/poanetwork/blockscout/pull/2642) - add ERC721 coin instance page
 
 ### Fixes
+- [#2707](https://github.com/poanetwork/blockscout/pull/2707) - fix for dashboard banner chart legend items
 - [#2701](https://github.com/poanetwork/blockscout/pull/2701) - Exclude nonconsensus blocks from avg block time calculation by default
+- [#2696](https://github.com/poanetwork/blockscout/pull/2696) - do not update fetched_coin_balance with nil
 - [#2693](https://github.com/poanetwork/blockscout/pull/2693) - remove non consensus internal transactions
+- [#2691](https://github.com/poanetwork/blockscout/pull/2691) - fix exchange rate websocket update for Rootstock
 - [#2687](https://github.com/poanetwork/blockscout/pull/2687) - remove non-consensus token transfers, logs when inserting new consensus blocks
 - [#2684](https://github.com/poanetwork/blockscout/pull/2684) - do not filter pending logs
 - [#2682](https://github.com/poanetwork/blockscout/pull/2682) - Use Task.start instead of Task.async in caches
 - [#2671](https://github.com/poanetwork/blockscout/pull/2671) - fixed buttons color at smart contract section
-- [#2691](https://github.com/poanetwork/blockscout/pull/2691) - fix exchange rate websocket update for Rootstock
+- [#2619](https://github.com/poanetwork/blockscout/pull/2619) - Enforce DB transaction's order to prevent deadlocks
 
 ### Chore
 
