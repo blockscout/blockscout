@@ -1496,7 +1496,7 @@ defmodule Explorer.Chain do
     query =
       from(
         balance in CoinBalance,
-        where: is_nil(balance.value_fetched_at),
+        where: is_nil(balance.value_fetched_at) or is_nil(balance.value),
         select: %{address_hash: balance.address_hash, block_number: balance.block_number}
       )
 
