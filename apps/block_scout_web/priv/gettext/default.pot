@@ -300,7 +300,6 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
-
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:42
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:165
@@ -1575,7 +1574,6 @@ msgstr ""
 msgid "Transactions sent"
 msgstr ""
 
-
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:40
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:47
@@ -1851,4 +1849,27 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10
 #: lib/block_scout_web/views/tokens/instance/overview_view.ex:61
 msgid "Metadata"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
+#: lib/block_scout_web/templates/address/overview.html.eex:145
+#: lib/block_scout_web/templates/address/overview.html.eex:153
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:87
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:95
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:110
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:118
+msgid "Close"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:62
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:67
+msgid "Decimals"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:60
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:64
+msgid "Transfers"
 msgstr ""
