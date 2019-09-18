@@ -20,7 +20,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   ],
   url: [
     scheme: "http",
-    host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
+    host: System.get_env("BLOCKSCOUT_HOST") || "explorer.enix.ai",
     path: System.get_env("NETWORK_PATH") || "/"
   ],
   https: [
