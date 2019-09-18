@@ -11,8 +11,8 @@
 
   <section>
     <div class="card">
-      <div class="card-body">
       <%= render OverviewView, "_tabs.html", assigns %>
+      <div class="card-body">
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= gettext "Metadata" %></h3>
