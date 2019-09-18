@@ -3,7 +3,7 @@
     <div class="api-doc-list-item-description">
       <h3 class="api-doc-list-item-title"><%= @action %></h3>
       <p class="api-doc-list-item-contents"><%= raw @info.notes %></p>
-      <span class="api-doc-list-item-query api-text-monospace api-text-monospace-background btn" 
+      <span class="api-doc-list-item-query api-text-monospace api-text-monospace-background btn"
         data-clipboard-text="curl -X POST --data '{&quot;id&quot;:0,&quot;jsonrpc&quot;:&quot;2.0&quot;,&quot;method&quot;: &quot;<%= @action %>&quot;,&quot;params&quot;: []}'"
       >
         curl -X POST --data '{"id":0,"jsonrpc":"2.0","method": "<%= @action %>", "params": []}'
@@ -17,7 +17,7 @@
         </div>
       </p>
     </div>
-    <div class="api-doc-list-item-controls" 
+    <div class="api-doc-list-item-controls"
       aria-controls="<%= @action %>"
       aria-expanded="false"
       data-toggle="collapse"
@@ -38,20 +38,6 @@
   >
     <h3 class="card-title margin-bottom-md">
       <%= gettext "Parameters" %>
-      <button
-        class="btn-full-primary float-right"
-        data-action="<%= @action %>"
-        data-module="eth"
-        data-selector='<%= "eth-#{@action}-btn-try-api" %>'
-        role="button"
-      ><%= gettext "Try it out" %></button>
-      <button
-        class="collapse btn-line float-right"
-        data-action="<%= @action %>"
-        data-module="eth"
-        data-selector='<%= "eth-#{@action}-btn-try-api-cancel" %>'
-        role="button"
-      ><%= gettext "Cancel" %></button>
     </h3>
     <!-- Parameters description list -->
     <div class="api-doc-parameters-list">

@@ -31,20 +31,6 @@
   >
     <h3 class="card-title margin-bottom-md">
       <%= gettext "Parameters" %>
-      <button
-        class="btn-full-primary float-right"
-        data-action="<%= @action.name %>"
-        data-module="<%= @module_name %>"
-        data-selector='<%= "#{@module_name}-#{@action.name}-btn-try-api" %>'
-        role="button"
-      ><%= gettext "Try it out" %></button>
-      <button
-        class="collapse btn-line float-right"
-        data-action="<%= @action.name %>"
-        data-module="<%= @module_name %>"
-        data-selector='<%= "#{@module_name}-#{@action.name}-btn-try-api-cancel" %>'
-        role="button"
-      ><%= gettext "Cancel" %></button>
     </h3>
     <!-- Parameters description list -->
     <div class="api-doc-parameters-list">
