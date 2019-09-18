@@ -102,7 +102,11 @@ if ($stakesPage.length) {
   store.dispatch({ type: 'CHANNEL_CONNECTED', channel })
 
   channel.on('staking_update', msg => {
-    $('.tooltip').hide()
+    // hide tooltip on tooltip triggering element reloading
+    // due to issues with bootstrap tooltips https://github.com/twbs/bootstrap/issues/13133
+    const stakesTopTooltipID = $('[aria-describedby]', $stakesTop).attr('aria-describedby')
+    $('#' + stakesTopTooltipID).hide()
+
     $stakesTop.html(msg.top_html)
 
     const state = store.getState()
