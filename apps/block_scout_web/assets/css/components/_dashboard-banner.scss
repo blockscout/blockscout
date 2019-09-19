@@ -72,7 +72,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
 }
 
 .dashboard-banner-chart-legend {
-  display: flex;
+  display: grid;
   grid-template-columns: 1fr 1fr;
   padding-bottom: 12px;
 
@@ -81,7 +81,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     padding-left: 12px;
     padding-top: 3px;
     position: relative;
-    padding-right: 60px;
+    padding-right: 12px;
 
     @include media-breakpoint-down(md) {
       display: flex;

@@ -3879,9 +3879,9 @@ defmodule Explorer.ChainTest do
       address = insert(:address)
       today = NaiveDateTime.utc_now()
       noon = Timex.set(today, hour: 12)
-      block = insert(:block, timestamp: noon)
+      block = insert(:block, timestamp: noon, number: 50)
       yesterday = Timex.shift(noon, days: -1)
-      block_one_day_ago = insert(:block, timestamp: yesterday)
+      block_one_day_ago = insert(:block, timestamp: yesterday, number: 49)
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
       insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_one_day_ago.number)
 
@@ -3907,6 +3907,22 @@ defmodule Explorer.ChainTest do
                %{date: yesterday |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")},
                %{date: today |> NaiveDateTime.to_date() |> Date.to_string(), value: Decimal.new("1E-15")}
              ]
+    end
+
+    test "uses last block value if there a couple of change in the same day" do
+      address = insert(:address)
+      today = NaiveDateTime.utc_now()
+      past = Timex.shift(today, hours: -1)
+
+      block_now = insert(:block, timestamp: today, number: 1)
+      insert(:fetched_balance, address_hash: address.hash, value: 1, block_number: block_now.number)
+
+      block_past = insert(:block, timestamp: past, number: 2)
+      insert(:fetched_balance, address_hash: address.hash, value: 0, block_number: block_past.number)
+
+      [balance] = Chain.address_to_balances_by_day(address.hash)
+
+      assert balance.value == Decimal.new(0)
     end
   end
 
