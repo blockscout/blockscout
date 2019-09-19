@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2642](https://github.com/poanetwork/blockscout/pull/2642) - add ERC721 coin instance page
 - [#2679](https://github.com/poanetwork/blockscout/pull/2679) - added fixed height for card chain blocks and card chain transactions
 - [#2678](https://github.com/poanetwork/blockscout/pull/2678) - fixed dashboard banner height bug
 - [#2672](https://github.com/poanetwork/blockscout/pull/2672) - added new theme for xUSDT
@@ -8,7 +9,6 @@
 - [#2666](https://github.com/poanetwork/blockscout/pull/2666) - fetch token counters in parallel
 - [#2665](https://github.com/poanetwork/blockscout/pull/2665) - new menu layout for mobile devices
 - [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
-- [#2642](https://github.com/poanetwork/blockscout/pull/2642) - add ERC721 coin instance page
 
 ### Fixes
 - [#2707](https://github.com/poanetwork/blockscout/pull/2707) - fix for dashboard banner chart legend items
