@@ -79,21 +79,14 @@ function getPriceData (marketHistoryData) {
   return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice}))
 }
 
-function getMarketCapData (marketHistoryData, availableSupply) {
-  if (availableSupply !== null && typeof availableSupply === 'object') {
-    return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply[date]}))
-  } else {
-    return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply}))
-  }
-}
-function getRetrievedPriceData(retrievedMarket) {
-      var retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
+function getRetrievedPriceData (retrievedMarket) {
+  var retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
   return retrievedMarket.map(({ date, closingPrice }) => ({x: date, y: closingPrice}))
 }
 
-function getRetrievedMarketData(retrievedMarket, retrievedSupply) {
-      var retrievedSupply = JSON.parse(localStorage.getItem('supplyStorage'))
-      var retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
+function getRetrievedMarketData (retrievedMarket, retrievedSupply) {
+  var retrievedSupply = JSON.parse(localStorage.getItem('supplyStorage'))
+  var retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
   if (retrievedSupply !== null && typeof retrievedSupply === 'object') {
     return retrievedMarket.map(({ date, closingPrice }) => ({x: date, y: closingPrice * retrievedSupply[date]}))
   } else {
