@@ -75,7 +75,6 @@ const config = {
     }
   }
 }
-
 function getPriceData (marketHistoryData) {
   return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice}))
 }
@@ -114,11 +113,11 @@ if (localStorage.getItem('current-color-mode') === 'dark') {
 }
 
 class MarketHistoryChart {
-  constructor (el, availableSupply, marketHistoryData) {
+  constructor (el, retrievedSupply, retrievedMarket) {
     this.price = {
       label: window.localized['Price'],
       yAxisID: 'price',
-      data: getPriceData(marketHistoryData),
+      data: getRetrievedPriceData(retrievedMarket),
       fill: false,
       pointRadius: 0,
       backgroundColor: priceLineColor,
@@ -128,14 +127,14 @@ class MarketHistoryChart {
     this.marketCap = {
       label: window.localized['Market Cap'],
       yAxisID: 'marketCap',
-      data: getMarketCapData(marketHistoryData, availableSupply),
+      data: getRetrievedMarketData(retrievedMarket, retrievedSupply),
       fill: false,
       pointRadius: 0,
       backgroundColor: mcapLineColor,
       borderColor: mcapLineColor,
       lineTension: 0
     }
-    this.availableSupply = availableSupply
+    this.retrievedSupply = retrievedSupply
     config.data.datasets = [this.price, this.marketCap]
     this.chart = new Chart(el, config)
   }
