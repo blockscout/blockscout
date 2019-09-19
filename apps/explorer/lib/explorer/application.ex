@@ -8,6 +8,7 @@ defmodule Explorer.Application do
   alias Explorer.Admin
 
   alias Explorer.Chain.Cache.{
+    Accounts,
     BlockCount,
     BlockNumber,
     Blocks,
@@ -49,7 +50,8 @@ defmodule Explorer.Application do
       BlockNumber,
       con_cache_child_spec(MarketHistoryCache.cache_name()),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
-      Transactions
+      Transactions,
+      Accounts
     ]
 
     children = base_children ++ configurable_children()

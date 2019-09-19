@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.CoinBalance do
   alias EthereumJSONRPC.FetchedBalances
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
 
   @behaviour BufferedTask
@@ -136,7 +137,9 @@ defmodule Indexer.Fetcher.CoinBalance do
   end
 
   defp run_fetched_balances(%FetchedBalances{errors: errors} = fetched_balances, _) do
-    {:ok, _} = import_fetched_balances(fetched_balances)
+    {:ok, imported} = import_fetched_balances(fetched_balances)
+
+    Accounts.drop(imported[:addresses])
 
     retry(errors)
   end
