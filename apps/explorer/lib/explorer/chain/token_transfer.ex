@@ -27,7 +27,7 @@ defmodule Explorer.Chain.TokenTransfer do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2, limit: 2, where: 3]
 
-  alias Explorer.Chain.{Address, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, Hash, TokenTransfer, Transaction}
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -91,6 +91,8 @@ defmodule Explorer.Chain.TokenTransfer do
       references: :hash,
       type: Hash.Full
     )
+
+    belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
 
     has_one(:token, through: [:token_contract_address, :token])
 
