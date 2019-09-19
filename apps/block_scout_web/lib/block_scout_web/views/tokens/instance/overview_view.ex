@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def total_supply?(%Token{total_supply: nil}), do: false
   def total_supply?(%Token{total_supply: _}), do: true
 
-  def image_src(nil), do: "/images/ether1_logo.svg"
+  def image_src(nil), do: "/images/controller@3x.png"
 
   def image_src(instance) do
     cond do
