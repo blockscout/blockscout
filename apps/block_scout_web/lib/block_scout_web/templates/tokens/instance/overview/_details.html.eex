@@ -1,6 +1,6 @@
 <section class="address-overview">
   <div class="row">
-    <div class="card-section col-md-12 col-lg-8 pr-0-md">
+    <div class="card-section col-md-12 col-lg-7 pr-0-md">
       <div class="card">
         <div class="card-body">
           <h1 class="card-title">
@@ -67,8 +67,8 @@
       </div>
     </div>
 
-    <div class="card-section col-md-12 col-lg-4 pl-0-md">
-      <div class="card card-background-1">
+    <div class="card-section col-md-12 col-lg-5 pl-0-md">
+      <div class="card">
         <div class="card-body">
           <div class="erc721-image" >
             <img src=<%=image_src(@token_instance.instance)%> />
