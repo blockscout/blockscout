@@ -10,6 +10,7 @@
 - [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
 
 ### Fixes
+- [#2718](https://github.com/poanetwork/blockscout/pull/2718) - Include all addresses taking part in transactions in wallets' addresses counter
 - [#2709](https://github.com/poanetwork/blockscout/pull/2709) - Fix stuck label and value for uncle block height
 - [#2707](https://github.com/poanetwork/blockscout/pull/2707) - fix for dashboard banner chart legend items
 - [#2706](https://github.com/poanetwork/blockscout/pull/2706) - fix empty total_supply in coin gecko response
