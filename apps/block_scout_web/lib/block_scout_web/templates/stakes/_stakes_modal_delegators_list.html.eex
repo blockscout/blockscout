@@ -2,7 +2,7 @@
   <div class="modal-dialog modal-dialog-centered modal-delegators-info" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Delegators</h5>
+        <h5 class="modal-title"><%= gettext("Delegators") %></h5>
       </div>
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-body">
@@ -10,18 +10,18 @@
           <div class="row stakes-table-th">
             <div class="col-1"></div>
             <div class="col-4">
-              <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: "Staker's Address", tooltip: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut." %>
+              <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Staker's Address"), tooltip: gettext("All pool participant addresses. The top address belongs to the validator.") %>
             </div>
             <div class="col-4">
-              <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: "Total Stake Amount", tooltip: "Lorem ipsum dolor sit iusmod tempor incididunt ut." %>
+              <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Total Stake Amount"), tooltip: gettext("Amount of STAKE placed by an address") %>
             </div>
             <div class="col-3">
               <%=
-                title = if @pool.is_validator do "Reward Percent" else "Potential Reward Percent" end
+                title = if @pool.is_validator do gettext("Reward Percent") else gettext("Potential Reward Percent") end
                 render BlockScoutWeb.StakesView,
                   "_stakes_th.html",
                   title: title,
-                  tooltip: "Lorem ipsum dolor sit iusmod tempor incididunt ut."
+                  tooltip: gettext("Reward distribution is based on stake amount. Validator receives a minimum of 30%.")
               %>
             </div>
           </div>
@@ -34,7 +34,7 @@
                     <%= BlockScoutWeb.AddressView.trimmed_hash(delegator.delegator_address_hash) %>
                   </span>
                   <%= if delegator.delegator_address_hash == @pool.staking_address_hash and @pool.is_validator do %>
-                    <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: "This is a validator" %>
+                    <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: gettext("This is a validator") %>
                   <% end %>
                   <%= if to_string(delegator.delegator_address_hash) == @account do %>
                     <div
@@ -44,9 +44,9 @@
                         data-html="true"
                         data-placement="top"
                         data-toggle="tooltip"
-                        title="It's me!"
+                        title="<%= gettext("It's me!") %>"
                     >
-                        ME
+                        <%= gettext("ME") %>
                     </div>
                   <% end %>
                 </div>
