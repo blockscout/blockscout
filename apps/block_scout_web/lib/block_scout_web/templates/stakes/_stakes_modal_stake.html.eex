@@ -12,19 +12,19 @@
               <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "delegator-stake", classes: "form-group", input_classes: "form-control n-b-r", attributes: "delegator-stake", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
 
               <%= if @delegator && Decimal.positive?(@delegator.stake_amount) do %>
-                <p class="form-p m-b-0">Current stake:
+                <p class="form-p m-b-0"><%= gettext("Current Stake:") %>
                   <span class="text-dark">
                     <%= format_token_amount(@delegator.stake_amount, @token) %>
                   </span>
                 </p>
               <% else %>
-                <p class="form-p m-b-0">Minimum Stake:
+                <p class="form-p m-b-0"><%= gettext("Minimum Stake:") %>
                   <span class="text-dark">
                     <%= format_token_amount(@min_stake, @token) %>
                   </span>
                 </p>
               <% end %>
-              <p class="form-p">Your Balance:
+              <p class="form-p"><%= gettext("Your Balance:") %>
                 <span class="text-dark">
                   <%= format_token_amount(@balance, @token) %>
                 </span>
@@ -43,7 +43,7 @@
               </div>
             </form>
           </div>
-          <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: "Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod temp incididunt ut labore et dolore magna. Sed do eiusmod temp incididunt ut.", extra_class: "b-b-r-0" %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("Stake placed on a pool is <strong>pending</strong> for the current staking epoch. It will be applied to the next staking epoch. You may withdraw or move pending stake at any time until it becomes active. Once active (the pool you staked with becomes a validator), a withdrawal order can be placed. This amount will be available to claim after that staking epoch is complete.") |> raw(), extra_class: "b-b-r-0" %>
         </div>
         <div class="modal-stake-right">
           <%= render BlockScoutWeb.StakesView, "_stakes_progress.html", pool: @pool, token: @token %>
