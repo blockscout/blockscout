@@ -12,14 +12,14 @@
       </div>
       <%= if @validator.is_banned do %>
         <div class="modal-validator-alert">
-          This pool is banned until block <%= "##{@validator.banned_until} (#{estimated_unban_day(@validator.banned_until, @average_block_time)})" %><br />
-          Reason for Ban: <%= String.capitalize(@validator.ban_reason) %>
+          <%= gettext("This pool is banned until block #%{banned_until} (%{estimated_unban_day})", banned_until: @validator.banned_until, estimated_unban_day: estimated_unban_day(@validator.banned_until, @average_block_time)) %><br />
+          <%= gettext("Reason for Ban: %{ban_reason}", ban_reason: String.capitalize(@validator.ban_reason)) %>
           <%= if @delegator &&
                  @delegator.delegator_address_hash != @validator.staking_address_hash &&
                  @validator.are_delegators_banned &&
                  @validator.banned_until != @validator.banned_delegators_until do %>
             <br />
-            You will be able to withdraw after block #<%= @validator.banned_delegators_until %> (<%= estimated_unban_day(@validator.banned_delegators_until, @average_block_time) %>)
+            <%= gettext("You will be able to withdraw after block #%{banned_delegators_until} (%{estimated_unban_day})", banned_delegators_until: @validator.banned_delegators_until, estimated_unban_day: estimated_unban_day(@validator.banned_delegators_until, @average_block_time)) %>
           <% end %>
         </div>
       <% end %>
