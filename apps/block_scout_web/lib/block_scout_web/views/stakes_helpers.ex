@@ -37,9 +37,9 @@ defmodule BlockScoutWeb.StakesHelpers do
     end
   end
 
-  def list_title(:validator), do: "Validators"
-  def list_title(:active), do: "Active Pools"
-  def list_title(:inactive), do: "Inactive Pools"
+  def list_title(:validator), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Validators")
+  def list_title(:active), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Active Pools")
+  def list_title(:inactive), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Inactive Pools")
 
   def format_token_amount(amount, token, options \\ [])
   def format_token_amount(nil, _token, _options), do: "-"

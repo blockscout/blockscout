@@ -9,7 +9,7 @@
           </div>
           <div class="modal-body">
             <form>
-              <p class="form-p">Your ordered amount</p>
+              <p class="form-p"><%= gettext("Your ordered amount") %></p>
               <p class="form-p">
                 <span class="text-dark">
                   <%= format_token_amount(@delegator.ordered_withdraw, @token) %>
@@ -20,7 +20,7 @@
               </div>
             </form>
           </div>
-          <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: "Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod temp incididunt ut labore et dolore magna. Sed do eiusmod temp incididunt ut.", extra_class: "b-b-r-0" %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("Withdrawal orders made during an active staking epoch are available to claim after the epoch is complete.") |> raw(), extra_class: "b-b-r-0" %>
         </div>
         <div class="modal-stake-right">
           <%= render BlockScoutWeb.StakesView, "_stakes_progress.html", pool: @pool, token: @token %>

@@ -65,7 +65,7 @@ export function unlockModal ($modal, $submitButton = null) {
 export function openErrorModal (title, text) {
   const $modal = $('#errorStatusModal')
   $modal.find('.modal-status-title').text(title)
-  $modal.find('.modal-status-text').text(text)
+  $modal.find('.modal-status-text').html(text)
   openModal($modal)
 }
 
