@@ -41,6 +41,9 @@ end
 config :explorer, Explorer.ExchangeRates.Source.TransactionAndLog,
   secondary_source: Explorer.ExchangeRates.Source.OneCoinSource
 
+config :explorer,
+  realtime_events_sender: Explorer.Chain.Events.SenderMock
+
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
     "parity"
