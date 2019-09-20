@@ -8,9 +8,8 @@
         </svg>
     </div>
     <div class="stakes-empty-content-info">
-        <h1 class="stakes-empty-content-title">Lorem Ipsum</h1>
-        <p class="stakes-empty-content-text">Lorem ipsum dolor sit amet, consect adipiscing elit, sed do
-eiusmod temp incididunt ut labore et dolore magna.</p>
+        <h1 class="stakes-empty-content-title"><%= gettext("No Information") %></h1>
+        <p class="stakes-empty-content-text"><%= gettext("There is no information currently available for this view. Deselect filters or choose another pool view to see current info. To participate as a delegator, select a pool address and click the Stake icon. To become a candidate, click the button below.") %></p>
         <%= render BlockScoutWeb.CommonComponentsView, "_btn_add_line.html", text: gettext("Become a Candidate"), extra_class: "js-become-candidate" %>
     </div>
 </div>
