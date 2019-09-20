@@ -10,12 +10,12 @@
           <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "candidate-stake", classes: "form-group", input_classes: "form-control n-b-r", attributes: "candidate-stake", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
 
           <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "mining-address", classes: "form-group", input_classes: "form-control", attributes: "mining-address", type: "text", placeholder: gettext("Your Mining Address") %>
-          <p class="form-p m-b-0">Minimum Stake:
+          <p class="form-p m-b-0"><%= gettext("Minimum Stake:") %>
             <span class="text-dark">
               <%= format_token_amount(@min_candidate_stake, @token) %>
             </span>
           </p>
-          <p class="form-p">Your Balance:
+          <p class="form-p"><%= gettext("Your Balance:") %>
             <span class="text-dark">
               <%= format_token_amount(@balance, @token) %>
             </span>
@@ -23,7 +23,8 @@
           <div class="form-buttons"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become a Candidate"), extra_class: "full-width" %></div>
         </form>
       </div>
-      <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: "Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod temp incididunt ut labore et dolore magna. Sed do eiusmod temp incididunt ut." %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("<p>To become a candidate, your staking address must be funded with STAKE tokens <strong>and</strong> xDai coins, and your Parity node must be active and configured with the mining address you specify here.</p>
+      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>") |> raw() %>
     </div>
   </div>
 </div>

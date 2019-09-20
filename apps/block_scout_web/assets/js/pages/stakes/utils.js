@@ -40,9 +40,15 @@ export async function makeContractCall (call, store) {
       resultShown = true
     }
   } catch (err) {
-    console.log(err)
     clearTimeout(timeout)
-    openErrorModal('Error', err.message)
+    let errorMessage = 'Your MetaMask transaction was not processed, please try again in a few minutes.'
+    if (err.message) {
+      const detailsMessage = err.message.replace(/["]/g, '&quot;')
+      console.log(detailsMessage)
+      const detailsHTML = ` <a href data-boundary="window" data-container="body" data-html="false" data-placement="top" data-toggle="tooltip" title="${detailsMessage}" data-original-title="${detailsMessage}">Details</a>`
+      errorMessage = errorMessage + detailsHTML
+    }
+    openErrorModal('Error', errorMessage)
   }
 }
 

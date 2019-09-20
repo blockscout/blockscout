@@ -2,7 +2,7 @@
   <div class="col-1 stakes-td"><div class="stakes-td-order"><%= @index %></div></div>
   <div class="col-2 stakes-td">
     <%=
-    tooltip = if @pool.is_validator, do: "This is a validator", else: false
+    tooltip = if @pool.is_validator, do: gettext("This is a validator"), else: false
     render BlockScoutWeb.StakesView,
     "_stakes_address.html",
     address: @pool.staking_address_hash,
@@ -21,7 +21,7 @@
   </div>
   <div class="col-2 stakes-td">
     <%= if @pools_type == :inactive do %>
-      <%= if @pool.is_banned, do: "Yes", else: "No" %>
+      <%= if @pool.is_banned, do: gettext("Yes"), else: gettext("No") %>
     <% else %>
       <%= if @pool.staked_ratio, do: "#{@pool.staked_ratio}%" %>
     <% end %>
@@ -34,12 +34,13 @@
   <div class="col-3 stakes-td justify-content-end">
     <%= if @pool.is_banned do %>
       <span class="stakes-td-banned-info">
-        Banned until block #<%= @pool.banned_until %> (<%= estimated_unban_day(@pool.banned_until, @average_block_time) %>).
+        <%= gettext("Banned until block #%{banned_until} (%{estimated_unban_day})", banned_until: @pool.banned_until, estimated_unban_day: estimated_unban_day(@pool.banned_until, @average_block_time)) %>
         <%= if @delegator &&
                @delegator.delegator_address_hash != @pool.staking_address_hash &&
                @pool.are_delegators_banned &&
                @pool.banned_until != @pool.banned_delegators_until do %>
-          You will be able to withdraw after block #<%= @pool.banned_delegators_until %> (<%= estimated_unban_day(@pool.banned_delegators_until, @average_block_time) %>)
+          <%= raw(".<br />") %>
+          <%= gettext("Withdraw after block #%{banned_delegators_until} (%{estimated_unban_day})", banned_delegators_until: @pool.banned_delegators_until, estimated_unban_day: estimated_unban_day(@pool.banned_delegators_until, @average_block_time)) %>
         <% end %>
       </span>
     <% end %>
