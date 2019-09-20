@@ -13,7 +13,7 @@
           <div class="modal-body">
             <form>
               <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "move-amount", classes: "form-group", input_classes: "form-control n-b-r", attributes: "move-amount", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol, value: @amount %>
-              <p class="form-p">You Staked:
+              <p class="form-p"><%= gettext("You Staked:") %>
                 <span class="text-dark">
                   <%= format_token_amount(@delegator_from.stake_amount, @token) %>
                 </span>
@@ -34,13 +34,13 @@
                 </select>
               </div>
               <%= if @delegator_to && Decimal.positive?(@delegator_to.stake_amount) do %>
-                <p class="form-p m-b-0">Current stake:
+                <p class="form-p m-b-0"><%= gettext("Current Stake:") %>
                   <span class="text-dark">
                     <%= format_token_amount(@delegator_to.stake_amount, @token) %>
                   </span>
                 </p>
               <% end %>
-              <p class="form-p">Max Amount to Move:
+              <p class="form-p"><%= gettext("Max Amount to Move:") %>
                 <span class="text-dark">
                   <%= format_token_amount(@delegator_from.max_withdraw_allowed, @token) %>
                 </span>
@@ -56,7 +56,7 @@
               </div>
             </form>
           </div>
-          <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: "Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod temp incididunt ut labore et dolore magna. Sed do eiusmod temp incididunt ut.", extra_class: "b-b-l-0 #{if @pool_to do "b-b-r-0" end}" %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("Stake placed on a candidate pool or an active validator pool <strong>during the current staking epoch</strong> can be moved from one pool to another. Active stake cannot be moved. To re-delegate active stake: order a withdrawal, claim the amount on the next staking epoch, and stake the amount on a different pool.") |> raw(), extra_class: "b-b-l-0 #{if @pool_to do "b-b-r-0" end}" %>
         </div>
         <%= if @pool_to do %>
           <div class="modal-stake-right">
