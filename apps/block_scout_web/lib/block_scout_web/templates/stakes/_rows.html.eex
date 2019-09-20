@@ -2,7 +2,7 @@
   <div class="col-1 stakes-td"><div class="stakes-td-order"><%= @index %></div></div>
   <div class="col-2 stakes-td">
     <%=
-    tooltip = if @pool.is_validator, do: "This is a validator", else: false
+    tooltip = if @pool.is_validator, do: gettext("This is a validator"), else: false
     render BlockScoutWeb.StakesView,
     "_stakes_address.html",
     address: @pool.staking_address_hash,
@@ -21,7 +21,7 @@
   </div>
   <div class="col-2 stakes-td">
     <%= if @pools_type == :inactive do %>
-      <%= if @pool.is_banned, do: "Yes", else: "No" %>
+      <%= if @pool.is_banned, do: gettext("Yes"), else: gettext("No") %>
     <% else %>
       <%= if @pool.staked_ratio, do: "#{@pool.staked_ratio}%" %>
     <% end %>
