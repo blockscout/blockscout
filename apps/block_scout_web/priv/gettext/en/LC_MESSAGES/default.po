@@ -43,7 +43,7 @@ msgid "%{block_type}s"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:21
+#: lib/block_scout_web/templates/block/overview.html.eex:20
 #: lib/block_scout_web/templates/chain/_block.html.eex:11
 msgid "%{count} Transactions"
 msgstr ""
@@ -471,7 +471,7 @@ msgid "Copy Txn Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:59
+#: lib/block_scout_web/templates/block/overview.html.eex:58
 msgid "Difficulty"
 msgstr ""
 
@@ -548,15 +548,15 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:56
-#: lib/block_scout_web/templates/block/overview.html.eex:109
-#: lib/block_scout_web/templates/block/overview.html.eex:159
+#: lib/block_scout_web/templates/block/overview.html.eex:108
+#: lib/block_scout_web/templates/block/overview.html.eex:158
 msgid "Gas Limit"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:61
-#: lib/block_scout_web/templates/block/overview.html.eex:102
-#: lib/block_scout_web/templates/block/overview.html.eex:153
+#: lib/block_scout_web/templates/block/overview.html.eex:101
+#: lib/block_scout_web/templates/block/overview.html.eex:152
 msgid "Gas Used"
 msgstr ""
 
@@ -643,7 +643,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:38
-#: lib/block_scout_web/templates/block/overview.html.eex:125
+#: lib/block_scout_web/templates/block/overview.html.eex:124
 #: lib/block_scout_web/templates/chain/_block.html.eex:15
 msgid "Miner"
 msgstr ""
@@ -698,7 +698,7 @@ msgid "Execute"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:74
+#: lib/block_scout_web/templates/block/overview.html.eex:73
 #: lib/block_scout_web/templates/transaction/overview.html.eex:79
 msgid "Nonce"
 msgstr ""
@@ -753,7 +753,7 @@ msgid "GET"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:85
+#: lib/block_scout_web/templates/block/overview.html.eex:84
 msgid "Position %{index}"
 msgstr ""
 
@@ -779,7 +779,7 @@ msgid "Gwei"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:37
+#: lib/block_scout_web/templates/block/overview.html.eex:36
 msgid "Hash"
 msgstr ""
 
@@ -945,7 +945,7 @@ msgid "Top Accounts - %{subnetwork} Explorer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:68
+#: lib/block_scout_web/templates/block/overview.html.eex:67
 msgid "Total Difficulty"
 msgstr ""
 
@@ -1206,7 +1206,7 @@ msgid "Parameters"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:44
+#: lib/block_scout_web/templates/block/overview.html.eex:43
 msgid "Parent Hash"
 msgstr ""
 
@@ -1367,7 +1367,7 @@ msgid "Show Validator Info"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:146
+#: lib/block_scout_web/templates/block/overview.html.eex:145
 msgid "Block Rewards"
 msgstr ""
 
@@ -1605,7 +1605,7 @@ msgid "Uncle Reward"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:81
+#: lib/block_scout_web/templates/block/overview.html.eex:80
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:52
 msgid "Uncles"
 msgstr ""
