@@ -26,6 +26,8 @@
 
 ### Chore
 
+- [#2723](https://github.com/poanetwork/blockscout/pull/2723) - get rid of ex_json_schema warnings
+
 
 ## 2.0.4-beta
 
