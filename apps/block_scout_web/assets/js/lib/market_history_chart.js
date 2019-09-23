@@ -79,6 +79,14 @@ function getPriceData (marketHistoryData) {
   return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice}))
 }
 
+function getMarketCapData (marketHistoryData, availableSupply) {
+  if (availableSupply !== null && typeof availableSupply === 'object') {
+    return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply[date]}))
+  } else {
+    return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply}))
+  }
+}
+
 function getRetrievedPriceData (retrievedMarket) {
   retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
   return retrievedMarket.map(({ date, closingPrice }) => ({x: date, y: closingPrice}))
@@ -106,11 +114,11 @@ if (localStorage.getItem('current-color-mode') === 'dark') {
 }
 
 class MarketHistoryChart {
-  constructor (el, retrievedSupply, retrievedMarket) {
+  constructor (el, availableSupply, marketHistoryData) {
     this.price = {
       label: window.localized['Price'],
       yAxisID: 'price',
-      data: getRetrievedPriceData(retrievedMarket),
+      data: getPriceData(marketHistoryData),
       fill: false,
       pointRadius: 0,
       backgroundColor: priceLineColor,
@@ -120,14 +128,14 @@ class MarketHistoryChart {
     this.marketCap = {
       label: window.localized['Market Cap'],
       yAxisID: 'marketCap',
-      data: getRetrievedMarketData(retrievedMarket, retrievedSupply),
+      data: getMarketCapData(marketHistoryData, availableSupply),
       fill: false,
       pointRadius: 0,
       backgroundColor: mcapLineColor,
       borderColor: mcapLineColor,
       lineTension: 0
     }
-    this.retrievedSupply = retrievedSupply
+    this.availableSupply = availableSupply
     config.data.datasets = [this.price, this.marketCap]
     this.chart = new Chart(el, config)
   }
@@ -136,11 +144,9 @@ class MarketHistoryChart {
     if (this.availableSupply !== null && typeof this.availableSupply === 'object') {
       const today = new Date().toJSON().slice(0, 10)
       this.availableSupply[today] = availableSupply
-      var retrievedSupply = JSON.parse(localStorage.getItem('supplyStorage'))
-      var retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
-      this.marketCap.data = getRetrievedMarketData(retrievedMarket, this.retrievedSupply)
+      this.marketCap.data = getMarketCapData(marketHistoryData, this.availableSupply)
     } else {
-      this.marketCap.data = getRetrievedMarketData(retrievedMarket, retrievedSupply)
+      this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
     }
     this.chart.update()
   }
