@@ -10,14 +10,18 @@ defmodule BlockScoutWeb.Tokens.Instance.MetadataController do
          {:ok, token} <- Chain.token_from_address_hash(hash, options),
          {:ok, token_transfer} <-
            Chain.erc721_token_instance_from_token_id_and_token_address(token_id, hash) do
-      render(
-        conn,
-        "index.html",
-        token_instance: token_transfer,
-        current_path: current_path(conn),
-        token: Market.add_price(token),
-        total_token_transfers: Chain.count_token_transfers_from_token_hash_and_token_id(hash, token_id)
-      )
+      if token_transfer.instance && token_transfer.instance.metadata do
+        render(
+          conn,
+          "index.html",
+          token_instance: token_transfer,
+          current_path: current_path(conn),
+          token: Market.add_price(token),
+          total_token_transfers: Chain.count_token_transfers_from_token_hash_and_token_id(hash, token_id)
+        )
+      else
+        not_found(conn)
+      end
     else
       _ ->
         not_found(conn)
