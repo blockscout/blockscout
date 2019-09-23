@@ -49,7 +49,7 @@ defmodule Indexer.Fetcher.TokenInstance do
 
   @impl BufferedTask
   def run([%{contract_address_hash: token_contract_address_hash, token_id: token_id}], _json_rpc_named_arguments) do
-    case InstanceMetadataRetriever.fetch_metadata(token_contract_address_hash, Decimal.to_integer(token_id)) do
+    case InstanceMetadataRetriever.fetch_metadata(to_string(token_contract_address_hash), Decimal.to_integer(token_id)) do
       {:ok, metadata} ->
         params = %{
           token_id: token_id,
