@@ -87,21 +87,6 @@ function getMarketCapData (marketHistoryData, availableSupply) {
   }
 }
 
-function getRetrievedPriceData (retrievedMarket) {
-  retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
-  return retrievedMarket.map(({ date, closingPrice }) => ({x: date, y: closingPrice}))
-}
-
-function getRetrievedMarketData (retrievedMarket, retrievedSupply) {
-  retrievedSupply = JSON.parse(localStorage.getItem('supplyStorage'))
-  retrievedMarket = JSON.parse(localStorage.getItem('marketStorage'))
-  if (retrievedSupply !== null && typeof retrievedSupply === 'object') {
-    return retrievedMarket.map(({ date, closingPrice }) => ({x: date, y: closingPrice * retrievedSupply[date]}))
-  } else {
-    return retrievedMarket.map(({ date, closingPrice }) => ({x: date, y: closingPrice * retrievedSupply}))
-  }
-}
-
 // colors for light and dark theme
 var priceLineColor
 var mcapLineColor
