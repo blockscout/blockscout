@@ -90,6 +90,11 @@
               <% end %>
             </dd>
           </dl>
+          <!-- feeRecipient -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"> <%= gettext "feeRecipient" %> </dt>
+            <dd class="col-sm-9"> <%= @transaction.block.miner_hash %> </dd>
+          </dl>
           <!-- Processing Time -->
           <%= case processing_time_duration(@transaction) do %>
             <% :pending -> %>

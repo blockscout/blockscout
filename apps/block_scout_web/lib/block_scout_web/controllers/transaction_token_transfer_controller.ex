@@ -91,6 +91,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
         current_path: current_path(conn),
         show_token_transfers: true,
         transaction: transaction
+        # block: block
       )
     else
       :error ->
