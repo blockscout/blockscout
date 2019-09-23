@@ -42,7 +42,7 @@ export async function makeContractCall (call, store) {
   } catch (err) {
     console.log(err)
     clearTimeout(timeout)
-    openErrorModal('Error', err.message)
+    openErrorModal('Error', 'Your MetaMask transaction was not processed, please try again in a few minutes.')
   }
 }
 
