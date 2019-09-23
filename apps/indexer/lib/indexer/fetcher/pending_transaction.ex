@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.PendingTransaction do
 
   alias Ecto.Changeset
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.Accounts
   alias Indexer.Fetcher.PendingTransaction
   alias Indexer.Transform.Addresses
 
@@ -148,7 +149,8 @@ defmodule Indexer.Fetcher.PendingTransaction do
            broadcast: :realtime,
            transactions: %{params: transactions_params, on_conflict: :nothing}
          }) do
-      {:ok, _} ->
+      {:ok, imported} ->
+        Accounts.drop(imported[:addresses])
         :ok
 
       {:error, [%Changeset{} | _] = changesets} ->

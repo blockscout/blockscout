@@ -12,8 +12,7 @@
             <%= if block_type(@block) == "Block" do %>
               <%= gettext("Block Height: %{height}", height: @block.number) %> <%= if @block.number == 0, do: "- " <> gettext("Genesis Block")%>
             <% else %>
-              <%= gettext("%{block_type} Height:", block_type: block_type(@block)) %>
-              <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
+              <%= gettext("%{block_type} Height:", block_type: block_type(@block)) %> <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
             <% end %>
           </h3>
           <div class="d-flex justify-content-start text-muted block-details-row">
