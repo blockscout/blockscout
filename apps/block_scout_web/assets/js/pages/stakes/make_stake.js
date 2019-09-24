@@ -2,13 +2,15 @@ import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
 import { openModal, openWarningModal, lockModal } from '../../lib/modals'
 import { setupValidation } from '../../lib/validation'
-import { makeContractCall, setupChart } from './utils'
+import { makeContractCall, setupChart, isSupportedNetwork } from './utils'
 
 export function openMakeStakeModal (event, store) {
   if (!store.getState().account) {
     openWarningModal('Unauthorized', 'Please login with MetaMask')
     return
   }
+
+  if (!isSupportedNetwork(store)) return
 
   const address = $(event.target).closest('[data-address]').data('address') || store.getState().account
 
