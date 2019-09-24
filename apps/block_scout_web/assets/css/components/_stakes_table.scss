@@ -69,6 +69,10 @@ $stakes-link-color: $primary !default;
   width: 100%;
 }
 
+.stakes-table-body {
+  min-height: 311px;
+}
+
 .stakes-table-th {
   background-color: $stakes-table-th-background;
   color: #a3a9b5;
