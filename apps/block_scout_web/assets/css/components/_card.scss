@@ -118,6 +118,7 @@ $card-tab-icon-color-active: #fff !default;
   padding: 0px $card-horizontal-padding;
   display: flex;
   justify-content: flex-end;
+  min-height: 54px;
 }
 
 .card-footer-paging {
@@ -125,6 +126,7 @@ $card-tab-icon-color-active: #fff !default;
   padding-bottom: 25px;
   display: flex;
   justify-content: flex-end;
+  min-height: 80px;
 }
 
 .card-title-controls {
