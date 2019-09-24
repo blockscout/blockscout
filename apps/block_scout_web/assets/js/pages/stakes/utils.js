@@ -1,7 +1,7 @@
 import $ from 'jquery'
 import Chart from 'chart.js'
 import { refreshPage } from '../../lib/async_listing_load'
-import { openErrorModal, openSuccessModal } from '../../lib/modals'
+import { openErrorModal, openSuccessModal, openWarningModal } from '../../lib/modals'
 
 export async function makeContractCall (call, store) {
   let gas, timeout
@@ -81,4 +81,14 @@ export function setupChart ($canvas, self, total) {
       }
     }
   })
+}
+
+export function isSupportedNetwork (store) {
+  if (store.getState().network.authorized) {
+    return true
+  }
+
+  openWarningModal('Unauthorized', 'Connect to the xDai Chain for staking.<br /> <a href="https://docs.xdaichain.com" target="_blank">Instructions</a>')
+
+  return false
 }

@@ -1,8 +1,10 @@
 import $ from 'jquery'
 import { openModal, lockModal } from '../../lib/modals'
-import { makeContractCall, setupChart } from './utils'
+import { makeContractCall, setupChart, isSupportedNetwork } from './utils'
 
 export function openClaimWithdrawalModal (event, store) {
+  if (!isSupportedNetwork(store)) return
+
   const address = $(event.target).closest('[data-address]').data('address')
 
   store.getState().channel
