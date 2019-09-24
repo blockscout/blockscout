@@ -82,6 +82,7 @@ defmodule Explorer.SmartContract.Verifier do
     end
   end
 
+  # 730000000000000000000000000000000000000000 - default library address that returned by the compiler
   defp try_library_verification(
          "730000000000000000000000000000000000000000" <> bytecode,
          <<_address::binary-size(42)>> <> bytecode
