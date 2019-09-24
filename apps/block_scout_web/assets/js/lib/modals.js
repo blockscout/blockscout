@@ -72,7 +72,7 @@ export function openErrorModal (title, text) {
 export function openWarningModal (title, text) {
   const $modal = $('#warningStatusModal')
   $modal.find('.modal-status-title').text(title)
-  $modal.find('.modal-status-text').text(text)
+  $modal.find('.modal-status-text').html(text)
   openModal($modal)
 }
 
