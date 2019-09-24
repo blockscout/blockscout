@@ -27,6 +27,7 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.Chain.Supply.ProofOfAuthority
   alias Explorer.Counters.AddressesWithBalanceCounter
+  alias Explorer.Counters.AddressesCounter
 
   doctest Explorer.Chain
 
@@ -47,6 +48,22 @@ defmodule Explorer.ChainTest do
 
       assert is_integer(addresses_with_balance)
       assert addresses_with_balance == 2
+    end
+  end
+
+  describe "count_addresses_from_cache/0" do
+    test "returns the number of all addresses" do
+      insert(:address, fetched_coin_balance: 0)
+      insert(:address, fetched_coin_balance: 1)
+      insert(:address, fetched_coin_balance: 2)
+
+      start_supervised!(AddressesCounter)
+      AddressesCounter.consolidate()
+
+      addresses_with_balance = Chain.count_addresses_from_cache()
+
+      assert is_integer(addresses_with_balance)
+      assert addresses_with_balance == 3
     end
   end
 
