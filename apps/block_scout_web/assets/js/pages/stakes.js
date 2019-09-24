@@ -15,11 +15,13 @@ import { openMakeStakeModal } from './stakes/make_stake'
 import { openMoveStakeModal } from './stakes/move_stake'
 import { openWithdrawStakeModal } from './stakes/withdraw_stake'
 import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
+import { openWarningModal } from '../lib/modals'
 
 export const initialState = {
   channel: null,
   web3: null,
   account: null,
+  network: null,
   stakingContract: null,
   blockRewardContract: null,
   tokenDecimals: 0,
@@ -29,6 +31,9 @@ export const initialState = {
   lastBlockNumber: 0,
   stakingAllowed: false
 }
+
+// 100 - id of xDai network, 101 - id of xDai test network
+export const allowedNetworkIds = [100, 101]
 
 export function reducer (state = initialState, action) {
   switch (action.type) {
@@ -47,6 +52,14 @@ export function reducer (state = initialState, action) {
         account: action.account,
         additionalParams: Object.assign({}, state.additionalParams, {
           account: action.account
+        })
+      })
+    }
+    case 'NETWORK_UPDATED': {
+      return Object.assign({}, state, {
+        network: action.network,
+        additionalParams: Object.assign({}, state.additionalParams, {
+          network: action.network
         })
       })
     }
@@ -173,6 +186,11 @@ function initializeWeb3 (store) {
     store.dispatch({ type: 'WEB3_DETECTED', web3 })
 
     setInterval(async function () {
+      const networkId = await web3.eth.net.getId()
+      if (!store.getState().network || (networkId !== store.getState().network.id)) {
+        setNetwork(networkId, store)
+      }
+
       const accounts = await web3.eth.getAccounts()
       const account = accounts[0] ? accounts[0].toLowerCase() : null
 
@@ -188,6 +206,22 @@ function initializeWeb3 (store) {
 function setAccount (account, store) {
   store.dispatch({ type: 'ACCOUNT_UPDATED', account })
   store.getState().channel.push('set_account', account)
+  refreshPage(store)
+}
+
+function setNetwork (networkId, store) {
+  let network = {
+    id: networkId,
+    authorized: false
+  }
+
+  if (allowedNetworkIds.includes(networkId)) {
+    network.authorized = true
+  } else {
+    openWarningModal('Unauthorized', 'Connect to the xDai Chain for staking.<br /> <a href="https://docs.xdaichain.com" target="_blank">Instructions</a>')
+  }
+
+  store.dispatch({ type: 'NETWORK_UPDATED', network })
   refreshPage(store)
 }
 
