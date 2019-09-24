@@ -19,6 +19,7 @@
 - [#2696](https://github.com/poanetwork/blockscout/pull/2696) - do not update fetched_coin_balance with nil
 - [#2693](https://github.com/poanetwork/blockscout/pull/2693) - remove non consensus internal transactions
 - [#2691](https://github.com/poanetwork/blockscout/pull/2691) - fix exchange rate websocket update for Rootstock
+- [#2688](https://github.com/poanetwork/blockscout/pull/2688) - fix try it out section
 - [#2687](https://github.com/poanetwork/blockscout/pull/2687) - remove non-consensus token transfers, logs when inserting new consensus blocks
 - [#2684](https://github.com/poanetwork/blockscout/pull/2684) - do not filter pending logs
 - [#2682](https://github.com/poanetwork/blockscout/pull/2682) - Use Task.start instead of Task.async in caches
