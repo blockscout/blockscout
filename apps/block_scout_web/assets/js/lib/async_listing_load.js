@@ -185,6 +185,7 @@ export const elements = {
         return $el.hide()
       }
 
+      $el.show()
       if (state.requestError || !state.nextPagePath || state.loading) {
         return $el.attr('disabled', 'disabled')
       }
@@ -199,6 +200,7 @@ export const elements = {
         return $el.hide()
       }
 
+      $el.show()
       if (state.requestError || !state.prevPagePath || state.loading) {
         return $el.attr('disabled', 'disabled')
       }
@@ -212,12 +214,13 @@ export const elements = {
       if (state.pagesStack.length === 0) {
         return $el.hide()
       }
-      $el.show()
-      $el.attr('disabled', false)
 
       const urlParams = new URLSearchParams(window.location.search)
       const blockParam = urlParams.get('block_type')
       const firstPageHref = window.location.href.split('?')[0]
+
+      $el.show()
+      $el.attr('disabled', false)
 
       if (blockParam !== null) {
         $el.attr('href', firstPageHref + '?block_type=' + blockParam)
@@ -232,6 +235,7 @@ export const elements = {
         return $el.hide()
       }
 
+      $el.show()
       if (state.pagesStack.length === 0) {
         return $el.text('Page 1')
       }
