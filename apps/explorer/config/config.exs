@@ -47,6 +47,11 @@ balances_update_interval =
   end
 
 config :explorer, Explorer.Counters.AddressesWithBalanceCounter,
+  enabled: false,
+  enable_consolidation: true,
+  update_interval_in_seconds: balances_update_interval || 30 * 60
+
+config :explorer, Explorer.Counters.AddressesCounter,
   enabled: true,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
