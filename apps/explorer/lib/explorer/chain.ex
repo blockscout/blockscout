@@ -3163,9 +3163,11 @@ defmodule Explorer.Chain do
   def erc721_token_instance_from_token_id_and_token_address(token_id, token_contract_address) do
     query =
       from(tt in TokenTransfer,
+        left_join: instance in Instance,
+        on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
         where: tt.token_contract_address_hash == ^token_contract_address and tt.token_id == ^token_id,
-        preload: [:instance],
-        limit: 1
+        limit: 1,
+        select: %{tt | instance: instance}
       )
 
     case Repo.one(query) do
