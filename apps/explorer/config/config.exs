@@ -145,6 +145,10 @@ config :explorer, Explorer.Chain.Cache.Accounts,
   ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
+config :explorer, Explorer.Chain.Cache.PendingTransactions,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

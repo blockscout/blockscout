@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2735](https://github.com/poanetwork/blockscout/pull/2735) - Add pending transactions cache
 - [#2717](https://github.com/poanetwork/blockscout/pull/2717) - Improve speed of nonconsensus data removal
 - [#2679](https://github.com/poanetwork/blockscout/pull/2679) - added fixed height for card chain blocks and card chain transactions
 - [#2678](https://github.com/poanetwork/blockscout/pull/2678) - fixed dashboard banner height bug
