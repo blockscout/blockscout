@@ -2,13 +2,15 @@ import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
 import { openModal, openErrorModal, openWarningModal, lockModal } from '../../lib/modals'
 import { setupValidation } from '../../lib/validation'
-import { makeContractCall } from './utils'
+import { makeContractCall, isSupportedNetwork } from './utils'
 
 export function openBecomeCandidateModal (store) {
   if (!store.getState().account) {
     openWarningModal('Unauthorized', 'Please login with MetaMask')
     return
   }
+
+  if (!isSupportedNetwork(store)) return
 
   store.getState().channel
     .push('render_become_candidate')
