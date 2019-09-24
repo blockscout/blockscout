@@ -2,9 +2,11 @@ import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
 import { openModal, lockModal } from '../../lib/modals'
 import { setupValidation } from '../../lib/validation'
-import { makeContractCall, setupChart } from './utils'
+import { makeContractCall, setupChart, isSupportedNetwork } from './utils'
 
 export function openMoveStakeModal (event, store) {
+  if (!isSupportedNetwork(store)) return
+
   const fromAddress = $(event.target).closest('[data-address]').data('address')
 
   store.getState().channel
