@@ -16,14 +16,14 @@
                 </span>
               </p>
               <%= if Decimal.positive?(@delegator.ordered_withdraw) do %>
-                <p class="form-p m-b-0"><%= gettext("Already ordered:") %>
+                <p class="form-p m-b-0"><%= gettext("Already Ordered:") %>
                   <span class="text-dark">
                     <%= format_token_amount(@delegator.ordered_withdraw, @token) %>
                   </span>
                 </p>
               <% end %>
               <%= if Decimal.positive?(@delegator.max_withdraw_allowed) do %>
-                <p class="form-p m-b-0"><%= gettext("Available now:") %>
+                <p class="form-p m-b-0"><%= gettext("Available Now:") %>
                   <span class="text-dark">
                     <%= format_token_amount(@delegator.max_withdraw_allowed, @token) %>
                   </span>
@@ -36,7 +36,7 @@
                 %>
               <% end %>
               <%= if Decimal.positive?(@delegator.max_ordered_withdraw_allowed) or Decimal.positive?(@delegator.ordered_withdraw) do %>
-                <p class="form-p m-b-0"><%= gettext("Available after the current epoch:") %>
+                <p class="form-p m-b-0"><%= gettext("Available after the Current Epoch:") %>
                   <span class="text-dark">
                     <%= format_token_amount(@delegator.max_ordered_withdraw_allowed, @token) %>
                   </span>

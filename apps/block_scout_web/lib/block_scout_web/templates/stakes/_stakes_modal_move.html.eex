@@ -34,7 +34,7 @@
                 </select>
               </div>
               <%= if @delegator_to && Decimal.positive?(@delegator_to.stake_amount) do %>
-                <p class="form-p m-b-0"><%= gettext("Current stake:") %>
+                <p class="form-p m-b-0"><%= gettext("Current Stake:") %>
                   <span class="text-dark">
                     <%= format_token_amount(@delegator_to.stake_amount, @token) %>
                   </span>

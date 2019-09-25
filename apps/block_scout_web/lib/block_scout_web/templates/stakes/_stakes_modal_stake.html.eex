@@ -12,7 +12,7 @@
               <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "delegator-stake", classes: "form-group", input_classes: "form-control n-b-r", attributes: "delegator-stake", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
 
               <%= if @delegator && Decimal.positive?(@delegator.stake_amount) do %>
-                <p class="form-p m-b-0"><%= gettext("Current stake:") %>
+                <p class="form-p m-b-0"><%= gettext("Current Stake:") %>
                   <span class="text-dark">
                     <%= format_token_amount(@delegator.stake_amount, @token) %>
                   </span>

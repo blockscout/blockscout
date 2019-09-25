@@ -20,7 +20,7 @@
               </div>
             </form>
           </div>
-          <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("Withdrawal orders made during an active staking epoch are available to claim once the epoch is complete.") |> raw(), extra_class: "b-b-r-0" %>
+          <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("Withdrawal orders made during an active staking epoch are available to claim after the epoch is complete.") |> raw(), extra_class: "b-b-r-0" %>
         </div>
         <div class="modal-stake-right">
           <%= render BlockScoutWeb.StakesView, "_stakes_progress.html", pool: @pool, token: @token %>
