@@ -794,7 +794,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/block_view.ex:20
 #: lib/block_scout_web/views/wei_helpers.ex:77
-msgid "GgGLD"
+msgid "Gwei"
 msgstr ""
 
 #, elixir-format
