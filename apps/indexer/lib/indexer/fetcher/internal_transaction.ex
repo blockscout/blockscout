@@ -225,6 +225,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number
         })
 
+      {:error, :acquire_transactions, :no_valid_transactions, _changes_so_far} ->
+        # Do not retry to fetch this batch of internal transactions if there is
+        # no valid transactions for their foreign key
+        :ok
+
       {:error, step, reason, _changes_so_far} ->
         Logger.error(
           fn ->

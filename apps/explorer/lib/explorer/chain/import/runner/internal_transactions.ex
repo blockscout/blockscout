@@ -169,9 +169,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         lock: "FOR UPDATE"
       )
 
-    hashes = repo.all(query)
+    transactions = repo.all(query)
 
-    {:ok, hashes}
+    if Enum.all?(transactions, &is_nil(&1.block_hash)) do
+      {:error, :no_valid_transactions}
+    else
+      {:ok, transactions}
+    end
   end
 
   defp update_transactions(repo, transactions, %{
