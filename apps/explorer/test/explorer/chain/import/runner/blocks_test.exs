@@ -7,13 +7,13 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
-  alias Explorer.Chain.{Address, Block, Transaction}
-  alias Explorer.Chain
-  alias Explorer.Repo
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, TokenTransfer}
+  alias Explorer.{Chain, Repo}
 
   describe "run/1" do
     setup do
-      block = insert(:block, consensus: true)
+      miner = insert(:address)
+      block = params_for(:block, consensus: true, miner_hash: miner.hash)
 
       timestamp = DateTime.utc_now()
       options = %{timestamps: %{inserted_at: timestamp, updated_at: timestamp}}
@@ -22,9 +22,11 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     end
 
     test "derive_transaction_forks replaces hash on conflicting (uncle_hash, index)", %{
-      consensus_block: %Block{hash: block_hash, miner_hash: miner_hash, number: block_number} = consensus_block,
+      consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number},
       options: options
     } do
+      consensus_block = insert(:block, %{hash: block_hash, number: block_number})
+
       transaction =
         :transaction
         |> insert()
@@ -81,7 +83,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     end
 
     test "delete_address_current_token_balances deletes rows with matching block number when consensus is true",
-         %{consensus_block: %Block{number: block_number} = block, options: options} do
+         %{consensus_block: %{number: block_number} = block, options: options} do
       %Address.CurrentTokenBalance{address_hash: address_hash, token_contract_address_hash: token_contract_address_hash} =
         insert(:address_current_token_balance, block_number: block_number)
 
@@ -98,7 +100,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     end
 
     test "delete_address_current_token_balances does not delete rows with matching block number when consensus is false",
-         %{consensus_block: %Block{number: block_number} = block, options: options} do
+         %{consensus_block: %{number: block_number} = block, options: options} do
       %Address.CurrentTokenBalance{} = insert(:address_current_token_balance, block_number: block_number)
 
       count = 1
@@ -113,8 +115,80 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       assert count(Address.CurrentTokenBalance) == count
     end
 
+    test "remove_nonconsensus_token_transfers deletes token transfer rows with matching block number when new consensus block is inserted",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      consensus_block = insert(:block, number: block_number, consensus: true)
+
+      transaction = insert(:transaction) |> with_block(consensus_block)
+
+      %TokenTransfer{transaction_hash: transaction_hash, log_index: log_index} =
+        insert(:token_transfer, block_number: block_number, transaction: transaction)
+
+      assert count(TokenTransfer) == 1
+
+      assert {:ok,
+              %{
+                remove_nonconsensus_token_transfers: [
+                  %{transaction_hash: ^transaction_hash, log_index: ^log_index}
+                ]
+              }} = run_block_consensus_change(block, true, options)
+
+      assert count(TokenTransfer) == 0
+    end
+
+    test "remove_nonconsensus_token_transfers does not delete token transfer rows with matching block number when new consensus block wasn't inserted",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      consensus_block = insert(:block, number: block_number, consensus: true)
+
+      transaction = insert(:transaction) |> with_block(consensus_block)
+
+      insert(:token_transfer, block_number: block_number, transaction: transaction)
+
+      count = 1
+
+      assert count(TokenTransfer) == count
+
+      assert {:ok, %{remove_nonconsensus_token_transfers: []}} = run_block_consensus_change(block, false, options)
+
+      assert count(TokenTransfer) == count
+    end
+
+    test "remove_nonconsensus_logs deletes nonconsensus logs", %{
+      consensus_block: %{number: block_number} = block,
+      options: options
+    } do
+      old_block = insert(:block, number: block_number, consensus: true)
+      forked_transaction = :transaction |> insert() |> with_block(old_block)
+      %Log{transaction_hash: hash, index: index} = insert(:log, transaction: forked_transaction)
+
+      assert count(Log) == 1
+
+      assert {:ok, %{remove_nonconsensus_logs: [%{transaction_hash: ^hash, index: ^index}]}} =
+               run_block_consensus_change(block, true, options)
+
+      assert count(Log) == 0
+    end
+
+    test "remove_nonconsensus_internal_transactions deletes nonconsensus internal transactions", %{
+      consensus_block: %{number: block_number} = block,
+      options: options
+    } do
+      old_block = insert(:block, number: block_number, consensus: true)
+      forked_transaction = :transaction |> insert() |> with_block(old_block)
+
+      %InternalTransaction{index: index, transaction_hash: hash} =
+        insert(:internal_transaction, index: 0, transaction: forked_transaction)
+
+      assert count(InternalTransaction) == 1
+
+      assert {:ok, %{remove_nonconsensus_internal_transactions: [%{transaction_hash: ^hash, index: ^index}]}} =
+               run_block_consensus_change(block, true, options)
+
+      assert count(InternalTransaction) == 0
+    end
+
     test "derive_address_current_token_balances inserts rows if there is an address_token_balance left for the rows deleted by delete_address_current_token_balances",
-         %{consensus_block: %Block{number: block_number} = block, options: options} do
+         %{consensus_block: %{number: block_number} = block, options: options} do
       token = insert(:token)
       token_contract_address_hash = token.contract_address_hash
 
@@ -172,7 +246,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     end
 
     test "a non-holder reverting to a holder increases the holder_count",
-         %{consensus_block: %Block{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
+         %{consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
       token = insert(:token)
       token_contract_address_hash = token.contract_address_hash
 
@@ -204,7 +278,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     end
 
     test "a holder reverting to a non-holder decreases the holder_count",
-         %{consensus_block: %Block{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
+         %{consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
       token = insert(:token)
       token_contract_address_hash = token.contract_address_hash
 
@@ -236,7 +310,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     end
 
     test "a non-holder becoming and a holder becoming while a holder becomes a non-holder cancels out and holder_count does not change",
-         %{consensus_block: %Block{number: block_number} = block, options: options} do
+         %{consensus_block: %{number: block_number} = block, options: options} do
       token = insert(:token)
       token_contract_address_hash = token.contract_address_hash
 
@@ -262,7 +336,8 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
     # Regression test for https://github.com/poanetwork/blockscout/issues/1644
     test "discards neighbouring blocks if they aren't related to the current one because of reorg and/or import timeout",
-         %{consensus_block: %Block{number: block_number, hash: block_hash, miner_hash: miner_hash}, options: options} do
+         %{consensus_block: %{number: block_number, hash: block_hash, miner_hash: miner_hash}, options: options} do
+      insert(:block, %{number: block_number, hash: block_hash})
       old_block1 = params_for(:block, miner_hash: miner_hash, parent_hash: block_hash, number: block_number + 1)
 
       new_block1 = params_for(:block, miner_hash: miner_hash, parent_hash: block_hash, number: block_number + 1)
@@ -286,7 +361,8 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
     # Regression test for https://github.com/poanetwork/blockscout/issues/1911
     test "forces block refetch if transaction is re-collated in a different block",
-         %{consensus_block: %Block{number: block_number, hash: block_hash, miner_hash: miner_hash}, options: options} do
+         %{consensus_block: %{number: block_number, hash: block_hash, miner_hash: miner_hash}, options: options} do
+      insert(:block, %{number: block_number, hash: block_hash})
       new_block1 = params_for(:block, miner_hash: miner_hash, parent_hash: block_hash, number: block_number + 1)
       new_block2 = params_for(:block, miner_hash: miner_hash, parent_hash: new_block1.hash, number: block_number + 2)
 
@@ -365,7 +441,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   end
 
   defp run_block_consensus_change(
-         %Block{hash: block_hash, miner_hash: miner_hash, number: block_number},
+         %{hash: block_hash, miner_hash: miner_hash, number: block_number},
          consensus,
          options
        ) do
