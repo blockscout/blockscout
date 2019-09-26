@@ -52,32 +52,37 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     |> Multi.run(:acquire_transactions, fn repo, _ ->
       acquire_transactions(repo, changes_list)
     end)
-    |> Multi.run(:internal_transactions, fn repo, _ ->
-      insert(repo, changes_list, insert_options)
+    |> Multi.run(:internal_transactions, fn repo, %{acquire_transactions: transactions} ->
+      insert(repo, changes_list, transactions, insert_options)
     end)
-    |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo, %{acquire_transactions: transaction_hashes} ->
-      update_transactions(repo, transaction_hashes, update_transactions_options)
+    |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo, %{acquire_transactions: transactions} ->
+      update_transactions(repo, transactions, update_transactions_options)
     end)
   end
 
   @impl Runner
   def timeout, do: @timeout
 
-  @spec insert(Repo.t(), [map], %{
+  @spec insert(Repo.t(), [map], [Transaction.t()], %{
           optional(:on_conflict) => Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) ::
           {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]}
           | {:error, [Changeset.t()]}
-  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
+  defp insert(repo, changes_list, transactions, %{timeout: timeout, timestamps: timestamps} = options)
        when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+
+    transactions_map = Map.new(transactions, &{&1.hash, &1})
 
     # Enforce InternalTransaction ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
 
-    final_changes_list = reject_pending_transactions(ordered_changes_list, repo)
+    final_changes_list =
+      ordered_changes_list
+      |> reject_pending_transactions(transactions_map)
+      |> add_block_number(transactions_map)
 
     {:ok, internal_transactions} =
       Import.insert_changes_list(
@@ -158,27 +163,34 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       from(
         t in Transaction,
         where: t.hash in ^transaction_hashes,
-        where: not is_nil(t.block_hash),
-        select: t.hash,
+        select: map(t, [:hash, :block_hash, :block_number]),
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: t.hash,
         lock: "FOR UPDATE"
       )
 
-    hashes = repo.all(query)
+    transactions = repo.all(query)
 
-    {:ok, hashes}
+    if Enum.all?(transactions, &is_nil(&1.block_hash)) do
+      {:error, :no_valid_transactions}
+    else
+      {:ok, transactions}
+    end
   end
 
-  defp update_transactions(repo, transaction_hashes, %{
+  defp update_transactions(repo, transactions, %{
          timeout: timeout,
          timestamps: timestamps
        })
-       when is_list(transaction_hashes) do
+       when is_list(transactions) do
+    transaction_hashes = Enum.map(transactions, & &1.hash)
+
     update_query =
       from(
         t in Transaction,
         where: t.hash in ^transaction_hashes,
+        # do not try to update pending transactions
+        where: not is_nil(t.block_hash),
         # ShareLocks order already enforced by `acquire_transactions` (see docs: sharelocks.md)
         update: [
           set: [
@@ -214,22 +226,23 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
-  defp reject_pending_transactions(ordered_changes_list, repo) do
-    transaction_hashes =
-      ordered_changes_list
-      |> Enum.map(& &1.transaction_hash)
-      |> Enum.dedup()
+  defp reject_pending_transactions(ordered_changes_list, transactions_map) do
+    Enum.reject(ordered_changes_list, fn %{transaction_hash: hash} ->
+      transactions_map
+      |> Map.fetch!(hash)
+      |> Map.get(:block_hash)
+      |> is_nil()
+    end)
+  end
 
-    query =
-      from(t in Transaction,
-        where: t.hash in ^transaction_hashes,
-        where: is_nil(t.block_hash),
-        select: t.hash
-      )
+  defp add_block_number(ordered_changes_list, transactions_map) do
+    Enum.map(ordered_changes_list, fn %{transaction_hash: hash} = internal_transaction ->
+      block_number =
+        transactions_map
+        |> Map.fetch!(hash)
+        |> Map.get(:block_number)
 
-    pending_transactions = repo.all(query)
-
-    ordered_changes_list
-    |> Enum.reject(fn %{transaction_hash: hash} -> Enum.member?(pending_transactions, hash) end)
+      Map.put(internal_transaction, :block_number, block_number)
+    end)
   end
 end
