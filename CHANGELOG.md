@@ -11,6 +11,7 @@
 - [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
 
 ### Fixes
+- [#2737](https://github.com/poanetwork/blockscout/pull/2737) - switched hardcoded subnetwork value to elixir expression for mobile menu
 - [#2736](https://github.com/poanetwork/blockscout/pull/2736) - do not update cache if no blocks were inserted
 - [#2731](https://github.com/poanetwork/blockscout/pull/2731) - fix library verification
 - [#2718](https://github.com/poanetwork/blockscout/pull/2718) - Include all addresses taking part in transactions in wallets' addresses counter
@@ -32,7 +33,6 @@
 ### Chore
 - [#2724](https://github.com/poanetwork/blockscout/pull/2724) - fix ci by commenting a line in hackney library
 - [#2708](https://github.com/poanetwork/blockscout/pull/2708) - add log index to logs view
-
 - [#2723](https://github.com/poanetwork/blockscout/pull/2723) - get rid of ex_json_schema warnings
 
 
