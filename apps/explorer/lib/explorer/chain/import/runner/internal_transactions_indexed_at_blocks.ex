@@ -65,8 +65,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsIndexedAtBlocks do
         lock: "FOR UPDATE"
       )
 
-    block_count = Enum.count(block_numbers)
-
     try do
       {_, result} =
         repo.update_all(
