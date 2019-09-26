@@ -70,7 +70,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsIndexedAtBlocks do
     try do
       {^block_count, result} =
         repo.update_all(
-          from(b in Block, join: s in subquery(query), on: b.hash == s.hash),
+          from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.hash),
           [set: [internal_transactions_indexed_at: timestamps.updated_at]],
           timeout: timeout
         )
