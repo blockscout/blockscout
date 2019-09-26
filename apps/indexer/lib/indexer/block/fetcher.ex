@@ -184,6 +184,8 @@ defmodule Indexer.Block.Fetcher do
     end
   end
 
+  defp update_block_cache([]), do: :ok
+
   defp update_block_cache(blocks) when is_list(blocks) do
     {min_block, max_block} = Enum.min_max_by(blocks, & &1.number)
 
