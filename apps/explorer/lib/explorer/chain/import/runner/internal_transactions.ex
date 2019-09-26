@@ -47,12 +47,16 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
     update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
+    |> Multi.run(:acquire_transactions, fn repo, _ ->
+      acquire_transactions(repo, changes_list)
+    end)
     |> Multi.run(:internal_transactions, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
-    |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo, _ ->
-      update_transactions(repo, changes_list, update_transactions_options)
+    |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo, %{acquire_transactions: transaction_hashes} ->
+      update_transactions(repo, transaction_hashes, update_transactions_options)
     end)
   end
 
@@ -70,7 +74,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
        when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # order so that row ShareLocks are grabbed in a consistent order
+    # Enforce InternalTransaction ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
 
     final_changes_list = reject_pending_transactions(ordered_changes_list, repo)
@@ -144,21 +148,38 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     )
   end
 
-  defp update_transactions(repo, internal_transactions, %{
-         timeout: timeout,
-         timestamps: timestamps
-       })
-       when is_list(internal_transactions) do
-    ordered_transaction_hashes =
+  defp acquire_transactions(repo, internal_transactions) do
+    transaction_hashes =
       internal_transactions
       |> MapSet.new(& &1.transaction_hash)
-      |> Enum.sort()
+      |> MapSet.to_list()
 
     query =
       from(
         t in Transaction,
-        where: t.hash in ^ordered_transaction_hashes,
+        where: t.hash in ^transaction_hashes,
         where: not is_nil(t.block_hash),
+        select: t.hash,
+        # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+        order_by: t.hash,
+        lock: "FOR UPDATE"
+      )
+
+    hashes = repo.all(query)
+
+    {:ok, hashes}
+  end
+
+  defp update_transactions(repo, transaction_hashes, %{
+         timeout: timeout,
+         timestamps: timestamps
+       })
+       when is_list(transaction_hashes) do
+    update_query =
+      from(
+        t in Transaction,
+        where: t.hash in ^transaction_hashes,
+        # ShareLocks order already enforced by `acquire_transactions` (see docs: sharelocks.md)
         update: [
           set: [
             internal_transactions_indexed_at: ^timestamps.updated_at,
@@ -184,12 +205,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       )
 
     try do
-      {_transaction_count, result} = repo.update_all(query, [], timeout: timeout)
+      {_transaction_count, result} = repo.update_all(update_query, [], timeout: timeout)
 
       {:ok, result}
     rescue
       postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, transaction_hashes: ordered_transaction_hashes}}
+        {:error, %{exception: postgrex_error, transaction_hashes: transaction_hashes}}
     end
   end
 

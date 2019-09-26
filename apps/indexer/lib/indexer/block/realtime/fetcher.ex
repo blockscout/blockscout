@@ -27,6 +27,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Ecto.Changeset
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
+  alias Explorer.Chain.Cache.Accounts
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
@@ -196,6 +197,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
         %{block_rewards: %{errors: block_reward_errors}},
         json_rpc_named_arguments
       )
+
+      Accounts.drop(imported[:addresses])
 
       ok
     end
