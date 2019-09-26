@@ -68,7 +68,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsIndexedAtBlocks do
     block_count = Enum.count(block_numbers)
 
     try do
-      {^block_count, result} =
+      {_, result} =
         repo.update_all(
           from(b in Block, join: s in subquery(query), on: b.hash == s.hash),
           [set: [internal_transactions_indexed_at: timestamps.updated_at]],
