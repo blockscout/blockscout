@@ -92,7 +92,7 @@
           </dl>
           <!-- feeRecipient -->
           <dl class="row">
-            <dt class="col-sm-3 text-muted"><%= gettext "feeRecipient" %> </dt>
+            <dt class="col-sm-3 text-muted"><%= gettext "Fee Recipient" %> </dt>
             <dd class="col-sm-9" data-selector="fee-recipient">
               <%= if @transaction.block.miner_hash do %>
                 <%= link(
