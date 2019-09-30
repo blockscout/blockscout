@@ -185,5 +185,13 @@
         </div>
       <% end %>
     </dd>
+    <dt class="col-md-2">
+      <%= gettext "Log Index" %>
+    </dt>
+    <dd class="col-md-10">
+      <div class="text-dark raw-transaction-log-index">
+        <%= @log.index %>
+      </div>
+    </dd>
   </dl>
 </div>

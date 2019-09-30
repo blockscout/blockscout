@@ -56,6 +56,7 @@ $ export NETWORK=POA
 | `SUPPORTED_CHAINS` | | Array of supported chains that displays in the footer and in the chains dropdown. This var was introduced in this PR [#1900](https://github.com/poanetwork/blockscout/pull/1900) and looks like an array of JSON objects.  | (empty) |  v2.0.0+ | | |
 | `BLOCK_COUNT_CACHE_PERIOD ` | | time to live of cache in seconds. This var was introduced in [#1876](https://github.com/poanetwork/blockscout/pull/1876)  | 600 |  v2.0.0+ | | |
 | `ALLOWED_EVM_VERSIONS ` | | the comma-separated list of allowed EVM versions for contracts verification. This var was introduced in [#1964](https://github.com/poanetwork/blockscout/pull/1964)  | "homestead, tangerineWhistle, spuriousDragon, byzantium, constantinople, petersburg" |  v2.0.0+ | | |
+| `UNCLES_IN_AVERAGE_BLOCK_TIME` | Include or exclude nonconsensus blocks in avg block time calculation. Exclude if `false`. | false | v2.0.1+ | | |
 | `AVERAGE_BLOCK_CACHE_PERIOD` | | Update of average block cache, in seconds | 30 minutes | v2.0.2+ | |
 | `MARKET_HISTORY_CACHE_PERIOD` | | Update of market history cache, in seconds | 6 hours | v2.0.2+ | |
 | `DISABLE_WEBAPP` | | If `true`, endpoints to webapp are hidden (compile-time) | `false` | v2.0.3+ | :white_check_mark: | |
@@ -65,7 +66,7 @@ $ export NETWORK=POA
 | `WEBAPP_URL` | | Link to web application instance, e.g. `http://host/path` | (empty) | v2.0.3+ | | |
 | `API_URL` | | Link to API instance, e.g. `http://host/path` | (empty) | v2.0.3+ | | |
 | `CHAIN_SPEC_PATH` | | Chain specification path (absolute file system path or url) to import block emission reward ranges and genesis account balances from | (empty) | v2.0.4+ | | |
-| `COIN_GECKO_ID` | | CoinGecko coin id required for fetching an exchange rate | poa-network | v2.0.4+ | | |
+| `COIN_GECKO_ID` | | CoinGecko coin id required for fetching an exchange rate | poa-network | v2.0.4+ | | master |
 | `EMISSION_FORMAT` | | Should be set to `POA` if you have block emission indentical to POA Network. This env var is used only if `CHAIN_SPEC_PATH` is set | `STANDARD` | v2.0.4+ | | |
 | `REWARDS_CONTRACT_ADDRESS` | | Emission rewards contract address. This env var is used only if `EMISSION_FORMAT` is set to `POA` | `0xeca443e8e1ab29971a45a9c57a6a9875701698a5` | v2.0.4+ | | |
 | `MAX_SKIPPING_DISTANCE` | | The maximum distance the indexer is allowed to wait for when notified of a number not following the lask known one. | 4 | master |

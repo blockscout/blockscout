@@ -3,17 +3,21 @@ defmodule BlockScoutWeb.Tokens.ReadContractController do
 
   alias Explorer.{Chain, Market}
 
+  import BlockScoutWeb.Tokens.TokenController, only: [fetch_token_counters: 2]
+
   def index(conn, %{"token_id" => address_hash_string}) do
     options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash, options) do
+      {total_token_transfers, total_token_holders} = fetch_token_counters(token, address_hash)
+
       render(
         conn,
         "index.html",
         token: Market.add_price(token),
-        total_token_transfers: token.holder_count || Chain.count_token_transfers_from_token_hash(address_hash),
-        total_token_holders: Chain.count_token_holders_from_token_hash(address_hash)
+        total_token_transfers: total_token_transfers,
+        total_token_holders: total_token_holders
       )
     else
       :error ->

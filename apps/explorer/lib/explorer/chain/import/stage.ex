@@ -47,4 +47,24 @@ defmodule Explorer.Chain.Import.Stage do
       runner.run(Multi.new(), changes_chunk, options)
     end)
   end
+
+  @spec single_multi([Runner.t()], runner_to_changes_list, %{optional(atom()) => term()}) ::
+          {Multi.t(), runner_to_changes_list}
+  def single_multi(runners, runner_to_changes_list, options) do
+    runners
+    |> Enum.reduce({Multi.new(), runner_to_changes_list}, fn runner, {multi, remaining_runner_to_changes_list} ->
+      {changes_list, new_remaining_runner_to_changes_list} = Map.pop(remaining_runner_to_changes_list, runner)
+
+      new_multi =
+        case changes_list do
+          nil ->
+            multi
+
+          _ ->
+            runner.run(multi, changes_list, options)
+        end
+
+      {new_multi, new_remaining_runner_to_changes_list}
+    end)
+  end
 end
