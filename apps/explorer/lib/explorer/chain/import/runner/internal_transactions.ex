@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   """
 
   require Ecto.Query
+  require Logger
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, Transaction}
@@ -226,7 +227,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   # If not using Parity this is not relevant
   defp remove_consensus_of_missing_transactions_blocks(_, [], _, _), do: {:ok, []}
 
-  defp remove_consensus_of_missing_transactions_blocks(repo, _block_hashes, changes_list, inserted) do
+  defp remove_consensus_of_missing_transactions_blocks(repo, block_hashes, changes_list, inserted) do
     inserted_block_numbers = MapSet.new(inserted, & &1.block_number)
 
     missing_transactions_block_numbers =
@@ -239,12 +240,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       from(
         b in Block,
         where: b.number in ^missing_transactions_block_numbers,
+        where: b.hash in ^block_hashes,
         # ShareLocks order already enforced by `internal_transactions_indexed_at_blocks` (see docs: sharelocks.md)
         update: [set: [consensus: false, internal_transactions_indexed_at: nil]]
       )
 
     try do
       {_num, result} = repo.update_all(update_query, [])
+
+      Logger.debug(fn ->
+        [
+          "consensus removed from blocks with numbers: ",
+          inspect(missing_transactions_block_numbers),
+          " because of missing transactions"
+        ]
+      end)
 
       {:ok, result}
     rescue

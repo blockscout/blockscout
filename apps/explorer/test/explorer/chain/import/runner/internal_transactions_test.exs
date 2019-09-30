@@ -53,7 +53,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       inserted = insert(:transaction) |> with_block(full_block)
 
       assert full_block.hash == inserted.block_hash
-      assert full_block.hash == inserted.block_hash
 
       index = 0
 
@@ -76,6 +75,35 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert from(i in InternalTransaction, where: i.transaction_hash == ^pending.hash) |> Repo.one() |> is_nil()
 
       assert %{consensus: false} = Repo.get(Block, empty_block.hash)
+
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^inserted.hash) |> Repo.one() |> is_nil() ==
+               false
+
+      assert %{consensus: true} = Repo.get(Block, full_block.hash)
+    end
+
+    test "does not remove consensus when block is empty and no transactions are missing" do
+      empty_block = insert(:block)
+
+      full_block = insert(:block)
+      inserted = insert(:transaction) |> with_block(full_block)
+
+      assert full_block.hash == inserted.block_hash
+
+      index = 0
+
+      transaction_changes =
+        inserted.hash
+        |> make_internal_transaction_changes(index, nil)
+        |> Map.put(:block_number, full_block.number)
+
+      multi =
+        Multi.new()
+        |> Multi.run(:internal_transactions_indexed_at_blocks, fn _, _ -> {:ok, [empty_block.hash, full_block.hash]} end)
+
+      assert {:ok, _} = run_internal_transactions([transaction_changes], multi)
+
+      assert %{consensus: true} = Repo.get(Block, empty_block.hash)
 
       assert from(i in InternalTransaction, where: i.transaction_hash == ^inserted.hash) |> Repo.one() |> is_nil() ==
                false
