@@ -72,21 +72,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
       ) do
     Logger.metadata(fetcher: :block_catchup)
 
-    {:ok, latest_block_number} =
-      case latest_block() do
-        nil ->
-          EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
-
-        number ->
-          {:ok, number}
-      end
-
-    case latest_block_number do
+    case latest_block(json_rpc_named_arguments) do
       # let realtime indexer get the genesis block
       0 ->
         %{first_block_number: 0, missing_block_count: 0, shrunk: false}
 
-      _ ->
+      latest_block_number ->
         # realtime indexer gets the current latest block
         first = latest_block_number - 1
         last = last_block()
@@ -345,12 +336,23 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   end
 
-  defp latest_block do
+  defp latest_block(json_rpc_named_arguments) do
     string_value = Application.get_env(:indexer, :last_block)
 
     case Integer.parse(string_value) do
-      {integer, ""} -> integer
-      _ -> nil
+      {integer, ""} ->
+        integer
+
+      _ ->
+        {:ok, number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+        # leave to realtime indexer the blocks in the skipping window
+        skipping_distance = Application.get_env(:indexer, :max_skipping_distance)
+
+        if number > skipping_distance do
+          number - skipping_distance
+        else
+          0
+        end
     end
   end
 end
