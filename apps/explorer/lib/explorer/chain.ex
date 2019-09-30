@@ -1575,11 +1575,10 @@ defmodule Explorer.Chain do
   @doc """
   Returns a stream of all blocks with unfetched internal transactions.
 
-  Only blocks with consensus and transactions are returned.
+  Only blocks with consensus are returned.
 
       iex> non_consensus = insert(:block, consensus: false)
       iex> unfetched = insert(:block)
-      iex> insert(:transaction) |> with_block(unfetched)
       iex> fetched = insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
       iex> to_be_refetched = insert(:block, refetch_needed: true)
       iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
@@ -1628,8 +1627,6 @@ defmodule Explorer.Chain do
         where: b.consensus,
         where: is_nil(b.internal_transactions_indexed_at),
         where: not b.refetch_needed,
-        # Filter out blocks that have no transactions
-        where: fragment("EXISTS (SELECT 1 FROM transactions AS t WHERE t.block_hash = ?)", b.hash),
         select: ^fields
       )
 
