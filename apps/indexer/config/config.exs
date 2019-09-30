@@ -28,6 +28,12 @@ block_transformer =
       transformer
   end
 
+max_skipping_distance =
+  case Integer.parse(System.get_env("MAX_SKIPPING_DISTANCE", "")) do
+    {num, ""} -> num
+    _ -> 5
+  end
+
 config :indexer,
   block_transformer: block_transformer,
   ecto_repos: [Explorer.Repo],
@@ -36,7 +42,8 @@ config :indexer,
   # bytes
   memory_limit: 42 <<< 30,
   first_block: System.get_env("FIRST_BLOCK") || "0",
-  last_block: System.get_env("LAST_BLOCK") || ""
+  last_block: System.get_env("LAST_BLOCK") || "",
+  max_skipping_distance: max_skipping_distance
 
 config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
 # config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
