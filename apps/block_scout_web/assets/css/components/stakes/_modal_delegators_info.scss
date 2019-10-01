@@ -3,9 +3,7 @@
   min-width: map-get($container-max-widths, "lg");
   width: 100%;
 
-  .container {
-    @include media-breakpoint-down(md) {
-      max-width: map-get($container-max-widths, "lg");
-    }
+  .modal-body {
+    padding: 0 0 25px;
   }
 }
