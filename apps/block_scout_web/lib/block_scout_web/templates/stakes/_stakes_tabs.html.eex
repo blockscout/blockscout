@@ -1,4 +1,4 @@
-<div class="card-tabs">
+<div class="card-tabs js-card-tabs">
     <%=
     link(
         gettext("Validators"),
