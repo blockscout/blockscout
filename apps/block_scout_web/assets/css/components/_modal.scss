@@ -102,14 +102,3 @@
     }
   }
 }
-
-@media (min-width: 576px) {
-  .modal-dialog {
-    max-width: 530px !important;
-  }
-}
-
-.modal-table {
-  width: calc(100% + #{$modal-horizontal-padding} * 2);
-  margin: 0 -#{$modal-horizontal-padding} 0;
-}
