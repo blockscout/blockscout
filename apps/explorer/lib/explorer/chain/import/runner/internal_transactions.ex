@@ -110,6 +110,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           error: fragment("EXCLUDED.error"),
           from_address_hash: fragment("EXCLUDED.from_address_hash"),
           gas: fragment("EXCLUDED.gas"),
+          gas_currency: fragment("EXCLUDED.gas_currency"),
+          gas_fee_recipient: fragment("EXCLUDED.gas_fee_recipient"),
           gas_used: fragment("EXCLUDED.gas_used"),
           # Don't update `index` as it is part of the composite primary key and used for the conflict target
           init: fragment("EXCLUDED.init"),
@@ -128,13 +130,15 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
       where:
         fragment(
-          "(EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_currency, EXCLUDED.gas_fee_recipient, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           internal_transaction.call_type,
           internal_transaction.created_contract_address_hash,
           internal_transaction.created_contract_code,
           internal_transaction.error,
           internal_transaction.from_address_hash,
           internal_transaction.gas,
+          internal_transaction.gas_currency,
+          internal_transaction.gas_fee_recipient,
           internal_transaction.gas_used,
           internal_transaction.init,
           internal_transaction.input,

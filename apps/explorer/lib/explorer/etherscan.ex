@@ -257,6 +257,8 @@ defmodule Explorer.Etherscan do
     from_address_hash
     gas
     gas_price
+    gas_currency
+    gas_fee_recipient
     gas_used
     hash
     index
@@ -332,6 +334,8 @@ defmodule Explorer.Etherscan do
             transaction_index: t.index,
             transaction_gas: t.gas,
             transaction_gas_price: t.gas_price,
+            transaction_gas_currency: t.gas_currency,
+            transaction_gas_fee_recipient: t.gas_fee_recipient,
             transaction_gas_used: t.gas_used,
             transaction_cumulative_gas_used: t.cumulative_gas_used,
             transaction_input: t.input,

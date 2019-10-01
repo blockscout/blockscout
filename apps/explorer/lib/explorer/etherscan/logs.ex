@@ -92,6 +92,8 @@ defmodule Explorer.Etherscan.Logs do
         select:
           merge(map(log, ^@log_fields), %{
             gas_price: transaction.gas_price,
+            gas_currency: transaction.gas_currency,
+            gas_fee_recipient: transaction.gas_fee_recipient,
             gas_used: transaction.gas_used,
             transaction_index: transaction.index,
             block_number: transaction.block_number
@@ -109,7 +111,7 @@ defmodule Explorer.Etherscan.Logs do
             transaction.from_address_hash == ^address_hash or
             transaction.created_contract_address_hash == ^address_hash,
         select: map(log, ^@log_fields),
-        select_merge: map(transaction, [:gas_price, :gas_used, :block_number]),
+        select_merge: map(transaction, [:gas_price, :gas_currency, :gas_fee_recipient, :gas_used, :block_number]),
         select_merge: %{
           transaction_index: transaction.index
         },
@@ -163,6 +165,8 @@ defmodule Explorer.Etherscan.Logs do
         select: %{
           transaction_hash: transaction.hash,
           gas_price: transaction.gas_price,
+          gas_currency: transaction.gas_currency,
+          gas_fee_recipient: transaction.gas_fee_recipient,
           gas_used: transaction.gas_used,
           transaction_index: transaction.index,
           block_hash: block.hash,

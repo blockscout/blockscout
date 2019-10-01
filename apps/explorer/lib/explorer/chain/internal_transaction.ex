@@ -15,6 +15,8 @@ defmodule Explorer.Chain.InternalTransaction do
    * `from_address_hash` - hash of the source of the `value`
    * `gas` - the amount of gas allowed
    * `gas_used` - the amount of gas used.  `nil` when a call errors.
+   * `gas_currency` -
+   * `gas_fee_recipient` -
    * `index` - the index of this internal transaction inside the `transaction`
    * `init` - the constructor arguments for creating `created_contract_code` when `type` is `:create`.
    * `input` - input bytes to the call
@@ -40,6 +42,8 @@ defmodule Explorer.Chain.InternalTransaction do
           from_address_hash: Hash.Address.t(),
           gas: Gas.t() | nil,
           gas_used: Gas.t() | nil,
+          gas_currency: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+          gas_fee_recipient: %Ecto.Association.NotLoaded{} | Address.t() | nil,
           index: non_neg_integer(),
           init: Data.t() | nil,
           input: Data.t() | nil,
@@ -101,6 +105,22 @@ defmodule Explorer.Chain.InternalTransaction do
       primary_key: true,
       references: :hash,
       type: Hash.Full
+    )
+
+    belongs_to(
+      :gas_currency,
+      Address,
+      foreign_key: :gas_currency_hash,
+      references: :hash,
+      type: Hash.Address
+    )
+
+    belongs_to(
+      :gas_fee_recipient,
+      Address,
+      foreign_key: :gas_fee_recipient_hash,
+      references: :hash,
+      type: Hash.Address
     )
   end
 
@@ -371,7 +391,7 @@ defmodule Explorer.Chain.InternalTransaction do
     type_changeset(changeset, attrs, type)
   end
 
-  @call_optional_fields ~w(error gas_used output block_number transaction_index)a
+  @call_optional_fields ~w(error gas_used output block_number transaction_index gas_currency gas_fee_recipient)a
   @call_required_fields ~w(call_type from_address_hash gas index input to_address_hash trace_address transaction_hash value)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
@@ -388,7 +408,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> unique_constraint(:index)
   end
 
-  @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number transaction_index)a
+  @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number transaction_index gas_currency gas_fee_recipient)a
   @create_required_fields ~w(from_address_hash gas index init trace_address transaction_hash value)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
