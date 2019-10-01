@@ -14,22 +14,24 @@
       </div>
     </div>
   </div>
-  <div class="stakes-progress-info">
-    <h2 class="stakes-progress-info-title"><%= gettext("Pool") %></h2>
-    <p class="stakes-progress-info-value stakes-progress-info-link js-validator-info" data-address="<%= to_string(@pool.staking_address_hash) %>">
-      <%= BlockScoutWeb.AddressView.trimmed_hash(@pool.staking_address_hash) %>
-    </p>
-  </div>
-  <div class="stakes-progress-info">
-    <h2 class="stakes-progress-info-title"><%= gettext("Stakes Ratio") %></h2>
-    <p class="stakes-progress-info-value">
-      <%= @pool.staked_ratio %>%
-    </p>
-  </div>
-  <div class="stakes-progress-info">
-    <h2 class="stakes-progress-info-title"><%= gettext("Delegators") %></h2>
-    <p class="stakes-progress-info-value stakes-progress-info-link js-delegators-list" data-address="<%= to_string(@pool.staking_address_hash) %>">
-      <%= @pool.delegators_count %>
-    </p>
+  <div class="stakes-progress-infos">
+    <div class="stakes-progress-info">
+      <h2 class="stakes-progress-info-title"><%= gettext("Pool") %></h2>
+      <p class="stakes-progress-info-value stakes-progress-info-link js-validator-info" data-address="<%= to_string(@pool.staking_address_hash) %>">
+        <%= BlockScoutWeb.AddressView.trimmed_hash(@pool.staking_address_hash) %>
+      </p>
+    </div>
+    <div class="stakes-progress-info">
+      <h2 class="stakes-progress-info-title"><%= gettext("Stakes Ratio") %></h2>
+      <p class="stakes-progress-info-value">
+        <%= @pool.staked_ratio %>%
+      </p>
+    </div>
+    <div class="stakes-progress-info">
+      <h2 class="stakes-progress-info-title"><%= gettext("Delegators") %></h2>
+      <p class="stakes-progress-info-value stakes-progress-info-link js-delegators-list" data-address="<%= to_string(@pool.staking_address_hash) %>">
+        <%= @pool.delegators_count %>
+      </p>
+    </div>
   </div>
 </div>
