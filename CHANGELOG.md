@@ -11,6 +11,7 @@
 - [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
 
 ### Fixes
+- [#2747](https://github.com/poanetwork/blockscout/pull/2747) - Improved contract method decoded view
 - [#2737](https://github.com/poanetwork/blockscout/pull/2737) - switched hardcoded subnetwork value to elixir expression for mobile menu
 - [#2736](https://github.com/poanetwork/blockscout/pull/2736) - do not update cache if no blocks were inserted
 - [#2731](https://github.com/poanetwork/blockscout/pull/2731) - fix library verification
