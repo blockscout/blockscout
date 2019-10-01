@@ -22,6 +22,9 @@ $(document.body).on('hide.bs.modal', e => {
 })
 
 export function openModal ($modal) {
+  // Hide all tooltips before showing a modal,
+  // since they are sticking on top of modal
+  $('.tooltip').tooltip('hide')
   if ($currentModal) {
     modalLocked = false
 

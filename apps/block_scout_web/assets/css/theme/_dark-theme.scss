@@ -291,7 +291,7 @@ $dark-stakes-banned-background: #3e314c;
 	}
 
 	// table
-	.stakes-table-th {
+	.stakes-table-head, .stakes-table-th {
 		background-color: $dark-light;
 		color: $labels-dark;
 	}
@@ -881,8 +881,8 @@ $dark-stakes-banned-background: #3e314c;
 		}
 	}
 
-	.modal-stake-middle {
-		border-left-color: darken($labels-dark, 30);
+	.modal-stake-left {
+		border-right-color: darken($labels-dark, 30);
 	}
 
 	.stakes-progress-data-progress, .stakes-progress-info-value {

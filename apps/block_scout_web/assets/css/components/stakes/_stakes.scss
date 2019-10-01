@@ -45,7 +45,7 @@ $stakes-stats-item-border-color: #fff !default;
   }
 
   @include media-breakpoint-down(sm) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
   .copy-icon {
@@ -143,6 +143,13 @@ $stakes-stats-item-border-color: #fff !default;
     min-width: 260px;
     width: 100%;
   }
+
+  @include media-breakpoint-down(sm) {
+    min-width: auto;
+    &.stakes-top-stats-item-address {
+      grid-column-end: span 2 !important;
+    }
+  }
 }
 
 .stakes-top-buttons {
@@ -163,6 +170,8 @@ $stakes-stats-item-border-color: #fff !default;
   }
 
   @include media-breakpoint-down(sm) {
+    min-width: auto;
+    grid-column-end: span 2;
     grid-column-start: auto !important;
     grid-row-start: auto !important;
     justify-self: center;

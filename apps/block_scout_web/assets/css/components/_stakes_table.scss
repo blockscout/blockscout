@@ -69,7 +69,22 @@ $stakes-link-color: $primary !default;
   width: 100%;
 }
 
+.stakes-table-head {
+  display: flex;
+  width: 100%;
+  min-width: 930px;
+  padding: 0 15px;
+  background-color: $stakes-table-th-background;
+  color: #a3a9b5;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1.2;
+  text-align: left;
+}
+
 .stakes-table-body {
+  padding: 0 15px;
+  min-width: 930px;
   min-height: 311px;
 }
 
@@ -106,7 +121,6 @@ $stakes-link-color: $primary !default;
 }
 
 .stakes-td {
-  display: flex;
   border-bottom: 1px solid #f5f6fa;
   font-size: 14px;
   font-weight: normal;
@@ -114,7 +128,7 @@ $stakes-link-color: $primary !default;
   line-height: 1.5;
   padding-right: $stakes-table-cell-separation;
   text-align: left;
-  align-items: center;
+  vertical-align: middle;
   white-space: nowrap;
 
   &:last-child {
@@ -131,6 +145,11 @@ $stakes-link-color: $primary !default;
     float: left;
     padding-right: 30px;
   }
+}
+
+.stakes-cell {
+  display: flex;
+  align-items: center;
 }
 
 .stakes-td-order {

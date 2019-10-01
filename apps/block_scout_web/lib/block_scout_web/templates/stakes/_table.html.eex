@@ -1,5 +1,5 @@
-<div class="container stakes-table-container">
-  <div class="row stakes-table-th">
+<div class="stakes-table-container">
+  <div class="stakes-table-head">
     <div class="col-1"></div>
     <div class="col-2">
       <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Pool"), tooltip: gettext("Candidate and Validator Pool Addresses. Current validator pools are specified by a checkmark.") %>
