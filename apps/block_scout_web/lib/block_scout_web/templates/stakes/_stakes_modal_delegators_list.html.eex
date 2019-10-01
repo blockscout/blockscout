@@ -1,4 +1,4 @@
-<div class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal modal-fullwidth-xs fade" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-delegators-info" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -6,8 +6,8 @@
       </div>
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-body">
-        <div class="container modal-table">
-          <div class="row stakes-table-th">
+        <div class="stakes-table-container">
+          <div class="stakes-table-head">
             <div class="col-1"></div>
             <div class="col-4">
               <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Staker's Address"), tooltip: gettext("All pool participant addresses. The top address belongs to the validator.") %>
@@ -25,36 +25,38 @@
               %>
             </div>
           </div>
-          <%= for {delegator, index} <- Enum.with_index(@delegators, 1) do %>
-            <div class="row">
-              <div class="col-1 stakes-td"><div class="stakes-td-order"><%= index %></div></div>
-              <div class="col-4 stakes-td">
-                <div class="stakes-address-container">
-                  <span class="stakes-address">
-                    <%= BlockScoutWeb.AddressView.trimmed_hash(delegator.delegator_address_hash) %>
-                  </span>
-                  <%= if delegator.delegator_address_hash == @pool.staking_address_hash and @pool.is_validator do %>
-                    <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: gettext("This is a validator") %>
-                  <% end %>
-                  <%= if to_string(delegator.delegator_address_hash) == @account do %>
-                    <div
-                        class="me-tooltip"
-                        data-boundary="window"
-                        data-container="body"
-                        data-html="true"
-                        data-placement="top"
-                        data-toggle="tooltip"
-                        title="<%= gettext("It's me!") %>"
-                    >
-                        <%= gettext("ME") %>
-                    </div>
-                  <% end %>
+          <div class="stakes-table-body">
+            <%= for {delegator, index} <- Enum.with_index(@delegators, 1) do %>
+              <div class="row">
+                <div class="col-1 stakes-td stakes-cell"><div class="stakes-td-order"><%= index %></div></div>
+                <div class="col-4 stakes-td stakes-cell">
+                  <div class="stakes-address-container">
+                    <span class="stakes-address">
+                      <%= BlockScoutWeb.AddressView.trimmed_hash(delegator.delegator_address_hash) %>
+                    </span>
+                    <%= if delegator.delegator_address_hash == @pool.staking_address_hash and @pool.is_validator do %>
+                      <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: gettext("This is a validator") %>
+                    <% end %>
+                    <%= if to_string(delegator.delegator_address_hash) == @account do %>
+                      <div
+                          class="me-tooltip"
+                          data-boundary="window"
+                          data-container="body"
+                          data-html="true"
+                          data-placement="top"
+                          data-toggle="tooltip"
+                          title="<%= gettext("It's me!") %>"
+                      >
+                          <%= gettext("ME") %>
+                      </div>
+                    <% end %>
+                  </div>
                 </div>
+                <div class="col-4 stakes-td stakes-cell"><%= format_token_amount(delegator.stake_amount, @token, symbol: false) %></div>
+                <div class="col-3 stakes-td stakes-cell"><%= if delegator.reward_ratio do "#{delegator.reward_ratio}%" else "-" end %></div>
               </div>
-              <div class="col-4 stakes-td"><%= format_token_amount(delegator.stake_amount, @token, symbol: false) %></div>
-              <div class="col-3 stakes-td"><%= if delegator.reward_ratio do "#{delegator.reward_ratio}%" else "-" end %></div>
-            </div>
-          <% end %>
+            <% end %>
+          </div>
         </div>
       </div>
     </div>
