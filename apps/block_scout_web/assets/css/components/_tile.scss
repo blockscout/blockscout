@@ -574,3 +574,7 @@ $cube-quantity: 5;
 .dark-theme-applied .dark-block-loader {
   background-color: #313355;
 }
+
+.table td, .table th {
+   vertical-align: middle;
+}

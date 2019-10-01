@@ -1,7 +1,10 @@
 .transaction-input-text {
   white-space: pre;
   color: black;
-
+  border: none;
+  height: 0px;
+  overflow: hidden;
+  
   pre {
     code {
       color: black;
