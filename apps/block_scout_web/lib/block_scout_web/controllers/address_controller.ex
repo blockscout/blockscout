@@ -44,8 +44,7 @@ defmodule BlockScoutWeb.AddressController do
           index: index,
           exchange_rate: exchange_rate,
           total_supply: total_supply,
-          tx_count: tx_count,
-          validation_count: validation_count(address.hash)
+          tx_count: tx_count
         )
       end)
 
