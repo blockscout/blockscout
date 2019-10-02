@@ -53,6 +53,7 @@ defmodule Explorer.Chain do
     BlockCount,
     BlockNumber,
     Blocks,
+    PendingTransactions,
     TransactionCount,
     Transactions
   }
@@ -2215,6 +2216,24 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
+    if is_nil(paging_options.key) do
+      paging_options.page_size
+      |> PendingTransactions.take_enough()
+      |> case do
+        nil ->
+          pending_transactions = fetch_recent_pending_transactions(paging_options, necessity_by_association)
+          PendingTransactions.update(pending_transactions)
+          pending_transactions
+
+        pending_transactions ->
+          pending_transactions
+      end
+    else
+      fetch_recent_pending_transactions(paging_options, necessity_by_association)
+    end
+  end
+
+  defp fetch_recent_pending_transactions(paging_options, necessity_by_association) do
     Transaction
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
