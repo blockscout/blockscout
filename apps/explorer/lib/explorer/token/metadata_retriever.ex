@@ -120,6 +120,21 @@ defmodule Explorer.Token.MetadataRetriever do
   It will retry to fetch each function in the Smart Contract according to :token_functions_reader_max_retries
   configured in the application env case one of them raised error.
   """
+
+  @spec get_functions_of(String.t()) :: Map.t()
+  def get_functions_of(hashes) when is_list(hashes) do
+    requests =
+      hashes
+      |> Enum.flat_map(fn hash ->
+        @contract_functions
+        |> Enum.map(fn {function, args} ->
+          %{contract_address: hash, function_name: function, args: args}
+        end)
+      end)
+
+    Reader.query_contracts(requests, @contract_abi)
+  end
+
   @spec get_functions_of(Hash.t()) :: Map.t()
   def get_functions_of(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address) do
     address_string = Hash.to_string(address)
@@ -128,7 +143,7 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   @spec get_functions_of(String.t()) :: Map.t()
-  def get_functions_of(contract_address_hash) do
+  def get_functions_of(contract_address_hash) when is_binary(contract_address_hash) do
     contract_address_hash
     |> fetch_functions_from_contract(@contract_functions)
     |> format_contract_functions_result(contract_address_hash)

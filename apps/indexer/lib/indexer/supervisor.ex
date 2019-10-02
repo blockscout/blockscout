@@ -72,8 +72,6 @@ defmodule Indexer.Supervisor do
       subscribe_named_arguments: subscribe_named_arguments
     } = named_arguments
 
-    metadata_updater_inverval = Application.get_env(:indexer, :metadata_updater_seconds_interval)
-
     block_fetcher =
       named_arguments
       |> Map.drop(~w(block_interval blocks_concurrency memory_monitor subscribe_named_arguments realtime_overrides)a)
@@ -120,7 +118,6 @@ defmodule Indexer.Supervisor do
 
         # Out-of-band fetchers
         {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
-        {TokenUpdater.Supervisor, [%{update_interval: metadata_updater_inverval}]},
 
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},
