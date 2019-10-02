@@ -7,7 +7,6 @@ defmodule Indexer.Fetcher.TokenUpdater do
   require Logger
 
   alias Explorer.Chain
-  alias Explorer.Chain.Token
   alias Explorer.Token.MetadataRetriever
   alias Indexer.BufferedTask
 

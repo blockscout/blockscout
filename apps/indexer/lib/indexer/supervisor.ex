@@ -19,7 +19,6 @@ defmodule Indexer.Supervisor do
     StakingPools,
     Token,
     TokenBalance,
-    TokenUpdater,
     UncleBlock
   }
 
