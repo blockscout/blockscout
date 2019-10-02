@@ -3,6 +3,7 @@
 ### Features
 - [#2726](https://github.com/poanetwork/blockscout/pull/2726) - Remove internal_transaction block_number setting from blocks runner
 - [#2717](https://github.com/poanetwork/blockscout/pull/2717) - Improve speed of nonconsensus data removal
+- [#2697](https://github.com/poanetwork/blockscout/pull/2697) - Add temporary indexer to trigger refetching of blocks where internal transactions number doesn't match
 - [#2679](https://github.com/poanetwork/blockscout/pull/2679) - added fixed height for card chain blocks and card chain transactions
 - [#2678](https://github.com/poanetwork/blockscout/pull/2678) - fixed dashboard banner height bug
 - [#2672](https://github.com/poanetwork/blockscout/pull/2672) - added new theme for xUSDT
