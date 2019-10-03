@@ -7,6 +7,8 @@ defmodule Indexer.Fetcher.TokenUpdater do
   require Logger
 
   alias Explorer.Chain
+  alias Explorer.Chain.Hash
+  alias Explorer.Chain.Token
   alias Explorer.Token.MetadataRetriever
   alias Indexer.BufferedTask
 
@@ -41,8 +43,8 @@ defmodule Indexer.Fetcher.TokenUpdater do
   end
 
   @impl BufferedTask
-  def init(initial, _reducer, _) do
-    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes(initial, &[&1 | &2])
+  def init(initial, reducer, _) do
+    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes(initial, reducer)
 
     tokens
   end
@@ -56,33 +58,25 @@ defmodule Indexer.Fetcher.TokenUpdater do
     |> MetadataRetriever.get_functions_of()
     |> case do
       {:ok, params} ->
-        case Chain.import(%{
-               tokens: %{params: params},
-               timeout: :infinity
-             }) do
-          {:ok, _imported} ->
-            :ok
-
-          {:error, step, reason, _changes_so_far} ->
-            Logger.error(
-              fn ->
-                [
-                  "failed to update tokens: ",
-                  inspect(reason)
-                ]
-              end,
-              step: step
-            )
-
-            {:retry, entries}
-        end
-
-      {:error, reason} ->
-        Logger.error(fn -> ["failed to update tokens: ", inspect(reason)] end,
-          error_count: Enum.count(entries)
-        )
-
-        {:retry, entries}
+        update_metadata(params)
     end
+  end
+
+  @doc false
+  def update_metadata(metadata_list) when is_list(metadata_list) do
+    options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
+
+    Enum.each(metadata_list, fn %{contract_address_hash: contract_address_hash} = metadata ->
+      {:ok, hash} = Hash.Address.cast(contract_address_hash)
+
+      case Chain.token_from_address_hash(hash, options) do
+        {:ok, %Token{cataloged: true} = token} ->
+          update_metadata(token, metadata)
+      end
+    end)
+  end
+
+  def update_metadata(%Token{} = token, metadata) do
+    Chain.update_token(%{token | updated_at: DateTime.utc_now()}, metadata)
   end
 end
