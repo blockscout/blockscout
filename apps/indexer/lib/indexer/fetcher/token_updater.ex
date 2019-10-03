@@ -7,8 +7,7 @@ defmodule Indexer.Fetcher.TokenUpdater do
   require Logger
 
   alias Explorer.Chain
-  alias Explorer.Chain.Hash
-  alias Explorer.Chain.Token
+  alias Explorer.Chain.{Hash, Token}
   alias Explorer.Token.MetadataRetriever
   alias Indexer.BufferedTask
 
@@ -59,6 +58,13 @@ defmodule Indexer.Fetcher.TokenUpdater do
     |> case do
       {:ok, params} ->
         update_metadata(params)
+
+      other ->
+        Logger.error(fn -> ["failed to update tokens: ", inspect(other)] end,
+          error_count: Enum.count(entries)
+        )
+
+        {:retry, entries}
     end
   end
 
