@@ -14,6 +14,7 @@
 - [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
 
 ### Fixes
+- [#2746](https://github.com/poanetwork/blockscout/pull/2746) - fixed wrong alignment in logs decoded view
 - [#2745](https://github.com/poanetwork/blockscout/pull/2745) - optimize addresses page
 - [#2742](https://github.com/poanetwork/blockscout/pull/2742) -
 fixed menu hovers in dark mode desktop view
