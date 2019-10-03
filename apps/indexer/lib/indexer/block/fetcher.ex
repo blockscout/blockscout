@@ -70,7 +70,6 @@ defmodule Indexer.Block.Fetcher do
 
   @receipts_batch_size 250
   @receipts_concurrency 10
-  @geth_block_limit 128
 
   @doc false
   def default_receipts_batch_size, do: @receipts_batch_size
@@ -280,8 +279,6 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_internal_transactions(%{transactions: transactions}, EthereumJSONRPC.Geth) do
-    max_block_number = Chain.fetch_max_block_number()
-
     transactions
     |> Enum.flat_map(fn
       %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
@@ -289,9 +286,6 @@ defmodule Indexer.Block.Fetcher do
 
       %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
         []
-    end)
-    |> Enum.filter(fn %{block_number: block_number} ->
-      max_block_number - block_number < @geth_block_limit
     end)
     |> InternalTransaction.async_fetch(10_000)
   end
