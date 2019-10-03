@@ -98,20 +98,21 @@ defmodule Explorer.Token.MetadataRetrieverTest do
         end
       )
 
-      assert [
-               %{
-                 name: "Bancor",
-                 symbol: "BNT",
-                 total_supply: 1_000_000_000_000_000_000,
-                 decimals: 18
-               },
-               %{
-                 name: "Bancor",
-                 symbol: "BNT",
-                 total_supply: 1_000_000_000_000_000_000,
-                 decimals: 18
-               }
-             ] = MetadataRetriever.get_functions_of([token.contract_address_hash, token.contract_address_hash])
+      assert {:ok,
+              [
+                %{
+                  name: "Bancor",
+                  symbol: "BNT",
+                  total_supply: 1_000_000_000_000_000_000,
+                  decimals: 18
+                },
+                %{
+                  name: "Bancor",
+                  symbol: "BNT",
+                  total_supply: 1_000_000_000_000_000_000,
+                  decimals: 18
+                }
+              ]} = MetadataRetriever.get_functions_of([token.contract_address_hash, token.contract_address_hash])
     end
 
     test "returns only the functions that were read without error" do
