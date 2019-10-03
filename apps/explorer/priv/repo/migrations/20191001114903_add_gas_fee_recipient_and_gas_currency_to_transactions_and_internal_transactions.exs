@@ -1,26 +1,31 @@
 defmodule Explorer.Repo.Migrations.AddGasFeeRecipientAndGasCurrencyToTransactions do
   @moduledoc """
-  Use `` to migrate data.
-  ```sh
-  mix ecto.migrate
-  psql -d $DATABASE -a -f priv/repo/migrations/scripts/
-  ```
   """
 
   use Ecto.Migration
 
   def up do
-    # Add nonce
+    # Add gas_currency_hash and gas_fee_recipient_hash
     alter table("transactions") do
-      add(:gas_currency, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: false)
-      add(:gas_fee_recipient, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: false)
+#      add(:gas_currency_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
+#      add(:gas_fee_recipient_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
+      add(:gas_currency_hash, :bytea, null: true)
+      add(:gas_fee_recipient_hash, :bytea, null: true)
+    end
+    alter table("internal_transactions") do
+      add(:gas_currency_hash, :bytea, null: true)
+      add(:gas_fee_recipient_hash, :bytea, null: true)
     end
   end
 
   def down do
     alter table("transactions") do
-      remove(:gas_currency)
-      remove(:gas_fee_recipient)
+      remove(:gas_currency_hash)
+      remove(:gas_fee_recipient_hash)
+    end
+    alter table("internal_transactions") do
+      remove(:gas_currency_hash)
+      remove(:gas_fee_recipient_hash)
     end
   end
 end

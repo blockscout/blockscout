@@ -30,7 +30,7 @@ defmodule Explorer.Chain.Transaction do
 
   @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_used index internal_transactions_indexed_at created_contract_code_indexed_at status
-                     gas_currency gas_fee_recipient to_address_hash)a
+                     gas_currency_hash gas_fee_recipient_hash to_address_hash)a
 
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
@@ -149,8 +149,10 @@ defmodule Explorer.Chain.Transaction do
           from_address_hash: Hash.Address.t(),
           gas: Gas.t(),
           gas_price: wei_per_gas,
-          gas_currency: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-          gas_fee_recipient: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+#          gas_currency: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+          gas_currency_hash: Hash.Address.t() | nil,
+#          gas_fee_recipient: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+          gas_fee_recipient_hash: Hash.Address.t() | nil,
           gas_used: Gas.t() | nil,
           hash: Hash.t(),
           index: transaction_index | nil,
@@ -211,6 +213,9 @@ defmodule Explorer.Chain.Transaction do
     field(:v, :decimal)
     field(:value, Wei)
 
+    field(:gas_currency_hash, Hash.Address)
+    field(:gas_fee_recipient_hash, Hash.Address)
+
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated
     # in a different block. See: https://github.com/poanetwork/blockscout/issues/1911
@@ -228,23 +233,6 @@ defmodule Explorer.Chain.Transaction do
       references: :hash,
       type: Hash.Address
     )
-
-    belongs_to(
-      :gas_currency,
-      Address,
-      foreign_key: :gas_currency_hash,
-      references: :hash,
-      type: Hash.Address
-    )
-
-    belongs_to(
-      :gas_fee_recipient,
-      Address,
-      foreign_key: :gas_fee_recipient_hash,
-      references: :hash,
-      type: Hash.Address
-    )
-
 
     has_many(:internal_transactions, InternalTransaction, foreign_key: :transaction_hash)
     has_many(:logs, Log, foreign_key: :transaction_hash)
@@ -267,6 +255,23 @@ defmodule Explorer.Chain.Transaction do
       references: :hash,
       type: Hash.Address
     )
+
+#    belongs_to(
+#      :gas_currency,
+#      Address,
+#      foreign_key: :gas_currency_hash,
+#      references: :hash,
+#      type: Hash.Address
+#    )
+#
+#    belongs_to(
+#      :gas_fee_recipient,
+#      Address,
+#      foreign_key: :gas_fee_recipient_hash,
+#      references: :hash,
+#      type: Hash.Address
+#    )
+
   end
 
   @doc """

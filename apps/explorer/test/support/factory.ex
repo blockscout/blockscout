@@ -242,8 +242,8 @@ defmodule Explorer.Factory do
       cumulative_gas_used: cumulative_gas_used,
       error: error,
       gas_used: gas_used,
-      gas_currency: gas_currency,
-      gas_fee_recipient: gas_fee_recipient,
+      gas_currency_hash: gas_currency_hash,
+      gas_fee_recipient_hash: gas_fee_recipient_hash,
       index: next_transaction_index,
       internal_transactions_indexed_at: internal_transactions_indexed_at,
       status: status
@@ -301,8 +301,8 @@ defmodule Explorer.Factory do
       call_type: :delegatecall,
       gas: gas,
       gas_used: gas_used,
-      gas_currency: build(:address),
-      gas_fee_recipient: build(:address),
+      gas_currency_hash: build(:address),
+      gas_fee_recipient_hash: build(:address),
       input: %Data{bytes: <<1>>},
       output: %Data{bytes: <<2>>},
       # caller MUST supply `index`
@@ -326,8 +326,8 @@ defmodule Explorer.Factory do
       from_address: build(:address),
       gas: gas,
       gas_used: gas_used,
-      gas_currency: build(:address),
-      gas_fee_recipient: build(:address),
+      gas_currency_hash: build(:address),
+      gas_fee_recipient_hash: build(:address),
       # caller MUST supply `index`
       init: data(:internal_transaction_init),
       trace_address: [],

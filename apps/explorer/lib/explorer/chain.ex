@@ -1649,8 +1649,8 @@ defmodule Explorer.Chain do
             | :from_address_hash
             | :gas
             | :gas_price
-            | :gas_currency
-            | :gas_fee_recipient
+            | :gas_currency_hash
+            | :gas_fee_recipient_hash
             | :hash
             | :index
             | :input
@@ -1685,8 +1685,8 @@ defmodule Explorer.Chain do
             | :from_address_hash
             | :gas
             | :gas_price
-            | :gas_currency
-            | :gas_fee_recipient
+            | :gas_currency_hash
+            | :gas_fee_recipient_hash
             | :hash
             | :index
             | :input
@@ -1722,8 +1722,8 @@ defmodule Explorer.Chain do
             | :from_address_hash
             | :gas
             | :gas_price
-            | :gas_currency
-            | :gas_fee_recipient
+            | :gas_currency_hash
+            | :gas_fee_recipient_hash
             | :hash
             | :index
             | :input
@@ -1756,8 +1756,8 @@ defmodule Explorer.Chain do
             | :from_address_hash
             | :gas
             | :gas_price
-            | :gas_currency
-            | :gas_fee_recipient
+            | :gas_currency_hash
+            | :gas_fee_recipient_hash
             | :hash
             | :index
             | :input

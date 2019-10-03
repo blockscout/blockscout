@@ -42,8 +42,10 @@ defmodule Explorer.Chain.InternalTransaction do
           from_address_hash: Hash.Address.t(),
           gas: Gas.t() | nil,
           gas_used: Gas.t() | nil,
-          gas_currency: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-          gas_fee_recipient: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+#          gas_currency: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+          gas_currency_hash: Hash.t() | nil,
+#          gas_fee_recipient: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+          gas_fee_recipient_hash: Hash.t() | nil,
           index: non_neg_integer(),
           init: Data.t() | nil,
           input: Data.t() | nil,
@@ -73,6 +75,9 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:value, Wei)
     field(:block_number, :integer)
     field(:transaction_index, :integer)
+
+    field(:gas_currency_hash, Hash.Address)
+    field(:gas_fee_recipient_hash, Hash.Address)
 
     timestamps()
 
@@ -107,21 +112,21 @@ defmodule Explorer.Chain.InternalTransaction do
       type: Hash.Full
     )
 
-    belongs_to(
-      :gas_currency,
-      Address,
-      foreign_key: :gas_currency_hash,
-      references: :hash,
-      type: Hash.Address
-    )
-
-    belongs_to(
-      :gas_fee_recipient,
-      Address,
-      foreign_key: :gas_fee_recipient_hash,
-      references: :hash,
-      type: Hash.Address
-    )
+#    belongs_to(
+#      :gas_currency,
+#      Address,
+#      foreign_key: :gas_currency_hash,
+#      references: :hash,
+#      type: Hash.Address
+#    )
+#
+#    belongs_to(
+#      :gas_fee_recipient,
+#      Address,
+#      foreign_key: :gas_fee_recipient_hash,
+#      references: :hash,
+#      type: Hash.Address
+#    )
   end
 
   @doc """
@@ -391,7 +396,7 @@ defmodule Explorer.Chain.InternalTransaction do
     type_changeset(changeset, attrs, type)
   end
 
-  @call_optional_fields ~w(error gas_used output block_number transaction_index gas_currency gas_fee_recipient)a
+  @call_optional_fields ~w(error gas_used output block_number transaction_index gas_currency_hash gas_fee_recipient_hash)a
   @call_required_fields ~w(call_type from_address_hash gas index input to_address_hash trace_address transaction_hash value)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
@@ -408,7 +413,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> unique_constraint(:index)
   end
 
-  @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number transaction_index gas_currency gas_fee_recipient)a
+  @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number transaction_index gas_currency_hash gas_fee_recipient_hash)a
   @create_required_fields ~w(from_address_hash gas index init trace_address transaction_hash value)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
