@@ -134,20 +134,23 @@ defmodule Explorer.Token.MetadataRetriever do
 
     updated_at = DateTime.utc_now()
 
-    requests
-    |> Reader.query_contracts(@contract_abi)
-    |> Enum.chunk_every(4)
-    |> Enum.zip(hashes)
-    |> Enum.map(fn {result, hash} ->
-      formatted_result =
-        ["decimals", "name", "symbol", "totalSupply"]
-        |> Enum.zip(result)
-        |> format_contract_functions_result(hash)
+    fetched_result =
+      requests
+      |> Reader.query_contracts(@contract_abi)
+      |> Enum.chunk_every(4)
+      |> Enum.zip(hashes)
+      |> Enum.map(fn {result, hash} ->
+        formatted_result =
+          ["decimals", "name", "symbol", "totalSupply"]
+          |> Enum.zip(result)
+          |> format_contract_functions_result(hash)
 
-      formatted_result
-      |> Map.put(:contract_address_hash, hash)
-      |> Map.put(:updated_at, updated_at)
-    end)
+        formatted_result
+        |> Map.put(:contract_address_hash, hash)
+        |> Map.put(:updated_at, updated_at)
+      end)
+
+    {:ok, fetched_result}
   end
 
   @spec get_functions_of(Hash.t()) :: Map.t()

@@ -11,7 +11,13 @@ defmodule Indexer.Fetcher.TokenUpdaterTest do
   setup :set_mox_global
 
   test "updates tokens metadata on start" do
-    insert(:token, name: nil, symbol: nil, decimals: 10, cataloged: true)
+    insert(:token,
+      name: nil,
+      symbol: nil,
+      decimals: 10,
+      cataloged: true,
+      updated_at: DateTime.add(DateTime.utc_now(), -:timer.hours(50), :millisecond)
+    )
 
     expect(
       EthereumJSONRPC.Mox,
@@ -49,7 +55,7 @@ defmodule Indexer.Fetcher.TokenUpdaterTest do
       end
     )
 
-    pid = start_supervised!({TokenUpdater, [%{update_interval: 1}, []]})
+    pid = TokenUpdater.Supervisor.Case.start_supervised!(json_rpc_named_arguments: [])
 
     wait_for_results(fn ->
       updated = Repo.one!(from(t in Token, where: t.cataloged == true and not is_nil(t.name), limit: 1))
