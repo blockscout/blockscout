@@ -69,3 +69,4 @@ $ export NETWORK=POA
 | `COIN_GECKO_ID` | | CoinGecko coin id required for fetching an exchange rate | poa-network | v2.0.4+ | | master |
 | `EMISSION_FORMAT` | | Should be set to `POA` if you have block emission indentical to POA Network. This env var is used only if `CHAIN_SPEC_PATH` is set | `STANDARD` | v2.0.4+ | | |
 | `REWARDS_CONTRACT_ADDRESS` | | Emission rewards contract address. This env var is used only if `EMISSION_FORMAT` is set to `POA` | `0xeca443e8e1ab29971a45a9c57a6a9875701698a5` | v2.0.4+ | | |
+| `BLOCKSCOUT_PROTOCOL` | | Url scheme for blockscout | in prod env `https` is used, in dev env `http` is used | master | | |
