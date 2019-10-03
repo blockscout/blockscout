@@ -19,6 +19,7 @@ defmodule Indexer.Supervisor do
     StakingPools,
     Token,
     TokenBalance,
+    TokenUpdater,
     UncleBlock
   }
 
@@ -111,6 +112,8 @@ defmodule Indexer.Supervisor do
         {ContractCode.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {TokenBalance.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
         {StakingPools.Supervisor, [[memory_monitor: memory_monitor]]},
