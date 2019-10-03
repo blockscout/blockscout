@@ -121,7 +121,7 @@ defmodule Explorer.Token.MetadataRetriever do
   configured in the application env case one of them raised error.
   """
 
-  @spec get_functions_of(String.t()) :: Map.t()
+  @spec get_functions_of([String.t()]) :: [Map.t()]
   def get_functions_of(hashes) when is_list(hashes) do
     requests =
       hashes
@@ -132,7 +132,22 @@ defmodule Explorer.Token.MetadataRetriever do
         end)
       end)
 
-    Reader.query_contracts(requests, @contract_abi)
+    updated_at = DateTime.utc_now()
+
+    requests
+    |> Reader.query_contracts(@contract_abi)
+    |> Enum.chunk_every(4)
+    |> Enum.zip(hashes)
+    |> Enum.map(fn {result, hash} ->
+      formatted_result =
+        ["decimals", "name", "symbol", "totalSupply"]
+        |> Enum.zip(result)
+        |> format_contract_functions_result(hash)
+
+      formatted_result
+      |> Map.put(:contract_address_hash, hash)
+      |> Map.put(:updated_at, updated_at)
+    end)
   end
 
   @spec get_functions_of(Hash.t()) :: Map.t()
