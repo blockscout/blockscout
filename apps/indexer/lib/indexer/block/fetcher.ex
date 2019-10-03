@@ -13,7 +13,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-  alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions}
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
 
   alias Indexer.Fetcher.{
@@ -177,6 +177,7 @@ defmodule Indexer.Block.Fetcher do
       update_block_cache(inserted[:blocks])
       update_transactions_cache(inserted[:transactions], inserted[:fork_transactions])
       update_addresses_cache(inserted[:addresses])
+      update_uncles_cache(inserted[:block_second_degree_relations])
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
@@ -203,6 +204,10 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp update_addresses_cache(addresses), do: Accounts.drop(addresses)
+
+  defp update_uncles_cache(updated_relations) do
+    Uncles.update_from_second_degree_relations(updated_relations)
+  end
 
   def import(
         %__MODULE__{broadcast: broadcast, callback_module: callback_module} = state,
