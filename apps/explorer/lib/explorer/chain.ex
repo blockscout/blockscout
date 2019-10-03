@@ -53,8 +53,10 @@ defmodule Explorer.Chain do
     BlockCount,
     BlockNumber,
     Blocks,
+    PendingTransactions,
     TransactionCount,
-    Transactions
+    Transactions,
+    Uncles
   }
 
   alias Explorer.Chain.Import.Runner
@@ -1343,20 +1345,43 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options) || @default_paging_options
     block_type = Keyword.get(options, :block_type, "Block")
 
-    if block_type == "Block" && !paging_options.key do
-      case Blocks.take_enough(paging_options.page_size) do
-        nil ->
-          elements = fetch_blocks(block_type, paging_options, necessity_by_association)
+    cond do
+      block_type == "Block" && !paging_options.key ->
+        block_from_cache(block_type, paging_options, necessity_by_association)
 
-          Blocks.update(elements)
+      block_type == "Uncle" && !paging_options.key ->
+        uncles_from_cache(block_type, paging_options, necessity_by_association)
 
-          elements
+      true ->
+        fetch_blocks(block_type, paging_options, necessity_by_association)
+    end
+  end
 
-        blocks ->
-          blocks
-      end
-    else
-      fetch_blocks(block_type, paging_options, necessity_by_association)
+  defp block_from_cache(block_type, paging_options, necessity_by_association) do
+    case Blocks.take_enough(paging_options.page_size) do
+      nil ->
+        elements = fetch_blocks(block_type, paging_options, necessity_by_association)
+
+        Blocks.update(elements)
+
+        elements
+
+      blocks ->
+        blocks
+    end
+  end
+
+  def uncles_from_cache(block_type, paging_options, necessity_by_association) do
+    case Uncles.take_enough(paging_options.page_size) do
+      nil ->
+        elements = fetch_blocks(block_type, paging_options, necessity_by_association)
+
+        Uncles.update(elements)
+
+        elements
+
+      blocks ->
+        blocks
     end
   end
 
@@ -2215,6 +2240,24 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
+    if is_nil(paging_options.key) do
+      paging_options.page_size
+      |> PendingTransactions.take_enough()
+      |> case do
+        nil ->
+          pending_transactions = fetch_recent_pending_transactions(paging_options, necessity_by_association)
+          PendingTransactions.update(pending_transactions)
+          pending_transactions
+
+        pending_transactions ->
+          pending_transactions
+      end
+    else
+      fetch_recent_pending_transactions(paging_options, necessity_by_association)
+    end
+  end
+
+  defp fetch_recent_pending_transactions(paging_options, necessity_by_association) do
     Transaction
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)

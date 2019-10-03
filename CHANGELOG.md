@@ -1,6 +1,9 @@
 ## Current
 
 ### Features
+- [#2733](https://github.com/poanetwork/blockscout/pull/2733) - Add cache for first page of uncles
+- [#2735](https://github.com/poanetwork/blockscout/pull/2735) - Add pending transactions cache
+- [#2726](https://github.com/poanetwork/blockscout/pull/2726) - Remove internal_transaction block_number setting from blocks runner
 - [#2717](https://github.com/poanetwork/blockscout/pull/2717) - Improve speed of nonconsensus data removal
 - [#2679](https://github.com/poanetwork/blockscout/pull/2679) - added fixed height for card chain blocks and card chain transactions
 - [#2678](https://github.com/poanetwork/blockscout/pull/2678) - fixed dashboard banner height bug
@@ -12,6 +15,9 @@
 
 ### Fixes
 - [#2746](https://github.com/poanetwork/blockscout/pull/2746) - fixed wrong alignment in logs decoded view
+- [#2745](https://github.com/poanetwork/blockscout/pull/2745) - optimize addresses page
+- [#2742](https://github.com/poanetwork/blockscout/pull/2742) -
+fixed menu hovers in dark mode desktop view
 - [#2737](https://github.com/poanetwork/blockscout/pull/2737) - switched hardcoded subnetwork value to elixir expression for mobile menu
 - [#2736](https://github.com/poanetwork/blockscout/pull/2736) - do not update cache if no blocks were inserted
 - [#2731](https://github.com/poanetwork/blockscout/pull/2731) - fix library verification
@@ -30,6 +36,7 @@
 - [#2671](https://github.com/poanetwork/blockscout/pull/2671) - fixed buttons color at smart contract section
 - [#2660](https://github.com/poanetwork/blockscout/pull/2660) - set correct last value for coin balances chart data
 - [#2619](https://github.com/poanetwork/blockscout/pull/2619) - Enforce DB transaction's order to prevent deadlocks
+- [#2738](https://github.com/poanetwork/blockscout/pull/2738) - do not fail block `internal_transactions_indexed_at` field update
 
 ### Chore
 - [#2724](https://github.com/poanetwork/blockscout/pull/2724) - fix ci by commenting a line in hackney library
