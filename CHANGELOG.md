@@ -39,6 +39,7 @@ fixed menu hovers in dark mode desktop view
 - [#2738](https://github.com/poanetwork/blockscout/pull/2738) - do not fail block `internal_transactions_indexed_at` field update
 
 ### Chore
+- [#2749](https://github.com/poanetwork/blockscout/pull/2749) - fix opt 22.1 support
 - [#2724](https://github.com/poanetwork/blockscout/pull/2724) - fix ci by commenting a line in hackney library
 - [#2708](https://github.com/poanetwork/blockscout/pull/2708) - add log index to logs view
 - [#2723](https://github.com/poanetwork/blockscout/pull/2723) - get rid of ex_json_schema warnings
