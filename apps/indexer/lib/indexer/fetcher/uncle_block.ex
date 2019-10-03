@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.UncleBlock do
   alias Ecto.Changeset
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
-  alias Explorer.Chain.Cache.Accounts
+  alias Explorer.Chain.Cache.{Accounts, PendingTransactions}
   alias Explorer.Chain.Hash
   alias Indexer.{Block, BufferedTask, Tracer}
   alias Indexer.Fetcher.UncleBlock
@@ -155,7 +155,7 @@ defmodule Indexer.Fetcher.UncleBlock do
 
   @impl Block.Fetcher
   def import(_, options) when is_map(options) do
-    with {:ok, %{block_second_degree_relations: block_second_degree_relations}} = ok <-
+    with {:ok, %{block_second_degree_relations: block_second_degree_relations} = imported} <-
            options
            |> Map.drop(@ignored_options)
            |> uncle_blocks()
@@ -168,8 +168,10 @@ defmodule Indexer.Fetcher.UncleBlock do
       # * TokenBalance.async_fetch is not called because it uses block numbers from consensus, not uncles
 
       UncleBlock.async_fetch_blocks(block_second_degree_relations)
+      PendingTransactions.update_pending(imported[:transactions])
+      PendingTransactions.update_pending(imported[:fork_transactions])
 
-      ok
+      {:ok, imported}
     end
   end
 
