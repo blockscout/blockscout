@@ -26,7 +26,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     [
       %Token{
         available_supply: to_decimal(market_data["circulating_supply"]),
-        total_supply: to_decimal(market_data["total_supply"]),
+        total_supply: to_decimal(market_data["total_supply"]) || to_decimal(market_data["circulating_supply"]),
         btc_value: btc_value,
         id: json_data["id"],
         last_updated: last_updated,
@@ -44,15 +44,41 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
   @impl Source
   def source_url do
-    "#{base_url()}/coins/#{coin_id()}"
+    {:ok, id} = coin_id()
+
+    "#{base_url()}/coins/#{id}"
   end
 
   defp base_url do
     config(:base_url) || "https://api.coingecko.com/api/v3"
   end
 
-  defp coin_id do
-    Application.get_env(:explorer, __MODULE__)[:coin_id]
+  def coin_id do
+    url = "#{base_url()}/coins/list"
+
+    symbol = String.downcase(Explorer.coin())
+
+    case HTTPoison.get(url, headers()) do
+      {:ok, %Response{body: body, status_code: 200}} ->
+        data = decode_json(body)
+
+        symbol_data =
+          Enum.find(data, fn item ->
+            item["symbol"] == symbol
+          end)
+
+        if symbol_data do
+          {:ok, symbol_data["id"]}
+        else
+          {:error, :not_found}
+        end
+
+      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
+        {:error, decode_json(body)["error"]}
+
+      {:error, %Error{reason: reason}} ->
+        {:error, reason}
+    end
   end
 
   defp get_btc_price(currency \\ "usd") do

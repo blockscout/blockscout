@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
+  import BlockScoutWeb.Tokens.TokenController, only: [fetch_token_counters: 2]
 
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -29,7 +30,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
             "_token_transfer.html",
             conn: conn,
             token: token,
-            transfer: transfer
+            token_transfer: transfer
           )
         end)
 
@@ -48,13 +49,15 @@ defmodule BlockScoutWeb.Tokens.TransferController do
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash, options) do
+      {total_token_transfers, total_token_holders} = fetch_token_counters(token, address_hash)
+
       render(
         conn,
         "index.html",
         current_path: current_path(conn),
         token: Market.add_price(token),
-        total_token_transfers: Chain.count_token_transfers_from_token_hash(address_hash),
-        total_token_holders: token.holder_count || Chain.count_token_holders_from_token_hash(address_hash)
+        total_token_transfers: total_token_transfers,
+        total_token_holders: total_token_holders
       )
     else
       :error ->

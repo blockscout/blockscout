@@ -1,0 +1,30 @@
+<section class="container">
+  <%= render(
+    OverviewView,
+    "_details.html",
+    token: @token,
+    total_token_transfers: @total_token_transfers,
+    token_id: @token_instance.token_id,
+    token_instance: @token_instance,
+    conn: @conn
+  ) %>
+
+  <section>
+    <div class="card">
+      <%= render OverviewView, "_tabs.html", assigns %>
+      <div class="card-body">
+        <section>
+          <div class="d-flex justify-content-between align-items-baseline">
+            <h3><%= gettext "Metadata" %></h3>
+            <button type="button" class="btn-line" id="button" data-clipboard-text="<%= format_metadata(@token_instance.instance.metadata) %>" aria-label="Copy Metadata">
+              <%= gettext "Copy Metadata" %>
+            </button>
+          </div>
+          <div class="tile tile-muted mb-4">
+            <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= format_metadata(@token_instance.instance.metadata) %></code>
+            </pre>
+          </div>
+        </section>
+    </div>
+  </section>
+</section>
