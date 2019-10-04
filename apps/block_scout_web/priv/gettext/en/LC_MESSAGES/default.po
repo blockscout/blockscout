@@ -911,7 +911,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:15
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:60
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:71
 #: lib/block_scout_web/views/tokens/overview_view.ex:35
 #: lib/block_scout_web/views/transaction_view.ex:313
 msgid "Token Transfers"
@@ -1801,7 +1801,7 @@ msgstr ""
 msgid "Copy Token ID"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:69
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:67
 msgid "Decimals"
@@ -1836,16 +1836,16 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/metadata/index.html.eex:18
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:61
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:72
 msgid "Metadata"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:58
 msgid "Module"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:56
 msgid "Total transactions"
 msgstr ""
