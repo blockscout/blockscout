@@ -69,3 +69,4 @@ $ export NETWORK=POA
 | `COIN_GECKO_ID` | | CoinGecko coin id required for fetching an exchange rate | poa-network | v2.0.4+ | | master |
 | `EMISSION_FORMAT` | | Should be set to `POA` if you have block emission indentical to POA Network. This env var is used only if `CHAIN_SPEC_PATH` is set | `STANDARD` | v2.0.4+ | | |
 | `REWARDS_CONTRACT_ADDRESS` | | Emission rewards contract address. This env var is used only if `EMISSION_FORMAT` is set to `POA` | `0xeca443e8e1ab29971a45a9c57a6a9875701698a5` | v2.0.4+ | | |
+| `INTERNAL_TRANSACTIONOS_FOR_TOKEN_TRANSFERS` | | Does not applicable for parity because we fetch all transactions for it. If set to true fetches internal transactions for simple token transfers transactions. It's disabled by default to increase internal transactions indexing speed | `false` | master | | |
