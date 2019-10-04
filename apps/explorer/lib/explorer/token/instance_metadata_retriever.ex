@@ -50,7 +50,30 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     {:error, :no_uri}
   end
 
-  defp fetch_json(%{"tokenURI" => {:ok, [token_uri]}}) do
+  defp fetch_json(%{"tokenURI" => {:ok, ["http://" <> _ = token_uri]}}) do
+    fetch_metadata(token_uri)
+  end
+
+  defp fetch_json(%{"tokenURI" => {:ok, ["https://" <> _ = token_uri]}}) do
+    fetch_metadata(token_uri)
+  end
+
+  defp fetch_json(%{"tokenURI" => {:ok, [json]}}) do
+    Jason.decode(json)
+  rescue
+    e ->
+      Logger.error(fn -> ["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"] end)
+
+      {:error, json}
+  end
+
+  defp fetch_json(result) do
+    Logger.error(fn -> ["Unknown metadata format #{result}."] end)
+
+    {:error, result}
+  end
+
+  defp fetch_metadata(token_uri) do
     case HTTPoison.get(token_uri) do
       {:ok, %Response{body: body, status_code: 200}} ->
         Jason.decode(body)
@@ -66,9 +89,5 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       Logger.error(fn -> ["Could not send request to token uri #{inspect(token_uri)}. error #{inspect(e)}"] end)
 
       {:error, :request_error}
-  end
-
-  defp fetch_json(result) do
-    {:error, result}
   end
 end
