@@ -157,7 +157,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
 
   defp put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set) do
     if Application.get_env(:explorer, :index_internal_transactions_for_token_transfers) do
-      changes
+      changes_list
     else
       do_put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
     end
