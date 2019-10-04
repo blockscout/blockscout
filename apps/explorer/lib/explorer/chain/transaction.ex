@@ -484,40 +484,26 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Modifies a query to filter for transactions whose hash is in a list or that are
-  linked to the given address_hash through a direction.
-
-  Be careful to not pass a large list, because this will lead to performance
-  problems.
+  Produces a list of queries starting from the given one and adding filters for
+  transactions that are linked to the given address_hash through a direction.
   """
-  def where_transaction_matches(query, transaction_hashes, :from, address_hash) do
-    where(
-      query,
-      [t],
-      t.hash in ^transaction_hashes or
-        t.from_address_hash == ^address_hash
-    )
+  def matching_address_queries_list(query, :from, address_hash) do
+    [where(query, [t], t.from_address_hash == ^address_hash)]
   end
 
-  def where_transaction_matches(query, transaction_hashes, :to, address_hash) do
-    where(
-      query,
-      [t],
-      t.hash in ^transaction_hashes or
-        t.to_address_hash == ^address_hash or
-        t.created_contract_address_hash == ^address_hash
-    )
+  def matching_address_queries_list(query, :to, address_hash) do
+    [
+      where(query, [t], t.to_address_hash == ^address_hash),
+      where(query, [t], t.created_contract_address_hash == ^address_hash)
+    ]
   end
 
-  def where_transaction_matches(query, transaction_hashes, _direction, address_hash) do
-    where(
-      query,
-      [t],
-      t.hash in ^transaction_hashes or
-        t.from_address_hash == ^address_hash or
-        t.to_address_hash == ^address_hash or
-        t.created_contract_address_hash == ^address_hash
-    )
+  def matching_address_queries_list(query, _direction, address_hash) do
+    [
+      where(query, [t], t.from_address_hash == ^address_hash),
+      where(query, [t], t.to_address_hash == ^address_hash),
+      where(query, [t], t.created_contract_address_hash == ^address_hash)
+    ]
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a
