@@ -64,7 +64,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     e ->
       Logger.error(fn -> ["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"] end)
 
-    {:error, json}
+      {:error, json}
   end
 
   defp fetch_json(result) do
