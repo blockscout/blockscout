@@ -234,7 +234,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		}
 	}
 
-	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon {
+	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon .btn-contract-icon {
 		border-color: $dark-primary;
 		path {
 			fill: $dark-primary;
@@ -504,7 +504,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		border-top-color: darken($labels-dark, 30);
 		border-bottom-color: darken($labels-dark, 30);
 	}
-	
+
 	// Form Controlls
 	.form-control {
 		background-color: $dark-light;
@@ -749,7 +749,7 @@ $labels-dark: #8a8dba; // header nav, labels
 			color: #fff;
 		}
 	}
-    
+
 	// alerts
 	.alert-link {
 		color: $labels-dark;
