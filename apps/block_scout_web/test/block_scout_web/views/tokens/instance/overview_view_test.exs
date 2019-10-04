@@ -31,5 +31,11 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewViewTest do
       assert OverviewView.image_src(%{metadata: data}) ==
                "https://img.paoditu.com/images/cut_trace_images/6b/5f/5b754f6b5f3b5_500_500.jpg"
     end
+
+    test "handles empty images" do
+      instance = %{metadata: %{"image" => ""}}
+
+      assert OverviewView.image_src(instance) != ""
+    end
   end
 end
