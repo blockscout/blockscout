@@ -42,6 +42,10 @@ defmodule BlockScoutWeb.ConnCase do
 
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
     Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Accounts.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Accounts.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.PendingTransactions.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.PendingTransactions.child_id())
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end

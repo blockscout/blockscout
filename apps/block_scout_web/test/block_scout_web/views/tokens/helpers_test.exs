@@ -8,28 +8,28 @@ defmodule BlockScoutWeb.Tokens.HelpersTest do
       token = build(:token, type: "ERC-20")
       token_transfer = build(:token_transfer, token: token, amount: nil)
 
-      assert Helpers.token_transfer_amount(token_transfer) == "--"
+      assert Helpers.token_transfer_amount(token_transfer) == {:ok, "--"}
     end
 
     test "returns the formatted amount according to token decimals with ERC-20 token" do
       token = build(:token, type: "ERC-20", decimals: Decimal.new(6))
       token_transfer = build(:token_transfer, token: token, amount: Decimal.new(1_000_000))
 
-      assert Helpers.token_transfer_amount(token_transfer) == "1"
+      assert Helpers.token_transfer_amount(token_transfer) == {:ok, "1"}
     end
 
     test "returns the formatted amount when the decimals is nil with ERC-20 token" do
       token = build(:token, type: "ERC-20", decimals: nil)
       token_transfer = build(:token_transfer, token: token, amount: Decimal.new(1_000_000))
 
-      assert Helpers.token_transfer_amount(token_transfer) == "1,000,000"
+      assert Helpers.token_transfer_amount(token_transfer) == {:ok, "1,000,000"}
     end
 
     test "returns a string with the token_id with ERC-721 token" do
       token = build(:token, type: "ERC-721", decimals: nil)
       token_transfer = build(:token_transfer, token: token, amount: nil, token_id: 1)
 
-      assert Helpers.token_transfer_amount(token_transfer) == "TokenID [1]"
+      assert Helpers.token_transfer_amount(token_transfer) == {:ok, :erc721_instance}
     end
 
     test "returns nothing for unknown token's type" do

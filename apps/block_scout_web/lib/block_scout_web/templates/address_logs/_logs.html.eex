@@ -1,8 +1,23 @@
 <div data-test="address_log" class="tile tile-muted" data-identifier-log="<%= "#{to_string(@log.transaction.hash)}#{@log.index}" %>">
+    <% decoded_result = decode(@log, @log.transaction) %>
+    <%= case decoded_result do %>
+      <%= {:error, :contract_not_verified, _cadidates} -> %>
+        <div class="alert alert-info">
+        <%= gettext "To see accurate decoded input data, the contract must be verified." %>
+        <%= case @log.transaction do %>
+          <% %{to_address: %{hash: hash}} -> %>
+            <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
+          <% _ -> %>
+            <%= nil %>
+        <% end %>
+        </div>
+      <% _ -> %>
+        <%= nil %>
+    <% end %>
   <dl class="row">
     <dt class="col-md-2"> <%= gettext "Transaction" %> </dt>
     <dd class="col-md-10">
-      <h3 class="">
+      <h3 class="logs-decoded">
         <%= link(
             @log.transaction,
             to: transaction_path(@conn, :show, @log.transaction),
@@ -11,19 +26,7 @@
             ) %>
       </h3>
     </dd>
-      <%= case decode(@log, @log.transaction) do %>
-        <% {:error, :contract_not_verified} -> %>
-          <dt class="col-md-2"><%= gettext "Decoded" %></dt>
-          <dd class="col-md-10">
-          <div class="alert alert-info">
-            <%= gettext "To see decoded input data, the contract must be verified." %>
-            <%= case @log.transaction do %>
-              <% %{to_address: %{hash: hash}} -> %>
-                <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
-              <% _ -> %>
-                <%= nil %>
-            <% end %>
-          </div>
+      <%= case decoded_result do %>
         <% {:error, :could_not_decode} -> %>
           <dt class="col-md-2"><%= gettext "Decoded" %></dt>
           <dd class="col-md-10">
@@ -81,7 +84,61 @@
                 </tr>
             <% end %>
          </table>
-       </div>
+        </div>
+        <% {:error, :contract_not_verified, results} -> %>
+           <%= for {:ok, method_id, text, mapping} <- results do %>
+             <dt class="col-md-2"><%= gettext "Decoded" %></dt>
+             <dd class="col-md-10">
+             <table summary="Transaction Info" class="table thead-light table-bordered transaction-input-table">
+               <tr>
+                 <td>Method Id</td>
+                 <td colspan="3"><code>0x<%= method_id %></code></td>
+               </tr>
+               <tr>
+                 <td>Call</td>
+                 <td colspan="3"><code><%= text %></code></td>
+               </tr>
+             </table>
+             <div class="table-responsive text-center">
+               <table style="color: black;" summary="<%= gettext "Log Data" %>" class="table thead-light table-bordered">
+                 <tr>
+                   <th scope="col"></th>
+                   <th scope="col"><%= gettext "Name" %></th>
+                   <th scope="col"><%= gettext "Type" %></th>
+                   <th scope="col"><%= gettext "Indexed?" %></th>
+                   <th scope="col"><%= gettext "Data" %></th>
+                 <tr>
+               <%= for {name, type, indexed?, value} <- mapping do %>
+                   <tr>
+                     <th scope="row">
+                       <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
+                         <% :error -> %>
+                           <%= nil %>
+                         <% copy_text -> %>
+                           <span
+                             aria-label='<%= gettext "Copy Value" %>'
+                             class="btn-copy-ico"
+                             data-clipboard-text="<%= copy_text %>"
+                             data-placement="top"
+                             data-toggle="tooltip"
+                           >
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+                               <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+                             </svg>
+                           </span>
+                       <% end %>
+                     </th>
+                     <td><%= name %></td>
+                     <td><%= type %></td>
+                     <td><%= indexed? %></td>
+                     <td>
+                       <pre class="transaction-input-text tile"><code><%= BlockScoutWeb.ABIEncodedValueView.value_html(type, value) %></code></pre>
+                     </td>
+                   </tr>
+               <% end %>
+            </table>
+         </div>
+        <% end %>
        <% _ -> %>
           <%= nil %>
       <% end %>
