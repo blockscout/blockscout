@@ -27,7 +27,7 @@
         document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
       }
     </script>
-    <button class="navbar-toggler" id="toggleButton" onclick="switchVisible(); type="button"  value="Click" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
+    <button class="navbar-toggler" id="toggleButton" type="button"  value="Click" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon" id="toggleImage1" style="width="26px;"></span>
       <span class="navbar-toggler-icon-1" id="toggleImage2"> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 47.971 47.971" style="enable-background:new 0 0 47.971 47.971; width: 17px;
     transform: translate(0px, -1.5px);" xml:space="preserve"> <g><g>
