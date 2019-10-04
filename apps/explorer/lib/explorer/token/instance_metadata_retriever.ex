@@ -61,6 +61,11 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       {:error, %Error{reason: reason}} ->
         {:error, reason}
     end
+  rescue
+    e ->
+      Logger.error(fn -> ["Could not send request to token uri #{inspect(token_uri)}. error #{inspect(e)}"] end)
+
+      {:error, :request_error}
   end
 
   defp fetch_json(result) do
