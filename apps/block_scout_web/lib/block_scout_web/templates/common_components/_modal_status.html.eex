@@ -33,15 +33,15 @@
         <% end %>
         <div class="modal-status-button-wrapper">
           <%= if @status !== "question" do %>
-            <button class="btn-line" type="button" data-dismiss="modal">
-              <span class="btn-line-text">Ok</span>
+            <button class="btn btn-primary" type="button" data-dismiss="modal">
+              <span class="btn btn-primary-text">Ok</span>
             </button>
           <% else %>
-            <button class="btn-line except" type="button" data-dismiss="modal">
-              <span class="btn-line-text">No</span>
+            <button class="btn btn-primary except" type="button" data-dismiss="modal">
+              <span class="btn btn-primary-text">No</span>
             </button>
-            <button class="btn-line accept" type="button" data-dismiss="modal">
-              <span class="btn-line-text">Yes</span>
+            <button class="btn btn-primary accept" type="button" data-dismiss="modal">
+              <span class="btn btn-primary-text">Yes</span>
             </button>
           <% end %>
         </div>

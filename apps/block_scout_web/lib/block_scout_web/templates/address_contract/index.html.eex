@@ -110,7 +110,7 @@
           <% {:ok, contract_code} -> %>
             <div class="d-flex justify-content-between align-items-baseline">
               <h2 class="card-title"><%= gettext "Contract Byte Code" %></h2>
-              <button type="button" class="btn-line" id="button" data-clipboard-text="<%= contract_code %>" aria-label="copy contract creation code">
+              <button type="button" class="btn btn-primary" id="button" data-clipboard-text="<%= contract_code %>" aria-label="copy contract creation code">
                 <%= gettext "Copy Contract Byte Code" %>
               </button>
             </div>
