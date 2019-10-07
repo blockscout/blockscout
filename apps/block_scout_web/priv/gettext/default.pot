@@ -1636,11 +1636,6 @@ msgid "Validated Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_tile.html.eex:35
-msgid "Validations"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:30
 msgid "Validator Creation Date"
 msgstr ""
