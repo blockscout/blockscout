@@ -1,7 +1,10 @@
 ## Current
 
 ### Features
+<<<<<<< HEAD
 - [#2642](https://github.com/poanetwork/blockscout/pull/2642) - add ERC721 coin instance page
+=======
+>>>>>>> 798605a2e82a9bab70f804ecb65b0c24120124ca
 - [#2717](https://github.com/poanetwork/blockscout/pull/2717) - Improve speed of nonconsensus data removal
 - [#2679](https://github.com/poanetwork/blockscout/pull/2679) - added fixed height for card chain blocks and card chain transactions
 - [#2678](https://github.com/poanetwork/blockscout/pull/2678) - fixed dashboard banner height bug
