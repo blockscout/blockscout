@@ -32,7 +32,7 @@ Currently available full-featured block explorers (Etherscan, Etherchain, Blockc
 |--------------------------------------------------------|-------------------------------------------------------|------------------------------------------------------|----------------------------------------------------------------|
 | [Callisto](https://blockscout.com/callisto/mainnet) | [Goerli Testnet](https://blockscout.com/eth/goerli) | [ARTIS](https://explorer.sigma1.artis.network) | [Celo Testnet](https://alfajores-blockscout.celo-testnet.org/) |
 | [Ethereum Classic](https://blockscout.com/etc/mainnet) | [Kovan Testnet](https://blockscout.com/eth/kovan) | [Ether-1](https://blocks.ether1.wattpool.net/) | [Matic Testnet](https://explorer.testnet2.matic.network/) |
-| [Ethereum Mainnet](https://blockscout.com/eth/mainnet) | [LUKSO L14 Testnet](https://blockscout.com/lukso/l14) | [Kotti Testnet](https://kottiexplorer.ethernode.io/) |  |
+| [Ethereum Mainnet](https://blockscout.com/eth/mainnet) | [LUKSO L14 Testnet](https://blockscout.com/lukso/l14) | [Kotti Testnet](https://kottiexplorer.ethernode.io/) | [Mordor Testnet](https://mordorexplorer.ethernode.io/) |
 | [POA Core Network](https://blockscout.com/poa/core) | [POA Sokol Testnet](https://blockscout.com/poa/sokol) | [Fuse Network](https://explorer.fuse.io/) |  |
 | [RSK](https://blockscout.com/rsk/mainnet) | [Rinkeby Testnet](https://blockscout.com/eth/rinkeby) | [Oasis Labs](https://blockexplorer.oasiscloud.io/) |  |
 | [xDai Chain](https://blockscout.com/poa/dai) | [Ropsten Testnet](https://blockscout.com/eth/ropsten) | [Petrichor](https://explorer.petrachor.com/) |  |
