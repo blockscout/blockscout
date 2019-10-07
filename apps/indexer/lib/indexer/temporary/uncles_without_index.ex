@@ -15,6 +15,7 @@ defmodule Indexer.Temporary.UnclesWithoutIndex do
   alias EthereumJSONRPC.Blocks
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.SecondDegreeRelation
+  alias Explorer.Chain.Cache.Uncles
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.UncleBlock
 
@@ -99,6 +100,7 @@ defmodule Indexer.Temporary.UnclesWithoutIndex do
     case Chain.import(%{block_second_degree_relations: %{params: block_second_degree_relations_params}}) do
       {:ok, %{block_second_degree_relations: block_second_degree_relations}} ->
         UncleBlock.async_fetch_blocks(block_second_degree_relations)
+        Uncles.update_from_second_degree_relations(block_second_degree_relations)
 
         retry(errors)
 
