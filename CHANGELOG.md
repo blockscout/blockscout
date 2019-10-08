@@ -1,6 +1,8 @@
 ## Current
 
 ### Features
+- [#2733](https://github.com/poanetwork/blockscout/pull/2733) - Add cache for first page of uncles
+- [#2735](https://github.com/poanetwork/blockscout/pull/2735) - Add pending transactions cache
 - [#2726](https://github.com/poanetwork/blockscout/pull/2726) - Remove internal_transaction block_number setting from blocks runner
 - [#2717](https://github.com/poanetwork/blockscout/pull/2717) - Improve speed of nonconsensus data removal
 - [#2697](https://github.com/poanetwork/blockscout/pull/2697) - Add temporary indexer to trigger refetching of blocks where internal transactions number doesn't match
@@ -11,9 +13,15 @@
 - [#2666](https://github.com/poanetwork/blockscout/pull/2666) - fetch token counters in parallel
 - [#2665](https://github.com/poanetwork/blockscout/pull/2665) - new menu layout for mobile devices
 - [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
+- [#2642](https://github.com/poanetwork/blockscout/pull/2642) - add ERC721 coin instance page
 - [#2470](https://github.com/poanetwork/blockscout/pull/2470) - Allow Realtime Fetcher to wait for small skips
 
 ### Fixes
+- [#2750](https://github.com/poanetwork/blockscout/pull/2750) - fixed contract buttons color for NFT token instance on each theme
+- [#2746](https://github.com/poanetwork/blockscout/pull/2746) - fixed wrong alignment in logs decoded view
+- [#2745](https://github.com/poanetwork/blockscout/pull/2745) - optimize addresses page
+- [#2742](https://github.com/poanetwork/blockscout/pull/2742) -
+fixed menu hovers in dark mode desktop view
 - [#2737](https://github.com/poanetwork/blockscout/pull/2737) - switched hardcoded subnetwork value to elixir expression for mobile menu
 - [#2736](https://github.com/poanetwork/blockscout/pull/2736) - do not update cache if no blocks were inserted
 - [#2731](https://github.com/poanetwork/blockscout/pull/2731) - fix library verification

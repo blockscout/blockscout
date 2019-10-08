@@ -142,11 +142,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     query =
       from(
         transaction in where_forked(blocks_changes),
-        select: %{
-          block_hash: transaction.block_hash,
-          index: transaction.index,
-          hash: transaction.hash
-        },
+        select: transaction,
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :hash],
         lock: "FOR UPDATE"
@@ -170,11 +166,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
             updated_at: ^updated_at
           ]
         ],
-        select: %{
-          block_hash: s.block_hash,
-          index: s.index,
-          hash: s.hash
-        }
+        select: s
       )
 
     {_num, transactions} = repo.update_all(update_query, [], timeout: timeout)
@@ -620,7 +612,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         b in Block.SecondDegreeRelation,
         join: s in subquery(query),
         on: b.nephew_hash == s.nephew_hash and b.uncle_hash == s.uncle_hash,
-        update: [set: [uncle_fetched_at: ^updated_at]]
+        update: [set: [uncle_fetched_at: ^updated_at]],
+        select: map(b, [:nephew_hash, :uncle_hash, :index])
       )
 
     try do
