@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2762](https://github.com/poanetwork/blockscout/pull/2762) - on-fly fetching of token instances
 - [#2733](https://github.com/poanetwork/blockscout/pull/2733) - Add cache for first page of uncles
 - [#2735](https://github.com/poanetwork/blockscout/pull/2735) - Add pending transactions cache
 - [#2726](https://github.com/poanetwork/blockscout/pull/2726) - Remove internal_transaction block_number setting from blocks runner

@@ -80,6 +80,12 @@ defmodule Indexer.Fetcher.TokenInstance do
   @doc """
   Fetches token instance data asynchronously.
   """
+  def async_fetch(token_transfers) when is_list(token_transfers) do
+    data = Chain.token_transfers_without_instances(token_transfers)
+
+    BufferedTask.buffer(__MODULE__, data)
+  end
+
   def async_fetch(data) do
     BufferedTask.buffer(__MODULE__, data)
   end
