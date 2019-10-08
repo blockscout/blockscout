@@ -34,7 +34,9 @@ $card-tab-icon-color-active: #fff !default;
 .card-background-1 {
   background-color: $card-background-1;
   color: $card-background-1-text-color;
-
+  @include media-breakpoint-down(sm) {
+    margin-left: 15px;
+  }
   a:not(.dropdown-item),
   a:not(.dropdown-item):hover {
     color: $card-background-1-text-color;
@@ -248,4 +250,10 @@ $card-tab-icon-color-active: #fff !default;
       }
     }
   }
+}
+
+.mob-transaction {
+  @include media-breakpoint-down(sm) {
+    margin-left: 15px!important;
+  } 
 }
