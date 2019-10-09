@@ -15,6 +15,7 @@
 - [#2642](https://github.com/poanetwork/blockscout/pull/2642) - add ERC721 coin instance page
 
 ### Fixes
+- [#2768](https://github.com/poanetwork/blockscout/pull/2768) - Remove nonconsensus blocks from cache after internal transactions importing
 - [#2753](https://github.com/poanetwork/blockscout/pull/2753) - fix nft token instance images
 - [#2750](https://github.com/poanetwork/blockscout/pull/2750) - fixed contract buttons color for NFT token instance on each theme
 - [#2746](https://github.com/poanetwork/blockscout/pull/2746) - fixed wrong alignment in logs decoded view
