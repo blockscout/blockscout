@@ -9,8 +9,6 @@ defmodule Explorer.Chain.Events.DBSender do
     send_notify(payload)
   end
 
-  def send_data(_event_type, :catchup, _event_data), do: :ok
-
   def send_data(event_type, broadcast_type, event_data) do
     payload = encode_payload({:chain_event, event_type, broadcast_type, event_data})
     send_notify(payload)

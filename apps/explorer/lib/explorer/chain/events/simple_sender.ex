@@ -11,8 +11,6 @@ defmodule Explorer.Chain.Events.SimpleSender do
     end)
   end
 
-  def send_data(_event_type, :catchup, _event_data), do: :ok
-
   def send_data(event_type) do
     Registry.dispatch(Registry.ChainEvents, event_type, fn entries ->
       for {pid, _registered_val} <- entries do
