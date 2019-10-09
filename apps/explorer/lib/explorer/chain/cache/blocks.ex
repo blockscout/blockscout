@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Cache.Blocks do
 
   def element_to_id(%Block{number: number}), do: number
 
-  def drop_nonconsensus([]), do: :ok
+  def drop_nonconsensus(numbers) when is_nil(numbers) or numbers == [], do: :ok
 
   def drop_nonconsensus(numbers) when is_list(numbers) do
     ConCache.update(cache_name(), ids_list_key(), fn ids ->
