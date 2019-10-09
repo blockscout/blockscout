@@ -73,11 +73,11 @@ textarea.form-control {
 }
 
 .contract-address {
-    display: inline-flex;
+    display: inline-block;
     text-decoration: underline;
     -webkit-text-decoration-style: dashed;
     text-decoration-style: dashed;
-    width: 255px;
+    width: 300px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
