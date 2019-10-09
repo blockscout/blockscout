@@ -241,6 +241,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         b in Block,
         where: b.number in ^missing_transactions_block_numbers,
         where: b.hash in ^block_hashes,
+        select: b.number,
         # ShareLocks order already enforced by `internal_transactions_indexed_at_blocks` (see docs: sharelocks.md)
         update: [set: [consensus: false, internal_transactions_indexed_at: nil]]
       )
