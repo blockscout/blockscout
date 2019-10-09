@@ -77,7 +77,7 @@ textarea.form-control {
     text-decoration: underline;
     -webkit-text-decoration-style: dashed;
     text-decoration-style: dashed;
-    width: 300px;
+    max-width: 300px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -85,7 +85,7 @@ textarea.form-control {
     text-decoration-style: none;
   }
   @media screen and (max-width: 768px) {
-    width: 172px;
+    max-width: 172px;
   }
 }
 
