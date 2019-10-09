@@ -16,7 +16,7 @@ config :explorer,
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
   healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5),
-  realtime_events_sender: Explorer.Chain.Events.Sender
+  realtime_events_sender: Explorer.Chain.Events.DBSender
 
 average_block_period =
   case Integer.parse(System.get_env("AVERAGE_BLOCK_CACHE_PERIOD", "")) do

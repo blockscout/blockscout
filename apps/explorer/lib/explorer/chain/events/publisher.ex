@@ -21,8 +21,7 @@ defmodule Explorer.Chain.Events.Publisher do
   end
 
   defp send_data(event_type) do
-    payload = encode_payload({:chain_event, event_type})
-    @sender.send_notify(payload)
+    @sender.send_data(event_type)
   end
 
   # The :catchup type of event is not being consumed right now.
@@ -31,13 +30,6 @@ defmodule Explorer.Chain.Events.Publisher do
   defp send_data(_event_type, :catchup, _event_data), do: :ok
 
   defp send_data(event_type, broadcast_type, event_data) do
-    payload = encode_payload({:chain_event, event_type, broadcast_type, event_data})
-    @sender.send_notify(payload)
-  end
-
-  defp encode_payload(payload) do
-    payload
-    |> :erlang.term_to_binary([:compressed])
-    |> Base.encode64()
+    @sender.send_data(event_type, broadcast_type, event_data)
   end
 end
