@@ -119,6 +119,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
           max_number_seen: max_number_seen
         } = state
       ) do
+    Logger.debug(fn -> ["no new number was received lately, polling now."] end)
+
     {number, new_max_number} =
       case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
         {:ok, number} when is_nil(max_number_seen) or number > max_number_seen ->
