@@ -17,6 +17,7 @@
 - [#2470](https://github.com/poanetwork/blockscout/pull/2470) - Allow Realtime Fetcher to wait for small skips
 
 ### Fixes
+- [#2770](https://github.com/poanetwork/blockscout/pull/2770) - do not re-fetch token instances without uris
 - [#2761](https://github.com/poanetwork/blockscout/pull/2761) - add indexes for token instances fetching queries
 - [#2755](https://github.com/poanetwork/blockscout/pull/2755) - various token instance fetcher fixes
 - [#2753](https://github.com/poanetwork/blockscout/pull/2753) - fix nft token instance images
