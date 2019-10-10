@@ -32,6 +32,13 @@ config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
   period: average_block_period
 
+config :explorer, Explorer.Chain.Events.Listener,
+  enabled:
+    if(System.get_env("DISABLE_WEBAPP") != "true",
+      do: false,
+      else: true
+    )
+
 config :explorer, Explorer.ChainSpec.GenesisData,
   enabled: true,
   chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
