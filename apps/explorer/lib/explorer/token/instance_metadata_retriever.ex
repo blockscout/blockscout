@@ -59,7 +59,9 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   defp fetch_json(%{"tokenURI" => {:ok, [token_uri]}}) do
     case HTTPoison.get(token_uri) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        %{metadata: Jason.decode(body)}
+        {:ok, json} = Jason.decode(body)
+
+        {:ok, %{metadata: json}}
 
       {:ok, %Response{body: body}} ->
         {:error, body}
