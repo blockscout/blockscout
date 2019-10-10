@@ -54,7 +54,8 @@ defmodule Indexer.Fetcher.TokenInstance do
         params = %{
           token_id: token_id,
           token_contract_address_hash: token_contract_address_hash,
-          metadata: metadata
+          metadata: metadata,
+          error: nil
         }
 
         {:ok, _result} = Chain.upsert_token_instance(params)
