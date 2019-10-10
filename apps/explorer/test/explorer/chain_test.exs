@@ -99,6 +99,82 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "ERC721_token_instance_from_token_id_and_token_address/2" do
+    test "return ERC721 token instance" do
+      contract_address = insert(:address)
+
+      token_id = 10
+
+      insert(:token_transfer,
+        from_address: contract_address,
+        token_contract_address: contract_address,
+        token_id: token_id
+      )
+
+      assert {:ok, result} =
+               Chain.erc721_token_instance_from_token_id_and_token_address(token_id, contract_address.hash)
+
+      assert result.token_id == Decimal.new(token_id)
+    end
+  end
+
+  describe "upsert_token_instance/1" do
+    test "insert a new token instance with valid params" do
+      token = insert(:token)
+
+      params = %{
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{uri: "http://example.com"}
+      }
+
+      {:ok, result} = Chain.upsert_token_instance(params)
+
+      assert result.token_id == Decimal.new(1)
+      assert result.metadata == params.metadata
+      assert result.token_contract_address_hash == token.contract_address_hash
+    end
+
+    test "replaces existing token instance record" do
+      token = insert(:token)
+
+      params = %{
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{uri: "http://example.com"}
+      }
+
+      {:ok, _} = Chain.upsert_token_instance(params)
+
+      params1 = %{
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{uri: "http://example1.com"}
+      }
+
+      {:ok, result} = Chain.upsert_token_instance(params1)
+
+      assert result.token_id == Decimal.new(1)
+      assert result.metadata == params1.metadata
+      assert result.token_contract_address_hash == token.contract_address_hash
+    end
+
+    test "fails to import with invalid params" do
+      params = %{
+        token_id: 1,
+        metadata: %{uri: "http://example.com"}
+      }
+
+      {:error,
+       %{
+         errors: [
+           token_contract_address_hash: {"can't be blank", [validation: :required]}
+         ],
+         valid?: false
+       }} = Chain.upsert_token_instance(params)
+    end
+  end
+
   describe "address_to_logs/2" do
     test "fetches logs" do
       %Address{hash: address_hash} = address = insert(:address)
@@ -3540,6 +3616,61 @@ defmodule Explorer.ChainTest do
         |> Enum.map(& &1.contract_address_hash)
 
       assert Chain.stream_cataloged_token_contract_address_hashes([], &(&2 ++ [&1])) == {:ok, expected_response}
+    end
+  end
+
+  describe "stream_unfetched_token_instances/2" do
+    test "reduces wuth given reducer and accumulator" do
+      token_contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 1))
+
+      token_transfer =
+        insert(
+          :token_transfer,
+          block_number: 1000,
+          to_address: build(:address),
+          transaction: transaction,
+          token_contract_address: token_contract_address,
+          token: token,
+          token_id: 11
+        )
+
+      assert {:ok, [result]} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
+      assert result.token_id == token_transfer.token_id
+      assert result.contract_address_hash == token_transfer.token_contract_address_hash
+    end
+
+    test "do not fetch records with token instances" do
+      token_contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 1))
+
+      token_transfer =
+        insert(
+          :token_transfer,
+          block_number: 1000,
+          to_address: build(:address),
+          transaction: transaction,
+          token_contract_address: token_contract_address,
+          token: token,
+          token_id: 11
+        )
+
+      insert(:token_instance,
+        token_id: token_transfer.token_id,
+        token_contract_address_hash: token_transfer.token_contract_address_hash
+      )
+
+      assert {:ok, []} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
     end
   end
 
