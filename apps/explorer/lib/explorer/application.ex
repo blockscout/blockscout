@@ -19,8 +19,6 @@ defmodule Explorer.Application do
     Uncles
   }
 
-  alias Explorer.Chain.Events.Listener
-
   alias Explorer.Chain.Supply.RSK
 
   alias Explorer.Market.MarketHistoryCache
