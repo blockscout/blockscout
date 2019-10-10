@@ -29,6 +29,8 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
 
   @cryptokitties_address_hash "0x06012c8cf97bead5deae237070f9587f8e7a266d"
 
+  @no_uri_error "no uri"
+
   def fetch_metadata(unquote(@cryptokitties_address_hash), token_id) do
     %{"tokenURI" => {:ok, ["https://api.cryptokitties.co/kitties/#{token_id}"]}}
     |> fetch_json()
@@ -47,13 +49,17 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   end
 
   defp fetch_json(%{"tokenURI" => {:ok, [""]}}) do
-    {:error, :no_uri}
+    {:ok, %{error: @no_uri_error}}
+  end
+
+  defp fetch_json(%{"tokenURI" => {:error, "(-32015) VM execution error."}}) do
+    {:ok, %{error: @no_uri_error}}
   end
 
   defp fetch_json(%{"tokenURI" => {:ok, [token_uri]}}) do
     case HTTPoison.get(token_uri) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        Jason.decode(body)
+        %{metadata: Jason.decode(body)}
 
       {:ok, %Response{body: body}} ->
         {:error, body}
