@@ -335,6 +335,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           token_transfer.transaction_hash,
           token_transfer.log_index
         ],
+        # acquire locks for `token_transfer`s only
         lock: "FOR UPDATE OF t0"
       )
 
@@ -367,6 +368,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           internal_transaction.transaction_hash,
           internal_transaction.index
         ],
+        # acquire locks for `internal_transaction`s only
         lock: "FOR UPDATE OF i0"
       )
 
@@ -398,6 +400,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           log.transaction_hash,
           log.index
         ],
+        # acquire locks for `log`s only
         lock: "FOR UPDATE OF l0"
       )
 
