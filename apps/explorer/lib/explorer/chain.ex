@@ -32,6 +32,7 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
+    CeloAccount,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -3455,6 +3456,20 @@ defmodule Explorer.Chain do
   end
 
   defp staking_pool_filter(query, _), do: query
+
+  def get_celo_account(address_hash) do
+    query =
+      from(account in CeloAccount,
+        where: account.address == ^address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
 
   defp with_decompiled_code_flag(query, _hash, false), do: query
 
