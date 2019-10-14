@@ -436,11 +436,19 @@ defmodule Indexer.Block.Realtime.FetcherTest do
     end
 
     test "when number is also max_number_seen results in fetching only the number" do
-      # note: this is a way to force this behavior, used by `poll_latest_block_number`
       number = 23
       assert [number] == Realtime.Fetcher.determine_fetching_action(number, nil, number)
-      assert [number] == Realtime.Fetcher.determine_fetching_action(number, nil, number)
       assert [number] == Realtime.Fetcher.determine_fetching_action(number, 21, number)
+    end
+
+    test "when max_number_seen is nil, fetching will start from previous_number" do
+      # note: this is a way to force this behavior, used by `poll_latest_block_number`
+      number = 156
+      previous_number = 150
+      old_number = 94
+
+      assert (previous_number + 1)..number == Realtime.Fetcher.determine_fetching_action(number, previous_number, nil)
+      assert (old_number + 1)..number == Realtime.Fetcher.determine_fetching_action(number, old_number, nil)
     end
 
     test "when number immediately follows the previous_number it is fetched" do
