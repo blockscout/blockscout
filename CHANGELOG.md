@@ -16,6 +16,7 @@
 - [#2762](https://github.com/poanetwork/blockscout/pull/2762) - on-fly fetching of token instances
 
 ### Fixes
+- [#2770](https://github.com/poanetwork/blockscout/pull/2770) - do not re-fetch token instances without uris
 - [#2767](https://github.com/poanetwork/blockscout/pull/2767) - fix websocket subscriptions with token instances
 - [#2765](https://github.com/poanetwork/blockscout/pull/2765) - fixed width issue for cards in mobile view for Transaction Details page
 - [#2753](https://github.com/poanetwork/blockscout/pull/2753) - fix nft token instance images
