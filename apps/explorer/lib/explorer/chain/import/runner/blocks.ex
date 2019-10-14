@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   import Ecto.Query, only: [from: 2, subquery: 1]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Address, Block, Import, InternalTransaction, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, Hash, Import, InternalTransaction, Log, TokenTransfer, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
@@ -83,16 +83,25 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         transactions: transactions
       })
     end)
-    |> Multi.run(:remove_nonconsensus_logs, fn repo, %{derive_transaction_forks: transactions} ->
+    |> Multi.run(:forked_transaction_hashes, fn _, %{derive_transaction_forks: transactions} ->
+      forked_transaction_hashes =
+        Enum.map(transactions, fn hash ->
+          {:ok, hash_bytes} = Hash.Full.dump(hash)
+          hash_bytes
+        end)
+
+      {:ok, forked_transaction_hashes}
+    end)
+    |> Multi.run(:remove_nonconsensus_logs, fn repo, %{forked_transaction_hashes: transactions} ->
       remove_nonconsensus_logs(repo, transactions, insert_options)
     end)
-    |> Multi.run(:remove_nonconsensus_internal_transactions, fn repo, %{derive_transaction_forks: transactions} ->
+    |> Multi.run(:remove_nonconsensus_internal_transactions, fn repo, %{forked_transaction_hashes: transactions} ->
       remove_nonconsensus_internal_transactions(repo, transactions, insert_options)
     end)
     |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
       acquire_contract_address_tokens(repo, consensus_block_numbers)
     end)
-    |> Multi.run(:remove_nonconsensus_token_transfers, fn repo, %{derive_transaction_forks: transactions} ->
+    |> Multi.run(:remove_nonconsensus_token_transfers, fn repo, %{forked_transaction_hashes: transactions} ->
       remove_nonconsensus_token_transfers(repo, transactions, insert_options)
     end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
@@ -318,21 +327,25 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     ordered_token_transfers =
       from(
         token_transfer in TokenTransfer,
-        where: token_transfer.transaction_hash in ^forked_transaction_hashes,
-        select: token_transfer.transaction_hash,
+        join: transaction in fragment("(SELECT unnest(?::bytea[]) AS hash)", ^forked_transaction_hashes),
+        on: transaction.hash == token_transfer.transaction_hash,
+        select: map(token_transfer, [:transaction_hash, :log_index]),
         # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
         order_by: [
           token_transfer.transaction_hash,
           token_transfer.log_index
         ],
-        lock: "FOR UPDATE"
+        # acquire locks for `token_transfer`s only
+        lock: "FOR UPDATE OF t0"
       )
 
     query =
       from(token_transfer in TokenTransfer,
         select: map(token_transfer, [:transaction_hash, :log_index]),
         inner_join: ordered_token_transfer in subquery(ordered_token_transfers),
-        on: ordered_token_transfer.transaction_hash == token_transfer.transaction_hash
+        on:
+          ordered_token_transfer.transaction_hash == token_transfer.transaction_hash and
+            ordered_token_transfer.log_index == token_transfer.log_index
       )
 
     {_count, deleted_token_transfers} = repo.delete_all(query, timeout: timeout)
@@ -347,21 +360,23 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     query =
       from(
         internal_transaction in InternalTransaction,
-        where: internal_transaction.transaction_hash in ^forked_transaction_hashes,
-        select: %{transaction_hash: internal_transaction.transaction_hash},
+        join: transaction in fragment("(SELECT unnest(?::bytea[]) AS hash)", ^forked_transaction_hashes),
+        on: transaction.hash == internal_transaction.transaction_hash,
+        select: map(internal_transaction, [:transaction_hash, :index]),
         # Enforce InternalTransaction ShareLocks order (see docs: sharelocks.md)
         order_by: [
           internal_transaction.transaction_hash,
           internal_transaction.index
         ],
-        lock: "FOR UPDATE"
+        # acquire locks for `internal_transaction`s only
+        lock: "FOR UPDATE OF i0"
       )
 
     delete_query =
       from(
         i in InternalTransaction,
         join: s in subquery(query),
-        on: i.transaction_hash == s.transaction_hash,
+        on: i.transaction_hash == s.transaction_hash and i.index == s.index,
         select: map(i, [:transaction_hash, :index])
       )
 
@@ -377,21 +392,23 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     ordered_logs =
       from(
         log in Log,
-        where: log.transaction_hash in ^forked_transaction_hashes,
-        select: log.transaction_hash,
+        join: transaction in fragment("(SELECT unnest(?::bytea[]) AS hash)", ^forked_transaction_hashes),
+        on: transaction.hash == log.transaction_hash,
+        select: map(log, [:transaction_hash, :index]),
         # Enforce Log ShareLocks order (see docs: sharelocks.md)
         order_by: [
           log.transaction_hash,
           log.index
         ],
-        lock: "FOR UPDATE"
+        # acquire locks for `log`s only
+        lock: "FOR UPDATE OF l0"
       )
 
     query =
       from(log in Log,
         select: map(log, [:transaction_hash, :index]),
         inner_join: ordered_log in subquery(ordered_logs),
-        on: ordered_log.transaction_hash == log.transaction_hash
+        on: ordered_log.transaction_hash == log.transaction_hash and ordered_log.index == log.index
       )
 
     {_count, deleted_logs} = repo.delete_all(query, timeout: timeout)
@@ -570,7 +587,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         where: block.hash in ^hashes or block.number in ^numbers,
         # Enforce Reward ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :address_hash, asc: :address_type, asc: :block_hash],
-        # NOTE: find a better way to know the alias that ecto gives to token
+        # acquire locks for `reward`s only
         lock: "FOR UPDATE OF b0"
       )
 

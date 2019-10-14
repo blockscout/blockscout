@@ -22,6 +22,7 @@
 - [#2761](https://github.com/poanetwork/blockscout/pull/2761) - add indexes for token instances fetching queries
 - [#2767](https://github.com/poanetwork/blockscout/pull/2767) - fix websocket subscriptions with token instances
 - [#2765](https://github.com/poanetwork/blockscout/pull/2765) - fixed width issue for cards in mobile view for Transaction Details page
+- [#2756](https://github.com/poanetwork/blockscout/pull/2756) - Improve subquery joins
 - [#2753](https://github.com/poanetwork/blockscout/pull/2753) - fix nft token instance images
 - [#2750](https://github.com/poanetwork/blockscout/pull/2750) - fixed contract buttons color for NFT token instance on each theme
 - [#2746](https://github.com/poanetwork/blockscout/pull/2746) - fixed wrong alignment in logs decoded view
