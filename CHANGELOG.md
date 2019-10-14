@@ -13,9 +13,11 @@
 - [#2665](https://github.com/poanetwork/blockscout/pull/2665) - new menu layout for mobile devices
 - [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
 - [#2642](https://github.com/poanetwork/blockscout/pull/2642) - add ERC721 coin instance page
+- [#2762](https://github.com/poanetwork/blockscout/pull/2762) - on-fly fetching of token instances
 
 ### Fixes
 - [#2770](https://github.com/poanetwork/blockscout/pull/2770) - do not re-fetch token instances without uris
+- [#2767](https://github.com/poanetwork/blockscout/pull/2767) - fix websocket subscriptions with token instances
 - [#2765](https://github.com/poanetwork/blockscout/pull/2765) - fixed width issue for cards in mobile view for Transaction Details page
 - [#2753](https://github.com/poanetwork/blockscout/pull/2753) - fix nft token instance images
 - [#2750](https://github.com/poanetwork/blockscout/pull/2750) - fixed contract buttons color for NFT token instance on each theme
