@@ -62,6 +62,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
               View.render_to_string(
                 TransactionView,
                 "_emission_reward_tile.html",
+                conn: conn,
                 current_address: address,
                 emission_funds: emission_reward,
                 validator: validator_reward
@@ -71,6 +72,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
               View.render_to_string(
                 TransactionView,
                 "_tile.html",
+                conn: conn,
                 current_address: address,
                 transaction: transaction
               )

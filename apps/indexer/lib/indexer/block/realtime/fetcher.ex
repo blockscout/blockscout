@@ -19,6 +19,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_replaced_transactions: 1,
       async_import_tokens: 1,
       async_import_token_balances: 1,
+      async_import_token_instances: 1,
       async_import_uncles: 1,
       fetch_and_import_range: 2,
       async_import_staking_pools: 0
@@ -91,6 +92,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       case start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen) do
         # The number may have not been inserted if it was part of a small skip
         :skip ->
+          Logger.debug(["#{inspect(number)} was skipped"])
           {previous_number, max_number_seen}
 
         _ ->
@@ -121,7 +123,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {number, new_max_number} =
       case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
         {:ok, number} when is_nil(max_number_seen) or number > max_number_seen ->
-          start_fetch_and_import(number, block_fetcher, previous_number, number)
+          # in case of polling the realtime fetcher should take care of all the
+          # blocks in the skipping window, because the cathup fetcher wont
+          max_skipping_distance = Application.get_env(:indexer, :max_skipping_distance)
+
+          last_catchup_number = max(0, 10 - max_skipping_distance - 1)
+          starting_number = max(previous_number, last_catchup_number) || last_catchup_number
+
+          start_fetch_and_import(number, block_fetcher, starting_number, nil)
 
           {max_number_seen, number}
 
@@ -376,6 +385,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_internal_transactions(imported, Keyword.get(json_rpc_named_arguments, :variant))
     async_import_tokens(imported)
     async_import_token_balances(imported)
+    async_import_token_instances(imported)
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
     async_import_staking_pools()

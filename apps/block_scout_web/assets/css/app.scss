@@ -100,6 +100,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/form";
 @import "components/btn_copy";
 @import "components/btn_qr";
+@import "components/btn_contract";
 @import "components/btn_address_card";
 @import "components/btn_dropdown_line";
 @import "components/transaction";
@@ -114,6 +115,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/radio_big";
 @import "components/btn_no_border";
 @import "components/custom_tooltips_block_details";
+@import "components/_erc721_token_image_container";
+@import "components/_inventory_token_instance_image_container";
 
 @import "theme/dark-theme";
 
