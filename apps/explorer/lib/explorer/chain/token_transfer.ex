@@ -278,11 +278,13 @@ defmodule Explorer.Chain.TokenTransfer do
   def address_to_unique_tokens(contract_address_hash) do
     from(
       tt in TokenTransfer,
-      where: tt.token_contract_address_hash == ^contract_address_hash,
+      left_join: instance in Instance,
+      on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
+      where: tt.token_contract_address_hash == ^contract_address_hash and tt.token_id == tt.token_id,
       order_by: [desc: tt.block_number],
       distinct: tt.token_id,
       preload: [:to_address],
-      select: tt
+      select: %{tt | instance: instance}
     )
   end
 end
