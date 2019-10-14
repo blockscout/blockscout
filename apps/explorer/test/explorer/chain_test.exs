@@ -173,6 +173,42 @@ defmodule Explorer.ChainTest do
          valid?: false
        }} = Chain.upsert_token_instance(params)
     end
+
+    test "inserts just an error without metadata" do
+      token = insert(:token)
+      error = "no uri"
+
+      params = %{
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        error: error
+      }
+
+      {:ok, result} = Chain.upsert_token_instance(params)
+
+      assert result.error == error
+    end
+
+    test "nillifies error" do
+      token = insert(:token)
+
+      insert(:token_instance,
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        error: "no uri"
+      )
+
+      params = %{
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{uri: "http://example1.com"}
+      }
+
+      {:ok, result} = Chain.upsert_token_instance(params)
+
+      assert is_nil(result.error)
+      assert result.metadata == params.metadata
+    end
   end
 
   describe "address_to_logs/2" do
