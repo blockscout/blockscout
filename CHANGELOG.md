@@ -13,6 +13,7 @@
 - [#2665](https://github.com/poanetwork/blockscout/pull/2665) - new menu layout for mobile devices
 - [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
 - [#2642](https://github.com/poanetwork/blockscout/pull/2642) - add ERC721 coin instance page
+- [#2762](https://github.com/poanetwork/blockscout/pull/2762) - on-fly fetching of token instances
 
 ### Fixes
 - [#2767](https://github.com/poanetwork/blockscout/pull/2767) - fix websocket subscriptions with token instances
