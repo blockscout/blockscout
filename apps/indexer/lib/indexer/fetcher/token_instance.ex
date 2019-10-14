@@ -69,6 +69,18 @@ defmodule Indexer.Fetcher.TokenInstance do
   @doc """
   Fetches token instance data asynchronously.
   """
+  def async_fetch(token_transfers) when is_list(token_transfers) do
+    data =
+      token_transfers
+      |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_id) end)
+      |> Enum.map(fn token_transfer ->
+        %{contract_address_hash: token_transfer.token_contract_address_hash, token_id: token_transfer.token_id}
+      end)
+      |> Enum.uniq()
+
+    BufferedTask.buffer(__MODULE__, data)
+  end
+
   def async_fetch(data) do
     BufferedTask.buffer(__MODULE__, data)
   end
