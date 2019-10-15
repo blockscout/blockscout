@@ -2,6 +2,7 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
   use EthereumJSONRPC.Case
 
   alias Explorer.Token.InstanceMetadataRetriever
+  alias Plug.Conn
 
   import Mox
 
@@ -47,6 +48,31 @@ defmodule Explorer.Token.InstanceMetadataRetrieverTest do
              } ==
                InstanceMetadataRetriever.query_contract("0x5caebd3b32e210e85ce3e9d51638b9c445481567", %{
                  "tokenURI" => [18_290_729_947_667_102_496]
+               })
+    end
+  end
+
+  describe "fetch_json/1" do
+    setup do
+      bypass = Bypass.open()
+
+      {:ok, bypass: bypass}
+    end
+
+    test "fetches json with latin1 encoding", %{bypass: bypass} do
+      json = """
+      {
+        "name": "Sérgio Mendonça"
+      }
+      """
+
+      Bypass.expect(bypass, "GET", "/api/card/55265", fn conn ->
+        Conn.resp(conn, 200, json)
+      end)
+
+      assert {:ok, %{metadata: %{"name" => "Sérgio Mendonça"}}} ==
+               InstanceMetadataRetriever.fetch_json(%{
+                 "tokenURI" => {:ok, ["http://localhost:#{bypass.port}/api/card/55265"]}
                })
     end
   end
