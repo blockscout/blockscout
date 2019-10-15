@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.Import.Runner.StakingPools do
   @moduledoc """
-  Bulk imports staking pools to StakingPool tabe.
+  Bulk imports staking pools to StakingPool table.
   """
 
   require Ecto.Query
