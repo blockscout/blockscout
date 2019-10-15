@@ -382,6 +382,20 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       insert_transaction(transaction2, options)
       assert Chain.missing_block_number_ranges(range) == [(block_number + 1)..(block_number + 1)]
     end
+
+    test "removes duplicate blocks (by hash) before inserting",
+         %{consensus_block: %{number: block_number, hash: block_hash, miner_hash: miner_hash}, options: options} do
+      new_block = params_for(:block, miner_hash: miner_hash, consensus: true)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block)
+
+      result =
+        Multi.new()
+        |> Blocks.run([block_changes, block_changes], options)
+        |> Repo.transaction()
+
+      assert {:ok, %{blocks: [%{hash: block_hash, consensus: true}]}} = result
+    end
   end
 
   defp insert_block(block_params, options) do
