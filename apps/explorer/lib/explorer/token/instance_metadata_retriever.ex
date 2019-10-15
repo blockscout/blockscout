@@ -70,7 +70,9 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     fetch_json(%{"tokenURI" => {:ok, [decoded_json]}})
   rescue
     e ->
-      Logger.error(fn -> ["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"] end)
+      Logger.error(["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"],
+        fetcher: :token_instances
+      )
 
       {:error, json}
   end
@@ -81,13 +83,15 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     {:ok, %{metadata: json}}
   rescue
     e ->
-      Logger.error(fn -> ["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"] end)
+      Logger.error(["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"],
+        fetcher: :token_instances
+      )
 
       {:error, json}
   end
 
   def fetch_json(result) do
-    Logger.error(fn -> ["Unknown metadata format #{inspect(result)}."] end)
+    Logger.error(["Unknown metadata format #{inspect(result)}."], fetcher: :token_instances)
 
     {:error, result}
   end
@@ -107,7 +111,9 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     end
   rescue
     e ->
-      Logger.error(fn -> ["Could not send request to token uri #{inspect(token_uri)}. error #{inspect(e)}"] end)
+      Logger.error(["Could not send request to token uri #{inspect(token_uri)}. error #{inspect(e)}"],
+        fetcher: :token_instances
+      )
 
       {:error, :request_error}
   end
