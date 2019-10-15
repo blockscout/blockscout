@@ -64,8 +64,21 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     fetch_metadata(token_uri)
   end
 
+  def fetch_json(%{"tokenURI" => {:ok, ["data:application/json," <> json]}}) do
+    decoded_json = URI.decode(json)
+
+    fetch_json(%{"tokenURI" => {:ok, [decoded_json]}})
+  rescue
+    e ->
+      Logger.error(fn -> ["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"] end)
+
+      {:error, json}
+  end
+
   def fetch_json(%{"tokenURI" => {:ok, [json]}}) do
-    Jason.decode(json)
+    {:ok, json} = decode_json(json)
+
+    {:ok, %{metadata: json}}
   rescue
     e ->
       Logger.error(fn -> ["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"] end)
