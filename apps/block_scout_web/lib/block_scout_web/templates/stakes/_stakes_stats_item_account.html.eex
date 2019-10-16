@@ -1,0 +1,26 @@
+<div class="stakes-top-stats-item stakes-top-stats-item-address"
+  data-user-address="<%= if @account, do: @account.address %>"
+>
+  <span class="stakes-top-stats-value">
+    <%= if @account do %>
+      <div data-placement="top" data-toggle="tooltip" title=<%= @account.address %>>
+        <%= binary_part(@account.address, 0, 13) %>...
+      </div>
+      <div class="copy-icon" data-clipboard-text="<%= @account.address %>">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
+          <path fill-rule="evenodd" d="M13 10a1 1 0 0 1-1-1V2H5a1 1 0 0 1 0-2h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1zm-3-5v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1zM8 6H2v6h6V6z"/>
+        </svg>
+      </div>
+    <% else %>
+      <a href="https://metamask.io" target="_blank" data-selector="login-button" class="stakes-top-stats-login">Login</a> with MetaMask
+    <% end %>
+  </span>
+  <span class="stakes-top-stats-label">
+    <span class="stakes-top-stats-label-item"><%= gettext "Balance" %>:
+      <%= format_according_to_decimals(@account[:balance], @token.decimals) %> <%= @token.symbol %>
+    </span>
+    <span class="stakes-top-stats-label-item"><%= gettext "Staked" %>:
+      <%= format_according_to_decimals(@account[:staked], @token.decimals) %> <%= @token.symbol %>
+    </span>
+  </span>
+</div>
