@@ -792,6 +792,7 @@ $labels-dark: #8a8dba; // header nav, labels
 .dark-theme-applied .dropdown-item.active, .dark-theme-applied .dropdown-item:hover, .dark-theme-applied .dropdown-item:focus {
     background-image: none;
     width: 100%;
+
     background-color: #3f3f42!important;
 }
  .dark-theme-applied .dropdown-item:hover:before {
