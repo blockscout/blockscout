@@ -21,11 +21,13 @@
 - [#2777](https://github.com/poanetwork/blockscout/pull/2777) - Remove duplicate blocks from changes_list before import
 - [#2755](https://github.com/poanetwork/blockscout/pull/2755) - various token instance fetcher fixes
 - [#2770](https://github.com/poanetwork/blockscout/pull/2770) - do not re-fetch token instances without uris
+- [#2769](https://github.com/poanetwork/blockscout/pull/2769) - optimize token token transfers query
 - [#2768](https://github.com/poanetwork/blockscout/pull/2768) - Remove nonconsensus blocks from cache after internal transactions importing
-- [#2761](https://github.com/poanetwork/blockscout/pull/2761) - add indexes for token instances fetching queries
 - [#2767](https://github.com/poanetwork/blockscout/pull/2767) - fix websocket subscriptions with token instances
 - [#2765](https://github.com/poanetwork/blockscout/pull/2765) - fixed width issue for cards in mobile view for Transaction Details page
+- [#2761](https://github.com/poanetwork/blockscout/pull/2761) - add indexes for token instances fetching queries
 - [#2756](https://github.com/poanetwork/blockscout/pull/2756) - Improve subquery joins
+- [#2755](https://github.com/poanetwork/blockscout/pull/2755) - various token instance fetcher fixes
 - [#2753](https://github.com/poanetwork/blockscout/pull/2753) - fix nft token instance images
 - [#2750](https://github.com/poanetwork/blockscout/pull/2750) - fixed contract buttons color for NFT token instance on each theme
 - [#2746](https://github.com/poanetwork/blockscout/pull/2746) - fixed wrong alignment in logs decoded view
@@ -53,6 +55,7 @@ fixed menu hovers in dark mode desktop view
 - [#2738](https://github.com/poanetwork/blockscout/pull/2738) - do not fail block `internal_transactions_indexed_at` field update
 
 ### Chore
+- [#2752](https://github.com/poanetwork/blockscout/pull/2752) - allow enabling internal transactions for simple token transfers txs
 - [#2749](https://github.com/poanetwork/blockscout/pull/2749) - fix opt 22.1 support
 - [#2724](https://github.com/poanetwork/blockscout/pull/2724) - fix ci by commenting a line in hackney library
 - [#2708](https://github.com/poanetwork/blockscout/pull/2708) - add log index to logs view
