@@ -72,7 +72,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:56
+#: lib/block_scout_web/templates/layout/app.html.eex:43
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -162,6 +162,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:3
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:19
 msgid "Balance"
 msgstr ""
 
@@ -209,7 +210,7 @@ msgid "Block Height: %{height}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:27
+#: lib/block_scout_web/templates/layout/app.html.eex:63
 msgid "Block Mined, awaiting import..."
 msgstr ""
 
@@ -241,7 +242,7 @@ msgid "Blocks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:26
+#: lib/block_scout_web/templates/layout/app.html.eex:62
 msgid "Blocks Indexed"
 msgstr ""
 
@@ -639,7 +640,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:15
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20
-#: lib/block_scout_web/templates/layout/app.html.eex:32
+#: lib/block_scout_web/templates/layout/app.html.eex:68
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:29
 #: lib/block_scout_web/templates/transaction/overview.html.eex:189
@@ -966,7 +967,7 @@ msgid "Last Balance Update: Block #"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:29
+#: lib/block_scout_web/templates/layout/app.html.eex:65
 msgid "Less than"
 msgstr ""
 
@@ -1033,9 +1034,10 @@ msgid "Mainnet"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:63
-#: lib/block_scout_web/templates/layout/app.html.eex:30
-#: lib/block_scout_web/views/address_view.ex:142
+#: lib/block_scout_web/templates/chain/show.html.eex:31
+#: lib/block_scout_web/templates/layout/app.html.eex:66
+#: lib/block_scout_web/views/address_view.ex:121
+#: lib/block_scout_web/views/address_view.ex:121
 msgid "Market Cap"
 msgstr ""
 
@@ -1092,9 +1094,8 @@ msgid "New Smart Contract Verification"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:55
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:98
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:141
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:67
+#: lib/block_scout_web/templates/stakes/_rows.html.eex:24
 msgid "No"
 msgstr ""
 
@@ -1166,8 +1167,8 @@ msgid "Potential matches from our contract method database:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:43
-#: lib/block_scout_web/templates/layout/app.html.eex:31
+#: lib/block_scout_web/templates/chain/show.html.eex:24
+#: lib/block_scout_web/templates/layout/app.html.eex:67
 msgid "Price"
 msgstr ""
 
@@ -1245,13 +1246,32 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:198
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:229
+=======
+<<<<<<< HEAD
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:195
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:226
+=======
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:168
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:185
+>>>>>>> Update gettext locale files
+>>>>>>> Update gettext locale files
 msgid "Search"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:192
+=======
+<<<<<<< HEAD
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:189
+=======
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:162
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:166
+>>>>>>> Update gettext locale files
+>>>>>>> Update gettext locale files
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1311,7 +1331,12 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/chain/show.html.eex:156
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:19
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:20
+=======
+#: lib/block_scout_web/templates/stakes/_table.html.eex:24
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:21
+>>>>>>> Update gettext locale files
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:20
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:19
@@ -1649,9 +1674,14 @@ msgid "Wei"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:60
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:103
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:146
+=======
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:72
+#: lib/block_scout_web/templates/stakes/_rows.html.eex:24
+>>>>>>> Update gettext locale files
 msgid "Yes"
 msgstr ""
 
@@ -1751,7 +1781,11 @@ msgid "If it still does not show up after 1 hour, please check with your sender/
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/layout/app.html.eex:28
+=======
+#: lib/block_scout_web/templates/layout/app.html.eex:64
+>>>>>>> Update gettext locale files
 msgid "Indexing Tokens"
 msgstr ""
 
@@ -1788,6 +1822,7 @@ msgid "Transfers"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/transaction/overview.html.eex:142
 #: lib/block_scout_web/templates/transaction/overview.html.eex:155
 msgid "Copy Txn Input"
@@ -1916,10 +1951,157 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:84
 #: lib/block_scout_web/views/address_view.ex:351
 msgid "Write Contract"
+=======
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:6
+msgid "%{blocks} block"
+msgid_plural "%{blocks} blocks"
+msgstr[0] ""
+msgstr[1] ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:52
+msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
 msgstr ""
 
 #, elixir-format
 #:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:26
+msgid "<p>To become a candidate, your staking address must be funded with STAKE tokens <strong>and</strong> xDai coins, and your Parity node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:131
+#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:11
+msgid "Active Pools"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:13
+msgid "All pool participant addresses. The top address belongs to the validator."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:18
+msgid "Already Ordered:"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:10
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:14
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:11
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:11
+msgid "Amount"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:16
+msgid "Amount of STAKE placed by an address"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:25
+msgid "Available Now:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:38
+msgid "Available after the Current Epoch:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_table.html.eex:12
+msgid "Banned"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_rows.html.eex:37
+msgid "Banned until block #%{banned_until} (%{estimated_unban_day})"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_empty_content.html.eex:13
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:5
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:23
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:25
+msgid "Become a Candidate"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:5
+msgid "Block number"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_table.html.eex:5
+msgid "Candidate and Validator Pool Addresses. Current validator pools are specified by a checkmark."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:31
+msgid "Candidate’s Staked Amount"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:22
+msgid "Choose Pool"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:7
+msgid "Claim Ordered Withdraw"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:18
+msgid "Claim the Amount"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:36
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:14
+msgid "Current Stake:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:5
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:31
+#: lib/block_scout_web/templates/stakes/_table.html.eex:18
+msgid "Delegators"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:37
+msgid "Delegators’ Staked Amount"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:4
+msgid "Epoch number"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:61
+msgid "How Many Times this Address has been Banned"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:55
+msgid "How Many Times this Address has been a Validator"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:136
+#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:18
+msgid "Inactive Pools"
+>>>>>>> Update gettext locale files
+msgstr ""
+
+#, elixir-format
+#:
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/smart_contract/_pending_contract_write.html.eex:12
 msgid "Waiting for transaction's confirmation..."
 msgstr ""
@@ -1984,4 +2166,262 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/bridged_tokens/index.html.eex:4
 msgid "Bridged Tokens"
+=======
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:48
+msgid "It's me!"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:67
+msgid "Likelihood of Becoming a Validator on the Next Epoch"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:50
+msgid "ME"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:42
+msgid "Max Amount to Move:"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:13
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:20
+msgid "Minimum Stake:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:8
+msgid "Mining Address:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:10
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:51
+msgid "Move Stake"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:6
+msgid "Next epoch in"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_empty_content.html.eex:11
+msgid "No Information"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:46
+msgid "Order Withdrawal"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:26
+msgid "Ordered"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:37
+msgid "Place stake"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:19
+#: lib/block_scout_web/templates/stakes/_table.html.eex:5
+msgid "Pool"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:20
+msgid "Potential Reward Percent"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:16
+msgid "Reason for Ban: %{ban_reason}"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:13
+msgid "Remove My Pool"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:20
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:49
+msgid "Reward Percent"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:24
+msgid "Reward distribution is based on stake amount. Validator receives a minimum of 30%."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:8
+msgid "Show banned only"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:14
+msgid "Show only those I staked into"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:7
+msgid "Stake"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:35
+msgid "Stake More"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:58
+msgid "Stake placed on a candidate pool or an active validator pool <strong>during the current staking epoch</strong> can be moved from one pool to another. Active stake cannot be moved. To re-delegate active stake: order a withdrawal, claim the amount on the next staking epoch, and stake the amount on a different pool."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:45
+msgid "Stake placed on a pool is <strong>pending</strong> for the current staking epoch. It will be applied to the next staking epoch. You may withdraw or move pending stake at any time until it becomes active. Once active (the pool you staked with becomes a validator), a withdrawal order can be placed. This amount will be available to claim after that staking epoch is complete."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:22
+msgid "Staked"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_table.html.eex:8
+msgid "Staked Amount"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:13
+msgid "Staker's Address"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:122
+msgid "Stakes"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:43
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:25
+#: lib/block_scout_web/templates/stakes/_table.html.eex:14
+msgid "Stakes Ratio"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:73
+msgid "The Number of Delegators in the Pool"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_table.html.eex:8
+msgid "The first amount is the validator’s own stake, the second is the total amount staked into the pool by the validator and all delegators."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_table.html.eex:18
+msgid "The number of delegators providing stake to the current pool. Click on the number to see more details."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_table.html.eex:14
+msgid "The percentage of stake in a single pool relative to the total amount staked in all active pools. A higher ratio results in a greater likelihood of validator pool selection."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_empty_content.html.eex:12
+msgid "There is no information currently available for this view. Deselect filters or choose another pool view to see current info. To participate as a delegator, select a pool address and click the Stake icon. To become a candidate, click the button below."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_rows.html.eex:5
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:38
+msgid "This is a validator"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:15
+msgid "This pool is banned until block #%{banned_until} (%{estimated_unban_day})"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:16
+msgid "Total Stake Amount"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_table.html.eex:12
+msgid "Validator pools can be banned for misbehavior (such as not revealing secret numbers). Validator and delegator stake contained in a banned pool cannot be withdrawn until the ban is over."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:126
+#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:4
+msgid "Validators"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:7
+msgid "Withdraw"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:33
+msgid "Withdraw Now"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_rows.html.eex:43
+msgid "Withdraw after block #%{banned_delegators_until} (%{estimated_unban_day})"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:22
+msgid "Withdrawal orders made during an active staking epoch are available to claim after the epoch is complete."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:15
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:12
+msgid "You Staked:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_validator_info.html.eex:22
+msgid "You will be able to withdraw after block #%{banned_delegators_until} (%{estimated_unban_day})"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:18
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:26
+msgid "Your Balance:"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:12
+msgid "Your Mining Address"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:11
+msgid "Your ordered amount"
+>>>>>>> Update gettext locale files
 msgstr ""
