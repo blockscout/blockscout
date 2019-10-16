@@ -11,7 +11,7 @@ defmodule Explorer.Etherscan do
   alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction}
 
   @default_options %{
-    order_by_direction: :asc,
+    order_by_direction: :desc,
     page_number: 1,
     page_size: 10_000,
     start_block: nil,
