@@ -19,6 +19,7 @@
 
 ### Fixes
 - [#2755](https://github.com/poanetwork/blockscout/pull/2755) - various token instance fetcher fixes
+- [#2781](https://github.com/poanetwork/blockscout/pull/2781) - optimize txlist json rpc
 - [#2770](https://github.com/poanetwork/blockscout/pull/2770) - do not re-fetch token instances without uris
 - [#2761](https://github.com/poanetwork/blockscout/pull/2761) - add indexes for token instances fetching queries
 - [#2767](https://github.com/poanetwork/blockscout/pull/2767) - fix websocket subscriptions with token instances
