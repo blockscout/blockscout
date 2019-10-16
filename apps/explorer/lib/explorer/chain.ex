@@ -51,6 +51,7 @@ defmodule Explorer.Chain do
     PendingBlockOperation,
     SmartContract,
     StakingPool,
+    StakingPoolsDelegator,
     Token,
     Token.Instance,
     TokenTransfer,
@@ -4155,6 +4156,13 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec fetch_last_token_balance(Hash.Address.t(), Hash.Address.t()) :: Decimal.t()
+  def fetch_last_token_balance(address_hash, token_contract_address_hash) do
+    address_hash
+    |> CurrentTokenBalance.last_token_balance(token_contract_address_hash)
+    |> Repo.one() || Decimal.new(0)
+  end
+
   @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []
   def address_to_coin_balances(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -4531,6 +4539,7 @@ defmodule Explorer.Chain do
 
     base_query =
       StakingPool
+      |> where(is_deleted: false)
       |> staking_pool_filter(filter)
       |> limit(^page_size)
       |> order_by(desc: :staked_ratio, asc: :staking_address_hash)
@@ -4553,39 +4562,44 @@ defmodule Explorer.Chain do
   @spec staking_pools_count(filter :: :validator | :active | :inactive) :: integer
   def staking_pools_count(filter) do
     StakingPool
+    |> where(is_deleted: false)
     |> staking_pool_filter(filter)
     |> Repo.aggregate(:count, :staking_address_hash)
   end
 
   defp staking_pool_filter(query, :validator) do
-    where(
-      query,
-      [pool],
-      pool.is_active == true and
-        pool.is_deleted == false and
-        pool.is_validator == true
-    )
+    where(query, is_validator: true)
   end
 
   defp staking_pool_filter(query, :active) do
-    where(
-      query,
-      [pool],
-      pool.is_active == true and
-        pool.is_deleted == false
-    )
+    where(query, is_active: true)
   end
 
   defp staking_pool_filter(query, :inactive) do
-    where(
-      query,
-      [pool],
-      pool.is_active == false and
-        pool.is_deleted == false
-    )
+    where(query, is_active: false)
   end
 
-  defp staking_pool_filter(query, _), do: query
+  def staking_pool(staking_address_hash) do
+    Repo.get_by(StakingPool, staking_address_hash: staking_address_hash)
+  end
+
+  def get_total_staked(address_hash) do
+    staked_query =
+      from(
+        delegator in StakingPoolsDelegator,
+        where: delegator.delegator_address_hash == ^address_hash and delegator.is_active,
+        select: sum(delegator.stake_amount)
+      )
+
+    self_staked_query =
+      from(
+        pool in StakingPool,
+        where: pool.staking_address_hash == ^address_hash and pool.is_active,
+        select: sum(pool.self_staked_amount)
+      )
+
+    Decimal.add(Repo.one(staked_query) || Decimal.new(0), Repo.one(self_staked_query) || Decimal.new(0))
+  end
 
   defp with_decompiled_code_flag(query, _hash, false), do: query
 
