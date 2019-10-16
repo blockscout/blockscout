@@ -36,6 +36,9 @@ defmodule Explorer.Chain.CeloAccount do
         address account_type gold usd locked_gold notive_period rewards
     )a
 
+    @validator_registered_event "0x4e35530e670c639b101af7074b9abce98a1bb1ebff1f7e21c83fc0a553775074"
+    def validator_registered_event, do: @validator_registered_event
+
     schema "celo_account" do
         field(:address, Hash.Address)
         field(:account_type, :string)

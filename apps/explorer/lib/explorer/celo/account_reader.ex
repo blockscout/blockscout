@@ -1,4 +1,4 @@
-defmodule Explorer.Staking.AccountReader do
+defmodule Explorer.Celo.AccountReader do
   @moduledoc """
   Reads information about Celo accounts using Smart Contract functions from the blockchain.
   """

@@ -18,6 +18,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Fetcher.{
     BlockReward,
+    CeloAccount,
     CoinBalance,
     ContractCode,
     InternalTransaction,
@@ -34,6 +35,7 @@ defmodule Indexer.Block.Fetcher do
     AddressCoinBalances,
     Addresses,
     AddressTokenBalances,
+    CeloAccounts,
     MintTransfers,
     TokenTransfers
   }
@@ -132,6 +134,7 @@ defmodule Indexer.Block.Fetcher do
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
+         %{accounts: accounts} = CeloAccounts.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
@@ -169,6 +172,7 @@ defmodule Indexer.Block.Fetcher do
                block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
+               celo_accounts: %{params: accounts},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts}
              }
@@ -305,6 +309,10 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_staking_pools do
     StakingPools.async_fetch()
+  end
+
+  def async_import_celo_accounts(%{celo_accounts: accounts}) do
+    CeloAccount.async_fetch(accounts)
   end
 
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}) do

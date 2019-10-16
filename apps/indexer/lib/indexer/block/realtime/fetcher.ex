@@ -21,7 +21,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_token_balances: 1,
       async_import_uncles: 1,
       fetch_and_import_range: 2,
-      async_import_staking_pools: 0
+      async_import_staking_pools: 0,
+      async_import_celo_accounts: 1
     ]
 
   alias Ecto.Changeset
@@ -361,6 +362,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
     async_import_staking_pools()
+    async_import_celo_accounts(imported)
   end
 
   defp balances(
