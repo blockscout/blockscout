@@ -41,9 +41,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            - v7-npm-install-{{ .Branch }}
-            - v7-npm-install
+            - v8-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            - v8-npm-install-{{ .Branch }}
+            - v8-npm-install
 
       - run:
           command: npm install
@@ -68,13 +68,13 @@ jobs:
           working_directory: "apps/block_scout_web/assets"
 
       - save_cache:
-          key: v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+          key: v8-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
           paths: "apps/block_scout_web/assets/node_modules"
       - save_cache:
-          key: v7-npm-install-{{ .Branch }}
+          key: v8-npm-install-{{ .Branch }}
           paths: "apps/block_scout_web/assets/node_modules"
       - save_cache:
-          key: v7-npm-install
+          key: v8-npm-install
           paths: "apps/block_scout_web/assets/node_modules"
 
       - run: mix compile
