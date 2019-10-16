@@ -44,8 +44,7 @@ defmodule BlockScoutWeb.AddressController do
           index: index,
           exchange_rate: exchange_rate,
           total_supply: total_supply,
-          tx_count: tx_count,
-          validation_count: validation_count(address.hash)
+          tx_count: tx_count
         )
       end)
 
@@ -61,7 +60,7 @@ defmodule BlockScoutWeb.AddressController do
   def index(conn, _params) do
     render(conn, "index.html",
       current_path: current_path(conn),
-      address_count: Chain.count_addresses_with_balance_from_cache()
+      address_count: Chain.count_addresses_from_cache()
     )
   end
 

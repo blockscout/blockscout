@@ -234,7 +234,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		}
 	}
 
-	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon {
+	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon .btn-contract-icon {
 		border-color: $dark-primary;
 		path {
 			fill: $dark-primary;
