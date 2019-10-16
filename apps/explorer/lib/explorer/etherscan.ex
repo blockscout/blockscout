@@ -272,7 +272,7 @@ defmodule Explorer.Etherscan do
       from(
         t in Transaction,
         inner_join: b in assoc(t, :block),
-        order_by: [{^options.order_by_direction, t.block_number}],
+        order_by: [{^options.order_by_direction, b.number}],
         limit: ^options.page_size,
         offset: ^offset(options),
         select:
