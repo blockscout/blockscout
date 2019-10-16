@@ -15,16 +15,28 @@ defmodule BlockScoutWeb.StakesController do
     render_template(assigns.filter, conn, params)
   end
 
-  def render_top do
+  def render_top(conn) do
     epoch_number = ContractState.get(:epoch_number, 0)
     epoch_end_block = ContractState.get(:epoch_end_block, 0)
     block_number = BlockNumber.get_max()
+    token = ContractState.get(:token, %Token{})
+
+    account =
+      if account_address = conn.assigns[:account] do
+        %{
+          address: account_address,
+          balance: Chain.fetch_last_token_balance(account_address, token.contract_address_hash),
+          staked: Chain.get_total_staked(account_address),
+          pool: Chain.staking_pool(account_address)
+        }
+      end
 
     View.render_to_string(StakesView, "_stakes_top.html",
       epoch_number: epoch_number,
       epoch_end_in: epoch_end_block - block_number,
       block_number: block_number,
-      logged_in: false
+      account: account,
+      token: token
     )
   end
 
@@ -83,7 +95,7 @@ defmodule BlockScoutWeb.StakesController do
 
   defp render_template(filter, conn, _) do
     render(conn, "index.html",
-      top: render_top(),
+      top: render_top(conn),
       pools_type: filter,
       current_path: current_path(conn),
       average_block_time: AverageBlockTime.average_block_time()
