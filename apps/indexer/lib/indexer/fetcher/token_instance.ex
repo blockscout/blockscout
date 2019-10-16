@@ -6,6 +6,8 @@ defmodule Indexer.Fetcher.TokenInstance do
   use Indexer.Fetcher
   use Spandex.Decorators
 
+  require Logger
+
   alias Explorer.Chain
   alias Explorer.Token.InstanceMetadataRetriever
   alias Indexer.BufferedTask
@@ -69,7 +71,16 @@ defmodule Indexer.Fetcher.TokenInstance do
 
         {:ok, _result} = Chain.upsert_token_instance(params)
 
-      _other ->
+      result ->
+        Logger.error(fn ->
+          [
+            "failed to fetch token instance metadata for #{
+              inspect({to_string(token_contract_address_hash), Decimal.to_integer(token_id)})
+            }: ",
+            inspect(result)
+          ]
+        end)
+
         :ok
     end
 
