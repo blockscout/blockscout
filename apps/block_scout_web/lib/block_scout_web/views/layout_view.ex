@@ -4,18 +4,23 @@ defmodule BlockScoutWeb.LayoutView do
   alias Plug.Conn
   alias Poison.Parser
 
-  @issue_url "https://github.com/poanetwork/blockscout/issues/new"
+  @issue_url "https://github.com/celo-org/blockscout/issues/new"
   @default_other_networks [
     %{
-      title: "Alfajores",
+      title: "Celo Alfajores",
       url: "https://alfajores-blockscout.celo-testnet.org/",
-      test_net?: false
+      test_net?: true
     },
     %{
-      title: "Betanet",
-      url: "https://blockscout.com/poa/sokol",
+      title: "Celo Integration",
+      url: "https://integration-blockscout.celo-testnet.org/",
       test_net?: true
-    }
+    },
+    %{
+      title: "Celo Betanet",
+      url: "https://betanet-blockscout.celo-testnet.org/",
+      test_net?: true
+    },
   ]
 
   alias BlockScoutWeb.SocialMedia
