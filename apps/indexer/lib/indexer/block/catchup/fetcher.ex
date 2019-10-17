@@ -17,7 +17,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_tokens: 1,
       async_import_token_balances: 1,
       async_import_uncles: 1,
-      fetch_and_import_range: 2
+      fetch_and_import_range: 2,
+      async_import_celo_accounts: 1
     ]
 
   alias Ecto.Changeset
@@ -164,6 +165,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_token_balances(imported)
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
+    async_import_celo_accounts(imported)
   end
 
   defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)

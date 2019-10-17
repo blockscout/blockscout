@@ -8,7 +8,7 @@ defmodule Explorer.Chain.CeloAccount do
   
     use Explorer.Schema
   
-    alias Explorer.Chain.{Hash, Wei}
+    alias Explorer.Chain.{Hash, Wei, Address}
   
 #    @type account_type :: %__MODULE__{ :regular | :validator | :group }
 
@@ -33,26 +33,42 @@ defmodule Explorer.Chain.CeloAccount do
     }
 
     @attrs ~w(
-        address account_type gold usd locked_gold notive_period rewards
+        address account_type gold usd locked_gold notice_period rewards
+    )a
+
+    @required_attrs ~w(
+        address
     )a
 
     @validator_registered_event "0x4e35530e670c639b101af7074b9abce98a1bb1ebff1f7e21c83fc0a553775074"
     def validator_registered_event, do: @validator_registered_event
 
     schema "celo_account" do
-        field(:address, Hash.Address)
         field(:account_type, :string)
         field(:gold, Wei)
         field(:usd, Wei)
         field(:locked_gold, Wei)
         field(:notice_period, :integer)
         field(:rewards, Wei)
+
+        belongs_to(
+            :account_address,
+            Address,
+            foreign_key: :address,
+            references: :hash,
+            type: Hash.Address
+        )
+
+        timestamps(null: false, type: :utc_datetime_usec)
     end
 
     def changeset(%__MODULE__{} = celo_account, attrs) do
-      celo_account
+        IO.inspect(celo_account)
+        IO.inspect(attrs)
+        celo_account
       |> cast(attrs, @attrs)
-      |> validate_required(@attrs)
+      |> validate_required(@required_attrs)
+      |> unique_constraint(:address)
     end
 
 end

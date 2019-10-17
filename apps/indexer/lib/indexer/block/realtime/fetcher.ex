@@ -193,6 +193,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([:block_rewards], chain_import_block_rewards)
            |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params),
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
+#      IO.inspect(imported)
       async_import_remaining_block_data(
         imported,
         %{block_rewards: %{errors: block_reward_errors}},

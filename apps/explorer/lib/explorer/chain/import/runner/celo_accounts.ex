@@ -45,9 +45,6 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
     |> Multi.run(:acquire_all_celo_accounts, fn repo, _ ->
       acquire_all_celo_accounts(repo)
     end)
-    |> Multi.run(:mark_as_deleted, fn repo, _ ->
-      mark_as_deleted(repo, changes_list, insert_options)
-    end)
     |> Multi.run(:insert_celo_accounts, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
@@ -70,27 +67,6 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
     {:ok, accounts}
   end
 
-  defp mark_as_deleted(repo, changes_list, %{timeout: timeout}) when is_list(changes_list) do
-    addresses = Enum.map(changes_list, & &1.address)
-
-    query =
-      from(
-        account in CeloAccount,
-        where: account.address not in ^addresses,
-        # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
-        update: [set: [is_deleted: true, is_active: false]]
-      )
-
-    try do
-      {_, result} = repo.update_all(query, [], timeout: timeout)
-
-      {:ok, result}
-    rescue
-      postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error}}
-    end
-  end
-
   @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
@@ -100,6 +76,7 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+    IO.inspect(on_conflict)
 
     # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.address)
@@ -119,7 +96,7 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
 
   defp default_on_conflict do
     from(
-      pool in CeloAccount,
+      account in CeloAccount,
       update: [
         set: [
           account_type: fragment("EXCLUDED.account_type"),
@@ -128,6 +105,8 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
           locked_gold: fragment("EXCLUDED.locked_gold"),
           notice_period: fragment("EXCLUDED.notice_period"),
           rewards: fragment("EXCLUDED.rewards"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", account.updated_at)
         ]
       ]
     )

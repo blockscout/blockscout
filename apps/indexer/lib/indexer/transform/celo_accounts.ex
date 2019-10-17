@@ -5,7 +5,6 @@ defmodule Indexer.Transform.CeloAccounts do
   
     require Logger
   
-    alias ABI.TypeDecoder
     alias Explorer.Chain.CeloAccount
 
     @doc """
@@ -31,22 +30,17 @@ defmodule Indexer.Transform.CeloAccounts do
         acc
     end
 
-    defp parse_params(%{second_topic: nil, third_topic: nil, fourth_topic: nil, data: data} = _log) when not is_nil(data) do
-        [validator_address] = decode_data(data, [:address])
+    defp parse_params(%{second_topic: validator_address, third_topic: nil, fourth_topic: nil, data: _data} = _log) do
         account = %{
-            address: validator_address
+            address: truncate_address_hash(validator_address)
         }
         {account}
     end
 
-    defp decode_data("0x", types) do
-        for _ <- types, do: nil
-    end
+    defp truncate_address_hash(nil), do: "0x0000000000000000000000000000000000000000"
 
-    defp decode_data("0x" <> encoded_data, types) do
-        encoded_data
-        |> Base.decode16!(case: :mixed)
-        |> TypeDecoder.decode_raw(types)
+    defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
+      "0x#{truncated_hash}"
     end
 
 end
