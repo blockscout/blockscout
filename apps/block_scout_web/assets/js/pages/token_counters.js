@@ -1,75 +1,73 @@
-import $ from "jquery";
-import omit from "lodash/omit";
-import URI from "urijs";
-import humps from "humps";
-import { subscribeChannel } from "../socket";
-import { createStore, connectElements } from "../lib/redux_helpers.js";
+import $ from 'jquery'
+import omit from 'lodash/omit'
+import humps from 'humps'
+import { createStore, connectElements } from '../lib/redux_helpers.js'
 
 export const initialState = {
-    channelDisconnected: false,
-    transferCount: null,
-    tokenHolderCount: null
-};
+  channelDisconnected: false,
+  transferCount: null,
+  tokenHolderCount: null
+}
 
-export function reducer(state = initialState, action) {
+export function reducer (state = initialState, action) {
   switch (action.type) {
-    case "PAGE_LOAD":
-    case "ELEMENTS_LOAD": {
-      return Object.assign({}, state, omit(action, "type"));
+    case 'PAGE_LOAD':
+    case 'ELEMENTS_LOAD': {
+      return Object.assign({}, state, omit(action, 'type'))
     }
-    case "CHANNEL_DISCONNECTED": {
-      if (state.beyondPageOne) return state;
+    case 'CHANNEL_DISCONNECTED': {
+      if (state.beyondPageOne) return state
 
       return Object.assign({}, state, {
         channelDisconnected: true
-      });
+      })
     }
-  case "COUNTERS_FETCHED": {
+    case 'COUNTERS_FETCHED': {
       return Object.assign({}, state, {
-          transferCount: action.transferCount,
-          tokenHolderCount: action.tokenHolderCount
-      });
+        transferCount: action.transferCount,
+        tokenHolderCount: action.tokenHolderCount
+      })
     }
     default:
-      return state;
+      return state
   }
 }
 
 const elements = {
   '[data-page="counters"]': {
-    render($el, state) {
+    render ($el, state) {
       if (state.counters) {
-        return $el;
+        return $el
       }
-      return $el;
+      return $el
     }
   },
   '[token-transfer-count]': {
-      render ($el, state) {
-          if (state.transferCount) {
-              $el.text(state.transferCount + ' Transfers')
-              return $el.show()
-          } else {
-              return $el.hide()
-          }
+    render ($el, state) {
+      if (state.transferCount) {
+        $el.text(state.transferCount + ' Transfers')
+        return $el.show()
+      } else {
+        return $el.hide()
+      }
     }
   },
-    '[token-holder-count]': {
-      render ($el, state) {
-          if (state.tokenHolderCount) {
-              $el.text(state.tokenHolderCount + ' Addresses')
-              return $el.show()
-          } else {
-              return $el.hide()
-          }
+  '[token-holder-count]': {
+    render ($el, state) {
+      if (state.tokenHolderCount) {
+        $el.text(state.tokenHolderCount + ' Addresses')
+        return $el.show()
+      } else {
+        return $el.hide()
+      }
     }
-  },
-};
+  }
+}
 
-function loadCounters(store) {
-    const $element = $('[data-async-counters]')
-    const path = $element.data().asyncCounters
-  function fetchCounters() {
+function loadCounters (store) {
+  const $element = $('[data-async-counters]')
+  const path = $element.data().asyncCounters
+  function fetchCounters () {
     store.dispatch({type: 'START_REQUEST'})
     $.getJSON(path)
       .done(response => store.dispatch(Object.assign({type: 'COUNTERS_FETCHED'}, humps.camelizeKeys(response))))
@@ -80,10 +78,10 @@ function loadCounters(store) {
   fetchCounters()
 }
 
-const $tokenPage = $('[token-page]');
+const $tokenPage = $('[token-page]')
 
 if ($tokenPage.length) {
-  const store = createStore(reducer);
-  connectElements({ store, elements });
-  loadCounters(store);
+  const store = createStore(reducer)
+  connectElements({ store, elements })
+  loadCounters(store)
 }
