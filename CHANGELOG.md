@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2292](https://github.com/poanetwork/blockscout/pull/2292) - Add Web UI for POSDAO Staking DApp
 - [#3282](https://github.com/poanetwork/blockscout/pull/3282) - Import bridged tokens custom metadata
 - [#3281](https://github.com/poanetwork/blockscout/pull/3281) - Write contract: display currently connected address
 - [#3279](https://github.com/poanetwork/blockscout/pull/3279) - NFT instance: link to the app
