@@ -1,0 +1,171 @@
+// general
+$primary: #1d3154;
+$secondary: #fdcec4;
+$tertiary: #a96c55;
+$additional-font: #a1ded1;
+
+$tile-body-a-color: $tertiary;
+$tile-type-block-color: $tertiary;
+$tile-type-progress-bar-color: $tertiary;
+a.tile-title { color: $tertiary !important; }
+
+// footer
+$footer-background-color: $primary;
+$footer-title-color: #fff;
+$footer-text-color: $secondary;
+$footer-item-disc-color: $secondary;
+$footer-social-icon-color: $secondary;
+
+.footer-logo {
+  filter: brightness(0) invert(1);
+}
+
+// dashboard
+$dashboard-line-color-price: $tertiary; // price left border
+
+$dashboard-banner-chart-legend-label-color: $primary;
+$dashboard-stats-item-label-color: $primary;
+$dashboard-banner-chart-legend-value-color: $primary; // chart labels
+$dashboard-stats-item-value-color: $primary; // stat values
+
+$dashboard-stats-item-border-color: $primary; // stat border
+$dashboard-banner-gradient-start: $secondary; // gradient begin
+$dashboard-banner-gradient-end: $secondary; // gradient end
+$dashboard-banner-network-plain-container-background-color: $secondary; // stats bg
+
+// navigation
+$header-icon-border-color-hover: $primary; // top border on hover
+$header-icon-color-hover: $primary; // nav icon on hover
+$dropdown-menu-item-hover-color: $primary !default;
+$dropdown-menu-item-hover-background: rgba($primary, .1) !default;
+
+// buttons
+$btn-line-bg: #fff; // button bg
+$btn-line-color: $primary; // button border and font color && hover bg color
+$btn-copy-color: $primary; // btn copy
+$btn-qr-color: $primary; // btn qr-code
+$btn-address-card-icon-color: $primary; // btn address color
+
+// card
+$card-background-1: $primary;
+$card-tab-active: $primary;
+
+$dashboard-banner-network-stats-static-image: "/images/lukso_dashboard_image.png";
+
+// Custom home
+$dashboard-banner-network-plain-container-height: 150px;
+
+.layout-container {
+  .dashboard-banner-container::after {
+    display: none;
+  }
+
+  .dashboard-banner-network-graph {
+    display: none;
+  }
+
+  .dashboard-banner-network-plain-container {
+    background-color: transparent;
+    height: $dashboard-banner-network-plain-container-height;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    box-shadow: none;
+
+    @include media-breakpoint-down(lg) {
+      height: auto;
+      min-height: $dashboard-banner-network-plain-container-height;
+      padding-bottom: 0;
+      padding-top: 25px;
+    }
+
+    .dashboard-banner-network-stats {
+      align-items: center;
+      display: flex;
+      height: 100%;
+      justify-content: flex-start;
+      width: 100%;
+
+      @include media-breakpoint-down(lg) {
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+
+      &::after {
+        background-color: transparent;
+        background-image: url($dashboard-banner-network-stats-static-image);
+        background-position: 50% 50%;
+        background-repeat: no-repeat;
+        background-size: contain;
+        bottom: auto;
+        content: "";
+        display: block;
+        flex-grow: 0;
+        flex-shrink: 0;
+        height: $dashboard-banner-network-plain-container-height;
+        margin: 0 0 0 auto;
+        order: 150;
+        width: 301px;
+        box-shadow: none;
+
+        @include media-breakpoint-down(lg) {
+          display: none;
+        }
+      }
+
+      .dashboard-banner-network-stats-item {
+        margin-right: 60px;
+
+        @include media-breakpoint-down(lg) {
+          flex-grow: 1;
+          flex-shrink: 1;
+          margin-right: 0;
+          margin-bottom: 25px;
+        }
+
+        @include media-breakpoint-down(sm) {
+          min-width: 50%;
+        }
+
+        &.dashboard-banner-network-stats-item-1 {
+          order: 1;
+        }
+        &.dashboard-banner-network-stats-item-2 {
+          order: 2;
+        }
+        &.dashboard-banner-network-stats-item-3 {
+          order: 4;
+          margin-right: 0;
+        }
+        &.dashboard-banner-network-stats-item-4 {
+          order: 3;
+        }
+      }
+    }
+    &:after {
+      box-shadow: none;
+    }
+  }
+}
+
+// Badges
+$badge-neutral-color: $tertiary;
+$badge-neutral-background-color: rgba($tertiary, .1);
+$api-text-monospace-color: $tertiary;
+
+// Dark theme
+$dark-primary: #fdcec4;
+$dark-secondary: #a96c55;
+$dark-primary-alternate: #a96c55;
+
+.dark-theme-applied {
+  .dashboard-banner-network-stats-value {
+    color: $dark-primary !important;
+  }
+  .layout-container .dashboard-banner-container {
+    background-color: #282945 !important;
+  }
+  .dashboard-banner-network-plain-container::after {
+    box-shadow: none !important;
+  }
+}

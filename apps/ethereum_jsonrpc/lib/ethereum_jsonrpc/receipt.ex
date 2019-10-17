@@ -258,7 +258,14 @@ defmodule EthereumJSONRPC.Receipt do
 
   defp entry_to_elixir({key, quantity})
        when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex) do
-    {:ok, {key, quantity_to_integer(quantity)}}
+    result =
+      if is_nil(quantity) do
+        nil
+      else
+        quantity_to_integer(quantity)
+      end
+
+    {:ok, {key, result}}
   end
 
   defp entry_to_elixir({"logs" = key, logs}) do
@@ -267,10 +274,10 @@ defmodule EthereumJSONRPC.Receipt do
 
   defp entry_to_elixir({"status" = key, status}) do
     case status do
-      "0x0" ->
+      zero when zero in ["0x0", "0x00"] ->
         {:ok, {key, :error}}
 
-      "0x1" ->
+      one when one in ["0x1", "0x01"] ->
         {:ok, {key, :ok}}
 
       # pre-Byzantium / Ethereum Classic on Parity
@@ -284,6 +291,11 @@ defmodule EthereumJSONRPC.Receipt do
 
   # fixes for latest ganache JSON RPC
   defp entry_to_elixir({key, _}) when key in ~w(r s v) do
+    :ignore
+  end
+
+  # Nethermind field
+  defp entry_to_elixir({"error", _}) do
     :ignore
   end
 

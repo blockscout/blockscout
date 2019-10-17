@@ -1,21 +1,32 @@
 <% block = @transaction.block %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
+<% status = transaction_status(@transaction) %>
 <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
-    <div class="col-md-12 col-lg-8">
+    <div class="col-md-12 col-lg-8 pr-0-md">
       <!-- Transaction Details -->
-      <div class="card">
+      <div class="card card-mr-50-md">
         <div class="card-body">
-          <div class="icon-links float-right">
-            <span data-clipboard-text="<%= @transaction %>">
-              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Txn Hash") %>" aria-label="<%= gettext("Copy Transaction Hash") %>">
-                <i class="fas fa-clone"></i>
-              </button>
+          <h1 class="card-title">
+            <%= gettext "Transaction Details" %>
+            <!-- buttons -->
+            <span class="overview-title-buttons float-right">
+              <span data-clipboard-text="<%= @transaction %>">
+                <span
+                  aria-label='<%= gettext("Copy Transaction Hash") %>'
+                  class="btn-copy-icon"
+                  data-placement="top"
+                  data-toggle="tooltip"
+                  title='<%= gettext("Copy Txn Hash") %>'
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+                    <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+                  </svg>
+                </span>
+              </span>
             </span>
-          </div>
-          <h1 class="card-title"><%= gettext "Transaction Details" %> </h1>
-
-          <%= if !block do %>
+          </h1>
+          <%= if status == :pending do %>
             <div class="tile tile-muted d-flex justify-content-center align-items-center mb-4">
               <div class="loading-spinner">
                 <span class="loading-spinner-block-1"></span>
@@ -24,8 +35,7 @@
               <%= gettext("This transaction is pending confirmation.") %>
             </div>
           <% end %>
-
-          <h3 data-test="transaction_detail_hash"><%= @transaction %> </h3>
+          <h3 class="transaction-details-address" data-test="transaction_detail_hash"><%= @transaction %> </h3>
           <span class="d-block mb-2 text-muted">
             <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, nil) |> BlockScoutWeb.RenderHelpers.render_partial() %>
             <span class="text-muted">  &rarr; </span>
@@ -33,13 +43,15 @@
           </span>
           <div class="d-flex flex-row justify-content-start text-muted">
             <span class="mr-4 text-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>"><%= BlockScoutWeb.TransactionView.transaction_display_type(@transaction) %></span>
-            <span class="mr-4" data-transaction-status="<%= BlockScoutWeb.TransactionView.formatted_status(@transaction) %>"><%= BlockScoutWeb.TransactionView.formatted_status(@transaction) %></span>
+            <span class="mr-4" data-transaction-status="<%= BlockScoutWeb.TransactionView.formatted_status(status) %>"><%= BlockScoutWeb.TransactionView.formatted_status(status) %></span>
             <span class="mr-4">
               <%= if block do %>
                 <span data-from-now="<%= @transaction.block.timestamp %>"></span>
               <% end %>
             </span>
           </div>
+          <!-- Verify in other explorers -->
+          <!-- <%= render BlockScoutWeb.AddressView, "_verify_other_explorers.html", hash: hash(@transaction), type: "tx" %> -->
           <hr>
           <!-- Block Hash -->
           <dl class="row">
@@ -52,12 +64,12 @@
                       to: block_path(@conn, :show, block)
                     ) %>
               <% else %>
-                <%= gettext "Pending" %>
+                <%= formatted_status(status) %>
               <% end %>
             </dd>
           </dl>
           <dl class="row">
-            <dt class="col-sm-3 text-muted"> <%= gettext "Block Confirmations" %> </dt>
+            <dt class="col-sm-3 text-muted"><%= gettext "Block Confirmations" %></dt>
             <dd class="col-sm-9">
               <span data-selector="block-confirmations"><%= confirmations(@transaction, block_height: @block_height) %></span>
           </dd>
@@ -71,71 +83,181 @@
           <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "TX Fee" %> </dt>
             <dd class="col-sm-9">
-              <%= formatted_fee(@transaction, denomination: :ether) %> (<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
+              <%= formatted_fee(@transaction, denomination: :ether) %>
+
+              <%= if !empty_exchange_rate?(@exchange_rate) do %>
+                (<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
+              <% end %>
             </dd>
           </dl>
-
-          <%= unless value_transfer?(@transaction) do %>
+          <!-- feeRecipient -->
           <dl class="row">
-            <dt class="col-sm-3 text-muted"><%= gettext "Raw Input" %></dt>
-            <dd class="col-sm-9">
-              <div class="raw-transaction-input">
-                <button type="button" class="copy icon-link mb-1" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= @transaction.input %>" aria-label="Copy Value">
-                  <i class="fas fa-clone"></i>
-                </button>
-
-                <div class="tile tile-muted">
-                  <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0">
-                    <code><%= @transaction.input %></code>
-                  </pre>
-                </div>
-              </div>
+            <dt class="col-sm-3 text-muted"><%= gettext "Fee Recipient" %> </dt>
+            <dd class="col-sm-9" data-selector="fee-recipient">
+              <%= if @transaction.block.miner_hash do %>
+                <%= link(
+                      @transaction.block.miner_hash,
+                      class: "address__link",
+                      to: address_path(@conn, :show, @transaction.block.miner_hash)
+                    ) %>
+              <% else %>
+                <%= formatted_status(status) %>
+              <% end %>
             </dd>
           </dl>
+          <!-- Processing Time -->
+          <%= case processing_time_duration(@transaction) do %>
+            <% :pending -> %>
+              <% nil %>
+            <% :unknown -> %>
+              <% nil %>
+            <% {:ok, interval_string} -> %>
+              <dl class="row">
+                <dt class="col-sm-3 text-muted"> <%= gettext "Transaction Speed" %> </dt>
+                <dd class="col-sm-9">
+                  <%= interval_string %>
+                </dd>
+              </dl>
+          <% end %>
+          <%= unless value_transfer?(@transaction) do %>
+            <dl class="row">
+              <dt class="col-sm-3 text-muted"><%= gettext "Raw Input" %></dt>
+              <dd class="col-sm-9">
+                <div class="d-flex mb-3 justify-content-between">
+                  <!-- Dropdown -->
+                  <div class="dropdown">
+                    <button class="btn-dropdown-line dropdown-toggle" type="button" id="tx-input-decoding-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <%= gettext("Hex (Default)") %>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="transaction-input-decoding-button">
+                      <a href class="dropdown-item tx-input-dropdown" data-target=".tx-raw-input" id="tx-dropdown-raw">
+                        <%= gettext("Hex (Default)") %>
+                      </a>
+                      <a href class="dropdown-item tx-input-dropdown" data-target=".tx-utf8-input" id="tx-dropdown-utf8">
+                        <%= gettext("UTF-8") %>
+                      </a>
+                    </div>
+                  </div>
+                  <!-- Copy -->
+                  <span
+                    aria-label="Copy Value"
+                    class="btn-copy-icon tx-raw-input transaction-input"
+                    id="tx-raw-input"
+                    data-clipboard-text="<%= @transaction.input %>"
+                    data-placement="top"
+                    data-toggle="tooltip"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+                      <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+                    </svg>
+                  </span>
+                  <!-- Copy -->
+                  <span
+                    aria-label="Copy Value"
+                    class="btn-copy-icon tx-utf8-input transaction-input"
+                    data-clipboard-text="<%= @transaction.input %>"
+                    data-placement="top"
+                    data-toggle="tooltip"
+                    style="display: none;"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+                      <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+                    </svg>
+                  </span>
+                </div>
+                <!-- Textarea -->
+                <div class="transaction-input tx-raw-input">
+                  <div class="tile tile-muted">
+                    <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @transaction.input %></code></pre>
+                  </div>
+                </div>
+                <!-- Textfield -->
+                <div class="transaction-input tx-utf8-input" style="display: none;">
+                  <div class="tile tile-muted">
+                    <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @transaction.input.bytes %></code></pre>
+                  </div>
+                </div>
+              </dd>
+            </dl>
           <% end %>
         </div>
       </div>
     </div>
 
-    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
-      <!-- Value -->
-      <div class="card card-primary flex-grow-1">
-        <div class="card-body">
-          <h2 class="card-title text-white"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
-          <div class="text-right">
-            <h3 class="text-white">
-              <%= value(@transaction) %>
-            </h3>
-            <span class="text-white text-faded" data-wei-value=<%= @transaction.value.value %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>
+    <%= case token_transfer_type(@transaction) do %>
+      <% {type, %{token_transfers: token_transfers} = transaction_with_transfers} when is_list(token_transfers) and token_transfers != [] -> %>
+        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0">
+        <!-- Value -->
+        <div class="card card-background-1 flex-grow-1">
+          <div class="card-body card-body-flex-column-space-between">
+            <%= if @transaction.value && @transaction.value.value != Decimal.new(0) do %>
+              <h2 class="card-title balance-card-title"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
+              <div class="text-right">
+                <h3 class="address-balance-text">
+                  <%= value(@transaction) %>
+                </h3>
+                <%= if !empty_exchange_rate?(@exchange_rate) do %>
+                  <p class="address-current-balance"
+                    data-wei-value=<%= @transaction.value.value %>
+                    data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
+                  </p>
+                <% end %>
+              </div>
+            <% end %>
+            <h2 class="card-title balance-card-title"><%= token_type_name(type)%><%= gettext " Token Transfer" %></h2>
+            <div class="text-right">
+            <%= for transfer  <- aggregate_token_transfers(transaction_with_transfers.token_transfers) do %>
+              <h3 class="address-balance-text">
+                  <%= token_transfer_amount(transfer) %>
+                  <%= " "%>
+                  <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
+              </h3>
+            <% end %>
+            </div>
           </div>
         </div>
+      <% _ -> %>
+        <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md">
+        <!-- Value -->
+        <div class="card card-background-1 flex-grow-1">
+          <div class="card-body card-body-flex-column-space-between">
+            <h2 class="card-title balance-card-title"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
+            <div class="text-right">
+              <h3 class="address-balance-text">
+                <%= value(@transaction) %>
+              </h3>
+              <%= if !empty_exchange_rate?(@exchange_rate) do %>
+                <p class="address-current-balance"
+                  data-wei-value=<%= @transaction.value.value %>
+                  data-usd-exchange-rate=<%= @exchange_rate.usd_value %>>
+                </p>
+              <% end %>
+            </div>
+          </div>
       </div>
-
+    <% end %>
       <!-- Gas -->
       <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
-        <div class="card-body">
-          <h2 class="card-title"> <%= gettext "Gas" %> </h2>
+        <div class="card-body card-body-flex-column-space-between">
+          <h2 class="card-title balance-card-title"> <%= gettext "Gas" %> </h2>
           <div class="text-right">
             <!-- Gas Used -->
-            <h3>
-              <span>
-                <%= gettext "Used" %>
-                <%= gas_used(@transaction) %> @
-                <%= gas_price(@transaction, :gwei) %>
-              </span>
+            <h3 class="address-balance-text">
+              <%= gettext "Used" %>
+              <%= gas_used(@transaction) %> @
+              <%= gas_price(@transaction, :gwei) %>
             </h3>
             <!-- Gas Limit -->
-            <span class="text-muted">
-              <%= gettext "Limit" %>
-              <%= format_gas_limit(@transaction.gas) %>
-            </span>
+            <p class="address-current-balance">
+              <%= gettext "Limit" %> <%= format_gas_limit(@transaction.gas) %>
+            </p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <%= unless should_decode?(@transaction) do %>
+  <%= unless skip_decoding?(@transaction) do %>
     <div class="row">
       <div class="col-md-12">
         <%= render BlockScoutWeb.TransactionView, "_decoded_input.html", Map.put(assigns, :decoded_input_data, decoded_input_data) %>

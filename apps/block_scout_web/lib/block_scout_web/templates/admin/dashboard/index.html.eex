@@ -1,1 +1,36 @@
-<div data-test="administrator_dashboard"></div>
+<div data-test="administrator_dashboard">
+  <div class="container">
+    <div class="row">
+      <h2>Tasks</h2>
+    </div>
+
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-body">
+            <div class="card-title">
+              <h3>Create Contract Methods</h3>
+            </div>
+            <div class="card-text">
+              <p>
+                <%= gettext("For any existing contracts in the database, insert all ABI entries into the contract_methods table. Use this in case you have verified smart contracts before early March 2019 and you want other contracts with the same functions to show those ABI's as candidate matches.") %>
+              </p>
+            </div>
+
+            <button id="run-create-contract-methods" data-api_path="<%= BlockScoutWeb.AdminRouter.Helpers.create_contract_methods_path(@conn, :create_contract_methods) %>" class="btn btn-primary">
+              <%= gettext("Run") %>
+
+              <span data-loading-message class="loading-spinner-small mr-2" style="display: none;">
+                <span class="loading-spinner-block-1"></span>
+                <span class="loading-spinner-block-2"></span>
+              </span>
+
+              <span data-success-message style="display: none;"> - Success</span>
+              <span data-error-message style="display: none;"> - Failed</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

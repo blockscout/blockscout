@@ -1,11 +1,15 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import omit from 'lodash/omit'
+import first from 'lodash/first'
+import rangeRight from 'lodash/rangeRight'
+import find from 'lodash/find'
+import map from 'lodash/map'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { batchChannel } from '../lib/utils'
+import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
 import { createMarketHistoryChart } from '../lib/market_history_chart'
 
@@ -24,7 +28,8 @@ export const initialState = {
   transactionsError: false,
   transactionsLoading: true,
   transactionCount: null,
-  usdMarketCap: null
+  usdMarketCap: null,
+  blockCount: null
 }
 
 export const reducer = withMissingBlocks(baseReducer)
@@ -32,7 +37,7 @@ export const reducer = withMissingBlocks(baseReducer)
 function baseReducer (state = initialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, _.omit(action, 'type'))
+      return Object.assign({}, state, omit(action, 'type'))
     }
     case 'RECEIVED_NEW_ADDRESS_COUNT': {
       return Object.assign({}, state, {
@@ -46,11 +51,13 @@ function baseReducer (state = initialState, action) {
           blocks: [
             action.msg,
             ...state.blocks.slice(0, -1)
-          ]
+          ],
+          blockCount: action.msg.blockNumber + 1
         })
       } else {
         return Object.assign({}, state, {
-          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
+          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block),
+          blockCount: action.msg.blockNumber + 1
         })
       }
     }
@@ -119,12 +126,12 @@ function withMissingBlocks (reducer) {
 
     if (!result.blocks || result.blocks.length < 2) return result
 
-    const maxBlock = _.first(result.blocks).blockNumber
+    const maxBlock = first(result.blocks).blockNumber
     const minBlock = maxBlock - (result.blocks.length - 1)
 
     return Object.assign({}, result, {
-      blocks: _.rangeRight(minBlock, maxBlock + 1)
-        .map((blockNumber) => _.find(result.blocks, ['blockNumber', blockNumber]) || {
+      blocks: rangeRight(minBlock, maxBlock + 1)
+        .map((blockNumber) => find(result.blocks, ['blockNumber', blockNumber]) || {
           blockNumber,
           chainBlockHtml: placeHolderBlock(blockNumber)
         })
@@ -139,7 +146,7 @@ const elements = {
       chart = createMarketHistoryChart($el[0])
     },
     render ($el, state, oldState) {
-      if (!chart || (oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData)) return
+      if (!chart || (oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) || !state.availableSupply) return
       chart.update(state.availableSupply, state.marketHistoryData)
     }
   },
@@ -150,6 +157,15 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.transactionCount === state.transactionCount) return
       $el.empty().append(numeral(state.transactionCount).format())
+    }
+  },
+  '[data-selector="block-count"]': {
+    load ($el) {
+      return { blockCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (oldState.blockCount === state.blockCount) return
+      $el.empty().append(numeral(state.blockCount).format())
     }
   },
   '[data-selector="address-count"]': {
@@ -182,7 +198,7 @@ const elements = {
       const container = $el[0]
 
       if (state.blocksLoading === false) {
-        const blocks = _.map(state.blocks, ({ chainBlockHtml }) => $(chainBlockHtml)[0])
+        const blocks = map(state.blocks, ({ chainBlockHtml }) => $(chainBlockHtml)[0])
         listMorph(container, blocks, { key: 'dataset.blockNumber', horizontal: true })
       }
     }
@@ -198,11 +214,7 @@ const elements = {
   },
   '[data-selector="chain-block-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
-      if (state.blocksLoading) {
-        $el.show()
-      } else {
-        $el.hide()
-      }
+      showLoader(state.blocksLoading, $el)
     }
   },
   '[data-selector="transactions-list"] [data-selector="error-message"]': {
@@ -212,7 +224,7 @@ const elements = {
   },
   '[data-selector="transactions-list"] [data-selector="loading-message"]': {
     render ($el, state, oldState) {
-      $el.toggle(state.transactionsLoading)
+      showLoader(state.transactionsLoading, $el)
     }
   },
   '[data-selector="transactions-list"]': {
@@ -222,7 +234,7 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.transactions === state.transactions) return
       const container = $el[0]
-      const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
+      const newElements = map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
       listMorph(container, newElements, { key: 'dataset.identifierHash' })
     }
   },
@@ -290,22 +302,20 @@ function bindTransactionErrorMessage (store) {
 export function placeHolderBlock (blockNumber) {
   return `
     <div
-      class="col-lg-3 fade-up-blocks-chain"
-      style="min-height: 100px;"
-      data-selector="place-holder"
+      class="col-lg-3 d-flex fade-up-blocks-chain"
       data-block-number="${blockNumber}"
+      data-selector="place-holder"
     >
       <div
         class="tile tile-type-block d-flex align-items-center fade-up"
-        style="height: 100px;"
       >
         <span class="loading-spinner-small ml-1 mr-4">
           <span class="loading-spinner-block-1"></span>
           <span class="loading-spinner-block-2"></span>
         </span>
         <div>
-          <div class="tile-title">${blockNumber}</div>
-          <div>${window.localized['Block Processing']}</div>
+          <span class="tile-title pr-0 pl-0">${blockNumber}</span>
+          <div class="tile-transactions">${window.localized['Block Processing']}</div>
         </div>
       </div>
     </div>

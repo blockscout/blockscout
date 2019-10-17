@@ -8,8 +8,7 @@ defmodule Explorer.Etherscan do
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.TokenBalance
-  alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction, Wei}
-  alias Explorer.Chain.Block.EmissionReward
+  alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction}
 
   @default_options %{
     order_by_direction: :asc,
@@ -56,6 +55,8 @@ defmodule Explorer.Etherscan do
   @internal_transaction_fields ~w(
     from_address_hash
     to_address_hash
+    transaction_hash
+    index
     value
     created_contract_address_hash
     input
@@ -185,22 +186,15 @@ defmodule Explorer.Etherscan do
     query =
       from(
         b in Block,
-        left_join: t in assoc(b, :transactions),
-        inner_join: r in EmissionReward,
-        on: fragment("? <@ ?", b.number, r.block_range),
         where: b.miner_hash == ^address_hash,
         order_by: [desc: b.number],
         group_by: b.number,
         group_by: b.timestamp,
-        group_by: r.reward,
         limit: ^merged_options.page_size,
         offset: ^offset(merged_options),
         select: %{
           number: b.number,
-          timestamp: b.timestamp,
-          reward: %Wei{
-            value: fragment("coalesce(sum(? * ?), 0) + ?", t.gas_used, t.gas_price, r.reward)
-          }
+          timestamp: b.timestamp
         }
       )
 
@@ -247,7 +241,8 @@ defmodule Explorer.Etherscan do
           contract_address_hash: tb.token_contract_address_hash,
           name: t.name,
           decimals: t.decimals,
-          symbol: t.symbol
+          symbol: t.symbol,
+          type: t.type
         }
       )
 
@@ -348,7 +343,8 @@ defmodule Explorer.Etherscan do
             token_name: tkn.name,
             token_symbol: tkn.symbol,
             token_decimals: tkn.decimals,
-            token_type: tkn.type
+            token_type: tkn.type,
+            token_log_index: tt.log_index
           })
       )
 

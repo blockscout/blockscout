@@ -1,15 +1,18 @@
 defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
-  alias Cldr.Number
-  alias Explorer.Chain
+  alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
+  alias BlockScoutWeb.Cldr.Number
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
-  alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
+  alias Explorer.ExchangeRates.Token
+  alias Timex.Duration
 
   import BlockScoutWeb.Gettext
+  import BlockScoutWeb.Tokens.Helpers
 
-  @tabs ["token_transfers", "internal_transactions", "logs"]
+  @tabs ["token_transfers", "internal_transactions", "logs", "raw_trace"]
 
   defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
 
@@ -29,20 +32,124 @@ defmodule BlockScoutWeb.TransactionView do
 
   def value_transfer?(_), do: false
 
+  def token_transfer_type(transaction) do
+    transaction_with_transfers = Repo.preload(transaction, token_transfers: :token)
+
+    type = Chain.transaction_token_transfer_type(transaction)
+    if type, do: {type, transaction_with_transfers}, else: {nil, transaction_with_transfers}
+  end
+
+  def aggregate_token_transfers(token_transfers) do
+    {transfers, nft_transfers} =
+      token_transfers
+      |> Enum.reduce({%{}, []}, fn token_transfer, acc ->
+        aggregate_reducer(token_transfer, acc)
+      end)
+
+    final_transfers = Map.values(transfers)
+
+    final_transfers ++ nft_transfers
+  end
+
+  defp aggregate_reducer(%{amount: amount} = token_transfer, {acc1, acc2}) when is_nil(amount) do
+    new_entry = %{
+      token: token_transfer.token,
+      amount: nil,
+      token_id: token_transfer.token_id
+    }
+
+    {acc1, [new_entry | acc2]}
+  end
+
+  defp aggregate_reducer(token_transfer, {acc1, acc2}) do
+    new_entry = %{
+      token: token_transfer.token,
+      amount: token_transfer.amount,
+      token_id: token_transfer.token_id
+    }
+
+    existing_entry = Map.get(acc1, token_transfer.token_contract_address, %{new_entry | amount: Decimal.new(0)})
+
+    new_acc1 =
+      Map.put(acc1, token_transfer.token_contract_address, %{
+        new_entry
+        | amount: Decimal.add(new_entry.amount, existing_entry.amount)
+      })
+
+    {new_acc1, acc2}
+  end
+
+  def token_type_name(type) do
+    case type do
+      :erc20 -> gettext("ERC-20 ")
+      :erc721 -> gettext("ERC-721 ")
+      _ -> ""
+    end
+  end
+
+  def processing_time_duration(%Transaction{block: nil}) do
+    :pending
+  end
+
+  def processing_time_duration(%Transaction{earliest_processing_start: nil}) do
+    :unknown
+  end
+
+  def processing_time_duration(%Transaction{
+        block: %Block{timestamp: end_time},
+        earliest_processing_start: earliest_processing_start,
+        inserted_at: inserted_at
+      }) do
+    with {:ok, long_interval} <- humanized_diff(earliest_processing_start, end_time),
+         {:ok, short_interval} <- humanized_diff(inserted_at, end_time) do
+      {:ok, merge_intervals(short_interval, long_interval)}
+    else
+      _ ->
+        :ignore
+    end
+  end
+
+  defp merge_intervals(short, long) when short == long, do: short
+
+  defp merge_intervals(short, long) do
+    [short_time, short_unit] = String.split(short, " ")
+    [long_time, long_unit] = String.split(long, " ")
+
+    if short_unit == long_unit do
+      short_time <> "-" <> long_time <> " " <> short_unit
+    else
+      short <> " - " <> long
+    end
+  end
+
+  defp humanized_diff(left, right) do
+    left
+    |> Timex.diff(right, :milliseconds)
+    |> Duration.from_milliseconds()
+    |> Timex.format_duration(Explorer.Counters.AverageBlockTimeDurationFormat)
+    |> case do
+      {:error, _} = error -> error
+      duration -> {:ok, duration}
+    end
+  end
+
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
-      nil ->
-        0
-
       %Block{consensus: true} ->
         {:ok, confirmations} = Chain.confirmations(block, named_arguments)
-        Cldr.Number.to_string!(confirmations, format: "#,###")
+        BlockScoutWeb.Cldr.Number.to_string!(confirmations, format: "#,###")
+
+      _ ->
+        0
     end
   end
 
   def contract_creation?(%Transaction{to_address: nil}), do: true
 
   def contract_creation?(_), do: false
+
+  #  def utf8_encode() do
+  #  end
 
   def fee(%Transaction{} = transaction) do
     {_, value} = Chain.fee(transaction, :wei)
@@ -63,10 +170,16 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
-  def formatted_status(transaction) do
-    transaction
-    |> Chain.transaction_to_status()
-    |> case do
+  def transaction_status(transaction) do
+    Chain.transaction_to_status(transaction)
+  end
+
+  def empty_exchange_rate?(exchange_rate) do
+    Token.null?(exchange_rate)
+  end
+
+  def formatted_status(status) do
+    case status do
       :pending -> gettext("Pending")
       :awaiting_internal_transactions -> gettext("(Awaiting internal transactions for status)")
       :success -> gettext("Success")
@@ -83,10 +196,10 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def gas(%type{gas: gas}) when is_transaction_type(type) do
-    Cldr.Number.to_string!(gas)
+    BlockScoutWeb.Cldr.Number.to_string!(gas)
   end
 
-  def should_decode?(transaction) do
+  def skip_decoding?(transaction) do
     contract_creation?(transaction) || value_transfer?(transaction)
   end
 
@@ -200,4 +313,5 @@ defmodule BlockScoutWeb.TransactionView do
   defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["logs"]), do: gettext("Logs")
+  defp tab_name(["raw_trace"]), do: gettext("Raw Trace")
 end

@@ -7,6 +7,7 @@ defmodule EthereumJSONRPC.Transaction do
   [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblockhashandindex),
   and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblocknumberandindex)
   """
+  require Logger
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
@@ -149,23 +150,25 @@ defmodule EthereumJSONRPC.Transaction do
     elixir_to_params(%{transaction | "input" => "0x"})
   end
 
-  def elixir_to_params(%{
-        "blockHash" => block_hash,
-        "blockNumber" => block_number,
-        "from" => from_address_hash,
-        "gas" => gas,
-        "gasPrice" => gas_price,
-        "hash" => hash,
-        "input" => input,
-        "nonce" => nonce,
-        "r" => r,
-        "s" => s,
-        "to" => to_address_hash,
-        "transactionIndex" => index,
-        "v" => v,
-        "value" => value
-      }) do
-    %{
+  def elixir_to_params(
+        %{
+          "blockHash" => block_hash,
+          "blockNumber" => block_number,
+          "from" => from_address_hash,
+          "gas" => gas,
+          "gasPrice" => gas_price,
+          "hash" => hash,
+          "input" => input,
+          "nonce" => nonce,
+          "r" => r,
+          "s" => s,
+          "to" => to_address_hash,
+          "transactionIndex" => index,
+          "v" => v,
+          "value" => value
+        } = transaction
+      ) do
+    result = %{
       block_hash: block_hash,
       block_number: block_number,
       from_address_hash: from_address_hash,
@@ -182,6 +185,12 @@ defmodule EthereumJSONRPC.Transaction do
       value: value,
       transaction_index: index
     }
+
+    if transaction["creates"] do
+      Map.put(result, :created_contract_address_hash, transaction["creates"])
+    else
+      result
+    end
   end
 
   # Ganache bug. it return `to: "0x0"` except of `to: null`
@@ -298,6 +307,12 @@ defmodule EthereumJSONRPC.Transaction do
     Enum.into(transaction, %{}, &entry_to_elixir/1)
   end
 
+  def to_elixir(transaction) when is_binary(transaction) do
+    Logger.warn(["Fetched transaction is not full: ", transaction])
+
+    nil
+  end
+
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
@@ -306,6 +321,10 @@ defmodule EthereumJSONRPC.Transaction do
   defp entry_to_elixir({key, value})
        when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to txType gasCurrency gasFeeRecipient),
        do: {key, value}
+
+  # specific to Nethermind client
+  defp entry_to_elixir({"data", value}),
+    do: {"input", value}
 
   defp entry_to_elixir({key, quantity}) when key in ~w(gas gasPrice nonce r s standardV v value) and quantity != nil do
     {key, quantity_to_integer(quantity)}
@@ -333,5 +352,9 @@ defmodule EthereumJSONRPC.Transaction do
       nil -> {key, chain_id}
       _ -> {key, quantity_to_integer(chain_id)}
     end
+  end
+
+  defp entry_to_elixir(_) do
+    {nil, nil}
   end
 end

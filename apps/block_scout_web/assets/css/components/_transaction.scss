@@ -1,0 +1,53 @@
+.transaction-bottom-panel {
+	display: flex;
+	flex-direction: column;
+	@media (min-width: 768px) {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: flex-end;
+	}
+}
+
+.transaction-bottom-panel {
+	display: flex;
+	flex-direction: column;
+	@media (min-width: 768px) {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: flex-end;
+	}
+}
+
+.download-all-transactions {
+	text-align: center;
+	color: #a3a9b5;
+	font-size: 13px;
+	margin-top: 10px;
+	@media (min-width: 768px) {
+		margin-top: 30px;
+	}
+	.download-all-transactions-link {
+		display: inline-flex;
+		align-items: center;
+		text-decoration: none;
+		svg {
+			position: relative;
+			margin-left: 2px;
+			top: -3px;
+			left: 3px;
+			path {
+				fill: $primary;
+			}
+		}
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+}
+
+.block-detail-number {
+	width: 25%;
+	@include media-breakpoint-down(sm) {
+		width: 60%;
+	}
+}

@@ -1,0 +1,140 @@
+$stakes-dashboard-copy-icon-color: $copy-icon-color !default;
+$stakes-address-color: $primary !default;
+$stakes-control-color: $primary !default;
+$stakes-stats-item-color: #fff !default;
+$stakes-stats-item-border-color: #fff !default;
+
+.stakes-top {
+  @include gradient-container();
+
+  margin-bottom: 3rem;
+  padding: 50px 0;
+}
+
+.stakes-top-stats {
+  display: flex;
+  justify-content: space-between;
+
+  @include stats-item($stakes-stats-item-border-color, $stakes-stats-item-color);
+
+  @include media-breakpoint-down(md) {
+    column-gap: 30px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 30px;
+  }
+
+  .stakes-top-stats-item {
+    @include media-breakpoint-down(md) {
+      &:nth-child(1),
+      &:nth-child(2),
+      &:nth-child(3) {
+        grid-column-start: 1;
+      }
+      &:nth-child(4) {
+        grid-column-start: 2;
+        grid-row-start: 1;
+      }
+    }
+
+    @include media-breakpoint-down(sm) {
+      grid-column-start: auto !important;
+      grid-row-start: auto !important;
+    }
+  }
+
+  @include media-breakpoint-down(sm) {
+    grid-template-columns: 1fr;
+  }
+
+  .copy-icon {
+    margin-left: 20px;
+    path {
+      fill: $stakes-dashboard-copy-icon-color;
+    }
+  }
+}
+
+.stakes-top-stats-value {
+  align-items: center;
+  display: flex;
+
+  .stakes-top-stats-item-address & {
+    white-space: normal;
+    word-break: break-all;
+  }
+}
+
+.stakes-top-stats-login {
+  color: $primary;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.stakes-address-container {
+  display: flex;
+  cursor: pointer;
+  justify-content: flex-start;
+
+  .stakes-address {
+    color: $stakes-address-color;
+    margin-right: 10px;
+
+    .stakes-tr-banned & {
+      color: $stakes-banned-color;
+    }
+  }
+}
+
+.stakes-controls {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 30px;
+}
+
+.stakes-control {
+  cursor: pointer;
+  display: flex;
+  justify-content: flex-start;
+  color: $stakes-control-color;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1.2;
+  margin-right: 25px;
+  text-align: left;
+
+  &:last-child {
+    margin-right: 0;
+  }
+}
+
+.stakes-control-icon {
+  margin-right: 10px;
+  path {
+    fill: $stakes-control-color;
+  }
+}
+
+.stakes-top-buttons {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+
+  .btn-add-full {
+    margin-bottom: 10px;
+  }
+
+  @include media-breakpoint-down(md) {
+    grid-column-start: 2;
+    grid-row-start: 2;
+    justify-self: end;
+  }
+
+  @include media-breakpoint-down(sm) {
+    grid-column-start: auto !important;
+    grid-row-start: auto !important;
+    justify-self: center;
+  }
+}

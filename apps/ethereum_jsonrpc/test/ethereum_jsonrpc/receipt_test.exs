@@ -30,4 +30,11 @@ defmodule EthereumJSONRPC.ReceiptTest do
       assert Receipt.to_elixir(%{"status" => nil, "transactionHash" => "0x0"}) == %{"transactionHash" => "0x0"}
     end
   end
+
+  test "leaves nil if blockNumber is nil" do
+    assert Receipt.to_elixir(%{"blockNumber" => nil, "transactionHash" => "0x0"}) == %{
+             "transactionHash" => "0x0",
+             "blockNumber" => nil
+           }
+  end
 end

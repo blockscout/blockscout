@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressTransactionControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  import BlockScoutWeb.Router.Helpers, only: [address_transaction_path: 3, address_transaction_path: 4]
+  import BlockScoutWeb.WebRouter.Helpers, only: [address_transaction_path: 3, address_transaction_path: 4]
 
   alias Explorer.Chain.Transaction
   alias Explorer.ExchangeRates.Token
@@ -13,10 +13,16 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       assert html_response(conn, 422)
     end
 
-    test "with valid address hash without address", %{conn: conn} do
-      conn = get(conn, address_transaction_path(conn, :index, "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"))
+    test "with valid address hash without address in the DB", %{conn: conn} do
+      conn =
+        get(
+          conn,
+          address_transaction_path(conn, :index, "0x8bf38d4764929064f2d4d3a56520a76ab3df415b", %{"type" => "JSON"})
+        )
 
-      assert html_response(conn, 404)
+      assert json_response(conn, 200)
+      transaction_tiles = json_response(conn, 200)["items"]
+      assert transaction_tiles |> length() == 0
     end
 
     test "returns transactions for the address", %{conn: conn} do
@@ -130,6 +136,42 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       assert Enum.all?([transaction.hash], fn transaction_hash ->
                Enum.any?(transaction_tiles, &String.contains?(&1, to_string(transaction_hash)))
              end)
+    end
+  end
+
+  describe "GET token_transfers_csv/2" do
+    test "exports token transfers to csv", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:token_transfer, transaction: transaction, from_address: address)
+      insert(:token_transfer, transaction: transaction, to_address: address)
+
+      conn = get(conn, "/token_transfers_csv", %{"address_id" => to_string(address.hash)})
+
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
+    end
+  end
+
+  describe "GET transactions_csv/2" do
+    test "download csv file with transactions", %{conn: conn} do
+      address = insert(:address)
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block()
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block()
+
+      conn = get(conn, "/transactions_csv", %{"address_id" => to_string(address.hash)})
+
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
     end
   end
 end

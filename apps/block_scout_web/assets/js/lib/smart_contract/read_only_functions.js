@@ -48,4 +48,6 @@ const readFunction = (element) => {
 
 const container = $('[data-smart-contract-functions]')
 
-loadFunctions(container)
+if (container.length) {
+  loadFunctions(container)
+}

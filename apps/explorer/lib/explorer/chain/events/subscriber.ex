@@ -3,13 +3,13 @@ defmodule Explorer.Chain.Events.Subscriber do
   Subscribes to events related to the Chain context.
   """
 
-  @allowed_broadcast_events ~w(addresses address_coin_balances blocks block_rewards internal_transactions token_transfers transactions)a
+  @allowed_broadcast_events ~w(addresses address_coin_balances blocks block_rewards internal_transactions token_transfers transactions contract_verification_result)a
 
-  @allowed_broadcast_types ~w(catchup realtime)a
+  @allowed_broadcast_types ~w(catchup realtime on_demand contract_verification_result)a
 
   @allowed_events ~w(exchange_rate)a
 
-  @type broadcast_type :: :realtime | :catchup
+  @type broadcast_type :: :realtime | :catchup | :on_demand
 
   @doc """
   Subscribes the caller process to a specified subset of chain-related events.

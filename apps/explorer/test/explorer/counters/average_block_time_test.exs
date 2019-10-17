@@ -3,13 +3,15 @@ defmodule Explorer.Counters.AverageBlockTimeTest do
 
   doctest Explorer.Counters.AverageBlockTimeDurationFormat
 
+  alias Explorer.Chain.Block
   alias Explorer.Counters.AverageBlockTime
-
-  defp block(number, last, duration), do: %{number: number, timestamp: Timex.shift(last, seconds: duration)}
+  alias Explorer.Repo
 
   setup do
     start_supervised!(AverageBlockTime)
     Application.put_env(:explorer, AverageBlockTime, enabled: true)
+
+    Application.put_env(:explorer, :include_uncles_in_average_block_time, true)
 
     on_exit(fn ->
       Application.put_env(:explorer, AverageBlockTime, enabled: false)
@@ -27,40 +29,65 @@ defmodule Explorer.Counters.AverageBlockTimeTest do
       assert AverageBlockTime.average_block_time() == Timex.Duration.parse!("PT0S")
     end
 
-    test "with only one block, the duration is 0" do
-      now = Timex.now()
-      block = block(0, now, 0)
+    test "considers both uncles and consensus blocks" do
+      block_number = 99_999_999
 
-      assert AverageBlockTime.average_block_time(block) == Timex.Duration.parse!("PT0S")
+      first_timestamp = Timex.now()
+
+      insert(:block, number: block_number, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 3))
+      insert(:block, number: block_number, consensus: false, timestamp: Timex.shift(first_timestamp, seconds: 9))
+      insert(:block, number: block_number, consensus: false, timestamp: Timex.shift(first_timestamp, seconds: 6))
+
+      assert Repo.aggregate(Block, :count, :hash) == 3
+
+      AverageBlockTime.refresh()
+
+      assert AverageBlockTime.average_block_time() == Timex.Duration.parse!("PT3S")
     end
 
-    test "once there are two blocks, the duration is the average distance between them all" do
-      now = Timex.now()
+    test "excludes uncles if include_uncles_in_average_block_time is set to false" do
+      block_number = 99_999_999
+      Application.put_env(:explorer, :include_uncles_in_average_block_time, false)
 
-      block0 = block(0, now, 0)
-      block1 = block(1, now, 2)
-      block2 = block(2, now, 6)
+      first_timestamp = Timex.now()
 
-      AverageBlockTime.average_block_time(block0)
-      assert AverageBlockTime.average_block_time(block1) == Timex.Duration.parse!("PT2S")
-      assert AverageBlockTime.average_block_time(block2) == Timex.Duration.parse!("PT3S")
+      insert(:block, number: block_number, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 3))
+      insert(:block, number: block_number, consensus: false, timestamp: Timex.shift(first_timestamp, seconds: 4))
+      insert(:block, number: block_number + 1, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 5))
+
+      AverageBlockTime.refresh()
+
+      assert AverageBlockTime.average_block_time() == Timex.Duration.parse!("PT2S")
     end
 
-    test "only the last 100 blocks are considered" do
-      now = Timex.now()
+    test "excludes uncles if include_uncles_in_average_block_time is set to true" do
+      block_number = 99_999_999
 
-      block0 = block(0, now, 0)
-      block1 = block(1, now, 2000)
+      first_timestamp = Timex.now()
 
-      AverageBlockTime.average_block_time(block0)
-      AverageBlockTime.average_block_time(block1)
+      insert(:block, number: block_number, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 3))
+      insert(:block, number: block_number, consensus: false, timestamp: Timex.shift(first_timestamp, seconds: 4))
+      insert(:block, number: block_number + 1, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 5))
 
-      for i <- 1..100 do
-        block = block(i + 1, now, 2000 + i)
-        AverageBlockTime.average_block_time(block)
-      end
+      AverageBlockTime.refresh()
 
       assert AverageBlockTime.average_block_time() == Timex.Duration.parse!("PT1S")
+    end
+
+    test "when there are no uncles sorts by block number" do
+      block_number = 99_999_999
+
+      first_timestamp = Timex.now()
+
+      insert(:block, number: block_number, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 3))
+      insert(:block, number: block_number + 2, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 9))
+      insert(:block, number: block_number + 1, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: 6))
+
+      assert Repo.aggregate(Block, :count, :hash) == 3
+
+      AverageBlockTime.refresh()
+
+      assert AverageBlockTime.average_block_time() == Timex.Duration.parse!("PT3S")
     end
   end
 end

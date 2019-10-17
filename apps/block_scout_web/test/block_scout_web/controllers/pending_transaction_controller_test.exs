@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.PendingTransactionControllerTest do
   use BlockScoutWeb.ConnCase
   alias Explorer.Chain.{Hash, Transaction}
 
-  import BlockScoutWeb.Router.Helpers, only: [pending_transaction_path: 2, pending_transaction_path: 3]
+  import BlockScoutWeb.WebRouter.Helpers, only: [pending_transaction_path: 2, pending_transaction_path: 3]
 
   describe "GET index/2" do
     test "returns no transactions that are in a block", %{conn: conn} do
@@ -23,13 +23,18 @@ defmodule BlockScoutWeb.PendingTransactionControllerTest do
       assert hd(json_response(conn, 200)["items"]) =~ to_string(transaction.hash)
     end
 
-    test "returns a count of pending transactions", %{conn: conn} do
-      insert(:transaction)
+    test "does not show dropped/replaced transactions", %{conn: conn} do
+      transaction = insert(:transaction)
 
-      conn = get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index))
+      dropped_replaced =
+        :transaction
+        |> insert(status: 0, error: "dropped/replaced")
+        |> with_block()
 
-      assert html_response(conn, 200)
-      assert 1 == conn.assigns.pending_transaction_count
+      conn = get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index, %{"type" => "JSON"}))
+
+      assert hd(json_response(conn, 200)["items"]) =~ to_string(transaction.hash)
+      refute hd(json_response(conn, 200)["items"]) =~ to_string(dropped_replaced.hash)
     end
 
     test "works when there are no transactions", %{conn: conn} do

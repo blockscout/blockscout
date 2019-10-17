@@ -3,12 +3,14 @@ defmodule BlockScoutWeb.ChainControllerTest do
     # ETS table is shared in `Explorer.Counters.AddressesWithBalanceCounter`
     async: false
 
-  import BlockScoutWeb.Router.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
+  import BlockScoutWeb.WebRouter.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
 
   alias Explorer.Chain.Block
   alias Explorer.Counters.AddressesWithBalanceCounter
 
   setup do
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     start_supervised!(AddressesWithBalanceCounter)
     AddressesWithBalanceCounter.consolidate()
 
@@ -66,7 +68,27 @@ defmodule BlockScoutWeb.ChainControllerTest do
     end
   end
 
-  describe "GET q/2" do
+  describe "GET token_autocomplete/2" do
+    test "finds matching tokens" do
+      insert(:token, name: "MaGiC")
+      insert(:token, name: "Evil")
+
+      conn = get(conn(), "/token_autocomplete?q=magic")
+
+      assert Enum.count(json_response(conn, 200)) == 1
+    end
+
+    test "finds two matching tokens" do
+      insert(:token, name: "MaGiC")
+      insert(:token, name: "magic")
+
+      conn = get(conn(), "/token_autocomplete?q=magic")
+
+      assert Enum.count(json_response(conn, 200)) == 2
+    end
+  end
+
+  describe "GET search/2" do
     test "finds a consensus block by block number", %{conn: conn} do
       insert(:block, number: 37)
       conn = get(conn, "/search?q=37")
@@ -101,6 +123,19 @@ defmodule BlockScoutWeb.ChainControllerTest do
       assert redirected_to(conn) == transaction_path(conn, :show, transaction)
     end
 
+    test "finds a transaction by hash when there are not 0x prefix", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      "0x" <> non_prefix_hash = to_string(transaction.hash)
+
+      conn = get(conn, "search?q=#{to_string(non_prefix_hash)}")
+
+      assert redirected_to(conn) == transaction_path(conn, :show, transaction)
+    end
+
     test "finds an address by hash", %{conn: conn} do
       address = insert(:address)
       conn = get(conn, "search?q=#{to_string(address.hash)}")
@@ -111,6 +146,15 @@ defmodule BlockScoutWeb.ChainControllerTest do
     test "finds an address by hash when there are extra spaces", %{conn: conn} do
       address = insert(:address)
       conn = get(conn, "search?q=#{to_string(address.hash)}")
+
+      assert redirected_to(conn) == address_path(conn, :show, address)
+    end
+
+    test "finds an address by hash when there are not 0x prefix", %{conn: conn} do
+      address = insert(:address)
+      "0x" <> non_prefix_hash = to_string(address.hash)
+
+      conn = get(conn, "search?q=#{to_string(non_prefix_hash)}")
 
       assert redirected_to(conn) == address_path(conn, :show, address)
     end

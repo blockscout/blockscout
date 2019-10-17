@@ -75,7 +75,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
     from(
       cb in CoinBalance,
       where: cb.address_hash == ^address_hash,
-      where: cb.value > ^0,
+      where: not is_nil(cb.value),
       inner_join: b in Block,
       on: cb.block_number == b.number,
       order_by: [desc: :block_number],
@@ -89,14 +89,30 @@ defmodule Explorer.Chain.Address.CoinBalance do
   Builds an `Ecto.Query` to fetch a series of balances by day for the given account. Each element in the series
   corresponds to the maximum balance in that day. Only the last 90 days of data are used.
   """
-  def balances_by_day(address_hash) do
+  def balances_by_day(address_hash, block_timestamp \\ nil) do
     CoinBalance
     |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
     |> where([cb], cb.address_hash == ^address_hash)
-    |> where([cb, b], b.timestamp >= fragment("date_trunc('day', now()) - interval '90 days'"))
+    |> limit_time_interval(block_timestamp)
     |> group_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
     |> order_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
     |> select([cb, b], %{date: type(fragment("date_trunc('day', ?)", b.timestamp), :date), value: max(cb.value)})
+  end
+
+  def limit_time_interval(query, nil) do
+    query |> where([cb, b], b.timestamp >= fragment("date_trunc('day', now()) - interval '90 days'"))
+  end
+
+  def limit_time_interval(query, %{timestamp: timestamp}) do
+    query |> where([cb, b], b.timestamp >= fragment("(? AT TIME ZONE ?) - interval '90 days'", ^timestamp, ^"Etc/UTC"))
+  end
+
+  def last_coin_balance_timestamp(address_hash) do
+    CoinBalance
+    |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
+    |> where([cb], cb.address_hash == ^address_hash)
+    |> last(:block_number)
+    |> select([cb, b], %{timestamp: b.timestamp, value: cb.value})
   end
 
   def changeset(%__MODULE__{} = balance, params) do
