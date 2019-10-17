@@ -824,7 +824,7 @@ msgid "Telegram"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:26
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:27
 msgid "There are no holders for this Token."
 msgstr ""
 
@@ -855,7 +855,7 @@ msgid "There are no tokens for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/inventory/index.html.eex:26
+#: lib/block_scout_web/templates/tokens/inventory/index.html.eex:27
 msgid "There are no tokens."
 msgstr ""
 
@@ -871,7 +871,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:26
-#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:25
+#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:26
 msgid "There are no transfers for this Token."
 msgstr ""
 
@@ -900,7 +900,7 @@ msgid "Token Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:16
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:17
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:9
 #: lib/block_scout_web/views/tokens/overview_view.ex:36
 msgid "Token Holders"
@@ -922,7 +922,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:3
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:16
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:3
-#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:15
+#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:16
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
 #: lib/block_scout_web/views/tokens/instance/overview_view.ex:71
@@ -999,7 +999,7 @@ msgid "Invalid Transaction Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/inventory/index.html.eex:16
+#: lib/block_scout_web/templates/tokens/inventory/index.html.eex:17
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:17
 #: lib/block_scout_web/views/tokens/overview_view.ex:38
 msgid "Inventory"
@@ -1055,7 +1055,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_read_contract/index.html.eex:14
-#: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:21
+#: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:22
 msgid "Loading..."
 msgstr ""
 
@@ -1382,10 +1382,10 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/chain/show.html.eex:91
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:19
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:21
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:22
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:21
-#: lib/block_scout_web/templates/tokens/inventory/index.html.eex:21
-#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:20
+#: lib/block_scout_web/templates/tokens/inventory/index.html.eex:22
+#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:21
 #: lib/block_scout_web/templates/transaction/index.html.eex:20
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:11
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:13
