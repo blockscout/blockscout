@@ -14,7 +14,7 @@
 
 BlockScout provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on **all EVM** (Ethereum Virtual Machine) blockchains. This includes the Ethereum main and test networks as well as **Ethereum forks and sidechains**.
 
-See our [project documentation](https://poanetwork.github.io/blockscout) for detailed information and setup instructions.
+See our [project documentation](https://docs.blockscout.com/) for detailed information and setup instructions.
 
 Visit the [POA BlockScout forum](https://forum.poa.network/c/blockscout) for FAQs, troubleshooting, and other BlockScout related items. You can also post and answer questions here.
 
@@ -49,12 +49,12 @@ Current BlockScout versions for hosted projects are available [on the forum](htt
 
 ## Getting Started
 
-See the [project documentation](https://poanetwork.github.io/blockscout) for instructions:
-- [Requirements](https://poanetwork.github.io/blockscout/#/requirements)
-- [Ansible deployment](https://poanetwork.github.io/blockscout/#/ansible-deployment)
-- [Manual deployment](https://poanetwork.github.io/blockscout/#/manual-deployment)
-- [ENV variables](https://poanetwork.github.io/blockscout/#/env-variables)
-- [Configuration options](https://poanetwork.github.io/blockscout/#/dev-env)
+See the [project documentation](https://docs.blockscout.com/) for instructions:
+- [Requirements](https://docs.blockscout.com/for-developers/information-and-settings/requirements)
+- [Ansible deployment](https://docs.blockscout.com/for-developers/ansible-deployment)
+- [Manual deployment](https://docs.blockscout.com/for-developers/manual-deployment)
+- [ENV variables](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
+- [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
 
 
 ## Acknowledgements
