@@ -4,6 +4,7 @@
 ## 3.3.3-beta
 
 ### Features
+- [#2292](https://github.com/poanetwork/blockscout/pull/2292) - Add Web UI for POSDAO Staking DApp
 - [#3320](https://github.com/poanetwork/blockscout/pull/3320) - Bridged tokens from AMB extensions support
 - [#3311](https://github.com/poanetwork/blockscout/pull/3311) - List of addresses with restricted access option
 - [#3293](https://github.com/poanetwork/blockscout/pull/3293) - Composite market cap for xDai: TokenBridge + OmniBridge
