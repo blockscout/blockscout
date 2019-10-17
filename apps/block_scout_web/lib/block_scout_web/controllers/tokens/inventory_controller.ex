@@ -75,7 +75,8 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
         current_path: current_path(conn),
         token: Market.add_price(token),
         total_token_transfers: total_token_transfers,
-        total_token_holders: total_token_holders
+        total_token_holders: total_token_holders,
+        counters_path: token_path(conn, :token_counters, %{"id" => to_string(address_hash)})
       )
     else
       :error ->

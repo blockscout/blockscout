@@ -2,7 +2,7 @@
   <div class="row">
     <div class="card-section col-md-12 col-lg-8 pr-0-md">
       <div class="card">
-        <div class="card-body">
+        <div class="card-body" data-async-counters="<%= @counters_path %>">
           <h1 class="card-title">
             <%= if token_name?(@token) do %>
               <%= @token.name %>

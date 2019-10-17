@@ -5,6 +5,7 @@
     token: @token,
     total_token_transfers: @total_token_transfers,
     total_token_holders: @total_token_holders,
+    counters_path: @counters_path,
     conn: @conn
   ) %>
 
