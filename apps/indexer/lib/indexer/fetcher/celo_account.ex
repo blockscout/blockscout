@@ -27,8 +27,19 @@ defmodule Indexer.Fetcher.CeloAccount do
         if CeloAccountSupervisor.disabled?() do
           :ok
         else
-          BufferedTask.buffer(__MODULE__, accounts, :infinity)
+          params =
+            accounts.params
+            |> Enum.map(&entry/1)
+
+          BufferedTask.buffer(__MODULE__, params, :infinity)
         end
+    end
+
+    def entry(address) do
+      %{
+        address: address,
+        retries_count: 0
+      }
     end
 
     @doc false

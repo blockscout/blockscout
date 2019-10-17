@@ -81,6 +81,10 @@ config :explorer, Explorer.Staking.PoolsReader,
   validators_contract_address: System.get_env("POS_VALIDATORS_CONTRACT"),
   staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
 
+config :explorer, Explorer.Celo.AccountReader,
+  validators_contract_address: System.get_env("VALIDATORS_CONTRACT_ADDRESS"),
+  lockedgold_contract_address: System.get_env("LOCKEDGOLD_CONTRACT_ADDRESS")
+
 if System.get_env("POS_STAKING_CONTRACT") do
   config :explorer, Explorer.Staking.EpochCounter,
     enabled: true,

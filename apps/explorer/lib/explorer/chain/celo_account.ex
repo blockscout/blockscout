@@ -63,8 +63,6 @@ defmodule Explorer.Chain.CeloAccount do
     end
 
     def changeset(%__MODULE__{} = celo_account, attrs) do
-        IO.inspect(celo_account)
-        IO.inspect(attrs)
         celo_account
       |> cast(attrs, @attrs)
       |> validate_required(@required_attrs)

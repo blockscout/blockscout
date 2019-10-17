@@ -33,6 +33,9 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
 
   @impl Import.Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
+
+
+
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -76,7 +79,6 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
           | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
-    IO.inspect(on_conflict)
 
     # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.address)

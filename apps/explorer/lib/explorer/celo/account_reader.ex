@@ -4,7 +4,9 @@ defmodule Explorer.Celo.AccountReader do
   """
   alias Explorer.SmartContract.Reader
 
-  def account_data(account_address) do
+  require Logger
+
+  def account_data(%{address: account_address}) do
     with data = fetch_account_data(account_address),
          {:ok, [is_validator]} <- data["isValidator"],
          {:ok, [is_validator_group]} <- data["isValidatorGroup"],
@@ -38,15 +40,17 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_account_data(account_address) do
-    call_methods([
+    data = call_methods([
       {:lockedgold, "getAccountWeight", [account_address]},
       {:validators, "isValidator", [account_address]},
       {:validators, "isValidatorGroup", [account_address]},
     ])
+    IO.inspect(data)
+    data
   end
 
   defp call_methods(methods) do
-    contract_abi = abi("lockedgold.json") + abi("validators.json")
+    contract_abi = abi("lockedgold.json") ++ abi("validators.json")
     methods
     |> Enum.map(&format_request/1)
     |> Reader.query_contracts(contract_abi)
@@ -68,7 +72,10 @@ defmodule Explorer.Celo.AccountReader do
   defp contract(:validators), do: config(:validators_contract_address)
 
   defp config(key) do
-    Application.get_env(:explorer, __MODULE__, [])[key]
+    # IO.inspect(Application.get_all_env(:explorer))
+    data = Application.get_env(:explorer, __MODULE__, [])[key]
+    IO.inspect(data)
+    data
   end
 
   # sobelow_skip ["Traversal"]
