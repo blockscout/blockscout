@@ -14,14 +14,14 @@ defmodule BlockScoutWeb.Tokens.TokenController do
          {:ok, token} <- Chain.token_from_address_hash(address_hash) do
       {transfer_count, token_holder_count} = fetch_token_counters(token, address_hash, 200)
 
-      json(conn, %{transfer_count: transfer_count, token_holder_counter: token_holder_count})
+      json(conn, %{transfer_count: transfer_count, token_holder_count: token_holder_count})
     else
       _ ->
         not_found(conn)
     end
   end
 
-  def fetch_token_counters(token, address_hash, timeout \\ 40) do
+  defp fetch_token_counters(token, address_hash, timeout) do
     total_token_transfers_task =
       Task.async(fn ->
         Chain.count_token_transfers_from_token_hash(address_hash)

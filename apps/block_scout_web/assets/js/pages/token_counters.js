@@ -6,9 +6,9 @@ import { subscribeChannel } from "../socket";
 import { createStore, connectElements } from "../lib/redux_helpers.js";
 
 export const initialState = {
-  channelDisconnected: false,
-  addressHash: null,
-  counters: null
+    channelDisconnected: false,
+    transferCount: null,
+    tokenHolderCount: null
 };
 
 export function reducer(state = initialState, action) {
@@ -24,9 +24,10 @@ export function reducer(state = initialState, action) {
         channelDisconnected: true
       });
     }
-    case "RECEIVED_COUNTERS_RESULT": {
+  case "COUNTERS_FETCHED": {
       return Object.assign({}, state, {
-        counters: action.msg.counters
+          transferCount: action.transferCount,
+          tokenHolderCount: action.tokenHolderCount
       });
     }
     default:
@@ -35,11 +36,6 @@ export function reducer(state = initialState, action) {
 }
 
 const elements = {
-  '[data-selector="channel-disconnected-message"]': {
-    render($el, state) {
-      if (state.channelDisconnected) $el.show();
-    }
-  },
   '[data-page="counters"]': {
     render($el, state) {
       if (state.counters) {
@@ -47,37 +43,47 @@ const elements = {
       }
       return $el;
     }
-  }
+  },
+  '[token-transfer-count]': {
+      render ($el, state) {
+          if (state.transferCount) {
+              $el.text(state.transferCount + ' Transfers')
+              return $el.show()
+          } else {
+              return $el.hide()
+          }
+    }
+  },
+    '[token-holder-count]': {
+      render ($el, state) {
+          if (state.tokenHolderCount) {
+              $el.text(state.tokenHolderCount + ' Addresses')
+              return $el.show()
+          } else {
+              return $el.hide()
+          }
+    }
+  },
 };
 
-const $tokenPage = $('[data-page="token-page"]');
+function loadCounters(store) {
+    const $element = $('[data-async-counters]')
+    const path = $element.data().asyncCounters
+  function fetchCounters() {
+    store.dispatch({type: 'START_REQUEST'})
+    $.getJSON(path)
+      .done(response => store.dispatch(Object.assign({type: 'COUNTERS_FETCHED'}, humps.camelizeKeys(response))))
+      .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
+      .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+  }
+
+  fetchCounters()
+}
+
+const $tokenPage = $('[token-page]');
 
 if ($tokenPage.length) {
   const store = createStore(reducer);
-  const addressHash = $("#smart_contract_address_hash").val();
-  const { filter, blockNumber } = humps.camelizeKeys(
-    URI(window.location).query(true)
-  );
-
-  store.dispatch({
-    type: "PAGE_LOAD",
-    addressHash,
-    filter,
-    beyondPageOne: !!blockNumber
-  });
   connectElements({ store, elements });
-
-  const addressChannel = subscribeChannel(`addresses:${addressHash}`);
-
-  addressChannel.onError(() =>
-    store.dispatch({
-      type: "CHANNEL_DISCONNECTED"
-    })
-  );
-  addressChannel.on("token_counters", msg =>
-    store.dispatch({
-      type: "RECEIVED_COUNTERS_RESULT",
-      msg: humps.camelizeKeys(msg)
-    })
-  );
+  loadCounters(store);
 }

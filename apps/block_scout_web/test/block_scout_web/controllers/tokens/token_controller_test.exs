@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.Tokens.TokenControllerTest do
       assert conn.status == 200
       {:ok, response} = Jason.decode(conn.resp_body)
 
-      assert %{"token_holder_counter" => 0, "transfer_count" => 1} == response
+      assert %{"token_holder_count" => 0, "transfer_count" => 1} == response
     end
   end
 end
