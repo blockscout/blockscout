@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.ChainController do
     render(
       conn,
       "show.html",
-      address_count: Chain.count_addresses_with_balance_from_cache(),
+      address_count: Chain.count_addresses_from_cache(),
       average_block_time: AverageBlockTime.average_block_time(),
       exchange_rate: exchange_rate,
       chart_data_path: market_history_chart_path(conn, :show),
