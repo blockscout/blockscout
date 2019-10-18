@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.ContractController do
   use BlockScoutWeb, :controller
 
+  require Logger
+
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
@@ -69,7 +71,19 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def getsourcecode(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
-      address = Chain.address_hash_to_address_with_source_code(address_hash)
+
+      Logger.debug("Address Hash: #{address_hash}")
+      
+      address = with {:ok, proxy_contract} <- Chain.get_proxied_address(address_hash) do
+        Logger.info("Implementation address FOUND in proxy table")
+        Chain.address_hash_to_address_with_source_code(proxy_contract)
+      else 
+        {:error, :not_found} ->
+          Logger.info("Implementation address NOT found in proxy table")
+          Chain.address_hash_to_address_with_source_code(address_hash)
+      end
+
+      Logger.debug("Address: #{address}")
 
       render(conn, :getsourcecode, %{
         contract: address

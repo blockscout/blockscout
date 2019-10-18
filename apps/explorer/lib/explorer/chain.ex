@@ -38,6 +38,7 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
+    ProxyContract,
     SmartContract,
     StakingPool,
     Token,
@@ -2667,6 +2668,20 @@ defmodule Explorer.Chain do
           address_with_smart_contract
         end
     end
+  end
+
+  def get_proxied_address(address_hash) do
+    query =
+      from(contract in ProxyContract,
+        where: contract.proxy_address == ^address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      proxy_contract -> {:ok, proxy_contract.implementation_address}
+    end    
   end
 
   @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil
