@@ -34,6 +34,7 @@
             <% {:ok, value} -> %>
               <%= value %>
           <% end %>
+          <%= " "%>
           <%= @token_transfer.token.symbol %>
         </span>
       </span>

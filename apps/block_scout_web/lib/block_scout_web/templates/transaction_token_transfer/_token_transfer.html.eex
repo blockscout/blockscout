@@ -19,6 +19,7 @@
           <% {:ok, value} -> %>
             <%= value %>
         <% end %>
+        <%= " "%>
         <%= link(token_symbol(@token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @token_transfer.token.contract_address_hash)) %>
       </span>
     </div>
