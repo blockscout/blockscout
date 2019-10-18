@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.AddressController do
     end
   end
 
-  def transaction_and_validation_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
+  defp transaction_and_validation_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
     transaction_count_task =
       Task.async(fn ->
         transaction_count(address_hash)
