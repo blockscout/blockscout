@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule BlockScoutWeb.AddressContractController do
   use BlockScoutWeb, :controller
 
