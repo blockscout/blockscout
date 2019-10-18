@@ -234,7 +234,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		}
 	}
 
-	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon {
+	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon .btn-contract-icon {
 		border-color: $dark-primary;
 		path {
 			fill: $dark-primary;
@@ -504,7 +504,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		border-top-color: darken($labels-dark, 30);
 		border-bottom-color: darken($labels-dark, 30);
 	}
-	
+
 	// Form Controlls
 	.form-control {
 		background-color: $dark-light;
@@ -749,7 +749,7 @@ $labels-dark: #8a8dba; // header nav, labels
 			color: #fff;
 		}
 	}
-    
+
 	// alerts
 	.alert-link {
 		color: $labels-dark;
@@ -792,35 +792,37 @@ $labels-dark: #8a8dba; // header nav, labels
 .dark-theme-applied .dropdown-item.active, .dark-theme-applied .dropdown-item:hover, .dark-theme-applied .dropdown-item:focus {
     background-image: none;
     width: 100%;
-    background-color: #35335d!important;
+    background-color: #3f426c!important;
 }
- .dark-theme-applied .dropdown-item:hover:before {
-	content: "|";
-    height: 50px;
-    width: 50%;
-    opacity: 1;
-    background: none;
-    right: 17%;
-    color: $dark-primary;
-    position: relative;
-}
-.dark-theme-applied .navbar.navbar-primary .navbar-nav .nav-link:hover,
-.dark-theme-applied .navbar.navbar-primary .navbar-nav .nav-link.activeLink,
-.dark-theme-applied .navbar.navbar-primary .navbar-nav .nav-link:focus {
-	background-image: none;
-    width: 100%;
-	background-color: #35335d!important;
-	color: white;
-	border: none;
-  }
-  .dark-theme-applied .navbar.navbar-primary .navbar-nav .nav-link:hover:before
-   {
-	content: "|";
-    height: 50px;
-    width: 50%;
-    opacity: 1;
-    background: none;
-    left: 24%;
-    top: 14%;
-	color: $dark-primary;
+@media (max-width: 991.98px) {
+	.dark-theme-applied .navbar.navbar-primary .navbar-nav .nav-link:hover,
+	.dark-theme-applied .navbar.navbar-primary .navbar-nav .nav-link.activeLink,
+	.dark-theme-applied .navbar.navbar-primary .navbar-nav .nav-link:focus {
+		background-image: none;
+		width: 100%;
+		background-color: #35335d!important;
+		color: white;
+		border: none;
+	  }
+	  .dark-theme-applied .dropdown-item:hover:before {
+		content: "|";
+		height: 50px;
+		width: 50%;
+		opacity: 1;
+		background: none;
+		right: 17%;
+		color: $dark-primary;
+		position: relative;
 	}
+	  .dark-theme-applied .navbar.navbar-primary .navbar-nav .nav-link:hover:before
+	   {
+		content: "|";
+		height: 50px;
+		width: 50%;
+		opacity: 1;
+		background: none;
+		left: 24%;
+		top: 14%;
+		color: $dark-primary;
+		}
+		}
