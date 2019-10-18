@@ -68,6 +68,18 @@ defmodule BlockScoutWeb.AddressController do
     redirect(conn, to: address_transaction_path(conn, :index, id))
   end
 
+  def address_counters(conn, %{"id" => address_hash_string}) do
+    case Chain.string_to_address_hash(address_hash_string) do
+      {:ok, address_hash} ->
+        {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
+
+        json(conn, %{transaction_count: transaction_count, validation_count: validation_count})
+
+      _ ->
+        not_found(conn)
+    end
+  end
+
   def transaction_and_validation_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
     transaction_count_task =
       Task.async(fn ->
@@ -80,7 +92,7 @@ defmodule BlockScoutWeb.AddressController do
       end)
 
     [transaction_count_task, validation_count_task]
-    |> Task.yield_many(:timer.seconds(30))
+    |> Task.yield_many(:timer.seconds(60))
     |> Enum.map(fn {_task, res} ->
       case res do
         {:ok, result} ->
@@ -96,11 +108,11 @@ defmodule BlockScoutWeb.AddressController do
     |> List.to_tuple()
   end
 
-  def transaction_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
+  defp transaction_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
     Chain.total_transactions_sent_by_address(address_hash)
   end
 
-  def validation_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
+  defp validation_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
     Chain.address_to_validation_count(address_hash)
   end
 end

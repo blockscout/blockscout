@@ -208,6 +208,8 @@ defmodule BlockScoutWeb.WebRouter do
       as: :smart_contract
     )
 
+    get("/address_counters", AddressController, :address_counters)
+
     get("/search", ChainController, :search)
 
     get("/search_logs", AddressLogsController, :search_logs)
