@@ -63,6 +63,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        current_path: current_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => to_string(address_hash)})
       )
     else
