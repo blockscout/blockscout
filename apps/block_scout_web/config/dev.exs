@@ -71,6 +71,10 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
 
 config :block_scout_web, BlockScoutWeb.Tracer, env: "dev", disabled?: true
 
+config :block_scout_web, :csp,
+  websocket_endpoints: "wss://bridge.walletconnect.org/ https://dai.poa.network/ http://localhost:8541/",
+  frame_endpoints: "https://widget.portis.io/"
+
 config :logger, :block_scout_web,
   level: :debug,
   path: Path.absname("logs/dev/block_scout_web.log")

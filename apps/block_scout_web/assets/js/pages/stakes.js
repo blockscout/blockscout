@@ -15,6 +15,9 @@ import { openMoveStakeModal } from './stakes/move_stake'
 import { openWithdrawStakeModal } from './stakes/withdraw_stake'
 import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
 import { openWarningModal } from '../lib/modals'
+import Web3Connect from "web3connect"
+import WalletConnectProvider from "@walletconnect/web3-provider";
+import Portis from "@portis/web3";
 
 export const initialState = {
   channel: null,
@@ -89,6 +92,33 @@ export function reducer (state = initialState, action) {
       return state
   }
 }
+
+const web3Connect = new Web3Connect.Core({
+  //network: "mainnet", // optional
+  providerOptions: {
+    walletconnect: {
+      package: WalletConnectProvider, // required
+      options: {
+        infuraId: null,
+        chainId: 100,
+        rpc: {
+          100: "https://dai.poa.network",
+          101: "http://localhost:8541"
+        }
+        //infuraId: "a54b4b38e94743928c452dcdfcafc767" // required
+      }
+    },
+    portis: {
+      package: Portis, // required
+      options: {
+        id: "829ee48f-4a30-4a22-9740-fb92f4e14896", // required
+        //network: {nodeUrl: "https://dai.poa.network"}
+        network: {nodeUrl: "http://localhost:8541"}
+        //network: "sokol"
+      }
+    }
+  }
+});
 
 const elements = {
   '[data-page="stakes"]': {
@@ -180,8 +210,16 @@ function updateFilters (store) {
 }
 
 function initializeWeb3 (store) {
-  if (window.ethereum) {
-    const web3 = new Web3(window.ethereum)
+  // subscribe to connect
+  $stakesTop.on('click', '[data-selector="login-button"]', loginByWeb3Connect)
+
+  // subscribe to close
+  web3Connect.on("close", () => {
+    console.log("Web3Connect Modal Closed"); // modal has closed
+  });
+
+  web3Connect.on("connect", (provider) => {
+    const web3 = new Web3(provider); // add provider to web3
     store.dispatch({ type: 'WEB3_DETECTED', web3 })
 
     setInterval(async function () {
@@ -197,14 +235,36 @@ function initializeWeb3 (store) {
         setAccount(account, store)
       }
     }, 100)
+  });
 
-    $stakesTop.on('click', '[data-selector="login-button"]', loginByMetamask)
-  }
+  // if (window.ethereum) {
+  //   console.log('window.ethereum')
+  //   const web3 = new Web3(window.ethereum)
+  //   console.log(web3)
+  //   store.dispatch({ type: 'WEB3_DETECTED', web3 })
+
+  //   setInterval(async function () {
+  //     const networkId = await web3.eth.net.getId()
+  //     if (!store.getState().network || (networkId !== store.getState().network.id)) {
+  //       setNetwork(networkId, store)
+  //     }
+
+  //     const accounts = await web3.eth.getAccounts()
+  //     const account = accounts[0] ? accounts[0].toLowerCase() : null
+
+  //     if (account !== store.getState().account) {
+  //       setAccount(account, store)
+  //     }
+  //   }, 100)
+
+  //   // $stakesTop.on('click', '[data-selector="login-button"]', loginByMetamask)
+  // }
 }
 
 function setAccount (account, store) {
   store.dispatch({ type: 'ACCOUNT_UPDATED', account })
   store.getState().channel.push('set_account', account)
+  console.log('setAccount')
   refreshPage(store)
 }
 
@@ -234,4 +294,11 @@ async function loginByMetamask (event) {
     console.log(e)
     console.error('User denied account access')
   }
+}
+
+async function loginByWeb3Connect (event) {
+  event.stopPropagation()
+  event.preventDefault()
+
+  web3Connect.toggleModal();
 }
