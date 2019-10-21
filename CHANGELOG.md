@@ -19,7 +19,6 @@
 
 ### Fixes
 - [#2779](https://github.com/poanetwork/blockscout/pull/2779) - fix fetching `latin1` encoded data
-- [#2755](https://github.com/poanetwork/blockscout/pull/2755) - various token instance fetcher fixes
 - [#2783](https://github.com/poanetwork/blockscout/pull/2783) - Fix stuck value and ticker on the token page
 - [#2781](https://github.com/poanetwork/blockscout/pull/2781) - optimize txlist json rpc
 - [#2770](https://github.com/poanetwork/blockscout/pull/2770) - do not re-fetch token instances without uris
