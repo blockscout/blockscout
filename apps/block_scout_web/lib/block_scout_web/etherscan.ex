@@ -222,6 +222,8 @@ defmodule BlockScoutWeb.Etherscan do
         "timeStamp" => "0x561d688c",
         "gasPrice" => "0xba43b7400",
         "gasUsed" => "0x10682",
+        "gasFeeRecipient" => "0xe7c7177b6e5418f27e435f96dbf3f7edae41c133",
+        "gasCurrency" => "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
         "logIndex" => "0x",
         "transactionHash" => "0x0b03498648ae2da924f961dda00dc6bb0a8df15519262b7e012b7d67f4bb7e83",
         "transactionIndex" => "0x"
@@ -793,6 +795,16 @@ defmodule BlockScoutWeb.Etherscan do
         type: "gas",
         definition: "A nonnegative number roughly equivalent to computational steps.",
         example: ~s("0x10682")
+      },
+      gasCurrency: %{
+        type: "address hash",
+        definition: "A 160-bit code used for identifying accounts or contracts.",
+        example: ~s("0x88f24de331525cf6cfd7455eb96a9e4d49b7f292")
+      },
+      feeRecipeint: %{
+        type: "address hash",
+        definition: "A 160-bit code used for identifying accounts or contracts.",
+        example: ~s("0xbbae99f0e1ee565404465638d40827b54d343638")
       },
       logIndex: %{
         type: "hexadecimal",

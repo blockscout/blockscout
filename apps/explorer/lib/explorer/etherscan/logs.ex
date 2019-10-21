@@ -92,6 +92,8 @@ defmodule Explorer.Etherscan.Logs do
         select:
           merge(map(log, ^@log_fields), %{
             gas_price: transaction.gas_price,
+            gas_currency_hash: transaction.gas_currency_hash,
+            gas_fee_recipient_hash: transaction.gas_fee_recipient_hash,
             gas_used: transaction.gas_used,
             transaction_index: transaction.index,
             block_number: transaction.block_number
