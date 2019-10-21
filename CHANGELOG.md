@@ -18,6 +18,7 @@
 - [#2470](https://github.com/poanetwork/blockscout/pull/2470) - Allow Realtime Fetcher to wait for small skips
 
 ### Fixes
+- [#2793](https://github.com/poanetwork/blockscout/pull/2793) - Hide "We are indexing this chain right now. Some of the counts may be inaccurate" banner if no txs in blockchain
 - [#2779](https://github.com/poanetwork/blockscout/pull/2779) - fix fetching `latin1` encoded data
 - [#2783](https://github.com/poanetwork/blockscout/pull/2783) - Fix stuck value and ticker on the token page
 - [#2781](https://github.com/poanetwork/blockscout/pull/2781) - optimize txlist json rpc
