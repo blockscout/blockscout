@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         current_path: current_path(conn),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        counters_path: address_path(conn, :address_counters, %{"id" => to_string(address_hash)})
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
       )
     else
       :error ->
