@@ -52,7 +52,7 @@ defmodule Explorer.Chain.CeloWithdrawal do
         celo_withdrawal
       |> cast(attrs, @attrs)
       |> validate_required(@required_attrs)
-      |> unique_constraint(:celo_withdrawal_key, name: :celo_withdrawal_key)
+      |> unique_constraint(:celo_withdrawal_key, name: :celo_withdrawal_account_address_index_index)
     end
 
 end

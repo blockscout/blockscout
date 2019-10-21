@@ -48,10 +48,8 @@ defmodule Explorer.Chain.CeloValidatorHistory do
         celo_validator_history
       |> cast(attrs, @attrs)
       |> validate_required(@required_attrs)
-      |> unique_constraint(:address)
+      |> unique_constraint(:celo_validator_history_key, name: :celo_validator_history_validator_address_block_number_index_index)
     end
 
 end
-
-
 
