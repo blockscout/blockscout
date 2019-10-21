@@ -1,5 +1,6 @@
 <% block = @transaction.block %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
+<% gas_currency_token_name = get_token_name(@transaction) %>
 <% status = transaction_status(@transaction) %>
 <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
@@ -83,10 +84,39 @@
           <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "TX Fee" %> </dt>
             <dd class="col-sm-9">
-              <%= formatted_fee(@transaction, denomination: :ether) %>
-
-              <%= if !empty_exchange_rate?(@exchange_rate) do %>
-                (<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
+              <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %>
+              <%= if gas_currency_token_name.name == "" do %>
+                <%= gas_currency_token_name.symbol %>
+              <% else %>
+                <%= gas_currency_token_name.name %> (<%= gas_currency_token_name.symbol %>)
+              <% end %>
+            </dd>
+          </dl>
+          <!-- gasCurrency -->
+          <%= if @transaction.gas_currency_hash do %>
+            <dl class="row">
+              <dt class="col-sm-3 text-muted"><%= gettext "Gas Currency" %> </dt>
+              <dd class="col-sm-9" data-selector="gas-currency">
+                <%= link(
+                  @transaction.gas_currency_hash,
+                  class: "address__link",
+                  to: address_path(@conn, :show, @transaction.gas_currency_hash)
+                ) %>
+              </dd>
+            </dl>
+          <% end %>
+          <!-- feeRecipient -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"><%= gettext "Fee Recipient" %> </dt>
+            <dd class="col-sm-9" data-selector="fee-recipient">
+              <%= if @transaction.gas_fee_recipient_hash do %>
+                <%= link(
+                      @transaction.gas_fee_recipient_hash,
+                      class: "address__link",
+                      to: address_path(@conn, :show, @transaction.gas_fee_recipient_hash)
+                    ) %>
+              <% else %>
+                <%= formatted_status(status) %>
               <% end %>
             </dd>
           </dl>

@@ -1,0 +1,7 @@
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-f", "docker/Dockerfile", "-t", "gcr.io/$PROJECT_ID/blockscout:$COMMIT_SHA", "."]
+    waitFor: ["-"]
+timeout: 1200s
+images:
+  - "gcr.io/$PROJECT_ID/blockscout:$COMMIT_SHA"

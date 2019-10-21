@@ -74,7 +74,7 @@ defmodule EthereumJSONRPC.Geth do
 
   defp debug_trace_transaction_requests(id_to_params) when is_map(id_to_params) do
     Enum.map(id_to_params, fn {id, %{hash_data: hash_data}} ->
-      debug_trace_transaction_request(%{id: id, hash_data: hash_data})
+      debug_trace_transaction_request(%{id: id, hash_data: hash_data, disableStack: true, disableMemory: true, disableStorage: true})
     end)
   end
 
@@ -83,7 +83,7 @@ defmodule EthereumJSONRPC.Geth do
   @tracer File.read!(@tracer_path)
 
   defp debug_trace_transaction_request(%{id: id, hash_data: hash_data}) do
-    request(%{id: id, method: "debug_traceTransaction", params: [hash_data, %{tracer: @tracer}]})
+    request(%{id: id, method: "debug_traceTransaction", params: [hash_data, %{tracer: @tracer, disableStack: true, disableMemory: true, disableStorage: true}]})
   end
 
   defp debug_trace_transaction_responses_to_internal_transactions_params(

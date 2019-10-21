@@ -450,6 +450,8 @@ defmodule BlockScoutWeb.Etherscan do
       "gasLimit" => "91966",
       "gasUsed" => "95123",
       "gasPrice" => "100000",
+      "gasFeeRecipient" => "0xe7c7177b6e5418f27e435f96dbf3f7edae41c133",
+      "gasCurrency" => "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
       "hash" => "0x0000000000000000000000000000000000000000000000000000000000000004",
       "input" => "0x04",
       "logs" => [

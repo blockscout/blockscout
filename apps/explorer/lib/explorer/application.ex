@@ -17,6 +17,8 @@ defmodule Explorer.Application do
     Transactions
   }
 
+  alias Explorer.Chain.Events.Listener
+
   alias Explorer.Chain.Supply.RSK
 
   alias Explorer.Market.MarketHistoryCache
@@ -45,6 +47,7 @@ defmodule Explorer.Application do
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
       TransactionCount,
       BlockCount,
+      Listener,
       Blocks,
       NetVersion,
       BlockNumber,

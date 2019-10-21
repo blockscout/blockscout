@@ -2,7 +2,12 @@ use Mix.Config
 
 # Configures the database
 config :explorer, Explorer.Repo,
-  url: System.get_env("DATABASE_URL"),
+  url: System.get_env("DATABASE_URL") || "postgresql://postgres:1234@localhost:5432/blockscout",
+  username: System.get_env("DATABASE_USER") || "postgres",
+  password: System.get_env("DATABASE_PASSWORD") || "1234",
+  database: System.get_env("DATABASE_DB") || "blockscout",
+  hostname: System.get_env("DATABASE_HOSTNAME") || "localhost",
+  port: System.get_env("DATABASE_PORT") || "5432",
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
   ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true"),
   prepare: :unnamed,
