@@ -28,24 +28,11 @@ Currently available full-featured block explorers (Etherscan, Etherchain, Blockc
 
 ## Supported Projects
 
-| **Hosted Mainnets** | **Hosted Testnets** | **Additional Chains using BlockScout** | **Additional Chains using BlockScout** |
-|--------------------------------------------------------|-------------------------------------------------------|------------------------------------------------------|----------------------------------------------------------------|
-| [Callisto](https://blockscout.com/callisto/mainnet) | [Goerli Testnet](https://blockscout.com/eth/goerli) | [ARTIS](https://explorer.sigma1.artis.network) | [Celo Testnet](https://alfajores-blockscout.celo-testnet.org/) |
-| [Ethereum Classic](https://blockscout.com/etc/mainnet) | [Kovan Testnet](https://blockscout.com/eth/kovan) | [Ether-1](https://blocks.ether1.wattpool.net/) | [Matic Testnet](https://explorer.testnet2.matic.network/) |
-| [Ethereum Mainnet](https://blockscout.com/eth/mainnet) | [LUKSO L14 Testnet](https://blockscout.com/lukso/l14) | [Kotti Testnet](https://kottiexplorer.ethernode.io/) | [Mordor Testnet](https://mordorexplorer.ethernode.io/) |
-| [POA Core Network](https://blockscout.com/poa/core)| [POA Sokol Testnet](https://blockscout.com/poa/sokol) | [Fuse Network](https://explorer.fuse.io/)  | [Athereum Testnet](http://athexplorer.ava.network/) |
-| [RSK](https://blockscout.com/rsk/mainnet) | [Rinkeby Testnet](https://blockscout.com/eth/rinkeby) | [Oasis Labs](https://blockexplorer.oasiscloud.io/) |  |
-| [xDai Chain](https://blockscout.com/poa/dai) | [Ropsten Testnet](https://blockscout.com/eth/ropsten) | [Petrichor](https://explorer.petrachor.com/) |  |
-|  |  | [PIRL](http://pirl.es/) |  |
-|  |  | [SafeChain](https://explorer.safechain.io) |  |
-|  |  | [SpringChain](https://explorer.springrole.com/) |  |
-|  |  | [Tenda](https://tenda.network) |  |
-|  |  | [Loom](http://plasma-blockexplorer.dappchains.com/) |  |
-|  |  | [GoJoy Chain](https://gojoychain.com/) |  |
-|  |  | [Xerom](https://blocks.xerom.org/) |  |
+BlockScout supports a growing number of projects. Hosted instances include POA Network, xDai Chain, Ethereum Classic, Ethereum Mainnet and most Testnets. 
 
+- [List of hosted mainnets, testnets, and additional chains using BlockScout](https://docs.blockscout.com/for-projects/supported-projects)
+- [Hosted instance versions](https://docs.blockscout.com/for-projects/supported-projects/hosted-instance-versions)
 
-Current BlockScout versions for hosted projects are available [on the forum](https://forum.poa.network/t/deployed-instances-on-blockscout-com/1938).
 
 ## Getting Started
 
