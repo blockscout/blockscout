@@ -809,7 +809,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           String.to_integer(transaction["blockNumber"])
         end)
 
-      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 <= &2))
+      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 >= &2))
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
@@ -831,12 +831,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> insert_list(:transaction, from_address: address)
         |> with_block(second_block)
 
-      _third_block_transactions =
+      first_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
         |> with_block(third_block)
 
-      first_block_transactions =
+      _third_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
         |> with_block(first_block)
