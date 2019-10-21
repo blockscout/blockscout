@@ -118,7 +118,7 @@ defmodule BlockScoutWeb.AddressController do
     Chain.address_to_validation_count(address.hash)
   end
 
-  def contract?(%{contract_code: nil}), do: false
+  defp contract?(%{contract_code: nil}), do: false
 
-  def contract?(%{contract_code: _}), do: true
+  defp contract?(%{contract_code: _}), do: true
 end
