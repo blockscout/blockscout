@@ -1,6 +1,8 @@
+<% status = transaction_status(@transaction) %>
 <div class="tile tile-type-<%= type_suffix(@transaction) %> fade-in <%= status_class(@transaction) %>" data-test="<%= type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
   <div class="row tile-body" data-selector="token-transfers-toggle" data-test="chain_transaction">
-    <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
+    <!-- Color Block -->
+    <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
       <span class="tile-label" data-test="transaction_type">
         <%= transaction_display_type(@transaction) %>
       </span>
@@ -11,12 +13,13 @@
             <span class="loading-spinner-block-2"></span>
           </div>
         <% end %>
-        <%= formatted_status(@transaction) %>
+        <%= formatted_status(status) %>
       </span>
     </div>
+    <!-- Content -->
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
       <%= render "_link.html", transaction_hash: @transaction.hash %>
-      <span class="text-nowrap">
+      <span>
         <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
         &rarr;
         <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
@@ -29,12 +32,35 @@
           <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %>
         </span>
       </span>
+
+      <!-- Transfer -->
+      <%= if involves_token_transfers?(@transaction) do %>
+        <div class="d-flex flex-column mt-2">
+          <% [first_token_transfer | remaining_token_transfers] = @transaction.token_transfers %>
+
+          <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: first_token_transfer %>
+
+          <div class="collapse token-transfer-toggle" id="transaction-<%= @transaction.hash %>">
+            <%= for token_transfer <- remaining_token_transfers do %>
+              <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer %>
+            <% end %>
+          </div>
+        </div>
+
+        <%= if Enum.any?(remaining_token_transfers) do %>
+          <div class="token-tile-view-more">
+              <%= link gettext("View More Transfers"), to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-open", "data-test": "token_transfers_expansion" %>
+              <%= link gettext("View Less Transfers"), class: "d-none", to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-close" %>
+          </div>
+        <% end %>
+      <% end %>
     </div>
-    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-start text-md-right mt-3 mt-md-0">
+    <!-- Block info -->
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-center text-md-right mt-3 mt-md-0 tile-bottom">
       <span class="mr-2 mr-md-0 order-1">
         <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
       </span>
-      <span class="mr-2 mr-md-0 order-2" data-from-now="<%= block_timestamp(@transaction) %>"></span>
+      <span class="mr-2 mr-md-0 order-2" in-tile data-from-now="<%= block_timestamp(@transaction) %>"></span>
       <%= if from_or_to_address?(@transaction, assigns[:current_address]) do %>
         <span class="mr-2 mr-md-0 order-0 order-md-3">
           <%= if @transaction.from_address_hash == assigns[:current_address].hash do %>
@@ -49,28 +75,5 @@
         </span>
       <% end %>
     </div>
-
-    <%= if involves_token_transfers?(@transaction) do %>
-      <div class="offset-md-2 col-md-10 col-lg-8 d-flex flex-column mt-2 mb-2">
-        <% [first_token_transfer | remaining_token_transfers] = @transaction.token_transfers %>
-
-        <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: first_token_transfer %>
-
-        <div class="collapse token-transfer-toggle" id="transaction-<%= @transaction.hash %>">
-          <%= for token_transfer <- remaining_token_transfers do %>
-            <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer %>
-          <% end %>
-        </div>
-      </div>
-
-      <%= if Enum.any?(remaining_token_transfers) do %>
-        <div class="col-md-12 d-flex flex-column mt-1 mb-2 text-center token-tile-view-more">
-          <span class="token-tile-more-lines">
-            <%= link gettext("View More Transfers"), to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-open", "data-test": "token_transfers_expansion" %>
-            <%= link gettext("View Less Transfers"), class: "d-none", to: "#transaction-#{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-close" %>
-          </span>
-        </div>
-      <% end %>
-    <% end %>
   </div>
 </div>

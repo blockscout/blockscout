@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  import BlockScoutWeb.Router.Helpers,
+  import BlockScoutWeb.WebRouter.Helpers,
     only: [address_internal_transaction_path: 3, address_internal_transaction_path: 4]
 
   alias Explorer.Chain.{Block, InternalTransaction, Transaction}
@@ -132,6 +132,49 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
         insert(:internal_transaction,
           transaction: transaction,
           to_address: address,
+          index: 2,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
+
+      path = address_internal_transaction_path(conn, :index, address, %{"filter" => "to", "type" => "JSON"})
+      conn = get(conn, path)
+
+      internal_transaction_tiles = json_response(conn, 200)["items"]
+
+      assert Enum.any?(internal_transaction_tiles, fn tile ->
+               String.contains?(tile, to_string(to_internal_transaction.transaction_hash)) &&
+                 String.contains?(tile, "data-internal-transaction-index=\"#{to_internal_transaction.index}\"")
+             end)
+
+      refute Enum.any?(internal_transaction_tiles, fn tile ->
+               String.contains?(tile, to_string(from_internal_transaction.transaction_hash)) &&
+                 String.contains?(tile, "data-internal-transaction-index=\"#{from_internal_transaction.index}\"")
+             end)
+    end
+
+    test "returns internal an transaction that created the address", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 1))
+
+      from_internal_transaction =
+        insert(:internal_transaction,
+          transaction: transaction,
+          from_address: address,
+          index: 1,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
+
+      to_internal_transaction =
+        insert(:internal_transaction,
+          transaction: transaction,
+          to_address: nil,
+          created_contract_address: address,
           index: 2,
           block_number: transaction.block_number,
           transaction_index: transaction.index

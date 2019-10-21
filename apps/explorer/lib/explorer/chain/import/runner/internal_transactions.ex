@@ -47,14 +47,16 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
     update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
+    |> Multi.run(:acquire_transactions, fn repo, _ ->
+      acquire_transactions(repo, changes_list)
+    end)
     |> Multi.run(:internal_transactions, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
-    |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo,
-                                                                    %{internal_transactions: internal_transactions}
-                                                                    when is_list(internal_transactions) ->
-      update_transactions(repo, internal_transactions, update_transactions_options)
+    |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo, %{acquire_transactions: transaction_hashes} ->
+      update_transactions(repo, transaction_hashes, update_transactions_options)
     end)
   end
 
@@ -72,13 +74,15 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
        when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # order so that row ShareLocks are grabbed in a consistent order
+    # Enforce InternalTransaction ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
+
+    final_changes_list = reject_pending_transactions(ordered_changes_list, repo)
 
     {:ok, internal_transactions} =
       Import.insert_changes_list(
         repo,
-        ordered_changes_list,
+        final_changes_list,
         conflict_target: [:transaction_hash, :index],
         for: InternalTransaction,
         on_conflict: on_conflict,
@@ -106,6 +110,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           error: fragment("EXCLUDED.error"),
           from_address_hash: fragment("EXCLUDED.from_address_hash"),
           gas: fragment("EXCLUDED.gas"),
+          gas_currency_hash: fragment("EXCLUDED.gas_currency_hash"),
+          gas_fee_recipient_hash: fragment("EXCLUDED.gas_fee_recipient_hash"),
           gas_used: fragment("EXCLUDED.gas_used"),
           # Don't update `index` as it is part of the composite primary key and used for the conflict target
           init: fragment("EXCLUDED.init"),
@@ -124,13 +130,15 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
       where:
         fragment(
-          "(EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_currency_hash, EXCLUDED.gas_fee_recipient_hash, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           internal_transaction.call_type,
           internal_transaction.created_contract_address_hash,
           internal_transaction.created_contract_code,
           internal_transaction.error,
           internal_transaction.from_address_hash,
           internal_transaction.gas,
+          internal_transaction.gas_currency_hash,
+          internal_transaction.gas_fee_recipient_hash,
           internal_transaction.gas_used,
           internal_transaction.init,
           internal_transaction.input,
@@ -144,20 +152,38 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     )
   end
 
-  defp update_transactions(repo, internal_transactions, %{
-         timeout: timeout,
-         timestamps: timestamps
-       })
-       when is_list(internal_transactions) do
-    ordered_transaction_hashes =
+  defp acquire_transactions(repo, internal_transactions) do
+    transaction_hashes =
       internal_transactions
       |> MapSet.new(& &1.transaction_hash)
-      |> Enum.sort()
+      |> MapSet.to_list()
 
     query =
       from(
         t in Transaction,
-        where: t.hash in ^ordered_transaction_hashes,
+        where: t.hash in ^transaction_hashes,
+        where: not is_nil(t.block_hash),
+        select: t.hash,
+        # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+        order_by: t.hash,
+        lock: "FOR UPDATE"
+      )
+
+    hashes = repo.all(query)
+
+    {:ok, hashes}
+  end
+
+  defp update_transactions(repo, transaction_hashes, %{
+         timeout: timeout,
+         timestamps: timestamps
+       })
+       when is_list(transaction_hashes) do
+    update_query =
+      from(
+        t in Transaction,
+        where: t.hash in ^transaction_hashes,
+        # ShareLocks order already enforced by `acquire_transactions` (see docs: sharelocks.md)
         update: [
           set: [
             internal_transactions_indexed_at: ^timestamps.updated_at,
@@ -173,8 +199,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
               ),
             status:
               fragment(
-                "COALESCE(?, CASE WHEN (SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index ASC LIMIT 1) IS NULL THEN ? ELSE ? END)",
-                t.status,
+                "CASE WHEN (SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index ASC LIMIT 1) IS NULL THEN ? ELSE ? END",
                 t.hash,
                 type(^:ok, t.status),
                 type(^:error, t.status)
@@ -183,15 +208,32 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         ]
       )
 
-    transaction_count = Enum.count(ordered_transaction_hashes)
-
     try do
-      {^transaction_count, result} = repo.update_all(query, [], timeout: timeout)
+      {_transaction_count, result} = repo.update_all(update_query, [], timeout: timeout)
 
       {:ok, result}
     rescue
       postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, transaction_hashes: ordered_transaction_hashes}}
+        {:error, %{exception: postgrex_error, transaction_hashes: transaction_hashes}}
     end
+  end
+
+  defp reject_pending_transactions(ordered_changes_list, repo) do
+    transaction_hashes =
+      ordered_changes_list
+      |> Enum.map(& &1.transaction_hash)
+      |> Enum.dedup()
+
+    query =
+      from(t in Transaction,
+        where: t.hash in ^transaction_hashes,
+        where: is_nil(t.block_hash),
+        select: t.hash
+      )
+
+    pending_transactions = repo.all(query)
+
+    ordered_changes_list
+    |> Enum.reject(fn %{transaction_hash: hash} -> Enum.member?(pending_transactions, hash) end)
   end
 end

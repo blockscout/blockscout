@@ -3,12 +3,10 @@ defmodule Explorer.Market do
   Context for data related to the cryptocurrency market.
   """
 
-  import Ecto.Query
-
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
-  alias Explorer.Market.MarketHistory
+  alias Explorer.Market.{MarketHistory, MarketHistoryCache}
   alias Explorer.{ExchangeRates, KnownTokens, Repo}
 
   @doc """
@@ -35,23 +33,22 @@ defmodule Explorer.Market do
 
   Today's date is include as part of the day count
   """
-  @spec fetch_recent_history(non_neg_integer()) :: [MarketHistory.t()]
-  def fetch_recent_history(days) when days >= 1 do
-    day_diff = days * -1
-
-    query =
-      from(
-        mh in MarketHistory,
-        where: mh.date > date_add(^Date.utc_today(), ^day_diff, "day"),
-        order_by: [desc: mh.date]
-      )
-
-    Repo.all(query)
+  @spec fetch_recent_history() :: [MarketHistory.t()]
+  def fetch_recent_history do
+    MarketHistoryCache.fetch()
   end
 
   @doc false
   def bulk_insert_history(records) do
-    Repo.insert_all(MarketHistory, records, on_conflict: :replace_all, conflict_target: [:date])
+    records_without_zeroes =
+      records
+      |> Enum.reject(fn item ->
+        Decimal.equal?(item.closing_price, 0) && Decimal.equal?(item.opening_price, 0)
+      end)
+      # Enforce MarketHistory ShareLocks order (see docs: sharelocks.md)
+      |> Enum.sort_by(& &1.date)
+
+    Repo.insert_all(MarketHistory, records_without_zeroes, on_conflict: :nothing, conflict_target: [:date])
   end
 
   def add_price(%{symbol: symbol} = token) do

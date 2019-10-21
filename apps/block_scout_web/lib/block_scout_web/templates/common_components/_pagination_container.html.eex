@@ -1,0 +1,64 @@
+<div class='pagination-container <%= if assigns[:position] == "top" do %>position-top<% end %> <%= if assigns[:position] == "bottom" do %>position-bottom<% end %>'>
+    <%= if false do %>
+    <!-- Pagination limit -->
+    <div class="pagination-limit">
+        <%= gettext "Show" %>
+        <select>
+            <option>20</option>
+            <option>50</option>
+            <option>100</option>
+        </select>
+        <%= gettext "Records" %>
+    </div>
+    <% end %>
+    <!-- Pagination -->
+    <ul class="pagination">
+        <!-- First -->
+        <li class="page-item">
+          <a
+                disabled
+                class="page-link"
+                href
+                data-first-page-button
+            >First</a>
+        </li>
+        <!-- Previous -->
+        <li class="page-item">
+            <a
+                <%= if !assigns[:prev_page_path] do %>disabled<% end %>
+                class="page-link"
+                href='<%= "#{assigns[:prev_page_path]}" %>'
+                <%= if assigns[:data_prev_page_button] do %>data-prev-page-button<% end %>
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="6" height="10">
+                    <path fill-rule="evenodd" d="M2.358 5l3.357 3.358a.959.959 0 1 1-1.357 1.357L.502 5.859c-.076-.042-.153-.08-.217-.144A.949.949 0 0 1 .011 5a.949.949 0 0 1 .274-.715c.064-.064.142-.102.217-.145L4.358.285a.959.959 0 1 1 1.357 1.357L2.358 5z"/>
+                </svg>
+            </a>
+        </li>
+        <!-- Page X of XX -->
+        <li class="page-item"><a class="page-link no-hover" href data-page-number><%= gettext "Page" %> <%= assigns[:cur_page_number] || "" %> <% if assigns[:total_pages_number] do %> <%= gettext "of" %> <%= assigns[:total_pages_number] || "undefined" %><% end %></a></li>
+        <!-- Next -->
+        <li class="page-item">
+            <a
+                <%= if !assigns[:next_page_path] do %>disabled<% end %>
+                class="page-link"
+                href='<%= "#{assigns[:next_page_path]}" %>'
+                <%= if assigns[:data_next_page_button] do %>data-next-page-button<% end %>
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="6" height="10">
+                    <path fill-rule="evenodd" d="M5.715 5.715c-.064.064-.141.102-.217.144L1.642 9.715A.959.959 0 1 1 .285 8.358L3.642 5 .285 1.642A.959.959 0 1 1 1.642.285L5.498 4.14c.075.043.153.081.217.145A.949.949 0 0 1 5.989 5a.949.949 0 0 1-.274.715z"/>
+                </svg>
+            </a>
+        </li>
+        <!-- Last -->
+        <%= if assigns[:last_page_path] do %>
+        <li class="page-item">
+            <a
+                <%= if !assigns[:last_page_path] do %>disabled<% end %>
+                class="page-link"
+                href='<%= "#{assigns[:last_page_path]}" %>'
+            >Last</a>
+        </li>
+        <% end %>
+    </ul>
+</div>

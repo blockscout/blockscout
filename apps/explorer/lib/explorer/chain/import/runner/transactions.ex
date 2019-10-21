@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Multi, Repo}
-  alias Explorer.Chain.{Data, Hash, Import, Transaction}
+  alias Explorer.Chain.{Block, Data, Hash, Import, Transaction}
   alias Explorer.Chain.Import.Runner.TokenTransfers
 
   @behaviour Import.Runner
@@ -42,7 +42,12 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       |> Map.put(:timestamps, timestamps)
       |> Map.put(:token_transfer_transaction_hash_set, token_transfer_transaction_hash_set(options))
 
-    Multi.run(multi, :transactions, fn repo, _ ->
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    multi
+    |> Multi.run(:recollated_transactions, fn repo, _ ->
+      discard_blocks_for_recollated_transactions(repo, changes_list, insert_options)
+    end)
+    |> Multi.run(:transactions, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
   end
@@ -77,7 +82,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     ordered_changes_list =
       changes_list
       |> put_internal_transactions_indexed_at(inserted_at, token_transfer_transaction_hash_set)
-      # order so that row ShareLocks are grabbed in a consistent order
+      # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(& &1.hash)
 
     Import.insert_changes_list(
@@ -86,7 +91,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       conflict_target: :hash,
       on_conflict: on_conflict,
       for: Transaction,
-      returning: ~w(block_number index hash internal_transactions_indexed_at)a,
+      returning: true,
       timeout: timeout,
       timestamps: timestamps
     )
@@ -98,13 +103,17 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       update: [
         set: [
           block_hash: fragment("EXCLUDED.block_hash"),
+          old_block_hash: transaction.block_hash,
           block_number: fragment("EXCLUDED.block_number"),
           created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
+          created_contract_code_indexed_at: fragment("EXCLUDED.created_contract_code_indexed_at"),
           cumulative_gas_used: fragment("EXCLUDED.cumulative_gas_used"),
           error: fragment("EXCLUDED.error"),
           from_address_hash: fragment("EXCLUDED.from_address_hash"),
           gas: fragment("EXCLUDED.gas"),
           gas_price: fragment("EXCLUDED.gas_price"),
+          gas_currency_hash: fragment("EXCLUDED.gas_currency_hash"),
+          gas_fee_recipient_hash: fragment("EXCLUDED.gas_fee_recipient_hash"),
           gas_used: fragment("EXCLUDED.gas_used"),
           index: fragment("EXCLUDED.index"),
           internal_transactions_indexed_at: fragment("EXCLUDED.internal_transactions_indexed_at"),
@@ -123,15 +132,18 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       ],
       where:
         fragment(
-          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.cumulative_gas_used, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.internal_transactions_indexed_at, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_currency_hash, EXCLUDED.gas_fee_recipient_hash, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.internal_transactions_indexed_at, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           transaction.block_hash,
           transaction.block_number,
           transaction.created_contract_address_hash,
+          transaction.created_contract_code_indexed_at,
           transaction.cumulative_gas_used,
           transaction.cumulative_gas_used,
           transaction.from_address_hash,
           transaction.gas,
           transaction.gas_price,
+          transaction.gas_currency_hash,
+          transaction.gas_fee_recipient_hash,
           transaction.gas_used,
           transaction.index,
           transaction.internal_transactions_indexed_at,
@@ -178,4 +190,66 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   end
 
   defp put_internal_transactions_indexed_at?(_, _), do: false
+
+  defp discard_blocks_for_recollated_transactions(repo, changes_list, %{
+         timeout: timeout,
+         timestamps: %{updated_at: updated_at}
+       })
+       when is_list(changes_list) do
+    {transactions_hashes, transactions_block_hashes} =
+      changes_list
+      |> Enum.filter(&Map.has_key?(&1, :block_hash))
+      |> Enum.map(fn %{hash: hash, block_hash: block_hash} ->
+        {:ok, hash_bytes} = Hash.Full.dump(hash)
+        {:ok, block_hash_bytes} = Hash.Full.dump(block_hash)
+        {hash_bytes, block_hash_bytes}
+      end)
+      |> Enum.unzip()
+
+    blocks_with_recollated_transactions =
+      from(
+        transaction in Transaction,
+        join:
+          new_transaction in fragment(
+            "(SELECT unnest(?::bytea[]) as hash, unnest(?::bytea[]) as block_hash)",
+            ^transactions_hashes,
+            ^transactions_block_hashes
+          ),
+        on: transaction.hash == new_transaction.hash,
+        where: transaction.block_hash != new_transaction.block_hash,
+        select: transaction.block_hash
+      )
+
+    block_hashes =
+      blocks_with_recollated_transactions
+      |> repo.all()
+      |> Enum.uniq()
+
+    if Enum.empty?(block_hashes) do
+      {:ok, []}
+    else
+      query =
+        from(
+          block in Block,
+          where: block.hash in ^block_hashes,
+          # Enforce Block ShareLocks order (see docs: sharelocks.md)
+          order_by: [asc: block.hash],
+          lock: "FOR UPDATE"
+        )
+
+      try do
+        {_, result} =
+          repo.update_all(
+            from(b in Block, join: s in subquery(query), on: b.hash == s.hash),
+            [set: [consensus: false, updated_at: updated_at]],
+            timeout: timeout
+          )
+
+        {:ok, result}
+      rescue
+        postgrex_error in Postgrex.Error ->
+          {:error, %{exception: postgrex_error, block_hashes: block_hashes}}
+      end
+    end
+  end
 end

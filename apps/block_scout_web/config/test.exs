@@ -7,7 +7,8 @@ config :block_scout_web, :sql_sandbox, true
 config :block_scout_web, BlockScoutWeb.Endpoint,
   http: [port: 4002],
   secret_key_base: "27Swe6KtEtmN37WyEYRjKWyxYULNtrxlkCEKur4qoV+Lwtk8lafsR16ifz1XBBYj",
-  server: true
+  server: true,
+  pubsub: [name: BlockScoutWeb.PubSub]
 
 config :block_scout_web, BlockScoutWeb.Tracer, disabled?: false
 
@@ -16,7 +17,7 @@ config :logger, :block_scout_web,
   path: Path.absname("logs/test/block_scout_web.log")
 
 # Configure wallaby
-config :wallaby, screenshot_on_failure: true
+config :wallaby, screenshot_on_failure: true, driver: Wallaby.Experimental.Chrome
 
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :none
 

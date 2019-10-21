@@ -188,31 +188,6 @@ defmodule Explorer.Chain.TokenTransferTest do
       assert Enum.map(results, & &1.token_id) == [last_owner.token_id]
       assert Enum.map(results, & &1.to_address_hash) == [last_owner.to_address_hash]
     end
-
-    test "won't return tokens that aren't uniques" do
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address, type: "ERC-20")
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(insert(:block, number: 1))
-
-      insert(
-        :token_transfer,
-        to_address: build(:address),
-        transaction: transaction,
-        token_contract_address: token_contract_address,
-        token: token
-      )
-
-      results =
-        token_contract_address.hash
-        |> TokenTransfer.address_to_unique_tokens()
-        |> Repo.all()
-
-      assert results == []
-    end
   end
 
   describe "where_any_address_fields_match/3" do
@@ -247,9 +222,11 @@ defmodule Explorer.Chain.TokenTransferTest do
         amount: 1
       )
 
+      {:ok, transaction_bytes} = Explorer.Chain.Hash.Full.dump(transaction.hash)
+
       transactions_hashes = TokenTransfer.where_any_address_fields_match(:to, paul.hash, %PagingOptions{page_size: 1})
 
-      assert Enum.member?(transactions_hashes, transaction.hash) == true
+      assert Enum.member?(transactions_hashes, transaction_bytes) == true
     end
 
     test "when from_address_hash match returns transactions hashes list" do
@@ -283,9 +260,11 @@ defmodule Explorer.Chain.TokenTransferTest do
         amount: 1
       )
 
+      {:ok, transaction_bytes} = Explorer.Chain.Hash.Full.dump(transaction.hash)
+
       transactions_hashes = TokenTransfer.where_any_address_fields_match(:from, john.hash, %PagingOptions{page_size: 1})
 
-      assert Enum.member?(transactions_hashes, transaction.hash) == true
+      assert Enum.member?(transactions_hashes, transaction_bytes) == true
     end
 
     test "when to_from_address_hash or from_address_hash match returns transactions hashes list" do

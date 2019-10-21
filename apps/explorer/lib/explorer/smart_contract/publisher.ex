@@ -23,20 +23,22 @@ defmodule Explorer.SmartContract.Publisher do
       #=> {:ok, %Explorer.Chain.SmartContract{}}
 
   """
-  def publish(address_hash, params) do
-    case Verifier.evaluate_authenticity(address_hash, params) do
+  def publish(address_hash, params, external_libraries \\ %{}) do
+    params_with_external_libaries = add_external_libraries(params, external_libraries)
+
+    case Verifier.evaluate_authenticity(address_hash, params_with_external_libaries) do
       {:ok, %{abi: abi}} ->
-        publish_smart_contract(address_hash, params, abi)
+        publish_smart_contract(address_hash, params_with_external_libaries, abi)
 
       {:error, error} ->
-        {:error, unverified_smart_contract(address_hash, params, error)}
+        {:error, unverified_smart_contract(address_hash, params_with_external_libaries, error)}
     end
   end
 
   defp publish_smart_contract(address_hash, params, abi) do
-    address_hash
-    |> attributes(params, abi)
-    |> Chain.create_smart_contract()
+    attrs = address_hash |> attributes(params, abi)
+
+    Chain.create_smart_contract(attrs, attrs.external_libraries)
   end
 
   defp unverified_smart_contract(address_hash, params, error) do
@@ -53,13 +55,56 @@ defmodule Explorer.SmartContract.Publisher do
   end
 
   defp attributes(address_hash, params, abi \\ %{}) do
+    constructor_arguments = params["constructor_arguments"]
+
+    clean_constructor_arguments =
+      if constructor_arguments != nil && constructor_arguments != "" do
+        constructor_arguments
+      else
+        nil
+      end
+
+    prepared_external_libraries = prepare_external_libraies(params["external_libraries"])
+
     %{
       address_hash: address_hash,
       name: params["name"],
       compiler_version: params["compiler_version"],
+      evm_version: params["evm_version"],
+      optimization_runs: params["optimization_runs"],
       optimization: params["optimization"],
       contract_source_code: params["contract_source_code"],
+      constructor_arguments: clean_constructor_arguments,
+      external_libraries: prepared_external_libraries,
       abi: abi
     }
+  end
+
+  defp prepare_external_libraies(nil), do: []
+
+  defp prepare_external_libraies(map) do
+    map
+    |> Enum.map(fn {key, value} ->
+      %{name: key, address_hash: value}
+    end)
+  end
+
+  defp add_external_libraries(params, external_libraries) do
+    clean_external_libraries =
+      Enum.reduce(1..5, %{}, fn number, acc ->
+        address_key = "library#{number}_address"
+        name_key = "library#{number}_name"
+
+        address = external_libraries[address_key]
+        name = external_libraries[name_key]
+
+        if is_nil(address) || address == "" || is_nil(name) || name == "" do
+          acc
+        else
+          Map.put(acc, name, address)
+        end
+      end)
+
+    Map.put(params, "external_libraries", clean_external_libraries)
   end
 end

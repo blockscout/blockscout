@@ -44,6 +44,20 @@ defmodule BlockScoutWeb.ChainTest do
       assert {:ok, %Address{hash: ^hash}} = address |> Phoenix.Param.to_param() |> Chain.from_param()
     end
 
+    test "finds a token by its name" do
+      name = "AYR"
+      insert(:token, symbol: name)
+
+      assert {:ok, %Address{}} = name |> Chain.from_param()
+    end
+
+    test "finds a token by its name even if lowercase name was passed" do
+      name = "ayr"
+      insert(:token, symbol: String.upcase(name))
+
+      assert {:ok, %Address{}} = name |> Chain.from_param()
+    end
+
     test "returns {:error, :not_found} when garbage is passed in" do
       assert {:error, :not_found} = Chain.from_param("any ol' thing")
     end
@@ -55,6 +69,14 @@ defmodule BlockScoutWeb.ChainTest do
       assert {:error, :not_found} = Chain.from_param("38999")
       assert {:error, :not_found} = Chain.from_param(transaction_hash)
       assert {:error, :not_found} = Chain.from_param(address_hash)
+    end
+  end
+
+  describe "Posion.encode!" do
+    test "correctly encodes decimal values" do
+      val = Decimal.from_float(5.55)
+
+      assert "\"5.55\"" == Poison.encode!(val)
     end
   end
 end

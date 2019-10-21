@@ -8,9 +8,13 @@ defmodule Explorer.Chain.SmartContract do
   http://solidity.readthedocs.io/en/v0.4.24/introduction-to-smart-contracts.html
   """
 
-  alias Explorer.Chain.{Address, Hash}
+  require Logger
 
   use Explorer.Schema
+
+  alias Explorer.Chain.{Address, ContractMethod, DecompiledSmartContract, Hash}
+  alias Explorer.Chain.SmartContract.ExternalLibrary
+  alias Explorer.Repo
 
   @typedoc """
   The name of a parameter to a function or event.
@@ -189,11 +193,15 @@ defmodule Explorer.Chain.SmartContract do
   * `abi` - The [JSON ABI specification](https://solidity.readthedocs.io/en/develop/abi-spec.html#json) for this
     contract.
   """
+
   @type t :: %Explorer.Chain.SmartContract{
           name: String.t(),
           compiler_version: String.t(),
           optimization: boolean,
           contract_source_code: String.t(),
+          constructor_arguments: String.t() | nil,
+          evm_version: String.t() | nil,
+          optimization_runs: non_neg_integer() | nil,
           abi: [function_description]
         }
 
@@ -202,7 +210,17 @@ defmodule Explorer.Chain.SmartContract do
     field(:compiler_version, :string)
     field(:optimization, :boolean)
     field(:contract_source_code, :string)
+    field(:constructor_arguments, :string)
+    field(:evm_version, :string)
+    field(:optimization_runs, :integer)
+    embeds_many(:external_libraries, ExternalLibrary)
     field(:abi, {:array, :map})
+
+    has_many(
+      :decompiled_smart_contracts,
+      DecompiledSmartContract,
+      foreign_key: :address_hash
+    )
 
     belongs_to(
       :address,
@@ -215,22 +233,101 @@ defmodule Explorer.Chain.SmartContract do
     timestamps()
   end
 
+  def preload_decompiled_smart_contract(contract) do
+    Repo.preload(contract, :decompiled_smart_contracts)
+  end
+
   def changeset(%__MODULE__{} = smart_contract, attrs) do
     smart_contract
-    |> cast(attrs, [:name, :compiler_version, :optimization, :contract_source_code, :address_hash, :abi])
+    |> cast(attrs, [
+      :name,
+      :compiler_version,
+      :optimization,
+      :contract_source_code,
+      :address_hash,
+      :abi,
+      :constructor_arguments,
+      :evm_version,
+      :optimization_runs
+    ])
     |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
+    |> prepare_changes(&upsert_contract_methods/1)
   end
 
   def invalid_contract_changeset(%__MODULE__{} = smart_contract, attrs, error) do
     smart_contract
-    |> cast(attrs, [:name, :compiler_version, :optimization, :contract_source_code, :address_hash])
+    |> cast(attrs, [
+      :name,
+      :compiler_version,
+      :optimization,
+      :contract_source_code,
+      :address_hash,
+      :evm_version,
+      :optimization_runs,
+      :constructor_arguments
+    ])
     |> validate_required([:name, :compiler_version, :optimization, :address_hash])
     |> add_error(:contract_source_code, error_message(error))
   end
 
+  def add_submitted_comment(code, inserted_at) when is_binary(code) do
+    code
+    |> String.split("\n")
+    |> add_submitted_comment(inserted_at)
+    |> Enum.join("\n")
+  end
+
+  def add_submitted_comment(contract_lines, inserted_at) when is_list(contract_lines) do
+    etherscan_index =
+      Enum.find_index(contract_lines, fn line ->
+        String.contains?(line, "Submitted for verification at Etherscan.io")
+      end)
+
+    blockscout_index =
+      Enum.find_index(contract_lines, fn line ->
+        String.contains?(line, "Submitted for verification at blockscout.com")
+      end)
+
+    cond do
+      etherscan_index && blockscout_index ->
+        List.replace_at(contract_lines, etherscan_index, "*")
+
+      etherscan_index && !blockscout_index ->
+        List.replace_at(
+          contract_lines,
+          etherscan_index,
+          "* Submitted for verification at blockscout.com on #{inserted_at}"
+        )
+
+      !etherscan_index && !blockscout_index ->
+        header = ["/**", "* Submitted for verification at blockscout.com on #{inserted_at}", "*/"]
+
+        header ++ contract_lines
+
+      true ->
+        contract_lines
+    end
+  end
+
+  defp upsert_contract_methods(%Ecto.Changeset{changes: %{abi: abi}} = changeset) do
+    ContractMethod.upsert_from_abi(abi, get_field(changeset, :address_hash))
+
+    changeset
+  rescue
+    exception ->
+      message = Exception.format(:error, exception, __STACKTRACE__)
+
+      Logger.error(fn -> ["Error while upserting contract methods: ", message] end)
+
+      changeset
+  end
+
+  defp upsert_contract_methods(changeset), do: changeset
+
   defp error_message(:compilation), do: "There was an error compiling your contract."
   defp error_message(:generated_bytecode), do: "Bytecode does not match, please try again."
+  defp error_message(:constructor_arguments), do: "Constructor arguments do not match, please try again."
   defp error_message(:name), do: "Wrong contract name, please try again."
   defp error_message(_), do: "There was an error validating your contract, please try again."
 end

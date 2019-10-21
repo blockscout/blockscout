@@ -7,6 +7,7 @@ defmodule EthereumJSONRPC.Transaction do
   [`eth_getTransactionByBlockHashAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblockhashandindex),
   and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblocknumberandindex)
   """
+  require Logger
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
@@ -28,6 +29,8 @@ defmodule EthereumJSONRPC.Transaction do
    * `"gas"` - `t:EthereumJSONRPC.quantity/0` of gas provided by the sender.  This is the max gas that may be used.
      `gas * gasPrice` is the max fee in wei that the sender is willing to pay for the transaction to be executed.
    * `"gasPrice"` - `t:EthereumJSONRPC.quantity/0` of wei to pay per unit of gas used.
+   * `"gasCurrency"` - `t:EthereumJSONRPC.address/0` of token used as currency for transaction gas fee
+   * `"gasFeeRecipient"` - `t:EthereumJSONRPC.address/0` of the receiver of the transaction gas fee
    * `"hash"` - `t:EthereumJSONRPC.hash/0` of the transaction
    * `"input"` - `t:EthereumJSONRPC.data/0` sent along with the transaction, such as input to the contract.
    * `"nonce"` - `t:EthereumJSONRPC.quantity/0` of transactions made by the sender prior to this one.
@@ -52,6 +55,8 @@ defmodule EthereumJSONRPC.Transaction do
           from_address_hash: EthereumJSONRPC.address(),
           gas: non_neg_integer(),
           gas_price: non_neg_integer(),
+          gas_currency_hash: EthereumJSONRPC.address(),
+          gas_fee_recipient_hash: EthereumJSONRPC.address(),
           hash: EthereumJSONRPC.hash(),
           index: non_neg_integer(),
           input: String.t(),
@@ -74,6 +79,8 @@ defmodule EthereumJSONRPC.Transaction do
       ...>     "from" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
       ...>     "gas" => 21000,
       ...>     "gasPrice" => 50000000000000,
+      ...>     "gasCurrency" => "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+      ...>     "gasFeeRecipient" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
       ...>     "hash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
       ...>     "input" => "0x",
       ...>     "nonce" => 0,
@@ -91,6 +98,8 @@ defmodule EthereumJSONRPC.Transaction do
         from_address_hash: "0xa1e4380a3b1f749673e270229993ee55f35663b4",
         gas: 21000,
         gas_price: 50000000000000,
+        gas_currency_hash: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+        gas_fee_recipient_hash: "0xa1e4380a3b1f749673e270229993ee55f35663b4",
         hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
         index: 0,
         input: "0x",
@@ -113,6 +122,8 @@ defmodule EthereumJSONRPC.Transaction do
       ...>     "from" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
       ...>     "gas" => 21000,
       ...>     "gasPrice" => 50000000000000,
+      ...>     "gasCurrency" => "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+      ...>     "gasFeeRecipient" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
       ...>     "hash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
       ...>     "input" => "0x0",
       ...>     "nonce" => 0,
@@ -130,6 +141,8 @@ defmodule EthereumJSONRPC.Transaction do
         from_address_hash: "0xa1e4380a3b1f749673e270229993ee55f35663b4",
         gas: 21000,
         gas_price: 50000000000000,
+        gas_currency_hash: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+        gas_fee_recipient_hash: "0xa1e4380a3b1f749673e270229993ee55f35663b4",
         hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
         index: 0,
         input: "0x",
@@ -149,28 +162,34 @@ defmodule EthereumJSONRPC.Transaction do
     elixir_to_params(%{transaction | "input" => "0x"})
   end
 
-  def elixir_to_params(%{
-        "blockHash" => block_hash,
-        "blockNumber" => block_number,
-        "from" => from_address_hash,
-        "gas" => gas,
-        "gasPrice" => gas_price,
-        "hash" => hash,
-        "input" => input,
-        "nonce" => nonce,
-        "r" => r,
-        "s" => s,
-        "to" => to_address_hash,
-        "transactionIndex" => index,
-        "v" => v,
-        "value" => value
-      }) do
-    %{
+  def elixir_to_params(
+        %{
+          "blockHash" => block_hash,
+          "blockNumber" => block_number,
+          "from" => from_address_hash,
+          "gas" => gas,
+          "gasPrice" => gas_price,
+          "gasCurrency" => gas_currency_hash,
+          "gasFeeRecipient" => gas_fee_recipient_hash,
+          "hash" => hash,
+          "input" => input,
+          "nonce" => nonce,
+          "r" => r,
+          "s" => s,
+          "to" => to_address_hash,
+          "transactionIndex" => index,
+          "v" => v,
+          "value" => value
+        } = transaction
+      ) do
+    result = %{
       block_hash: block_hash,
       block_number: block_number,
       from_address_hash: from_address_hash,
       gas: gas,
       gas_price: gas_price,
+      gas_currency_hash: gas_currency_hash,
+      gas_fee_recipient_hash: gas_fee_recipient_hash,
       hash: hash,
       index: index,
       input: input,
@@ -182,6 +201,12 @@ defmodule EthereumJSONRPC.Transaction do
       value: value,
       transaction_index: index
     }
+
+    if transaction["creates"] do
+      Map.put(result, :created_contract_address_hash, transaction["creates"])
+    else
+      result
+    end
   end
 
   # Ganache bug. it return `to: "0x0"` except of `to: null`
@@ -203,6 +228,8 @@ defmodule EthereumJSONRPC.Transaction do
           "from" => _,
           "gas" => _,
           "gasPrice" => _,
+          "gasCurrency" => _,
+          "gasFeeRecipient" => _,
           "hash" => _,
           "input" => _,
           "nonce" => _,
@@ -225,6 +252,8 @@ defmodule EthereumJSONRPC.Transaction do
       ...>     block_number: 34,
       ...>     gas: 4700000,
       ...>     gas_price: 100000000000,
+      ...>     gas_currency: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+      ...>     gas_fee_recipient: "0xa1e4380a3b1f749673e270229993ee55f35663b4",
       ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     index: 0,
       ...>     input: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
@@ -256,6 +285,8 @@ defmodule EthereumJSONRPC.Transaction do
     ...>     "from" => "0x40aa34fb35ef0804a41c2b4be7d3e3d65c7f6d5c",
     ...>     "gas" => "0xcf08",
     ...>     "gasPrice" => "0x0",
+    ...>     "gasCurrency" => nil,
+    ...>     "gasFeeRecipient" => nil,
     ...>     "hash" => "0x6b80a90c958fb5791a070929379ed6eb7a33ecdf9f9cafcada2f6803b3f25ec3",
     ...>     "input" => "0x",
     ...>     "nonce" => "0x77",
@@ -279,6 +310,8 @@ defmodule EthereumJSONRPC.Transaction do
       "from" => "0x40aa34fb35ef0804a41c2b4be7d3e3d65c7f6d5c",
       "gas" => 53000,
       "gasPrice" => 0,
+      "gasCurrency" => nil,
+      "gasFeeRecipient" => nil,
       "hash" => "0x6b80a90c958fb5791a070929379ed6eb7a33ecdf9f9cafcada2f6803b3f25ec3",
       "input" => "0x",
       "nonce" => 119,
@@ -298,6 +331,12 @@ defmodule EthereumJSONRPC.Transaction do
     Enum.into(transaction, %{}, &entry_to_elixir/1)
   end
 
+  def to_elixir(transaction) when is_binary(transaction) do
+    Logger.warn(["Fetched transaction is not full: ", transaction])
+
+    nil
+  end
+
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
@@ -306,6 +345,10 @@ defmodule EthereumJSONRPC.Transaction do
   defp entry_to_elixir({key, value})
        when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to txType gasCurrency gasFeeRecipient),
        do: {key, value}
+
+  # specific to Nethermind client
+  defp entry_to_elixir({"data", value}),
+    do: {"input", value}
 
   defp entry_to_elixir({key, quantity}) when key in ~w(gas gasPrice nonce r s standardV v value) and quantity != nil do
     {key, quantity_to_integer(quantity)}
@@ -333,5 +376,9 @@ defmodule EthereumJSONRPC.Transaction do
       nil -> {key, chain_id}
       _ -> {key, quantity_to_integer(chain_id)}
     end
+  end
+
+  defp entry_to_elixir(_) do
+    {nil, nil}
   end
 end

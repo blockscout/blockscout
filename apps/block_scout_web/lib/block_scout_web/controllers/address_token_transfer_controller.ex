@@ -4,9 +4,10 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
   alias BlockScoutWeb.TransactionView
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
+  alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
+  import BlockScoutWeb.AddressController, only: [transaction_and_validation_count: 1]
 
   import BlockScoutWeb.Chain,
     only: [next_page_params: 3, paging_options: 1, split_list_by_page: 1]
@@ -76,15 +77,18 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
          {:ok, token_hash} <- Chain.string_to_address_hash(token_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, token} <- Chain.token_from_address_hash(token_hash) do
+      {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
+
       render(
         conn,
         "index.html",
         address: address,
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         current_path: current_path(conn),
         token: token,
-        transaction_count: transaction_count(address),
-        validation_count: validation_count(address)
+        transaction_count: transaction_count,
+        validation_count: validation_count
       )
     else
       :error ->

@@ -1,15 +1,27 @@
 defmodule Explorer.MarketTest do
-  use Explorer.DataCase
+  use Explorer.DataCase, async: false
 
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
+  setup do
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+
+    on_exit(fn ->
+      Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    end)
+
+    :ok
+  end
+
   test "fetch_recent_history/1" do
     today = Date.utc_today()
 
     records =
-      for i <- 0..5 do
+      for i <- 0..29 do
         %{
           date: Timex.shift(today, days: i * -1),
           closing_price: Decimal.new(1),
@@ -19,16 +31,9 @@ defmodule Explorer.MarketTest do
 
     Market.bulk_insert_history(records)
 
-    history = Market.fetch_recent_history(1)
-    assert length(history) == 1
+    history = Market.fetch_recent_history()
+    assert length(history) == 30
     assert Enum.at(history, 0).date == Enum.at(records, 0).date
-
-    more_history = Market.fetch_recent_history(5)
-    assert length(more_history) == 5
-
-    for {history_record, index} <- Enum.with_index(more_history) do
-      assert history_record.date == Enum.at(records, index).date
-    end
   end
 
   describe "bulk_insert_history/1" do
@@ -67,9 +72,30 @@ defmodule Explorer.MarketTest do
       assert missing_records == %{}
     end
 
-    test "overrides existing records on date conflict" do
+    test "doesn't replace existing records with zeros" do
       date = ~D[2018-04-01]
-      Repo.insert(%MarketHistory{date: date})
+
+      {:ok, old_record} =
+        Repo.insert(%MarketHistory{date: date, closing_price: Decimal.new(1), opening_price: Decimal.new(1)})
+
+      new_record = %{
+        date: date,
+        closing_price: Decimal.new(0),
+        opening_price: Decimal.new(0)
+      }
+
+      Market.bulk_insert_history([new_record])
+
+      fetched_record = Repo.get_by(MarketHistory, date: date)
+      assert fetched_record.closing_price == old_record.closing_price
+      assert fetched_record.opening_price == old_record.opening_price
+    end
+
+    test "does not override existing records on date conflict" do
+      date = ~D[2018-04-01]
+
+      {:ok, old_record} =
+        Repo.insert(%MarketHistory{date: date, closing_price: Decimal.new(2), opening_price: Decimal.new(2)})
 
       new_record = %{
         date: date,
@@ -80,8 +106,8 @@ defmodule Explorer.MarketTest do
       Market.bulk_insert_history([new_record])
 
       fetched_record = Repo.get_by(MarketHistory, date: date)
-      assert fetched_record.closing_price == new_record.closing_price
-      assert fetched_record.opening_price == new_record.opening_price
+      assert fetched_record.closing_price == old_record.closing_price
+      assert fetched_record.opening_price == old_record.opening_price
     end
   end
 end

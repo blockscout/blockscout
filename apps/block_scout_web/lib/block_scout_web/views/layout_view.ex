@@ -2,8 +2,26 @@ defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
   alias Plug.Conn
+  alias Poison.Parser
 
-  @issue_url "https://github.com/poanetwork/blockscout/issues/new"
+  @issue_url "https://github.com/celo-org/blockscout/issues/new"
+  @default_other_networks [
+    %{
+      title: "Celo Alfajores",
+      url: "https://alfajores-blockscout.celo-testnet.org/",
+      test_net?: true
+    },
+    %{
+      title: "Celo Integration",
+      url: "https://integration-blockscout.celo-testnet.org/",
+      test_net?: true
+    },
+    %{
+      title: "Celo Betanet",
+      url: "https://betanet-blockscout.celo-testnet.org/",
+      test_net?: true
+    },
+  ]
 
   alias BlockScoutWeb.SocialMedia
 
@@ -13,6 +31,11 @@ defmodule BlockScoutWeb.LayoutView do
 
   def logo do
     Keyword.get(application_config(), :logo) || "/images/blockscout_logo.svg"
+  end
+
+  def logo_footer do
+    Keyword.get(application_config(), :logo_footer) || Keyword.get(application_config(), :logo) ||
+      "/images/blockscout_logo.svg"
   end
 
   def subnetwork_title do
@@ -45,7 +68,8 @@ defmodule BlockScoutWeb.LayoutView do
     user_agent =
       case Conn.get_req_header(conn, "user-agent") do
         [] -> "unknown"
-        user_agent -> user_agent
+        [user_agent] -> if String.valid?(user_agent), do: user_agent, else: "unknown"
+        _other -> "unknown"
       end
 
     """
@@ -76,23 +100,83 @@ defmodule BlockScoutWeb.LayoutView do
     BlockScoutWeb.version()
   end
 
+  def release_link(version) do
+    release_link_env_var = Application.get_env(:block_scout_web, :release_link)
+
+    release_link =
+      cond do
+        version == "" || version == nil ->
+          nil
+
+        release_link_env_var == "" || release_link_env_var == nil ->
+          "https://github.com/poanetwork/blockscout/releases/tag/" <> version
+
+        true ->
+          release_link_env_var
+      end
+
+    if release_link == nil do
+      ""
+    else
+      html_escape({:safe, "<a href=\"#{release_link}\" class=\"footer-link\" target=\"_blank\">#{version}</a>"})
+    end
+  end
+
   def ignore_version?("unknown"), do: true
   def ignore_version?(_), do: false
 
   def other_networks do
-    :block_scout_web
-    |> Application.get_env(:other_networks, [])
+    get_other_networks =
+      if Application.get_env(:block_scout_web, :other_networks) do
+        :block_scout_web
+        |> Application.get_env(:other_networks)
+        |> Parser.parse!(%{keys: :atoms!})
+      else
+        @default_other_networks
+      end
+
+    get_other_networks
     |> Enum.reject(fn %{title: title} ->
       title == subnetwork_title()
     end)
+    |> Enum.sort()
   end
 
-  def main_nets do
-    Enum.reject(other_networks(), &Map.get(&1, :test_net?))
+  def main_nets(nets) do
+    nets
+    |> Enum.reject(&Map.get(&1, :test_net?))
   end
 
-  def test_nets do
-    Enum.filter(other_networks(), &Map.get(&1, :test_net?))
+  def test_nets(nets) do
+    nets
+    |> Enum.filter(&Map.get(&1, :test_net?))
+  end
+
+  def dropdown_nets do
+    other_networks()
+    |> Enum.reject(&Map.get(&1, :hide_in_dropdown?))
+  end
+
+  def dropdown_main_nets do
+    dropdown_nets()
+    |> main_nets()
+  end
+
+  def dropdown_test_nets do
+    dropdown_nets()
+    |> test_nets()
+  end
+
+  def dropdown_head_main_nets do
+    dropdown_nets()
+    |> main_nets()
+    |> Enum.reject(&Map.get(&1, :other?))
+  end
+
+  def dropdown_other_nets do
+    dropdown_nets()
+    |> main_nets()
+    |> Enum.filter(&Map.get(&1, :other?))
   end
 
   def other_explorers do
@@ -102,4 +186,33 @@ defmodule BlockScoutWeb.LayoutView do
       []
     end
   end
+
+  def webapp_url(conn) do
+    :block_scout_web
+    |> Application.get_env(:webapp_url)
+    |> validate_url()
+    |> case do
+      :error -> chain_path(conn, :show)
+      {:ok, url} -> url
+    end
+  end
+
+  def api_url do
+    :block_scout_web
+    |> Application.get_env(:api_url)
+    |> validate_url()
+    |> case do
+      :error -> ""
+      {:ok, url} -> url
+    end
+  end
+
+  defp validate_url(url) when is_binary(url) do
+    case URI.parse(url) do
+      %URI{host: nil} -> :error
+      _ -> {:ok, url}
+    end
+  end
+
+  defp validate_url(_), do: :error
 end

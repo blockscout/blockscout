@@ -18,12 +18,21 @@ export function createCoinBalanceHistoryChart (el) {
           y: balance.value
         }))
 
+      var stepSize = 3
+
+      if (data.length > 1) {
+        var diff = Math.abs(new Date(data[data.length - 1].date) - new Date(data[data.length - 2].date))
+        var periodInDays = diff / (1000 * 60 * 60 * 24)
+
+        stepSize = periodInDays
+      }
       return new Chart(el, {
         type: 'line',
         data: {
           datasets: [{
             label: 'coin balance',
-            data: coinBalanceHistoryData
+            data: coinBalanceHistoryData,
+            lineTension: 0
           }]
         },
         options: {
@@ -35,7 +44,7 @@ export function createCoinBalanceHistoryChart (el) {
               type: 'time',
               time: {
                 unit: 'day',
-                stepSize: 3
+                stepSize: stepSize
               }
             }],
             yAxes: [{

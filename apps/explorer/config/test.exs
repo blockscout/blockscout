@@ -13,6 +13,8 @@ config :explorer, Explorer.Repo,
 
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets
 
+config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: false
+
 config :explorer, Explorer.KnownTokens, enabled: false, store: :ets
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: false
@@ -38,6 +40,9 @@ end
 
 config :explorer, Explorer.ExchangeRates.Source.TransactionAndLog,
   secondary_source: Explorer.ExchangeRates.Source.OneCoinSource
+
+config :explorer,
+  realtime_events_sender: Explorer.Chain.Events.SenderMock
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do

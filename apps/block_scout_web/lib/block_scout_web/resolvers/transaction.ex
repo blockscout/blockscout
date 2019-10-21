@@ -12,8 +12,8 @@ defmodule BlockScoutWeb.Resolvers.Transaction do
     end
   end
 
-  def get_by(%Address{} = address, args, _) do
-    address
+  def get_by(%Address{hash: address_hash}, args, _) do
+    address_hash
     |> GraphQL.address_to_transactions_query()
     |> Connection.from_query(&Repo.all/1, args, options(args))
   end

@@ -49,7 +49,7 @@ defmodule Explorer.Chain.ImportTest do
       internal_transactions: %{
         params: [
           %{
-            block_number: 35,
+            block_number: 37,
             transaction_index: 0,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             index: 0,
@@ -65,7 +65,7 @@ defmodule Explorer.Chain.ImportTest do
             value: 0
           },
           %{
-            block_number: 35,
+            block_number: 37,
             transaction_index: 1,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             index: 1,
@@ -470,27 +470,27 @@ defmodule Explorer.Chain.ImportTest do
     test "publishes addresses with updated fetched_coin_balance data to subscribers on insert" do
       Subscriber.to(:addresses, :realtime)
       Import.all(@import_data)
-      assert_received {:chain_event, :addresses, :realtime, [%Address{}, %Address{}, %Address{}]}
+      assert_receive {:chain_event, :addresses, :realtime, [%Address{}, %Address{}, %Address{}]}
     end
 
     test "publishes block data to subscribers on insert" do
       Subscriber.to(:blocks, :realtime)
       Import.all(@import_data)
-      assert_received {:chain_event, :blocks, :realtime, [%Block{}]}
+      assert_receive {:chain_event, :blocks, :realtime, [%Block{}]}
     end
 
     test "publishes internal_transaction data to subscribers on insert" do
       Subscriber.to(:internal_transactions, :realtime)
       Import.all(@import_data)
 
-      assert_received {:chain_event, :internal_transactions, :realtime,
-                       [%{transaction_hash: _, index: _}, %{transaction_hash: _, index: _}]}
+      assert_receive {:chain_event, :internal_transactions, :realtime,
+                      [%{transaction_hash: _, index: _}, %{transaction_hash: _, index: _}]}
     end
 
     test "publishes transactions data to subscribers on insert" do
       Subscriber.to(:transactions, :realtime)
       Import.all(@import_data)
-      assert_received {:chain_event, :transactions, :realtime, [%Transaction{}]}
+      assert_receive {:chain_event, :transactions, :realtime, [%Transaction{}]}
     end
 
     test "publishes token_transfers data to subscribers on insert" do
@@ -498,7 +498,7 @@ defmodule Explorer.Chain.ImportTest do
 
       Import.all(@import_data)
 
-      assert_received {:chain_event, :token_transfers, :realtime, [%TokenTransfer{}]}
+      assert_receive {:chain_event, :token_transfers, :realtime, [%TokenTransfer{}]}
     end
 
     test "does not broadcast if broadcast option is false" do
@@ -519,7 +519,7 @@ defmodule Explorer.Chain.ImportTest do
       from_address_hash = "0x8cc2e4b51b4340cb3727cffe3f1878756e732cee"
       from_address = insert(:address, hash: from_address_hash)
 
-      block = insert(:block)
+      block = insert(:block, number: 37)
 
       transaction_string_hash = "0x0705ea0a5b997d9aafd5c531e016d9aabe3297a28c0bd4ef005fe6ea329d301b"
 
@@ -551,7 +551,7 @@ defmodule Explorer.Chain.ImportTest do
               transaction_hash: transaction_string_hash,
               type: "create",
               value: 0,
-              block_number: 35,
+              block_number: 37,
               transaction_index: 0
             }
           ]
@@ -563,6 +563,62 @@ defmodule Explorer.Chain.ImportTest do
       address = Explorer.Repo.get(Address, address_hash)
 
       assert address.contract_code != smart_contract_bytecode
+    end
+
+    test "updates `error`, `status` and `internal_transaction_indexed_at` even if internal transactions were alreader inserted" do
+      address_hash = "0x1c494fa496f1cfd918b5ff190835af3aaf609899"
+      from_address = insert(:address, hash: address_hash)
+
+      block = insert(:block, consensus: true, number: 37)
+
+      transaction =
+        :transaction
+        |> insert(error: nil, internal_transactions_indexed_at: nil, status: nil, from_address: from_address)
+        |> with_block(block, status: :error)
+
+      internal_transacton =
+        insert(:internal_transaction,
+          block_number: 37,
+          transaction_hash: transaction.hash,
+          error: "Bad Instruction",
+          index: 0,
+          gas_used: nil,
+          output: nil,
+          gas: 19,
+          type: "call"
+        )
+
+      options = %{
+        internal_transactions: %{
+          params: [
+            %{
+              block_number: internal_transacton.block_number,
+              call_type: internal_transacton.type,
+              gas: internal_transacton.gas,
+              gas_used: internal_transacton.gas_used,
+              index: internal_transacton.index,
+              output: internal_transacton.output,
+              transaction_hash: internal_transacton.transaction_hash,
+              type: internal_transacton.type,
+              from_address_hash: address_hash,
+              to_address_hash: address_hash,
+              trace_address: [],
+              value: 0,
+              transaction_index: 0,
+              error: internal_transacton.error,
+              input: internal_transacton.input
+            }
+          ]
+        }
+      }
+
+      {:ok, _} = Import.all(options)
+
+      assert result =
+               %Transaction{error: "Bad Instruction", status: :error} =
+               Repo.one!(from(t in Transaction, where: t.hash == ^transaction.hash))
+
+      assert result.internal_transactions_indexed_at
     end
 
     test "with internal_transactions updates Transaction internal_transactions_indexed_at" do
@@ -622,7 +678,7 @@ defmodule Explorer.Chain.ImportTest do
         internal_transactions: %{
           params: [
             %{
-              block_number: 35,
+              block_number: block_number,
               transaction_index: 0,
               transaction_hash: transaction_hash,
               index: 0,
@@ -713,7 +769,7 @@ defmodule Explorer.Chain.ImportTest do
         internal_transactions: %{
           params: [
             %{
-              block_number: 35,
+              block_number: block_number,
               call_type: "call",
               created_contract_code: smart_contract_bytecode,
               created_contract_address_hash: created_contract_address_hash,
@@ -819,7 +875,7 @@ defmodule Explorer.Chain.ImportTest do
                        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
                        type: "create",
                        value: 0,
-                       block_number: 35,
+                       block_number: 37,
                        transaction_index: 0
                      },
                      %{
@@ -836,7 +892,7 @@ defmodule Explorer.Chain.ImportTest do
                        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
                        type: "create",
                        value: 0,
-                       block_number: 35,
+                       block_number: 37,
                        transaction_index: 1
                      }
                    ],
@@ -1491,7 +1547,7 @@ defmodule Explorer.Chain.ImportTest do
                    timeout: 1
                  },
                  block_second_degree_relations: %{
-                   params: [%{nephew_hash: block_hash, uncle_hash: uncle_hash}],
+                   params: [%{nephew_hash: block_hash, uncle_hash: uncle_hash, index: 0}],
                    timeout: 1
                  },
                  internal_transactions: %{
@@ -1501,7 +1557,7 @@ defmodule Explorer.Chain.ImportTest do
                        index: 0,
                        from_address_hash: from_address_hash,
                        to_address_hash: to_address_hash,
-                       block_number: 35,
+                       block_number: block_number,
                        transaction_index: 0
                      )
                    ],
@@ -1769,7 +1825,7 @@ defmodule Explorer.Chain.ImportTest do
                        value: 0,
                        input: "0x",
                        error: error,
-                       block_number: 35,
+                       block_number: block_number,
                        transaction_index: 0
                      }
                    ]

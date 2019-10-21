@@ -13,6 +13,8 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
 
   """
 
+  require Logger
+
   import Plug.Conn
   import Phoenix.Controller, only: [put_view: 2]
 
@@ -23,16 +25,33 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   def init(opts), do: opts
 
   def call(%Conn{params: %{"module" => module, "action" => action}} = conn, translations) do
-    with {:ok, controller} <- translate_module(translations, module),
+    with {:ok, {controller, write_actions}} <- translate_module(translations, module),
          {:ok, action} <- translate_action(action),
+         true <- action_accessed?(action, write_actions),
          {:ok, conn} <- call_controller(conn, controller, action) do
       conn
     else
-      _ ->
+      {:error, :no_action} ->
         conn
         |> put_status(400)
         |> put_view(RPCView)
         |> Controller.render(:error, error: "Unknown action")
+        |> halt()
+
+      {:error, error} ->
+        Logger.error(fn -> ["Error while calling RPC action", inspect(error)] end)
+
+        conn
+        |> put_status(500)
+        |> put_view(RPCView)
+        |> Controller.render(:error, error: "Something went wrong.")
+        |> halt()
+
+      _ ->
+        conn
+        |> put_status(500)
+        |> put_view(RPCView)
+        |> Controller.render(:error, error: "Something went wrong.")
         |> halt()
     end
   end
@@ -46,26 +65,45 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   end
 
   @doc false
-  @spec translate_module(map(), String.t()) :: {:ok, module()} | :error
-  def translate_module(translations, module) do
+  @spec translate_module(map(), String.t()) :: {:ok, {module(), list(atom())}} | {:error, :no_action}
+  defp translate_module(translations, module) do
     module_lowercase = String.downcase(module)
-    Map.fetch(translations, module_lowercase)
+
+    case Map.fetch(translations, module_lowercase) do
+      {:ok, module} -> {:ok, module}
+      _ -> {:error, :no_action}
+    end
   end
 
   @doc false
-  @spec translate_action(String.t()) :: {:ok, atom()} | :error
-  def translate_action(action) do
+  @spec translate_action(String.t()) :: {:ok, atom()} | {:error, :no_action}
+  defp translate_action(action) do
     action_lowercase = String.downcase(action)
     {:ok, String.to_existing_atom(action_lowercase)}
   rescue
-    ArgumentError -> :error
+    ArgumentError -> {:error, :no_action}
+  end
+
+  defp action_accessed?(action, write_actions) do
+    conf = Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)
+
+    if action in write_actions do
+      conf[:writing_enabled] || {:error, :no_action}
+    else
+      conf[:reading_enabled] || {:error, :no_action}
+    end
   end
 
   @doc false
-  @spec call_controller(Conn.t(), module(), atom()) :: {:ok, Conn.t()} | :error
-  def call_controller(conn, controller, action) do
-    {:ok, controller.call(conn, action)}
+  @spec call_controller(Conn.t(), module(), atom()) :: {:ok, Conn.t()} | {:error, :no_action} | {:error, Exception.t()}
+  defp call_controller(conn, controller, action) do
+    if :erlang.function_exported(controller, action, 2) do
+      {:ok, controller.call(conn, action)}
+    else
+      {:error, :no_action}
+    end
   rescue
-    Conn.WrapperError -> :error
+    e ->
+      {:error, Exception.format(:error, e, __STACKTRACE__)}
   end
 end

@@ -5,7 +5,7 @@ defmodule Indexer.TokenBalancesTest do
   doctest Indexer.TokenBalances
 
   alias Indexer.TokenBalances
-  alias Indexer.TokenBalance
+  alias Indexer.Fetcher.TokenBalance
   alias Explorer.Chain.Hash
 
   import Mox
@@ -61,34 +61,6 @@ defmodule Indexer.TokenBalancesTest do
       get_balance_from_blockchain_with_error()
 
       assert TokenBalances.fetch_token_balances_from_blockchain(token_balances) == {:ok, []}
-    end
-
-    test "ignores results that raised :timeout" do
-      address = insert(:address)
-      token = insert(:token, contract_address: build(:contract_address))
-      address_hash_string = Hash.to_string(address.hash)
-
-      token_balance_params = [
-        %{
-          token_contract_address_hash: Hash.to_string(token.contract_address_hash),
-          address_hash: address_hash_string,
-          block_number: 1_000,
-          retries_count: 1
-        },
-        %{
-          token_contract_address_hash: Hash.to_string(token.contract_address_hash),
-          address_hash: address_hash_string,
-          block_number: 1_001,
-          retries_count: 1
-        }
-      ]
-
-      get_balance_from_blockchain()
-      get_balance_from_blockchain_with_timeout(200)
-
-      {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain(token_balance_params, timeout: 100)
-
-      assert length(result) == 1
     end
   end
 
@@ -177,30 +149,11 @@ defmodule Indexer.TokenBalancesTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      fn [%{id: _, method: _, params: [%{data: _, to: _}, _]}], _options ->
+      fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
         {:ok,
          [
            %{
-             id: "balanceOf",
-             jsonrpc: "2.0",
-             result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
-           }
-         ]}
-      end
-    )
-  end
-
-  defp get_balance_from_blockchain_with_timeout(timeout) do
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn [%{id: _, method: _, params: [%{data: _, to: _}, _]}], _options ->
-        :timer.sleep(timeout)
-
-        {:ok,
-         [
-           %{
-             id: "balanceOf",
+             id: id,
              jsonrpc: "2.0",
              result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
            }
@@ -213,12 +166,12 @@ defmodule Indexer.TokenBalancesTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      fn [%{id: _, method: _, params: [%{data: _, to: _}, _]}], _options ->
+      fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
         {:ok,
          [
            %{
              error: %{code: -32015, data: "Reverted 0x", message: "VM execution error."},
-             id: "balanceOf",
+             id: id,
              jsonrpc: "2.0"
            }
          ]}

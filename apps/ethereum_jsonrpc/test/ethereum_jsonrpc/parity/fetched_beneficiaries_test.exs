@@ -41,7 +41,7 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiariesTest do
       block_number = 1_000
       block_quantity = EthereumJSONRPC.integer_to_quantity(block_number)
       hash1 = "0xef481b4e2c3ed62265617f2e9dfcdf3cf3efc11a"
-      hash2 = "0x523b6539ff08d72a6c8bb598af95bf50c1ea839c"
+      hash2 = "0xef481b4e2c3ed62265617f2e9dfcdf3cf3efc11a"
       reward = "0xde0b6b3a7640000"
 
       responses = [
