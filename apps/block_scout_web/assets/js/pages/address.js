@@ -34,6 +34,13 @@ export function reducer (state = initialState, action) {
         channelDisconnected: true
       })
     }
+    case 'COUNTERS_FETCHED': {
+      console.log(action)
+      return Object.assign({}, state, {
+        transactionCount: action.transactionCount,
+        validationCount: action.validationCount
+      })
+    }
     case 'RECEIVED_NEW_BLOCK': {
       if (state.channelDisconnected) return state
 
@@ -81,8 +88,13 @@ const elements = {
       return { transactionCount: numeral($el.text()).value() }
     },
     render ($el, state, oldState) {
-      if (oldState.transactionCount === state.transactionCount) return
-      $el.empty().append(numeral(state.transactionCount).format())
+      if (state.transactionCount) {
+        if (oldState.transactionCount === state.transactionCount) return
+        $el.empty().append('>= ' + numeral(state.transactionCount).format() + ' Transactions')
+        $el.show()
+      } else {
+        $el.hide()
+      }
     }
   },
   '[data-selector="fetched-coin-balance-block-number"]': {
@@ -99,10 +111,27 @@ const elements = {
       return { validationCount: numeral($el.text()).value() }
     },
     render ($el, state, oldState) {
-      if (oldState.validationCount === state.validationCount) return
-      $el.empty().append(numeral(state.validationCount).format())
+      if (state.validationCount) {
+        if (oldState.validationCount === state.validationCount) return
+        $el.empty().append(numeral(state.validationCount).format() + ' Blocks Validated')
+        $el.show()
+      } else {
+        $el.hide()
+      }
     }
   }
+}
+
+function loadCounters (store) {
+  const $element = $('[data-async-counters]')
+  const path = $element.data().asyncCounters
+
+  function fetchCounters () {
+    $.getJSON(path)
+      .done(response => store.dispatch(Object.assign({type: 'COUNTERS_FETCHED'}, humps.camelizeKeys(response))))
+  }
+
+  fetchCounters()
 }
 
 const $addressDetailsPage = $('[data-page="address-details"]')
@@ -149,4 +178,6 @@ if ($addressDetailsPage.length) {
       type: 'RECEIVED_UPDATED_BALANCE',
       msg: humps.camelizeKeys(msg)
     }))
+
+  loadCounters(store)
 }

@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.AddressController do
 
   alias BlockScoutWeb.AddressView
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
@@ -69,26 +68,25 @@ defmodule BlockScoutWeb.AddressController do
   end
 
   def address_counters(conn, %{"id" => address_hash_string}) do
-    case Chain.string_to_address_hash(address_hash_string) do
-      {:ok, address_hash} ->
-        {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      {transaction_count, validation_count} = transaction_and_validation_count(address)
 
-        json(conn, %{transaction_count: transaction_count, validation_count: validation_count})
-
-      _ ->
-        not_found(conn)
+      json(conn, %{transaction_count: transaction_count, validation_count: validation_count})
+    else
+      _ -> not_found(conn)
     end
   end
 
-  defp transaction_and_validation_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
+  defp transaction_and_validation_count(address) do
     transaction_count_task =
       Task.async(fn ->
-        transaction_count(address_hash)
+        transaction_count(address)
       end)
 
     validation_count_task =
       Task.async(fn ->
-        validation_count(address_hash)
+        validation_count(address)
       end)
 
     [transaction_count_task, validation_count_task]
@@ -108,11 +106,19 @@ defmodule BlockScoutWeb.AddressController do
     |> List.to_tuple()
   end
 
-  defp transaction_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
-    Chain.total_transactions_sent_by_address(address_hash)
+  defp transaction_count(address) do
+    if contract?(address) do
+      Chain.address_to_incoming_transaction_count(address.hash)
+    else
+      Chain.total_transactions_sent_by_address(address.hash)
+    end
   end
 
-  defp validation_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
-    Chain.address_to_validation_count(address_hash)
+  defp validation_count(address) do
+    Chain.address_to_validation_count(address.hash)
   end
+
+  def contract?(%{contract_code: nil}), do: false
+
+  def contract?(%{contract_code: _}), do: true
 end

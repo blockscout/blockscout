@@ -71,18 +71,8 @@
             <% end %>
             <span>
               <span class="address-detail-item">
-                <%= if contract?(@address) do %>
-                  <%= gettext(">=") %>
-                  <span data-selector="transaction-count">
-                    <%= incoming_transaction_count(@address.hash) %>
-                  </span>
-                  <%= gettext("Incoming Transactions") %>
-                <% else %>
-                  <span data-selector="transaction-count">
-                    <%= BlockScoutWeb.Cldr.Number.to_string!(0, format: "#,###") %>
-                  </span>
-                  <%= gettext("Transactions Sent") %>
-                <% end %>
+                <span data-selector="transaction-count">
+                </span>
               </span>
               <%= if @address.fetched_coin_balance_block_number do %>
                 <span class="address-detail-item">
@@ -92,9 +82,7 @@
 
               <span class="address-detail-item">
                 <span data-selector="validation-count">
-                  <%= BlockScoutWeb.Cldr.Number.to_string!(0, format: "#,###") %>
                 </span>
-                <%= gettext("Blocks Validated") %>
               </span>
             </span>
           </div>
