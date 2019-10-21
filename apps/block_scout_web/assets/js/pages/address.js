@@ -35,7 +35,6 @@ export function reducer (state = initialState, action) {
       })
     }
     case 'COUNTERS_FETCHED': {
-      console.log(action)
       return Object.assign({}, state, {
         transactionCount: action.transactionCount,
         validationCount: action.validationCount
