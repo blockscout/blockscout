@@ -28,13 +28,47 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
-  def validator_data(%{address: _address}) do
+  def validator_data(%{address: address}) do
+    with data = fetch_validator_data(address),
+      {:ok, [name, url, _, affiliation]} <- data["getValidator"] do
+     {:ok,
+      %{
+        address: address,
+        name: name,
+        url: url,
+        affiliation: affiliation
+      }
+     }
+     else  _ -> :error end
   end
 
-  def validator_group_data(%{address: _address}) do
+  def validator_group_data(%{address: address}) do
+    with data = fetch_validator_group_data(address),
+      {:ok, [name, url, _members, commission]} <- data["getValidatorGroup"] do
+     {:ok,
+      %{
+        address: address,
+        name: name,
+        url: url,
+        commission: commission
+      }
+     }
+     else  _ -> :error end
   end
 
-  def withdrawal_data(%{address: _address}) do
+  # how to delete them from the table?
+  def withdrawal_data(%{address: address}) do
+    with data = fetch_withdrawal_data(address),
+      {:ok, [values, timestamps]} <- data["getPendingWithdrawals"] do
+     {:ok,
+      %{
+        address: address,
+        withdrawals:
+          Enum.zip(values, timestamps) |>
+          Enum.map(fn (v,t) -> %{address: address, amount: v, timestamp: t} end)
+      }
+     }
+     else  _ -> :error end
   end
 
   def validator_history(%{block_number: _block_number}) do
@@ -55,6 +89,26 @@ defmodule Explorer.Celo.AccountReader do
       {:lockedgold, "getAccountNonvotingLockedGold", [account_address]},
       {:validators, "isValidator", [account_address]},
       {:validators, "isValidatorGroup", [account_address]},
+    ])
+    IO.inspect(data)
+    data
+  end
+
+  defp fetch_validator_data(address) do
+    data = call_methods([{:validators, "getValidator", [address]}])
+    IO.inspect(data)
+    data
+  end
+
+  defp fetch_withdrawal_data(address) do
+    data = call_methods([{:locked_gold, "getPendingWithdrawals", [address]}])
+    IO.inspect(data)
+    data
+  end
+
+  defp fetch_validator_group_data(address) do
+    data = call_methods([
+      {:validators, "getValidatorGroup", [address]},
     ])
     IO.inspect(data)
     data

@@ -74,20 +74,22 @@ defmodule Explorer.Chain.CeloAccount do
         @account_created,
         @validator_group_vote_revoked, 
         @validator_group_vote_activated,
-        @validator_group_vote_cast
+        @validator_group_vote_cast,
+        @validator_registered_event,
+        @validator_group_registered,
     ]
 
     # Events for updating validator
     def validator_events, do: [
         @validator_registered_event,
         @validator_affiliated,
-        @validator_deaffiliated
+        @validator_deaffiliated,
     ]
 
     # Events for updating validator group
     def validator_group_events, do: [
         @validator_group_registered,
-        @validator_group_deregistered
+        @validator_group_deregistered,
     ] 
 
     # Events for notifications
