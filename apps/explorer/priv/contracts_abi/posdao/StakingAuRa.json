@@ -179,34 +179,6 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "STAKE_UNIT",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "erc20Restricted",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
     "name": "stakingEpochDuration",
     "outputs": [
       {
@@ -278,20 +250,6 @@
       }
     ],
     "name": "orderedWithdrawAmount",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "MAX_DELEGATORS_PER_POOL",
     "outputs": [
       {
         "name": "",
@@ -516,20 +474,6 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_miningAddress",
-        "type": "address"
-      }
-    ],
-    "name": "addPoolNative",
-    "outputs": [],
-    "payable": true,
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
         "name": "_unremovableStakingAddress",
         "type": "address"
       }
@@ -579,10 +523,6 @@
       {
         "name": "_stakeWithdrawDisallowPeriod",
         "type": "uint256"
-      },
-      {
-        "name": "_erc20Restricted",
-        "type": "bool"
       }
     ],
     "name": "initialize",
@@ -666,20 +606,6 @@
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_toPoolStakingAddress",
-        "type": "address"
-      }
-    ],
-    "name": "stakeNative",
-    "outputs": [],
-    "payable": true,
-    "stateMutability": "payable",
     "type": "function"
   },
   {
