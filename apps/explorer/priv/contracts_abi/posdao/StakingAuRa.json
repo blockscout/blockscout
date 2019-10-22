@@ -24,25 +24,6 @@
   },
   {
     "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "stakeAmountTotal",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
     "inputs": [],
     "name": "candidateMinStake",
     "outputs": [
@@ -105,7 +86,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "erc20TokenContract",
+    "name": "erc677TokenContract",
     "outputs": [
       {
         "name": "",
@@ -166,29 +147,6 @@
       }
     ],
     "name": "orderWithdrawEpoch",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      },
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "stakeAmount",
     "outputs": [
       {
         "name": "",
@@ -778,11 +736,11 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_erc20TokenContract",
+        "name": "_erc677TokenContract",
         "type": "address"
       }
     ],
-    "name": "setErc20TokenContract",
+    "name": "setErc677TokenContract",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -1083,7 +1041,7 @@
         "type": "address"
       }
     ],
-    "name": "stakeAmountMinusOrderedWithdraw",
+    "name": "stakeAmount",
     "outputs": [
       {
         "name": "",
@@ -1102,7 +1060,7 @@
         "type": "address"
       }
     ],
-    "name": "stakeAmountTotalMinusOrderedWithdraw",
+    "name": "stakeAmountTotal",
     "outputs": [
       {
         "name": "",
