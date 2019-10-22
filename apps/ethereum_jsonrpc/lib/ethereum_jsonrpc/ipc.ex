@@ -2,6 +2,8 @@ defmodule EthereumJSONRPC.IPC do
   use GenServer
   @moduledoc false
 
+  import EthereumJSONRPC.HTTP, only: [standardize_response: 1]
+
   # Server
 
   def child_spec(opts) do
@@ -74,24 +76,25 @@ defmodule EthereumJSONRPC.IPC do
     with {:ok, response} <- post(__MODULE__, Jason.encode!(payload)),
          {:ok, decoded_body} <- Jason.decode(response) do
       case decoded_body do
-        %{"error" => error} -> {:error, error}
-        result = [%{} | _] -> {:ok, format_batch(result)}
-        result -> {:ok, Map.get(result, "result")}
+        %{"error" => error} ->
+          {:error, error}
+
+        result = [%{} | _] ->
+          list =
+            result
+            |> Enum.reverse()
+            |> List.flatten()
+            |> Enum.map(&standardize_response/1)
+
+          {:ok, list}
+
+        result ->
+          {:ok, Map.get(result, "result")}
       end
     else
       {:error, %Jason.DecodeError{data: ""}} -> {:error, :empty_response}
       {:error, error} -> {:error, {:invalid_json, error}}
       {:error, error} -> {:error, error}
     end
-  end
-
-  defp format_batch(list) do
-    list
-    |> Enum.sort(fn %{"id" => id1}, %{"id" => id2} ->
-      id1 <= id2
-    end)
-    |> Enum.map(fn %{"result" => result} ->
-      result
-    end)
   end
 end
