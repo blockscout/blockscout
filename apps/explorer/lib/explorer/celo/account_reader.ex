@@ -11,16 +11,14 @@ defmodule Explorer.Celo.AccountReader do
          {:ok, [is_validator]} <- data["isValidator"],
          {:ok, [is_validator_group]} <- data["isValidatorGroup"],
          account_type = determine_account_type(is_validator, is_validator_group),
-         {:ok, [gold]} <- data["getAccountWeight"] do
-      {
-        :ok,
+         {:ok, [gold]} <- data["getAccountTotalLockedGold"],
+         {:ok, [nonvoting_gold]} <- data["getAccountNonvotingLockedGold"] do
+        {:ok,
         %{
           address: account_address,
-          gold: 0,
-          usd: 0,
-          notice_period: 0,
           rewards: 0,
           locked_gold: gold,
+          locked_nonvoting_gold: nonvoting_gold,
           account_type: account_type,
         }
       }
@@ -28,6 +26,18 @@ defmodule Explorer.Celo.AccountReader do
       _ ->
         :error
     end
+  end
+
+  def validator_data(%{address: _address}) do
+  end
+
+  def validator_group_data(%{address: _address}) do
+  end
+
+  def withdrawal_data(%{address: _address}) do
+  end
+
+  def validator_history(%{block_number: _block_number}) do
   end
 
   defp determine_account_type(is_validator, is_validator_group) do
@@ -41,7 +51,8 @@ defmodule Explorer.Celo.AccountReader do
 
   defp fetch_account_data(account_address) do
     data = call_methods([
-      {:lockedgold, "getAccountWeight", [account_address]},
+      {:lockedgold, "getAccountTotalLockedGold", [account_address]},
+      {:lockedgold, "getAccountNonvotingLockedGold", [account_address]},
       {:validators, "isValidator", [account_address]},
       {:validators, "isValidatorGroup", [account_address]},
     ])
@@ -50,7 +61,7 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp call_methods(methods) do
-    contract_abi = abi("lockedgold.json") ++ abi("validators.json")
+    contract_abi = abi("lockedgold.json") ++ abi("validators.json") ++ abi("election.json")
     methods
     |> Enum.map(&format_request/1)
     |> Reader.query_contracts(contract_abi)
@@ -70,11 +81,10 @@ defmodule Explorer.Celo.AccountReader do
 
   defp contract(:lockedgold), do: config(:lockedgold_contract_address)
   defp contract(:validators), do: config(:validators_contract_address)
+  defp contract(:election), do: config(:election_contract_address)
 
   defp config(key) do
-    # IO.inspect(Application.get_all_env(:explorer))
     data = Application.get_env(:explorer, __MODULE__, [])[key]
-    IO.inspect(data)
     data
   end
 

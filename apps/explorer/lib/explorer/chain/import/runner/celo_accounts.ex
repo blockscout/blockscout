@@ -102,10 +102,8 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
       update: [
         set: [
           account_type: fragment("EXCLUDED.account_type"),
-          gold: fragment("EXCLUDED.gold"),
-          usd: fragment("EXCLUDED.usd"),
+          nonvoting_locked_gold: fragment("EXCLUDED.nonvoting_locked_gold"),
           locked_gold: fragment("EXCLUDED.locked_gold"),
-          notice_period: fragment("EXCLUDED.notice_period"),
           rewards: fragment("EXCLUDED.rewards"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", account.updated_at)

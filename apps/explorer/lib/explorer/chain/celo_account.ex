@@ -15,25 +15,21 @@ defmodule Explorer.Chain.CeloAccount do
     @typedoc """
     * `address` - address of the account.
     * `account_type` - regular, validator or validator group
-    * `gold` - cGLD balance
-    * `usd` - cUSD balance
-    * `locked_gold` - voting weight
-    * `notice_period` - 
+    * `locked_gold` - total locked gold
+    * `nonvoting_locked_gold` - non-voting locked gold
     * `rewards` - rewards in cGLD
     """
 
     @type t :: %__MODULE__{
         address: Hash.Address.t(),
         account_type: String.t(),
-        gold: Wei.t(),
-        usd: Wei.t(),
         locked_gold: Wei.t(),
-        notice_period: integer,
+        nonvoting_locked_gold: Wei.t(),
         rewards: Wei.t()
     }
 
     @attrs ~w(
-        address account_type gold usd locked_gold notice_period rewards
+        address account_type nonvoting_locked_gold locked_gold rewards
     )a
 
     @required_attrs ~w(
@@ -41,7 +37,7 @@ defmodule Explorer.Chain.CeloAccount do
     )a
 
     # Validator events
-    @validator_registered_event "0x4e35530e670c639b101af7074b9abce98a1bb1ebff1f7e21c83fc0a553775074"
+    @validator_registered_event "0x16a4d3b60e9bdb778667d02910e9e003e66c41a49f5d4929f52b1771cd7fd6ab"
     def validator_registered_event, do: @validator_registered_event
 
 #    @validator_group_member_added "0xbdf7e616a6943f81e07a7984c9d4c00197dc2f481486ce4ffa6af52a113974ad"
@@ -103,10 +99,8 @@ defmodule Explorer.Chain.CeloAccount do
 
     schema "celo_account" do
         field(:account_type, :string)
-        field(:gold, Wei)
-        field(:usd, Wei)
+        field(:nonvoting_locked_gold, Wei)
         field(:locked_gold, Wei)
-        field(:notice_period, :integer)
         field(:rewards, Wei)
 
         belongs_to(
@@ -121,6 +115,7 @@ defmodule Explorer.Chain.CeloAccount do
     end
 
     def changeset(%__MODULE__{} = celo_account, attrs) do
+        IO.inspect(attrs)
         celo_account
       |> cast(attrs, @attrs)
       |> validate_required(@required_attrs)

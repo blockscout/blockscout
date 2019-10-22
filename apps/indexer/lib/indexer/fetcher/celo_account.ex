@@ -100,6 +100,7 @@ defmodule Indexer.Fetcher.CeloAccount do
     
             account, {failed, success} ->
               changeset = CeloAccount.changeset(%CeloAccount{}, account)
+              IO.inspect(changeset)
     
               if changeset.valid? do
                 {failed, [changeset.changes | success]}

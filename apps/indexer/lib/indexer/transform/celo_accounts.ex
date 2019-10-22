@@ -12,7 +12,6 @@ defmodule Indexer.Transform.CeloAccounts do
     """
     def parse(logs) do
       initial_acc = %{accounts: []}
-
       logs
       |> Enum.filter(&(&1.first_topic == unquote(CeloAccount.validator_registered_event())))
       |> Enum.reduce(initial_acc, &do_parse/2)
@@ -20,6 +19,7 @@ defmodule Indexer.Transform.CeloAccounts do
 
     defp do_parse(log, %{accounts: accounts} = acc) do
       {account} = parse_params(log)
+      IO.inspect(log)
   
       %{
         accounts: [account | accounts]
