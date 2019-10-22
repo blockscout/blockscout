@@ -67,11 +67,11 @@ defmodule Explorer.Staking.ContractState do
 
     %{
       "validatorSetContract" => {:ok, [validator_set_contract_address]},
-      "erc20TokenContract" => {:ok, [token_contract_address]}
+      "erc677TokenContract" => {:ok, [token_contract_address]}
     } =
       Reader.query_contract(staking_contract_address, staking_abi, %{
         "validatorSetContract" => [],
-        "erc20TokenContract" => []
+        "erc677TokenContract" => []
       })
 
     %{"blockRewardContract" => {:ok, [block_reward_contract_address]}} =
