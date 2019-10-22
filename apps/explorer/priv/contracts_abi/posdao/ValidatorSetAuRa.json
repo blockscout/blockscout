@@ -78,7 +78,7 @@
         "type": "address"
       }
     ],
-    "name": "isValidatorOnPreviousEpoch",
+    "name": "isValidatorPrevious",
     "outputs": [
       {
         "name": "",
