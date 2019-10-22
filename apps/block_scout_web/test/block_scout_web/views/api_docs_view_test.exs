@@ -3,32 +3,6 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
 
   alias BlockScoutWeb.APIDocsView
 
-  describe "blockscout_url/0" do
-    setup do
-      original = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)
-
-      on_exit(fn -> Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint, original) end)
-
-      :ok
-    end
-
-    test "returns url with scheme and host without port" do
-      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
-        url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/"]
-      )
-
-      assert APIDocsView.blockscout_url() == "https://blockscout.com/"
-    end
-
-    test "returns url with scheme and host with path" do
-      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
-        url: [scheme: "https", host: "blockscout.com", port: 9999, path: "/chain/dog"]
-      )
-
-      assert APIDocsView.blockscout_url() == "https://blockscout.com/chain/dog"
-    end
-  end
-
   describe "api_url/1" do
     setup do
       original = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)
@@ -52,6 +26,15 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
       )
 
       assert APIDocsView.api_url() == "https://blockscout.com/api"
+    end
+
+    test "localhost return with port" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "http", host: "localhost"],
+        http: [port: 9999]
+      )
+
+      assert APIDocsView.api_url() == "http://localhost:9999/api"
     end
   end
 
@@ -78,6 +61,15 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
       )
 
       assert APIDocsView.eth_rpc_api_url() == "https://blockscout.com/api/eth_rpc"
+    end
+
+    test "localhost return with port" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "http", host: "localhost"],
+        http: [port: 9999]
+      )
+
+      assert APIDocsView.eth_rpc_api_url() == "http://localhost:9999/api/eth_rpc"
     end
   end
 end

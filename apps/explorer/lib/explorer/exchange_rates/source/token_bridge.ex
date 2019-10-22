@@ -3,10 +3,11 @@ defmodule Explorer.ExchangeRates.Source.TokenBridge do
   Adapter for calculating the market cap and total supply from token bridge
   while still getting other info like price in dollars and bitcoin from a secondary source
   """
-  require Logger
 
   alias Explorer.Chain
   alias Explorer.ExchangeRates.{Source, Token}
+
+  import Source, only: [to_decimal: 1]
 
   @behaviour Source
 
@@ -24,12 +25,12 @@ defmodule Explorer.ExchangeRates.Source.TokenBridge do
 
   defp build_struct(original_token) do
     %Token{
-      available_supply: to_decimal_fix(Chain.circulating_supply()),
+      available_supply: to_decimal(Chain.circulating_supply()),
       total_supply: 0,
       btc_value: original_token.btc_value,
       id: original_token.id,
       last_updated: original_token.last_updated,
-      market_cap_usd: Decimal.mult(to_decimal_fix(Chain.circulating_supply()), original_token.usd_value),
+      market_cap_usd: market_cap_usd(Chain.circulating_supply(), original_token),
       name: original_token.name,
       symbol: original_token.symbol,
       usd_value: original_token.usd_value,
@@ -37,8 +38,12 @@ defmodule Explorer.ExchangeRates.Source.TokenBridge do
     }
   end
 
-  defp to_decimal_fix(value) do
-    Decimal.new(value)
+  defp market_cap_usd(nil, _original_token), do: Decimal.new(0)
+
+  defp market_cap_usd(supply, original_token) do
+    supply
+    |> to_decimal()
+    |> Decimal.mult(original_token.usd_value)
   end
 
   @impl Source
@@ -48,7 +53,7 @@ defmodule Explorer.ExchangeRates.Source.TokenBridge do
 
   @spec secondary_source() :: module()
   defp secondary_source do
-    config(:secondary_source) || Explorer.ExchangeRates.Source.CoinMarketCap
+    config(:secondary_source) || Explorer.ExchangeRates.Source.CoinGecko
   end
 
   @spec config(atom()) :: term

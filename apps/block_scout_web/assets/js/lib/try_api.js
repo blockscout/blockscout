@@ -124,7 +124,7 @@ $('button[data-try-api-ui-button-type="execute"]').click(event => {
   }
 
   $.ajax({
-    url: `/api${query}`,
+    url: composeRequestUrl(query),
     success: (_data, _status, xhr) => {
       handleSuccess(query, xhr, clickedButton)
     },
