@@ -7,7 +7,7 @@ defmodule Explorer.Staking.ContractReader do
 
   def global_requests do
     [
-      token_contract_address: {:staking, "erc20TokenContract", []},
+      token_contract_address: {:staking, "erc677TokenContract", []},
       min_candidate_stake: {:staking, "candidateMinStake", []},
       min_delegator_stake: {:staking, "delegatorMinStake", []},
       epoch_number: {:staking, "stakingEpoch", []},
@@ -29,8 +29,8 @@ defmodule Explorer.Staking.ContractReader do
       is_active: {:staking, "isPoolActive", [staking_address]},
       active_delegators: {:staking, "poolDelegators", [staking_address]},
       inactive_delegators: {:staking, "poolDelegatorsInactive", [staking_address]},
-      staked_amount: {:staking, "stakeAmountTotalMinusOrderedWithdraw", [staking_address]},
-      self_staked_amount: {:staking, "stakeAmountMinusOrderedWithdraw", [staking_address, staking_address]},
+      staked_amount: {:staking, "stakeAmountTotal", [staking_address]},
+      self_staked_amount: {:staking, "stakeAmount", [staking_address, staking_address]},
       block_reward: {:block_reward, "validatorRewardPercent", [staking_address]},
       stakers: {:block_reward, "snapshotStakers", [staking_address]},
       reward_percents: {:block_reward, "snapshotRewardPercents", [staking_address]}
@@ -51,7 +51,7 @@ defmodule Explorer.Staking.ContractReader do
 
   def delegator_requests(pool_address, delegator_address) do
     [
-      stake_amount: {:staking, "stakeAmountMinusOrderedWithdraw", [pool_address, delegator_address]},
+      stake_amount: {:staking, "stakeAmount", [pool_address, delegator_address]},
       ordered_withdraw: {:staking, "orderedWithdrawAmount", [pool_address, delegator_address]},
       max_withdraw_allowed: {:staking, "maxWithdrawAllowed", [pool_address, delegator_address]},
       max_ordered_withdraw_allowed: {:staking, "maxWithdrawOrderAllowed", [pool_address, delegator_address]},
