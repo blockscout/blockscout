@@ -378,7 +378,7 @@
         "type": "uint256"
       }
     ],
-    "name": "Claimed",
+    "name": "ClaimedOrderedWithdrawal",
     "type": "event"
   },
   {
@@ -405,7 +405,7 @@
         "type": "uint256"
       }
     ],
-    "name": "Staked",
+    "name": "PlacedStake",
     "type": "event"
   },
   {
@@ -437,7 +437,7 @@
         "type": "uint256"
       }
     ],
-    "name": "StakeMoved",
+    "name": "MovedStake",
     "type": "event"
   },
   {
@@ -464,7 +464,7 @@
         "type": "int256"
       }
     ],
-    "name": "WithdrawalOrdered",
+    "name": "OrderedWithdrawal",
     "type": "event"
   },
   {
@@ -491,7 +491,7 @@
         "type": "uint256"
       }
     ],
-    "name": "Withdrawn",
+    "name": "WithdrewStake",
     "type": "event"
   },
   {
