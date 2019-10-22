@@ -17,8 +17,8 @@ defmodule EthereumJSONRPC.Application do
       :hackney_pool.child_spec(:ethereum_jsonrpc, recv_timeout: 60_000, timeout: 60_000, max_connections: 1000),
       Supervisor.child_spec({RollingWindow, [rolling_window_opts]}, id: RollingWindow.ErrorThrottle)
     ]
-    |> add_ipc_client()
     |> add_throttle_rolling_window(config)
+    |> add_ipc_client()
     |> Supervisor.start_link(strategy: :one_for_one, name: EthereumJSONRPC.Supervisor)
   end
 
@@ -41,7 +41,7 @@ defmodule EthereumJSONRPC.Application do
 
   defp add_ipc_client(children) do
     case Application.get_env(:ethereum_jsonrpc, :rpc_transport) do
-      :ipc -> [IPC.child_spec([path: Application.get_env(:ethereum_jsonrpc, :ipc_path)]) | children]
+      :ipc -> [IPC.child_spec(path: Application.get_env(:ethereum_jsonrpc, :ipc_path)) | children]
       _ -> children
     end
   end

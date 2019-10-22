@@ -5,7 +5,6 @@ defmodule EthereumJSONRPC.IPC do
   # Server
 
   def child_spec(opts) do
-    IO.inspect(opts)
     default = %{
       id: __MODULE__,
       start: {__MODULE__, :start_link, opts},
@@ -16,7 +15,7 @@ defmodule EthereumJSONRPC.IPC do
   end
 
   def start_link({:path, path}) do
-    GenServer.start_link(__MODULE__, [path: path, socket: nil])
+    GenServer.start_link(__MODULE__, [path: path, socket: nil], name: __MODULE__)
   end
 
   def init(state) do
@@ -59,20 +58,20 @@ defmodule EthereumJSONRPC.IPC do
   def handle_call(
         {:request, request},
         _from,
-        [socket: socket, path: _, ipc_request_timeout: timeout] = state
+        [socket: socket, path: _] = state
       ) do
     response =
       socket
       |> :gen_tcp.send(request)
-      |> receive_response(socket, timeout)
+      |> receive_response(socket, 500_000)
 
     {:reply, response, state}
   end
 
   # Client
 
-  def json_rpc(pid, payload, _opts) do
-    with {:ok, response} <- post(pid, payload),
+  def json_rpc(payload, _opts) do
+    with {:ok, response} <- post(__MODULE__, Jason.encode!(payload)),
          {:ok, decoded_body} <- Jason.decode(response) do
       case decoded_body do
         %{"error" => error} -> {:error, error}
