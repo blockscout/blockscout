@@ -219,25 +219,6 @@
         "type": "address"
       }
     ],
-    "name": "validatorIndex",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
     "name": "validatorCounter",
     "outputs": [
       {
@@ -578,24 +559,6 @@
       {
         "name": "",
         "type": "address[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "getQueueValidators",
-    "outputs": [
-      {
-        "name": "miningAddresses",
-        "type": "address[]"
-      },
-      {
-        "name": "newStakingEpoch",
-        "type": "bool"
       }
     ],
     "payable": false,
