@@ -4,6 +4,7 @@ $secondary: #FBCC5C;
 $tertiary: #fff;
 $additional-font: #fff;
 $white: #fff;
+$celo-dark: #2E3338;
 
 $purple: #BF97FF;
 $orange: #FFB765;
@@ -32,11 +33,13 @@ $footer-social-icon-color: $secondary;
 
 .footer-logo { filter: none !important; }
 .footer-list ul li {
-    line-height: 1.8 !important;
-
     &:before {
-        content: none !important;
-        display: none !important;
+        background-color: $white !important;
+    }
+}
+.footer {
+    .fa, .fas, .far, .fal, .fab {
+        color: $white !important;
     }
 }
 
@@ -56,6 +59,17 @@ $dashboard-banner-gradient-end: #289371; // gradient end
 
 $dashboard-banner-network-plain-container-background-color: #2ea780; // stats bg
 
+.layout-container .dashboard-banner-container {
+    background: $celo-dark !important;
+}
+.dashboard-banner-network-plain-container,
+.dashboard-banner-network-plain-container::after {
+    content: none !important;
+    background: none !important;
+    margin-top: auto !important;
+    margin-bottom: auto !important;
+}
+
 
 // navigation
 $header-background-color: #2e3338;
@@ -74,6 +88,10 @@ $btn-line-color: $primary; // button border and font color && hover bg color
 $btn-copy-color: $primary; // btn copy
 $btn-qr-color: $primary; // btn qr-code
 $btn-address-card-icon-color: $primary; // btn address color
+
+.card .btn-line {
+  @include btn-line($btn-line-color, $btn-line-bg);
+}
 
 //links & tile
 $tile-body-a-color: $primary;
@@ -108,10 +126,8 @@ $api-text-monospace-color: $primary;
 }
 
 // Network selection
-$network-selector-overlay-background: rgba(#fff, 0.4);
-
 .network-selector-overlay {
-  background-color: $network-selector-overlay-background;
+  background-color: rgba($primary, 0.6) !important;
 }
 
 form.network-selector-search-container {
@@ -123,6 +139,9 @@ form.network-selector-search-container {
     &:hover {
         border-color: $primary;
     }
+}
+.network-selector-close path {
+    fill: $celo-dark !important;
 }
 
 // Radio button
