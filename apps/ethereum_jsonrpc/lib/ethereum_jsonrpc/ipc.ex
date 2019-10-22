@@ -4,8 +4,19 @@ defmodule EthereumJSONRPC.IPC do
 
   # Server
 
-  def start_link(state \\ []) do
-    GenServer.start_link(__MODULE__, Keyword.merge(state, socket: nil))
+  def child_spec(opts) do
+    IO.inspect(opts)
+    default = %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, opts},
+      type: :worker
+    }
+
+    Supervisor.child_spec(default, [])
+  end
+
+  def start_link({:path, path}) do
+    GenServer.start_link(__MODULE__, [path: path, socket: nil])
   end
 
   def init(state) do
