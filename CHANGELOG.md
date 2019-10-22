@@ -54,6 +54,7 @@ fixed menu hovers in dark mode desktop view
 - [#2738](https://github.com/poanetwork/blockscout/pull/2738) - do not fail block `internal_transactions_indexed_at` field update
 
 ### Chore
+- [#2794](https://github.com/poanetwork/blockscout/pull/2786) - update hosted versions in readme
 - [#2789](https://github.com/poanetwork/blockscout/pull/2786) - remove projects table in readme, link to docs version
 - [#2786](https://github.com/poanetwork/blockscout/pull/2786) - updated docs links, removed docs folder
 - [#2752](https://github.com/poanetwork/blockscout/pull/2752) - allow enabling internal transactions for simple token transfers txs
