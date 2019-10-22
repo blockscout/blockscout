@@ -11,30 +11,30 @@ defmodule Indexer.Transform.CeloAccounts do
     Returns a list of account addresses given a list of logs.
     """
     def parse(logs) do
-      initial_acc = %{accounts: []}
-      logs
-      |> Enum.filter(&(&1.first_topic == unquote(CeloAccount.validator_registered_event())))
-      |> Enum.reduce(initial_acc, &do_parse/2)
+      result = logs
+      |> Enum.filter(fn log ->
+        Enum.member?(CeloAccount.account_events(), log.first_topic)
+      end)
+      |> Enum.reduce([], &do_parse/2)
+      |> Enum.map(fn address -> %{address: address} end)
+      %{accounts: result}
     end
 
-    defp do_parse(log, %{accounts: accounts} = acc) do
-      {account} = parse_params(log)
+    defp do_parse(log, accounts) do
+      account_address = parse_params(log)
       IO.inspect(log)
   
-      %{
-        accounts: [account | accounts]
-      }
+      if Enum.member?(accounts, account_address) do accounts
+      else [account_address | accounts] end
+
     rescue
       _ in [FunctionClauseError, MatchError] ->
         Logger.error(fn -> "Unknown account event format: #{inspect(log)}" end)
-        acc
+        accounts
     end
 
-    defp parse_params(%{second_topic: validator_address, third_topic: nil, fourth_topic: nil, data: _data} = _log) do
-        account = %{
-            address: truncate_address_hash(validator_address)
-        }
-        {account}
+    defp parse_params(%{second_topic: validator_address, third_topic: _topic3, fourth_topic: _topic4, data: _data} = _log) do
+      truncate_address_hash(validator_address)
     end
 
     defp truncate_address_hash(nil), do: "0x0000000000000000000000000000000000000000"
