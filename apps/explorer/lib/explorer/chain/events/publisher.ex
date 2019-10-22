@@ -24,7 +24,7 @@ defmodule Explorer.Chain.Events.Publisher do
   end
 
   defp sender do
-    Application.get_env(:explorer, :realtime_events_sender) |> IO.inspect
+    Application.get_env(:explorer, :realtime_events_sender)
   end
 
   # The :catchup type of event is not being consumed right now.
