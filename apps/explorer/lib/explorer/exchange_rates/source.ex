@@ -2,8 +2,6 @@ defmodule Explorer.ExchangeRates.Source do
   @moduledoc """
   Behaviour for fetching exchange rates from external sources.
   """
-
-  alias Explorer.ExchangeRates.Source.CoinMarketCap
   alias Explorer.ExchangeRates.Token
   alias HTTPoison.{Error, Response}
 
@@ -12,34 +10,18 @@ defmodule Explorer.ExchangeRates.Source do
   """
   @spec fetch_exchange_rates(module) :: {:ok, [Token.t()]} | {:error, any}
   def fetch_exchange_rates(source \\ exchange_rates_source()) do
-    if(source == CoinMarketCap) do
-      fetch_exchange_rates_from_paginable_source(source)
-    else
-      fetch_exchange_rates_request(source)
-    end
-  end
-
-  defp fetch_exchange_rates_from_paginable_source(source, page \\ 1) do
-    case HTTPoison.get(source.source_url(page), headers()) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        cond do
-          body =~ Explorer.coin() -> {:ok, source.format_data(body)}
-          page == source.max_page_number -> {:error, "exchange rates not found for this network"}
-          true -> fetch_exchange_rates_from_paginable_source(source, page + 1)
-        end
-
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..502 ->
-        {:error, decode_json(body)["error"]}
-
-      {:error, %Error{reason: reason}} ->
-        {:error, reason}
-    end
+    fetch_exchange_rates_request(source)
   end
 
   defp fetch_exchange_rates_request(source) do
     case HTTPoison.get(source.source_url(), headers()) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        {:ok, source.format_data(body)}
+        result =
+          body
+          |> decode_json()
+          |> source.format_data()
+
+        {:ok, result}
 
       {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
         {:error, decode_json(body)["error"]}
@@ -83,7 +65,7 @@ defmodule Explorer.ExchangeRates.Source do
 
   @spec exchange_rates_source() :: module()
   defp exchange_rates_source do
-    config(:source) || Explorer.ExchangeRates.Source.CoinMarketCap
+    config(:source) || Explorer.ExchangeRates.Source.CoinGecko
   end
 
   @spec config(atom()) :: term

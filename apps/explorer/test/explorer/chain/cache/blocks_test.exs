@@ -5,8 +5,8 @@ defmodule Explorer.Chain.Cache.BlocksTest do
   alias Explorer.Repo
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, :blocks})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, :blocks})
+    Supervisor.terminate_child(Explorer.Supervisor, Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Blocks.child_id())
     :ok
   end
 
