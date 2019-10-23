@@ -99,9 +99,9 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     end
 
     block_number = 1_000_006
-    insert(:block, number: block_number)
+    block = insert(:block, number: block_number)
 
-    assert :ok = InternalTransaction.run([block_number], json_rpc_named_arguments)
+    assert :ok = InternalTransaction.run([{block_number, block.hash}], json_rpc_named_arguments)
 
     assert InternalTransaction.init(
              [],

@@ -148,7 +148,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     {block_number, block_hash}
   end
 
-  defp block_params(block_number) when is_integer(block_number) do
+  defp block_params({block_number, _hash}) when is_integer(block_number) do
     %{number: block_number}
   end
 
@@ -333,7 +333,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
           {_, block_hash} =
             Enum.find(entries, fn {block_number, _} -> block_number == internal_transaction_param[:block_number] end)
 
-          Map.put(internal_transaction_params, :block_hash, block_hash)
+          Map.put(internal_transaction_param, :block_hash, block_hash)
         end)
 
       _ ->
@@ -344,7 +344,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
               block_number == internal_transaction_param[:block_number]
             end)
 
-          Map.put(internal_transaction_params, :block_hash, block_hash)
+          Map.put(internal_transaction_param, :block_hash, block_hash)
         end)
     end
   end
