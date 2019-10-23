@@ -129,7 +129,7 @@ defmodule Explorer.SmartContract.Reader do
       Keyword.get(opts, :json_rpc_named_arguments) || Application.get_env(:explorer, :json_rpc_named_arguments)
 
     res = EthereumJSONRPC.execute_contract_functions(requests, abi, json_rpc_named_arguments)
-    IO.inspect(res)
+    #IO.inspect(res)
     res
   end
 

@@ -16,8 +16,8 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
 
         create table(:celo_validator) do
             add(:address, :bytea, null: false)
-            add(:name, :string)
-            add(:url, :string)
+            add(:name, :string, size: 2048)
+            add(:url, :string, size: 2048)
             add(:group_address_hash, :bytea)
 
             timestamps(null: false, type: :utc_datetime_usec)
@@ -27,8 +27,8 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
 
         create table(:celo_validator_group) do
             add(:address, :bytea, null: false)
-            add(:name, :string)
-            add(:url, :string)
+            add(:name, :string, size: 2048)
+            add(:url, :string, size: 2048)
             add(:commission, :numeric, precision: 100)
             timestamps(null: false, type: :utc_datetime_usec)
         end

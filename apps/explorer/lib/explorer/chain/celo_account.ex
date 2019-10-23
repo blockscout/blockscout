@@ -43,7 +43,7 @@ defmodule Explorer.Chain.CeloAccount do
 #    @validator_group_member_added "0xbdf7e616a6943f81e07a7984c9d4c00197dc2f481486ce4ffa6af52a113974ad"
 #    @validator_group_member_removed "0xc7666a52a66ff601ff7c0d4d6efddc9ac20a34792f6aa003d1804c9d4d5baa57"
 
-    @validator_group_registered "0x939d2ce9990e1bdc223c6f065c5f11b09b9c1ab8d78d224711c2823e0e3d6af7"
+    @validator_group_registered "0xf06063b1217cba695d05e17f1c988075a319cc6db44392d4d8f303cf599cf8ee"
     @validator_group_deregistered "0xae7e034b0748a10a219b46074b20977a9170bf4027b156c797093773619a8669"
 
     @validator_affiliated "0x91ef92227057e201e406c3451698dd780fe7672ad74328591c88d281af31581d"

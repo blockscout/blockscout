@@ -61,11 +61,12 @@ defmodule Explorer.Chain.Import.Runner.CeloWithdrawals do
   
       # Enforce ShareLocks order (see docs: sharelocks.md)
       ordered_changes_list = Enum.sort_by(changes_list, &{&1.address, &1.index})
+      uniq_changes_list = Enum.dedup_by(ordered_changes_list, &{&1.address, &1.index})
   
       {:ok, _} =
         Import.insert_changes_list(
           repo,
-          ordered_changes_list,
+          uniq_changes_list,
           conflict_target: [:address, :index],
           on_conflict: on_conflict,
           for: CeloWithdrawal,
