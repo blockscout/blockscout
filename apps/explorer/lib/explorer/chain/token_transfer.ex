@@ -94,7 +94,7 @@ defmodule Explorer.Chain.TokenTransfer do
       type: Hash.Full
     )
 
-    has_one(:instance,through: [:token_contract_address, :token_id])
+    has_one(:instance, through: [:token_contract_address, :token_id])
 
     belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
 
