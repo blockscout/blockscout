@@ -69,9 +69,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
   *Note*: The internal transactions for individual transactions cannot be paginated,
   so the total number of internal transactions that could be produced is unknown.
   """
-  @spec async_block_fetch([%{required(:block_number) => Block.block_number()}]) :: :ok
-  def async_block_fetch(transactions_fields, timeout \\ 5000) when is_list(transactions_fields) do
-    entries = Enum.map(transactions_fields, &block_entry/1)
+  @spec async_block_fetch([%{required(:block_number) => Block.block_number(), required(:block_hash) => Hash.Full.t()}]) ::
+          :ok
+  def async_block_fetch(blocks_fields, timeout \\ 5000) when is_list(blocks_fields) do
+    entries = Enum.map(blocks_fields, &block_entry/1)
 
     BufferedTask.buffer(__MODULE__, entries, timeout)
   end
@@ -124,17 +125,27 @@ defmodule Indexer.Fetcher.InternalTransaction do
     final
   end
 
-  defp entry(%{block_number: block_number, hash: %Hash{bytes: bytes}, index: index}) when is_integer(block_number) do
-    {block_number, bytes, index}
+  defp entry(%{
+         block_number: block_number,
+         hash: %Hash{bytes: bytes},
+         index: index,
+         block_hash: %Hash{} = block_hash
+       })
+       when is_integer(block_number) do
+    {block_number, bytes, index, block_hash}
   end
 
-  defp params({block_number, hash_bytes, index}) when is_integer(block_number) do
+  defp params({block_number, hash_bytes, index, _block_hash}) when is_integer(block_number) do
     {:ok, hash} = Hash.Full.cast(hash_bytes)
     %{block_number: block_number, hash_data: to_string(hash), transaction_index: index}
   end
 
-  defp block_entry(%{number: block_number}) when is_integer(block_number) do
+  defp params({block_number, _block_hash}) when is_integer(block_number) do
     block_number
+  end
+
+  defp block_entry(%{number: block_number, hash: %Hash{} = block_hash}) when is_integer(block_number) do
+    {block_number, block_hash}
   end
 
   defp block_params(block_number) when is_integer(block_number) do
@@ -162,6 +173,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     |> case do
       EthereumJSONRPC.Parity ->
         unique_entries
+        |> Enum.map(&params/1)
         |> EthereumJSONRPC.fetch_block_internal_transactions(json_rpc_named_arguments)
 
       _ ->
@@ -196,9 +208,12 @@ defmodule Indexer.Fetcher.InternalTransaction do
     unique_entries_count = Enum.count(unique_entries)
     internal_transactions_params_without_failed_creations = remove_failed_creations(internal_transactions_params)
 
+    internal_transactions_params_with_block_hash =
+      add_block_hash(internal_transactions_params_without_failed_creations, unique_entries, json_rpc_named_arguments)
+
     addresses_params =
       Addresses.extract_addresses(%{
-        internal_transactions: internal_transactions_params_without_failed_creations
+        internal_transactions: internal_transactions_params_with_block_hash
       })
 
     address_hash_to_block_number =
@@ -209,7 +224,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     imports =
       Chain.import(%{
         addresses: %{params: addresses_params},
-        internal_transactions: %{params: internal_transactions_params_without_failed_creations},
+        internal_transactions: %{params: internal_transactions_params_with_block_hash},
         internal_transactions_indexed_at_blocks: %{
           params: internal_transactions_indexed_at_blocks,
           with: :number_only_changeset
@@ -308,5 +323,29 @@ defmodule Indexer.Fetcher.InternalTransaction do
         internal_transaction_params
       end
     end)
+  end
+
+  defp add_block_hash(internal_transaction_params, entries, json_rpc_named_arguments) do
+    case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+      EthereumJSONRPC.Parity ->
+        internal_transaction_params
+        |> Enum.map(fn internal_transaction_param ->
+          {_, block_hash} =
+            Enum.find(entries, fn {block_number, _} -> block_number == internal_transaction_param[:block_number] end)
+
+          Map.put(internal_transaction_params, :block_hash, block_hash)
+        end)
+
+      _ ->
+        internal_transaction_params
+        |> Enum.map(fn internal_transaction_param ->
+          {_, _, _, block_hash} =
+            Enum.find(entries, fn {block_number, _, _, _} ->
+              block_number == internal_transaction_param[:block_number]
+            end)
+
+          Map.put(internal_transaction_params, :block_hash, block_hash)
+        end)
+    end
   end
 end

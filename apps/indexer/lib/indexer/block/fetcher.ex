@@ -282,7 +282,7 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_internal_transactions(%{blocks: blocks}, EthereumJSONRPC.Parity) do
     blocks
-    |> Enum.map(fn %Block{number: block_number} -> %{number: block_number} end)
+    |> Enum.map(fn %Block{number: block_number, hash: hash} -> %{number: block_number, hash: hash} end)
     |> InternalTransaction.async_block_fetch(10_000)
   end
 
@@ -291,8 +291,14 @@ defmodule Indexer.Block.Fetcher do
 
     transactions
     |> Enum.flat_map(fn
-      %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
-        [%{block_number: block_number, index: index, hash: hash}]
+      %Transaction{
+        block_number: block_number,
+        block_hash: block_hash,
+        index: index,
+        hash: hash,
+        internal_transactions_indexed_at: nil
+      } ->
+        [%{block_number: block_number, index: index, hash: hash, block_hash: block_hash}]
 
       %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
         []
