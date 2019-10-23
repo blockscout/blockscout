@@ -55,6 +55,7 @@ fixed menu hovers in dark mode desktop view
 
 ### Chore
 - [#2796](https://github.com/poanetwork/blockscout/pull/2796) - Optimize all images with ImageOptim
+- [#2794](https://github.com/poanetwork/blockscout/pull/2786) - update hosted versions in readme
 - [#2789](https://github.com/poanetwork/blockscout/pull/2786) - remove projects table in readme, link to docs version
 - [#2786](https://github.com/poanetwork/blockscout/pull/2786) - updated docs links, removed docs folder
 - [#2752](https://github.com/poanetwork/blockscout/pull/2752) - allow enabling internal transactions for simple token transfers txs
