@@ -18,7 +18,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
             add(:address, :bytea, null: false)
             add(:name, :string)
             add(:url, :string)
-            add(:group_address_hash, :bytea, null: false)
+            add(:group_address_hash, :bytea)
 
             timestamps(null: false, type: :utc_datetime_usec)
         end

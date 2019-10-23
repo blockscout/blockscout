@@ -61,11 +61,12 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorHistory do
   
       # Enforce ShareLocks order (see docs: sharelocks.md)
       ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_number, &1.index})
+      uniq_changes_list = Enum.dedup_by(ordered_changes_list, & &1.address)
   
       {:ok, _} =
         Import.insert_changes_list(
           repo,
-          ordered_changes_list,
+          uniq_changes_list,
           conflict_target: [:block_number, :index],
           on_conflict: on_conflict,
           for: CeloValidatorHistory,

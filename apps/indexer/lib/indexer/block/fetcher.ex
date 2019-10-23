@@ -19,6 +19,8 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.{
     BlockReward,
     CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup,
     CoinBalance,
     ContractCode,
     InternalTransaction,
@@ -135,7 +137,8 @@ defmodule Indexer.Block.Fetcher do
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
-         %{accounts: celo_accounts} = CeloAccounts.parse(logs),
+         %{accounts: celo_accounts, validators: celo_validators,
+           validator_groups: celo_validator_groups} = CeloAccounts.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
@@ -174,6 +177,8 @@ defmodule Indexer.Block.Fetcher do
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                celo_accounts: %{params: celo_accounts},
+               celo_validators: %{params: celo_validators},
+               celo_validator_groups: %{params: celo_validator_groups},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts}
              }
@@ -317,6 +322,18 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_celo_accounts(_), do: :ok
+
+  def async_import_celo_validators(%{celo_validators: accounts}) do
+    CeloValidator.async_fetch(accounts)
+  end
+
+  def async_import_celo_validators(_), do: :ok
+
+  def async_import_celo_validator_groups(%{celo_validator_groups: accounts}) do
+    CeloValidatorGroup.async_fetch(accounts)
+  end
+
+  def async_import_celo_validator_groups(_), do: :ok
 
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}) do
     UncleBlock.async_fetch_blocks(block_second_degree_relations)

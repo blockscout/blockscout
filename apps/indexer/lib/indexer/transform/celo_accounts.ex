@@ -39,6 +39,8 @@ defmodule Indexer.Transform.CeloAccounts do
       |> Enum.reduce([], &do_parse/2)
       |> Enum.map(fn address -> %{address: address} end)
 
+      # IO.inspect(accounts)
+
       %{accounts: accounts, validators: validators, validator_groups: validator_groups, withdrawals: withdrawals}
     end
 

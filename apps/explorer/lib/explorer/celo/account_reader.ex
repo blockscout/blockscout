@@ -30,13 +30,13 @@ defmodule Explorer.Celo.AccountReader do
 
   def validator_data(%{address: address}) do
     with data = fetch_validator_data(address),
-      {:ok, [name, url, _, affiliation]} <- data["getValidator"] do
+      {:ok, [{name, url, _, affiliation}]} <- data["getValidator"] do
      {:ok,
       %{
         address: address,
         name: name,
         url: url,
-        affiliation: affiliation
+        group_address_hash: affiliation
       }
      }
      else  _ -> :error end
@@ -95,7 +95,11 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_validator_data(address) do
-    data = call_methods([{:validators, "getValidator", [address]}])
+    data = call_methods([
+      {:validators, "getValidator", [address]},
+      {:validators, "isValidator", [address]},
+    ])
+    IO.inspect(address)
     IO.inspect(data)
     data
   end

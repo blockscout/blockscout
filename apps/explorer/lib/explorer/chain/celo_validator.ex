@@ -54,6 +54,7 @@ defmodule Explorer.Chain.CeloValidator do
     end
 
     def changeset(%__MODULE__{} = celo_validator, attrs) do
+        IO.inspect(attrs)
         celo_validator
       |> cast(attrs, @attrs)
       |> validate_required(@required_attrs)

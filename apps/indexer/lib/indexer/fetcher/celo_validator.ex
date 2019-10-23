@@ -84,6 +84,7 @@ defmodule Indexer.Fetcher.CeloValidator do
         |> Enum.map(fn %{address: address} = account ->
           case AccountReader.validator_data(address) do
             {:ok, data} ->
+              IO.inspect(data)
               Map.merge(account, data)
     
             error ->
