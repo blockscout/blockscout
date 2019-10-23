@@ -178,6 +178,27 @@ defmodule BlockScoutWeb.WebRouter do
         only: [:index],
         as: :inventory
       )
+
+      resources(
+        "/instance",
+        Tokens.InstanceController,
+        only: [:show],
+        as: :instance
+      ) do
+        resources(
+          "/token_transfers",
+          Tokens.Instance.TransferController,
+          only: [:index],
+          as: :transfer
+        )
+
+        resources(
+          "/metadata",
+          Tokens.Instance.MetadataController,
+          only: [:index],
+          as: :metadata
+        )
+      end
     end
 
     resources(
