@@ -164,7 +164,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
                [],
                fn block_number, acc -> [block_number | acc] end,
                json_rpc_named_arguments
-             ) == [block.number]
+             ) == [{block.number, block.hash}]
     end
 
     @tag :no_geth

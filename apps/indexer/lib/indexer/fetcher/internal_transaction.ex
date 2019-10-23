@@ -101,7 +101,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
       case Keyword.fetch!(json_rpc_named_arguments, :variant) do
         EthereumJSONRPC.Parity ->
           Chain.stream_blocks_with_unfetched_internal_transactions(
-            [:number],
+            [:number, :hash],
             initial,
             fn block_fields, acc ->
               block_fields
@@ -112,7 +112,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
         _ ->
           Chain.stream_transactions_with_unfetched_internal_transactions(
-            [:block_number, :hash, :index],
+            [:block_number, :hash, :index, :block_hash],
             initial,
             fn transaction_fields, acc ->
               transaction_fields
