@@ -57,6 +57,7 @@ defmodule Explorer.Chain.TokenTransfer do
           token_contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
           token_contract_address_hash: Hash.Address.t(),
           token_id: non_neg_integer() | nil,
+          instance: Instance.t() | nil,
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
           log_index: non_neg_integer()
@@ -92,6 +93,8 @@ defmodule Explorer.Chain.TokenTransfer do
       references: :hash,
       type: Hash.Full
     )
+
+    has_one(:instance,through: [:token_contract_address, :token_id])
 
     belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
 
