@@ -18,6 +18,7 @@
 - [#2470](https://github.com/poanetwork/blockscout/pull/2470) - Allow Realtime Fetcher to wait for small skips
 
 ### Fixes
+- [#2779](https://github.com/poanetwork/blockscout/pull/2779) - fix fetching `latin1` encoded data
 - [#2783](https://github.com/poanetwork/blockscout/pull/2783) - Fix stuck value and ticker on the token page
 - [#2781](https://github.com/poanetwork/blockscout/pull/2781) - optimize txlist json rpc
 - [#2770](https://github.com/poanetwork/blockscout/pull/2770) - do not re-fetch token instances without uris
@@ -53,6 +54,7 @@ fixed menu hovers in dark mode desktop view
 - [#2738](https://github.com/poanetwork/blockscout/pull/2738) - do not fail block `internal_transactions_indexed_at` field update
 
 ### Chore
+- [#2794](https://github.com/poanetwork/blockscout/pull/2786) - update hosted versions in readme
 - [#2789](https://github.com/poanetwork/blockscout/pull/2786) - remove projects table in readme, link to docs version
 - [#2786](https://github.com/poanetwork/blockscout/pull/2786) - updated docs links, removed docs folder
 - [#2752](https://github.com/poanetwork/blockscout/pull/2752) - allow enabling internal transactions for simple token transfers txs
