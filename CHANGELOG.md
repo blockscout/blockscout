@@ -2,6 +2,16 @@
 
 ### Features
 - [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
+
+### Fixes
+
+### Chore
+
+
+## 2.1.0-beta
+
+### Features
+- [#2776](https://github.com/poanetwork/blockscout/pull/2776) - fetch token counters async
 - [#2772](https://github.com/poanetwork/blockscout/pull/2772) - add token instance images to the token inventory tab
 - [#2733](https://github.com/poanetwork/blockscout/pull/2733) - Add cache for first page of uncles
 - [#2735](https://github.com/poanetwork/blockscout/pull/2735) - Add pending transactions cache
@@ -19,7 +29,9 @@
 - [#2470](https://github.com/poanetwork/blockscout/pull/2470) - Allow Realtime Fetcher to wait for small skips
 
 ### Fixes
+- [#2793](https://github.com/poanetwork/blockscout/pull/2793) - Hide "We are indexing this chain right now. Some of the counts may be inaccurate" banner if no txs in blockchain
 - [#2779](https://github.com/poanetwork/blockscout/pull/2779) - fix fetching `latin1` encoded data
+- [#2799](https://github.com/poanetwork/blockscout/pull/2799) - fix catchup fetcher for empty node and db
 - [#2783](https://github.com/poanetwork/blockscout/pull/2783) - Fix stuck value and ticker on the token page
 - [#2781](https://github.com/poanetwork/blockscout/pull/2781) - optimize txlist json rpc
 - [#2770](https://github.com/poanetwork/blockscout/pull/2770) - do not re-fetch token instances without uris
@@ -55,6 +67,8 @@ fixed menu hovers in dark mode desktop view
 - [#2738](https://github.com/poanetwork/blockscout/pull/2738) - do not fail block `internal_transactions_indexed_at` field update
 
 ### Chore
+- [#2796](https://github.com/poanetwork/blockscout/pull/2796) - Optimize all images with ImageOptim
+- [#2794](https://github.com/poanetwork/blockscout/pull/2786) - update hosted versions in readme
 - [#2789](https://github.com/poanetwork/blockscout/pull/2786) - remove projects table in readme, link to docs version
 - [#2786](https://github.com/poanetwork/blockscout/pull/2786) - updated docs links, removed docs folder
 - [#2752](https://github.com/poanetwork/blockscout/pull/2752) - allow enabling internal transactions for simple token transfers txs
