@@ -1324,6 +1324,7 @@ defmodule Explorer.ChainTest do
             call_type: "call",
             from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
             to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             gas: 4_677_320,
             gas_used: 27770,
             input: "0x",
@@ -1495,6 +1496,12 @@ defmodule Explorer.ChainTest do
                 internal_transactions: [
                   %{
                     index: 0,
+                    block_hash: %Hash{
+                      byte_count: 32,
+                      bytes:
+                        <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71, 99, 40, 51, 77, 192, 38, 207, 102, 96,
+                          106, 132, 251, 118, 155, 61, 60, 188, 204, 132, 113, 189>>
+                    },
                     transaction_hash: %Hash{
                       byte_count: 32,
                       bytes:
