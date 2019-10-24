@@ -57,7 +57,6 @@ defmodule Explorer.Chain.TokenTransfer do
           token_contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
           token_contract_address_hash: Hash.Address.t(),
           token_id: non_neg_integer() | nil,
-          instance: Instance.t() | nil,
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
           log_index: non_neg_integer()
@@ -94,9 +93,14 @@ defmodule Explorer.Chain.TokenTransfer do
       type: Hash.Full
     )
 
-    has_one(:instance, through: [:token_contract_address, :token_id])
-
     belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
+
+    has_one(
+      :instance,
+      Instance,
+      foreign_key: :token_contract_address_hash,
+      references: :token_contract_address_hash
+    )
 
     has_one(:token, through: [:token_contract_address, :token])
 
@@ -268,7 +272,6 @@ defmodule Explorer.Chain.TokenTransfer do
   @doc """
   A token ERC-721 is considered unique because it corresponds to the possession
   of a specific asset.
-
   To find out its current owner, it is necessary to look at the token last
   transfer.
   """

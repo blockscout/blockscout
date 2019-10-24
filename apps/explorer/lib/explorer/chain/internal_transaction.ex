@@ -103,7 +103,7 @@ defmodule Explorer.Chain.InternalTransaction do
       type: Hash.Full
     )
 
-    belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
+    belongs_to(:block, Block, foreign_key: :block_hash, primary_key: true, references: :hash, type: Hash.Full)
   end
 
   @doc """
@@ -374,7 +374,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @call_optional_fields ~w(error gas_used output block_number transaction_index)a
-  @call_required_fields ~w(call_type from_address_hash gas index input to_address_hash trace_address transaction_hash value)a
+  @call_required_fields ~w(call_type from_address_hash gas index input to_address_hash trace_address transaction_hash block_hash value)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
   defp type_changeset(changeset, attrs, :call) do
@@ -387,11 +387,12 @@ defmodule Explorer.Chain.InternalTransaction do
     |> foreign_key_constraint(:from_address_hash)
     |> foreign_key_constraint(:to_address_hash)
     |> foreign_key_constraint(:transaction_hash)
+    |> foreign_key_constraint(:block_hash)
     |> unique_constraint(:index)
   end
 
   @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number transaction_index)a
-  @create_required_fields ~w(from_address_hash gas index init trace_address transaction_hash value)a
+  @create_required_fields ~w(from_address_hash gas index init trace_address transaction_hash block_hash value)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
   defp type_changeset(changeset, attrs, type) when type in [:create, :create2] do
@@ -403,11 +404,12 @@ defmodule Explorer.Chain.InternalTransaction do
     |> foreign_key_constraint(:created_contract_address_hash)
     |> foreign_key_constraint(:from_address_hash)
     |> foreign_key_constraint(:transaction_hash)
+    |> foreign_key_constraint(:block_hash)
     |> unique_constraint(:index)
   end
 
   @selfdestruct_optional_fields ~w(block_number transaction_index)a
-  @selfdestruct_required_fields ~w(from_address_hash index to_address_hash trace_address transaction_hash type value)a
+  @selfdestruct_required_fields ~w(from_address_hash index to_address_hash trace_address transaction_hash block_hash type value)a
   @selfdestruct_allowed_fields @selfdestruct_optional_fields ++ @selfdestruct_required_fields
 
   defp type_changeset(changeset, attrs, :selfdestruct) do
