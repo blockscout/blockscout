@@ -122,6 +122,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     gas: 4597044,
       ...>     gas_used: 166651,
       ...>     index: 0,
+      ...>     block_hash: "0x0e4fd5228570735094a5c5c527932ce4ba09e3a624d09d8f8ec9837d694fe535",
       ...>     init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     trace_address: [],
       ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
@@ -162,6 +163,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     gas: 3946728,
       ...>     index: 0,
       ...>     init: "0x4bb278f3",
+      ...>     block_hash: "0x0e4fd5228570735094a5c5c527932ce4ba09e3a624d09d8f8ec9837d694fe535",
       ...>     trace_address: [],
       ...>     transaction_hash: "0x3c624bb4852fb5e35a8f45644cec7a486211f6ba89034768a2b763194f22f97d",
       ...>     type: "create",
@@ -184,6 +186,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
+      ...>     block_hash: "0x0e4fd5228570735094a5c5c527932ce4ba09e3a624d09d8f8ec9837d694fe535",
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     index: 0,
@@ -208,6 +211,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
+      ...>     block_hash: "0x0e4fd5228570735094a5c5c527932ce4ba09e3a624d09d8f8ec9837d694fe535",
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
       ...>     index: 0,
@@ -234,6 +238,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     block_number: 35,
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
+      ...>     block_hash: "0x0e4fd5228570735094a5c5c527932ce4ba09e3a624d09d8f8ec9837d694fe535",
       ...>     index: 0,
       ...>     trace_address: [],
       ...>     type: "call",
@@ -262,6 +267,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
+      ...>     block_hash: "0x0e4fd5228570735094a5c5c527932ce4ba09e3a624d09d8f8ec9837d694fe535",
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
       ...>     index: 0,
@@ -290,6 +296,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+      ...>     block_hash: "0x0e4fd5228570735094a5c5c527932ce4ba09e3a624d09d8f8ec9837d694fe535",
       ...>     created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     error: "Bad instruction",
       ...>     from_address_hash: "0x78a42d3705fb3c26a4b54737a784bf064f0815fb",
@@ -322,6 +329,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas: 4597044,
       ...>     index: 0,
+      ...>     block_hash: "0x0e4fd5228570735094a5c5c527932ce4ba09e3a624d09d8f8ec9837d694fe535",
       ...>     init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     trace_address: [],
       ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
@@ -347,6 +355,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %{
       ...>     from_address_hash: "0xa7542d78b9a0be6147536887e0065f16182d294b",
       ...>     index: 1,
+      ...>     block_hash: "0x0e4fd5228570735094a5c5c527932ce4ba09e3a624d09d8f8ec9837d694fe535",
       ...>     to_address_hash: "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5",
       ...>     trace_address: [0],
       ...>     transaction_hash: "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",

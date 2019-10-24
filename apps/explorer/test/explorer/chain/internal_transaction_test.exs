@@ -22,6 +22,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
           input: "0x70696e746f73",
           output: "0x72656672696564",
           to_address_hash: "0x6295ee1b4f6dd65047762f924ecd367c17eabf8f",
+          block_hash: "0x0e4fd5228570735094a5c5c527932ce4ba09e3a624d09d8f8ec9837d694fe535",
           trace_address: [0, 1],
           transaction_hash: transaction.hash,
           type: "call",
