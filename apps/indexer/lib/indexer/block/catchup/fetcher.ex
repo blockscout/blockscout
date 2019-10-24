@@ -76,7 +76,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     case latest_block(json_rpc_named_arguments) do
       # let realtime indexer get the genesis block
       0 ->
-        %{first_block_number: 0, missing_block_count: 0, shrunk: false}
+        %{first_block_number: 0, missing_block_count: 0, last_block_number: 0, shrunk: false}
 
       latest_block_number ->
         # realtime indexer gets the current latest block

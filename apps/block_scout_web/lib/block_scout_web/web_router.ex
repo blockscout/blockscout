@@ -220,6 +220,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
 
+    get("/token_counters", Tokens.TokenController, :token_counters)
+
     get("/*path", PageNotFoundController, :index)
   end
 end
