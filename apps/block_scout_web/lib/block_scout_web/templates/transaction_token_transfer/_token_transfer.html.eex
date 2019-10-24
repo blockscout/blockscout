@@ -13,7 +13,14 @@
       </span>
 
       <span class="tile-title text-truncate">
-        <%= token_transfer_amount(@token_transfer) %> <%= link(token_symbol(@token_transfer.token), to: token_path(@conn, :show, @token_transfer.token.contract_address_hash)) %>
+        <%= case token_transfer_amount(@token_transfer) do%>
+          <% {:ok, :erc721_instance} -> %>
+            <%= "TokenID ["%><%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, @token_transfer.token.contract_address_hash, to_string(@token_transfer.token_id))) %><%= "]" %>
+          <% {:ok, value} -> %>
+            <%= value %>
+        <% end %>
+        <%= " "%>
+        <%= link(token_symbol(@token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @token_transfer.token.contract_address_hash)) %>
       </span>
     </div>
   </div>
