@@ -46,6 +46,16 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   @desc """
+  Celo account information
+  """
+  object :celo_account do
+    field(:address, :address_hash)
+    field(:account_type, :string)
+    field(:nonvoting_locked_gold, :wei)
+    field(:locked_gold, :wei)
+  end
+
+  @desc """
   A package of data that contains zero or more transactions, the hash of the previous block ("parent"), and optionally
   other data. Because each block (except for the initial "genesis block") points to the previous block, the data
   structure that they form is called a "blockchain".
