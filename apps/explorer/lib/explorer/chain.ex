@@ -715,19 +715,28 @@ defmodule Explorer.Chain do
   """
   @spec finished_indexing?() :: boolean()
   def finished_indexing? do
-    min_block_number_transaction = Repo.aggregate(Transaction, :min, :block_number)
-
-    if min_block_number_transaction do
+    transaction_exists =
       Transaction
-      |> where([t], t.block_number == ^min_block_number_transaction and is_nil(t.internal_transactions_indexed_at))
       |> limit(1)
       |> Repo.one()
-      |> case do
-        nil -> true
-        _ -> false
+
+    min_block_number_transaction = Repo.aggregate(Transaction, :min, :block_number)
+
+    if transaction_exists do
+      if min_block_number_transaction do
+        Transaction
+        |> where([t], t.block_number == ^min_block_number_transaction and is_nil(t.internal_transactions_indexed_at))
+        |> limit(1)
+        |> Repo.one()
+        |> case do
+          nil -> true
+          _ -> false
+        end
+      else
+        false
       end
     else
-      false
+      true
     end
   end
 
