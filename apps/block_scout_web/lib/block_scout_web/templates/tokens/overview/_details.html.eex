@@ -2,7 +2,7 @@
   <div class="row">
     <div class="card-section col-md-12 col-lg-8 pr-0-md">
       <div class="card">
-        <div class="card-body">
+        <div class="card-body" token-page data-async-counters="<%= @counters_path %>">
           <h1 class="card-title">
             <%= if token_name?(@token) do %>
               <%= @token.name %>
@@ -57,10 +57,10 @@
             </span>
             <div class="d-flex flex-row justify-content-start text-muted">
               <span class="mr-4"> <%= @token.type %> </span>
-              <span class="mr-4"><%= @total_token_holders %>  <%= gettext "Addresses" %></span>
-              <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
+              <span token-holder-count class="mr-4"></span>
+              <span token-transfer-count class="mr-4"></span>
               <%= if decimals?(@token) do %>
-                <span class="mr-4"><%= @token.decimals %> <%= gettext "Decimals" %></span>
+                <span  class="mr-4"><%= @token.decimals %> <%= gettext "Decimals" %></span>
               <% end %>
             </div>
           </div>
