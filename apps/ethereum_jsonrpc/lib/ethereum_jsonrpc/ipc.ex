@@ -6,18 +6,8 @@ defmodule EthereumJSONRPC.IPC do
 
   # Server
 
-  def child_spec(opts) do
-    default = %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, opts},
-      type: :worker
-    }
-
-    Supervisor.child_spec(default, [])
-  end
-
-  def start_link({:path, path}) do
-    GenServer.start_link(__MODULE__, [path: path, socket: nil], name: __MODULE__)
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, Keyword.merge(opts, socket: nil))
   end
 
   def init(state) do
@@ -72,8 +62,8 @@ defmodule EthereumJSONRPC.IPC do
 
   # Client
 
-  def json_rpc(payload, _opts) do
-    with {:ok, response} <- post(__MODULE__, Jason.encode!(payload)),
+  def request(pid, payload) do
+    with {:ok, response} <- post(pid, Jason.encode!(payload)),
          {:ok, decoded_body} <- Jason.decode(response) do
       case decoded_body do
         %{"error" => error} ->
@@ -96,5 +86,9 @@ defmodule EthereumJSONRPC.IPC do
       {:error, error} -> {:error, {:invalid_json, error}}
       {:error, error} -> {:error, error}
     end
+  end
+
+  def json_rpc(payload, _opts) do
+    :poolboy.transaction(:ipc_worker, fn pid -> request(pid, payload) end, 600_000)
   end
 end

@@ -41,8 +41,23 @@ defmodule EthereumJSONRPC.Application do
 
   defp add_ipc_client(children) do
     case Application.get_env(:ethereum_jsonrpc, :rpc_transport) do
-      :ipc -> [IPC.child_spec(path: Application.get_env(:ethereum_jsonrpc, :ipc_path)) | children]
-      _ -> children
+      :ipc ->
+        [
+          :poolboy.child_spec(:worker, poolboy_config(), path: Application.get_env(:ethereum_jsonrpc, :ipc_path))
+          | children
+        ]
+
+      _ ->
+        children
     end
+  end
+
+  defp poolboy_config do
+    [
+      {:name, {:local, :ipc_worker}},
+      {:worker_module, IPC},
+      {:size, 10},
+      {:max_overflow, 5}
+    ]
   end
 end
