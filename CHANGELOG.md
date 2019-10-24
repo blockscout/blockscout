@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2800](https://github.com/poanetwork/blockscout/pull/2800) - return not found for not verified contract for token read_contract
 
 ### Chore
 
