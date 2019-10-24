@@ -18,7 +18,8 @@ export const initialState = {
   balanceCard: null,
   fetchedCoinBalanceBlockNumber: null,
   transactionCount: null,
-  validationCount: null
+  validationCount: null,
+  countersFetched: false
 }
 
 export function reducer (state = initialState, action) {
@@ -37,7 +38,8 @@ export function reducer (state = initialState, action) {
     case 'COUNTERS_FETCHED': {
       return Object.assign({}, state, {
         transactionCount: action.transactionCount,
-        validationCount: action.validationCount
+        validationCount: action.validationCount,
+        countersFetched: true
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
@@ -87,7 +89,7 @@ const elements = {
       return { transactionCount: numeral($el.text()).value() }
     },
     render ($el, state, oldState) {
-      if (state.transactionCount) {
+      if (state.countersFetched && state.transactionCount) {
         if (oldState.transactionCount === state.transactionCount) return
         $el.empty().append('>= ' + numeral(state.transactionCount).format() + ' Transactions')
         $el.show()
@@ -110,7 +112,7 @@ const elements = {
       return { validationCount: numeral($el.text()).value() }
     },
     render ($el, state, oldState) {
-      if (state.validationCount) {
+      if (state.countersFetched && state.validationCount) {
         if (oldState.validationCount === state.validationCount) return
         $el.empty().append(numeral(state.validationCount).format() + ' Blocks Validated')
         $el.show()
