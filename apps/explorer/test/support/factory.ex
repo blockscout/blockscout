@@ -153,7 +153,7 @@ defmodule Explorer.Factory do
     }
   end
 
-  def contract_method_factory() do
+  def contract_method_factory do
     %ContractMethod{
       identifier: Base.decode16!("60fe47b1", case: :lower),
       abi: %{
@@ -290,7 +290,7 @@ defmodule Explorer.Factory do
     data
   end
 
-  def internal_transaction_factory() do
+  def internal_transaction_factory do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
@@ -298,6 +298,7 @@ defmodule Explorer.Factory do
       from_address: build(:address),
       to_address: build(:address),
       call_type: :delegatecall,
+      block: build(:block),
       gas: gas,
       gas_used: gas_used,
       input: %Data{bytes: <<1>>},
@@ -311,7 +312,7 @@ defmodule Explorer.Factory do
     }
   end
 
-  def internal_transaction_create_factory() do
+  def internal_transaction_create_factory do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
@@ -326,6 +327,7 @@ defmodule Explorer.Factory do
       # caller MUST supply `index`
       init: data(:internal_transaction_init),
       trace_address: [],
+      block: build(:block),
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       type: :create,
@@ -333,13 +335,14 @@ defmodule Explorer.Factory do
     }
   end
 
-  def internal_transaction_selfdestruct_factory() do
+  def internal_transaction_selfdestruct_factory do
     %InternalTransaction{
       from_address: build(:address),
       trace_address: [],
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       type: :selfdestruct,
+      block: build(:block),
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
   end
