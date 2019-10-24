@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://blockscout.com">
-    <img width="200" src="https://blockscout.com/eth/mainnet/android-chrome-192x192.png" \>
+    <img width="200" src="https://blockscout.com/poa/core/android-chrome-192x192.png" \>
   </a>
 </p>
 
