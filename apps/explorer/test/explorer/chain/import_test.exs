@@ -53,6 +53,7 @@ defmodule Explorer.Chain.ImportTest do
             transaction_index: 0,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             index: 0,
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             trace_address: [],
             type: "call",
             call_type: "call",
@@ -66,6 +67,7 @@ defmodule Explorer.Chain.ImportTest do
           },
           %{
             block_number: 37,
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             transaction_index: 1,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             index: 1,
@@ -544,6 +546,7 @@ defmodule Explorer.Chain.ImportTest do
               from_address_hash: from_address_hash,
               gas: 184_531,
               gas_used: 84531,
+              block_hash: block.hash,
               index: 0,
               init:
                 "0x6060604052341561000c57fe5b5b6101a68061001c6000396000f300606060405263ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416631d3b9edf811461005b57806366098d4f1461007b578063a12f69e01461009b578063f4f3bdc1146100bb575bfe5b6100696004356024356100db565b60408051918252519081900360200190f35b61006960043560243561010a565b60408051918252519081900360200190f35b610069600435602435610124565b60408051918252519081900360200190f35b610069600435602435610163565b60408051918252519081900360200190f35b60008282028315806100f757508284828115156100f457fe5b04145b15156100ff57fe5b8091505b5092915050565b6000828201838110156100ff57fe5b8091505b5092915050565b60008080831161013057fe5b828481151561013b57fe5b049050828481151561014957fe5b0681840201841415156100ff57fe5b8091505b5092915050565b60008282111561016f57fe5b508082035b929150505600a165627a7a7230582020c944d8375ca14e2c92b14df53c2d044cb99dc30c3ba9f55e2bcde87bd4709b0029",
@@ -593,6 +596,7 @@ defmodule Explorer.Chain.ImportTest do
           params: [
             %{
               block_number: internal_transacton.block_number,
+              block_hash: block.hash,
               call_type: internal_transacton.type,
               gas: internal_transacton.gas,
               gas_used: internal_transacton.gas_used,
@@ -681,6 +685,7 @@ defmodule Explorer.Chain.ImportTest do
               block_number: block_number,
               transaction_index: 0,
               transaction_hash: transaction_hash,
+              block_hash: block_hash,
               index: 0,
               trace_address: [],
               type: "call",
@@ -776,6 +781,7 @@ defmodule Explorer.Chain.ImportTest do
               from_address_hash: from_address_hash,
               gas: 4_677_320,
               gas_used: 27770,
+              block_hash: block_hash,
               index: 0,
               init:
                 "0x6060604052341561000c57fe5b5b6101a68061001c6000396000f300606060405263ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416631d3b9edf811461005b57806366098d4f1461007b578063a12f69e01461009b578063f4f3bdc1146100bb575bfe5b6100696004356024356100db565b60408051918252519081900360200190f35b61006960043560243561010a565b60408051918252519081900360200190f35b610069600435602435610124565b60408051918252519081900360200190f35b610069600435602435610163565b60408051918252519081900360200190f35b60008282028315806100f757508284828115156100f457fe5b04145b15156100ff57fe5b8091505b5092915050565b6000828201838110156100ff57fe5b8091505b5092915050565b60008080831161013057fe5b828481151561013b57fe5b049050828481151561014957fe5b0681840201841415156100ff57fe5b8091505b5092915050565b60008282111561016f57fe5b508082035b929150505600a165627a7a7230582020c944d8375ca14e2c92b14df53c2d044cb99dc30c3ba9f55e2bcde87bd4709b0029",
@@ -812,6 +818,8 @@ defmodule Explorer.Chain.ImportTest do
     end
 
     test "transactions with multiple create uses first internal transaction's created contract address hash" do
+      block_hash = "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd"
+
       assert {:ok, _} =
                Import.all(%{
                  blocks: %{
@@ -821,7 +829,7 @@ defmodule Explorer.Chain.ImportTest do
                        difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
                        gas_limit: 6_946_336,
                        gas_used: 50450,
-                       hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+                       hash: block_hash,
                        miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
                        nonce: 0,
                        number: 37,
@@ -866,6 +874,7 @@ defmodule Explorer.Chain.ImportTest do
                        created_contract_code:
                          "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
                        from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+                       block_hash: block_hash,
                        gas: 4_677_320,
                        gas_used: 27770,
                        index: 0,
@@ -884,6 +893,7 @@ defmodule Explorer.Chain.ImportTest do
                          "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
                        from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
                        gas: 4_677_320,
+                       block_hash: block_hash,
                        gas_used: 27770,
                        index: 1,
                        init:
@@ -1051,6 +1061,7 @@ defmodule Explorer.Chain.ImportTest do
                  internal_transactions: %{
                    params: [
                      %{
+                       block_hash: "0x1f8cde8bd326702c49e065d56b08bdc82caa0c4820d914e27026c9c68ca1cf09",
                        block_number: 6_535_159,
                        created_contract_address_hash: "0xf606a51bd1be5e633f4170e302ea9f6f90a85c0f",
                        created_contract_code: "0x",
@@ -1067,6 +1078,7 @@ defmodule Explorer.Chain.ImportTest do
                        transaction_block_number: 35
                      },
                      %{
+                       block_hash: "0xe16d3ce09c2f5bba53bb8a78268e70692f7d3401f654038f2733948f267819bf",
                        block_number: 6_546_180,
                        error: "Out of gas",
                        from_address_hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6",
@@ -1554,6 +1566,7 @@ defmodule Explorer.Chain.ImportTest do
                    params: [
                      params_for(:internal_transaction,
                        transaction_hash: transaction_hash,
+                       block_hash: block_hash,
                        index: 0,
                        from_address_hash: from_address_hash,
                        to_address_hash: to_address_hash,
@@ -1814,6 +1827,7 @@ defmodule Explorer.Chain.ImportTest do
                  internal_transactions: %{
                    params: [
                      %{
+                       block_hash: block_hash_before,
                        transaction_hash: transaction_hash,
                        index: 0,
                        type: :call,
