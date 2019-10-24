@@ -972,6 +972,10 @@ defmodule Explorer.ChainTest do
       assert Chain.finished_indexing?()
     end
 
+    test "finished indexing (no txs)" do
+      assert Chain.finished_indexing?()
+    end
+
     test "not finished indexing" do
       block = insert(:block, number: 1)
 
