@@ -326,26 +326,30 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp add_block_hash(internal_transaction_params, entries, json_rpc_named_arguments) do
-    case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-      EthereumJSONRPC.Parity ->
-        internal_transaction_params
-        |> Enum.map(fn internal_transaction_param ->
-          {_, block_hash} =
-            Enum.find(entries, fn {block_number, _} -> block_number == internal_transaction_param[:block_number] end)
+    client = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-          Map.put(internal_transaction_param, :block_hash, block_hash)
+    do_add_block_hash(internal_transaction_params, entries, client)
+  end
+
+  defp do_add_block_hash(internal_transaction_params, entries, EthereumJSONRPC.Parity) do
+    internal_transaction_params
+    |> Enum.map(fn internal_transaction_param ->
+      {_, block_hash} =
+        Enum.find(entries, fn {block_number, _} -> block_number == internal_transaction_param[:block_number] end)
+
+      Map.put(internal_transaction_param, :block_hash, block_hash)
+    end)
+  end
+
+  defp do_add_block_hash(internal_transaction_params, entries, _) do
+    internal_transaction_params
+    |> Enum.map(fn internal_transaction_param ->
+      {_, _, _, block_hash} =
+        Enum.find(entries, fn {block_number, _, _, _} ->
+          block_number == internal_transaction_param[:block_number]
         end)
 
-      _ ->
-        internal_transaction_params
-        |> Enum.map(fn internal_transaction_param ->
-          {_, _, _, block_hash} =
-            Enum.find(entries, fn {block_number, _, _, _} ->
-              block_number == internal_transaction_param[:block_number]
-            end)
-
-          Map.put(internal_transaction_param, :block_hash, block_hash)
-        end)
-    end
+      Map.put(internal_transaction_param, :block_hash, block_hash)
+    end)
   end
 end
