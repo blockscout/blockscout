@@ -4,6 +4,7 @@
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
 
 ### Fixes
+- [#2803](https://github.com/poanetwork/blockscout/pull/2803) - Fix block validator custom tooltip
 
 ### Chore
 
