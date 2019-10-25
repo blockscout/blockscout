@@ -47,7 +47,6 @@ defmodule Explorer.Chain.Address.CoinBalance do
     timestamps()
 
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
-    belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
   end
 
   @doc """

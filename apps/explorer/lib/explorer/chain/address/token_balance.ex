@@ -50,8 +50,6 @@ defmodule Explorer.Chain.Address.TokenBalance do
       type: Hash.Address
     )
 
-    belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
-
     timestamps()
   end
 
