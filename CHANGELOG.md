@@ -6,6 +6,7 @@
 ### Fixes
 
 ### Chore
+- [#2805](https://github.com/poanetwork/blockscout/pull/2805) - Update supported chains default option
 
 
 ## 2.1.0-beta
