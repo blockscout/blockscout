@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Log do
   require Logger
 
   alias ABI.{Event, FunctionSelector}
-  alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Transaction}
+  alias Explorer.Chain.{Address, ContractMethod, Data, Hash, Transaction}
   alias Explorer.Repo
 
   @required_attrs ~w(address_hash data index transaction_hash)a
@@ -59,8 +59,6 @@ defmodule Explorer.Chain.Log do
       references: :hash,
       type: Hash.Full
     )
-
-    belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
   end
 
   @doc """
