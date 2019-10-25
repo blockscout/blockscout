@@ -8,12 +8,16 @@ defmodule BlockScoutWeb.Schema.Types do
 
   alias BlockScoutWeb.Resolvers.{
     InternalTransaction,
-    Transaction
+    Transaction,
+    CeloAccount,
+    Address
   }
 
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.Schema.Scalars)
 
+  connection(node_type: :celo_account)
+  connection(node_type: :address)
   connection(node_type: :transaction)
   connection(node_type: :internal_transaction)
   connection(node_type: :token_transfer)
@@ -29,6 +33,10 @@ defmodule BlockScoutWeb.Schema.Types do
 
     field :smart_contract, :smart_contract do
       resolve(dataloader(:db, :smart_contract))
+    end
+
+    connection field(:celo_account, node_type: :celo_account) do
+      resolve(&CeloAccount.get_by/3)
     end
 
     connection field(:transactions, node_type: :transaction) do
@@ -53,6 +61,9 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:account_type, :string)
     field(:nonvoting_locked_gold, :wei)
     field(:locked_gold, :wei)
+    connection field(:address_info, node_type: :address) do
+      resolve(&Address.get_by/3)
+    end
   end
 
   @desc """
