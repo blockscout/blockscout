@@ -178,6 +178,27 @@ defmodule BlockScoutWeb.WebRouter do
         only: [:index],
         as: :inventory
       )
+
+      resources(
+        "/instance",
+        Tokens.InstanceController,
+        only: [:show],
+        as: :instance
+      ) do
+        resources(
+          "/token_transfers",
+          Tokens.Instance.TransferController,
+          only: [:index],
+          as: :transfer
+        )
+
+        resources(
+          "/metadata",
+          Tokens.Instance.MetadataController,
+          only: [:index],
+          as: :metadata
+        )
+      end
     end
 
     resources(
@@ -198,6 +219,8 @@ defmodule BlockScoutWeb.WebRouter do
     get("/token_transfers_csv", AddressTransactionController, :token_transfers_csv)
 
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
+
+    get("/token_counters", Tokens.TokenController, :token_counters)
 
     get("/*path", PageNotFoundController, :index)
   end

@@ -280,6 +280,9 @@ $network-selector-item-icon-dimensions: 30px !default;
   &-lukso-l14-testnet {
     background-image: url(/images/network-selector-icons/lukso-l14-testnet.svg)
   }
+  &-xusdt-chain {
+    background-image: url(/images/network-selector-icons/circle-xusdt.svg)
+  }
 }
 
 .network-selector-item-title {
