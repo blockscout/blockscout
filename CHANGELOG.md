@@ -6,6 +6,7 @@
 ### Fixes
 
 ### Chore
+- [#2808](https://github.com/poanetwork/blockscout/pull/2808) - Add tooltip for tx input
 
 
 ## 2.1.0-beta
