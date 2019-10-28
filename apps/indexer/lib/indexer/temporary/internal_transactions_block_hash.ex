@@ -9,7 +9,7 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
 
   import Ecto.Query
 
-  alias Explorer.Chain.{ InternalTransaction, Transaction}
+  alias Explorer.Chain.{InternalTransaction, Transaction}
   alias Explorer.Repo
   alias Indexer.Temporary.AddressesWithoutCode.TaskSupervisor
 
@@ -48,10 +48,13 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
     )
 
     query =
-      from(transaction in Transaction,
-        left_join: internal_transaction in InternalTransaction,
+      from(block in Block,
+        inner_join: transaction in Transaction,
+        on: block.hash == transaction.block_hash,
+        inner_join: internal_transaction in InternalTransaction,
         on: transaction.hash == internal_transaction.transaction_hash,
-        where: is_nil(internal_transaction.block_hash) and not is_nil(internal_transaction.transaction_hash)
+        where: is_nil(internal_transaction.block_hash) and not is_nil(internal_transaction.transaction_hash),
+        select: block.block_hash,
       )
 
     Logger.debug(
@@ -65,22 +68,12 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
   end
 
   defp process_query(query) do
-    query_stream = Repo.stream(query, max_rows: @batch_size, timeout: @query_timeout)
+    transaction_hashes = Repo.all(query, timeout: @query_timeout)
 
-    stream =
-      TaskSupervisor
-      |> Task.Supervisor.async_stream_nolink(
-        query_stream,
-        fn transaction -> populate_block_hash(transaction) end,
-        @task_options
-      )
-
-      Repo.transaction(fn -> Stream.run(stream) end, timeout: @query_timeout)
-  end
-
-  def populate_block_hash(transaction) do
     Repo.update(
-      from(t in InternalTransaction, where: t.transaction_hash == ^transaction.hash),
+      from(t in InternalTransaction, where: t.transaction_hash in ^transaction_hashes
+        inner_jo
+      ),
       set: [block_hash: transaction.block_hash]
     )
   end
