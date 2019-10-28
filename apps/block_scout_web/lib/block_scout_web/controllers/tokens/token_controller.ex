@@ -9,7 +9,19 @@ defmodule BlockScoutWeb.Tokens.TokenController do
     redirect(conn, to: token_transfer_path(conn, :index, address_hash_string))
   end
 
-  def fetch_token_counters(token, address_hash) do
+  def token_counters(conn, %{"id" => address_hash_string}) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, token} <- Chain.token_from_address_hash(address_hash) do
+      {transfer_count, token_holder_count} = fetch_token_counters(token, address_hash, 200)
+
+      json(conn, %{transfer_count: transfer_count, token_holder_count: token_holder_count})
+    else
+      _ ->
+        not_found(conn)
+    end
+  end
+
+  defp fetch_token_counters(token, address_hash, timeout) do
     total_token_transfers_task =
       Task.async(fn ->
         Chain.count_token_transfers_from_token_hash(address_hash)
@@ -21,7 +33,7 @@ defmodule BlockScoutWeb.Tokens.TokenController do
       end)
 
     [total_token_transfers_task, total_token_holders_task]
-    |> Task.yield_many(:timer.seconds(40))
+    |> Task.yield_many(:timer.seconds(timeout))
     |> Enum.map(fn {_task, res} ->
       case res do
         {:ok, result} ->

@@ -173,6 +173,42 @@ defmodule Explorer.ChainTest do
          valid?: false
        }} = Chain.upsert_token_instance(params)
     end
+
+    test "inserts just an error without metadata" do
+      token = insert(:token)
+      error = "no uri"
+
+      params = %{
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        error: error
+      }
+
+      {:ok, result} = Chain.upsert_token_instance(params)
+
+      assert result.error == error
+    end
+
+    test "nillifies error" do
+      token = insert(:token)
+
+      insert(:token_instance,
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        error: "no uri"
+      )
+
+      params = %{
+        token_id: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        metadata: %{uri: "http://example1.com"}
+      }
+
+      {:ok, result} = Chain.upsert_token_instance(params)
+
+      assert is_nil(result.error)
+      assert result.metadata == params.metadata
+    end
   end
 
   describe "address_to_logs/2" do
@@ -933,6 +969,10 @@ defmodule Explorer.ChainTest do
       |> insert()
       |> with_block(block, internal_transactions_indexed_at: DateTime.utc_now())
 
+      assert Chain.finished_indexing?()
+    end
+
+    test "finished indexing (no txs)" do
       assert Chain.finished_indexing?()
     end
 
@@ -3643,6 +3683,28 @@ defmodule Explorer.ChainTest do
       assert {:ok, [result]} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
       assert result.token_id == token_transfer.token_id
       assert result.contract_address_hash == token_transfer.token_contract_address_hash
+    end
+
+    test "does not fetch token transfers without token id" do
+      token_contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 1))
+
+      insert(
+        :token_transfer,
+        block_number: 1000,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token,
+        token_id: nil
+      )
+
+      assert {:ok, []} = Chain.stream_unfetched_token_instances([], &[&1 | &2])
     end
 
     test "do not fetch records with token instances" do
