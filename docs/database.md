@@ -1,6 +1,6 @@
 # Database useful information
 
-Here you can find some commands and SQL sentences that could help to deal with the Blockscout database. 
+Here you can find some commands and SQL sentences that could help to deal with the Blockscout database.
 
 ## Ecto database creation and migration
 
@@ -23,8 +23,8 @@ If you need to create a new table or define a migration you can find the migrati
 ## Registering Smart Contracts source code
 
 To visualize the Smart Contracts source code and ABI is necessary to register and verify with the information existing on-chain.
-If after doing that, the contract is a proxy in front of a implementation address, it's possible to register that mapping 
-in the database, allowing to retrieve the original source code in the web interface and the RPC api. 
+If after doing that, the contract is a proxy in front of a implementation address, it's possible to register that mapping
+in the database, allowing to retrieve the original source code in the web interface and the RPC api.
 
 ### Adding Mapping between Proxy Contract and Implementation Address
 

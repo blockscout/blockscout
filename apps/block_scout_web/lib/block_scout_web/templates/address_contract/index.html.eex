@@ -36,8 +36,10 @@
             <dd class="col-md-4"><%= @is_proxy %></dd>
             <div class="d-none d-sm-block d-md-none"></br></br></div>
             <div class="d-block d-sm-none"></br></br></div>
-            <dt class="col-md-2 text-muted"><%= gettext "Proxy Name:" %></dt>
-            <dd class="col-md-4"><%= @proxy.smart_contract.name %></dd>
+            <%= if @proxy.smart_contract &&  @proxy.smart_contract.name do %>
+              <dt class="col-md-2 text-muted"><%= gettext "Proxy Name:" %></dt>
+              <dd class="col-md-4"><%= @proxy.smart_contract.name %></dd>
+            <% end %>
             </dl>
           <% end %>
           <dl class="row">

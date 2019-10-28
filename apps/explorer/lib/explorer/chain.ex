@@ -22,6 +22,8 @@ defmodule Explorer.Chain do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
+  require Logger
+
   alias ABI.TypeDecoder
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
@@ -2619,7 +2621,7 @@ defmodule Explorer.Chain do
   naming the address for reference.
   """
   @spec create_smart_contract(map()) :: {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
-  def create_smart_contract(attrs \\ %{}, external_libraries \\ []) do
+  def create_smart_contract(attrs \\ %{}, external_libraries \\ [], proxy_address \\ nil) do
     new_contract = %SmartContract{}
 
     smart_contract_changeset =
@@ -2629,8 +2631,23 @@ defmodule Explorer.Chain do
 
     address_hash = Changeset.get_field(smart_contract_changeset, :address_hash)
 
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     insert_result =
+    if proxy_address != nil do
+      proxy_address= attrs[:proxy_address]
+      Logger.debug(fn -> "Adding Proxy Address Mapping: #{proxy_address}" end)
+
+      Multi.new()
+      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
+      |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
+      |> Multi.run(:insert_address_name, fn repo, _ ->
+        name = Changeset.get_field(smart_contract_changeset, :name)
+        create_address_name(repo, name, address_hash)
+      end)
+      |> Multi.run(:proxy_address_contract, fn repo, _ -> set_address_proxy(repo, proxy_address, address_hash) end)
+      |> Multi.insert(:smart_contract, smart_contract_changeset)
+      |> Repo.transaction()
+
+    else
       Multi.new()
       |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
       |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
@@ -2641,7 +2658,10 @@ defmodule Explorer.Chain do
       |> Multi.insert(:smart_contract, smart_contract_changeset)
       |> Repo.transaction()
 
+    end
+
     case insert_result do
+
       {:ok, %{smart_contract: smart_contract}} ->
         {:ok, smart_contract}
 
@@ -2650,6 +2670,7 @@ defmodule Explorer.Chain do
 
       {:error, :set_address_verified, message, _} ->
         {:error, message}
+
     end
   end
 
@@ -2677,6 +2698,22 @@ defmodule Explorer.Chain do
       {1, _} -> {:ok, []}
       _ -> {:error, "There was an error annotating that the address has been decompiled."}
     end
+  end
+
+  defp set_address_proxy(repo, proxy_address, implementation_address) do
+    params = %{
+      proxy_address: proxy_address,
+      implementation_address: implementation_address
+    }
+
+    Logger.debug(fn -> "Setting Proxy Address Mapping: #{proxy_address} - #{implementation_address}" end)
+
+    %ProxyContract{}
+    |> ProxyContract.changeset(params)
+    |> repo.insert(
+         on_conflict: :replace_all,
+         conflict_target: [:proxy_address])
+
   end
 
   defp clear_primary_address_names(repo, address_hash) do
@@ -2746,7 +2783,7 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       proxy_contract -> {:ok, proxy_contract.implementation_address}
-    end    
+    end
   end
 
   @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil

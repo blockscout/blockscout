@@ -2012,6 +2012,12 @@ defmodule BlockScoutWeb.Etherscan do
         description: "The number of optimization runs used during compilation"
       },
       %{
+        key: "proxyAddress",
+        placeholder: "proxyAddress",
+        type: "string",
+        description: "If the contract is behind a proxy, the address of that proxy contract"
+      },
+      %{
         key: "library1Name",
         type: "string",
         description: "The name of the first library used."
