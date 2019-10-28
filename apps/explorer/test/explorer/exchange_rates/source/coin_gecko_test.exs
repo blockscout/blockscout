@@ -18,30 +18,42 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
   }
   """
 
-  @json_mkt_data """
+  @coins_list """
   [
     {
       "id": "poa-network",
       "symbol": "poa",
-      "name": "POA Network",
-      "image": "https://assets.coingecko.com/coins/images/3157/large/poa.jpg?1520829019",
-      "current_price": 0.114782883773693,
-      "market_cap": 25248999.6735956,
-      "market_cap_rank": 185,
-      "total_volume": 2344442.13578437,
-      "high_24h": 0.115215129840519,
-      "low_24h": 0.101039753612939,
-      "price_change_24h": 0.0135970966607094,
-      "price_change_percentage_24h": 13.437753511298,
-      "market_cap_change_24h": 3058195.58191147,
-      "market_cap_change_percentage_24h": 13.7813644304017,
-      "circulating_supply": "219935174.0",
-      "total_supply": 252193195,
-      "ath": 0.935923393359191,
-      "ath_change_percentage": -87.731057963078,
-      "ath_date": "2018-05-10T09:45:31.809Z",
-      "roi": null,
-      "last_updated": "2018-10-23T01:25:31.764Z"
+      "name": "POA Network"
+    },
+    {
+      "id": "poc-chain",
+      "symbol": "pocc",
+      "name": "POC Chain"
+    },
+    {
+      "id": "pocket-arena",
+      "symbol": "poc",
+      "name": "Pocket Arena"
+    },
+    {
+    "id": "ethereum",
+    "symbol": "eth",
+    "name": "Ethereum"
+    },
+    {
+      "id": "rootstock",
+      "symbol": "rbtc",
+      "name": "Rootstock RSK"
+    },
+    {
+      "id": "dai",
+      "symbol": "dai",
+      "name": "Dai"
+    },
+    {
+      "id": "callisto",
+      "symbol": "clo",
+      "name": "Callisto Network"
     }
   ]
   """
@@ -59,36 +71,96 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
         Conn.resp(conn, 200, @json_btc_price)
       end)
 
-      {:ok, expected_date, 0} = "2018-10-23T01:25:31.764Z" |> DateTime.from_iso8601()
+      json_data =
+        "#{File.cwd!()}/test/support/fixture/exchange_rates/coin_gecko.json"
+        |> File.read!()
+        |> Jason.decode!()
 
       expected = [
         %Token{
-          available_supply: Decimal.new("252193195"),
-          total_supply: Decimal.new("252193195"),
-          btc_value: Decimal.new("0.00001753101509231471092879666458"),
+          available_supply: Decimal.new("220167621.0"),
+          total_supply: Decimal.new("252193195.0"),
+          btc_value: Decimal.new("0.000002055310963802830367634997491"),
           id: "poa-network",
-          last_updated: expected_date,
-          market_cap_usd: Decimal.new("25248999.6735956"),
+          last_updated: ~U[2019-08-21 08:36:49.371Z],
+          market_cap_usd: Decimal.new("2962791"),
           name: "POA Network",
-          symbol: "poa",
-          usd_value: Decimal.new("0.114782883773693"),
-          volume_24h_usd: Decimal.new("2344442.13578437")
+          symbol: "POA",
+          usd_value: Decimal.new("0.01345698"),
+          volume_24h_usd: Decimal.new("119946")
         }
       ]
 
-      assert expected == CoinGecko.format_data(@json_mkt_data)
+      assert expected == CoinGecko.format_data(json_data)
     end
 
-    test "returns nothing when given bad data", %{bypass: bypass} do
-      Bypass.expect(bypass, "GET", "/exchange_rates", fn conn ->
-        Conn.resp(conn, 200, @json_btc_price)
-      end)
-
+    test "returns nothing when given bad data" do
       bad_data = """
         [{"id": "poa-network"}]
       """
 
       assert [] = CoinGecko.format_data(bad_data)
+    end
+  end
+
+  describe "coin_id/0" do
+    setup do
+      bypass = Bypass.open()
+      Application.put_env(:explorer, CoinGecko, base_url: "http://localhost:#{bypass.port}")
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :coin, "POA")
+      end)
+
+      {:ok, bypass: bypass}
+    end
+
+    test "fetches poa coin id by default", %{bypass: bypass} do
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, @coins_list)
+      end)
+
+      assert CoinGecko.coin_id() == {:ok, "poa-network"}
+    end
+
+    test "fetches eth coin id", %{bypass: bypass} do
+      Application.put_env(:explorer, :coin, "ETH")
+
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, @coins_list)
+      end)
+
+      assert CoinGecko.coin_id() == {:ok, "ethereum"}
+    end
+
+    test "fetches rbtc coin id", %{bypass: bypass} do
+      Application.put_env(:explorer, :coin, "RBTC")
+
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, @coins_list)
+      end)
+
+      assert CoinGecko.coin_id() == {:ok, "rootstock"}
+    end
+
+    test "fetches dai coin id", %{bypass: bypass} do
+      Application.put_env(:explorer, :coin, "DAI")
+
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, @coins_list)
+      end)
+
+      assert CoinGecko.coin_id() == {:ok, "dai"}
+    end
+
+    test "fetches callisto coin id", %{bypass: bypass} do
+      Application.put_env(:explorer, :coin, "CLO")
+
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, @coins_list)
+      end)
+
+      assert CoinGecko.coin_id() == {:ok, "callisto"}
     end
   end
 end

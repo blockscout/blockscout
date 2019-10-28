@@ -1,18 +1,109 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 2.1.0-beta
+
+### Features
+- [#2776](https://github.com/poanetwork/blockscout/pull/2776) - fetch token counters async
+- [#2772](https://github.com/poanetwork/blockscout/pull/2772) - add token instance images to the token inventory tab
+- [#2762](https://github.com/poanetwork/blockscout/pull/2762) - on-fly fetching of token instances
+- [#2733](https://github.com/poanetwork/blockscout/pull/2733) - Add cache for first page of uncles
+- [#2735](https://github.com/poanetwork/blockscout/pull/2735) - Add pending transactions cache
+- [#2726](https://github.com/poanetwork/blockscout/pull/2726) - Remove internal_transaction block_number setting from blocks runner
+- [#2717](https://github.com/poanetwork/blockscout/pull/2717) - Improve speed of nonconsensus data removal
+- [#2679](https://github.com/poanetwork/blockscout/pull/2679) - added fixed height for card chain blocks and card chain transactions
+- [#2678](https://github.com/poanetwork/blockscout/pull/2678) - fixed dashboard banner height bug
+- [#2672](https://github.com/poanetwork/blockscout/pull/2672) - added new theme for xUSDT
+- [#2667](https://github.com/poanetwork/blockscout/pull/2667) - Add ETS-based cache for accounts page
+- [#2666](https://github.com/poanetwork/blockscout/pull/2666) - fetch token counters in parallel
+- [#2665](https://github.com/poanetwork/blockscout/pull/2665) - new menu layout for mobile devices
+- [#2663](https://github.com/poanetwork/blockscout/pull/2663) - Fetch address counters in parallel
+- [#2642](https://github.com/poanetwork/blockscout/pull/2642) - add ERC721 coin instance page
+- [#2470](https://github.com/poanetwork/blockscout/pull/2470) - Allow Realtime Fetcher to wait for small skips
+
+### Fixes
+- [#2793](https://github.com/poanetwork/blockscout/pull/2793) - Hide "We are indexing this chain right now. Some of the counts may be inaccurate" banner if no txs in blockchain
+- [#2779](https://github.com/poanetwork/blockscout/pull/2779) - fix fetching `latin1` encoded data
+- [#2799](https://github.com/poanetwork/blockscout/pull/2799) - fix catchup fetcher for empty node and db
+- [#2783](https://github.com/poanetwork/blockscout/pull/2783) - Fix stuck value and ticker on the token page
+- [#2781](https://github.com/poanetwork/blockscout/pull/2781) - optimize txlist json rpc
+- [#2770](https://github.com/poanetwork/blockscout/pull/2770) - do not re-fetch token instances without uris
+- [#2769](https://github.com/poanetwork/blockscout/pull/2769) - optimize token token transfers query
+- [#2761](https://github.com/poanetwork/blockscout/pull/2761) - add indexes for token instances fetching queries
+- [#2767](https://github.com/poanetwork/blockscout/pull/2767) - fix websocket subscriptions with token instances
+- [#2765](https://github.com/poanetwork/blockscout/pull/2765) - fixed width issue for cards in mobile view for Transaction Details page
+- [#2762](https://github.com/poanetwork/blockscout/pull/2762) - on-fly fetching of token instances
+- [#2755](https://github.com/poanetwork/blockscout/pull/2755) - various token instance fetcher fixes
+- [#2753](https://github.com/poanetwork/blockscout/pull/2753) - fix nft token instance images
+- [#2750](https://github.com/poanetwork/blockscout/pull/2750) - fixed contract buttons color for NFT token instance on each theme
+- [#2746](https://github.com/poanetwork/blockscout/pull/2746) - fixed wrong alignment in logs decoded view
+- [#2745](https://github.com/poanetwork/blockscout/pull/2745) - optimize addresses page
+- [#2742](https://github.com/poanetwork/blockscout/pull/2742) -
+fixed menu hovers in dark mode desktop view
+- [#2737](https://github.com/poanetwork/blockscout/pull/2737) - switched hardcoded subnetwork value to elixir expression for mobile menu
+- [#2736](https://github.com/poanetwork/blockscout/pull/2736) - do not update cache if no blocks were inserted
+- [#2731](https://github.com/poanetwork/blockscout/pull/2731) - fix library verification
+- [#2718](https://github.com/poanetwork/blockscout/pull/2718) - Include all addresses taking part in transactions in wallets' addresses counter
+- [#2709](https://github.com/poanetwork/blockscout/pull/2709) - Fix stuck label and value for uncle block height
+- [#2707](https://github.com/poanetwork/blockscout/pull/2707) - fix for dashboard banner chart legend items
+- [#2706](https://github.com/poanetwork/blockscout/pull/2706) - fix empty total_supply in coin gecko response
+- [#2701](https://github.com/poanetwork/blockscout/pull/2701) - Exclude nonconsensus blocks from avg block time calculation by default
+- [#2696](https://github.com/poanetwork/blockscout/pull/2696) - do not update fetched_coin_balance with nil
+- [#2693](https://github.com/poanetwork/blockscout/pull/2693) - remove non consensus internal transactions
+- [#2691](https://github.com/poanetwork/blockscout/pull/2691) - fix exchange rate websocket update for Rootstock
+- [#2688](https://github.com/poanetwork/blockscout/pull/2688) - fix try it out section
+- [#2687](https://github.com/poanetwork/blockscout/pull/2687) - remove non-consensus token transfers, logs when inserting new consensus blocks
+- [#2684](https://github.com/poanetwork/blockscout/pull/2684) - do not filter pending logs
+- [#2682](https://github.com/poanetwork/blockscout/pull/2682) - Use Task.start instead of Task.async in caches
+- [#2671](https://github.com/poanetwork/blockscout/pull/2671) - fixed buttons color at smart contract section
+- [#2660](https://github.com/poanetwork/blockscout/pull/2660) - set correct last value for coin balances chart data
+- [#2619](https://github.com/poanetwork/blockscout/pull/2619) - Enforce DB transaction's order to prevent deadlocks
+- [#2738](https://github.com/poanetwork/blockscout/pull/2738) - do not fail block `internal_transactions_indexed_at` field update
+
+### Chore
+- [#2796](https://github.com/poanetwork/blockscout/pull/2796) - Optimize all images with ImageOptim
+- [#2794](https://github.com/poanetwork/blockscout/pull/2786) - update hosted versions in readme
+- [#2789](https://github.com/poanetwork/blockscout/pull/2786) - remove projects table in readme, link to docs version
+- [#2786](https://github.com/poanetwork/blockscout/pull/2786) - updated docs links, removed docs folder
+- [#2752](https://github.com/poanetwork/blockscout/pull/2752) - allow enabling internal transactions for simple token transfers txs
+- [#2749](https://github.com/poanetwork/blockscout/pull/2749) - fix opt 22.1 support
+- [#2744](https://github.com/poanetwork/blockscout/pull/2744) - Disable Geth tests in CI
+- [#2724](https://github.com/poanetwork/blockscout/pull/2724) - fix ci by commenting a line in hackney library
+- [#2708](https://github.com/poanetwork/blockscout/pull/2708) - add log index to logs view
+- [#2723](https://github.com/poanetwork/blockscout/pull/2723) - get rid of ex_json_schema warnings
+
+
+## 2.0.4-beta
+
+### Features
+- [#2636](https://github.com/poanetwork/blockscout/pull/2636) - Execute all address' transactions page queries in parallel
 - [#2596](https://github.com/poanetwork/blockscout/pull/2596) - support AuRa's empty step reward type
+- [#2588](https://github.com/poanetwork/blockscout/pull/2588) - add verification submission comment
+- [#2505](https://github.com/poanetwork/blockscout/pull/2505) - support POA Network emission rewards
+- [#2581](https://github.com/poanetwork/blockscout/pull/2581) - Add generic Map-like Cache behaviour and implementation
 - [#2561](https://github.com/poanetwork/blockscout/pull/2561) - Add token's type to the response of tokenlist method
+- [#2555](https://github.com/poanetwork/blockscout/pull/2555) - find and show decoding candidates for logs
 - [#2499](https://github.com/poanetwork/blockscout/pull/2499) - import emission reward ranges
 - [#2497](https://github.com/poanetwork/blockscout/pull/2497) - Add generic Ordered Cache behaviour and implementation
 
 ### Fixes
+- [#2659](https://github.com/poanetwork/blockscout/pull/2659) - Multipurpose front-end part update
 - [#2640](https://github.com/poanetwork/blockscout/pull/2640) - SVG network icons
+- [#2635](https://github.com/poanetwork/blockscout/pull/2635) - optimize ERC721 inventory query
 - [#2626](https://github.com/poanetwork/blockscout/pull/2626) - Fixing 2 Mobile UI Issues
 - [#2623](https://github.com/poanetwork/blockscout/pull/2623) - fix a blinking test
 - [#2616](https://github.com/poanetwork/blockscout/pull/2616) - deduplicate coin history records by delta
 - [#2613](https://github.com/poanetwork/blockscout/pull/2613) - fix getminedblocks rpc endpoint
+- [#2612](https://github.com/poanetwork/blockscout/pull/2612) - Add cache updating independently from Indexer
+- [#2610](https://github.com/poanetwork/blockscout/pull/2610) - use CoinGecko instead of CoinMarketcap for exchange rates
 - [#2592](https://github.com/poanetwork/blockscout/pull/2592) - process new metadata format for whisper
+- [#2591](https://github.com/poanetwork/blockscout/pull/2591) - Fix url error in API page
 - [#2572](https://github.com/poanetwork/blockscout/pull/2572) - Ease non-critical css
 - [#2570](https://github.com/poanetwork/blockscout/pull/2570) - Network icons preload
 - [#2569](https://github.com/poanetwork/blockscout/pull/2569) - do not fetch emission rewards for transactions csv exporter
@@ -20,11 +111,14 @@
 - [#2564](https://github.com/poanetwork/blockscout/pull/2564) - fix first page button for uncles and reorgs
 - [#2563](https://github.com/poanetwork/blockscout/pull/2563) - Fix view less transfers button
 - [#2538](https://github.com/poanetwork/blockscout/pull/2538) - fetch the last not empty coin balance records
+- [#2468](https://github.com/poanetwork/blockscout/pull/2468) - fix confirmations for non consensus blocks
 
 ### Chore
+- [#2662](https://github.com/poanetwork/blockscout/pull/2662) - fetch coin gecko id based on the coin symbol
+- [#2646](https://github.com/poanetwork/blockscout/pull/2646) - Added Xerom to list of Additional Chains using BlockScout
 - [#2634](https://github.com/poanetwork/blockscout/pull/2634) - add Lukso to networks dropdown
-- [#2611](https://github.com/poanetwork/blockscout/pull/2611) - fix js dependency vulnerabilities
 - [#2617](https://github.com/poanetwork/blockscout/pull/2617) - skip cache update if there are no blocks inserted
+- [#2611](https://github.com/poanetwork/blockscout/pull/2611) - fix js dependency vulnerabilities
 - [#2594](https://github.com/poanetwork/blockscout/pull/2594) - do not start genesis data fetching periodically
 - [#2590](https://github.com/poanetwork/blockscout/pull/2590) - restore backward compatablity with old releases
 - [#2577](https://github.com/poanetwork/blockscout/pull/2577) - Need recompile column in the env vars table
