@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
   use Explorer.DataCase
 
   alias Ecto.Multi
-  alias Explorer.Chain.{Data, Wei, Transaction, InternalTransaction}
+  alias Explorer.Chain.{Block, Data, Wei, Transaction, InternalTransaction}
   alias Explorer.Chain.Import.Runner.InternalTransactions
 
   describe "run/1" do
@@ -42,10 +42,78 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert is_nil(Repo.get(Transaction, pending.hash).block_hash)
     end
+
+    test "removes consensus to blocks where transactions are missing" do
+      empty_block = insert(:block)
+      pending = insert(:transaction)
+
+      assert is_nil(pending.block_hash)
+
+      full_block = insert(:block)
+      inserted = insert(:transaction) |> with_block(full_block)
+
+      assert full_block.hash == inserted.block_hash
+
+      index = 0
+
+      pending_transaction_changes =
+        pending.hash
+        |> make_internal_transaction_changes(index, nil)
+        |> Map.put(:block_number, empty_block.number)
+
+      transaction_changes =
+        inserted.hash
+        |> make_internal_transaction_changes(index, nil)
+        |> Map.put(:block_number, full_block.number)
+
+      multi =
+        Multi.new()
+        |> Multi.run(:internal_transactions_indexed_at_blocks, fn _, _ -> {:ok, [empty_block.hash, full_block.hash]} end)
+
+      assert {:ok, _} = run_internal_transactions([pending_transaction_changes, transaction_changes], multi)
+
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^pending.hash) |> Repo.one() |> is_nil()
+
+      assert %{consensus: false} = Repo.get(Block, empty_block.hash)
+
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^inserted.hash) |> Repo.one() |> is_nil() ==
+               false
+
+      assert %{consensus: true} = Repo.get(Block, full_block.hash)
+    end
+
+    test "does not remove consensus when block is empty and no transactions are missing" do
+      empty_block = insert(:block)
+
+      full_block = insert(:block)
+      inserted = insert(:transaction) |> with_block(full_block)
+
+      assert full_block.hash == inserted.block_hash
+
+      index = 0
+
+      transaction_changes =
+        inserted.hash
+        |> make_internal_transaction_changes(index, nil)
+        |> Map.put(:block_number, full_block.number)
+
+      multi =
+        Multi.new()
+        |> Multi.run(:internal_transactions_indexed_at_blocks, fn _, _ -> {:ok, [empty_block.hash, full_block.hash]} end)
+
+      assert {:ok, _} = run_internal_transactions([transaction_changes], multi)
+
+      assert %{consensus: true} = Repo.get(Block, empty_block.hash)
+
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^inserted.hash) |> Repo.one() |> is_nil() ==
+               false
+
+      assert %{consensus: true} = Repo.get(Block, full_block.hash)
+    end
   end
 
-  defp run_internal_transactions(changes_list) when is_list(changes_list) do
-    Multi.new()
+  defp run_internal_transactions(changes_list, multi \\ Multi.new()) when is_list(changes_list) do
+    multi
     |> InternalTransactions.run(changes_list, %{
       timeout: :infinity,
       timestamps: %{inserted_at: DateTime.utc_now(), updated_at: DateTime.utc_now()}

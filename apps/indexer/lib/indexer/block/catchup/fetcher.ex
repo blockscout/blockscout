@@ -16,6 +16,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_replaced_transactions: 1,
       async_import_tokens: 1,
       async_import_token_balances: 1,
+      async_import_token_instances: 1,
       async_import_uncles: 1,
       fetch_and_import_range: 2
     ]
@@ -72,21 +73,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
       ) do
     Logger.metadata(fetcher: :block_catchup)
 
-    {:ok, latest_block_number} =
-      case latest_block() do
-        nil ->
-          EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
-
-        number ->
-          {:ok, number}
-      end
-
-    case latest_block_number do
+    case latest_block(json_rpc_named_arguments) do
       # let realtime indexer get the genesis block
       0 ->
         %{first_block_number: 0, missing_block_count: 0, shrunk: false}
 
-      _ ->
+      latest_block_number ->
         # realtime indexer gets the current latest block
         first = latest_block_number - 1
         last = last_block()
@@ -164,6 +156,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_token_balances(imported)
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
+    async_import_token_instances(imported)
   end
 
   defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)
@@ -345,12 +338,23 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   end
 
-  defp latest_block do
+  defp latest_block(json_rpc_named_arguments) do
     string_value = Application.get_env(:indexer, :last_block)
 
     case Integer.parse(string_value) do
-      {integer, ""} -> integer
-      _ -> nil
+      {integer, ""} ->
+        integer
+
+      _ ->
+        {:ok, number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+        # leave to realtime indexer the blocks in the skipping window
+        skipping_distance = Application.get_env(:indexer, :max_skipping_distance)
+
+        if number > skipping_distance do
+          number - skipping_distance
+        else
+          0
+        end
     end
   end
 end

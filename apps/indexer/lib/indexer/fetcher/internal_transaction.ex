@@ -14,13 +14,14 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Transform.Addresses
 
   @behaviour BufferedTask
 
-  @max_batch_size 10
-  @max_concurrency 5
+  @max_batch_size 4
+  @max_concurrency 8
   @defaults [
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
@@ -218,9 +219,17 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     case imports do
       {:ok, imported} ->
+        Accounts.drop(imported[:addreses])
+        Blocks.drop_nonconsensus(imported[:remove_consensus_of_missing_transactions_blocks])
+
         async_import_coin_balances(imported, %{
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number
         })
+
+      {:error, :acquire_transactions, :no_valid_transactions, _changes_so_far} ->
+        # Do not retry to fetch this batch of internal transactions if there is
+        # no valid transactions for their foreign key
+        :ok
 
       {:error, step, reason, _changes_so_far} ->
         Logger.error(
