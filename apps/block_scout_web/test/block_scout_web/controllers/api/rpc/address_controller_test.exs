@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias BlockScoutWeb.API.RPC.AddressController
   alias Explorer.Chain
   alias Explorer.Chain.{Events.Subscriber, Transaction, Wei}
-  alias Explorer.Counters.{AddressesWithBalanceCounter, AverageBlockTime}
+  alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Explorer.Repo
 
@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
     start_supervised!(AverageBlockTime)
     start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
-    start_supervised!(AddressesWithBalanceCounter)
+    start_supervised!(AddressesCounter)
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true)
 
@@ -809,7 +809,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           String.to_integer(transaction["blockNumber"])
         end)
 
-      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 <= &2))
+      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 >= &2))
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
@@ -831,12 +831,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> insert_list(:transaction, from_address: address)
         |> with_block(second_block)
 
-      _third_block_transactions =
+      first_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
         |> with_block(third_block)
 
-      first_block_transactions =
+      _third_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
         |> with_block(first_block)
