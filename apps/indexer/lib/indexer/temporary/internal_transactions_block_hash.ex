@@ -17,7 +17,7 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
   @query_timeout :infinity
   @batch_size 10
 
-  def start_link([gen_server_options]) do
+  def start_link(gen_server_options) do
     GenServer.start_link(__MODULE__, [], gen_server_options)
   end
 
@@ -25,7 +25,7 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
   def init(_opts) do
     schedule_work()
 
-    :ok
+    {:ok, []}
   end
 
   def schedule_work do
@@ -82,7 +82,7 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
   end
 
   def populate_block_hash(block_hash) do
-    Repo.update(
+    Repo.update_all(
       from(it in InternalTransaction,
         inner_join: transaction in Transaction,
         on: it.transaction_hash == transaction.hash,
