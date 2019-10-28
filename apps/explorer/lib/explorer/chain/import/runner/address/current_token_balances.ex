@@ -106,12 +106,14 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.token_contract_address_hash})
-
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
+    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
+      contract_address_hashes = changes_list |> Enum.map(& &1.token_contract_address_hash) |> Enum.uniq()
+      Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
+    end)
     |> Multi.run(:address_current_token_balances, fn repo, _ ->
-      insert(repo, ordered_changes_list, insert_options)
+      insert(repo, changes_list, insert_options)
     end)
     |> Multi.run(:address_current_token_balances_update_token_holder_counts, fn repo,
                                                                                 %{
@@ -120,6 +122,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
                                                                                 } ->
       token_holder_count_deltas = upserted_balances_to_holder_count_deltas(upserted_balances)
 
+      # ShareLocks order already enforced by `acquire_contract_address_tokens` (see docs: sharelocks.md)
       Tokens.update_holder_counts_with_deltas(
         repo,
         token_holder_count_deltas,
@@ -193,9 +196,12 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         }) ::
           {:ok, [CurrentTokenBalance.t()]}
           | {:error, [Changeset.t()]}
-  defp insert(repo, ordered_changes_list, %{timeout: timeout, timestamps: timestamps} = options)
-       when is_atom(repo) and is_list(ordered_changes_list) do
+  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
+       when is_atom(repo) and is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+
+    # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.token_contract_address_hash})
 
     Import.insert_changes_list(
       repo,
