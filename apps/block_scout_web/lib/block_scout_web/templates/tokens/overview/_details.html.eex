@@ -57,8 +57,12 @@
             </span>
             <div class="d-flex flex-row justify-content-start text-muted">
               <span class="mr-4"> <%= @token.type %> </span>
-              <span class="mr-4"><%= @total_token_holders %>  <%= gettext "Addresses" %></span>
-              <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
+              <%= if @total_token_holders > 0 do %>
+                <span class="mr-4"><%= @total_token_holders %>  <%= gettext "Addresses" %></span>
+              <% end %>
+              <%= if @total_token_transfers > 0 do %>
+                <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
+              <% end %>
               <%= if decimals?(@token) do %>
                 <span class="mr-4"><%= @token.decimals %> <%= gettext "Decimals" %></span>
               <% end %>
