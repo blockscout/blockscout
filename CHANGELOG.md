@@ -6,6 +6,7 @@
 ### Fixes
 
 ### Chore
+- [#2807](https://github.com/poanetwork/blockscout/pull/2807) - 422 page
 
 
 ## 2.1.0-beta
