@@ -2,10 +2,13 @@
 
 ### Features
 - [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
+- [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
 
 ### Fixes
 
 ### Chore
+- [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
+- [#2801](https://github.com/poanetwork/blockscout/pull/2801) - remove unused clause in address_to_unique_tokens query
 
 
 ## 2.1.0-beta
