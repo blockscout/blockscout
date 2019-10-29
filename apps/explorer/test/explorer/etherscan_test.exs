@@ -68,6 +68,8 @@ defmodule Explorer.EtherscanTest do
           transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           transaction_index: transaction.index
         )
         |> with_contract_creation(contract_address)
@@ -144,6 +146,8 @@ defmodule Explorer.EtherscanTest do
           transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           transaction_index: transaction.index
         )
         |> with_contract_creation(contract_address)
@@ -485,6 +489,8 @@ defmodule Explorer.EtherscanTest do
           index: 0,
           from_address: address,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           transaction_index: transaction.index
         )
         |> with_contract_creation(contract_address)
@@ -527,6 +533,8 @@ defmodule Explorer.EtherscanTest do
           transaction: transaction,
           index: index,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
           transaction_index: transaction.index
         )
       end
@@ -551,6 +559,8 @@ defmodule Explorer.EtherscanTest do
         transaction: transaction1,
         index: 0,
         block_number: transaction1.block_number,
+        block_hash: transaction1.block_hash,
+        block_index: 0,
         transaction_index: transaction1.index
       )
 
@@ -558,6 +568,8 @@ defmodule Explorer.EtherscanTest do
         transaction: transaction1,
         index: 1,
         block_number: transaction1.block_number,
+        block_hash: transaction1.block_hash,
+        block_index: 1,
         transaction_index: transaction1.index
       )
 
@@ -566,6 +578,8 @@ defmodule Explorer.EtherscanTest do
         index: 0,
         type: :reward,
         block_number: transaction2.block_number,
+        block_hash: transaction2.block_hash,
+        block_index: 2,
         transaction_index: transaction2.index
       )
 
@@ -617,6 +631,8 @@ defmodule Explorer.EtherscanTest do
           index: 0,
           from_address: address,
           block_number: transaction.block_number,
+          block_hash: block.hash,
+          block_index: 0,
           transaction_index: transaction.index
         )
         |> with_contract_creation(contract_address)
@@ -665,6 +681,8 @@ defmodule Explorer.EtherscanTest do
           index: index,
           from_address: address,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
           transaction_index: transaction.index
         }
 
@@ -689,6 +707,8 @@ defmodule Explorer.EtherscanTest do
         transaction: transaction,
         index: 0,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index,
         created_contract_address: address1
       )
@@ -697,6 +717,8 @@ defmodule Explorer.EtherscanTest do
         transaction: transaction,
         index: 1,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 1,
         transaction_index: transaction.index,
         from_address: address1
       )
@@ -705,6 +727,8 @@ defmodule Explorer.EtherscanTest do
         transaction: transaction,
         index: 2,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 2,
         transaction_index: transaction.index,
         to_address: address1
       )
@@ -713,6 +737,8 @@ defmodule Explorer.EtherscanTest do
         transaction: transaction,
         index: 3,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 3,
         transaction_index: transaction.index,
         from_address: address2
       )
@@ -740,6 +766,8 @@ defmodule Explorer.EtherscanTest do
           index: index,
           from_address: address,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
           transaction_index: transaction.index
         }
 
@@ -780,6 +808,8 @@ defmodule Explorer.EtherscanTest do
           index: index,
           from_address: address,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
           transaction_index: transaction.index
         }
 

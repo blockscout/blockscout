@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
   alias Explorer.Counters.AddressesCounter
   alias Explorer.{Repo}
-  alias Explorer.Chain.{Transaction}
+  alias Explorer.Chain.{PendingBlockOperation, Transaction}
 
   setup do
     start_supervised!(AddressesCounter)
@@ -111,6 +111,10 @@ defmodule BlockScoutWeb.ViewingAppTest do
       |> insert()
       |> with_block(block)
 
+      block_hash = block.hash
+
+      insert(:pending_block_operation, block_hash: block_hash, fetch_internal_transactions: true)
+
       BlocksIndexedCounter.calculate_blocks_indexed()
 
       assert Decimal.cmp(Explorer.Chain.indexed_ratio(), 1) == :eq
@@ -119,7 +123,10 @@ defmodule BlockScoutWeb.ViewingAppTest do
       |> AppPage.visit_page()
       |> assert_has(AppPage.indexed_status("Indexing Tokens"))
 
-      Repo.update_all(Transaction, set: [internal_transactions_indexed_at: DateTime.utc_now()])
+      Repo.update_all(
+        from(p in PendingBlockOperation, where: p.block_hash == ^block_hash),
+        set: [fetch_internal_transactions: false]
+      )
 
       BlocksIndexedCounter.calculate_blocks_indexed()
 
