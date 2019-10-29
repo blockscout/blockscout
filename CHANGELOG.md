@@ -75,6 +75,7 @@ fixed menu hovers in dark mode desktop view
 - [#2738](https://github.com/poanetwork/blockscout/pull/2738) - do not fail block `internal_transactions_indexed_at` field update
 
 ### Chore
+- [#2797](https://github.com/poanetwork/blockscout/pull/2797) - Return old style menu
 - [#2796](https://github.com/poanetwork/blockscout/pull/2796) - Optimize all images with ImageOptim
 - [#2794](https://github.com/poanetwork/blockscout/pull/2786) - update hosted versions in readme
 - [#2789](https://github.com/poanetwork/blockscout/pull/2786) - remove projects table in readme, link to docs version
