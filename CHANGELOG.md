@@ -7,6 +7,7 @@
 
 ### Chore
 - [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
+- [#2801](https://github.com/poanetwork/blockscout/pull/2801) - remove unused clause in address_to_unique_tokens query
 
 
 ## 2.1.0-beta
