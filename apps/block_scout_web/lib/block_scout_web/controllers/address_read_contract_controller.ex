@@ -26,27 +26,21 @@ defmodule BlockScoutWeb.AddressReadContractController do
     ]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
-      if address.smart_contract do
-        {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
+         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true),
+         false <- is_nil(address.smart_contract) do
+      {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
 
-        render(
-          conn,
-          "index.html",
-          address: address,
-          coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-          exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-          transaction_count: transaction_count,
-          validation_count: validation_count
-        )
-      else
-        not_found(conn)
-      end
+      render(
+        conn,
+        "index.html",
+        address: address,
+        coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        transaction_count: transaction_count,
+        validation_count: validation_count
+      )
     else
-      :error ->
-        not_found(conn)
-
-      {:error, :not_found} ->
+      _ ->
         not_found(conn)
     end
   end
