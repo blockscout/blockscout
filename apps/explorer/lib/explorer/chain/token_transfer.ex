@@ -280,7 +280,7 @@ defmodule Explorer.Chain.TokenTransfer do
       tt in TokenTransfer,
       left_join: instance in Instance,
       on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
-      where: tt.token_contract_address_hash == ^contract_address_hash and tt.token_id == tt.token_id,
+      where: tt.token_contract_address_hash == ^contract_address_hash,
       order_by: [desc: tt.block_number],
       distinct: tt.token_id,
       preload: [:to_address],

@@ -36,6 +36,7 @@ import './pages/transaction'
 import './pages/transactions'
 import './pages/layout'
 import './pages/verification_form'
+import './pages/token_counters'
 import './pages/dark-mode-switcher'
 
 import './pages/admin/tasks.js'

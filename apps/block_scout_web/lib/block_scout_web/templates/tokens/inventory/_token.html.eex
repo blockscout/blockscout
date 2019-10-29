@@ -20,7 +20,8 @@
           <%= render BlockScoutWeb.AddressView,
             "_link.html",
             address: @token_transfer.to_address,
-            contract: false %>
+            contract: false,
+            use_custom_tooltip: false %>
         </span>
       </span>
     </div>
