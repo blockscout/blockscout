@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
 
 ### Fixes
