@@ -6,6 +6,7 @@
 ### Fixes
 
 ### Chore
+- [#2801](https://github.com/poanetwork/blockscout/pull/2801) - remove unused clause in address_to_unique_tokens query
 
 
 ## 2.1.0-beta
