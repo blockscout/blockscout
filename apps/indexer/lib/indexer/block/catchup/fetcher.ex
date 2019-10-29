@@ -12,7 +12,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_block_rewards: 1,
       async_import_coin_balances: 2,
       async_import_created_contract_codes: 1,
-      async_import_internal_transactions: 2,
+      async_import_internal_transactions: 1,
       async_import_replaced_transactions: 1,
       async_import_tokens: 1,
       async_import_token_balances: 1,
@@ -122,7 +122,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   @async_import_remaining_block_data_options ~w(address_hash_to_fetched_balance_block_number)a
 
   @impl Block.Fetcher
-  def import(%Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}, options) when is_map(options) do
+  def import(_block_fetcher, options) when is_map(options) do
     {async_import_remaining_block_data_options, options_with_block_rewards_errors} =
       Map.split(options, @async_import_remaining_block_data_options)
 
@@ -135,8 +135,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     with {:import, {:ok, imported} = ok} <- {:import, Chain.import(full_chain_import_options)} do
       async_import_remaining_block_data(
         imported,
-        Map.put(async_import_remaining_block_data_options, :block_rewards, %{errors: block_reward_errors}),
-        json_rpc_named_arguments
+        Map.put(async_import_remaining_block_data_options, :block_rewards, %{errors: block_reward_errors})
       )
 
       ok
@@ -145,13 +144,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp async_import_remaining_block_data(
          imported,
-         %{block_rewards: %{errors: block_reward_errors}} = options,
-         json_rpc_named_arguments
+         %{block_rewards: %{errors: block_reward_errors}} = options
        ) do
     async_import_block_rewards(block_reward_errors)
     async_import_coin_balances(imported, options)
     async_import_created_contract_codes(imported)
-    async_import_internal_transactions(imported, Keyword.get(json_rpc_named_arguments, :variant))
+    async_import_internal_transactions(imported)
     async_import_tokens(imported)
     async_import_token_balances(imported)
     async_import_uncles(imported)

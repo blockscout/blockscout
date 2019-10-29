@@ -46,7 +46,13 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
 
     insert(:log, address: lincoln, index: 0, transaction: transaction)
 
-    internal = insert(:internal_transaction, index: 0, transaction: transaction)
+    internal =
+      insert(:internal_transaction,
+        index: 0,
+        transaction: transaction,
+        block_hash: transaction.block_hash,
+        block_index: 0
+      )
 
     {:ok,
      %{
@@ -95,7 +101,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
         |> with_contract_creation(contract_address)
 
       :internal_transaction_create
-      |> insert(transaction: transaction, index: 0)
+      |> insert(transaction: transaction, index: 0, block_hash: transaction.block_hash, block_index: 0)
       |> with_contract_creation(contract_address)
 
       session

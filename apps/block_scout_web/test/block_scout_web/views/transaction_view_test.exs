@@ -192,6 +192,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(block, status: :error)
 
+      insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
+
       status = TransactionView.transaction_status(transaction)
       assert TransactionView.formatted_status(status) == "Error: (Awaiting internal transactions for reason)"
     end
@@ -200,7 +202,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
       transaction =
         :transaction
         |> insert()
-        |> with_block(status: :error, internal_transactions_indexed_at: DateTime.utc_now(), error: "Out of Gas")
+        |> with_block(status: :error, error: "Out of Gas")
 
       status = TransactionView.transaction_status(transaction)
       assert TransactionView.formatted_status(status) == "Error: Out of Gas"

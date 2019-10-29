@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :internal_transactions, :realtime, internal_transactions}) do
     internal_transactions
     |> Stream.map(
-      &(InternalTransaction
+      &(InternalTransaction.where_nonpending_block()
         |> Repo.get_by(transaction_hash: &1.transaction_hash, index: &1.index)
         |> Repo.preload([:from_address, :to_address, transaction: :block]))
     )

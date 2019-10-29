@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Stage.BlockFollowing do
+defmodule Explorer.Chain.Import.Stage.BlockPending do
   @moduledoc """
   Imports any tables that follows and cannot be imported at the same time as
   those imported by `Explorer.Chain.Import.Stage.Addresses`,
@@ -13,9 +13,7 @@ defmodule Explorer.Chain.Import.Stage.BlockFollowing do
   @impl Stage
   def runners,
     do: [
-      Runner.Block.SecondDegreeRelations,
-      Runner.Block.Rewards,
-      Runner.Address.CurrentTokenBalances
+      Runner.InternalTransactions
     ]
 
   @impl Stage
