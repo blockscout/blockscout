@@ -7,14 +7,10 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash.Supervisor do
 
   alias Indexer.Temporary.InternalTransactionsBlockHash
 
-  def child_spec([init_arguments]) do
-    child_spec([init_arguments, []])
-  end
-
-  def child_spec([_init_arguments, _gen_server_options] = start_link_arguments) do
+  def child_spec do
     default = %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, start_link_arguments},
+      start: {__MODULE__, :start_link, []},
       type: :supervisor
     }
 
@@ -29,7 +25,6 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash.Supervisor do
   def init(_) do
     Supervisor.init(
       [
-        {Task.Supervisor, name: Indexer.Temporary.InternalTransactionsBlockHash.TaskSupervisor},
         {InternalTransactionsBlockHash, [name: InternalTransactionsBlockHash]}
       ],
       strategy: :rest_for_one

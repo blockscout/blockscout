@@ -14,8 +14,7 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHashTest do
 
       assert is_nil(internal_transaction_without_block_hash.block_hash)
 
-      [[name: TaskSupervisor]]
-      |> Supervisor.child_spec()
+      Supervisor.child_spec()
       |> ExUnit.Callbacks.start_supervised!()
 
       InternalTransactionsBlockHash.populate_block_hash()
