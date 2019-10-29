@@ -4,7 +4,7 @@
       <h1 class="card-title"><%= gettext "Addresses" %></h1>
 
     <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
-	
+
 	<div class="addresses-table-container">
 		<div class="stakes-table-container">
 			<table>
@@ -25,11 +25,13 @@
 								Balance
 							</div>
 						</th>
-						<th class="stakes-table-th">
-							<div class="stakes-table-th-content">
-								Percentage
-							</div>
-						</th>
+                                                <%= if balance_percentage_enabled?() do %>
+       						  <th class="stakes-table-th">
+       						     <div class="stakes-table-th-content">
+       						       Percentage
+       						     </div>
+       						   </th>
+                                                <% end %>
 						<th class="stakes-table-th">
 							<div class="stakes-table-th-content">
 								Txn Count
@@ -43,7 +45,7 @@
 			</table>
 		</div>
 	</div>
-    
+
     <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
     </div>
   </div>
