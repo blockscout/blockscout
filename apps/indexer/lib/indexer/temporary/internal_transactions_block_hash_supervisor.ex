@@ -7,6 +7,10 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash.Supervisor do
 
   alias Indexer.Temporary.InternalTransactionsBlockHash
 
+  def child_spec(_) do
+    child_spec()
+  end
+
   def child_spec do
     default = %{
       id: __MODULE__,

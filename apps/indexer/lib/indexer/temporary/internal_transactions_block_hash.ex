@@ -53,26 +53,25 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
         inner_join: internal_transaction in InternalTransaction,
         on: transaction.hash == internal_transaction.transaction_hash,
         where: is_nil(internal_transaction.block_hash) and not is_nil(internal_transaction.transaction_hash),
+        distinct: block.hash,
         limit: @limit
       )
 
-    if count_records(query) > 0 do
-      Logger.debug(
-        [
-          "Started populating block hashes"
-        ],
-        fetcher: :internal_transacions_block_hash
-      )
+    Logger.debug(
+      [
+        "Started populating block hashes"
+      ],
+      fetcher: :internal_transacions_block_hash
+    )
 
-      process_query(query)
-    else
-      Logger.debug(
-        [
-          "Finished populating block hashes"
-        ],
-        fetcher: :internal_transacions_block_hash
-      )
-    end
+    process_query(query)
+
+    Logger.debug(
+      [
+        "Finished populating block hashes"
+      ],
+      fetcher: :internal_transacions_block_hash
+    )
   end
 
   defp process_query(query) do
@@ -92,6 +91,13 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
   end
 
   defp populate_block_hash(block_hash) do
+    Logger.debug(
+      [
+        "Started populating block hash #{block_hash}"
+      ],
+      fetcher: :internal_transacions_block_hash
+    )
+
     Repo.update_all(
       from(it in InternalTransaction,
         inner_join: transaction in Transaction,
@@ -100,9 +106,12 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
       ),
       set: [block_hash: block_hash]
     )
-  end
 
-  defp count_records(query) do
-    Repo.one(from(p in query, select: fragment("count(*)")))
+    Logger.debug(
+      [
+        "Finished populating block hash #{block_hash}"
+      ],
+      fetcher: :internal_transacions_block_hash
+    )
   end
 end

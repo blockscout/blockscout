@@ -26,6 +26,7 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Temporary.{
     BlocksTransactionsMismatch,
+    InternalTransactionsBlockHash,
     UncatalogedTokenTransfers,
     UnclesWithoutIndex
   }
@@ -124,7 +125,7 @@ defmodule Indexer.Supervisor do
         # Out-of-band fetchers
         {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
         {TokenUpdater.Supervisor, [%{update_interval: metadata_updater_inverval}]},
-
+        {InternalTransactionsBlockHash.Supervisor, []},
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},
         {UnclesWithoutIndex.Supervisor,
