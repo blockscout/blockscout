@@ -13,6 +13,12 @@ config :logger, :indexer_token_balances,
   metadata_filter: [fetcher: :token_balances],
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
+config :logger, :internal_transacions_block_hash,
+  level: :debug,
+  path: Path.absname("logs/prod/internal_transactions_bloc_hash.log"),
+  metadata_filter: [fetcher: :internal_transacions_block_hash],
+  rotate: %{max_bytes: 52_428_800, keep: 19}
+
 config :logger, :failed_contract_creations,
   level: :debug,
   path: Path.absname("logs/prod/indexer/failed_contract_creations.log"),

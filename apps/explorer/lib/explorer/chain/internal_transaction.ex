@@ -3,7 +3,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Data, Gas, Hash, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Data, Gas, Hash, Transaction, Wei}
   alias Explorer.Chain.InternalTransaction.{Action, CallType, Result, Type}
 
   @typedoc """
@@ -102,6 +102,8 @@ defmodule Explorer.Chain.InternalTransaction do
       references: :hash,
       type: Hash.Full
     )
+
+    belongs_to(:block, Block, foreign_key: :block_hash, primary_key: true, references: :hash, type: Hash.Full)
   end
 
   @doc """

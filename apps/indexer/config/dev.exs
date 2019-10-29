@@ -6,6 +6,16 @@ config :logger, :indexer,
   level: :debug,
   path: Path.absname("logs/dev/indexer.log")
 
+config :logger, :token_instances,
+  level: :debug,
+  path: Path.absname("logs/dev/internal_transactions_bloc_hash.log"),
+  metadata_filter: [fetcher: :internal_transacions_block_hash]
+
+config :logger, :internal_transacions_block_hash,
+  level: :debug,
+  path: Path.absname("logs/dev/internal_transactions_bloc_hash.log"),
+  metadata_filter: [fetcher: :internal_transacions_block_hash]
+
 config :logger, :indexer_token_balances,
   level: :debug,
   path: Path.absname("logs/dev/indexer/token_balances/error.log"),
