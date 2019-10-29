@@ -9,6 +9,10 @@ config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   wait_per_timeout: :timer.seconds(20),
   max_jitter: :timer.seconds(2)
 
+config :ethereum_jsonrpc,
+  rpc_transport: if(System.get_env("ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT", "http") == "http", do: :http, else: :ipc),
+  ipc_path: System.get_env("IPC_PATH")
+
 # Add this configuration to add global RPC request throttling.
 # throttle_rate_limit: 250,
 # throttle_rolling_window_opts: [

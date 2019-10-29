@@ -124,7 +124,7 @@
           <h2 class="card-title balance-card-title"><%= gettext "Miner" %></h2>
           <div class="text-right tooltipCustom">
             <!-- Validator's Name -->
-            <span class="tooltiptextTopMiner"> Validator's Name</span>
+            <span class="tooltiptextTopMiner"> <%= @block.miner %></span>
 
             <h3 class="address-balance-text text-truncate" >
 
@@ -132,7 +132,8 @@
                 "_link.html",
                 address: @block.miner,
                 contract: false,
-                class: "" %>
+                class: "",
+                use_custom_tooltip: true %>
             </h3>
           </div>
         </div>
