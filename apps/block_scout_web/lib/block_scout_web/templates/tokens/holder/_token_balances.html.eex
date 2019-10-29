@@ -2,7 +2,7 @@
   <div class="row">
     <div class="col-md-7 col-lg-8 d-flex flex-column">
       <span>
-        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_balance.address, contract: BlockScoutWeb.AddressView.contract?(@token_balance.address) %>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_balance.address, contract: BlockScoutWeb.AddressView.contract?(@token_balance.address), use_custom_tooltip: false %>
       </span>
 
       <span>
