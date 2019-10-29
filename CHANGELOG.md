@@ -10,6 +10,7 @@
 
 ### Chore
 - [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
+- [#2807](https://github.com/poanetwork/blockscout/pull/2807) - 422 page
 - [#2805](https://github.com/poanetwork/blockscout/pull/2805) - Update supported chains default option
 - [#2801](https://github.com/poanetwork/blockscout/pull/2801) - remove unused clause in address_to_unique_tokens query
 
