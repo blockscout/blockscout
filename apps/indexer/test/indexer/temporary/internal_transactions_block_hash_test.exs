@@ -12,13 +12,23 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHashTest do
       internal_transaction_without_block_hash =
         insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
 
+      assert is_nil(internal_transaction_without_block_hash.block_hash)
+
       [[name: TaskSupervisor]]
       |> Supervisor.child_spec()
       |> ExUnit.Callbacks.start_supervised!()
 
-      InternalTransactionsBlockHash.populate_block_hash() |> IO.inspect()
+      InternalTransactionsBlockHash.populate_block_hash()
 
-      Process.sleep(5_000)
+      wait_for_results(fn ->
+        Repo.one!(
+          from(it in Explorer.Chain.InternalTransaction,
+            where:
+              it.transaction_hash == ^transaction.hash and it.block_hash == ^block.hash and
+                it.index == ^internal_transaction_without_block_hash.index
+          )
+        )
+      end)
     end
   end
 end

@@ -11,11 +11,10 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
 
   alias Explorer.Chain.{Block, InternalTransaction, Transaction}
   alias Explorer.Repo
-  alias Indexer.Temporary.InternalTransactionsBlockHash.TaskSupervisor
 
-  @task_options [max_concurrency: 3, timeout: :infinity]
   @query_timeout :infinity
   @batch_size 10
+  @limit 100
 
   def start_link(gen_server_options) do
     GenServer.start_link(__MODULE__, [], gen_server_options)
@@ -54,34 +53,45 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
         inner_join: internal_transaction in InternalTransaction,
         on: transaction.hash == internal_transaction.transaction_hash,
         where: is_nil(internal_transaction.block_hash) and not is_nil(internal_transaction.transaction_hash),
-        select: block.hash
+        limit: @limit
       )
 
-    Logger.debug(
-      [
-        "Started populating block hashes"
-      ],
-      fetcher: :internal_transacions_block_hash
-    )
+    if count_records(query) > 0 do
+      Logger.debug(
+        [
+          "Started populating block hashes"
+        ],
+        fetcher: :internal_transacions_block_hash
+      )
 
-    process_query(query)
+      process_query(query)
+    else
+      Logger.debug(
+        [
+          "Finished populating block hashes"
+        ],
+        fetcher: :internal_transacions_block_hash
+      )
+    end
   end
 
   defp process_query(query) do
+    query = from(el in query, select: el.hash)
+
     query_stream = Repo.stream(query, max_rows: @batch_size, timeout: @query_timeout)
 
     stream =
-      TaskSupervisor
-      |> Task.Supervisor.async_stream_nolink(
-        query_stream,
-        fn block_hash -> populate_block_hash(block_hash) end,
-        @task_options
-      )
+      query_stream
+      |> Stream.each(fn block_hash ->
+        populate_block_hash(block_hash)
+      end)
 
     Repo.transaction(fn -> Stream.run(stream) end, timeout: @query_timeout)
+
+    Process.send_after(self(), :run, 1_000)
   end
 
-  def populate_block_hash(block_hash) do
+  defp populate_block_hash(block_hash) do
     Repo.update_all(
       from(it in InternalTransaction,
         inner_join: transaction in Transaction,
@@ -90,5 +100,9 @@ defmodule Indexer.Temporary.InternalTransactionsBlockHash do
       ),
       set: [block_hash: block_hash]
     )
+  end
+
+  defp count_records(query) do
+    Repo.one(from(p in query, select: fragment("count(*)")))
   end
 end
