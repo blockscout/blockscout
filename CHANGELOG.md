@@ -6,6 +6,7 @@
 ### Fixes
 
 ### Chore
+- [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
 
 
 ## 2.1.0-beta
