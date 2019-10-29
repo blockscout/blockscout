@@ -6,6 +6,7 @@
 ### Fixes
 
 ### Chore
+- [#2818](https://github.com/poanetwork/blockscout/pull/2818) - allow hiding marketcap percentage
 
 
 ## 2.1.0-beta
