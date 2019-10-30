@@ -13,10 +13,12 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
       |> Chain.contract_creation_input_data()
       |> String.replace("0x", "")
 
+    check_func = fn assumed_arguments -> assumed_arguments == arguments_data end
+
     if verify_older_version(creation_code, contract_code, arguments_data) do
       true
     else
-      extract_constructor_arguments(creation_code, arguments_data)
+      extract_constructor_arguments(creation_code, check_func)
     end
   end
 
@@ -29,40 +31,61 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     |> Kernel.==(arguments_data)
   end
 
-  defp extract_constructor_arguments(code, passed_constructor_arguments) do
+  defp extract_constructor_arguments(code, check_func) do
     case code do
       # Solidity ~ 4.23 # https://solidity.readthedocs.io/en/v0.4.23/metadata.html
       "a165627a7a72305820" <> <<_::binary-size(64)>> <> "0029" <> constructor_arguments ->
-        if passed_constructor_arguments == constructor_arguments do
-          true
+        check_func_result = check_func.(constructor_arguments)
+
+        if check_func_result do
+          check_func_result
         else
-          extract_constructor_arguments(constructor_arguments, passed_constructor_arguments)
+          extract_constructor_arguments(constructor_arguments, check_func)
         end
 
       # Solidity >= 0.5.10 https://solidity.readthedocs.io/en/v0.5.10/metadata.html
       "a265627a7a72305820" <>
           <<_::binary-size(64)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
-        if passed_constructor_arguments == constructor_arguments do
-          true
+        check_func_result = check_func.(constructor_arguments)
+
+        if check_func_result do
+          check_func_result
         else
-          extract_constructor_arguments(constructor_arguments, passed_constructor_arguments)
+          extract_constructor_arguments(constructor_arguments, check_func)
         end
 
       # Solidity >= 0.5.11 https://github.com/ethereum/solidity/blob/develop/Changelog.md#0511-2019-08-12
       # Metadata: Update the swarm hash to the current specification, changes bzzr0 to bzzr1 and urls to use bzz-raw://
       "a265627a7a72315820" <>
           <<_::binary-size(64)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
-        if passed_constructor_arguments == constructor_arguments do
-          true
+        check_func_result = check_func.(constructor_arguments)
+
+        if check_func_result do
+          check_func_result
         else
-          extract_constructor_arguments(constructor_arguments, passed_constructor_arguments)
+          extract_constructor_arguments(constructor_arguments, check_func)
         end
 
       <<>> ->
-        passed_constructor_arguments == ""
+        check_func.("")
 
       <<_::binary-size(2)>> <> rest ->
-        extract_constructor_arguments(rest, passed_constructor_arguments)
+        extract_constructor_arguments(rest, check_func)
     end
   end
+
+  # def find_contructor_arguments(address_hash, contract_code, abi) do
+  #   arguments_data = arguments_data |> String.trim_trailing() |> String.trim_leading("0x")
+
+  #   creation_code =
+  #     address_hash
+  #     |> Chain.contract_creation_input_data()
+  #     |> String.replace("0x", "")
+
+  #   if verify_older_version(creation_code, contract_code, arguments_data) do
+  #     true
+  #   else
+  #     extract_constructor_arguments(creation_code, arguments_data)
+  #   end
+  # end
 end
