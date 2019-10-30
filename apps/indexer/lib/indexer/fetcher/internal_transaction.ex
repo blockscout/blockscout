@@ -145,7 +145,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
   end
 
   defp import_internal_transaction(internal_transactions_params, unique_numbers) do
-    unique_numbers_count = Enum.count(unique_numbers)
     internal_transactions_params_without_failed_creations = remove_failed_creations(internal_transactions_params)
 
     addresses_params =
@@ -192,7 +191,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
             ]
           end,
           step: step,
-          error_count: unique_numbers_count
+          error_count: Enum.count(unique_numbers)
         )
 
         # re-queue the de-duped entries

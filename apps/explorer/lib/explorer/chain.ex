@@ -724,29 +724,20 @@ defmodule Explorer.Chain do
   """
   @spec finished_indexing?() :: boolean()
   def finished_indexing? do
-    transaction_exists =
-      Transaction
-      |> limit(1)
-      |> Repo.one()
+    with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
+         min_block_number when not is_nil(min_block_number) <- Repo.aggregate(Transaction, :min, :block_number) do
+      query =
+        from(
+          b in Block,
+          join: pending_ops in assoc(b, :pending_operations),
+          where: pending_ops.fetch_internal_transactions,
+          where: b.consensus and b.number == ^min_block_number
+        )
 
-    min_block_number_transaction = Repo.aggregate(Transaction, :min, :block_number)
-
-    if transaction_exists do
-      if min_block_number_transaction do
-        query =
-          from(
-            b in Block,
-            join: pending_ops in assoc(b, :pending_operations),
-            where: pending_ops.fetch_internal_transactions,
-            where: b.consensus and b.number == ^min_block_number_transaction
-          )
-
-        !Repo.exists?(query)
-      else
-        false
-      end
+      !Repo.exists?(query)
     else
-      true
+      {:transactions_exist, false} -> true
+      nil -> false
     end
   end
 
@@ -1338,10 +1329,7 @@ defmodule Explorer.Chain do
   @doc """
   The number of `t:Explorer.Chain.InternalTransaction.t/0`.
 
-      iex> transaction =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block()
+      iex> transaction = :transaction |> insert() |> with_block()
       iex> insert(:internal_transaction, index: 0, transaction: transaction, block_hash: transaction.block_hash, block_index: 0)
       iex> Explorer.Chain.internal_transaction_count()
       1
@@ -1353,8 +1341,7 @@ defmodule Explorer.Chain do
 
   """
   def internal_transaction_count do
-    InternalTransaction.where_nonpending_block()
-    |> Repo.aggregate(:count, :transaction_hash)
+    Repo.aggregate(InternalTransaction.where_nonpending_block(), :count, :transaction_hash)
   end
 
   @doc """
@@ -1630,7 +1617,8 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of all blocks with unfetched internal transactions.
+  Returns a stream of all blocks with unfetched internal transactions, using
+  the `pending_block_operation` table.
 
   Only blocks with consensus are returned.
 

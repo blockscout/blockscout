@@ -317,7 +317,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       nonconsensus_hashes
       |> MapSet.new()
       |> MapSet.union(MapSet.new(hashes))
-      |> MapSet.to_list()
       |> Enum.sort()
       |> Enum.map(fn hash ->
         %{block_hash: hash, fetch_internal_transactions: true}
