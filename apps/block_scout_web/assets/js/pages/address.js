@@ -93,8 +93,10 @@ const elements = {
         if (oldState.transactionCount === state.transactionCount) return
         $el.empty().append('>= ' + numeral(state.transactionCount).format() + ' Transactions')
         $el.show()
+        $el.parent('.address-detail-item').removeAttr('style')
       } else {
         $el.hide()
+        $el.parent('.address-detail-item').css('display', 'none')
       }
     }
   },

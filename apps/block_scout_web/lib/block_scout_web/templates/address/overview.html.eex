@@ -70,7 +70,7 @@
               </span>
             <% end %>
             <span>
-              <span class="address-detail-item">
+              <span class="address-detail-item" style="display: none">
                 <span data-selector="transaction-count">
                 </span>
               </span>
