@@ -265,7 +265,8 @@ defmodule BlockScoutWeb.AddressView do
       partial: "_responsive_hash.html",
       address: current_address,
       contract: contract?,
-      truncate: truncate
+      truncate: truncate,
+      use_custom_tooltip: false
     ]
   end
 
@@ -275,7 +276,8 @@ defmodule BlockScoutWeb.AddressView do
       partial: "_link.html",
       address: address,
       contract: contract?,
-      truncate: truncate
+      truncate: truncate,
+      use_custom_tooltip: false
     ]
   end
 
