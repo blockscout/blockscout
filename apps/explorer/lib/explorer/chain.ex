@@ -51,6 +51,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Cache.{
     Accounts,
+    AddressCount,
     BlockCount,
     BlockNumber,
     Blocks,
@@ -61,7 +62,7 @@ defmodule Explorer.Chain do
   }
 
   alias Explorer.Chain.Import.Runner
-  alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
+  alias Explorer.Counters.AddressesWithBalanceCounter
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
 
@@ -119,14 +120,6 @@ defmodule Explorer.Chain do
   @spec count_addresses_with_balance_from_cache :: non_neg_integer()
   def count_addresses_with_balance_from_cache do
     AddressesWithBalanceCounter.fetch()
-  end
-
-  @doc """
-  Gets from the cache the count of all `t:Explorer.Chain.Address.t/0`'s
-  """
-  @spec count_addresses_from_cache :: non_neg_integer()
-  def count_addresses_from_cache do
-    AddressesCounter.fetch()
   end
 
   @doc """
@@ -2389,6 +2382,24 @@ defmodule Explorer.Chain do
       %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
 
       trunc(count * 0.90)
+    else
+      cached_value
+    end
+  end
+
+  @doc """
+  Estimated count of `t:Explorer.Chain.Address.t/0`.
+
+  Estimated count of addresses.
+  """
+  @spec address_estimated_count() :: non_neg_integer()
+  def address_estimated_count do
+    cached_value = AddressCount.get_count()
+
+    if is_nil(cached_value) do
+      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'addresses';")
+
+      count
     else
       cached_value
     end

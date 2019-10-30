@@ -9,6 +9,7 @@ defmodule Explorer.Application do
 
   alias Explorer.Chain.Cache.{
     Accounts,
+    AddressCount,
     BlockCount,
     BlockNumber,
     Blocks,
@@ -47,6 +48,7 @@ defmodule Explorer.Application do
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
       TransactionCount,
       BlockCount,
+      AddressCount,
       Blocks,
       NetVersion,
       BlockNumber,
@@ -73,7 +75,6 @@ defmodule Explorer.Application do
       configure(Explorer.Market.History.Cataloger),
       configure(Explorer.Chain.Events.Listener),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
-      configure(Explorer.Counters.AddressesCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Validator.MetadataProcessor),
       configure(Explorer.Staking.EpochCounter)

@@ -5,14 +5,10 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   alias BlockScoutWeb.AppPage
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
-  alias Explorer.Counters.AddressesCounter
   alias Explorer.{Repo}
   alias Explorer.Chain.{Transaction}
 
   setup do
-    start_supervised!(AddressesCounter)
-    AddressesCounter.consolidate()
-
     :ok
   end
 

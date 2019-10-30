@@ -65,11 +65,6 @@ config :explorer, Explorer.Counters.AddressesWithBalanceCounter,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
 
-config :explorer, Explorer.Counters.AddressesCounter,
-  enabled: true,
-  enable_consolidation: true,
-  update_interval_in_seconds: balances_update_interval || 30 * 60
-
 config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
 config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
