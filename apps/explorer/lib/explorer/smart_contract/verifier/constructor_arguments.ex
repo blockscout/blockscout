@@ -2,7 +2,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
   @moduledoc """
   Smart contract contrstructor arguments verification logic.
   """
-
+  alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
 
   def verify(address_hash, contract_code, arguments_data) do
@@ -15,7 +15,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
 
     check_func = fn assumed_arguments -> assumed_arguments == arguments_data end
 
-    if verify_older_version(creation_code, contract_code, arguments_data) do
+    if verify_older_version(creation_code, contract_code, check_func) do
       true
     else
       extract_constructor_arguments(creation_code, check_func)
@@ -24,11 +24,11 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
 
   # Earlier versions of Solidity didn't have whisper code.
   # constructor argument were directly appended to source code
-  defp verify_older_version(creation_code, contract_code, arguments_data) do
+  defp verify_older_version(creation_code, contract_code, check_func) do
     creation_code
     |> String.split(contract_code)
     |> List.last()
-    |> Kernel.==(arguments_data)
+    |> check_func.()
   end
 
   defp extract_constructor_arguments(code, check_func) do
@@ -74,18 +74,30 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     end
   end
 
-  # def find_contructor_arguments(address_hash, contract_code, abi) do
-  #   arguments_data = arguments_data |> String.trim_trailing() |> String.trim_leading("0x")
+  def find_contructor_arguments(address_hash, contract_code, abi) do
+    creation_code =
+      address_hash
+      |> Chain.contract_creation_input_data()
+      |> String.replace("0x", "")
 
-  #   creation_code =
-  #     address_hash
-  #     |> Chain.contract_creation_input_data()
-  #     |> String.replace("0x", "")
+    constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
 
-  #   if verify_older_version(creation_code, contract_code, arguments_data) do
-  #     true
-  #   else
-  #     extract_constructor_arguments(creation_code, arguments_data)
-  #   end
-  # end
+    input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1)
+
+    check_func = fn assumed_arguments ->
+      try do
+        _ =
+          assumed_arguments
+          |> Base.decode16!(case: :mixed)
+          |> TypeDecoder.decode_raw(input_types)
+
+        assumed_arguments
+      rescue
+        _ -> false
+      end
+    end
+
+    verify_older_version(creation_code, contract_code, check_func) ||
+      extract_constructor_arguments(creation_code, check_func)
+  end
 end
