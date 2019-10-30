@@ -22,11 +22,15 @@ defmodule Explorer.Chain.InternalTransaction do
    * `to_address` - the sink of the `value`
    * `to_address_hash` - hash of the sink of the `value`
    * `trace_address` - list of traces
-   * `transaction` - transaction in which this transaction occurred
+   * `transaction` - transaction in which this internal transaction occurred
    * `transaction_hash` - foreign key for `transaction`
    * `transaction_index` - the `t:Explorer.Chain.Transaction.t/0` `index` of `transaction` in `block_number`.
    * `type` - type of internal transaction
    * `value` - value of transferred from `from_address` to `to_address`
+   * `block` - block in which this internal transaction occurred
+   * `block_hash` - foreign key for `block`
+   * `block_index` - the index of this internal transaction inside the `block`
+   * `pending_block` - `nil` if `block` has all its internal transactions fetched
   """
   @type t :: %__MODULE__{
           block_number: Explorer.Chain.Block.block_number() | nil,
@@ -409,17 +413,12 @@ defmodule Explorer.Chain.InternalTransaction do
   on its own or use empty types to know that a block has no internal transactions.
   """
   def blockless_changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
-    changeset =
-      internal_transaction
-      |> cast(attrs, ~w(type block_number)a)
+    changeset = cast(internal_transaction, attrs, ~w(type block_number)a)
 
-    if is_nil(get_field(changeset, :type)) do
-      changeset
-      |> validate_required(~w(block_number)a)
+    if validate_required(changeset, ~w(type)a).valid? do
+      type_changeset(changeset, attrs)
     else
-      changeset
-      |> validate_required(~w(type)a)
-      |> type_changeset(attrs)
+      validate_required(changeset, ~w(block_number)a)
     end
   end
 

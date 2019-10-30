@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
   alias Explorer.Counters.AddressesCounter
   alias Explorer.{Repo}
-  alias Explorer.Chain.{PendingBlockOperation, Transaction}
+  alias Explorer.Chain.PendingBlockOperation
 
   setup do
     start_supervised!(AddressesCounter)

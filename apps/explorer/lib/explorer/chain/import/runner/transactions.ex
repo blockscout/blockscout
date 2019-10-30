@@ -78,10 +78,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
        when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    ordered_changes_list =
-      changes_list
-      # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
-      |> Enum.sort_by(& &1.hash)
+    # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
 
     Import.insert_changes_list(
       repo,
