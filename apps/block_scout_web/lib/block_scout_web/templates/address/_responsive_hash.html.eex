@@ -1,6 +1,10 @@
 <span class="<%= if @contract do %>contract-address<% end %>" data-address-hash="<%= @address %>">
   <%= if name = primary_name(@address) do %>
-     <span data-toggle="tooltip" data-placement="top" title="<%= @address %>"><%= name %> (<%= short_hash(@address) %>...)</span>
+     <%= if @use_custom_tooltip == true do %>
+      <span><%= name %> (<%= short_hash(@address) %>...)</span>
+     <% else %>
+      <span data-toggle="tooltip" data-placement="top" title="<%= @address %>"><%= name %> (<%= short_hash(@address) %>...)</span>
+     <% end %>
   <% else %>
     <%= if assigns[:truncate] do %>
       <%= BlockScoutWeb.AddressView.trimmed_hash(@address.hash) %>

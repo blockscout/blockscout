@@ -1,13 +1,21 @@
 ## Current
 
 ### Features
+- [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
 
 ### Fixes
+- [#2800](https://github.com/poanetwork/blockscout/pull/2800) - return not found for not verified contract for token read_contract
+- [#2806](https://github.com/poanetwork/blockscout/pull/2806) - Fix blocks fetching on the main page
+- [#2803](https://github.com/poanetwork/blockscout/pull/2803) - Fix block validator custom tooltip
 
 ### Chore
 - [#2818](https://github.com/poanetwork/blockscout/pull/2818) - allow hiding marketcap percentage
-
+- [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
+- [#2808](https://github.com/poanetwork/blockscout/pull/2808) - Add tooltip for tx input
+- [#2807](https://github.com/poanetwork/blockscout/pull/2807) - 422 page
+- [#2805](https://github.com/poanetwork/blockscout/pull/2805) - Update supported chains default option
+- [#2801](https://github.com/poanetwork/blockscout/pull/2801) - remove unused clause in address_to_unique_tokens query
 
 ## 2.1.0-beta
 
@@ -68,6 +76,7 @@ fixed menu hovers in dark mode desktop view
 - [#2738](https://github.com/poanetwork/blockscout/pull/2738) - do not fail block `internal_transactions_indexed_at` field update
 
 ### Chore
+- [#2797](https://github.com/poanetwork/blockscout/pull/2797) - Return old style menu
 - [#2796](https://github.com/poanetwork/blockscout/pull/2796) - Optimize all images with ImageOptim
 - [#2794](https://github.com/poanetwork/blockscout/pull/2786) - update hosted versions in readme
 - [#2789](https://github.com/poanetwork/blockscout/pull/2786) - remove projects table in readme, link to docs version
