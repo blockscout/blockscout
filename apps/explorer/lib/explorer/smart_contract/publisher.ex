@@ -27,6 +27,12 @@ defmodule Explorer.SmartContract.Publisher do
     params_with_external_libaries = add_external_libraries(params, external_libraries)
 
     case Verifier.evaluate_authenticity(address_hash, params_with_external_libaries) do
+      {:ok, %{abi: abi, contructor_arguments: contructor_arguments}} ->
+        params_with_contructor_arguments =
+          Map.put(params_with_external_libaries, "constructor_arguments", contructor_arguments)
+
+        publish_smart_contract(address_hash, params_with_contructor_arguments, abi)
+
       {:ok, %{abi: abi}} ->
         publish_smart_contract(address_hash, params_with_external_libaries, abi)
 
