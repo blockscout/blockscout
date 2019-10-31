@@ -339,6 +339,18 @@ defmodule Explorer.Chain do
     end)
   end
 
+  def address_to_token_transfers(address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    direction = Keyword.get(options, :direction)
+
+    transaction_hashes_from_token_transfers =
+      TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
+
+    final_query = where(base_query, [t], t.hash in ^transaction_hashes_from_token_transfers)
+
+    Repo.all(final_query)
+  end
+
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
