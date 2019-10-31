@@ -844,7 +844,7 @@ msgid "There are no logs for this transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_token_transfer/index.html.eex:15
+#: lib/block_scout_web/templates/address_token_transfer/index.html.eex:18
 msgid "There are no token transfers for this address."
 msgstr ""
 
@@ -935,7 +935,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:8
 #: lib/block_scout_web/templates/address_token/index.html.eex:8
-#: lib/block_scout_web/templates/address_token_transfer/index.html.eex:9
+#: lib/block_scout_web/templates/address_token_transfer/index.html.eex:11
 #: lib/block_scout_web/views/address_view.ex:307
 msgid "Tokens"
 msgstr ""
@@ -1377,7 +1377,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:61
 #: lib/block_scout_web/templates/address_logs/index.html.eex:21
 #: lib/block_scout_web/templates/address_token/index.html.eex:13
-#: lib/block_scout_web/templates/address_token_transfer/index.html.eex:20
+#: lib/block_scout_web/templates/address_token_transfer/index.html.eex:23
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:59
 #: lib/block_scout_web/templates/address_validation/index.html.eex:22
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
