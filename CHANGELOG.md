@@ -3,6 +3,7 @@
 ### Features
 - [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
+- [#2821](https://github.com/poanetwork/blockscout/pull/2821) - add autodetection of constructor arguments
 
 ### Fixes
 - [#2800](https://github.com/poanetwork/blockscout/pull/2800) - return not found for not verified contract for token read_contract
