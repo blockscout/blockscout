@@ -49,7 +49,6 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
       assert html_response(conn, 200)
       assert address.hash == conn.assigns.address.hash
       assert %Token{} = conn.assigns.exchange_rate
-      assert conn.assigns.transaction_count
     end
   end
 end
