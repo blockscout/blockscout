@@ -49,9 +49,14 @@ defmodule Explorer.Chain.CeloAccount do
     @validator_affiliated "0x91ef92227057e201e406c3451698dd780fe7672ad74328591c88d281af31581d"
     @validator_deaffiliated "0x71815121f0622b31a3e7270eb28acb9fd10825ff418c9a18591f617bb8a31a6c"
 
-    # Locked gold events
+    # Account events
     @account_created "0x805996f252884581e2f74cf3d2b03564d5ec26ccc90850ae12653dc1b72d1fa2"
+    @account_wallet_address_set "0xf81d74398fd47e35c36b714019df15f200f623dde569b5b531d6a0b4da5c5f26"
+    @account_url_set "0x0b5629fec5b6b5a1c2cfe0de7495111627a8cf297dced72e0669527425d3f01b"
+    @account_name_set "0xa6e2c5a23bb917ba0a584c4b250257ddad698685829b66a8813c004b39934fe4"
+    @account_data_encryption_key_set "0x43fdefe0a824cb0e3bbaf9c4bc97669187996136fe9282382baf10787f0d808d"
 
+    # Locked gold events
     @gold_withdrawn "0x292d39ba701489b7f640c83806d3eeabe0a32c9f0a61b49e95612ebad42211cd"
     @gold_unlocked "0xb1a3aef2a332070da206ad1868a5e327f5aa5144e00e9a7b40717c153158a588"
     @gold_locked "0x0f0f2fc5b4c987a49e1663ce2c2d65de12f3b701ff02b4d09461421e63e609e7"
@@ -72,6 +77,10 @@ defmodule Explorer.Chain.CeloAccount do
         @gold_unlocked,
         @gold_locked, 
         @account_created,
+        @account_wallet_address_set,
+        @account_url_set,
+        @account_name_set,
+        @account_data_encryption_key_set,
         @validator_group_vote_revoked, 
         @validator_group_vote_activated,
         @validator_group_vote_cast,
