@@ -341,13 +341,22 @@ defmodule Explorer.Chain do
 
   @spec address_hash_to_token_transfers(Hash.Address.t(), Keyword.t()) :: [Transaction.t()]
   def address_hash_to_token_transfers(address_hash, options \\ []) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    direction = Keyword.get(options, :direction)
 
-    address_hash
-    |> Transaction.transactions_with_token_transfers()
-    |> Transaction.preload_token_transfers(address_hash)
-    |> handle_paging_options(paging_options)
-    |> Repo.all()
+    base_query =
+      paging_options
+      |> fetch_transactions()
+      |> join_associations(necessity_by_association)
+      |> Transaction.preload_token_transfers(address_hash)
+
+    transaction_hashes_from_token_transfers =
+      TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
+
+    final_query = from(transaction in base_query, where: transaction.hash in ^transaction_hashes_from_token_transfers)
+
+    Repo.all(final_query)
   end
 
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
