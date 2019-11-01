@@ -1282,6 +1282,26 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "address_hash_to_token_transfers/2" do
+    test "fetches token transfers by address hash" do
+      address = insert(:address)
+
+      token_transfer =
+        insert(
+          :token_transfer,
+          from_address: address,
+          amount: 1
+        )
+
+      [transaction_hash] =
+        address.hash
+        |> Chain.address_hash_to_token_transfers()
+        |> Enum.map(& &1.hash)
+
+      assert transaction_hash == token_transfer.transaction_hash
+    end
+  end
+
   # Full tests in `test/explorer/import_test.exs`
   describe "import/1" do
     @import_data %{
