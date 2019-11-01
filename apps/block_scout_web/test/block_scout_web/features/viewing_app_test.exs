@@ -9,6 +9,9 @@ defmodule BlockScoutWeb.ViewingAppTest do
   alias Explorer.Chain.{Transaction}
 
   setup do
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
+    
     :ok
   end
 
