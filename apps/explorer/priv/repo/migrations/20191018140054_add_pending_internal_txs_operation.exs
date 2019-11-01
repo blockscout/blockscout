@@ -28,7 +28,7 @@ defmodule Explorer.Repo.Migrations.AddPendingInternalTxsOperation do
     end
 
     alter table(:internal_transactions) do
-      add(:block_hash, :bytea)
+      # add(:block_hash, :bytea)
       add(:block_index, :integer)
     end
 
