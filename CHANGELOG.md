@@ -11,6 +11,7 @@
 - [#2803](https://github.com/poanetwork/blockscout/pull/2803) - Fix block validator custom tooltip
 
 ### Chore
+- [#2827](https://github.com/poanetwork/blockscout/pull/2827) - Node js 12.13.0 (latest LTS release) support
 - [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
 - [#2808](https://github.com/poanetwork/blockscout/pull/2808) - Add tooltip for tx input
 - [#2807](https://github.com/poanetwork/blockscout/pull/2807) - 422 page
