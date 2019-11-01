@@ -850,6 +850,19 @@ defmodule Explorer.Chain do
     Repo.all(query)
   end
 
+  @spec search_contract(String.t()) :: [SmartContract.t()]
+  def search_contract(word) do
+    term = String.replace(word, ~r/\W/u, "") <> ":*"
+
+    query =
+      from(token in SmartContract,
+        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
+        limit: 5
+      )
+
+    Repo.all(query)
+  end
+
   @doc """
   Converts `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
 
