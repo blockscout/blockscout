@@ -140,6 +140,7 @@ defmodule Explorer.Celo.AccountReader do
   defp contract(:lockedgold), do: config(:lockedgold_contract_address)
   defp contract(:validators), do: config(:validators_contract_address)
   defp contract(:election), do: config(:election_contract_address)
+  defp contract(:accounts), do: config(:accounts_contract_address)
 
   defp config(key) do
     data = Application.get_env(:explorer, __MODULE__, [])[key]
