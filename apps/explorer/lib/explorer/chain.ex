@@ -342,14 +342,12 @@ defmodule Explorer.Chain do
   @spec address_hash_to_token_transfers(Hash.Address.t(), Keyword.t()) :: [Transaction.t()]
   def address_hash_to_token_transfers(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    direction = Keyword.get(options, :direction)
 
-    transaction_hashes_from_token_transfers =
-      TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
-
-    final_query = where(Transaction, [t], t.hash in ^transaction_hashes_from_token_transfers)
-
-    Repo.all(final_query)
+    address_hash
+    |> Transaction.transactions_with_token_transfers()
+    |> Transaction.preload_token_transfers(address_hash)
+    |> handle_paging_options(paging_options)
+    |> Repo.all()
   end
 
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]

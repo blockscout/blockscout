@@ -101,6 +101,58 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
 
   def index(
         conn,
+        %{
+          "address_id" => address_hash_string,
+          "type" => "JSON"
+        } = params
+      ) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      transactions =
+        Chain.address_hash_to_token_transfers(
+          address_hash,
+          paging_options(params)
+        )
+
+      {transactions_paginated, next_page} = split_list_by_page(transactions)
+
+      next_page_path =
+        case next_page_params(next_page, transactions_paginated, params) do
+          nil ->
+            nil
+
+          next_page_params ->
+            address_token_transfers_path(
+              conn,
+              :index,
+              address_hash_string,
+              Map.delete(next_page_params, "type")
+            )
+        end
+
+      transfers_json =
+        Enum.map(transactions_paginated, fn transaction ->
+          View.render_to_string(
+            TransactionView,
+            "_tile.html",
+            conn: conn,
+            transaction: transaction,
+            current_address: address
+          )
+        end)
+
+      json(conn, %{items: transfers_json, next_page_path: next_page_path})
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
+    end
+  end
+
+  def index(
+        conn,
         %{"address_id" => address_hash_string}
       ) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
