@@ -17,13 +17,11 @@ defmodule Explorer.Chain.CeloValidator do
 
     @type t :: %__MODULE__{
         address: Hash.Address.t(),
-        name: String.t(),
-        url: String.t(),
         group_address_hash: Hash.Address.t(),
     }
 
     @attrs ~w(
-        address name url group_address_hash
+        address group_address_hash
     )a
 
     @required_attrs ~w(
@@ -31,8 +29,6 @@ defmodule Explorer.Chain.CeloValidator do
     )a
 
     schema "celo_validator" do
-        field(:url, :string)
-        field(:name, :string)
 
         belongs_to(
             :validator_address,

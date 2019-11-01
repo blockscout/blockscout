@@ -8,6 +8,8 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
             add(:nonvoting_locked_gold, :numeric, precision: 100)
             add(:locked_gold, :numeric, precision: 100)
             add(:rewards, :numeric, precision: 100)
+            add(:name, :string, size: 2048)
+            add(:url, :string, size: 2048)
 
             timestamps(null: false, type: :utc_datetime_usec)
         end
@@ -16,9 +18,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
 
         create table(:celo_validator) do
             add(:address, :bytea, null: false)
-            add(:name, :string, size: 2048)
-            add(:url, :string, size: 2048)
-            add(:group_address_hash, :bytea)
+            add(:group_address_hash, :bytea) # affiliation
 
             timestamps(null: false, type: :utc_datetime_usec)
         end
@@ -27,8 +27,6 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
 
         create table(:celo_validator_group) do
             add(:address, :bytea, null: false)
-            add(:name, :string, size: 2048)
-            add(:url, :string, size: 2048)
             add(:commission, :numeric, precision: 100)
             timestamps(null: false, type: :utc_datetime_usec)
         end

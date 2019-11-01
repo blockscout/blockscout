@@ -143,21 +143,18 @@ defmodule Indexer.Block.Catchup.Fetcher do
     full_chain_import_options =
       put_in(options_without_block_rewards_errors, [:blocks, :params, Access.all(), :consensus], true)
 
-#    IO.inspect(full_chain_import_options)
-
     with {:import, {:ok, imported} = ok} <- {:import, Chain.import(full_chain_import_options)} do
-      async_import_remaining_block_data(
+      async_import_celo_accounts(full_chain_import_options)
+      async_import_celo_validators(full_chain_import_options)
+      async_import_celo_validator_groups(full_chain_import_options)
+        async_import_remaining_block_data(
         imported,
         Map.put(async_import_remaining_block_data_options, :block_rewards, %{errors: block_reward_errors}),
         json_rpc_named_arguments
       )
-      async_import_celo_accounts(full_chain_import_options)
-      async_import_celo_validators(full_chain_import_options)
-      async_import_celo_validator_groups(full_chain_import_options)
-
       ok
     end
-  end
+end
 
   defp async_import_remaining_block_data(
          imported,

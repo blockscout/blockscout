@@ -8,14 +8,18 @@ defmodule Explorer.Celo.AccountReader do
 
   def account_data(%{address: account_address}) do
     with data = fetch_account_data(account_address),
-         {:ok, [is_validator]} <- data["isValidator"],
-         {:ok, [is_validator_group]} <- data["isValidatorGroup"],
+        {:ok, [name]} <- data["getName"],
+        {:ok, [url]} <- data["getMetadataURL"],
+        {:ok, [is_validator]} <- data["isValidator"],
+        {:ok, [is_validator_group]} <- data["isValidatorGroup"],
          account_type = determine_account_type(is_validator, is_validator_group),
          {:ok, [gold]} <- data["getAccountTotalLockedGold"],
          {:ok, [nonvoting_gold]} <- data["getAccountNonvotingLockedGold"] do
         {:ok,
         %{
           address: account_address,
+          name: name,
+          url: url,
           rewards: 0,
           locked_gold: gold,
           locked_nonvoting_gold: nonvoting_gold,
@@ -30,12 +34,10 @@ defmodule Explorer.Celo.AccountReader do
 
   def validator_data(%{address: address}) do
     with data = fetch_validator_data(address),
-      {:ok, [{name, url, _, affiliation}]} <- data["getValidator"] do
+      {:ok, [{_, affiliation}]} <- data["getValidator"] do
      {:ok,
       %{
         address: address,
-        name: name,
-        url: url,
         group_address_hash: affiliation
       }
      }
@@ -44,12 +46,10 @@ defmodule Explorer.Celo.AccountReader do
 
   def validator_group_data(%{address: address}) do
     with data = fetch_validator_group_data(address),
-      {:ok, [{name, url, _members, commission}]} <- data["getValidatorGroup"] do
+      {:ok, [{_members, commission}]} <- data["getValidatorGroup"] do
      {:ok,
       %{
         address: address,
-        name: name,
-        url: url,
         commission: commission
       }
      }
@@ -89,6 +89,8 @@ defmodule Explorer.Celo.AccountReader do
       {:lockedgold, "getAccountNonvotingLockedGold", [account_address]},
       {:validators, "isValidator", [account_address]},
       {:validators, "isValidatorGroup", [account_address]},
+      {:accounts, "getName", [account_address]},
+      {:accounts, "getMetadataURL", [account_address]},
     ])
     IO.inspect(data)
     data
@@ -97,7 +99,6 @@ defmodule Explorer.Celo.AccountReader do
   defp fetch_validator_data(address) do
     data = call_methods([
       {:validators, "getValidator", [address]},
-      {:validators, "isValidator", [address]},
     ])
     IO.inspect(address)
     IO.inspect(data)
@@ -119,7 +120,7 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp call_methods(methods) do
-    contract_abi = abi("lockedgold.json") ++ abi("validators.json") ++ abi("election.json")
+    contract_abi = abi("lockedgold.json") ++ abi("validators.json") ++ abi("election.json") ++ abi("accounts.json")
     methods
     |> Enum.map(&format_request/1)
     |> Reader.query_contracts(contract_abi)

@@ -99,8 +99,6 @@ defmodule Explorer.Chain.Import.Runner.CeloValidators do
       account in CeloValidator,
       update: [
         set: [
-          name: fragment("EXCLUDED.name"),
-          url: fragment("EXCLUDED.url"),
           group_address_hash: fragment("EXCLUDED.group_address_hash"),
           
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),

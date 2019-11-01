@@ -99,6 +99,8 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
       account in CeloAccount,
       update: [
         set: [
+          name: fragment("EXCLUDED.name"),
+          url: fragment("EXCLUDED.url"),
           account_type: fragment("EXCLUDED.account_type"),
           nonvoting_locked_gold: fragment("EXCLUDED.nonvoting_locked_gold"),
           locked_gold: fragment("EXCLUDED.locked_gold"),

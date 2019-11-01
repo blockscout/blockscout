@@ -318,6 +318,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_celo_accounts(%{celo_accounts: accounts}) do
+    IO.inspect(accounts)
     CeloAccount.async_fetch(accounts)
   end
 

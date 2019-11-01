@@ -100,8 +100,6 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
         account in CeloValidatorGroup,
         update: [
           set: [
-            name: fragment("EXCLUDED.name"),
-            url: fragment("EXCLUDED.url"),
             commission: fragment("EXCLUDED.commission"),
             
             inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),

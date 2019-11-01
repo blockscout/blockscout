@@ -65,7 +65,8 @@ defmodule Indexer.Fetcher.CeloAccount do
 
     @impl BufferedTask
     def run(accounts, _json_rpc_named_arguments) do
-        failed_list =
+      IO.inspect(accounts)
+      failed_list =
             accounts
             |> Enum.map(&Map.put(&1, :retries_count, &1.retries_count + 1))
             |> fetch_from_blockchain()
@@ -79,6 +80,7 @@ defmodule Indexer.Fetcher.CeloAccount do
     end
 
     defp fetch_from_blockchain(addresses) do
+        IO.inspect(addresses)
         addresses
         |> Enum.filter(&(&1.retries_count <= @max_retries))
         |> Enum.map(fn %{address: address} = account ->
@@ -93,6 +95,7 @@ defmodule Indexer.Fetcher.CeloAccount do
     end
 
     defp import_accounts(accounts) do
+      IO.inspect(accounts)
         {failed, success} =
           Enum.reduce(accounts, {[], []}, fn
             %{error: _error} = account, {failed, success} ->
