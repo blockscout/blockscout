@@ -27,14 +27,12 @@
       class: "card-tab #{tab_status("logs", @conn.request_path)}",
       to: address_logs_path(@conn, :index, @address.hash)
       ) %>
-  <%= if BlockScoutWeb.AddressView.validator?(@validation_count) do %>
-    <%= link(
-      gettext("Blocks Validated"),
-      class: "card-tab #{tab_status("validations", @conn.request_path)}",
-      "data-test": "validations_tab_link",
-      to: address_validation_path(@conn, :index, @address.hash)
-    ) %>
-  <% end %>
+  <%= link(
+    gettext("Blocks Validated"),
+    class: "card-tab #{tab_status("validations", @conn.request_path)}",
+    "data-test": "validations_tab_link",
+    to: address_validation_path(@conn, :index, @address.hash)
+  ) %>
   <%= if contract?(@address) do %>
     <%= link(
         to: address_contract_path(@conn, :index, @address.hash),
