@@ -45,4 +45,17 @@ defmodule BlockScoutWeb.AddressControllerTest do
       assert redirected_to(conn) =~ "/address/0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed/transactions"
     end
   end
+
+  describe "GET address_counters/2" do
+    test "returns address counters" do
+      address = insert(:address)
+
+      conn = get(conn, "/address_counters", %{"id" => to_string(address.hash)})
+
+      assert conn.status == 200
+      {:ok, response} = Jason.decode(conn.resp_body)
+
+      assert %{"transaction_count" => 0, "validation_count" => 0} == response
+    end
+  end
 end
