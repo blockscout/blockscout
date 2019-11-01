@@ -304,22 +304,9 @@ defmodule Explorer.Chain do
       |> join_associations(necessity_by_association)
       |> Transaction.preload_token_transfers(address_hash)
 
-    direction_tasks =
-      base_query
-      |> Transaction.matching_address_queries_list(direction, address_hash)
-      |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
-
-    token_transfers_task =
-      Task.async(fn ->
-        transaction_hashes_from_token_transfers =
-          TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
-
-        final_query = where(base_query, [t], t.hash in ^transaction_hashes_from_token_transfers)
-
-        Repo.all(final_query)
-      end)
-
-    [token_transfers_task | direction_tasks]
+    base_query
+    |> Transaction.matching_address_queries_list(direction, address_hash)
+    |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
   end
 
   defp wait_for_address_transactions(tasks) do
