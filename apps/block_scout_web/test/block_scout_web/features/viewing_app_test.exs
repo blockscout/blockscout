@@ -5,13 +5,14 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   alias BlockScoutWeb.AppPage
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
+  alias Explorer.Counters.AddressesCounter
   alias Explorer.{Repo}
   alias Explorer.Chain.{Transaction}
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
-    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
-    
+    start_supervised!(AddressesCounter)
+    AddressesCounter.consolidate()
+
     :ok
   end
 

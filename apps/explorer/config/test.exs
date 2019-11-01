@@ -21,6 +21,8 @@ config :explorer, Explorer.Counters.AverageBlockTime, enabled: false
 
 config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: false, enable_consolidation: false
 
+config :explorer, Explorer.Counters.AddressesCounter, enabled: false, enable_consolidation: false
+
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
 config :explorer, Explorer.Tracer, disabled?: false
