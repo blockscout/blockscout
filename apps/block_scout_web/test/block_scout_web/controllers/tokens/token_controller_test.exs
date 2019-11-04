@@ -1,11 +1,13 @@
 defmodule BlockScoutWeb.Tokens.TokenControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
+  alias Explorer.Chain.Address
+
   describe "GET show/2" do
     test "redirects to transfers page", %{conn: conn} do
       contract_address = insert(:address)
 
-      conn = get(conn, token_path(conn, :show, contract_address.hash))
+      conn = get(conn, token_path(conn, :show, Address.checksum(contract_address.hash)))
 
       assert conn.status == 302
     end
@@ -25,7 +27,7 @@ defmodule BlockScoutWeb.Tokens.TokenControllerTest do
         token_id: token_id
       )
 
-      conn = get(conn, "/token_counters", %{"id" => to_string(contract_address.hash)})
+      conn = get(conn, "/token_counters", %{"id" => Address.checksum(contract_address.hash)})
 
       assert conn.status == 200
       {:ok, response} = Jason.decode(conn.resp_body)
