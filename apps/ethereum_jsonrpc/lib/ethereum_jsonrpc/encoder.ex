@@ -62,22 +62,26 @@ defmodule EthereumJSONRPC.Encoder do
     types_list = List.wrap(function_selector.returns)
 
     tuple_list =
-     if Enum.count(types_list) < 2 do types_list
-     else
-       [{:tuple, types_list}]
+     case types_list do
+       [:string] -> [{:tuple, [:string]}]
+       [a] -> [a]
+       lst -> [{:tuple, lst}]
      end
 
     #IO.inspect(result)
     #IO.inspect(tuple_list)
     #IO.inspect(result |> String.slice(2..-1) |> Base.decode16!(case: :lower))
 
-    decoded_result = result |> String.slice(2..-1) |> Base.decode16!(case: :lower)
-
     decoded_data =
-      case [types_list, decoded_result] do
-        [[:string], ""] -> [""]
-        _ -> decoded_result |> TypeDecoder.decode_raw(tuple_list)
-      end
+      result
+      |> String.slice(2..-1)
+      |> Base.decode16!(case: :lower)
+      |> TypeDecoder.decode_raw(tuple_list)
+
+    #  case [types_list, decoded_result] do
+    #    [[:string], ""] -> [""]
+    #    _ -> decoded_result |> TypeDecoder.decode_raw(tuple_list)
+    #  end
 
     #IO.inspect(decoded_data)
 

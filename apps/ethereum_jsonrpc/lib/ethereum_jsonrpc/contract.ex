@@ -42,6 +42,8 @@ defmodule EthereumJSONRPC.Contract do
         |> Encoder.encode_function_call(args)
         |> eth_call_request(contract_address, index, Map.get(request, :block_number))
       end)
+    
+    IO.inspect(prepared)
 
     indexed_responses =
       prepared
@@ -54,6 +56,8 @@ defmodule EthereumJSONRPC.Contract do
         {:error, error} -> raise error
       end
       |> Enum.into(%{}, &{&1.id, &1})
+
+    IO.inspect(indexed_responses)
 
     Enum.map(requests_with_index, fn {%{function_name: function_name}, index} ->
       selectors = Enum.filter(parsed_abi, fn p_abi -> p_abi.function == function_name end)

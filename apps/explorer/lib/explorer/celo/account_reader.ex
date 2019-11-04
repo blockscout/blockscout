@@ -8,8 +8,8 @@ defmodule Explorer.Celo.AccountReader do
 
   def account_data(%{address: account_address}) do
     with data = fetch_account_data(account_address),
-        {:ok, [name]} <- data["getName"],
-        {:ok, [url]} <- data["getMetadataURL"],
+        {:ok, [{name}]} <- data["getName"],
+        {:ok, [{url}]} <- data["getMetadataURL"],
         {:ok, [is_validator]} <- data["isValidator"],
         {:ok, [is_validator_group]} <- data["isValidatorGroup"],
          account_type = determine_account_type(is_validator, is_validator_group),

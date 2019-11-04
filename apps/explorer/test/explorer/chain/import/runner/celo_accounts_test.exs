@@ -10,7 +10,6 @@ defmodule Explorer.Chain.Import.Runner.CeloAccountsTest do
     describe "run/1" do
       test "insert new accounts list" do
         pools =
-          [pool1, pool2] =
           [params_for(:celo_account), params_for(:celo_account)]
           |> Enum.map(fn param ->
             changeset = CeloAccount.changeset(%CeloAccount{}, param)
@@ -25,7 +24,7 @@ defmodule Explorer.Chain.Import.Runner.CeloAccountsTest do
   
     defp run_changes(changes) do
       Multi.new()
-      |> StakingPools.run(changes, %{
+      |> CeloAccounts.run(changes, %{
         timeout: :infinity,
         timestamps: %{inserted_at: DateTime.utc_now(), updated_at: DateTime.utc_now()}
       })
