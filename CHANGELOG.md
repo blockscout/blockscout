@@ -6,6 +6,7 @@
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
 
 ### Fixes
+- [#2830](https://github.com/poanetwork/blockscout/pull/2830) - Fix wrong color of contract icon on xDai chain
 - [#2829](https://github.com/poanetwork/blockscout/pull/2829) - Fix for stuck gas limit label and value
 - [#2800](https://github.com/poanetwork/blockscout/pull/2800) - return not found for not verified contract for token read_contract
 - [#2806](https://github.com/poanetwork/blockscout/pull/2806) - Fix blocks fetching on the main page
