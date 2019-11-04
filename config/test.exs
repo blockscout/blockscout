@@ -15,3 +15,13 @@ config :explorer, Explorer.ExchangeRates,
   store: :none
 
 config :explorer, Explorer.KnownTokens, store: :none
+
+config :explorer, Explorer.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  username: "postgres",
+  password: "1234",
+  database: "explorer_test",
+  hostname: "localhost",
+  poolsize: 10,
+  # Ensure async testing is possible:
+  pool: Ecto.Adapters.SQL.Sandbox
