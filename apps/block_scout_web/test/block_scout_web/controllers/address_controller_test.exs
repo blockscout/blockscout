@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
     # ETS tables are shared in `Explorer.Counters.*`
     async: false
 
+  alias Explorer.Chain.Address
   alias Explorer.Counters.AddressesCounter
 
   describe "GET index/2" do
@@ -50,7 +51,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
     test "returns address counters" do
       address = insert(:address)
 
-      conn = get(conn, "/address_counters", %{"id" => to_string(address.hash)})
+      conn = get(conn, "/address_counters", %{"id" => Address.checksum(address.hash)})
 
       assert conn.status == 200
       {:ok, response} = Jason.decode(conn.resp_body)
