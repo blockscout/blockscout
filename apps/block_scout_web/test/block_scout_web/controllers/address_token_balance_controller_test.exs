@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceControllerTest do
 
       ajax_conn = ajax(conn)
 
-      response_conn = get(ajax_conn, address_token_balance_path(ajax_conn, :index, hash))
+      response_conn = get(ajax_conn, address_token_balance_path(ajax_conn, :index, Address.checksum(hash)))
 
       assert html_response(response_conn, 200)
     end

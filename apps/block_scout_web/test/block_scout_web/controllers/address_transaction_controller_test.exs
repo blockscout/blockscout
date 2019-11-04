@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         |> insert(to_address: address)
         |> with_block(block)
 
-      conn = get(conn, address_transaction_path(conn, :index, address, %{"type" => "JSON"}))
+      conn = get(conn, address_transaction_path(conn, :index, Address.checksum(address), %{"type" => "JSON"}))
 
       transaction_tiles = json_response(conn, 200)["items"]
       transaction_hashes = Enum.map([to_transaction.hash, from_transaction.hash], &to_string(&1))
