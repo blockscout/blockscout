@@ -65,7 +65,7 @@ defmodule Indexer.Fetcher.CeloAccount do
 
     @impl BufferedTask
     def run(accounts, _json_rpc_named_arguments) do
-      IO.inspect(accounts)
+      # IO.inspect(accounts)
       failed_list =
             accounts
             |> Enum.map(&Map.put(&1, :retries_count, &1.retries_count + 1))
@@ -95,7 +95,7 @@ defmodule Indexer.Fetcher.CeloAccount do
     end
 
     defp import_accounts(accounts) do
-      IO.inspect(accounts)
+        # IO.inspect(accounts)
         {failed, success} =
           Enum.reduce(accounts, {[], []}, fn
             %{error: _error} = account, {failed, success} ->

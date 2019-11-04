@@ -34,11 +34,12 @@ defmodule Explorer.Celo.AccountReader do
 
   def validator_data(%{address: address}) do
     with data = fetch_validator_data(address),
-      {:ok, [{_, affiliation}]} <- data["getValidator"] do
+      {:ok, [{_, affiliation, score}]} <- data["getValidator"] do
      {:ok,
       %{
         address: address,
-        group_address_hash: affiliation
+        group_address_hash: affiliation,
+        score: score,
       }
      }
      else  _ -> :error end

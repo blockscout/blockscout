@@ -8,7 +8,7 @@ defmodule Explorer.Chain.CeloValidator do
 
     use Explorer.Schema
 
-    alias Explorer.Chain.{Hash, Address}
+    alias Explorer.Chain.{Hash, Wei, Address}
 
     @typedoc """
     * `address` - address of the validator.
@@ -21,7 +21,7 @@ defmodule Explorer.Chain.CeloValidator do
     }
 
     @attrs ~w(
-        address group_address_hash
+        address group_address_hash score
     )a
 
     @required_attrs ~w(
@@ -29,6 +29,8 @@ defmodule Explorer.Chain.CeloValidator do
     )a
 
     schema "celo_validator" do
+
+        field(:score, Wei)
 
         belongs_to(
             :validator_address,

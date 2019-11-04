@@ -19,6 +19,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
         create table(:celo_validator) do
             add(:address, :bytea, null: false)
             add(:group_address_hash, :bytea) # affiliation
+            add(:score, :numeric, precision: 100)
 
             timestamps(null: false, type: :utc_datetime_usec)
         end
