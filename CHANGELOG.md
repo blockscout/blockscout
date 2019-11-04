@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2834](https://github.com/poanetwork/blockscout/pull/2834) - always redirect to checksummed hash
 - [#2787](https://github.com/poanetwork/blockscout/pull/2787) - async fetching of address counters
 - [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
