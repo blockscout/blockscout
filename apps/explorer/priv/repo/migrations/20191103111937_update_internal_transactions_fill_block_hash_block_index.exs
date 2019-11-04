@@ -2,8 +2,11 @@ defmodule Explorer.Repo.Migrations.UpdateInternalTransactionsFillBlockHashBlockI
   use Ecto.Migration
 
   def change do
+  	execute("""
+   	SET session_replication_role = replica;
+    """)
     execute("""
-    UPDATE internal_transactions itx
+   	UPDATE internal_transactions itx
     SET block_hash = with_block.block_hash, block_index = with_block.block_index
     FROM (
       SELECT i.transaction_hash,
@@ -20,6 +23,12 @@ defmodule Explorer.Repo.Migrations.UpdateInternalTransactionsFillBlockHashBlockI
     WHERE itx.transaction_hash = with_block.transaction_hash
     AND itx.index = with_block.index
     ;
+
+    SET session_replication_role = DEFAULT;
+    """)
+
+    execute("""
+    SET session_replication_role = DEFAULT;
     """)
   end
 end
