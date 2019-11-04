@@ -150,7 +150,9 @@ defmodule Explorer.Chain.Transaction do
           from_address_hash: Hash.Address.t(),
           gas: Gas.t(),
           gas_price: wei_per_gas,
+          gas_currency: %Ecto.Association.NotLoaded{} | Address.t(),
           gas_currency_hash: Hash.Address.t() | nil,
+          gas_fee_recipient: %Ecto.Association.NotLoaded{} | Address.t(),
           gas_fee_recipient_hash: Hash.Address.t() | nil,
           gas_used: Gas.t() | nil,
           hash: Hash.t(),
@@ -211,8 +213,11 @@ defmodule Explorer.Chain.Transaction do
     field(:status, Status)
     field(:v, :decimal)
     field(:value, Wei)
-    field(:gas_currency_hash, Hash.Address)
-    field(:gas_fee_recipient_hash, Hash.Address)
+#    field(:gas_currency_hash, Hash.Address)
+#    field(:gas_fee_recipient_hash, Hash.Address)
+
+    belongs_to(:gas_currency, Address, foreign_key: :gas_currency_hash, references: :hash, type: Hash.Address)
+    belongs_to(:gas_fee_recipient, Address, foreign_key: :gas_fee_recipient_hash, references: :hash, type: Hash.Address)
 
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated
