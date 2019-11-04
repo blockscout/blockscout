@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
       address = insert(:address)
 
-      conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
+      conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)))
 
       assert %Token{} = conn.assigns.exchange_rate
     end
@@ -108,7 +108,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       |> insert(from_address: address)
       |> with_block()
 
-      conn = get(conn, address_transaction_path(conn, :index, address.hash, %{"type" => "JSON"}))
+      conn = get(conn, address_transaction_path(conn, :index, Address.checksum(address.hash), %{"type" => "JSON"}))
 
       refute json_response(conn, 200)["next_page_path"]
     end
@@ -131,7 +131,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         transaction: transaction
       )
 
-      conn = get(conn, address_transaction_path(conn, :index, address), %{"type" => "JSON"})
+      conn = get(conn, address_transaction_path(conn, :index, Address.checksum(address)), %{"type" => "JSON"})
 
       transaction_tiles = json_response(conn, 200)["items"]
 

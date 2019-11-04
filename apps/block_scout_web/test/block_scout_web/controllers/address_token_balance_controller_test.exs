@@ -24,7 +24,8 @@ defmodule BlockScoutWeb.AddressTokenBalanceControllerTest do
     test "with AJAX with valid address without address still returns token balances", %{conn: conn} do
       ajax_conn = ajax(conn)
 
-      response_conn = get(ajax_conn, address_token_balance_path(ajax_conn, :index, Factory.address_hash()))
+      response_conn =
+        get(ajax_conn, address_token_balance_path(ajax_conn, :index, Factory.Address.checksum(address_hash())))
 
       assert html_response(response_conn, 200)
     end

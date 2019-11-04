@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
   describe "GET show/3" do
     test "returns not found for nonexistent address" do
-      nonexistent_address_hash = Hash.to_string(Factory.address_hash())
+      nonexistent_address_hash = Address.checksum(Hash.to_string(Factory.address_hash()))
 
       path =
         smart_contract_path(

@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.AddressPage do
   def visit_page(session, %Address{hash: address_hash}), do: visit_page(session, address_hash)
 
   def visit_page(session, address_hash) do
-    visit(session, "/address/#{address_hash}")
+    visit(session, "/address/#{Address.checksum(address_hash)}")
   end
 
   def visit_page(session) do

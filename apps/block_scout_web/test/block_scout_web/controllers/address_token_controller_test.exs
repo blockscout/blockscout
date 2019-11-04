@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         to_address: address
       )
 
-      conn = get(conn, address_token_path(conn, :index, address), type: "JSON")
+      conn = get(conn, address_token_path(conn, :index, Address.checksum(address)), type: "JSON")
 
       {:ok, %{"items" => items}} =
         conn.resp_body
@@ -131,7 +131,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
       end)
 
-      conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash), type: "JSON")
+      conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), type: "JSON")
 
       {:ok, %{"next_page_path" => next_page_path}} =
         conn.resp_body
