@@ -1,6 +1,26 @@
 ## Current
 
 ### Features
+- [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
+- [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
+
+### Fixes
+- [#2800](https://github.com/poanetwork/blockscout/pull/2800) - return not found for not verified contract for token read_contract
+- [#2806](https://github.com/poanetwork/blockscout/pull/2806) - Fix blocks fetching on the main page
+- [#2803](https://github.com/poanetwork/blockscout/pull/2803) - Fix block validator custom tooltip
+
+### Chore
+- [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
+- [#2808](https://github.com/poanetwork/blockscout/pull/2808) - Add tooltip for tx input
+- [#2807](https://github.com/poanetwork/blockscout/pull/2807) - 422 page
+- [#2805](https://github.com/poanetwork/blockscout/pull/2805) - Update supported chains default option
+- [#2801](https://github.com/poanetwork/blockscout/pull/2801) - remove unused clause in address_to_unique_tokens query
+
+
+## 2.1.0-beta
+
+### Features
+- [#2776](https://github.com/poanetwork/blockscout/pull/2776) - fetch token counters async
 - [#2772](https://github.com/poanetwork/blockscout/pull/2772) - add token instance images to the token inventory tab
 - [#2733](https://github.com/poanetwork/blockscout/pull/2733) - Add cache for first page of uncles
 - [#2735](https://github.com/poanetwork/blockscout/pull/2735) - Add pending transactions cache
@@ -18,6 +38,9 @@
 - [#2470](https://github.com/poanetwork/blockscout/pull/2470) - Allow Realtime Fetcher to wait for small skips
 
 ### Fixes
+- [#2793](https://github.com/poanetwork/blockscout/pull/2793) - Hide "We are indexing this chain right now. Some of the counts may be inaccurate" banner if no txs in blockchain
+- [#2779](https://github.com/poanetwork/blockscout/pull/2779) - fix fetching `latin1` encoded data
+- [#2799](https://github.com/poanetwork/blockscout/pull/2799) - fix catchup fetcher for empty node and db
 - [#2783](https://github.com/poanetwork/blockscout/pull/2783) - Fix stuck value and ticker on the token page
 - [#2781](https://github.com/poanetwork/blockscout/pull/2781) - optimize txlist json rpc
 - [#2770](https://github.com/poanetwork/blockscout/pull/2770) - do not re-fetch token instances without uris
@@ -53,9 +76,14 @@ fixed menu hovers in dark mode desktop view
 - [#2738](https://github.com/poanetwork/blockscout/pull/2738) - do not fail block `internal_transactions_indexed_at` field update
 
 ### Chore
+- [#2797](https://github.com/poanetwork/blockscout/pull/2797) - Return old style menu
+- [#2796](https://github.com/poanetwork/blockscout/pull/2796) - Optimize all images with ImageOptim
+- [#2794](https://github.com/poanetwork/blockscout/pull/2786) - update hosted versions in readme
+- [#2789](https://github.com/poanetwork/blockscout/pull/2786) - remove projects table in readme, link to docs version
 - [#2786](https://github.com/poanetwork/blockscout/pull/2786) - updated docs links, removed docs folder
 - [#2752](https://github.com/poanetwork/blockscout/pull/2752) - allow enabling internal transactions for simple token transfers txs
 - [#2749](https://github.com/poanetwork/blockscout/pull/2749) - fix opt 22.1 support
+- [#2744](https://github.com/poanetwork/blockscout/pull/2744) - Disable Geth tests in CI
 - [#2724](https://github.com/poanetwork/blockscout/pull/2724) - fix ci by commenting a line in hackney library
 - [#2708](https://github.com/poanetwork/blockscout/pull/2708) - add log index to logs view
 - [#2723](https://github.com/poanetwork/blockscout/pull/2723) - get rid of ex_json_schema warnings

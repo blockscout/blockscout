@@ -72,14 +72,15 @@ defmodule Indexer.Fetcher.TokenInstance do
         {:ok, _result} = Chain.upsert_token_instance(params)
 
       result ->
-        Logger.error(fn ->
+        Logger.debug(
           [
             "failed to fetch token instance metadata for #{
               inspect({to_string(token_contract_address_hash), Decimal.to_integer(token_id)})
             }: ",
             inspect(result)
-          ]
-        end)
+          ],
+          fetcher: :token_instances
+        )
 
         :ok
     end
