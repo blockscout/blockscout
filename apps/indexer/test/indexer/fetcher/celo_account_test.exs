@@ -1,32 +1,56 @@
-defmodule Explorer.Token.AccountReaderTest do
+defmodule Indexer.Fetcher.CeloAccountsTest do
     use EthereumJSONRPC.Case
-  
-    alias Explorer.Celo.AccountReader
+    use Explorer.DataCase
   
     import Mox
+  
+    alias Explorer.Chain.{Address, Hash, CeloAccount}
+    # alias Indexer.Fetcher.CeloAccount
+  
+    @moduletag :capture_log
   
     setup :verify_on_exit!
     setup :set_mox_global
 
-    describe "get_account_data" do
-        test "get_account_data success" do
-            get_account_data_from_blockchain()
+    describe "run/3" do
+        setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+            Indexer.Fetcher.CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     
+          :ok
+        end
+    
+        test "imports the given token balances" do
+
             address = <<71, 225, 114, 246, 207, 182, 199, 208, 28, 21, 116, 250, 62, 43, 231, 204, 115, 38, 157, 149>>
 
-            response = { :ok,
-            %{
-                account_type: "validator",
-                address: address,
-                locked_gold: 10001000000000000000000,
-                nonvoting_locked_gold: 1000000000000000000,
-                name: "CLabs Validator #0 on testing",
-                rewards: 0,
-                url: ""
-              }
-            }
+              get_account_data_from_blockchain()
 
-            assert AccountReader.account_data(%{address: address}) == response
+            entry = Indexer.Fetcher.CeloAccount.entry(%{address: address})
+
+          assert Indexer.Fetcher.CeloAccount.run(
+               [entry],
+               nil
+             ) == :ok
+
+          assert {:ok,
+          %Explorer.Chain.CeloAccount{
+            account_type: "validator",
+            address: %Explorer.Chain.Hash{
+              byte_count: 20,
+              bytes: address
+            },
+            name: "CLabs Validator #0 on testing",
+            locked_gold: locked_gold,
+            nonvoting_locked_gold: nonvoting_locked_gold,
+            rewards: rewards,
+            url: nil
+          }} = Explorer.Chain.get_celo_account(address)
+
+          assert locked_gold.value == Decimal.new(10001000000000000000000)
+          assert nonvoting_locked_gold.value == Decimal.new(1000000000000000000)
+          assert rewards.value == Decimal.new(0)
+
+
         end
     end
 
@@ -135,7 +159,5 @@ defmodule Explorer.Token.AccountReaderTest do
                 end)}
             end
           )
-                
-                
     end
 end

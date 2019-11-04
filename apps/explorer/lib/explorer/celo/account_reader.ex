@@ -22,7 +22,7 @@ defmodule Explorer.Celo.AccountReader do
           url: url,
           rewards: 0,
           locked_gold: gold,
-          locked_nonvoting_gold: nonvoting_gold,
+          nonvoting_locked_gold: nonvoting_gold,
           account_type: account_type,
         }
       }
