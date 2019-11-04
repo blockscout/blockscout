@@ -45,6 +45,7 @@
 - [#2844](https://github.com/poanetwork/blockscout/pull/2844) - Extend external reward types up to 20
 - [#2827](https://github.com/poanetwork/blockscout/pull/2827) - Node js 12.13.0 (latest LTS release) support
 - [#2818](https://github.com/poanetwork/blockscout/pull/2818) - allow hiding marketcap percentage
+- [#2835](https://github.com/poanetwork/blockscout/pull/2835) - Update int txs constraints repairing script
 - [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
 - [#2808](https://github.com/poanetwork/blockscout/pull/2808) - Add tooltip for tx input
 - [#2807](https://github.com/poanetwork/blockscout/pull/2807) - 422 page
