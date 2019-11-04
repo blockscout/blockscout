@@ -107,7 +107,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         smart_contract_path(
           BlockScoutWeb.Endpoint,
           :show,
-          smart_contract.address_hash,
+          Address.checksum(smart_contract.address_hash),
           function_name: "get",
           args: []
         )

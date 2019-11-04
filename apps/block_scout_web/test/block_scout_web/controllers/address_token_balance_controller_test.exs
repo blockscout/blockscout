@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceControllerTest do
     test "without AJAX", %{conn: conn} do
       %Address{hash: hash} = Factory.insert(:address)
 
-      response_conn = get(conn, address_token_balance_path(conn, :index, to_string(hash)))
+      response_conn = get(conn, address_token_balance_path(conn, :index, Address.checksum(hash)))
 
       assert html_response(response_conn, 404)
     end

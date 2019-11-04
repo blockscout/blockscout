@@ -72,7 +72,7 @@ defmodule Explorer.Factory do
 
   def contract_address_factory do
     %Address{
-      hash: Address.checksum(address_hash()),
+      hash: address_hash(),
       contract_code: Map.fetch!(contract_code_info(), :bytecode)
     }
   end

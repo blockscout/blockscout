@@ -104,7 +104,12 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           transaction_index: transaction.index
         )
 
-      path = address_internal_transaction_path(conn, :index, address, %{"filter" => "from", "type" => "JSON"})
+      path =
+        address_internal_transaction_path(conn, :index, Address.checksum(address), %{
+          "filter" => "from",
+          "type" => "JSON"
+        })
+
       conn = get(conn, path)
 
       internal_transaction_tiles = json_response(conn, 200)["items"]
@@ -282,7 +287,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
         )
 
       conn =
-        get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash), %{
+        get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), %{
           "block_number" => Integer.to_string(b_block.number),
           "transaction_index" => Integer.to_string(transaction_3.index),
           "index" => Integer.to_string(index),
@@ -322,10 +327,15 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       end)
 
       conn =
-        get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash, %{"type" => "JSON"}))
+        get(
+          conn,
+          address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash), %{
+            "type" => "JSON"
+          })
+        )
 
       expected_response =
-        address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash), %{
+        address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash, %{
           "block_number" => number,
           "index" => 11,
           "transaction_index" => transaction_index
