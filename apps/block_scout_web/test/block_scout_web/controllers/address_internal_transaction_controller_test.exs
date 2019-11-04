@@ -191,7 +191,9 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           transaction_index: transaction.index
         )
 
-      path = address_internal_transaction_path(conn, :index, address, %{"filter" => "to", "type" => "JSON"})
+      path =
+        address_internal_transaction_path(conn, :index, Address.checksum(address), %{"filter" => "to", "type" => "JSON"})
+
       conn = get(conn, path)
 
       internal_transaction_tiles = json_response(conn, 200)["items"]
