@@ -10,6 +10,7 @@
 - [#2803](https://github.com/poanetwork/blockscout/pull/2803) - Fix block validator custom tooltip
 
 ### Chore
+- [#2835](https://github.com/poanetwork/blockscout/pull/2835) - Update int txs constraints repairing script
 - [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
 - [#2808](https://github.com/poanetwork/blockscout/pull/2808) - Add tooltip for tx input
 - [#2807](https://github.com/poanetwork/blockscout/pull/2807) - 422 page
