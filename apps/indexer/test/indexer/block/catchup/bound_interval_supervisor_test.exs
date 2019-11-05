@@ -17,7 +17,10 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
     ReplacedTransaction,
     Token,
     TokenBalance,
-    UncleBlock
+    UncleBlock,
+    CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup
   }
 
   @moduletag capture_log: true
@@ -222,6 +225,9 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       UncleBlock.Supervisor.Case.start_supervised!(
@@ -429,6 +435,9 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       # from `setup :state`
@@ -522,6 +531,9 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       UncleBlock.Supervisor.Case.start_supervised!(

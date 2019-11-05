@@ -8,8 +8,8 @@ defmodule Explorer.Celo.AccountReader do
 
   def account_data(%{address: account_address}) do
     with data = fetch_account_data(account_address),
-        {:ok, [{name}]} <- data["getName"],
-        {:ok, [{url}]} <- data["getMetadataURL"],
+        {:ok, [name]} <- data["getName"],
+        {:ok, [url]} <- data["getMetadataURL"],
         {:ok, [is_validator]} <- data["isValidator"],
         {:ok, [is_validator_group]} <- data["isValidatorGroup"],
          account_type = determine_account_type(is_validator, is_validator_group),
@@ -34,7 +34,7 @@ defmodule Explorer.Celo.AccountReader do
 
   def validator_data(%{address: address}) do
     with data = fetch_validator_data(address),
-      {:ok, [{_, affiliation, score}]} <- data["getValidator"] do
+      {:ok, [_, affiliation, score]} <- data["getValidator"] do
      {:ok,
       %{
         address: address,
@@ -47,7 +47,7 @@ defmodule Explorer.Celo.AccountReader do
 
   def validator_group_data(%{address: address}) do
     with data = fetch_validator_group_data(address),
-      {:ok, [{_members, commission}]} <- data["getValidatorGroup"] do
+      {:ok, [_members, commission]} <- data["getValidatorGroup"] do
      {:ok,
       %{
         address: address,

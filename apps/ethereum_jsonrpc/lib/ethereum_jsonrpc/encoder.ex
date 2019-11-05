@@ -61,15 +61,18 @@ defmodule EthereumJSONRPC.Encoder do
   def decode_result(%{id: id, result: result}, function_selector) do
     types_list = List.wrap(function_selector.returns)
 
-    tuple_list =
-     case types_list do
-       [:string] -> [{:tuple, [:string]}]
-       [a] -> [a]
-       lst -> [{:tuple, lst}]
-     end
+    tuple_list = [{:tuple, types_list}]
+#    {tuple_list, fix_string} =
+#     case types_list do
+#      [a] -> {[{:tuple, [a]}], true}
+#      [:string] -> {[{:tuple, [:string]}], true}
+#      [a] -> {[a], false}
+#       lst -> {[{:tuple, lst}], false}
+#     end
 
-    #IO.inspect(result)
-    #IO.inspect(tuple_list)
+#     IO.inspect(result)
+#     IO.inspect(types_list)
+     #IO.inspect(tuple_list)
     #IO.inspect(result |> String.slice(2..-1) |> Base.decode16!(case: :lower))
 
     decoded_data =
@@ -83,9 +86,13 @@ defmodule EthereumJSONRPC.Encoder do
     #    _ -> decoded_result |> TypeDecoder.decode_raw(tuple_list)
     #  end
 
-    #IO.inspect(decoded_data)
+#    IO.inspect(decoded_data)
+    fixed_data = case decoded_data do
+      [tup] -> Tuple.to_list(tup)
+      _ -> decoded_data
+    end
 
-    {id, {:ok, decoded_data}}
+    {id, {:ok, fixed_data}}
   rescue
     MatchError ->
       #IO.inspect("match error")
