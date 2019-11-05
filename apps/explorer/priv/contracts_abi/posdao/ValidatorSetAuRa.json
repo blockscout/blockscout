@@ -557,7 +557,21 @@
     "name": "getPendingValidators",
     "outputs": [
       {
-        "name": "",
+        "name": "_miningAddress",
+        "type": "address[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "validatorsToBeFinalized",
+    "outputs": [
+      {
+        "name": "_miningAddress",
         "type": "address[]"
       }
     ],
