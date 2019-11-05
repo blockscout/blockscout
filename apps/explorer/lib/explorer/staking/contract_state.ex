@@ -10,7 +10,7 @@ defmodule Explorer.Staking.ContractState do
   alias Explorer.Chain
   alias Explorer.Chain.Events.{Publisher, Subscriber}
   alias Explorer.SmartContract.Reader
-  alias Explorer.Staking.ContractReader
+  alias Explorer.Staking.{ContractReader, StakeSnapshotting}
 
   @table_name __MODULE__
   @table_keys [
@@ -227,6 +227,8 @@ defmodule Explorer.Staking.ContractState do
         timeout: :infinity
       })
 
+    if previous_epoch && previous_epoch != 0 && previous_epoch != global_responses.epoch_number do
+      Supervisor.start_link([{StakeSnapshotting, block_number: block_number}], strategy: :one_for_all)
     end
 
     Publisher.broadcast(:staking_update)
