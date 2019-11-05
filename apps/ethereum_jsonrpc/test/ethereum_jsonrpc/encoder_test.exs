@@ -82,9 +82,9 @@ defmodule EthereumJSONRPC.EncoderTest do
       result =
         "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000441494f4e00000000000000000000000000000000000000000000000000000000"
 
-      selector = %ABI.FunctionSelector{function: "name", types: [], returns: [:string]}
+      selector = %ABI.FunctionSelector{function: "name", types: [], returns: [{:tuple, [:string]}]}
 
-      assert Encoder.decode_result(%{id: "storedName", result: result}, selector) == {"storedName", {:ok, ["AION"]}}
+      assert Encoder.decode_result(%{id: "storedName", result: result}, selector) == {"storedName", {:ok, [{"AION"}]}}
     end
   end
 end
