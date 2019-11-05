@@ -166,10 +166,10 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
   end
 
-  def visit_page(session, %Address{hash: address_hash}), do: visit_page(session, Address.checksum(address_hash))
+  def visit_page(session, %Address{hash: address_hash}), do: visit_page(session, address_hash)
 
   def visit_page(session, address_hash) do
-    visit(session, "/address/#{Address.checksum(address_hash)}")
+    visit(session, "/address/#{address_hash}")
   end
 
   def visit_page(session) do

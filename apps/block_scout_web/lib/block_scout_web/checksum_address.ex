@@ -23,24 +23,28 @@ defmodule BlockScoutWeb.ChecksumAddress do
   def call(conn, _), do: conn
 
   defp check_checksum(conn, id, param_name) do
-    case Chain.string_to_address_hash(id) do
-      {:ok, address_hash} ->
-        checksummed_hash = Address.checksum(address_hash)
+    if Application.get_env(:block_scout_web, :checksum_address_hashes) do
+      case Chain.string_to_address_hash(id) do
+        {:ok, address_hash} ->
+          checksummed_hash = Address.checksum(address_hash)
 
-        if checksummed_hash != id do
-          conn = %{conn | params: Map.merge(conn.params, %{param_name => checksummed_hash})}
+          if checksummed_hash != id do
+            conn = %{conn | params: Map.merge(conn.params, %{param_name => checksummed_hash})}
 
-          new_path = String.replace(conn.request_path, id, checksummed_hash)
+            new_path = String.replace(conn.request_path, id, checksummed_hash)
 
+            conn
+            |> Controller.redirect(to: new_path)
+            |> halt
+          else
+            conn
+          end
+
+        _ ->
           conn
-          |> Controller.redirect(to: new_path)
-          |> halt
-        else
-          conn
-        end
-
-      _ ->
-        conn
+      end
+    else
+      conn
     end
   end
 end

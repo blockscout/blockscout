@@ -3,11 +3,12 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     # Because ETS tables is shared for `Explorer.Counters.*`
     async: false
 
-  alias Explorer.Chain.Address
   alias Explorer.Counters.AddressesCounter
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
+    Application.put_env(:block_scout_web, :checksum_address_hashes, false)
+
     block = insert(:block, number: 42)
 
     lincoln = insert(:address, fetched_coin_balance: 5)
@@ -38,6 +39,10 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         block_hash: block.hash,
         address_type: :validator
       )
+
+    on_exit(fn ->
+      Application.put_env(:block_scout_web, :checksum_address_hashes, true)
+    end)
 
     {:ok,
      %{
@@ -70,10 +75,10 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   end
 
   test "viewing address overview information", %{session: session} do
-    address = insert(:address, fetched_coin_balance: 500, hash: Address.checksum(address_hash()))
+    address = insert(:address, fetched_coin_balance: 500)
 
     session
-    |> AddressPage.visit_page(address.hash)
+    |> AddressPage.visit_page(address)
     |> assert_text(AddressPage.balance(), "0.0000000000000005 Ether")
   end
 
@@ -96,7 +101,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       transaction_hash = AddressView.trimmed_hash(transaction.hash)
 
       session
-      |> AddressPage.visit_page(Address.checksum(internal_transaction.created_contract_address))
+      |> AddressPage.visit_page(internal_transaction.created_contract_address)
       |> assert_text(AddressPage.contract_creator(), "#{address_hash} at #{transaction_hash}")
     end
 
@@ -129,7 +134,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       transaction_hash = AddressView.trimmed_hash(transaction.hash)
 
       session
-      |> AddressPage.visit_page(Address.checksum(internal_transaction.created_contract_address))
+      |> AddressPage.visit_page(internal_transaction.created_contract_address)
       |> assert_text(AddressPage.contract_creator(), "#{contract_hash} at #{transaction_hash}")
     end
   end
@@ -141,7 +146,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       transactions: transactions
     } do
       session
-      |> AddressPage.visit_page(Address.checksum(addresses.lincoln))
+      |> AddressPage.visit_page(addresses.lincoln)
       |> assert_has(AddressPage.transaction(transactions.from_taft))
       |> assert_has(AddressPage.transaction(transactions.from_lincoln))
       |> assert_has(AddressPage.transaction_status(transactions.from_lincoln))
@@ -153,7 +158,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       transactions: transactions
     } do
       session
-      |> AddressPage.visit_page(Address.checksum(addresses.lincoln))
+      |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.apply_filter("From")
       |> assert_has(AddressPage.transaction(transactions.from_lincoln))
       |> refute_has(AddressPage.transaction(transactions.from_taft))
@@ -165,7 +170,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       transactions: transactions
     } do
       session
-      |> AddressPage.visit_page(Address.checksum(addresses.lincoln))
+      |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.apply_filter("To")
       |> refute_has(AddressPage.transaction(transactions.from_lincoln))
       |> assert_has(AddressPage.transaction(transactions.from_taft))
@@ -177,7 +182,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       transactions: transactions
     } do
       session
-      |> AddressPage.visit_page(Address.checksum(addresses.lincoln))
+      |> AddressPage.visit_page(addresses.lincoln)
       |> assert_has(AddressPage.transaction_address_link(transactions.from_lincoln, :to))
       |> refute_has(AddressPage.transaction_address_link(transactions.from_lincoln, :from))
     end
@@ -190,7 +195,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
 
       session
-      |> AddressPage.visit_page(Address.checksum(addresses.lincoln))
+      |> AddressPage.visit_page(addresses.lincoln)
       |> assert_has(AddressPage.transaction(transactions.from_taft))
       |> assert_has(AddressPage.transaction(transactions.from_lincoln))
 
@@ -229,7 +234,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       session: session
     } do
       session
-      |> AddressPage.visit_page(Address.checksum(addresses.lincoln))
+      |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.click_internal_transactions()
       |> assert_has(AddressPage.internal_transaction_address_link(internal_transaction, :from))
       |> refute_has(AddressPage.internal_transaction_address_link(internal_transaction, :to))
@@ -242,7 +247,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         |> with_block(insert(:block, number: 7000))
 
       session
-      |> AddressPage.visit_page(Address.checksum(addresses.lincoln))
+      |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.click_internal_transactions()
       |> assert_has(AddressPage.internal_transactions(count: 2))
 
@@ -289,7 +294,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       )
 
       session
-      |> AddressPage.visit_page(Address.checksum(lincoln))
+      |> AddressPage.visit_page(lincoln)
       |> assert_has(AddressPage.token_transfers(transaction, count: 1))
       |> assert_has(AddressPage.token_transfer(transaction, lincoln, count: 1))
       |> assert_has(AddressPage.token_transfer(transaction, taft, count: 1))
@@ -364,7 +369,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       )
 
       session
-      |> AddressPage.visit_page(Address.checksum(lincoln))
+      |> AddressPage.visit_page(lincoln)
       |> assert_has(AddressPage.token_transfers(transaction, count: 1))
     end
 
@@ -394,7 +399,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       )
 
       session
-      |> AddressPage.visit_page(Address.checksum(lincoln))
+      |> AddressPage.visit_page(lincoln)
       |> click(AddressPage.token_transfers_expansion(transaction))
       |> assert_has(AddressPage.token_transfers(transaction, count: 3))
     end
@@ -428,7 +433,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
 
       session
-      |> AddressPage.visit_page(Address.checksum(lincoln))
+      |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_tokens()
       |> AddressPage.click_token_transfers(token)
       |> assert_has(AddressPage.token_transfers(transaction, count: 1))
@@ -485,7 +490,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
     test "filter tokens balances by token name", %{session: session, lincoln: lincoln} do
       session
-      |> AddressPage.visit_page(Address.checksum(lincoln))
+      |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
       |> assert_has(AddressPage.token_balance(count: 2))
@@ -527,7 +532,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
     test "see list of coin balances", %{session: session, address: address} do
       session
-      |> AddressPage.visit_page(Address.checksum(address))
+      |> AddressPage.visit_page(address)
       |> AddressPage.click_coin_balance_history()
       |> assert_has(AddressPage.coin_balances(count: 2))
     end
