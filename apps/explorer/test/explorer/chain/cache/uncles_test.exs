@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Cache.UnclesTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.Cache.Uncles
-  alias Explorer.Repo
+  # alias Explorer.Repo
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Uncles.child_id())
