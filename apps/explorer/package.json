@@ -14,6 +14,6 @@
   "scripts": {},
   "dependencies": {
     "keccak": "^2.0.0",
-    "solc": "^0.5"
+    "solc": "^0.5.12"
   }
 }
