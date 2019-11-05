@@ -141,20 +141,6 @@
   },
   {
     "constant": true,
-    "inputs": [],
-    "name": "isSnapshotting",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
     "inputs": [
       {
         "name": "",
@@ -213,20 +199,6 @@
     "constant": true,
     "inputs": [],
     "name": "bridgeNativeFee",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "snapshotTotalStakeAmount",
     "outputs": [
       {
         "name": "",
@@ -520,58 +492,6 @@
     "constant": true,
     "inputs": [],
     "name": "nativeToErcBridgesAllowed",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_validatorStakingAddress",
-        "type": "address"
-      }
-    ],
-    "name": "snapshotRewardPercents",
-    "outputs": [
-      {
-        "name": "result",
-        "type": "uint256[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_validatorStakingAddress",
-        "type": "address"
-      }
-    ],
-    "name": "snapshotStakers",
-    "outputs": [
-      {
-        "name": "result",
-        "type": "address[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "snapshotStakingAddresses",
     "outputs": [
       {
         "name": "",
