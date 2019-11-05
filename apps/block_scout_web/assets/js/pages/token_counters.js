@@ -66,7 +66,7 @@ const elements = {
 
 function loadCounters (store) {
   const $element = $('[data-async-counters]')
-  const path = $element.data().asyncCounters
+  const path = $element.data() && $element.data().asyncCounters
   function fetchCounters () {
     store.dispatch({type: 'START_REQUEST'})
     $.getJSON(path)
