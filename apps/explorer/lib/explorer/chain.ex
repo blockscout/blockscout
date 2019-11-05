@@ -211,7 +211,7 @@ defmodule Explorer.Chain do
     last_nonce =
       address_hash
       |> Transaction.last_nonce_by_address_query()
-      |> Repo.one()
+      |> Repo.one(timeout: :infinity)
 
     case last_nonce do
       nil -> 0
