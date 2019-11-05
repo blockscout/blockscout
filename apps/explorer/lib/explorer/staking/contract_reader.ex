@@ -31,9 +31,7 @@ defmodule Explorer.Staking.ContractReader do
       inactive_delegators: {:staking, "poolDelegatorsInactive", [staking_address]},
       staked_amount: {:staking, "stakeAmountTotal", [staking_address]},
       self_staked_amount: {:staking, "stakeAmount", [staking_address, staking_address]},
-      block_reward: {:block_reward, "validatorRewardPercent", [staking_address]},
-      stakers: {:block_reward, "snapshotStakers", [staking_address]},
-      reward_percents: {:block_reward, "snapshotRewardPercents", [staking_address]}
+      block_reward: {:block_reward, "validatorRewardPercent", [staking_address]}
     ]
   end
 
@@ -57,14 +55,6 @@ defmodule Explorer.Staking.ContractReader do
       max_ordered_withdraw_allowed: {:staking, "maxWithdrawOrderAllowed", [pool_address, delegator_address]},
       ordered_withdraw_epoch: {:staking, "orderWithdrawEpoch", [pool_address, delegator_address]}
     ]
-  end
-
-  def pools_snapshot_requests(block_number) do
-    [staking_addresses: {:block_reward, "snapshotStakingAddresses", [], block_number}]
-  end
-
-  def stakers_snapshot_requests(pool_address, block_number) do
-    [{pool_address, {:block_reward, "snapshotStakers", [pool_address], block_number}}]
   end
 
   def perform_requests(requests, contracts, abi) do
