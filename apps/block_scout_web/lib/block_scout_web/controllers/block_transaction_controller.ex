@@ -50,7 +50,8 @@ defmodule BlockScoutWeb.BlockTransactionController do
             View.render_to_string(
               TransactionView,
               "_tile.html",
-              transaction: transaction
+              transaction: transaction,
+              conn: conn
             )
           end)
 

@@ -30,6 +30,18 @@
             <dt class="col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
             <dd class="col-md-4"><%= format_optimization_text(@address.smart_contract.optimization) %></dd>
           </dl>
+          <%= if @is_proxy do %>
+            <dl class="row">
+            <dt class="col-md-2 text-muted"><%= gettext "Is a Proxy?" %></dt>
+            <dd class="col-md-4"><%= @is_proxy %></dd>
+            <div class="d-none d-sm-block d-md-none"></br></br></div>
+            <div class="d-block d-sm-none"></br></br></div>
+            <%= if @proxy.smart_contract &&  @proxy.smart_contract.name do %>
+              <dt class="col-md-2 text-muted"><%= gettext "Proxy Name:" %></dt>
+              <dd class="col-md-4"><%= @proxy.smart_contract.name %></dd>
+            <% end %>
+            </dl>
+          <% end %>
           <dl class="row">
             <dt class="col-md-2 text-muted"><%= gettext "Compiler version" %></dt>
             <dd class="col-md-4"><%= @address.smart_contract.compiler_version %></dd>

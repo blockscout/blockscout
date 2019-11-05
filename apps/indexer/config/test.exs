@@ -20,3 +20,4 @@ config :logger, :addresses_without_code,
   level: :debug,
   path: Path.absname("logs/test/indexer/addresses_without_code.log"),
   metadata_filter: [fetcher: :addresses_without_code]
+

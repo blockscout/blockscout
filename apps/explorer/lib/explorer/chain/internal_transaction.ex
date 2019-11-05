@@ -15,6 +15,8 @@ defmodule Explorer.Chain.InternalTransaction do
    * `from_address_hash` - hash of the source of the `value`
    * `gas` - the amount of gas allowed
    * `gas_used` - the amount of gas used.  `nil` when a call errors.
+   * `gas_currency_hash` - the address of the token used for the transaction
+   * `gas_fee_recipient_hash` - the address of the recipient of the gas fee
    * `index` - the index of this internal transaction inside the `transaction`
    * `init` - the constructor arguments for creating `created_contract_code` when `type` is `:create`.
    * `input` - input bytes to the call
@@ -40,6 +42,10 @@ defmodule Explorer.Chain.InternalTransaction do
           from_address_hash: Hash.Address.t(),
           gas: Gas.t() | nil,
           gas_used: Gas.t() | nil,
+          gas_currency: %Ecto.Association.NotLoaded{} | Address.t(),
+          gas_currency_hash: Hash.Address.t() | nil,
+          gas_fee_recipient: %Ecto.Association.NotLoaded{} | Address.t(),
+          gas_fee_recipient_hash: Hash.Address.t() | nil,
           index: non_neg_integer(),
           init: Data.t() | nil,
           input: Data.t() | nil,
@@ -69,6 +75,11 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:value, Wei)
     field(:block_number, :integer)
     field(:transaction_index, :integer)
+    
+    #field(:gas_currency_hash, Hash.Address)
+    #field(:gas_fee_recipient_hash, Hash.Address)
+    belongs_to(:gas_currency, Address, foreign_key: :gas_currency_hash, references: :hash, type: Hash.Address)
+    belongs_to(:gas_fee_recipient, Address, foreign_key: :gas_fee_recipient_hash, references: :hash, type: Hash.Address)
 
     timestamps()
 
@@ -102,6 +113,7 @@ defmodule Explorer.Chain.InternalTransaction do
       references: :hash,
       type: Hash.Full
     )
+
   end
 
   @doc """
@@ -117,6 +129,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
       ...>     created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     gas_currency_hash: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+      ...>     gas_fee_recipient_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas: 4597044,
       ...>     gas_used: 166651,
       ...>     index: 0,
@@ -176,7 +190,7 @@ defmodule Explorer.Chain.InternalTransaction do
         bytes: <<120, 164, 45, 55, 5, 251, 60, 38, 164, 181, 71, 55, 167, 132, 191, 6, 79, 8, 21, 251>>
       }
 
-  `:call` type traces are generated when a method in a contrat is call.
+  `:call` type traces are generated when a method in a contract is call.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -371,7 +385,7 @@ defmodule Explorer.Chain.InternalTransaction do
     type_changeset(changeset, attrs, type)
   end
 
-  @call_optional_fields ~w(error gas_used output block_number transaction_index)a
+  @call_optional_fields ~w(error gas_used output block_number transaction_index gas_currency_hash gas_fee_recipient_hash)a
   @call_required_fields ~w(call_type from_address_hash gas index input to_address_hash trace_address transaction_hash value)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
@@ -388,7 +402,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> unique_constraint(:index)
   end
 
-  @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number transaction_index)a
+  @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number transaction_index gas_currency_hash gas_fee_recipient_hash)a
   @create_required_fields ~w(from_address_hash gas index init trace_address transaction_hash value)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 

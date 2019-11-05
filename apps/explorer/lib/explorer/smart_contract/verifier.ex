@@ -41,7 +41,7 @@ defmodule Explorer.SmartContract.Verifier do
     constructor_arguments = Map.get(params, "constructor_arguments", "")
     evm_version = Map.get(params, "evm_version")
     optimization_runs = Map.get(params, "optimization_runs", 200)
-
+    
     solc_output =
       CodeCompiler.run(
         name: name,
@@ -69,7 +69,8 @@ defmodule Explorer.SmartContract.Verifier do
     blockchain_bytecode_without_whisper = extract_bytecode(blockchain_bytecode)
 
     cond do
-      generated_bytecode != blockchain_bytecode_without_whisper ->
+      generated_bytecode != blockchain_bytecode_without_whisper &&
+          !try_library_verification(generated_bytecode, blockchain_bytecode_without_whisper) ->
         {:error, :generated_bytecode}
 
       has_constructor_with_params?(abi) &&
@@ -79,6 +80,18 @@ defmodule Explorer.SmartContract.Verifier do
       true ->
         {:ok, %{abi: abi}}
     end
+  end
+
+  # 730000000000000000000000000000000000000000 - default library address that returned by the compiler
+  defp try_library_verification(
+         "730000000000000000000000000000000000000000" <> bytecode,
+         <<_address::binary-size(42)>> <> bytecode
+       ) do
+    true
+  end
+
+  defp try_library_verification(_, _) do
+    false
   end
 
   @doc """

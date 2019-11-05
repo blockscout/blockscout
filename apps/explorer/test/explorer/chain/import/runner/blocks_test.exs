@@ -117,10 +117,12 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
     test "remove_nonconsensus_token_transfers deletes token transfer rows with matching block number when new consensus block is inserted",
          %{consensus_block: %{number: block_number} = block, options: options} do
-      insert(:block, number: block_number, consensus: true)
+      consensus_block = insert(:block, number: block_number, consensus: true)
+
+      transaction = insert(:transaction) |> with_block(consensus_block)
 
       %TokenTransfer{transaction_hash: transaction_hash, log_index: log_index} =
-        insert(:token_transfer, block_number: block_number, transaction: insert(:transaction))
+        insert(:token_transfer, block_number: block_number, transaction: transaction)
 
       assert count(TokenTransfer) == 1
 
@@ -136,7 +138,11 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
     test "remove_nonconsensus_token_transfers does not delete token transfer rows with matching block number when new consensus block wasn't inserted",
          %{consensus_block: %{number: block_number} = block, options: options} do
-      insert(:token_transfer, block_number: block_number, transaction: insert(:transaction))
+      consensus_block = insert(:block, number: block_number, consensus: true)
+
+      transaction = insert(:transaction) |> with_block(consensus_block)
+
+      insert(:token_transfer, block_number: block_number, transaction: transaction)
 
       count = 1
 

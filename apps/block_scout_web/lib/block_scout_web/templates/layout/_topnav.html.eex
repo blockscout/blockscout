@@ -16,7 +16,7 @@
          <span class="nav-link-icon">
          <svg xmlns="http://www.w3.org/2000/svg" width="6" height="6">
          <circle cx="3" cy="3" r="3" fill="#80d6a1"></circle>
-         </svg> </span>Sokol Testnet</a>
+         </svg> </span><%= subnetwork_title() %></a>
      <button class="new-button" id="dark-mode-changer">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="16">
             <path fill="#a3a9b5" fill-rule="evenodd" d="M14.88 11.578a.544.544 0 0 0-.599-.166 5.7 5.7 0 0 1-1.924.321c-3.259 0-5.91-2.632-5.91-5.866 0-1.947.968-3.759 2.59-4.849a.534.534 0 0 0-.225-.97A5.289 5.289 0 0 0 8.059 0C3.615 0 0 3.588 0 8s3.615 8 8.059 8c2.82 0 5.386-1.423 6.862-3.806a.533.533 0 0 0-.041-.616z"></path>
@@ -27,7 +27,7 @@
         document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
       }
     </script>
-    <button class="navbar-toggler" id="toggleButton" onclick="switchVisible(); type="button"  value="Click" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
+    <button class="navbar-toggler" id="toggleButton" type="button"  value="Click" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon" id="toggleImage1" style="width="26px;"></span>
       <span class="navbar-toggler-icon-1" id="toggleImage2"> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 47.971 47.971" style="enable-background:new 0 0 47.971 47.971; width: 17px;
     transform: translate(0px, -1.5px);" xml:space="preserve"> <g><g>

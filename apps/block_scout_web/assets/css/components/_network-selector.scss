@@ -233,7 +233,7 @@ $network-selector-item-icon-dimensions: 30px !default;
 }
 
 .network-selector-item-icon {
-  background-color: #dfdfdf;
+  background-color: white;
   background-position: 50% 50%;
   background-repeat: no-repeat;
   background-size: contain;
@@ -282,6 +282,18 @@ $network-selector-item-icon-dimensions: 30px !default;
   }
   &-xusdt-chain {
     background-image: url(/images/network-selector-icons/circle-xusdt.svg)
+  }
+  &-celo-alfajores {
+    background-image: url(/images/network-selector-icons/celo.svg)
+  }
+  &-celo-integration {
+    background-image: url(/images/network-selector-icons/celo.svg)
+  }
+  &-celo-betanet {
+    background-image: url(/images/network-selector-icons/celo.svg)
+  }
+  &-celo {
+    background-image: url(/images/network-selector-icons/celo.svg)
   }
 }
 

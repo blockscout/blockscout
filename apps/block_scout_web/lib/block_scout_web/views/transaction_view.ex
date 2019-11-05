@@ -294,6 +294,14 @@ defmodule BlockScoutWeb.TransactionView do
     {fee_type, format_wei_value(Wei.from(fee, :wei), denomination, include_unit_label: include_label?)}
   end
 
+  def get_token_name(transaction) do
+    token = Transaction.get_token_name(transaction)
+    case token do
+      {:ok, address} -> address
+      {:error, :not_found} -> %{name: "", symbol: " #{gettext("Ether")}"}
+    end
+  end
+
   @doc """
   Get the current tab name/title from the request path and possible tab names.
 

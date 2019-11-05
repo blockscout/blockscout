@@ -112,6 +112,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           from_address_hash: fragment("EXCLUDED.from_address_hash"),
           gas: fragment("EXCLUDED.gas"),
           gas_price: fragment("EXCLUDED.gas_price"),
+          gas_currency_hash: fragment("EXCLUDED.gas_currency_hash"),
+          gas_fee_recipient_hash: fragment("EXCLUDED.gas_fee_recipient_hash"),
           gas_used: fragment("EXCLUDED.gas_used"),
           index: fragment("EXCLUDED.index"),
           internal_transactions_indexed_at: fragment("EXCLUDED.internal_transactions_indexed_at"),
@@ -130,7 +132,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       ],
       where:
         fragment(
-          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.internal_transactions_indexed_at, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_currency_hash, EXCLUDED.gas_fee_recipient_hash, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.internal_transactions_indexed_at, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           transaction.block_hash,
           transaction.block_number,
           transaction.created_contract_address_hash,
@@ -140,6 +142,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           transaction.from_address_hash,
           transaction.gas,
           transaction.gas_price,
+          transaction.gas_currency_hash,
+          transaction.gas_fee_recipient_hash,
           transaction.gas_used,
           transaction.index,
           transaction.internal_transactions_indexed_at,
@@ -155,12 +159,20 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     )
   end
 
-  defp put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
+  defp put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set) do
+    if Application.get_env(:explorer, :index_internal_transactions_for_token_transfers) do
+      changes_list
+    else
+      do_put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
+    end
+  end
+
+  defp do_put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
        when is_list(changes_list) do
     Enum.map(changes_list, &put_internal_transactions_indexed_at(&1, timestamp, token_transfer_transaction_hash_set))
   end
 
-  defp put_internal_transactions_indexed_at(%{hash: hash} = changes, timestamp, token_transfer_transaction_hash_set) do
+  defp do_put_internal_transactions_indexed_at(%{hash: hash} = changes, timestamp, token_transfer_transaction_hash_set) do
     token_transfer? = to_string(hash) in token_transfer_transaction_hash_set
 
     if put_internal_transactions_indexed_at?(changes, token_transfer?) do
