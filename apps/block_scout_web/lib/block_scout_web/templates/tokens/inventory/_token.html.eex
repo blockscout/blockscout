@@ -10,7 +10,7 @@
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="mr-1"><%= gettext "Token ID" %>:</span>
         <span class="tile-title">
-          <%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, @token.contract_address_hash, to_string(@token_transfer.token_id))) %>
+          <%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, "#{@token.contract_address_hash}", "#{@token_transfer.token_id}")) %>
         </span>
       </span>
 

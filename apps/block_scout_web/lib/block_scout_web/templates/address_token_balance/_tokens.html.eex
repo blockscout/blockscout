@@ -11,7 +11,7 @@
       data-token-symbol="<%= token_balance.token.symbol %>"
     >
       <%= link(
-            to: token_path(@conn, :show, token_balance.token.contract_address_hash),
+            to: token_path(@conn, :show, to_string(token_balance.token.contract_address_hash)),
             class: "dropdown-item"
           ) do %>
         <div class="row">
