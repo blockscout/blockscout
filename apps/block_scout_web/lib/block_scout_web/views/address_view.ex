@@ -109,6 +109,10 @@ defmodule BlockScoutWeb.AddressView do
     format_wei_value(balance, :ether)
   end
 
+  def balance_percentage_enabled? do
+    Application.get_env(:block_scout_web, :show_percentage)
+  end
+
   def balance_percentage(_, nil), do: ""
 
   def balance_percentage(%Address{fetched_coin_balance: balance}, total_supply) do

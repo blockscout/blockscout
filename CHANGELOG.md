@@ -4,8 +4,11 @@
 - [#2787](https://github.com/poanetwork/blockscout/pull/2787) - async fetching of address counters
 - [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
+- [#2822](https://github.com/poanetwork/blockscout/pull/2822) - Estimated address count on the main page, if cache is empty
 
 ### Fixes
+- [#2830](https://github.com/poanetwork/blockscout/pull/2830) - Fix wrong color of contract icon on xDai chain
+- [#2829](https://github.com/poanetwork/blockscout/pull/2829) - Fix for stuck gas limit label and value
 - [#2828](https://github.com/poanetwork/blockscout/pull/2828) - Fix for script that clears compilation/launching assets
 - [#2800](https://github.com/poanetwork/blockscout/pull/2800) - return not found for not verified contract for token read_contract
 - [#2806](https://github.com/poanetwork/blockscout/pull/2806) - Fix blocks fetching on the main page
@@ -13,6 +16,7 @@
 
 ### Chore
 - [#2827](https://github.com/poanetwork/blockscout/pull/2827) - Node js 12.13.0 (latest LTS release) support
+- [#2818](https://github.com/poanetwork/blockscout/pull/2818) - allow hiding marketcap percentage
 - [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
 - [#2808](https://github.com/poanetwork/blockscout/pull/2808) - Add tooltip for tx input
 - [#2807](https://github.com/poanetwork/blockscout/pull/2807) - 422 page

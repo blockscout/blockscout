@@ -1,23 +1,23 @@
 // general
-$primary: #233174;
-$secondary: #15f9bb;
-$tertiary: #5a77ff;
+$primary: #17314f;
+$secondary: #15bba6;
+$tertiary: #93d7ff;
 $additional-font: #fff;
 
 // footer
-$footer-background-color:#202d6a;
+$footer-background-color: $primary;
 $footer-title-color: #fff;
-$footer-text-color: #b5c2ff;
+$footer-text-color: #96bde8;
 $footer-item-disc-color: $secondary;
 .footer-logo { filter: brightness(0) invert(1); }
-.footer-social-icon { color: $secondary!important; }
+
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
 
 $dashboard-line-color-market: $secondary;
 
 $dashboard-banner-chart-legend-label-color: $footer-text-color;
-$dashboard-stats-item-label-color: #b4c1ff;
+$dashboard-stats-item-label-color: $footer-text-color;
 $dashboard-banner-chart-legend-value-color: #fff; // chart labels
 $dashboard-stats-item-value-color: #fff; // stat values
 
@@ -25,11 +25,9 @@ $dashboard-stats-item-border-color: $secondary; // stat border
 
 $dashboard-banner-gradient-start: $primary; // gradient begin
 
-$dashboard-banner-gradient-end: #1e2a63;
-// gradient end
+$dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
 
-$dashboard-banner-network-plain-container-background-color: #273781
-; // stats bg
+$dashboard-banner-network-plain-container-background-color: #20446e; // stats bg
 
 
 // navigation
@@ -37,20 +35,21 @@ $dashboard-banner-network-plain-container-background-color: #273781
 
 // buttons
 $btn-line-bg: #fff; // button bg
-$btn-line-color: $primary; // button border and font color && hover bg color
-$btn-copy-color: $primary; // btn copy
-$btn-qr-color: $primary; // btn qr-code
+$btn-line-color: $secondary; // button border and font color && hover bg color
+$btn-copy-color: $secondary; // btn copy
+$btn-qr-color: $secondary; // btn qr-code
 $btn-address-card-icon-color: $secondary; // btn address color
+$btn-contract-color: $secondary;
 
 //links & tile
-$tile-body-a-color: $tertiary;
-$tile-type-block-color: $primary;
-$tile-type-progress-bar-color: $primary;
-a.tile-title { color: $primary !important; }
+$tile-body-a-color: $secondary;
+$tile-type-block-color: $secondary;
+$tile-type-progress-bar-color: $secondary;
+a.tile-title { color: $secondary !important; }
 
 // card
-$card-background-1: $primary;
-$card-tab-active: $primary;
+$card-background-1: $secondary;
+$card-tab-active: $secondary;
 
 .layout-container {
 	.dashboard-banner-container {
@@ -68,20 +67,6 @@ $badge-neutral-background-color: rgba(#20446e, .1);
 $api-text-monospace-color: #20446e;
 
 // Dark theme
-$dark-primary: #233174;
-$dark-secondary:#15f9bb;
-$dark-tertiary: #5a77ff;
-
-.dark-theme-applied .tile .tile-body a, .dark-theme-applied .tile span[data-address-hash] {
-    color: $dark-tertiary!important;
-}
-
-.dark-theme-applied .btn-line {
-    background-color: transparent!important;
-    border-color: $dark-tertiary!important;
-    color: $dark-tertiary!important;
-}
-
-.dark-theme-applied .btn-line:hover {
-    color: $additional-font!important;
-}
+$dark-primary: #15bba6;
+$dark-secondary: #93d7ff;
+$dark-primary-alternate: #15bba6;
