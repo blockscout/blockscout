@@ -11,7 +11,6 @@ defmodule Explorer.Staking.ContractState do
   alias Explorer.Chain.Events.{Publisher, Subscriber}
   alias Explorer.SmartContract.Reader
   alias Explorer.Staking.ContractReader
-  alias Explorer.Token.{BalanceReader, MetadataRetriever}
 
   @table_name __MODULE__
   @table_keys [
@@ -158,11 +157,6 @@ defmodule Explorer.Staking.ContractState do
           Enum.map(responses.inactive_delegators, &{pool_address, &1, false})
       end)
 
-    delegator_rewards =
-      Enum.into(pool_staking_responses, %{}, fn {pool_address, responses} ->
-        {pool_address, Enum.into(Enum.zip(responses.stakers, responses.reward_percents), %{})}
-      end)
-
     delegator_responses =
       delegators
       |> Enum.map(fn {pool_address, delegator_address, _} ->
@@ -219,27 +213,10 @@ defmodule Explorer.Staking.ContractState do
 
     delegator_entries =
       Enum.map(delegator_responses, fn {{pool_address, delegator_address, is_active}, response} ->
-        staking_response = pool_staking_responses[pool_address]
-
-        reward_ratio =
-          if is_validator[staking_response.mining_address_hash] do
-            reward_ratio = delegator_rewards[pool_address][delegator_address]
-
-            if reward_ratio do
-              reward_ratio / 10_000
-            end
-          else
-            ratio(
-              response.stake_amount - response.ordered_withdraw,
-              staking_response.staked_amount - staking_response.self_staked_amount
-            ) * min(0.7, 1 - staking_response.block_reward / 1_000_000)
-          end
-
         Map.merge(response, %{
           delegator_address_hash: delegator_address,
           pool_address_hash: pool_address,
-          is_active: is_active,
-          reward_ratio: reward_ratio
+          is_active: is_active
         })
       end)
 
@@ -250,62 +227,9 @@ defmodule Explorer.Staking.ContractState do
         timeout: :infinity
       })
 
-    if token && previous_epoch != global_responses.epoch_number do
-      update_tokens(token.contract_address_hash, contracts, abi, global_responses.epoch_start_block - 1, block_number)
     end
 
     Publisher.broadcast(:staking_update)
-  end
-
-  defp update_tokens(token_contract_address_hash, contracts, abi, last_epoch_block_number, block_number) do
-    now = DateTime.utc_now()
-
-    token_params =
-      token_contract_address_hash
-      |> MetadataRetriever.get_functions_of()
-      |> Map.merge(%{
-        contract_address_hash: token_contract_address_hash,
-        type: "ERC-20"
-      })
-
-    addresses =
-      block_number
-      |> ContractReader.pools_snapshot_requests()
-      |> ContractReader.perform_requests(contracts, abi)
-      |> Map.fetch!(:staking_addresses)
-      |> Enum.flat_map(&ContractReader.stakers_snapshot_requests(&1, last_epoch_block_number))
-      |> ContractReader.perform_requests(contracts, abi)
-      |> Map.values()
-      |> List.flatten()
-      |> Enum.uniq()
-
-    balance_params =
-      addresses
-      |> Enum.map(
-        &%{
-          token_contract_address_hash: token_contract_address_hash,
-          address_hash: &1,
-          block_number: block_number
-        }
-      )
-      |> BalanceReader.get_balances_of()
-      |> Enum.zip(addresses)
-      |> Enum.map(fn {{:ok, balance}, address} ->
-        %{
-          address_hash: address,
-          token_contract_address_hash: token_contract_address_hash,
-          block_number: block_number,
-          value: balance,
-          value_fetched_at: now
-        }
-      end)
-
-    {:ok, _} =
-      Chain.import(%{
-        addresses: %{params: Enum.map(addresses, &%{hash: &1}), on_conflict: :nothing},
-        address_current_token_balances: %{params: balance_params},
-        tokens: %{params: [token_params]}
-      })
   end
 
   defp get_token(address) do
