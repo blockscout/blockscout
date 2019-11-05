@@ -39,18 +39,13 @@ async function becomeCandidate ($modal, store, msg) {
   lockModal($modal)
 
   const stakingContract = store.getState().stakingContract
-  const blockRewardContract = store.getState().blockRewardContract
   const decimals = store.getState().tokenDecimals
   const stake = new BigNumber($modal.find('[candidate-stake]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
   const miningAddress = $modal.find('[mining-address]').val().trim().toLowerCase()
 
   try {
     if (!await stakingContract.methods.areStakeAndWithdrawAllowed().call()) {
-      if (await blockRewardContract.methods.isSnapshotting().call()) {
-        openErrorModal('Error', 'Staking actions are temporarily restricted. Please try again in a few blocks.')
-      } else {
-        openErrorModal('Error', 'The current staking epoch is ending, and staking actions are temporarily restricted. Please try again when the new epoch starts.')
-      }
+      openErrorModal('Error', 'The current staking epoch is ending, and staking actions are temporarily restricted. Please try again when the new epoch starts.')
       return false
     }
 
