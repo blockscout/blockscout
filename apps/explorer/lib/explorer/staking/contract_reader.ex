@@ -19,7 +19,9 @@ defmodule Explorer.Staking.ContractReader do
       pools_likely: {:staking, "getPoolsToBeElected", []},
       pools_likelihood: {:staking, "getPoolsLikelihood", []},
       validators: {:validator_set, "getValidators", []},
-      unremovable_validator: {:validator_set, "unremovableValidator", []}
+      unremovable_validator: {:validator_set, "unremovableValidator", []},
+      pending_validators: {:validator_set, "getPendingValidators", []},
+      be_finalized_validators: {:validator_set, "validatorsToBeFinalized", []}
     ]
   end
 
