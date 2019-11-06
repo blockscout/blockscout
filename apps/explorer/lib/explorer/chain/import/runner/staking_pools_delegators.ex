@@ -106,7 +106,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
       update: [
         set: [
           stake_amount: fragment("EXCLUDED.stake_amount"),
-          snapshotted_stake_amount: fragment("EXCLUDED.snapshotted_stake_amount"),
+          snapshotted_stake_amount: delegator.snapshotted_stake_amount,
           ordered_withdraw: fragment("EXCLUDED.ordered_withdraw"),
           max_withdraw_allowed: fragment("EXCLUDED.max_withdraw_allowed"),
           max_ordered_withdraw_allowed: fragment("EXCLUDED.max_ordered_withdraw_allowed"),
