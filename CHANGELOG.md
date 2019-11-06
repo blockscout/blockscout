@@ -8,8 +8,10 @@
 
 ### Fixes
 - [#2841](https://github.com/poanetwork/blockscout/pull/2841) - LUKSO dashboard height fix
+- [#2837](https://github.com/poanetwork/blockscout/pull/2837) - fix txlist ordering issue
 - [#2830](https://github.com/poanetwork/blockscout/pull/2830) - Fix wrong color of contract icon on xDai chain
 - [#2829](https://github.com/poanetwork/blockscout/pull/2829) - Fix for stuck gas limit label and value
+- [#2828](https://github.com/poanetwork/blockscout/pull/2828) - Fix for script that clears compilation/launching assets
 - [#2800](https://github.com/poanetwork/blockscout/pull/2800) - return not found for not verified contract for token read_contract
 - [#2806](https://github.com/poanetwork/blockscout/pull/2806) - Fix blocks fetching on the main page
 - [#2803](https://github.com/poanetwork/blockscout/pull/2803) - Fix block validator custom tooltip
