@@ -25,6 +25,7 @@ defmodule Explorer.Repo.Migrations.CreateBlocks do
     create(index(:blocks, [:timestamp]))
 
     IO.inspect("???????????????????????????")
+
     if Mix.env() != :test do
       create(index(:blocks, [:parent_hash], unique: true, where: ~s(consensus), name: :one_consensus_child_per_parent))
       create(index(:blocks, [:number], unique: true, where: ~s(consensus), name: :one_consensus_block_at_height))

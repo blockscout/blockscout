@@ -243,8 +243,8 @@ defmodule Explorer.Factory do
       cumulative_gas_used: cumulative_gas_used,
       error: error,
       gas_used: gas_used,
-#      gas_currency_hash: gas_currency_hash,
-#      gas_fee_recipient_hash: gas_fee_recipient_hash,
+      #      gas_currency_hash: gas_currency_hash,
+      #      gas_fee_recipient_hash: gas_fee_recipient_hash,
       index: next_transaction_index,
       internal_transactions_indexed_at: internal_transactions_indexed_at,
       status: status

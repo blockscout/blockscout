@@ -213,8 +213,8 @@ defmodule Explorer.Chain.Transaction do
     field(:status, Status)
     field(:v, :decimal)
     field(:value, Wei)
-#    field(:gas_currency_hash, Hash.Address)
-#    field(:gas_fee_recipient_hash, Hash.Address)
+    #    field(:gas_currency_hash, Hash.Address)
+    #    field(:gas_fee_recipient_hash, Hash.Address)
 
     belongs_to(:gas_currency, Address, foreign_key: :gas_currency_hash, references: :hash, type: Hash.Address)
     belongs_to(:gas_fee_recipient, Address, foreign_key: :gas_fee_recipient_hash, references: :hash, type: Hash.Address)
@@ -258,7 +258,6 @@ defmodule Explorer.Chain.Transaction do
       references: :hash,
       type: Hash.Address
     )
-
   end
 
   @doc """
@@ -651,13 +650,14 @@ defmodule Explorer.Chain.Transaction do
   end
 
   def get_token_name(%__MODULE__{gas_currency_hash: nil}), do: {:error, :not_found}
+
   def get_token_name(%__MODULE__{
-    gas_currency_hash: gas_currency_hash
-  }) do
+        gas_currency_hash: gas_currency_hash
+      }) do
     query =
       from(token in Token,
         where: token.contract_address_hash == ^gas_currency_hash,
-#        select: {token, %{"name" => token.name, "symbol" => token.symbol}},
+        #        select: {token, %{"name" => token.name, "symbol" => token.symbol}},
         limit: 1
       )
 
