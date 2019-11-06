@@ -598,8 +598,8 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
-  def transactions_with_token_transfers(address_hash) do
-    query = transactions_with_token_transfers_query(address_hash)
+  def transactions_with_token_transfers_direction(direction, address_hash) do
+    query = transactions_with_token_transfers_query_direction(direction, address_hash)
 
     from(
       t in subquery(query),
@@ -608,7 +608,27 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
-  defp transactions_with_token_transfers_query(address_hash) do
+  defp transactions_with_token_transfers_query_direction(:from, address_hash) do
+    from(
+      t in Transaction,
+      inner_join: tt in TokenTransfer,
+      on: t.hash == tt.transaction_hash,
+      where: tt.from_address_hash == ^address_hash,
+      distinct: :hash
+    )
+  end
+
+  defp transactions_with_token_transfers_query_direction(:to, address_hash) do
+    from(
+      t in Transaction,
+      inner_join: tt in TokenTransfer,
+      on: t.hash == tt.transaction_hash,
+      where: tt.to_address_hash == ^address_hash,
+      distinct: :hash
+    )
+  end
+
+  defp transactions_with_token_transfers_query_direction(_, address_hash) do
     from(
       t in Transaction,
       inner_join: tt in TokenTransfer,
