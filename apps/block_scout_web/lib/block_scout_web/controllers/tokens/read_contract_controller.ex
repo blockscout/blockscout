@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.Tokens.ReadContractController do
     options = [necessity_by_association: %{[contract_address: :smart_contract] => :optional}]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         :ok <- Chain.check_verified_smart_contract_exists(address_hash),
          {:ok, token} <- Chain.token_from_address_hash(address_hash, options) do
       render(
         conn,
@@ -15,6 +16,9 @@ defmodule BlockScoutWeb.Tokens.ReadContractController do
         counters_path: token_path(conn, :token_counters, %{"id" => to_string(address_hash)})
       )
     else
+      :not_found ->
+        not_found(conn)
+
       :error ->
         not_found(conn)
 

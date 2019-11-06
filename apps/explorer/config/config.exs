@@ -16,6 +16,11 @@ config :explorer,
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
   healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5),
+  realtime_events_sender:
+    if(System.get_env("DISABLE_WEBAPP") != "true",
+      do: Explorer.Chain.Events.SimpleSender,
+      else: Explorer.Chain.Events.DBSender
+    ),
   index_internal_transactions_for_token_transfers:
     if(System.get_env("INTERNAL_TRANSACTIONOS_FOR_TOKEN_TRANSFERS") == "true", do: true, else: false)
 
@@ -28,6 +33,13 @@ average_block_period =
 config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
   period: average_block_period
+
+config :explorer, Explorer.Chain.Events.Listener,
+  enabled:
+    if(System.get_env("DISABLE_WEBAPP") == nil && System.get_env("DISABLE_INDEXER") == nil,
+      do: false,
+      else: true
+    )
 
 config :explorer, Explorer.ChainSpec.GenesisData,
   enabled: true,

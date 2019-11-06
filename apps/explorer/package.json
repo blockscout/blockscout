@@ -13,6 +13,7 @@
   },
   "scripts": {},
   "dependencies": {
-    "solc": "^0.5"
+    "keccak": "^2.0.0",
+    "solc": "^0.5.12"
   }
 }
