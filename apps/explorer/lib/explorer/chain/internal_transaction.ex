@@ -42,8 +42,10 @@ defmodule Explorer.Chain.InternalTransaction do
           from_address_hash: Hash.Address.t(),
           gas: Gas.t() | nil,
           gas_used: Gas.t() | nil,
-          gas_currency_hash: Hash.t() | nil,
-          gas_fee_recipient_hash: Hash.t() | nil,
+          gas_currency: %Ecto.Association.NotLoaded{} | Address.t(),
+          gas_currency_hash: Hash.Address.t() | nil,
+          gas_fee_recipient: %Ecto.Association.NotLoaded{} | Address.t(),
+          gas_fee_recipient_hash: Hash.Address.t() | nil,
           index: non_neg_integer(),
           init: Data.t() | nil,
           input: Data.t() | nil,
@@ -73,8 +75,11 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:value, Wei)
     field(:block_number, :integer)
     field(:transaction_index, :integer)
-    field(:gas_currency_hash, Hash.Address)
-    field(:gas_fee_recipient_hash, Hash.Address)
+    
+    #field(:gas_currency_hash, Hash.Address)
+    #field(:gas_fee_recipient_hash, Hash.Address)
+    belongs_to(:gas_currency, Address, foreign_key: :gas_currency_hash, references: :hash, type: Hash.Address)
+    belongs_to(:gas_fee_recipient, Address, foreign_key: :gas_fee_recipient_hash, references: :hash, type: Hash.Address)
 
     timestamps()
 
