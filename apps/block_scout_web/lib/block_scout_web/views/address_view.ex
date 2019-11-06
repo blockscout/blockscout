@@ -109,6 +109,10 @@ defmodule BlockScoutWeb.AddressView do
     format_wei_value(balance, :ether)
   end
 
+  def balance_percentage_enabled? do
+    Application.get_env(:block_scout_web, :show_percentage)
+  end
+
   def balance_percentage(_, nil), do: ""
 
   def balance_percentage(%Address{fetched_coin_balance: balance}, total_supply) do
@@ -218,12 +222,6 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
-
-  def incoming_transaction_count(address_hash) do
-    address_hash
-    |> Chain.address_to_incoming_transaction_count()
-    |> BlockScoutWeb.Cldr.Number.to_string!(format: "#,###")
-  end
 
   def trimmed_hash(%Hash{} = hash) do
     string_hash = to_string(hash)
