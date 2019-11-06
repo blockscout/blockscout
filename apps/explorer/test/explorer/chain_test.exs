@@ -316,7 +316,6 @@ defmodule Explorer.ChainTest do
         :transaction
         |> insert(from_address: address)
         |> with_block()
-        |> Repo.preload(:token_transfers)
 
       assert [transaction] ==
                Chain.address_to_transactions_with_rewards(address_hash, direction: :from)
@@ -330,7 +329,6 @@ defmodule Explorer.ChainTest do
         :transaction
         |> insert(to_address: address)
         |> with_block()
-        |> Repo.preload(:token_transfers)
 
       assert [transaction] ==
                Chain.address_to_transactions_with_rewards(address_hash, direction: :to)
@@ -344,7 +342,6 @@ defmodule Explorer.ChainTest do
         :transaction
         |> insert(from_address: address)
         |> with_block()
-        |> Repo.preload(:token_transfers)
 
       # only contains "from" transaction
       assert [transaction] ==
@@ -359,7 +356,6 @@ defmodule Explorer.ChainTest do
         :transaction
         |> insert(to_address: address)
         |> with_block()
-        |> Repo.preload(:token_transfers)
 
       assert [transaction] ==
                Chain.address_to_transactions_with_rewards(address_hash, direction: :to)
@@ -374,13 +370,11 @@ defmodule Explorer.ChainTest do
         :transaction
         |> insert(to_address: address)
         |> with_block(block)
-        |> Repo.preload(:token_transfers)
 
       transaction2 =
         :transaction
         |> insert(from_address: address)
         |> with_block(block)
-        |> Repo.preload(:token_transfers)
 
       assert [transaction2, transaction1] ==
                Chain.address_to_transactions_with_rewards(address_hash)
@@ -422,111 +416,6 @@ defmodule Explorer.ChainTest do
       assert [transaction.hash] ==
                Chain.address_to_transactions_with_rewards(address_hash)
                |> Enum.map(& &1.hash)
-    end
-
-    test "returns just the token transfers related to the given address" do
-      %Address{hash: address_hash} = address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert(to_address: address)
-        |> with_block()
-
-      token_transfer =
-        insert(
-          :token_transfer,
-          to_address: address,
-          transaction: transaction
-        )
-
-      insert(
-        :token_transfer,
-        to_address: build(:address),
-        transaction: transaction
-      )
-
-      transaction =
-        address_hash
-        |> Chain.address_to_transactions_with_rewards()
-        |> List.first()
-
-      token_transfers_related =
-        Enum.map(
-          transaction.token_transfers,
-          &{&1.transaction_hash, &1.log_index}
-        )
-
-      assert token_transfers_related == [
-               {token_transfer.transaction_hash, token_transfer.log_index}
-             ]
-    end
-
-    test "returns just the token transfers related to the given contract address" do
-      contract_address =
-        insert(
-          :address,
-          contract_code: Factory.data("contract_code")
-        )
-
-      transaction =
-        :transaction
-        |> insert(to_address: contract_address)
-        |> with_block()
-
-      token_transfer =
-        insert(
-          :token_transfer,
-          to_address: contract_address,
-          transaction: transaction
-        )
-
-      insert(
-        :token_transfer,
-        to_address: build(:address),
-        transaction: transaction
-      )
-
-      transaction =
-        contract_address.hash
-        |> Chain.address_to_transactions_with_rewards()
-        |> List.first()
-
-      token_transfers_contract_address =
-        Enum.map(
-          transaction.token_transfers,
-          &{&1.transaction_hash, &1.log_index}
-        )
-
-      assert token_transfers_contract_address == [
-               {token_transfer.transaction_hash, token_transfer.log_index}
-             ]
-    end
-
-    test "returns all token transfers when the given address is the token contract address" do
-      %Address{hash: contract_address_hash} =
-        contract_address = insert(:address, contract_code: Factory.data("contract_code"))
-
-      transaction =
-        :transaction
-        |> insert(to_address: contract_address)
-        |> with_block()
-
-      insert(
-        :token_transfer,
-        to_address: build(:address),
-        token_contract_address: contract_address,
-        transaction: transaction
-      )
-
-      insert(
-        :token_transfer,
-        to_address: build(:address),
-        token_contract_address: contract_address,
-        transaction: transaction
-      )
-
-      transaction = Chain.address_to_transactions_with_rewards(contract_address_hash) |> List.first()
-      assert Enum.count(transaction.token_transfers) == 2
     end
 
     test "with transactions can be paginated" do
@@ -1233,6 +1122,84 @@ defmodule Explorer.ChainTest do
   end
 
   describe "address_hash_to_token_transfers/2" do
+    test "returns just the token transfers related to the given contract address" do
+      contract_address =
+        insert(
+          :address,
+          contract_code: Factory.data("contract_code")
+        )
+
+      transaction =
+        :transaction
+        |> insert(to_address: contract_address)
+        |> with_block()
+
+      token_transfer =
+        insert(
+          :token_transfer,
+          to_address: contract_address,
+          transaction: transaction
+        )
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction
+      )
+
+      transaction =
+        contract_address.hash
+        |> Chain.address_hash_to_token_transfers()
+        |> List.first()
+
+      token_transfers_contract_address =
+        Enum.map(
+          transaction.token_transfers,
+          &{&1.transaction_hash, &1.log_index}
+        )
+
+      assert token_transfers_contract_address == [
+               {token_transfer.transaction_hash, token_transfer.log_index}
+             ]
+    end
+
+    test "returns just the token transfers related to the given address" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      token_transfer =
+        insert(
+          :token_transfer,
+          to_address: address,
+          transaction: transaction
+        )
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction
+      )
+
+      transaction =
+        address_hash
+        |> Chain.address_hash_to_token_transfers()
+        |> List.first()
+
+      token_transfers_related =
+        Enum.map(
+          transaction.token_transfers,
+          &{&1.transaction_hash, &1.log_index}
+        )
+
+      assert token_transfers_related == [
+               {token_transfer.transaction_hash, token_transfer.log_index}
+             ]
+    end
+
     test "fetches token transfers by address hash" do
       address = insert(:address)
 
