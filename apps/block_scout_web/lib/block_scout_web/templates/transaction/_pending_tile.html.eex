@@ -8,10 +8,10 @@
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
       <%= render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @transaction.hash %>
       <span class="text-nowrap">
-        <%= render BlockScoutWeb.AddressView, "_link.html", address: @transaction.from_address, contract: BlockScoutWeb.AddressView.contract?(@transaction.from_address) %>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @transaction.from_address, contract: BlockScoutWeb.AddressView.contract?(@transaction.from_address), use_custom_tooltip: false %>
         &rarr;
         <%= if @transaction.to_address_hash do %>
-          <%= render BlockScoutWeb.AddressView, "_link.html", address: @transaction.to_address, contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address) %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address: @transaction.to_address, contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address), use_custom_tooltip: false %>
         <% else %>
           <%= gettext("Contract Address Pending") %>
         <% end %>

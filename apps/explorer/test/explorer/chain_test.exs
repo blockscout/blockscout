@@ -51,7 +51,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "count_addresses_from_cache/0" do
+  describe "address_estimated_count/0" do
     test "returns the number of all addresses" do
       insert(:address, fetched_coin_balance: 0)
       insert(:address, fetched_coin_balance: 1)
@@ -60,7 +60,7 @@ defmodule Explorer.ChainTest do
       start_supervised!(AddressesCounter)
       AddressesCounter.consolidate()
 
-      addresses_with_balance = Chain.count_addresses_from_cache()
+      addresses_with_balance = Chain.address_estimated_count()
 
       assert is_integer(addresses_with_balance)
       assert addresses_with_balance == 3

@@ -1,4 +1,5 @@
 /* Custom Tooltips for Block Details Page */
+$tooltip-background-color: $btn-line-color !default;
 
 .tooltipCustom {
     position: relative;
@@ -8,23 +9,20 @@
 .tooltipCustom .tooltiptextTopMiner {
     visibility: hidden;
     position: absolute;
-    width: 50%;
+    width: 100%;
     background-color: white;
-    color: black;
+    color: $tooltip-background-color;
     text-align: center;
     border-radius: 6px;
-    left: 25%;
+    left: 0%;
     bottom: 100%;
-    padding: 15px 0px;
+    padding: 15px;
     display: inline-block;
     z-index: 1;
     font-family: Nunito;
     margin-bottom: 15px;
     opacity: 0;
     transition: opacity 0.5s;
-    @include media-breakpoint-down(lg) {
-        left: 60%;
-    }
 }
 
 .tooltipCustom .tooltiptextTopMiner::after {
@@ -39,45 +37,6 @@
 }
 
 .tooltipCustom:hover .tooltiptextTopMiner {
-    visibility: visible;
-    opacity: 1;
-}
-
-.tooltipCustom .tooltiptextTopR {
-    visibility: hidden;
-    position: absolute;
-    width: 50%;
-    background-color: $primary;
-    color: white;
-    text-align: center;
-    border-radius: 6px;
-    left: 52%;
-    bottom: 120%;
-    padding: 15px 10px;
-    font-family: Nunito;
-    display: inline-block;
-    z-index: 1;
-    margin-bottom: 15px;
-    opacity: 0;
-    transition: opacity 0.5s;
-    @include media-breakpoint-down(lg) {
-        bottom: 100%;
-        padding: 9px 10px;
-    }
-}
-
-.tooltipCustom .tooltiptextTopR::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: $primary transparent transparent transparent;
-}
-
-.tooltipCustom:hover .tooltiptextTopR {
     visibility: visible;
     opacity: 1;
 }

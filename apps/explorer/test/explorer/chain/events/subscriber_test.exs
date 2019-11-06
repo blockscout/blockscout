@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Events.SubscriberTest do
 
       Publisher.broadcast([{event_type, event_data}], broadcast_type)
 
-      assert_received {:chain_event, :blocks, :realtime, []}
+      assert_receive {:chain_event, :blocks, :realtime, []}
     end
   end
 
@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Events.SubscriberTest do
 
       Publisher.broadcast(event_type)
 
-      assert_received {:chain_event, :exchange_rate}
+      assert_receive {:chain_event, :exchange_rate}
     end
   end
 end
