@@ -230,6 +230,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   def involves_token_transfers?(%Transaction{token_transfers: []}), do: false
   def involves_token_transfers?(%Transaction{token_transfers: transfers}) when is_list(transfers), do: true
+  def involves_token_transfers?(_), do: false
 
   def qr_code(%Transaction{hash: hash}) do
     hash

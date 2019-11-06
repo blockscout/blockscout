@@ -312,7 +312,6 @@ defmodule Explorer.Chain do
       paging_options
       |> fetch_transactions()
       |> join_associations(necessity_by_association)
-      |> Transaction.preload_token_transfers(address_hash)
 
     base_query
     |> Transaction.matching_address_queries_list(direction, address_hash)
