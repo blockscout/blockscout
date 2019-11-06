@@ -7,6 +7,7 @@
 - [#2822](https://github.com/poanetwork/blockscout/pull/2822) - Estimated address count on the main page, if cache is empty
 
 ### Fixes
+- [#2841](https://github.com/poanetwork/blockscout/pull/2841) - LUKSO dashboard height fix
 - [#2837](https://github.com/poanetwork/blockscout/pull/2837) - fix txlist ordering issue
 - [#2830](https://github.com/poanetwork/blockscout/pull/2830) - Fix wrong color of contract icon on xDai chain
 - [#2829](https://github.com/poanetwork/blockscout/pull/2829) - Fix for stuck gas limit label and value

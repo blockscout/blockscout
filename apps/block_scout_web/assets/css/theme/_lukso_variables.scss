@@ -56,6 +56,9 @@ $dashboard-banner-network-stats-static-image: "/images/lukso_dashboard_image.png
 $dashboard-banner-network-plain-container-height: 150px;
 
 .layout-container {
+  .dashboard-banner-container {
+    height: auto !important;
+  }
   .dashboard-banner-container::after {
     display: none;
   }
