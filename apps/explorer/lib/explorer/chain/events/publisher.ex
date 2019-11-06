@@ -16,14 +16,15 @@ defmodule Explorer.Chain.Events.Publisher do
   @spec broadcast(atom()) :: :ok
   def broadcast(event_type) do
     send_data(event_type)
+    :ok
   end
 
   defp send_data(event_type) do
-    Registry.dispatch(Registry.ChainEvents, event_type, fn entries ->
-      for {pid, _registered_val} <- entries do
-        send(pid, {:chain_event, event_type})
-      end
-    end)
+    sender().send_data(event_type)
+  end
+
+  defp sender do
+    Application.get_env(:explorer, :realtime_events_sender)
   end
 
   # The :catchup type of event is not being consumed right now.
@@ -32,10 +33,6 @@ defmodule Explorer.Chain.Events.Publisher do
   defp send_data(_event_type, :catchup, _event_data), do: :ok
 
   defp send_data(event_type, broadcast_type, event_data) do
-    Registry.dispatch(Registry.ChainEvents, {event_type, broadcast_type}, fn entries ->
-      for {pid, _registered_val} <- entries do
-        send(pid, {:chain_event, event_type, broadcast_type, event_data})
-      end
-    end)
+    sender().send_data(event_type, broadcast_type, event_data)
   end
 end
