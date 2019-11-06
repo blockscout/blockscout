@@ -10,7 +10,7 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.{Address, Gas, Hash, Transaction}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
-  @optional_attrs ~w(internal_transactions_indexed_at size refetch_needed total_difficulty difficulty)a
+  @optional_attrs ~w(internal_transactions_indexed_at size refetch_needed total_difficulty difficulty receipts_root transactions_root receipts_root)a
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
@@ -45,6 +45,9 @@ defmodule Explorer.Chain.Block do
    * `size` - The size of the block in bytes.
    * `timestamp` - When the block was collated
    * `total_difficulty` - the total `difficulty` of the chain until this block.
+   * `transactions_root` - the root of the transaction trie of the block.
+   * `state_root` - the root of the final state trie of the block.
+   * `receipts_root` - the root of the receipts trie of the block
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
    * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer`.
   """
@@ -62,6 +65,9 @@ defmodule Explorer.Chain.Block do
           size: non_neg_integer(),
           timestamp: DateTime.t(),
           total_difficulty: difficulty(),
+          transactions_root: Hash.t(),
+          state_root: Hash.t(),
+          receipts_root: Hash.t(),
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
           internal_transactions_indexed_at: DateTime.t(),
           refetch_needed: boolean()
@@ -80,6 +86,9 @@ defmodule Explorer.Chain.Block do
     field(:total_difficulty, :decimal)
     field(:internal_transactions_indexed_at, :utc_datetime_usec)
     field(:refetch_needed, :boolean)
+    field(:transactions_root, Hash.Full)
+    field(:receipts_root, Hash.Full)
+    field(:state_root, Hash.Full)
 
     timestamps()
 
