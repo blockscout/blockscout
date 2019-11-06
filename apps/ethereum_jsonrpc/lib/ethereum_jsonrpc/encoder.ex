@@ -72,7 +72,7 @@ defmodule EthereumJSONRPC.Encoder do
 
 #     IO.inspect(result)
 #     IO.inspect(types_list)
-     #IO.inspect(tuple_list)
+    IO.inspect(tuple_list)
     #IO.inspect(result |> String.slice(2..-1) |> Base.decode16!(case: :lower))
 
     decoded_data =
@@ -81,12 +81,7 @@ defmodule EthereumJSONRPC.Encoder do
       |> Base.decode16!(case: :lower)
       |> TypeDecoder.decode_raw(tuple_list)
 
-    #  case [types_list, decoded_result] do
-    #    [[:string], ""] -> [""]
-    #    _ -> decoded_result |> TypeDecoder.decode_raw(tuple_list)
-    #  end
-
-#    IO.inspect(decoded_data)
+    IO.inspect(decoded_data)
     fixed_data = case decoded_data do
       [tup] -> Tuple.to_list(tup)
       _ -> decoded_data
