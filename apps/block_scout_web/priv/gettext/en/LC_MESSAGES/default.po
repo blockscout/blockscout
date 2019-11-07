@@ -682,6 +682,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:209
 #: lib/block_scout_web/templates/transaction/overview.html.eex:244
 #: lib/block_scout_web/views/transaction_view.ex:302
+#: lib/block_scout_web/views/transaction_view.ex:302
 #: lib/block_scout_web/views/wei_helpers.ex:78
 msgid "cGLD"
 msgstr ""
@@ -1035,7 +1036,6 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:155
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:177
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:199
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:143
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:221
 msgid "Library Name"
 msgstr ""
