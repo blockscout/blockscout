@@ -448,7 +448,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       old_number = 94
 
       assert (previous_number + 1)..number == Realtime.Fetcher.determine_fetching_action(number, previous_number, nil)
-      assert (old_number + 1)..number == Realtime.Fetcher.determine_fetching_action(number, old_number, nil)
+      assert (number - 10)..number == Realtime.Fetcher.determine_fetching_action(number, old_number, nil)
     end
 
     test "when number immediately follows the previous_number it is fetched" do
@@ -472,7 +472,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
       number = max_number_seen + max_skipping_distance + 1
 
-      assert (previous_number + 1)..number ==
+      assert (number - 10)..number ==
                Realtime.Fetcher.determine_fetching_action(number, previous_number, max_number_seen)
     end
   end
