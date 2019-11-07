@@ -308,7 +308,7 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   def to_elixir(transaction) when is_binary(transaction) do
-    Logger.warn(["Fetched transaction is not full: ", transaction])
+    #    Logger.warn(["Fetched transaction is not full: ", transaction])
 
     nil
   end
