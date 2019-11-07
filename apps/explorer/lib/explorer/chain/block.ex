@@ -10,7 +10,7 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.{Address, Gas, Hash, Transaction}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
-  @optional_attrs ~w(internal_transactions_indexed_at size refetch_needed total_difficulty difficulty receipts_root transactions_root receipts_root)a
+  @optional_attrs ~w(internal_transactions_indexed_at size refetch_needed total_difficulty difficulty receipts_root transactions_root state_root)a
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
@@ -47,7 +47,7 @@ defmodule Explorer.Chain.Block do
    * `total_difficulty` - the total `difficulty` of the chain until this block.
    * `transactions_root` - the root of the transaction trie of the block.
    * `state_root` - the root of the final state trie of the block.
-   * `receipts_root` - the root of the receipts trie of the block
+   * `receipts_root` - the root of the receipts trie of the block.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
    * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer`.
   """

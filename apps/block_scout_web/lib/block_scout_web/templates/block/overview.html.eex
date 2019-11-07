@@ -37,6 +37,30 @@
             <dd class="col-sm-9"><a class="transaction__link"  data-toggle="tooltip" data-placement="top"  title="" data-original-title="The SHA256 hash of the block."><%= to_string(@block.hash) %></a></dd>
           </dl>
 
+          <%= if @block.state_root do %>
+            <!-- State Root -->
+            <dl class="row">
+              <dt class="col-sm-3 text-muted"><%= gettext "State root" %></dt>
+              <dd class="col-sm-9"><a class="transaction__link"  data-toggle="tooltip" data-placement="top"  title="" data-original-title="The root of the final state trie of the block"><%= to_string(@block.state_root) %></a></dd>
+            </dl>
+          <% end %>
+
+          <%= if @block.transactions_root do %>
+            <!-- Transactions Root -->
+            <dl class="row">
+              <dt class="col-sm-3 text-muted"><%= gettext "Transactions root" %></dt>
+              <dd class="col-sm-9"><a class="transaction__link"  data-toggle="tooltip" data-placement="top"  title="" data-original-title="The root of the transaction trie of the block"><%= to_string(@block.transactions_root) %></a></dd>
+            </dl>
+          <% end %>
+
+          <%= if @block.receipts_root do %>
+            <!-- Receipts Root -->
+            <dl class="row">
+              <dt class="col-sm-3 text-muted"><%= gettext "Receipts root" %></dt>
+              <dd class="col-sm-9"><a class="transaction__link"  data-toggle="tooltip" data-placement="top"  title="" data-original-title="The root of the receipts trie of the block"><%= to_string(@block.receipts_root) %></a></dd>
+            </dl>
+          <% end %>
+
           <%= unless @block.number == 0 do %>
               <!-- Parent Hash -->
               <dl class="row">
