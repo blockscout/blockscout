@@ -121,6 +121,14 @@ if ($contractVerificationPage.length) {
       $(this).hide()
     })
 
+    $('.autodetectfalse').on('click', function () {
+      if ($(this).prop('checked')) { $('.constructor-arguments').show() }
+    })
+
+    $('.autodetecttrue').on('click', function () {
+      if ($(this).prop('checked')) { $('.constructor-arguments').hide() }
+    })
+
     $('.js-smart-contract-form-reset').on('click', function () {
       $('.js-contract-library-form-group').removeClass('active')
       $('.js-contract-library-form-group').first().addClass('active')
