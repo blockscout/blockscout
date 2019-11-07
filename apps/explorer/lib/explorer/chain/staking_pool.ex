@@ -28,6 +28,8 @@ defmodule Explorer.Chain.StakingPool do
           staked_ratio: Decimal.t(),
           self_staked_amount: Decimal.t(),
           staked_amount: Decimal.t(),
+          snapshotted_self_staked_amount: Decimal.t(),
+          snapshotted_staked_amount: Decimal.t(),
           ban_reason: String.t(),
           was_banned_count: integer,
           was_validator_count: integer,
@@ -35,7 +37,7 @@ defmodule Explorer.Chain.StakingPool do
         }
 
   @attrs ~w(
-    is_active delegators_count staked_amount self_staked_amount is_validator
+    is_active delegators_count staked_amount self_staked_amount snapshotted_staked_amount snapshotted_self_staked_amount is_validator
     was_validator_count is_banned are_delegators_banned ban_reason was_banned_count banned_until banned_delegators_until likelihood
     staked_ratio staking_address_hash mining_address_hash block_reward_ratio
     is_unremovable
@@ -60,6 +62,8 @@ defmodule Explorer.Chain.StakingPool do
     field(:staked_ratio, :decimal)
     field(:self_staked_amount, :decimal)
     field(:staked_amount, :decimal)
+    field(:snapshotted_self_staked_amount, :decimal)
+    field(:snapshotted_staked_amount, :decimal)
     field(:ban_reason, :string)
     field(:was_banned_count, :integer)
     field(:was_validator_count, :integer)
