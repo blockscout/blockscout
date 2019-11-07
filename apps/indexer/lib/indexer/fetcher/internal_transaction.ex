@@ -14,6 +14,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Transform.Addresses
 
@@ -218,6 +219,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     case imports do
       {:ok, imported} ->
+        Accounts.drop(imported[:addreses])
+
         async_import_coin_balances(imported, %{
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number
         })

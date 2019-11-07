@@ -1189,7 +1189,7 @@ defmodule BlockScoutWeb.Etherscan do
         key: "sort",
         type: "string",
         description:
-          "A string representing the order by block number direction. Defaults to ascending order. Available values: asc, desc"
+          "A string representing the order by block number direction. Defaults to descending order. Available values: asc, desc"
       },
       %{
         key: "startblock",

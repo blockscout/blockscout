@@ -2,7 +2,7 @@
 
 ## Motivation
 
-*Why should we merge these changes.  If using GitHub keywords to close [issues](https://github.com/poanetwork/blockscout/issues), this is optional as the motivation can be read on the issue page.*
+*Why we should merge these changes.  If using GitHub keywords to close [issues](https://github.com/poanetwork/blockscout/issues), this is optional as the motivation can be read on the issue page.*
 
 ## Changelog
 
@@ -19,7 +19,7 @@
 
 *If you have any Incompatible Changes in the above Changelog, outline how users of prior versions can upgrade once this PR lands or when reviewers are testing locally.  A common upgrading step is "Database reset and re-index required".*
 
-## Checklist for your PR
+## Checklist for your Pull Request (PR)
 
 <!--
   Ideally a PR has all of the checkmarks set.
@@ -28,12 +28,12 @@
   checkmark indicating that you are sure it is dealt with (be that by irrelevance).
 
   If you don't set a checkmark (e. g. don't add a test for new functionality),
-  you must be able to justify that.
+  please justify why.
 -->
 
   - [ ] I added an entry to `CHANGELOG.md` with this PR
   - [ ] If I added new functionality, I added tests covering it.
   - [ ] If I fixed a bug, I added a regression test to prevent the bug from silently reappearing again.
-  - [ ] I checked whether I should update the docs and did so if necessary
-  - [ ] If I added/changed/removed ENV var, I should update the list of env vars in https://github.com/poanetwork/blockscout/blob/master/docs/env-variables.md to reflect changes in the table here https://poanetwork.github.io/blockscout/#/env-variables?id=blockscout-env-variables. I've set `master` in the `Version` column.
-  - [ ] If I add new indices into DB, I checked, that they don't redundant with PGHero or other tools
+  - [ ] I checked whether I should update the docs and did so by submitting a PR to https://github.com/blockscout/docs
+  - [ ] If I added/changed/removed ENV var, I submitted a PR to https://github.com/blockscout/docs to update the list of env vars at https://github.com/blockscout/docs/blob/master/for-developers/information-and-settings/env-variables.md and I updated the version to `master` in the Version column. Changes will be reflected in this table: https://docs.blockscout.com/for-developers/information-and-settings/env-variables. 
+  - [ ] If I add new indices into DB, I checked, that they are not redundant with PGHero or other tools

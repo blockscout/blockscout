@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.AddressController, only: [transaction_and_validation_count: 1]
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.TransactionView
@@ -62,6 +61,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
               View.render_to_string(
                 TransactionView,
                 "_emission_reward_tile.html",
+                conn: conn,
                 current_address: address,
                 emission_funds: emission_reward,
                 validator: validator_reward
@@ -71,6 +71,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
               View.render_to_string(
                 TransactionView,
                 "_tile.html",
+                conn: conn,
                 current_address: address,
                 transaction: transaction
               )
@@ -96,8 +97,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
-      {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
-
       render(
         conn,
         "index.html",
@@ -105,8 +104,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        transaction_count: transaction_count,
-        validation_count: validation_count,
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         current_path: current_path(conn)
       )
     else
@@ -126,8 +124,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
               coin_balance_status: nil,
               exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
               filter: params["filter"],
-              transaction_count: 0,
-              validation_count: 0,
+              counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
               current_path: current_path(conn)
             )
 

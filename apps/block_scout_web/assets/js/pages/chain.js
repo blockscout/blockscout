@@ -68,10 +68,10 @@ function baseReducer (state = initialState, action) {
       return Object.assign({}, state, { blocksLoading: false })
     }
     case 'BLOCKS_FETCHED': {
-      return Object.assign({}, state, { blocks: [...action.msg.blocks] })
+      return Object.assign({}, state, { blocks: [...action.msg.blocks], blocksLoading: false })
     }
     case 'BLOCKS_REQUEST_ERROR': {
-      return Object.assign({}, state, { blocksError: true })
+      return Object.assign({}, state, { blocksError: true, blocksLoading: false })
     }
     case 'RECEIVED_NEW_EXCHANGE_RATE': {
       return Object.assign({}, state, {

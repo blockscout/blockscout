@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     # Because ETS tables is shared for `Explorer.Counters.*`
     async: false
 
-  alias Explorer.Counters.AddressesWithBalanceCounter
+  alias Explorer.Counters.AddressesCounter
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
@@ -58,8 +58,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       [first_address | _] = addresses
       [last_address | _] = Enum.reverse(addresses)
 
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
+      start_supervised!(AddressesCounter)
+      AddressesCounter.consolidate()
 
       session
       |> AddressPage.visit_page()

@@ -8,12 +8,15 @@ defmodule Explorer.Application do
   alias Explorer.Admin
 
   alias Explorer.Chain.Cache.{
+    Accounts,
     BlockCount,
     BlockNumber,
     Blocks,
     NetVersion,
+    PendingTransactions,
     TransactionCount,
-    Transactions
+    Transactions,
+    Uncles
   }
 
   alias Explorer.Chain.Supply.RSK
@@ -49,7 +52,10 @@ defmodule Explorer.Application do
       BlockNumber,
       con_cache_child_spec(MarketHistoryCache.cache_name()),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
-      Transactions
+      Transactions,
+      Accounts,
+      PendingTransactions,
+      Uncles
     ]
 
     children = base_children ++ configurable_children()
@@ -65,7 +71,9 @@ defmodule Explorer.Application do
       configure(Explorer.ChainSpec.GenesisData),
       configure(Explorer.KnownTokens),
       configure(Explorer.Market.History.Cataloger),
+      configure(Explorer.Chain.Events.Listener),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
+      configure(Explorer.Counters.AddressesCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Validator.MetadataProcessor),
       configure(Explorer.Staking.EpochCounter)

@@ -112,7 +112,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
     |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
     |> where([cb], cb.address_hash == ^address_hash)
     |> last(:block_number)
-    |> select([cb, b], %{timestamp: b.timestamp})
+    |> select([cb, b], %{timestamp: b.timestamp, value: cb.value})
   end
 
   def changeset(%__MODULE__{} = balance, params) do

@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.ContractCode do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Transform.Addresses
 
@@ -126,7 +127,8 @@ defmodule Indexer.Fetcher.ContractCode do
                addresses: %{params: merged_addresses_params},
                timeout: :infinity
              }) do
-          {:ok, _} ->
+          {:ok, imported} ->
+            Accounts.drop(imported[:addresses])
             :ok
 
           {:error, step, reason, _changes_so_far} ->

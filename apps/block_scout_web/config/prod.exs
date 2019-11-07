@@ -20,7 +20,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   check_origin: false,
   http: [port: System.get_env("PORT")],
   url: [
-    scheme: "https",
+    scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "https",
     port: System.get_env("PORT"),
     host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
     path: System.get_env("NETWORK_PATH") || "/"

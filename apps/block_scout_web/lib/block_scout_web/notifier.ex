@@ -7,13 +7,14 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.{AddressContractVerificationView, Endpoint}
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
+  alias Explorer.Chain.Supply.RSK
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.SmartContract.{Solidity.CodeCompiler, Solidity.CompilerVersion}
   alias Phoenix.View
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
-    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.count_addresses_with_balance_from_cache()})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
 
     addresses
     |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)
@@ -76,8 +77,17 @@ defmodule BlockScoutWeb.Notifier do
         data -> data
       end
 
+    exchange_rate_with_available_supply =
+      case Application.get_env(:explorer, :supply) do
+        RSK ->
+          %{exchange_rate | available_supply: nil, market_cap_usd: RSK.market_cap(exchange_rate)}
+
+        _ ->
+          exchange_rate
+      end
+
     Endpoint.broadcast("exchange_rate:new_rate", "new_rate", %{
-      exchange_rate: exchange_rate,
+      exchange_rate: exchange_rate_with_available_supply,
       market_history_data: Enum.map(market_history_data, fn day -> Map.take(day, [:closing_price, :date]) end)
     })
   end
