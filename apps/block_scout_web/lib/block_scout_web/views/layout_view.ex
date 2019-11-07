@@ -9,17 +9,17 @@ defmodule BlockScoutWeb.LayoutView do
     %{
       title: "Celo Alfajores",
       url: "https://alfajores-blockscout.celo-testnet.org/",
-      test_net?: true,
+      test_net?: true
     },
     %{
       title: "Celo Integration",
       url: "https://integration-blockscout.celo-testnet.org/",
-      test_net?: true,
+      test_net?: true
     },
     %{
       title: "Celo Betanet",
       url: "https://betanet-blockscout.celo-testnet.org/",
-      test_net?: true,
+      test_net?: true
     }
   ]
 
