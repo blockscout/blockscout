@@ -177,14 +177,19 @@ defmodule Indexer.Block.Fetcher do
                block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
-               celo_accounts: %{params: celo_accounts},
-               celo_validators: %{params: celo_validators},
-               celo_validator_groups: %{params: celo_validator_groups},
+ #              celo_accounts: %{params: celo_accounts},
+ #              celo_validators: %{params: celo_validators},
+ #              celo_validator_groups: %{params: celo_validator_groups},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts}
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
+      
+      async_import_celo_accounts(%{celo_accounts: %{params: celo_accounts}})
+      async_import_celo_validators(%{celo_validators: %{params: celo_validators}})
+      async_import_celo_validator_groups(%{celo_validator_groups: %{params: celo_validator_groups}})
+
       update_block_cache(inserted[:blocks])
       update_transactions_cache(inserted[:transactions], inserted[:fork_transactions])
       update_addresses_cache(inserted[:addresses])
