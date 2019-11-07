@@ -250,7 +250,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
         [number]
 
       true ->
-        (previous_number + 1)..number
+        if number - previous_number - 1 > 10 do
+          (number - 10)..number
+        else
+          (previous_number + 1)..number
+        end
     end
   end
 
