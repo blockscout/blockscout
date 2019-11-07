@@ -72,10 +72,11 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
       address =
-        with {:ok, proxy_contract} <- Chain.get_proxied_address(address_hash) do
-          Logger.debug("Implementation address FOUND in proxy table")
-          Chain.address_hash_to_address_with_source_code(proxy_contract)
-        else
+        case Chain.get_proxied_address(address_hash) do
+          {:ok, proxy_contract} ->
+            Logger.debug("Implementation address FOUND in proxy table")
+            Chain.address_hash_to_address_with_source_code(proxy_contract)
+
           {:error, :not_found} ->
             Logger.debug("Implementation address NOT found in proxy table")
             Chain.address_hash_to_address_with_source_code(address_hash)
