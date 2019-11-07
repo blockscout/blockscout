@@ -1876,3 +1876,28 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:64
 msgid "Transfers"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:110
+msgid "Fee Recipient"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:98
+msgid "Gas Currency"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:35
+msgid "Is a Proxy?"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:93
+msgid "Proxy Address"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:40
+msgid "Proxy Name:"
+msgstr ""
