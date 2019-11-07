@@ -13,20 +13,13 @@ defmodule Explorer.Celo.AbiHandler do
 
   @impl GenServer
   def init(_) do
-    Logger.debug(fn -> "Importing ABI data" end)
     contract_abi = abi("lockedgold.json") ++ abi("validators.json") ++ abi("election.json") ++ abi("accounts.json")
     {:ok, contract_abi}
   end
 
   def get_abi do
+#    start_link(:ok)
     GenServer.call(__MODULE__, :fetch)
-  end
-
-  @impl GenServer
-  def handle_info(:import, _) do
-    Logger.debug(fn -> "Importing ABI data" end)
-    contract_abi = abi("lockedgold.json") ++ abi("validators.json") ++ abi("election.json") ++ abi("accounts.json")
-    {:noreply, contract_abi}
   end
 
   @impl GenServer
