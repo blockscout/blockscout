@@ -18,7 +18,6 @@ defmodule Explorer.Celo.AbiHandler do
   end
 
   def get_abi do
-#    start_link(:ok)
     GenServer.call(__MODULE__, :fetch)
   end
 
