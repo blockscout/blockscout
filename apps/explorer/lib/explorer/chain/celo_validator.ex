@@ -1,7 +1,6 @@
-
 defmodule Explorer.Chain.CeloValidator do
     @moduledoc """
-
+Data type and schema for storing Celo validators. Most of the data about validators is stored in the Celo accounts table.
     """
 
     require Logger
@@ -52,7 +51,6 @@ defmodule Explorer.Chain.CeloValidator do
     end
 
     def changeset(%__MODULE__{} = celo_validator, attrs) do
-        IO.inspect(attrs)
         celo_validator
       |> cast(attrs, @attrs)
       |> validate_required(@required_attrs)

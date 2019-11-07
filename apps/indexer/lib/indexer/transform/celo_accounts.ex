@@ -11,42 +11,24 @@ defmodule Indexer.Transform.CeloAccounts do
     Returns a list of account addresses given a list of logs.
     """
     def parse(logs) do
-      accounts = logs
-      |> Enum.filter(fn log ->
-        Enum.member?(CeloAccount.account_events(), log.first_topic)
-      end)
+      %{
+        accounts: get_addresses(logs, CeloAccount.account_events()),
+        validators: get_addresses(logs, CeloAccount.validator_events()),
+        validator_groups: get_addresses(logs, CeloAccount.validator_group_events()),
+        withdrawals: get_addresses(logs, CeloAccount.withdrawal_events()),
+      }
+    end
+
+    defp get_addresses(logs, topics) do
+      logs
+      |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
       |> Enum.reduce([], &do_parse/2)
       |> Enum.map(fn address -> %{address: address} end)
-
-      validators = logs
-      |> Enum.filter(fn log ->
-        Enum.member?(CeloAccount.validator_events(), log.first_topic)
-      end)
-      |> Enum.reduce([], &do_parse/2)
-      |> Enum.map(fn address -> %{address: address} end)
-
-      validator_groups = logs
-      |> Enum.filter(fn log ->
-        Enum.member?(CeloAccount.validator_group_events(), log.first_topic)
-      end)
-      |> Enum.reduce([], &do_parse/2)
-      |> Enum.map(fn address -> %{address: address} end)
-
-      withdrawals = logs
-      |> Enum.filter(fn log ->
-        Enum.member?(CeloAccount.withdrawal_events(), log.first_topic)
-      end)
-      |> Enum.reduce([], &do_parse/2)
-      |> Enum.map(fn address -> %{address: address} end)
-
-      # IO.inspect(accounts)
-
-      %{accounts: accounts, validators: validators, validator_groups: validator_groups, withdrawals: withdrawals}
+      
     end
 
     defp do_parse(log, accounts) do
       account_address = parse_params(log)
-      IO.inspect(log)
   
       if Enum.member?(accounts, account_address) do accounts
       else [account_address | accounts] end

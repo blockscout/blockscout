@@ -1,7 +1,6 @@
-
 defmodule Explorer.Chain.CeloAccount do
     @moduledoc """
-
+Datatype for storing Celo accounts
     """
   
     require Logger
@@ -36,11 +35,9 @@ defmodule Explorer.Chain.CeloAccount do
         address
     )a
 
+    # Event topics that are used to find out when accounts, validators or validator groups have changed
     # Validator events
-    @validator_registered_event "0x4e35530e670c639b101af7074b9abce98a1bb1ebff1f7e21c83fc0a553775074"
-
-#    @validator_group_member_added "0xbdf7e616a6943f81e07a7984c9d4c00197dc2f481486ce4ffa6af52a113974ad"
-#    @validator_group_member_removed "0xc7666a52a66ff601ff7c0d4d6efddc9ac20a34792f6aa003d1804c9d4d5baa57"
+    @validator_registered "0x4e35530e670c639b101af7074b9abce98a1bb1ebff1f7e21c83fc0a553775074"
 
     @validator_group_registered "0xbf4b45570f1907a94775f8449817051a492a676918e38108bb762e991e6b58dc"
     @validator_group_deregistered "0xae7e034b0748a10a219b46074b20977a9170bf4027b156c797093773619a8669"
@@ -59,11 +56,6 @@ defmodule Explorer.Chain.CeloAccount do
     @gold_withdrawn "0x292d39ba701489b7f640c83806d3eeabe0a32c9f0a61b49e95612ebad42211cd"
     @gold_unlocked "0xb1a3aef2a332070da206ad1868a5e327f5aa5144e00e9a7b40717c153158a588"
     @gold_locked "0x0f0f2fc5b4c987a49e1663ce2c2d65de12f3b701ff02b4d09461421e63e609e7"
-
-#    @withdrawal "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
-#    @commitment_extended "0x0bc777c8576820f4a28d80a04ac50b4e07fd6923caa67f52059d5df938917b70"
-#    @commitment_notified "0x8ee34f4f80d81bf361408efb771ad4cd664aefa5856aebfa85cfb772ad613193"
-#    @new_commitment "0x178836574cee05ae88734424adca5b6039fa073e985267dc8a26ed466410a831"
 
     # Election events
     @validator_group_vote_revoked "0xa06c722f7d446349fdd811f3d539bc91c7b11df8a2f4e012685712a30068f668"
@@ -127,7 +119,6 @@ defmodule Explorer.Chain.CeloAccount do
     end
 
     def changeset(%__MODULE__{} = celo_account, attrs) do
-        IO.inspect(attrs)
         celo_account
       |> cast(attrs, @attrs)
       |> validate_required(@required_attrs)

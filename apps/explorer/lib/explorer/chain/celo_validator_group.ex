@@ -1,7 +1,6 @@
-
 defmodule Explorer.Chain.CeloValidatorGroup do
     @moduledoc """
-
+Datatype for storing Celo validator groups
     """
 
     require Logger
@@ -43,7 +42,6 @@ defmodule Explorer.Chain.CeloValidatorGroup do
     end
 
     def changeset(%__MODULE__{} = celo_validator_group, attrs) do
-        IO.inspect(celo_validator_group)
         celo_validator_group
       |> cast(attrs, @attrs)
       |> validate_required(@required_attrs)

@@ -80,7 +80,6 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
       # Enforce ShareLocks order (see docs: sharelocks.md)
       ordered_changes_list = Enum.sort_by(changes_list, & &1.address)
       uniq_changes_list = Enum.dedup_by(ordered_changes_list, & &1.address)
-      IO.inspect(uniq_changes_list)
 
       {:ok, _} =
         Import.insert_changes_list(

@@ -57,7 +57,6 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
     query =
       from(
         account in CeloAccount,
-        # Enforce ShareLocks order (see docs: sharelocks.md)
         order_by: account.address,
         lock: "FOR UPDATE"
       )
@@ -77,7 +76,6 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.address)
     uniq_changes_list = Enum.dedup_by(ordered_changes_list, & &1.address)
 

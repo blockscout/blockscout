@@ -8,10 +8,10 @@ defmodule Explorer.Celo.AccountReader do
 
   def account_data(%{address: account_address}) do
     with data = fetch_account_data(account_address),
-        {:ok, [name]} <- data["getName"],
-        {:ok, [url]} <- data["getMetadataURL"],
-        {:ok, [is_validator]} <- data["isValidator"],
-        {:ok, [is_validator_group]} <- data["isValidatorGroup"],
+         {:ok, [name]} <- data["getName"],
+         {:ok, [url]} <- data["getMetadataURL"],
+         {:ok, [is_validator]} <- data["isValidator"],
+         {:ok, [is_validator_group]} <- data["isValidatorGroup"],
          account_type = determine_account_type(is_validator, is_validator_group),
          {:ok, [gold]} <- data["getAccountTotalLockedGold"],
          {:ok, [nonvoting_gold]} <- data["getAccountNonvotingLockedGold"] do
@@ -85,7 +85,7 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_account_data(account_address) do
-    data = call_methods([
+    call_methods([
       {:lockedgold, "getAccountTotalLockedGold", [account_address]},
       {:lockedgold, "getAccountNonvotingLockedGold", [account_address]},
       {:validators, "isValidator", [account_address]},
@@ -93,31 +93,23 @@ defmodule Explorer.Celo.AccountReader do
       {:accounts, "getName", [account_address]},
       {:accounts, "getMetadataURL", [account_address]},
     ])
-    IO.inspect(data)
-    data
   end
 
   defp fetch_validator_data(address) do
     data = call_methods([
       {:validators, "getValidator", [address]},
     ])
-    IO.inspect(address)
-    IO.inspect(data)
     data
   end
 
   defp fetch_withdrawal_data(address) do
-    data = call_methods([{:locked_gold, "getPendingWithdrawals", [address]}])
-    IO.inspect(data)
-    data
+    call_methods([{:locked_gold, "getPendingWithdrawals", [address]}])
   end
 
   defp fetch_validator_group_data(address) do
-    data = call_methods([
+    call_methods([
       {:validators, "getValidatorGroup", [address]},
     ])
-    IO.inspect(data)
-    data
   end
 
   defp call_methods(methods) do
@@ -145,8 +137,7 @@ defmodule Explorer.Celo.AccountReader do
   defp contract(:accounts), do: config(:accounts_contract_address)
 
   defp config(key) do
-    data = Application.get_env(:explorer, __MODULE__, [])[key]
-    data
+    Application.get_env(:explorer, __MODULE__, [])[key]
   end
 
   # sobelow_skip ["Traversal"]

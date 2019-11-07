@@ -3643,6 +3643,7 @@ defmodule Explorer.Chain do
 
   defp staking_pool_filter(query, _), do: query
 
+  @spec get_celo_account(Hash.Address.t()) :: {:ok, CeloAccount.t()} | {:error, :not_found}
   def get_celo_account(address_hash) do
     query =
       from(account in CeloAccount,

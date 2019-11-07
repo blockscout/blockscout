@@ -23,7 +23,7 @@ Some data has to be extracted from already fetched data, and there're several tr
 - `mint_transfers`: parses logs to extract token mint transfers
 - `address_token_balances`: creates token balance entities for futher fetching, based on detected token transfers
 - `blocks`: extracts block signer hash from additional data for Clique chains
-
+- `celo_accounts`: parses logs to extract Celo related changes
 
 ### Root fetchers
 
@@ -58,6 +58,9 @@ The following async fetchers are launched for importing missing data:
 - `token`
 - `contract_code`
 - `staking_pools`
+- `celo_accounts`
+- `celo_validators`
+- `celo_validator_groups`
 
 ### Async fetchers
 
@@ -80,6 +83,9 @@ Most of them are based off `BufferedTask`, and the basic algorithm goes like thi
 - `token`: for `tokens` with `cataloged == false`
 - `contract_code`: for `transactions` with non-null `created_contract_address_hash` and null `created_contract_code_indexed_at`
 - `staking_pools`: for fetching staking pools
+- `celo_accounts`: for fetching Celo accounts
+- `celo_validators`: for fetching Celo validators
+- `celo_validator_groups`: for fetching Celo validator pools
 
 Additionally:
 - `token_updater` is run every 2 days to update token metadata
