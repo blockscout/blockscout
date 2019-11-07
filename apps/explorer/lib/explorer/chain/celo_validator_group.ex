@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.CeloValidatorGroup do
     @moduledoc """
-Datatype for storing Celo validator groups
+    Datatype for storing Celo validator groups
     """
 
     require Logger

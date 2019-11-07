@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.CeloAccount do
     @moduledoc """
-Datatype for storing Celo accounts
+    Datatype for storing Celo accounts
     """
   
     require Logger
@@ -75,13 +75,13 @@ Datatype for storing Celo accounts
         @validator_group_vote_revoked, 
         @validator_group_vote_activated,
         @validator_group_vote_cast,
-        @validator_registered_event,
+        @validator_registered,
         @validator_group_registered,
     ]
 
     # Events for updating validator
     def validator_events, do: [
-        @validator_registered_event,
+        @validator_registered,
         @validator_affiliated,
         @validator_deaffiliated,
     ]

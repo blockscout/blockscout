@@ -1,7 +1,7 @@
 
 defmodule Explorer.Chain.CeloWithdrawal do
     @moduledoc """
-
+    Table for storing withdrawal information for Celo Accounts.
     """
 
     require Logger

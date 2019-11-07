@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.CeloValidatorHistory do
     @moduledoc """
-Data type and schema for storing validator history (fetching not yet implemented)
+    Data type and schema for storing validator history (fetching not yet implemented)
     """
 
     require Logger

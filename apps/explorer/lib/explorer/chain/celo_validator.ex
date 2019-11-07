@@ -1,6 +1,6 @@
 defmodule Explorer.Chain.CeloValidator do
     @moduledoc """
-Data type and schema for storing Celo validators. Most of the data about validators is stored in the Celo accounts table.
+    Data type and schema for storing Celo validators. Most of the data about validators is stored in the Celo accounts table.
     """
 
     require Logger
