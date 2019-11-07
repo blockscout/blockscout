@@ -89,9 +89,9 @@ defmodule Indexer.Fetcher.UncleBlockTest do
                "number" => number_quantity,
                "parentHash" => "0x006edcaa1e6fde822908783bc4ef1ad3675532d542fce53537557391cfe34c3c",
                "size" => "0x243",
-               "receiptsRoot" => "0x0",
+               "receiptsRoot" => nil,
                "sha3Uncles" => "0x0",
-               "stateRoot" => "0x0",
+               "stateRoot" => nil,
                "timestamp" => "0x5b437f41",
                "totalDifficulty" => "0x342337ffffffffffffffffffffffffed8d29bb",
                "transactions" => [
@@ -116,7 +116,7 @@ defmodule Indexer.Fetcher.UncleBlockTest do
                    "value" => "0x0"
                  }
                ],
-               "transactionsRoot" => "0x0",
+               "transactionsRoot" => nil,
                "uncles" => [uncle_uncle_hash_data]
              }
            }

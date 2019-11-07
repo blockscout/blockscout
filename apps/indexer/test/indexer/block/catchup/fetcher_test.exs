@@ -180,14 +180,14 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                "parentHash" =>
                  block_hash()
                  |> to_string(),
-               "receiptsRoot" => "0x0",
+               "receiptsRoot" => "0x056b23fbba480696b65fe5a59b8f2148a1299103c4f57df839233af2cf4ca2d2",
                "size" => "0x0",
                "sha3Uncles" => "0x0",
-               "stateRoot" => "0x0",
+               "stateRoot" => "0xe2a0904c4dd733aefd872f2c088cf88ad94df18d48364689e593968c76cfa538",
                "timestamp" => "0x0",
                "totalDifficulty" => "0x0",
                "transactions" => [],
-               "transactionsRoot" => "0x0",
+               "transactionsRoot" => "0xfa19089042e1675fdf790b47dd29a74b3cbf95a7bb30793af0b3f0e215daaf6e",
                "uncles" => []
              }
            }
@@ -289,14 +289,14 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                "parentHash" =>
                  block_hash()
                  |> to_string(),
-               "receiptsRoot" => "0x0",
+               "receiptsRoot" => "0x056b23fbba480696b65fe5a59b8f2148a1299103c4f57df839233af2cf4ca2d2",
                "size" => "0x0",
                "sha3Uncles" => "0x0",
-               "stateRoot" => "0x0",
+               "stateRoot" => "0xe2a0904c4dd733aefd872f2c088cf88ad94df18d48364689e593968c76cfa538",
                "timestamp" => "0x0",
                "totalDifficulty" => "0x0",
                "transactions" => [],
-               "transactionsRoot" => "0x0",
+               "transactionsRoot" => "0xfa19089042e1675fdf790b47dd29a74b3cbf95a7bb30793af0b3f0e215daaf6e",
                "uncles" => []
              }
            }
@@ -395,14 +395,14 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                "parentHash" =>
                  block_hash()
                  |> to_string(),
-               "receiptsRoot" => "0x0",
+               "receiptsRoot" => "0x056b23fbba480696b65fe5a59b8f2148a1299103c4f57df839233af2cf4ca2d2",
                "size" => "0x0",
                "sha3Uncles" => "0x0",
-               "stateRoot" => "0x0",
+               "stateRoot" => "0xe2a0904c4dd733aefd872f2c088cf88ad94df18d48364689e593968c76cfa538",
                "timestamp" => "0x0",
                "totalDifficulty" => "0x0",
                "transactions" => [],
-               "transactionsRoot" => "0x0",
+               "transactionsRoot" => "0xfa19089042e1675fdf790b47dd29a74b3cbf95a7bb30793af0b3f0e215daaf6e",
                "uncles" => []
              }
            }
