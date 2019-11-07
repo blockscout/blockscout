@@ -2,9 +2,9 @@ defmodule Explorer.Celo.AccountReader do
   @moduledoc """
   Reads information about Celo accounts using Smart Contract functions from the blockchain.
   """
-  alias Explorer.SmartContract.Reader
 
   require Logger
+  alias Explorer.SmartContract.Reader
 
   def account_data(%{address: account_address}) do
     with data = fetch_account_data(account_address),
@@ -15,7 +15,7 @@ defmodule Explorer.Celo.AccountReader do
          account_type = determine_account_type(is_validator, is_validator_group),
          {:ok, [gold]} <- data["getAccountTotalLockedGold"],
          {:ok, [nonvoting_gold]} <- data["getAccountNonvotingLockedGold"] do
-        {:ok,
+      {:ok,
         %{
           address: account_address,
           name: name,
@@ -64,15 +64,21 @@ defmodule Explorer.Celo.AccountReader do
      {:ok,
       %{
         address: address,
-        withdrawals:
-          Enum.zip(values, timestamps) |>
-          Enum.map(fn (v,t) -> %{address: address, amount: v, timestamp: t} end)
+        withdrawals: Enum.map(Enum.zip(values, timestamps), fn {v,t} -> %{address: address, amount: v, timestamp: t} end)
       }
      }
      else  _ -> :error end
   end
 
   def validator_history(%{block_number: _block_number}) do
+    with data = fetch_validators(),
+      {:ok, [validators]} <- data["currentValidators"] do
+     {:ok,
+      %{
+        validators: validators
+      }
+     }
+     else  _ -> :error end
   end
 
   defp determine_account_type(is_validator, is_validator_group) do
@@ -102,6 +108,13 @@ defmodule Explorer.Celo.AccountReader do
     data
   end
 
+  defp fetch_validators() do
+    data = call_methods([
+      {:validators, "currentValidators", []},
+    ])
+    data
+  end
+
   defp fetch_withdrawal_data(address) do
     call_methods([{:locked_gold, "getPendingWithdrawals", [address]}])
   end
@@ -113,7 +126,7 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp call_methods(methods) do
-    contract_abi = abi("lockedgold.json") ++ abi("validators.json") ++ abi("election.json") ++ abi("accounts.json")
+    contract_abi = Explorer.Celo.AbiHandler.get_abi()
     methods
     |> Enum.map(&format_request/1)
     |> Reader.query_contracts(contract_abi)
@@ -138,14 +151,6 @@ defmodule Explorer.Celo.AccountReader do
 
   defp config(key) do
     Application.get_env(:explorer, __MODULE__, [])[key]
-  end
-
-  # sobelow_skip ["Traversal"]
-  defp abi(file_name) do
-    :explorer
-    |> Application.app_dir("priv/contracts_abi/celo/#{file_name}")
-    |> File.read!()
-    |> Jason.decode!()
   end
 
 end

@@ -30,6 +30,9 @@ config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
   period: average_block_period
 
+config :explorer, Explorer.Celo.AbiHandler,
+  enabled: true
+
 config :explorer, Explorer.ChainSpec.GenesisData,
   enabled: true,
   chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),

@@ -10,6 +10,7 @@ defmodule Explorer.Token.AccountReaderTest do
 
     describe "get_account_data" do
         test "get_account_data success" do
+            start_supervised!(Explorer.Celo.AbiHandler)
             get_account_data_from_blockchain()
     
             address = <<71, 225, 114, 246, 207, 182, 199, 208, 28, 21, 116, 250, 62, 43, 231, 204, 115, 38, 157, 149>>
