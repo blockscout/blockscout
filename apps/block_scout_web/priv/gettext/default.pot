@@ -13,6 +13,11 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:222
+msgid " Token Transfer"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:14
 msgid " is recommended."
 msgstr ""
@@ -911,7 +916,6 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:5
 #: lib/block_scout_web/templates/transaction_token_transfer/_token_transfer.html.eex:4
 #: lib/block_scout_web/views/transaction_view.ex:259
-#: lib/block_scout_web/templates/transaction/overview.html.eex:222
 msgid "Token Transfer"
 msgstr ""
 
@@ -1018,20 +1022,21 @@ msgid "Less than"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:133
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:155
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:177
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:199
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:221
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:143
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:165
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:187
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:209
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:231
 msgid "Library Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:123
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:145
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:167
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:189
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:211
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:133
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:155
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:177
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:199
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:143
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:221
 msgid "Library Name"
 msgstr ""
 
