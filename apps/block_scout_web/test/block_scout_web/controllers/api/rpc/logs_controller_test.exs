@@ -299,6 +299,8 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
           "timeStamp" => datetime_to_hex(block.timestamp),
           "gasPrice" => decimal_to_hex(transaction.gas_price.value),
           "gasUsed" => decimal_to_hex(transaction.gas_used),
+          "feeRecipient" => "",
+          "gasCurrency" => "",
           "logIndex" => integer_to_hex(log.index),
           "transactionHash" => "#{transaction.hash}",
           "transactionIndex" => integer_to_hex(transaction.index)
@@ -446,6 +448,8 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
           "gasPrice" => decimal_to_hex(transaction.gas_price.value),
           "gasUsed" => decimal_to_hex(transaction.gas_used),
           "logIndex" => integer_to_hex(log1.index),
+          "feeRecipient" => "",
+          "gasCurrency" => "",
           "transactionHash" => "#{transaction.hash}",
           "transactionIndex" => integer_to_hex(transaction.index)
         }
@@ -807,6 +811,8 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
               "blockNumber" => %{"type" => "string"},
               "timeStamp" => %{"type" => "string"},
               "gasPrice" => %{"type" => "string"},
+              "gasCurrency" => %{"type" => "string"},
+              "gasFeeRecipient" => %{"type" => "string"},
               "gasUsed" => %{"type" => "string"},
               "logIndex" => %{"type" => "string"},
               "transactionHash" => %{"type" => "string"},
