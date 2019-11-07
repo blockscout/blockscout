@@ -54,12 +54,6 @@ defmodule Indexer.Fetcher.CeloValidatorGroup do
 
     @impl BufferedTask
     def init(initial, _, _) do
-        #{:ok, final} = Chain.stream_unfetched_token_balances(initial, fn token_balance, acc ->
-        #    token_balance
-        #    |> entry()
-        #    |> reducer.(acc)
-        #end)
-
         initial
     end
 
