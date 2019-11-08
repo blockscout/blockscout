@@ -668,6 +668,7 @@ defmodule Explorer.Factory do
     %CeloAccount{
       address: address_hash(),
       account_type: "normal",
+      name: "Validator #123",
       locked_gold: wei_per_ether * 4,
       nonvoting_locked_gold: wei_per_ether * 4,
       rewards: 0,

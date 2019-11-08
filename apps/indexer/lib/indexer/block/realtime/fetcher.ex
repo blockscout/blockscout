@@ -23,9 +23,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_uncles: 1,
       fetch_and_import_range: 2,
       async_import_staking_pools: 0,
-      async_import_celo_accounts: 1,
-      async_import_celo_validators: 1,
-      async_import_celo_validator_groups: 1,
     ]
 
   alias Ecto.Changeset
@@ -215,9 +212,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
         %{block_rewards: %{errors: block_reward_errors}},
         json_rpc_named_arguments
       )
-      async_import_celo_accounts(chain_import_options)
-      async_import_celo_validators(chain_import_options)
-      async_import_celo_validator_groups(chain_import_options)
 
       Accounts.drop(imported[:addresses])
 
