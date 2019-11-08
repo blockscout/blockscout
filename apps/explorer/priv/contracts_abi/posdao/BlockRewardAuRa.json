@@ -520,5 +520,71 @@
     "payable": false,
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_stakingEpoch",
+        "type": "uint256"
+      },
+      {
+        "name": "_validatorStaked",
+        "type": "uint256"
+      },
+      {
+        "name": "_totalStaked",
+        "type": "uint256"
+      },
+      {
+        "name": "_poolReward",
+        "type": "uint256"
+      }
+    ],
+    "name": "validatorShare",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_stakingEpoch",
+        "type": "uint256"
+      },
+      {
+        "name": "_delegatorStaked",
+        "type": "uint256"
+      },
+      {
+        "name": "_validatorStaked",
+        "type": "uint256"
+      },
+      {
+        "name": "_totalStaked",
+        "type": "uint256"
+      },
+      {
+        "name": "_poolReward",
+        "type": "uint256"
+      }
+    ],
+    "name": "delegatorShare",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
   }
 ]

@@ -59,6 +59,20 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  # args = [staking_epoch, validator_staked, total_staked, pool_reward \\ 10_00000]
+  def pool_reward_requests(args) do
+    [
+      validator_share: {:block_reward, "validatorShare", args},
+    ]
+  end
+
+  # args = [staking_epoch, delegator_staked, validator_staked, total_staked, pool_reward \\ 10_00000]
+  def delegator_reward_requests(args) do
+    [
+      delegator_share: {:block_reward, "delegatorShare", args},
+    ]
+  end
+
   def perform_requests(requests, contracts, abi) do
     requests
     |> generate_requests(contracts)
