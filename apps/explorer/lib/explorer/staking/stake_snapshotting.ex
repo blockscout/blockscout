@@ -2,12 +2,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
   @moduledoc """
   Need to store stakeAmount from previous block in the beginning of new epoch.
   for validators
-  params:
-  current block number
 
   """
-
-  use GenServer
 
   import Ecto.Query, only: [from: 2]
 
@@ -16,49 +12,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
   alias Explorer.SmartContract.Reader
   alias Explorer.Staking.ContractReader
 
-  defstruct [
-    :block_number,
-    :contracts,
-    :abi
-  ]
-
-  def start_link(opts) do
-    {block_number, _opts} = Keyword.pop(opts, :block_number)
-    GenServer.start_link(__MODULE__, block_number, name: __MODULE__)
-  end
-
-  def init(block_number) do
-    staking_abi = abi("StakingAuRa")
-    validator_set_abi = abi("ValidatorSetAuRa")
-    block_reward_abi = abi("BlockRewardAuRa")
-
-    staking_contract_address = Application.get_env(:explorer, Explorer.Staking.ContractState)[:staking_contract_address]
-
-    %{"validatorSetContract" => {:ok, [validator_set_contract_address]}} =
-      Reader.query_contract(staking_contract_address, staking_abi, %{"validatorSetContract" => []})
-
-    %{"blockRewardContract" => {:ok, [block_reward_contract_address]}} =
-      Reader.query_contract(validator_set_contract_address, validator_set_abi, %{"blockRewardContract" => []})
-
-    state = %__MODULE__{
-      block_number: block_number,
-      contracts: %{
-        staking: staking_contract_address,
-        validator_set: validator_set_contract_address,
-        block_reward: block_reward_contract_address
-      },
-      abi: staking_abi ++ validator_set_abi ++ block_reward_abi
-    }
-
-    {:ok, state, {:continue, []}}
-  end
-
-  def handle_continue(_, state) do
-    start_snapshoting(state)
-    {:noreply, state}
-  end
-
-  defp start_snapshoting(%{contracts: contracts, abi: abi, block_number: block_number} = _state) do
+  def start_snapshoting(%{contracts: contracts, abi: abi, global_responses: global_responses}, block_number) do
     %{
       "getPendingValidators" => {:ok, [pending_validators_mining_addresses]},
       "validatorsToBeFinalized" => {:ok, [be_finalized_validators_mining_addresses]}
@@ -68,7 +22,6 @@ defmodule Explorer.Staking.StakeSnapshotting do
         "validatorsToBeFinalized" => []
       })
 
-    global_responses = ContractReader.perform_requests(ContractReader.global_requests(), contracts, abi)
     pool_mining_addresses = pending_validators_mining_addresses ++ be_finalized_validators_mining_addresses
 
     pool_staking_addresses =
@@ -109,7 +62,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
           global_responses.epoch_number,
           response.snapshotted_self_staked_amount,
           response.snapshotted_staked_amount,
-          1000_000])
+          1000_000
+        ])
       end)
       |> ContractReader.perform_grouped_requests(pool_staking_addresses, contracts, abi)
 
@@ -117,12 +71,14 @@ defmodule Explorer.Staking.StakeSnapshotting do
       delegator_responses
       |> Enum.map(fn {{pool_address, _delegator_address, _}, response} ->
         staking_response = pool_staking_responses[pool_address]
+
         ContractReader.delegator_reward_requests([
           global_responses.epoch_number,
           response.stake_amount,
           staking_response.snapshotted_self_staked_amount,
           staking_response.snapshotted_staked_amount,
-          1000_000])
+          1000_000
+        ])
       end)
       |> ContractReader.perform_grouped_requests(delegators, contracts, abi)
 
@@ -135,7 +91,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
         %{
           staking_address_hash: staking_address,
           delegators_count: length(staking_response.active_delegators),
-          snapshotted_staked_ratio: pool_reward_response.validator_share / 10_000,
+          snapshotted_staked_ratio: pool_reward_response.validator_share / 10_000
         }
         |> Map.merge(
           Map.take(staking_response, [
@@ -207,14 +163,14 @@ defmodule Explorer.Staking.StakeSnapshotting do
   # args = [staking_epoch, validator_staked, total_staked, pool_reward \\ 10_00000]
   def pool_reward_requests(args, block_number) do
     [
-      validator_share: {:block_reward, "validatorShare", args, block_number - 1},
+      validator_share: {:block_reward, "validatorShare", args, block_number - 1}
     ]
   end
 
   # args = [staking_epoch, delegator_staked, validator_staked, total_staked, pool_reward \\ 10_00000]
   def delegator_reward_requests(args, block_number) do
     [
-      delegator_share: {:block_reward, "delegatorShare", args, block_number - 1},
+      delegator_share: {:block_reward, "delegatorShare", args, block_number - 1}
     ]
   end
 
@@ -271,13 +227,6 @@ defmodule Explorer.Staking.StakeSnapshotting do
         ]
       ]
     )
-  end
-
-  defp abi(file_name) do
-    :explorer
-    |> Application.app_dir("priv/contracts_abi/posdao/#{file_name}.json")
-    |> File.read!()
-    |> Jason.decode!()
   end
 
   defp decode_data(address_hash_string) do
