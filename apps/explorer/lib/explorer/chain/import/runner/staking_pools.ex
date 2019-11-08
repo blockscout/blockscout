@@ -132,6 +132,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           likelihood: fragment("EXCLUDED.likelihood"),
           block_reward_ratio: fragment("EXCLUDED.block_reward_ratio"),
           staked_ratio: fragment("EXCLUDED.staked_ratio"),
+          snapshotted_staked_ratio: pool.snapshotted_staked_ratio,
           self_staked_amount: fragment("EXCLUDED.self_staked_amount"),
           staked_amount: fragment("EXCLUDED.staked_amount"),
           snapshotted_self_staked_amount: pool.snapshotted_self_staked_amount,
