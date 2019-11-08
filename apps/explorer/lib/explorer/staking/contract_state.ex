@@ -164,7 +164,6 @@ defmodule Explorer.Staking.ContractState do
       end)
       |> ContractReader.perform_grouped_requests(delegators, contracts, abi)
 
-    staked_total = Enum.sum(for {_, pool} <- pool_staking_responses, pool.is_active, do: pool.staked_amount)
     [likelihood_values, total_likelihood] = global_responses.pools_likelihood
 
     likelihood =
@@ -172,18 +171,42 @@ defmodule Explorer.Staking.ContractState do
       |> Enum.zip(likelihood_values)
       |> Enum.into(%{})
 
+    pool_reward_responses =
+      pool_staking_responses
+      |> Enum.map(fn {_address, response} ->
+        ContractReader.pool_reward_requests([
+          global_responses.epoch_number,
+          response.self_staked_amount,
+          response.staked_amount,
+          1000_000
+        ])
+      end)
+      |> ContractReader.perform_grouped_requests(pools, contracts, abi)
+
+    delegator_reward_responses =
+      delegator_responses
+      |> Enum.map(fn {{pool_address, _, _}, response} ->
+        staking_response = pool_staking_responses[pool_address]
+        ContractReader.delegator_reward_requests([
+          global_responses.epoch_number,
+          response.stake_amount,
+          staking_response.self_staked_amount,
+          staking_response.staked_amount,
+          1000_000
+        ])
+      end)
+      |> ContractReader.perform_grouped_requests(delegators, contracts, abi)
+
     pool_entries =
       Enum.map(pools, fn staking_address ->
         staking_response = pool_staking_responses[staking_address]
         mining_response = pool_mining_responses[staking_address]
+        pool_reward_response = pool_reward_responses[staking_address]
 
         %{
           staking_address_hash: staking_address,
           delegators_count: length(staking_response.active_delegators),
-          staked_ratio:
-            if staking_response.is_active do
-              ratio(staking_response.staked_amount, staked_total)
-            end,
+          staked_ratio: pool_reward_response.validator_share / 10_000,
           likelihood: ratio(likelihood[staking_address] || 0, total_likelihood),
           block_reward_ratio: staking_response.block_reward / 10_000,
           is_deleted: false,
@@ -213,10 +236,12 @@ defmodule Explorer.Staking.ContractState do
 
     delegator_entries =
       Enum.map(delegator_responses, fn {{pool_address, delegator_address, is_active}, response} ->
+        delegator_reward_response = delegator_reward_responses[{pool_address, delegator_address, is_active}]
         Map.merge(response, %{
           delegator_address_hash: delegator_address,
           pool_address_hash: pool_address,
-          is_active: is_active
+          is_active: is_active,
+          reward_ratio: delegator_reward_response.delegator_share / 10_000
         })
       end)
 
