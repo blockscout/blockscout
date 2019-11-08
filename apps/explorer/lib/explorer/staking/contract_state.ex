@@ -187,6 +187,7 @@ defmodule Explorer.Staking.ContractState do
       delegator_responses
       |> Enum.map(fn {{pool_address, _, _}, response} ->
         staking_response = pool_staking_responses[pool_address]
+
         ContractReader.delegator_reward_requests([
           global_responses.epoch_number,
           response.stake_amount,
@@ -237,6 +238,7 @@ defmodule Explorer.Staking.ContractState do
     delegator_entries =
       Enum.map(delegator_responses, fn {{pool_address, delegator_address, is_active}, response} ->
         delegator_reward_response = delegator_reward_responses[{pool_address, delegator_address, is_active}]
+
         Map.merge(response, %{
           delegator_address_hash: delegator_address,
           pool_address_hash: pool_address,
@@ -253,7 +255,10 @@ defmodule Explorer.Staking.ContractState do
       })
 
     if previous_epoch && previous_epoch != 0 && previous_epoch != global_responses.epoch_number do
-      Supervisor.start_link([{StakeSnapshotting, block_number: block_number}], strategy: :one_for_all)
+      StakeSnapshotting.start_snapshoting(
+        %{contracts: contracts, abi: abi, global_responses: global_responses},
+        block_number
+      )
     end
 
     Publisher.broadcast(:staking_update)
