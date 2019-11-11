@@ -24,7 +24,8 @@ defmodule Explorer.Staking.ContractState do
     :staking_allowed,
     :staking_contract,
     :validator_set_contract,
-    :block_reward_contract
+    :block_reward_contract,
+    :validator_set_apply_block
   ]
 
   defstruct [
@@ -129,7 +130,8 @@ defmodule Explorer.Staking.ContractState do
         :epoch_number,
         :epoch_start_block,
         :epoch_end_block,
-        :staking_allowed
+        :staking_allowed,
+        :validator_set_apply_block
       ])
       |> Map.to_list()
       |> Enum.concat(token: token)
@@ -171,6 +173,8 @@ defmodule Explorer.Staking.ContractState do
       |> Enum.zip(likelihood_values)
       |> Enum.into(%{})
 
+    pool_staking_keys = Enum.map(pool_staking_responses, fn {key, _response} -> key end)
+
     pool_reward_responses =
       pool_staking_responses
       |> Enum.map(fn {_address, response} ->
@@ -181,7 +185,9 @@ defmodule Explorer.Staking.ContractState do
           1000_000
         ])
       end)
-      |> ContractReader.perform_grouped_requests(pools, contracts, abi)
+      |> ContractReader.perform_grouped_requests(pool_staking_keys, contracts, abi)
+
+    delegator_keys = Enum.map(delegator_responses, fn {key, _response} -> key end)
 
     delegator_reward_responses =
       delegator_responses
@@ -196,7 +202,7 @@ defmodule Explorer.Staking.ContractState do
           1000_000
         ])
       end)
-      |> ContractReader.perform_grouped_requests(delegators, contracts, abi)
+      |> ContractReader.perform_grouped_requests(delegator_keys, contracts, abi)
 
     pool_entries =
       Enum.map(pools, fn staking_address ->
