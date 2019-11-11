@@ -13,14 +13,29 @@
               <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Staker's Address"), tooltip: gettext("All pool participant addresses. The top address belongs to the validator.") %>
             </div>
             <div class="col-4">
-              <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Current Stake Amount") <> "<br />(" <> gettext("Accounted Stake Amount")  <> ")", tooltip: gettext("Amount of STAKE placed by an address") %>
+              <%=
+                amount_col_title =
+                  if @validator_set_apply_block > 0 do
+                    gettext("Current Stake Amount") <> "<br />(" <> gettext("Accounted Stake Amount")  <> ")"
+                  else
+                    gettext("Current Stake Amount")
+                  end
+
+                render BlockScoutWeb.StakesView, "_stakes_th.html", title: amount_col_title, tooltip: gettext("Amount of STAKE placed by an address")
+              %>
             </div>
             <div class="col-3">
               <%=
-                _title = if @pool.is_validator do gettext("Reward Percent") else gettext("Potential Reward Percent") end
+                reward_col_title =
+                  if @pool.is_validator && @validator_set_apply_block > 0 do
+                    gettext("Potential Reward Percent") <> "<br />(" <> gettext("Current Reward Percent")  <> ")"
+                  else
+                    gettext("Potential Reward Percent")
+                  end
+
                 render BlockScoutWeb.StakesView,
                   "_stakes_th.html",
-                  title: gettext("Potential Reward Percent") <> "<br />(" <> gettext("Current Reward Percent")  <> ")",
+                  title: reward_col_title,
                   tooltip: gettext("Reward distribution is based on stake amount. Validator receives a minimum of 30%.")
               %>
             </div>
@@ -52,14 +67,37 @@
                     <% end %>
                   </div>
                 </div>
-                <div class="col-4 stakes-td stakes-cell"><%= format_token_amount(delegator.stake_amount, @token, symbol: false) %> (<%= if delegator.snapshotted_stake_amount do format_token_amount(delegator.snapshotted_stake_amount, @token, symbol: false) else 0 end %>)</div>
+                <div class="col-4 stakes-td stakes-cell">
+                  <%= format_token_amount(delegator.stake_amount, @token, symbol: false) %>
+                  <%= if @pool.is_validator && @validator_set_apply_block > 0 do %>
+                    (
+                      <%=
+                        if delegator.snapshotted_stake_amount do
+                          format_token_amount(delegator.snapshotted_stake_amount, @token, symbol: false) 
+                        else
+                          0
+                        end
+                      %>
+                    )
+                  <% end %>
+                </div>
                 <div class="col-3 stakes-td stakes-cell">
-                <%= if delegator.reward_ratio do %> 
-                  <%= delegator.reward_ratio %>%
-                  (<%= if delegator.snapshotted_reward_ratio do "#{delegator.snapshotted_reward_ratio}%" else "0%" end %>)
-                <% else %>
-                  -
-                <% end %>
+                  <%= if delegator.reward_ratio do %>
+                    <%= delegator.reward_ratio %>%
+                    <%= if @pool.is_validator && @validator_set_apply_block > 0 do %>
+                      (
+                        <%=
+                          if delegator.snapshotted_reward_ratio do
+                            "#{delegator.snapshotted_reward_ratio}%"
+                          else
+                            "0%"
+                          end
+                        %>
+                      )
+                    <% end %>
+                  <% else %>
+                    -
+                  <% end %>
                 </div>
               </div>
             <% end %>
