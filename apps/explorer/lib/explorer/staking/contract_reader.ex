@@ -21,7 +21,8 @@ defmodule Explorer.Staking.ContractReader do
       validators: {:validator_set, "getValidators", []},
       unremovable_validator: {:validator_set, "unremovableValidator", []},
       pending_validators: {:validator_set, "getPendingValidators", []},
-      be_finalized_validators: {:validator_set, "validatorsToBeFinalized", []}
+      be_finalized_validators: {:validator_set, "validatorsToBeFinalized", []},
+      validator_set_apply_block: {:validator_set, "validatorSetApplyBlock", []}
     ]
   end
 
