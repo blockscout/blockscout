@@ -55,6 +55,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
       end)
       |> ContractReader.perform_grouped_requests(delegators, contracts, abi)
 
+    pool_staking_keys = Enum.map(pool_staking_responses, fn {key, _response} -> key end)
+
     pool_reward_responses =
       pool_staking_responses
       |> Enum.map(fn {_address, response} ->
@@ -65,7 +67,9 @@ defmodule Explorer.Staking.StakeSnapshotting do
           1000_000
         ])
       end)
-      |> ContractReader.perform_grouped_requests(pool_staking_addresses, contracts, abi)
+      |> ContractReader.perform_grouped_requests(pool_staking_keys, contracts, abi)
+
+    delegator_keys = Enum.map(delegator_responses, fn {key, _response} -> key end)
 
     delegator_reward_responses =
       delegator_responses
@@ -80,7 +84,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
           1000_000
         ])
       end)
-      |> ContractReader.perform_grouped_requests(delegators, contracts, abi)
+      |> ContractReader.perform_grouped_requests(delegator_keys, contracts, abi)
 
     pool_entries =
       Enum.map(pool_staking_addresses, fn staking_address ->
@@ -181,25 +185,25 @@ defmodule Explorer.Staking.StakeSnapshotting do
         set: [
           mining_address_hash: fragment("EXCLUDED.mining_address_hash"),
           delegators_count: fragment("EXCLUDED.delegators_count"),
-          is_active: fragment("EXCLUDED.is_active"),
-          is_banned: fragment("EXCLUDED.is_banned"),
-          is_validator: fragment("EXCLUDED.is_validator"),
-          is_unremovable: fragment("EXCLUDED.is_unremovable"),
-          are_delegators_banned: fragment("EXCLUDED.are_delegators_banned"),
-          likelihood: fragment("EXCLUDED.likelihood"),
-          block_reward_ratio: fragment("EXCLUDED.block_reward_ratio"),
-          staked_ratio: fragment("EXCLUDED.staked_ratio"),
           snapshotted_staked_ratio: fragment("EXCLUDED.snapshotted_staked_ratio"),
           self_staked_amount: fragment("EXCLUDED.self_staked_amount"),
           staked_amount: fragment("EXCLUDED.staked_amount"),
           snapshotted_self_staked_amount: fragment("EXCLUDED.snapshotted_self_staked_amount"),
           snapshotted_staked_amount: fragment("EXCLUDED.snapshotted_staked_amount"),
-          ban_reason: fragment("EXCLUDED.ban_reason"),
-          was_banned_count: fragment("EXCLUDED.was_banned_count"),
-          was_validator_count: fragment("EXCLUDED.was_validator_count"),
-          is_deleted: fragment("EXCLUDED.is_deleted"),
-          banned_until: fragment("EXCLUDED.banned_until"),
-          banned_delegators_until: fragment("EXCLUDED.banned_delegators_until"),
+          is_active: pool.is_active,
+          is_banned: pool.is_banned,
+          is_validator: pool.is_validator,
+          is_unremovable: pool.is_unremovable,
+          are_delegators_banned: pool.are_delegators_banned,
+          likelihood: pool.likelihood,
+          block_reward_ratio: pool.block_reward_ratio,
+          staked_ratio: pool.staked_ratio,
+          ban_reason: pool.ban_reason,
+          was_banned_count: pool.was_banned_count,
+          was_validator_count: pool.was_validator_count,
+          banned_until: pool.banned_until,
+          is_deleted: pool.is_deleted,
+          banned_delegators_until: pool.banned_delegators_until,
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", pool.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", pool.updated_at)
         ]
@@ -218,12 +222,12 @@ defmodule Explorer.Staking.StakeSnapshotting do
           max_withdraw_allowed: fragment("EXCLUDED.max_withdraw_allowed"),
           max_ordered_withdraw_allowed: fragment("EXCLUDED.max_ordered_withdraw_allowed"),
           ordered_withdraw_epoch: fragment("EXCLUDED.ordered_withdraw_epoch"),
-          reward_ratio: fragment("EXCLUDED.reward_ratio"),
+          reward_ratio: delegator.reward_ratio,
           snapshotted_reward_ratio: fragment("EXCLUDED.snapshotted_reward_ratio"),
+          is_active: delegator.is_active,
+          is_deleted: delegator.is_deleted,
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", delegator.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", delegator.updated_at),
-          is_active: fragment("EXCLUDED.is_active"),
-          is_deleted: fragment("EXCLUDED.is_deleted")
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", delegator.updated_at)
         ]
       ]
     )
