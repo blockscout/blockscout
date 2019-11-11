@@ -37,7 +37,7 @@ defmodule Explorer.SmartContract.Publisher do
   end
 
   defp publish_smart_contract(address_hash, params, abi) do
-    proxy_address= Map.get(params, "proxy_address")
+    proxy_address = Map.get(params, "proxy_address")
 
     attrs = address_hash |> attributes(params, abi)
 

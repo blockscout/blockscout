@@ -41,7 +41,7 @@ defmodule Explorer.SmartContract.Verifier do
     constructor_arguments = Map.get(params, "constructor_arguments", "")
     evm_version = Map.get(params, "evm_version")
     optimization_runs = Map.get(params, "optimization_runs", 200)
-    
+
     solc_output =
       CodeCompiler.run(
         name: name,

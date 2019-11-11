@@ -2632,36 +2632,33 @@ defmodule Explorer.Chain do
     address_hash = Changeset.get_field(smart_contract_changeset, :address_hash)
 
     insert_result =
-    if proxy_address != nil do
-      proxy_address= attrs[:proxy_address]
-      Logger.debug(fn -> "Adding Proxy Address Mapping: #{proxy_address}" end)
+      if proxy_address != nil do
+        proxy_address = attrs[:proxy_address]
+        Logger.debug(fn -> "Adding Proxy Address Mapping: #{proxy_address}" end)
 
-      Multi.new()
-      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
-      |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
-      |> Multi.run(:insert_address_name, fn repo, _ ->
-        name = Changeset.get_field(smart_contract_changeset, :name)
-        create_address_name(repo, name, address_hash)
-      end)
-      |> Multi.run(:proxy_address_contract, fn repo, _ -> set_address_proxy(repo, proxy_address, address_hash) end)
-      |> Multi.insert(:smart_contract, smart_contract_changeset)
-      |> Repo.transaction()
-
-    else
-      Multi.new()
-      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
-      |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
-      |> Multi.run(:insert_address_name, fn repo, _ ->
-        name = Changeset.get_field(smart_contract_changeset, :name)
-        create_address_name(repo, name, address_hash)
-      end)
-      |> Multi.insert(:smart_contract, smart_contract_changeset)
-      |> Repo.transaction()
-
-    end
+        Multi.new()
+        |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
+        |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
+        |> Multi.run(:insert_address_name, fn repo, _ ->
+          name = Changeset.get_field(smart_contract_changeset, :name)
+          create_address_name(repo, name, address_hash)
+        end)
+        |> Multi.run(:proxy_address_contract, fn repo, _ -> set_address_proxy(repo, proxy_address, address_hash) end)
+        |> Multi.insert(:smart_contract, smart_contract_changeset)
+        |> Repo.transaction()
+      else
+        Multi.new()
+        |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
+        |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
+        |> Multi.run(:insert_address_name, fn repo, _ ->
+          name = Changeset.get_field(smart_contract_changeset, :name)
+          create_address_name(repo, name, address_hash)
+        end)
+        |> Multi.insert(:smart_contract, smart_contract_changeset)
+        |> Repo.transaction()
+      end
 
     case insert_result do
-
       {:ok, %{smart_contract: smart_contract}} ->
         {:ok, smart_contract}
 
@@ -2670,7 +2667,6 @@ defmodule Explorer.Chain do
 
       {:error, :set_address_verified, message, _} ->
         {:error, message}
-
     end
   end
 
@@ -2711,9 +2707,9 @@ defmodule Explorer.Chain do
     %ProxyContract{}
     |> ProxyContract.changeset(params)
     |> repo.insert(
-         on_conflict: :replace_all,
-         conflict_target: [:proxy_address])
-
+      on_conflict: :replace_all,
+      conflict_target: [:proxy_address]
+    )
   end
 
   defp clear_primary_address_names(repo, address_hash) do
