@@ -54,6 +54,7 @@ defmodule BlockScoutWeb.StakesChannel do
   def handle_in("render_delegators_list", %{"address" => staking_address}, socket) do
     pool = Chain.staking_pool(staking_address)
     token = ContractState.get(:token)
+    validator_set_apply_block = ContractState.get(:validator_set_apply_block)
 
     delegators =
       staking_address
@@ -73,7 +74,8 @@ defmodule BlockScoutWeb.StakesChannel do
         account: socket.assigns[:account],
         pool: pool,
         delegators: delegators,
-        token: token
+        token: token,
+        validator_set_apply_block: validator_set_apply_block
       )
 
     {:reply, {:ok, %{html: html}}, socket}
