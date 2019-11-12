@@ -110,6 +110,19 @@ defmodule Indexer.Block.Fetcher do
     struct!(__MODULE__, named_arguments)
   end
 
+#  defp append_logs(extra_logs, %{logs: logs, receipts: receipts}) do
+#    %{logs: logs ++ extra_logs, receipts: receipts}
+#  end
+
+  defp get_extra_logs(logs, extra_logs) do
+    e_logs =
+      extra_logs |>
+      Enum.filter(fn (%{transaction_hash: hash}) ->
+        hash == "0x0000000000000000000000000000000000000000000000000000000000000000" end) |>
+      Enum.map(fn (a) -> Map.put(a, :transaction_hash, "0xdb89f2ce857c67f6ac8717fbe58490c7caf60e79e529493294eccd0690e9052f") end)
+    logs ++ e_logs
+  end
+
   @decorate span(tracer: Tracer)
   @spec fetch_and_import_range(t, Range.t()) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
@@ -134,10 +147,12 @@ defmodule Indexer.Block.Fetcher do
              errors: blocks_errors
            }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
          blocks = TransformBlocks.transform_blocks(blocks_params),
+         {:ok, %{logs: extra_logs}} <- EthereumJSONRPC.fetch_logs(range, json_rpc_named_arguments),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: logs, receipts: receipts} = receipt_params,
+         transfer_logs = get_extra_logs(logs, extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
-         %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
+         %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(transfer_logs),
          %{accounts: celo_accounts, validators: celo_validators,
            validator_groups: celo_validator_groups} = CeloAccounts.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
@@ -165,6 +180,7 @@ defmodule Indexer.Block.Fetcher do
            |> add_gas_payments(transactions_with_receipts)
            |> BlockReward.reduce_uncle_rewards(),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         IO.inspect(address_token_balances),
          {:ok, inserted} <-
            __MODULE__.import(
              state,
@@ -177,14 +193,12 @@ defmodule Indexer.Block.Fetcher do
                block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
- #              celo_accounts: %{params: celo_accounts},
- #              celo_validators: %{params: celo_validators},
- #              celo_validator_groups: %{params: celo_validator_groups},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts}
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
+      IO.inspect(extra_logs)
       
       async_import_celo_accounts(%{celo_accounts: %{params: celo_accounts}})
       async_import_celo_validators(%{celo_validators: %{params: celo_validators}})

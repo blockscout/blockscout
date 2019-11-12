@@ -71,7 +71,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @primary_key false
   schema "token_transfers" do
     field(:amount, :decimal)
-    field(:block_number, :integer)
+    field(:block_number, :integer, primary_key: true)
     field(:log_index, :integer, primary_key: true)
     field(:token_id, :decimal)
 

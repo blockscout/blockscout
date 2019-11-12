@@ -221,5 +221,6 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
     )
 
     create(unique_index(:transactions, [:block_hash, :index]))
+
   end
 end

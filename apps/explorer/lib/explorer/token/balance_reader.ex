@@ -42,12 +42,14 @@ defmodule Explorer.Token.BalanceReader do
          block_number: block_number,
          token_contract_address_hash: token_contract_address_hash
        }) do
-    %{
+    res = %{
       contract_address: token_contract_address_hash,
       function_name: "balanceOf",
       args: [address_hash],
-      block_number: block_number
+      block_number: block_number,
+      gasprice: "1000000000000000000",
     }
+    res
   end
 
   defp format_balance_result({:ok, [balance]}) do
