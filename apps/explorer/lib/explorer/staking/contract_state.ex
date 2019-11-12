@@ -25,7 +25,8 @@ defmodule Explorer.Staking.ContractState do
     :staking_contract,
     :validator_set_contract,
     :block_reward_contract,
-    :validator_set_apply_block
+    :validator_set_apply_block,
+    :is_snapshotted
   ]
 
   defstruct [
@@ -92,7 +93,8 @@ defmodule Explorer.Staking.ContractState do
       validator_set_contract: %{abi: validator_set_abi, address: validator_set_contract_address},
       block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address},
       token_contract_address: token_contract_address,
-      token: get_token(token_contract_address)
+      token: get_token(token_contract_address),
+      is_snapshotted: false
     )
 
     {:ok, state, {:continue, []}}
@@ -261,10 +263,16 @@ defmodule Explorer.Staking.ContractState do
       })
 
     if previous_epoch && previous_epoch != 0 && previous_epoch != global_responses.epoch_number do
-      StakeSnapshotting.start_snapshoting(
-        %{contracts: contracts, abi: abi, global_responses: global_responses},
-        block_number
-      )
+      with(
+        true <- :ets.insert(@table_name, is_snapshotted: false),
+        {:ok, _} <-
+          StakeSnapshotting.start_snapshoting(
+            %{contracts: contracts, abi: abi, global_responses: global_responses},
+            block_number
+          )
+      ) do
+        :ets.insert(@table_name, is_snapshotted: true)
+      end
     end
 
     Publisher.broadcast(:staking_update)
