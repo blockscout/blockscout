@@ -6,7 +6,7 @@ defmodule Explorer.Validator.MetadataRetriever do
   alias Explorer.SmartContract.Reader
 
   def fetch_data do
-    {:ok, binary_moc_address} = Explorer.Chain.Hash.Address.cast("0xdc4765d9dabf6c6c4908fe97e649ef1f05cb6252")
+    {:ok, binary_moc_address} = Explorer.Chain.Hash.Address.cast("0xcf260ea317555637c55f70e55dba8d5ad8414cb0")
     validators_list_excluding_moc =
     fetch_validators_list()
     |> Enum.reject(fn binary_validator_address ->
