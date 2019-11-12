@@ -6,7 +6,7 @@ defmodule Explorer.Repo.Migrations.CreateStakingPools do
       add(:is_active, :boolean, default: false, null: false)
       add(:is_deleted, :boolean, default: false, null: false)
       add(:delegators_count, :integer)
-      add(:staked_amount, :numeric, precision: 100)
+      add(:total_staked_amount, :numeric, precision: 100)
       add(:self_staked_amount, :numeric, precision: 100)
       add(:is_validator, :boolean, default: false, null: false)
       add(:was_validator_count, :integer)
