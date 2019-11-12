@@ -63,7 +63,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
         ContractReader.pool_reward_requests([
           global_responses.epoch_number,
           response.snapshotted_self_staked_amount,
-          response.snapshotted_staked_amount,
+          response.snapshotted_total_staked_amount,
           1000_000
         ])
       end)
@@ -80,7 +80,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
           global_responses.epoch_number,
           response.stake_amount,
           staking_response.snapshotted_self_staked_amount,
-          staking_response.snapshotted_staked_amount,
+          staking_response.snapshotted_total_staked_amount,
           1000_000
         ])
       end)
@@ -99,9 +99,9 @@ defmodule Explorer.Staking.StakeSnapshotting do
         }
         |> Map.merge(
           Map.take(staking_response, [
-            :snapshotted_staked_amount,
+            :snapshotted_total_staked_amount,
             :snapshotted_self_staked_amount,
-            :staked_amount,
+            :total_staked_amount,
             :self_staked_amount,
             :mining_address_hash
           ])
@@ -142,9 +142,9 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
   defp pool_staking_requests(staking_address, block_number) do
     [
-      snapshotted_staked_amount: {:staking, "stakeAmountTotal", [staking_address], block_number - 1},
+      snapshotted_total_staked_amount: {:staking, "stakeAmountTotal", [staking_address], block_number - 1},
       snapshotted_self_staked_amount: {:staking, "stakeAmount", [staking_address, staking_address], block_number - 1},
-      staked_amount: {:staking, "stakeAmountTotal", [staking_address]},
+      total_staked_amount: {:staking, "stakeAmountTotal", [staking_address]},
       self_staked_amount: {:staking, "stakeAmount", [staking_address, staking_address]},
       mining_address_hash: {:validator_set, "miningByStakingAddress", [staking_address]},
       active_delegators: {:staking, "poolDelegators", [staking_address]},
@@ -186,9 +186,9 @@ defmodule Explorer.Staking.StakeSnapshotting do
           delegators_count: fragment("EXCLUDED.delegators_count"),
           snapshotted_staked_ratio: fragment("EXCLUDED.snapshotted_staked_ratio"),
           self_staked_amount: fragment("EXCLUDED.self_staked_amount"),
-          staked_amount: fragment("EXCLUDED.staked_amount"),
+          total_staked_amount: fragment("EXCLUDED.total_staked_amount"),
           snapshotted_self_staked_amount: fragment("EXCLUDED.snapshotted_self_staked_amount"),
-          snapshotted_staked_amount: fragment("EXCLUDED.snapshotted_staked_amount"),
+          snapshotted_total_staked_amount: fragment("EXCLUDED.snapshotted_total_staked_amount"),
           is_active: pool.is_active,
           is_banned: pool.is_banned,
           is_validator: pool.is_validator,

@@ -19,9 +19,9 @@ export function openMoveStakeModal (event, store) {
 }
 
 function setupModal ($modal, fromAddress, store, msg) {
-  setupChart($modal.find('.js-pool-from-progress'), msg.from.self_staked_amount, msg.from.staked_amount)
+  setupChart($modal.find('.js-pool-from-progress'), msg.from.self_staked_amount, msg.from.total_staked_amount)
   if (msg.to) {
-    setupChart($modal.find('.js-pool-to-progress'), msg.to.self_staked_amount, msg.to.staked_amount)
+    setupChart($modal.find('.js-pool-to-progress'), msg.to.self_staked_amount, msg.to.total_staked_amount)
 
     setupValidation(
       $modal.find('form'),

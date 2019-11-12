@@ -132,7 +132,7 @@ defmodule BlockScoutWeb.StakesChannel do
       delegator_staked: (delegator && delegator.stake_amount) || 0,
       min_stake: min_stake,
       self_staked_amount: pool.self_staked_amount,
-      staked_amount: pool.staked_amount
+      total_staked_amount: pool.total_staked_amount
     }
 
     {:reply, {:ok, result}, socket}
@@ -178,7 +178,7 @@ defmodule BlockScoutWeb.StakesChannel do
         stake_amount: delegator_from.stake_amount,
         min_stake: min_from_stake,
         self_staked_amount: pool_from.self_staked_amount,
-        staked_amount: pool_from.staked_amount
+        total_staked_amount: pool_from.total_staked_amount
       },
       to:
         if pool_to do
@@ -186,7 +186,7 @@ defmodule BlockScoutWeb.StakesChannel do
             stake_amount: (delegator_to && delegator_to.stake_amount) || 0,
             min_stake: min_to_stake,
             self_staked_amount: pool_to.self_staked_amount,
-            staked_amount: pool_to.staked_amount
+            total_staked_amount: pool_to.total_staked_amount
           }
         end
     }
@@ -216,7 +216,7 @@ defmodule BlockScoutWeb.StakesChannel do
     result = %{
       html: html,
       self_staked_amount: pool.self_staked_amount,
-      staked_amount: pool.staked_amount,
+      total_staked_amount: pool.total_staked_amount,
       delegator_staked: delegator.stake_amount,
       ordered_withdraw: delegator.ordered_withdraw,
       max_withdraw_allowed: delegator.max_withdraw_allowed,
@@ -242,7 +242,7 @@ defmodule BlockScoutWeb.StakesChannel do
     result = %{
       html: html,
       self_staked_amount: pool.self_staked_amount,
-      staked_amount: pool.staked_amount
+      total_staked_amount: pool.total_staked_amount
     }
 
     {:reply, {:ok, result}, socket}
