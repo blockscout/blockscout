@@ -15,7 +15,7 @@
             <div class="col-4">
               <%=
                 amount_col_title =
-                  if @validator_set_apply_block > 0 do
+                  if @is_show_snapshotted_data do
                     gettext("Current Stake Amount") <> "<br />(" <> gettext("Accounted Stake Amount")  <> ")"
                   else
                     gettext("Current Stake Amount")
@@ -27,7 +27,7 @@
             <div class="col-3">
               <%=
                 reward_col_title =
-                  if @pool.is_validator && @validator_set_apply_block > 0 do
+                  if @is_show_snapshotted_data do
                     gettext("Potential Reward Percent") <> "<br />(" <> gettext("Current Reward Percent")  <> ")"
                   else
                     gettext("Potential Reward Percent")
@@ -69,11 +69,11 @@
                 </div>
                 <div class="col-4 stakes-td stakes-cell">
                   <%= format_token_amount(delegator.stake_amount, @token, symbol: false) %>
-                  <%= if @pool.is_validator && @validator_set_apply_block > 0 do %>
+                  <%= if @is_show_snapshotted_data do %>
                     (
                       <%=
                         if delegator.snapshotted_stake_amount do
-                          format_token_amount(delegator.snapshotted_stake_amount, @token, symbol: false) 
+                          format_token_amount(delegator.snapshotted_stake_amount, @token, symbol: false)
                         else
                           0
                         end
@@ -84,7 +84,7 @@
                 <div class="col-3 stakes-td stakes-cell">
                   <%= if delegator.reward_ratio do %>
                     <%= delegator.reward_ratio %>%
-                    <%= if @pool.is_validator && @validator_set_apply_block > 0 do %>
+                    <%= if @is_show_snapshotted_data do %>
                       (
                         <%=
                           if delegator.snapshotted_reward_ratio do

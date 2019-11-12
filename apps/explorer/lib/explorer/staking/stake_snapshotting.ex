@@ -127,12 +127,11 @@ defmodule Explorer.Staking.StakeSnapshotting do
         })
       end)
 
-    {:ok, _} =
-      Chain.import(%{
-        staking_pools: %{params: pool_entries, on_conflict: staking_pool_on_conflict()},
-        staking_pools_delegators: %{params: delegator_entries, on_conflict: staking_pools_delegator_on_conflict()},
-        timeout: :infinity
-      })
+    Chain.import(%{
+      staking_pools: %{params: pool_entries, on_conflict: staking_pool_on_conflict()},
+      staking_pools_delegators: %{params: delegator_entries, on_conflict: staking_pools_delegator_on_conflict()},
+      timeout: :infinity
+    })
   end
 
   def transform_requests(minig_address) do
