@@ -7,6 +7,9 @@
 - [#2822](https://github.com/poanetwork/blockscout/pull/2822) - Estimated address count on the main page, if cache is empty
 
 ### Fixes
+- [#2851](https://github.com/poanetwork/blockscout/pull/2851) - Fix paths for front assets
+- [#2843](https://github.com/poanetwork/blockscout/pull/2843) - fix realtime fetcher small skips feature
+- [#2841](https://github.com/poanetwork/blockscout/pull/2841) - LUKSO dashboard height fix
 - [#2837](https://github.com/poanetwork/blockscout/pull/2837) - fix txlist ordering issue
 - [#2830](https://github.com/poanetwork/blockscout/pull/2830) - Fix wrong color of contract icon on xDai chain
 - [#2829](https://github.com/poanetwork/blockscout/pull/2829) - Fix for stuck gas limit label and value
@@ -16,6 +19,8 @@
 - [#2803](https://github.com/poanetwork/blockscout/pull/2803) - Fix block validator custom tooltip
 
 ### Chore
+- [#2845](https://github.com/poanetwork/blockscout/pull/2845) - Set outline none for nav dropdown item in mobile view (fix for Safari)
+- [#2844](https://github.com/poanetwork/blockscout/pull/2844) - Extend external reward types up to 20
 - [#2827](https://github.com/poanetwork/blockscout/pull/2827) - Node js 12.13.0 (latest LTS release) support
 - [#2818](https://github.com/poanetwork/blockscout/pull/2818) - allow hiding marketcap percentage
 - [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
