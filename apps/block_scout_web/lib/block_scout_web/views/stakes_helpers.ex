@@ -12,11 +12,11 @@ defmodule BlockScoutWeb.StakesHelpers do
     zero = Decimal.new(0)
 
     case pool do
-      %{staked_amount: ^zero} ->
+      %{total_staked_amount: ^zero} ->
         0
 
-      %{staked_amount: staked_amount, self_staked_amount: self_staked} ->
-        amount = Decimal.to_float(staked_amount)
+      %{total_staked_amount: total_staked_amount, self_staked_amount: self_staked} ->
+        amount = Decimal.to_float(total_staked_amount)
         self = Decimal.to_float(self_staked)
         self / amount * 100
     end
