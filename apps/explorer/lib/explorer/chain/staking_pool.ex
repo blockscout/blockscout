@@ -28,9 +28,9 @@ defmodule Explorer.Chain.StakingPool do
           staked_ratio: Decimal.t(),
           snapshotted_staked_ratio: Decimal.t(),
           self_staked_amount: Decimal.t(),
-          staked_amount: Decimal.t(),
+          total_staked_amount: Decimal.t(),
           snapshotted_self_staked_amount: Decimal.t(),
-          snapshotted_staked_amount: Decimal.t(),
+          snapshotted_total_staked_amount: Decimal.t(),
           ban_reason: String.t(),
           was_banned_count: integer,
           was_validator_count: integer,
@@ -38,13 +38,13 @@ defmodule Explorer.Chain.StakingPool do
         }
 
   @attrs ~w(
-    is_active delegators_count staked_amount self_staked_amount snapshotted_staked_amount snapshotted_self_staked_amount is_validator
+    is_active delegators_count total_staked_amount self_staked_amount snapshotted_total_staked_amount snapshotted_self_staked_amount is_validator
     was_validator_count is_banned are_delegators_banned ban_reason was_banned_count banned_until banned_delegators_until likelihood
     staked_ratio snapshotted_staked_ratio staking_address_hash mining_address_hash block_reward_ratio
     is_unremovable
   )a
   @req_attrs ~w(
-    is_active delegators_count staked_amount self_staked_amount is_validator
+    is_active delegators_count total_staked_amount self_staked_amount is_validator
     was_validator_count is_banned was_banned_count banned_until
     staking_address_hash mining_address_hash is_unremovable
   )a
@@ -63,9 +63,9 @@ defmodule Explorer.Chain.StakingPool do
     field(:staked_ratio, :decimal)
     field(:snapshotted_staked_ratio, :decimal)
     field(:self_staked_amount, :decimal)
-    field(:staked_amount, :decimal)
+    field(:total_staked_amount, :decimal)
     field(:snapshotted_self_staked_amount, :decimal)
-    field(:snapshotted_staked_amount, :decimal)
+    field(:snapshotted_total_staked_amount, :decimal)
     field(:ban_reason, :string)
     field(:was_banned_count, :integer)
     field(:was_validator_count, :integer)
@@ -104,8 +104,8 @@ defmodule Explorer.Chain.StakingPool do
   defp validate_staked_amount(%{valid?: false} = c), do: c
 
   defp validate_staked_amount(changeset) do
-    if get_field(changeset, :staked_amount) < get_field(changeset, :self_staked_amount) do
-      add_error(changeset, :staked_amount, "must be greater than self_staked_amount")
+    if get_field(changeset, :total_staked_amount) < get_field(changeset, :self_staked_amount) do
+      add_error(changeset, :total_staked_amount, "must be greater than self_staked_amount")
     else
       changeset
     end

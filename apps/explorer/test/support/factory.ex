@@ -663,7 +663,7 @@ defmodule Explorer.Factory do
       is_active: true,
       is_banned: false,
       is_validator: true,
-      staked_amount: wei_per_ether * 500,
+      total_staked_amount: wei_per_ether * 500,
       self_staked_amount: wei_per_ether * 300,
       was_banned_count: 0,
       was_validator_count: 1

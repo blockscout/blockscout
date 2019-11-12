@@ -15,7 +15,7 @@
     render BlockScoutWeb.CommonComponentsView,
     "_progress_from_to.html",
     from: format_token_amount(@pool.self_staked_amount, @token, digits: 0, ellipsize: false, symbol: false),
-    to: format_token_amount(@pool.staked_amount, @token, digits: 0, ellipsize: false, symbol: false),
+    to: format_token_amount(@pool.total_staked_amount, @token, digits: 0, ellipsize: false, symbol: false),
     progress: amount_ratio(@pool)
     %>
   </div>

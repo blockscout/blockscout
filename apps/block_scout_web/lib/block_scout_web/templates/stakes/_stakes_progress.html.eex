@@ -10,7 +10,7 @@
         <%= format_token_amount(@pool.self_staked_amount, @token, symbol: false, digits: 2) %>
       </div>
       <div class="stakes-progress-data-total js-stakes-progress-data-total">
-        <%= format_token_amount(@pool.staked_amount, @token, symbol: false, digits: 2) %>
+        <%= format_token_amount(@pool.total_staked_amount, @token, symbol: false, digits: 2) %>
       </div>
     </div>
   </div>
