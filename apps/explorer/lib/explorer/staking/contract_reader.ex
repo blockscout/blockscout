@@ -32,7 +32,7 @@ defmodule Explorer.Staking.ContractReader do
       is_active: {:staking, "isPoolActive", [staking_address]},
       active_delegators: {:staking, "poolDelegators", [staking_address]},
       inactive_delegators: {:staking, "poolDelegatorsInactive", [staking_address]},
-      staked_amount: {:staking, "stakeAmountTotal", [staking_address]},
+      total_staked_amount: {:staking, "stakeAmountTotal", [staking_address]},
       self_staked_amount: {:staking, "stakeAmount", [staking_address, staking_address]},
       block_reward: {:block_reward, "validatorRewardPercent", [staking_address]}
     ]

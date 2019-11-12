@@ -18,7 +18,7 @@ export function openMakeStakeModal (event, store) {
     .push('render_make_stake', { address })
     .receive('ok', msg => {
       const $modal = $(msg.html)
-      setupChart($modal.find('.js-stakes-progress'), msg.self_staked_amount, msg.staked_amount)
+      setupChart($modal.find('.js-stakes-progress'), msg.self_staked_amount, msg.total_staked_amount)
       setupValidation(
         $modal.find('form'),
         {

@@ -183,7 +183,7 @@ defmodule Explorer.Staking.ContractState do
         ContractReader.pool_reward_requests([
           global_responses.epoch_number,
           response.self_staked_amount,
-          response.staked_amount,
+          response.total_staked_amount,
           1000_000
         ])
       end)
@@ -200,7 +200,7 @@ defmodule Explorer.Staking.ContractState do
           global_responses.epoch_number,
           response.stake_amount,
           staking_response.self_staked_amount,
-          staking_response.staked_amount,
+          staking_response.total_staked_amount,
           1000_000
         ])
       end)
@@ -227,7 +227,7 @@ defmodule Explorer.Staking.ContractState do
           Map.take(staking_response, [
             :mining_address_hash,
             :is_active,
-            :staked_amount,
+            :total_staked_amount,
             :self_staked_amount
           ])
         )
