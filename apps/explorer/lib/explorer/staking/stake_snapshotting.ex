@@ -22,7 +22,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
         "validatorsToBeFinalized" => []
       })
 
-    pool_mining_addresses = pending_validators_mining_addresses ++ be_finalized_validators_mining_addresses
+    pool_mining_addresses = Enum.uniq(pending_validators_mining_addresses ++ be_finalized_validators_mining_addresses)
 
     pool_staking_addresses =
       pool_mining_addresses
