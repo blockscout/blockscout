@@ -118,8 +118,7 @@ defmodule Indexer.Block.Fetcher do
     e_logs =
       extra_logs |>
       Enum.filter(fn (%{transaction_hash: hash}) ->
-        hash == "0x0000000000000000000000000000000000000000000000000000000000000000" end) |>
-      Enum.map(fn (a) -> Map.put(a, :transaction_hash, "0xdb89f2ce857c67f6ac8717fbe58490c7caf60e79e529493294eccd0690e9052f") end)
+        hash == "0x0000000000000000000000000000000000000000000000000000000000000000" end)
     logs ++ e_logs
   end
 
