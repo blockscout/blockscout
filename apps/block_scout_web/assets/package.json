@@ -25,7 +25,6 @@
     "bootstrap": "^4.1.3",
     "chart.js": "^2.7.2",
     "clipboard": "^2.0.1",
-    "fg-loadcss": "^2.1.0",
     "highlight.js": "^9.13.1",
     "highlightjs-solidity": "^1.0.6",
     "humps": "^2.0.1",

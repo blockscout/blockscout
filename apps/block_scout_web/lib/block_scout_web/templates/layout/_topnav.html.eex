@@ -168,7 +168,6 @@
     </div>
   </div>
 </nav>
-<%= render BlockScoutWeb.LayoutView, "_network_selector.html" %>
 <script>
   if (localStorage.getItem("current-color-mode") === "dark") {
     var modeChanger = document.getElementById("dark-mode-changer");
