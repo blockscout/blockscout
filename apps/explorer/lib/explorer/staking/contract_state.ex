@@ -168,6 +168,8 @@ defmodule Explorer.Staking.ContractState do
       end)
       |> ContractReader.perform_grouped_requests(delegators, contracts, abi)
 
+    staked_total = Enum.sum(for {_, pool} <- pool_staking_responses, pool.is_active, do: pool.total_staked_amount)
+
     [likelihood_values, total_likelihood] = global_responses.pools_likelihood
 
     likelihood =
@@ -180,7 +182,7 @@ defmodule Explorer.Staking.ContractState do
     pool_reward_responses =
       pool_staking_responses
       |> Enum.map(fn {_address, response} ->
-        ContractReader.pool_reward_requests([
+        ContractReader.validator_reward_requests([
           global_responses.epoch_number,
           response.self_staked_amount,
           response.total_staked_amount,
@@ -215,7 +217,11 @@ defmodule Explorer.Staking.ContractState do
         %{
           staking_address_hash: staking_address,
           delegators_count: length(staking_response.active_delegators),
-          staked_ratio: pool_reward_response.validator_share / 10_000,
+          staked_ratio:
+            if staking_response.is_active do
+              ratio(staking_response.total_staked_amount, staked_total)
+            end,
+          validator_reward_ratio: pool_reward_response.validator_share / 10_000,
           likelihood: ratio(likelihood[staking_address] || 0, total_likelihood),
           block_reward_ratio: staking_response.block_reward / 10_000,
           is_deleted: false,
