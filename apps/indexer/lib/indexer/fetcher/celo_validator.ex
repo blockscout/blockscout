@@ -9,17 +9,11 @@ defmodule Indexer.Fetcher.CeloValidator do
     alias Explorer.Chain.CeloValidator
     alias Explorer.Chain
     alias Explorer.Celo.AccountReader
+    alias Indexer.Fetcher.Util
 
     alias Indexer.BufferedTask
 
     @behaviour BufferedTask
-
-    @defaults [
-        flush_interval: 300,
-        max_batch_size: 100,
-        max_concurrency: 10,
-        task_supervisor: Indexer.Fetcher.CeloValidator.TaskSupervisor
-    ]
 
     @max_retries 3
 
@@ -44,12 +38,7 @@ defmodule Indexer.Fetcher.CeloValidator do
 
     @doc false
     def child_spec([init_options, gen_server_options]) do
-        merged_init_opts =
-            @defaults
-            |> Keyword.merge(init_options)
-            |> Keyword.put(:state, {0, []})
-
-        Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
+      Util.default_child_spec(init_options, gen_server_options, __MODULE__)
     end
 
     @impl BufferedTask
