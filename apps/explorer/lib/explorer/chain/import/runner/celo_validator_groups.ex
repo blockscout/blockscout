@@ -7,7 +7,8 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
   
     alias Ecto.{Changeset, Multi, Repo}
     alias Explorer.Chain.{Import, CeloValidatorGroup}
-  
+    alias Explorer.Chain.Import.Runner.Util
+
     import Ecto.Query, only: [from: 2]
   
     @behaviour Import.Runner
@@ -32,13 +33,8 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
     end
   
     @impl Import.Runner
-    def run(multi, changes_list, %{timestamps: timestamps} = options) do
-      insert_options =
-        options
-        |> Map.get(option_key(), %{})
-        |> Map.take(~w(on_conflict timeout)a)
-        |> Map.put_new(:timeout, @timeout)
-        |> Map.put(:timestamps, timestamps)
+    def run(multi, changes_list, options) do
+      insert_options = Util.make_insert_options(option_key(), @timeout, options)
   
       # Enforce ShareLocks tables order (see docs: sharelocks.md)
       multi
@@ -67,19 +63,15 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
       {:ok, accounts}
     end
   
-    @spec insert(Repo.t(), [map()], %{
-            optional(:on_conflict) => Import.Runner.on_conflict(),
-            required(:timeout) => timeout,
-            required(:timestamps) => Import.timestamps()
-          }) ::
-            {:ok, [CeloValidatorGroup.t()]}
-            | {:error, [Changeset.t()]}
+    @spec insert(Repo.t(), [map()], Util.insert_option()) :: {:ok, [CeloValidatorGroup.t()]} | {:error, [Changeset.t()]}
     defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
       on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
   
       # Enforce ShareLocks order (see docs: sharelocks.md)
-      ordered_changes_list = Enum.sort_by(changes_list, & &1.address)
-      uniq_changes_list = Enum.dedup_by(ordered_changes_list, & &1.address)
+      uniq_changes_list =
+        changes_list
+        |> Enum.sort_by(& &1.address)
+        |> Enum.dedup_by(& &1.address)
 
       {:ok, _} =
         Import.insert_changes_list(
