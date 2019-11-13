@@ -111,7 +111,8 @@ defmodule Explorer.Etherscan.Logs do
             transaction.from_address_hash == ^address_hash or
             transaction.created_contract_address_hash == ^address_hash,
         select: map(log, ^@log_fields),
-        select_merge: map(transaction, [:gas_price, :gas_currency_hash, :gas_fee_recipient_hash, :gas_used, :block_number]),
+        select_merge:
+          map(transaction, [:gas_price, :gas_currency_hash, :gas_fee_recipient_hash, :gas_used, :block_number]),
         select_merge: %{
           transaction_index: transaction.index
         },

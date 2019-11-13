@@ -11,16 +11,15 @@ defmodule Explorer.Chain.ProxyContract do
 
   alias Explorer.Chain.{Hash}
 
-
   @typedoc """
   * `proxy_address` - address of the proxy contract.
   * `implementation_address` - address of the implementation contract behind the proxy.
   """
 
   @type t :: %Explorer.Chain.ProxyContract{
-               proxy_address: Hash.Address.t(),
-               implementation_address: Hash.Address.t()
-             }
+          proxy_address: Hash.Address.t(),
+          implementation_address: Hash.Address.t()
+        }
 
   schema "proxy_contract" do
     field(:proxy_address, Hash.Address)
@@ -35,6 +34,4 @@ defmodule Explorer.Chain.ProxyContract do
     ])
     |> validate_required([:proxy_address, :implementation_address])
   end
-
 end
-

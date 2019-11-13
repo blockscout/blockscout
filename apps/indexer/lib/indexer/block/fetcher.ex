@@ -177,9 +177,6 @@ defmodule Indexer.Block.Fetcher do
                block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
- #              celo_accounts: %{params: celo_accounts},
- #              celo_validators: %{params: celo_validators},
- #              celo_validator_groups: %{params: celo_validator_groups},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts}
              }
