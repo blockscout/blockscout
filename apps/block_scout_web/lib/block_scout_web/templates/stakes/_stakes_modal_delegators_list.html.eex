@@ -82,13 +82,27 @@
                   <% end %>
                 </div>
                 <div class="col-3 stakes-td stakes-cell">
-                  <%= if delegator.reward_ratio do %>
-                    <%= delegator.reward_ratio %>%
+                  <%
+                    reward =
+                      if delegator.delegator_address_hash == @pool.staking_address_hash do
+                        %{
+                          reward_ratio: @pool.validator_reward_ratio,
+                          snapshotted_reward_ratio: @pool.snapshotted_validator_reward_ratio
+                        }
+                      else
+                        %{
+                          reward_ratio: delegator.reward_ratio,
+                          snapshotted_reward_ratio: delegator.snapshotted_reward_ratio
+                        }
+                      end
+                  %>
+                  <%= if reward.reward_ratio do %>
+                    <%= reward.reward_ratio %>%
                     <%= if @is_show_snapshotted_data do %>
                       (
                         <%=
-                          if delegator.snapshotted_reward_ratio do
-                            "#{delegator.snapshotted_reward_ratio}%"
+                          if reward.snapshotted_reward_ratio do
+                            "#{reward.snapshotted_reward_ratio}%"
                           else
                             "0%"
                           end
