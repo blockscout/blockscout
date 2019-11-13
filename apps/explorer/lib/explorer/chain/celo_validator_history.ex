@@ -16,7 +16,7 @@ defmodule Explorer.Chain.CeloValidatorHistory do
 
     @type t :: %__MODULE__{
         address: Hash.Address.t(),
-        block_number: Explorer.Chain.Block.block_number() | nil,
+        block_number: Explorer.Chain.Block.block_number(),
         index: non_neg_integer(),
     }
 
@@ -25,7 +25,7 @@ defmodule Explorer.Chain.CeloValidatorHistory do
     )a
 
     @required_attrs ~w(
-        address
+        address block_number index
     )a
     
     schema "celo_validator_history" do
@@ -47,7 +47,7 @@ defmodule Explorer.Chain.CeloValidatorHistory do
         celo_validator_history
       |> cast(attrs, @attrs)
       |> validate_required(@required_attrs)
-      |> unique_constraint(:celo_validator_history_key, name: :celo_validator_history_validator_address_block_number_index_index)
+      |> unique_constraint(:celo_validator_history_key, name: :celo_validator_history_block_number_index_index)
     end
 
 end

@@ -47,21 +47,17 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
         create table(:celo_validator_history) do
             add(:index, :integer, null: false)
             add(:block_number, :integer, null: false)
-            add(:validator_address, :bytea, null: false)
+            add(:address, :bytea, null: false)
             timestamps(null: false, type: :utc_datetime_usec)
         end
 
-        create(index(:celo_validator_history, [:validator_address, :block_number, :index], unique: true))
+        create(index(:celo_validator_history, [:block_number, :index], unique: true))
 
-        IO.inspect(Explorer.Repo.insert(Explorer.Chain.Address.changeset(%Explorer.Chain.Address{}, %{
-            hash: "0x0000000000000000000000000000000000000000",
-        })))
-    
-        IO.inspect(Explorer.Chain.Address.changeset(%Explorer.Chain.Address{}, %{
+        Explorer.Repo.insert(Explorer.Chain.Address.changeset(%Explorer.Chain.Address{}, %{
             hash: "0x0000000000000000000000000000000000000000",
         }))
     
-        IO.inspect(Explorer.Chain.Transaction.changeset(%Explorer.Chain.Transaction{}, %{
+        Explorer.Repo.insert(Explorer.Chain.Transaction.changeset(%Explorer.Chain.Transaction{}, %{
             gas: 0,
             gas_price: 0,
             hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -73,19 +69,6 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
             from_address_hash: "0x0000000000000000000000000000000000000000",
             value: 0,
         }))
-
-        IO.inspect(Explorer.Repo.insert(Explorer.Chain.Transaction.changeset(%Explorer.Chain.Transaction{}, %{
-            gas: 0,
-            gas_price: 0,
-            hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-            v: 27,
-            r: 123,
-            s: 234,
-            nonce: 1000000000,
-            input: "0x1234",
-            from_address_hash: "0x0000000000000000000000000000000000000000",
-            value: 0,
-        })))
 
     end
 end

@@ -20,6 +20,7 @@ defmodule Indexer.Supervisor do
     CeloAccount,
     CeloValidator,
     CeloValidatorGroup,
+    CeloValidatorHistory,
     Token,
     TokenBalance,
     TokenInstance,
@@ -126,6 +127,7 @@ defmodule Indexer.Supervisor do
         {CeloAccount.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {CeloValidator.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {CeloValidatorGroup.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CeloValidatorHistory.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
 
         # Out-of-band fetchers
         {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},

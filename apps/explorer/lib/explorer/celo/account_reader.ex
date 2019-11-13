@@ -70,14 +70,14 @@ defmodule Explorer.Celo.AccountReader do
      else  _ -> :error end
   end
 
-  def validator_history(%{block_number: _block_number}) do
-    with data = fetch_validators(),
+  def validator_history(block_number) do
+    with data = fetch_validators(block_number),
       {:ok, [validators]} <- data["currentValidators"] do
-     {:ok,
-      %{
-        validators: validators
-      }
-     }
+     list =
+        validators
+        |> Enum.with_index
+        |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx} end)
+     {:ok, %{ validators: list}}
      else  _ -> :error end
   end
 
@@ -108,10 +108,8 @@ defmodule Explorer.Celo.AccountReader do
     data
   end
 
-  defp fetch_validators() do
-    data = call_methods([
-      {:validators, "currentValidators", []},
-    ])
+  defp fetch_validators(bn) do
+    data = call_methods([{:election, "currentValidators", []}], bn)
     data
   end
 
@@ -136,11 +134,31 @@ defmodule Explorer.Celo.AccountReader do
     end)
   end
 
+  defp call_methods(methods, bn) do
+    contract_abi = Explorer.Celo.AbiHandler.get_abi()
+    methods
+    |> Enum.map(fn (a) -> format_request(a, bn) end)
+    |> Reader.query_contracts(contract_abi)
+    |> Enum.zip(methods)
+    |> Enum.into(%{}, fn {response, {_, function_name, _}} ->
+      {function_name, response}
+    end)
+  end
+
   defp format_request({contract_name, function_name, params}) do
     %{
       contract_address: contract(contract_name),
       function_name: function_name,
       args: params
+    }
+  end
+
+  defp format_request({contract_name, function_name, params}, bn) do
+    %{
+      contract_address: contract(contract_name),
+      function_name: function_name,
+      args: params,
+      block_number: bn,
     }
   end
 
