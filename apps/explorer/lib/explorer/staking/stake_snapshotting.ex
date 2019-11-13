@@ -60,7 +60,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
     pool_reward_responses =
       pool_staking_responses
       |> Enum.map(fn {_address, response} ->
-        ContractReader.pool_reward_requests([
+        ContractReader.validator_reward_requests([
           global_responses.epoch_number,
           response.snapshotted_self_staked_amount,
           response.snapshotted_total_staked_amount,
@@ -95,7 +95,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
         %{
           staking_address_hash: staking_address,
           delegators_count: length(staking_response.active_delegators),
-          snapshotted_staked_ratio: pool_reward_response.validator_share / 10_000
+          snapshotted_validator_reward_ratio: pool_reward_response.validator_share / 10_000
         }
         |> Map.merge(
           Map.take(staking_response, [
@@ -163,20 +163,6 @@ defmodule Explorer.Staking.StakeSnapshotting do
     ]
   end
 
-  # args = [staking_epoch, validator_staked, total_staked, pool_reward \\ 10_00000]
-  def pool_reward_requests(args, block_number) do
-    [
-      validator_share: {:block_reward, "validatorShare", args, block_number - 1}
-    ]
-  end
-
-  # args = [staking_epoch, delegator_staked, validator_staked, total_staked, pool_reward \\ 10_00000]
-  def delegator_reward_requests(args, block_number) do
-    [
-      delegator_share: {:block_reward, "delegatorShare", args, block_number - 1}
-    ]
-  end
-
   defp staking_pool_on_conflict do
     from(
       pool in StakingPool,
@@ -184,7 +170,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
         set: [
           mining_address_hash: fragment("EXCLUDED.mining_address_hash"),
           delegators_count: fragment("EXCLUDED.delegators_count"),
-          snapshotted_staked_ratio: fragment("EXCLUDED.snapshotted_staked_ratio"),
+          snapshotted_validator_reward_ratio: fragment("EXCLUDED.snapshotted_validator_reward_ratio"),
           self_staked_amount: fragment("EXCLUDED.self_staked_amount"),
           total_staked_amount: fragment("EXCLUDED.total_staked_amount"),
           snapshotted_self_staked_amount: fragment("EXCLUDED.snapshotted_self_staked_amount"),
@@ -197,6 +183,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
           likelihood: pool.likelihood,
           block_reward_ratio: pool.block_reward_ratio,
           staked_ratio: pool.staked_ratio,
+          validator_reward_ratio: pool.validator_reward_ratio,
           ban_reason: pool.ban_reason,
           was_banned_count: pool.was_banned_count,
           was_validator_count: pool.was_validator_count,
