@@ -8,7 +8,18 @@ defmodule Indexer.Block.Realtime.FetcherTest do
   alias Explorer.Chain.{Address, Transaction}
   alias Indexer.Block.Catchup.Sequence
   alias Indexer.Block.Realtime
-  alias Indexer.Fetcher.{ContractCode, InternalTransaction, ReplacedTransaction, Token, TokenBalance, UncleBlock, CeloAccount, CeloValidator, CeloValidatorGroup}
+
+  alias Indexer.Fetcher.{
+    ContractCode,
+    InternalTransaction,
+    ReplacedTransaction,
+    Token,
+    TokenBalance,
+    UncleBlock,
+    CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup
+  }
 
   @moduletag capture_log: true
 

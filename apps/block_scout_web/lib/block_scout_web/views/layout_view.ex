@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.LayoutView do
       title: "Celo Betanet",
       url: "https://betanet-blockscout.celo-testnet.org/",
       test_net?: true
-    },
+    }
   ]
 
   alias BlockScoutWeb.SocialMedia

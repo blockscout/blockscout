@@ -49,6 +49,7 @@ defmodule Indexer.Transform.TokenTransfers do
       transaction_hash: log.transaction_hash,
       token_type: "ERC-20"
     }
+
     IO.inspect(token_transfer)
 
     token = %{

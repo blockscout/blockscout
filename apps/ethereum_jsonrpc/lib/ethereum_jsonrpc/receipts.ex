@@ -146,14 +146,19 @@ defmodule EthereumJSONRPC.Receipts do
   end
 
   def fetch_logs(to, from, json_rpc_named_arguments) do
-    requests = [%{
-      id: 123,
-      method: "eth_getLogs",
-      params: [%{
-        fromBlock: "0x" <> Integer.to_string(from, 16),
-        toBlock: "0x" <> Integer.to_string(to, 16)
-      }]
-    }]
+    requests = [
+      %{
+        id: 123,
+        method: "eth_getLogs",
+        params: [
+          %{
+            fromBlock: "0x" <> Integer.to_string(from, 16),
+            toBlock: "0x" <> Integer.to_string(to, 16)
+          }
+        ]
+      }
+    ]
+
     with {:ok, responses} <- json_rpc(requests, json_rpc_named_arguments),
          {:ok, orig_logs} <- reduce_logs_responses(responses) do
       elixir_logs = Logs.to_elixir(orig_logs)

@@ -68,7 +68,7 @@ defmodule Indexer.Block.Fetcher do
                 token_transfers: Import.Runner.options(),
                 tokens: Import.Runner.options(),
                 transactions: Import.Runner.options(),
-                celo_accounts: Import.Runner.options(),
+                celo_accounts: Import.Runner.options()
               }
             ) :: Import.all_result()
 
@@ -111,15 +111,17 @@ defmodule Indexer.Block.Fetcher do
     struct!(__MODULE__, named_arguments)
   end
 
-#  defp append_logs(extra_logs, %{logs: logs, receipts: receipts}) do
-#    %{logs: logs ++ extra_logs, receipts: receipts}
-#  end
+  #  defp append_logs(extra_logs, %{logs: logs, receipts: receipts}) do
+  #    %{logs: logs ++ extra_logs, receipts: receipts}
+  #  end
 
   defp get_extra_logs(logs, extra_logs) do
     e_logs =
-      extra_logs |>
-      Enum.filter(fn (%{transaction_hash: hash}) ->
-        hash == "0x0000000000000000000000000000000000000000000000000000000000000000" end)
+      extra_logs
+      |> Enum.filter(fn %{transaction_hash: hash} ->
+        hash == "0x0000000000000000000000000000000000000000000000000000000000000000"
+      end)
+
     logs ++ e_logs
   end
 
@@ -153,8 +155,8 @@ defmodule Indexer.Block.Fetcher do
          transfer_logs = get_extra_logs(logs, extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(transfer_logs),
-         %{accounts: celo_accounts, validators: celo_validators,
-           validator_groups: celo_validator_groups} = CeloAccounts.parse(logs),
+         %{accounts: celo_accounts, validators: celo_validators, validator_groups: celo_validator_groups} =
+           CeloAccounts.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
@@ -199,7 +201,7 @@ defmodule Indexer.Block.Fetcher do
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       IO.inspect(extra_logs)
-      
+
       async_import_celo_accounts(%{celo_accounts: %{params: celo_accounts}})
       async_import_celo_validators(%{celo_validators: %{params: celo_validators}})
       async_import_celo_validator_groups(%{celo_validator_groups: %{params: celo_validator_groups}})

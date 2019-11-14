@@ -75,9 +75,9 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:value, Wei)
     field(:block_number, :integer)
     field(:transaction_index, :integer)
-    
-    #field(:gas_currency_hash, Hash.Address)
-    #field(:gas_fee_recipient_hash, Hash.Address)
+
+    # field(:gas_currency_hash, Hash.Address)
+    # field(:gas_fee_recipient_hash, Hash.Address)
     belongs_to(:gas_currency, Address, foreign_key: :gas_currency_hash, references: :hash, type: Hash.Address)
     belongs_to(:gas_fee_recipient, Address, foreign_key: :gas_fee_recipient_hash, references: :hash, type: Hash.Address)
 
@@ -113,7 +113,6 @@ defmodule Explorer.Chain.InternalTransaction do
       references: :hash,
       type: Hash.Full
     )
-
   end
 
   @doc """

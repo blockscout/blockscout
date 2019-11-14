@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias Explorer.SmartContract.Publisher
 
   def verify(conn, %{"addressHash" => address_hash} = params) do
-
     with {:params, {:ok, fetched_params}} <- {:params, fetch_verify_params(params)},
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
          {:params, external_libraries} <-
@@ -72,15 +71,15 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def getsourcecode(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
-
-      address = with {:ok, proxy_contract} <- Chain.get_proxied_address(address_hash) do
-        Logger.debug("Implementation address FOUND in proxy table")
-        Chain.address_hash_to_address_with_source_code(proxy_contract)
-      else
-        {:error, :not_found} ->
-          Logger.debug("Implementation address NOT found in proxy table")
-          Chain.address_hash_to_address_with_source_code(address_hash)
-      end
+      address =
+        with {:ok, proxy_contract} <- Chain.get_proxied_address(address_hash) do
+          Logger.debug("Implementation address FOUND in proxy table")
+          Chain.address_hash_to_address_with_source_code(proxy_contract)
+        else
+          {:error, :not_found} ->
+            Logger.debug("Implementation address NOT found in proxy table")
+            Chain.address_hash_to_address_with_source_code(address_hash)
+        end
 
       render(conn, :getsourcecode, %{
         contract: address

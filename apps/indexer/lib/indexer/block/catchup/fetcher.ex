@@ -18,7 +18,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_token_balances: 1,
       async_import_token_instances: 1,
       async_import_uncles: 1,
-      fetch_and_import_range: 2,
+      fetch_and_import_range: 2
     ]
 
   alias Ecto.Changeset
@@ -133,14 +133,15 @@ defmodule Indexer.Block.Catchup.Fetcher do
       put_in(options_without_block_rewards_errors, [:blocks, :params, Access.all(), :consensus], true)
 
     with {:import, {:ok, imported} = ok} <- {:import, Chain.import(full_chain_import_options)} do
-        async_import_remaining_block_data(
+      async_import_remaining_block_data(
         imported,
         Map.put(async_import_remaining_block_data_options, :block_rewards, %{errors: block_reward_errors}),
         json_rpc_named_arguments
       )
+
       ok
     end
-end
+  end
 
   defp async_import_remaining_block_data(
          imported,

@@ -244,8 +244,8 @@ defmodule Explorer.Factory do
       cumulative_gas_used: cumulative_gas_used,
       error: error,
       gas_used: gas_used,
-#      gas_currency_hash: gas_currency_hash,
-#      gas_fee_recipient_hash: gas_fee_recipient_hash,
+      #      gas_currency_hash: gas_currency_hash,
+      #      gas_fee_recipient_hash: gas_fee_recipient_hash,
       index: next_transaction_index,
       internal_transactions_indexed_at: internal_transactions_indexed_at,
       status: status
@@ -665,14 +665,14 @@ defmodule Explorer.Factory do
 
   def celo_account_factory do
     wei_per_ether = 1_000_000_000_000_000_000
+
     %CeloAccount{
       address: address_hash(),
       account_type: "normal",
       name: "Validator #123",
       locked_gold: wei_per_ether * 4,
       nonvoting_locked_gold: wei_per_ether * 4,
-      rewards: 0,
+      rewards: 0
     }
   end
-
 end

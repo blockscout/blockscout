@@ -69,10 +69,11 @@ defmodule EthereumJSONRPC.Encoder do
       |> Base.decode16!(case: :lower)
       |> TypeDecoder.decode_raw(tuple_list)
 
-    fixed_data = case decoded_data do
-      [tup] -> Tuple.to_list(tup)
-      _ -> decoded_data
-    end
+    fixed_data =
+      case decoded_data do
+        [tup] -> Tuple.to_list(tup)
+        _ -> decoded_data
+      end
 
     {id, {:ok, fixed_data}}
   rescue

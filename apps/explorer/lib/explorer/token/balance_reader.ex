@@ -47,8 +47,9 @@ defmodule Explorer.Token.BalanceReader do
       function_name: "balanceOf",
       args: [address_hash],
       block_number: block_number,
-      gasprice: "1000000000000000000",
+      gasprice: "1000000000000000000"
     }
+
     res
   end
 
