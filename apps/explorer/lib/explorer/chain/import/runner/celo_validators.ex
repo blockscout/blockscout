@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidators do
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, CeloValidator}
+  alias Explorer.Chain.{CeloValidator, Import}
   alias Explorer.Chain.Import.Runner.Util
 
   import Ecto.Query, only: [from: 2]

@@ -1,4 +1,8 @@
 defmodule Indexer.Fetcher.Util do
+  @moduledoc """
+  Some shared code
+  """
+
   @defaults [
     flush_interval: 300,
     max_batch_size: 100,

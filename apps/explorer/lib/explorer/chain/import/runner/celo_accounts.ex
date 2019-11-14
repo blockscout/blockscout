@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, CeloAccount}
+  alias Explorer.Chain.{CeloAccount, Import}
   alias Explorer.Chain.Import.Runner.Util
 
   import Ecto.Query, only: [from: 2]
