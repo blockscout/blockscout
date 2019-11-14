@@ -18,6 +18,7 @@
 - [#2803](https://github.com/poanetwork/blockscout/pull/2803) - Fix block validator custom tooltip
 
 ### Chore
+- [#2859](https://github.com/poanetwork/blockscout/pull/2859) - Add eth_blockNumber API endpoint to eth_rpc section
 - [#2846](https://github.com/poanetwork/blockscout/pull/2846) - Remove networks images preload
 - [#2845](https://github.com/poanetwork/blockscout/pull/2845) - Set outline none for nav dropdown item in mobile view (fix for Safari)
 - [#2844](https://github.com/poanetwork/blockscout/pull/2844) - Extend external reward types up to 20
