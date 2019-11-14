@@ -90,12 +90,14 @@ defmodule Explorer.Celo.AccountReader do
     case data["currentValidators"] do
       {:ok, [validators]} ->
         list =
-        validators
-        |> Enum.with_index()
-        |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx} end)
+          validators
+          |> Enum.with_index()
+          |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx} end)
 
-      {:ok, %{validators: list}}
-      _ -> :error
+        {:ok, %{validators: list}}
+
+      _ ->
+        :error
     end
   end
 
