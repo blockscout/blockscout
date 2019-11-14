@@ -20,8 +20,8 @@ defmodule Indexer.Transform.TokenTransfers do
   end
 
   defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc) do
-    IO.inspect("do_parse")
-    IO.inspect(log)
+    # IO.inspect("do_parse")
+    # IO.inspect(log)
     {token, token_transfer} = parse_params(log)
 
     %{
@@ -50,7 +50,7 @@ defmodule Indexer.Transform.TokenTransfers do
       token_type: "ERC-20"
     }
 
-    IO.inspect(token_transfer)
+    # IO.inspect(token_transfer)
 
     token = %{
       contract_address_hash: log.address_hash,

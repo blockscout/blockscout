@@ -182,7 +182,7 @@ defmodule Indexer.Block.Fetcher do
            |> add_gas_payments(transactions_with_receipts)
            |> BlockReward.reduce_uncle_rewards(),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
-         IO.inspect(address_token_balances),
+         # IO.inspect(address_token_balances),
          {:ok, inserted} <-
            __MODULE__.import(
              state,
@@ -200,7 +200,7 @@ defmodule Indexer.Block.Fetcher do
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
-      IO.inspect(extra_logs)
+      # IO.inspect(extra_logs)
 
       async_import_celo_accounts(%{celo_accounts: %{params: celo_accounts}})
       async_import_celo_validators(%{celo_validators: %{params: celo_validators}})

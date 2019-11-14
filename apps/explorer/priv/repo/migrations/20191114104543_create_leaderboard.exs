@@ -24,7 +24,7 @@ defmodule Explorer.Repo.Migrations.CreateLeaderboard do
     create(index(:exchange_rates, [:token], unique: true))
 
     execute("CREATE type json_type AS (address char(40), multiplier real)")
-    execute("CREATE type json_assoc AS (address char(40), claim_address char(40))")
+    execute("CREATE type json_assoc AS (address char(40), claimed_address char(40))")
     execute("CREATE type json_rate AS (token bytea, rate real)")
   end
 end

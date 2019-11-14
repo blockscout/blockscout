@@ -15,7 +15,9 @@ defmodule BlockScoutWeb.Resolvers.Address do
   def get_by(_, %{hash: hash}, _) do
     case Chain.hash_to_address(hash) do
       {:error, :not_found} -> {:error, "Address not found."}
-      {:ok, _} = result -> result
+      {:ok, _} = result ->
+        IO.inspect(result)
+        result
     end
   end
 

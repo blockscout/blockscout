@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.Schema.Types do
   import_types(BlockScoutWeb.Schema.Scalars)
 
   connection(node_type: :celo_account)
+  connection(node_type: :competitor)
   connection(node_type: :address)
   connection(node_type: :transaction)
   connection(node_type: :internal_transaction)
@@ -85,6 +86,14 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:total_difficulty, :decimal)
     field(:miner_hash, :address_hash)
     field(:parent_hash, :full_hash)
+  end
+
+  @desc """
+  Leaderboard entry
+  """
+  object :competitor do
+    field(:address, :address_hash)
+    field(:score, :float)
   end
 
   @desc """

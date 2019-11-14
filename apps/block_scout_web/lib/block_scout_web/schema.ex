@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.Schema do
     Address,
     Block,
     CeloAccount,
+    Competitor,
     InternalTransaction,
     TokenTransfer,
     Transaction
@@ -65,6 +66,11 @@ defmodule BlockScoutWeb.Schema do
     field :address, :address do
       arg(:hash, non_null(:address_hash))
       resolve(&Address.get_by/3)
+    end
+
+    @desc "Gets the leaderboard"
+    field :leaderboard, list_of(:competitor) do
+      resolve(&Competitor.get_by/3)
     end
 
     @desc "Gets an account by address hash."
