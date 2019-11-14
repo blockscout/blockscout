@@ -1946,7 +1946,24 @@ defmodule BlockScoutWeb.Etherscan do
 
   @contract_verify_action %{
     name: "verify",
-    description: "Verify a contract with its source code and contract creation information.",
+    description: """
+    Verify a contract with its source code and contract creation information.
+    <br/>
+    <br/>
+    <p class="api-doc-list-item-text">curl POST example:</p>
+    <br/>
+    <div class='tab-content'>
+    <div class='tab-pane fade show active'>
+    <div class="tile tile-muted p-1">
+    <div class="m-2">
+    curl -d '{"addressHash":"0xd6984e092b51337032cf0300c7291e4839be37e1","compilerVersion":"v0.5.4+commit.9549d8ff",
+    "contractSourceCode":"pragma solidity ^0.5.4;\n","name":"Test","optimization":false}'
+    -H "Content-Type: application/json" -X POST  "https://blockscout.com/eth/kovan/api?module=contract&action=verify"
+    </pre>
+    </div>
+    </div>
+    </div>
+    """,
     required_params: [
       %{
         key: "addressHash",
