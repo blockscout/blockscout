@@ -3655,9 +3655,9 @@ defmodule Explorer.Chain do
   end
 
   def query_leaderboard do
-    result = SQL.query(Repo, """
-        SELECT competitors.address, SUM(rate*value+fetched_coin_balance+locked_gold)*multiplier AS score
-        FROM addresses, exchange_rates, competitors, claims, celo_account,
+    result = SQL.query(Repo,"""
+        SELECT competitors.address, b.name, SUM(rate*value+fetched_coin_balance+celo_account.locked_gold)*multiplier AS score
+        FROM addresses, exchange_rates, competitors, claims, celo_account, celo_account as b,
           (SELECT claims.claimed_address AS address, COALESCE(SUM(value),0) AS value
           FROM address_current_token_balances, claims
           WHERE address_hash=claims.claimed_address
@@ -3667,7 +3667,8 @@ defmodule Explorer.Chain do
         AND claims.claimed_address = get.address
         AND celo_account.address = addresses.hash
         AND claims.address = competitors.address
-        GROUP BY competitors.address, multiplier
+        AND competitors.address = b.address
+        GROUP BY competitors.address, multiplier, b.name
         ORDER BY score
       """)
     IO.inspect(result)

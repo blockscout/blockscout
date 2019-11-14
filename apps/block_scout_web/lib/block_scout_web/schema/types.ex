@@ -89,11 +89,12 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   @desc """
-  Leaderboard entry
+  Leaderboard entry 
   """
   object :competitor do
     field(:address, :address_hash)
-    field(:score, :float)
+    field(:points, :float)
+    field(:identity, :string)
   end
 
   @desc """
