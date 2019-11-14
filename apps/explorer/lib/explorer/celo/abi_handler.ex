@@ -4,8 +4,6 @@ defmodule Explorer.Celo.AbiHandler do
 
   use GenServer
 
-  require Logger
-
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
