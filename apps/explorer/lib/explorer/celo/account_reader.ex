@@ -37,7 +37,7 @@ defmodule Explorer.Celo.AccountReader do
     data = fetch_validator_data(address)
 
     case data["getValidator"] do
-      {:ok, [_, affiliation, score]} <- data["getValidator"] ->
+      {:ok, [_, affiliation, score]} ->
         {:ok,
          %{
            address: address,
@@ -93,7 +93,6 @@ defmodule Explorer.Celo.AccountReader do
          %{
            validators: validators
          }}
-    else
       _ -> :error
     end
   end
@@ -130,7 +129,7 @@ defmodule Explorer.Celo.AccountReader do
     data
   end
 
-  defp fetch_validators(_bn) do
+  defp fetch_validators do
     data =
       call_methods([
         {:validators, "currentValidators", []}
