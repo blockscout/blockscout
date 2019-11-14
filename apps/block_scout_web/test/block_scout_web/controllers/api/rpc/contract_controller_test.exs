@@ -70,10 +70,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["result"] == [
                %{
                  "ABI" => "Contract source code not verified",
-                 "Address" => to_string(address.hash),
-                 "CompilerVersion" => "",
-                 "ContractName" => "",
-                 "OptimizationUsed" => ""
+                 "Address" => to_string(address.hash)
                }
              ]
 
@@ -95,10 +92,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["result"] == [
                %{
                  "ABI" => "Contract source code not verified",
-                 "Address" => to_string(address.hash),
-                 "CompilerVersion" => "",
-                 "ContractName" => "",
-                 "OptimizationUsed" => ""
+                 "Address" => to_string(address.hash)
                }
              ]
 
@@ -124,10 +118,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["result"] == [
                %{
                  "ABI" => "Contract source code not verified",
-                 "Address" => to_string(address.hash),
-                 "CompilerVersion" => "",
-                 "ContractName" => "",
-                 "OptimizationUsed" => ""
+                 "Address" => to_string(address.hash)
                }
              ]
 
@@ -174,10 +165,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["result"] == [
                %{
                  "ABI" => "Contract source code not verified",
-                 "Address" => to_string(decompiled_smart_contract.address_hash),
-                 "CompilerVersion" => "",
-                 "ContractName" => "",
-                 "OptimizationUsed" => ""
+                 "Address" => to_string(decompiled_smart_contract.address_hash)
                }
              ]
 
@@ -199,10 +187,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["result"] == [
                %{
                  "ABI" => "Contract source code not verified",
-                 "Address" => to_string(smart_contract.address_hash),
-                 "CompilerVersion" => "",
-                 "ContractName" => "",
-                 "OptimizationUsed" => ""
+                 "Address" => to_string(smart_contract.address_hash)
                }
              ]
 
@@ -225,10 +210,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
       assert %{
                "ABI" => "Contract source code not verified",
-               "Address" => to_string(smart_contract.address_hash),
-               "CompilerVersion" => "",
-               "ContractName" => "",
-               "OptimizationUsed" => ""
+               "Address" => to_string(smart_contract.address_hash)
              } in response["result"]
 
       refute to_string(non_match.address_hash) in Enum.map(response["result"], &Map.get(&1, "Address"))
@@ -251,10 +233,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["result"] == [
                %{
                  "ABI" => "Contract source code not verified",
-                 "Address" => to_string(contract_address.hash),
-                 "CompilerVersion" => "",
-                 "ContractName" => "",
-                 "OptimizationUsed" => ""
+                 "Address" => to_string(contract_address.hash)
                }
              ]
 
@@ -281,10 +260,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert response["result"] == [
                %{
                  "ABI" => "Contract source code not verified",
-                 "Address" => to_string(contract_address.hash),
-                 "CompilerVersion" => "",
-                 "ContractName" => "",
-                 "OptimizationUsed" => ""
+                 "Address" => to_string(contract_address.hash)
                }
              ]
 
@@ -423,7 +399,11 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "CompilerVersion" => "",
           "OptimizationUsed" => "",
           "DecompiledSourceCode" => "",
-          "DecompilerVersion" => ""
+          "DecompilerVersion" => "",
+          "ConstructorArguments" => "",
+          "EVMVersion" => "",
+          "ExternalLibraries" => "",
+          "OptimizationRuns" => ""
         }
       ]
 
@@ -439,7 +419,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     end
 
     test "with a verified contract address", %{conn: conn} do
-      contract = insert(:smart_contract, optimization: true)
+      contract = insert(:smart_contract, optimization: true, optimization_runs: 200, evm_version: "default")
 
       params = %{
         "module" => "contract",
@@ -456,12 +436,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "ABI" => Jason.encode!(contract.abi),
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
-          "DecompiledSourceCode" => "Contract source code not decompiled.",
           # The contract's optimization value is true, so the expected value
           # for `OptimizationUsed` is "1". If it was false, the expected value
           # would be "0".
-          "DecompilerVersion" => "",
-          "OptimizationUsed" => "1"
+          "OptimizationUsed" => "true",
+          "OptimizationRuns" => 200,
+          "EVMVersion" => "default"
         }
       ]
 
@@ -508,9 +488,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         "ABI" => Jason.encode!(contract_code_info.abi),
         "ContractName" => contract_code_info.name,
         "CompilerVersion" => contract_code_info.version,
-        "DecompiledSourceCode" => "Contract source code not decompiled.",
-        "DecompilerVersion" => "",
-        "OptimizationUsed" => "0"
+        "OptimizationUsed" => "false",
+        "EVMVersion" => nil
       }
 
       assert response["status"] == "1"
@@ -578,9 +557,9 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                  contract_source_code
 
       assert result["ContractName"] == name
-      assert result["DecompiledSourceCode"] == "Contract source code not decompiled."
-      assert result["DecompilerVersion"] == ""
-      assert result["OptimizationUsed"] == "1"
+      assert result["DecompiledSourceCode"] == nil
+      assert result["DecompilerVersion"] == nil
+      assert result["OptimizationUsed"] == "true"
       assert :ok = ExJsonSchema.Validator.validate(verify_schema(), response)
     end
   end
