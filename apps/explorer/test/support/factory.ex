@@ -28,6 +28,7 @@ defmodule Explorer.Factory do
     TokenTransfer,
     Token.Instance,
     Transaction,
+    CeloAccount,
     StakingPool,
     StakingPoolsDelegator
   }
@@ -659,6 +660,19 @@ defmodule Explorer.Factory do
       ordered_withdraw: wei_per_ether * 600,
       stake_amount: wei_per_ether * 200,
       ordered_withdraw_epoch: 2
+    }
+  end
+
+  def celo_account_factory do
+    wei_per_ether = 1_000_000_000_000_000_000
+
+    %CeloAccount{
+      address: address_hash(),
+      account_type: "normal",
+      name: "Validator #123",
+      locked_gold: wei_per_ether * 4,
+      nonvoting_locked_gold: wei_per_ether * 4,
+      rewards: 0
     }
   end
 end

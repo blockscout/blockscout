@@ -19,7 +19,10 @@ defmodule Indexer.Block.FetcherTest do
     ReplacedTransaction,
     Token,
     TokenBalance,
-    UncleBlock
+    UncleBlock,
+    CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup
   }
 
   @moduletag capture_log: true
@@ -55,6 +58,9 @@ defmodule Indexer.Block.FetcherTest do
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       UncleBlock.Supervisor.Case.start_supervised!(

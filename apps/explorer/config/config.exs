@@ -30,6 +30,8 @@ config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
   period: average_block_period
 
+config :explorer, Explorer.Celo.AbiHandler, enabled: true
+
 config :explorer, Explorer.ChainSpec.GenesisData,
   enabled: true,
   chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
@@ -87,6 +89,12 @@ end
 config :explorer, Explorer.Staking.PoolsReader,
   validators_contract_address: System.get_env("POS_VALIDATORS_CONTRACT"),
   staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
+
+config :explorer, Explorer.Celo.AccountReader,
+  accounts_contract_address: System.get_env("ACCOUNTS_CONTRACT_ADDRESS"),
+  validators_contract_address: System.get_env("VALIDATORS_CONTRACT_ADDRESS"),
+  lockedgold_contract_address: System.get_env("LOCKEDGOLD_CONTRACT_ADDRESS"),
+  election_contract_address: System.get_env("ELECTION_CONTRACT_ADDRESS")
 
 if System.get_env("POS_STAKING_CONTRACT") do
   config :explorer, Explorer.Staking.EpochCounter,

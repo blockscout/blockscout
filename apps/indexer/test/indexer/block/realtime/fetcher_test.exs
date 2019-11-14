@@ -8,7 +8,18 @@ defmodule Indexer.Block.Realtime.FetcherTest do
   alias Explorer.Chain.{Address, Transaction}
   alias Indexer.Block.Catchup.Sequence
   alias Indexer.Block.Realtime
-  alias Indexer.Fetcher.{ContractCode, InternalTransaction, ReplacedTransaction, Token, TokenBalance, UncleBlock}
+
+  alias Indexer.Fetcher.{
+    ContractCode,
+    InternalTransaction,
+    ReplacedTransaction,
+    Token,
+    TokenBalance,
+    UncleBlock,
+    CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup
+  }
 
   @moduletag capture_log: true
 
@@ -55,6 +66,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       Sequence.cap(sequence)
 
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 

@@ -294,8 +294,6 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
     @tag :no_parity
     test "duplicate transaction hashes only retry uniques", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      IO.inspect(json_rpc_named_arguments)
-
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
           {:ok, [%{id: 0, error: %{code: -32602, message: "Invalid params"}}]}
