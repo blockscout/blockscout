@@ -63,7 +63,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
     {:ok, accounts}
   end
 
-  @spec insert(Repo.t(), [map()], Util.insert_option()) :: {:ok, [CeloValidatorGroup.t()]} | {:error, [Changeset.t()]}
+  @spec insert(Repo.t(), [map()], Util.insert_options()) :: {:ok, [CeloValidatorGroup.t()]} | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
