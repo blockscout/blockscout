@@ -22,7 +22,7 @@ defmodule Indexer.Block.FetcherTest do
     UncleBlock,
     CeloAccount,
     CeloValidator,
-    CeloValidatorGroup,
+    CeloValidatorGroup
   }
 
   @moduletag capture_log: true

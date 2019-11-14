@@ -67,7 +67,7 @@ defmodule Indexer.Block.Fetcher do
                 token_transfers: Import.Runner.options(),
                 tokens: Import.Runner.options(),
                 transactions: Import.Runner.options(),
-                celo_accounts: Import.Runner.options(),
+                celo_accounts: Import.Runner.options()
               }
             ) :: Import.all_result()
 
@@ -138,8 +138,8 @@ defmodule Indexer.Block.Fetcher do
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
-         %{accounts: celo_accounts, validators: celo_validators,
-           validator_groups: celo_validator_groups} = CeloAccounts.parse(logs),
+         %{accounts: celo_accounts, validators: celo_validators, validator_groups: celo_validator_groups} =
+           CeloAccounts.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
@@ -182,7 +182,7 @@ defmodule Indexer.Block.Fetcher do
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
-      
+
       async_import_celo_accounts(%{celo_accounts: %{params: celo_accounts}})
       async_import_celo_validators(%{celo_validators: %{params: celo_validators}})
       async_import_celo_validator_groups(%{celo_validator_groups: %{params: celo_validator_groups}})

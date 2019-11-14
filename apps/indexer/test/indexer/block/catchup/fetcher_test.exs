@@ -10,7 +10,18 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   alias Explorer.Chain.Hash
   alias Indexer.Block
   alias Indexer.Block.Catchup.Fetcher
-  alias Indexer.Fetcher.{BlockReward, CoinBalance, InternalTransaction, Token, TokenBalance, UncleBlock, CeloAccount, CeloValidator, CeloValidatorGroup}
+
+  alias Indexer.Fetcher.{
+    BlockReward,
+    CoinBalance,
+    InternalTransaction,
+    Token,
+    TokenBalance,
+    UncleBlock,
+    CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup
+  }
 
   @moduletag capture_log: true
 

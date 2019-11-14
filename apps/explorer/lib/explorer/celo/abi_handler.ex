@@ -31,6 +31,4 @@ defmodule Explorer.Celo.AbiHandler do
     |> File.read!()
     |> Jason.decode!()
   end
-
 end
-

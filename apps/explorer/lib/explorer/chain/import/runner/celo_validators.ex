@@ -92,12 +92,10 @@ defmodule Explorer.Chain.Import.Runner.CeloValidators do
       update: [
         set: [
           group_address_hash: fragment("EXCLUDED.group_address_hash"),
-          
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", account.updated_at)
         ]
       ]
     )
   end
-
 end

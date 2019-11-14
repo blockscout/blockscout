@@ -101,5 +101,4 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
       ]
     )
   end
-
 end
