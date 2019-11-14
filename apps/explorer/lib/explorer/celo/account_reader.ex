@@ -4,11 +4,13 @@ defmodule Explorer.Celo.AccountReader do
   """
 
   require Logger
+  alias Explorer.Celo.AbiHandler
   alias Explorer.SmartContract.Reader
 
   def account_data(%{address: account_address}) do
-    with data = fetch_account_data(account_address),
-         {:ok, [name]} <- data["getName"],
+    data = fetch_account_data(account_address)
+
+    with {:ok, [name]} <- data["getName"],
          {:ok, [url]} <- data["getMetadataURL"],
          {:ok, [is_validator]} <- data["isValidator"],
          {:ok, [is_validator_group]} <- data["isValidatorGroup"],
@@ -32,57 +34,67 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   def validator_data(%{address: address}) do
-    with data = fetch_validator_data(address),
-         {:ok, [_, affiliation, score]} <- data["getValidator"] do
-      {:ok,
-       %{
-         address: address,
-         group_address_hash: affiliation,
-         score: score
-       }}
-    else
-      _ -> :error
+    data = fetch_validator_data(address)
+
+    case data["getValidator"] do
+      {:ok, [_, affiliation, score]} ->
+        {:ok,
+         %{
+           address: address,
+           group_address_hash: affiliation,
+           score: score
+         }}
+
+      _ ->
+        :error
     end
   end
 
   def validator_group_data(%{address: address}) do
-    with data = fetch_validator_group_data(address),
-         {:ok, [_members, commission, _size_history]} <- data["getValidatorGroup"] do
-      {:ok,
-       %{
-         address: address,
-         commission: commission
-       }}
-    else
-      _ -> :error
+    data = fetch_validator_group_data(address)
+
+    case data["getValidatorGroup"] do
+      {:ok, [_members, commission, _size_history]} ->
+        {:ok,
+         %{
+           address: address,
+           commission: commission
+         }}
+
+      _ ->
+        :error
     end
   end
 
   # how to delete them from the table?
   def withdrawal_data(%{address: address}) do
-    with data = fetch_withdrawal_data(address),
-         {:ok, [values, timestamps]} <- data["getPendingWithdrawals"] do
-      {:ok,
-       %{
-         address: address,
-         withdrawals:
-           Enum.map(Enum.zip(values, timestamps), fn {v, t} -> %{address: address, amount: v, timestamp: t} end)
-       }}
-    else
-      _ -> :error
+    data = fetch_withdrawal_data(address)
+
+    case data["getPendingWithdrawals"] do
+      {:ok, [values, timestamps]} ->
+        {:ok,
+         %{
+           address: address,
+           withdrawals:
+             Enum.map(Enum.zip(values, timestamps), fn {v, t} -> %{address: address, amount: v, timestamp: t} end)
+         }}
+
+      _ ->
+        :error
     end
   end
 
   def validator_history(block_number) do
-    with data = fetch_validators(block_number),
-         {:ok, [validators]} <- data["currentValidators"] do
-      list =
+    data = fetch_validators(block_number)
+
+    case data["currentValidators"] do
+      {:ok, [validators]} ->
+        list =
         validators
         |> Enum.with_index()
         |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx} end)
 
       {:ok, %{validators: list}}
-    else
       _ -> :error
     end
   end
@@ -135,7 +147,7 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp call_methods(methods) do
-    contract_abi = Explorer.Celo.AbiHandler.get_abi()
+    contract_abi = AbiHandler.get_abi()
 
     methods
     |> Enum.map(&format_request/1)

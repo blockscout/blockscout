@@ -7,7 +7,7 @@ defmodule Explorer.Chain.CeloValidatorHistory do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, Address}
+  alias Explorer.Chain.{Address, Hash}
 
   @typedoc """
   * `address` - address of the validator.

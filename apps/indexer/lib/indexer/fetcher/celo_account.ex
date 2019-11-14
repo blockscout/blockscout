@@ -1,26 +1,23 @@
 defmodule Indexer.Fetcher.CeloAccount do
+  @moduledoc """
+  Fetches Celo accounts.
+  """
   use Indexer.Fetcher
   use Spandex.Decorators
 
   require Logger
 
   alias Indexer.Fetcher.CeloAccount.Supervisor, as: CeloAccountSupervisor
-  alias Explorer.Chain.CeloAccount
-  alias Explorer.Chain
+
   alias Explorer.Celo.AccountReader
+  alias Explorer.Chain
+  alias Explorer.Chain.CeloAccount
 
   alias Indexer.BufferedTask
+  alias Indexer.Fetcher.Util
 
   @behaviour BufferedTask
 
-<<<<<<< HEAD
-  @defaults [
-    flush_interval: 300,
-    max_batch_size: 100,
-    max_concurrency: 10,
-    task_supervisor: Indexer.Fetcher.CeloAccount.TaskSupervisor
-  ]
-
   @max_retries 3
 
   def async_fetch(accounts) do
@@ -31,18 +28,6 @@ defmodule Indexer.Fetcher.CeloAccount do
         accounts.params
         |> Enum.map(&entry/1)
 
-=======
-  @max_retries 3
-
-  def async_fetch(accounts) do
-    if CeloAccountSupervisor.disabled?() do
-      :ok
-    else
-      params =
-        accounts.params
-        |> Enum.map(&entry/1)
-
->>>>>>> 1a92f710716f2d5e8138e90f2d7e88cc26faeaec
       BufferedTask.buffer(__MODULE__, params, :infinity)
     end
   end
@@ -56,16 +41,7 @@ defmodule Indexer.Fetcher.CeloAccount do
 
   @doc false
   def child_spec([init_options, gen_server_options]) do
-<<<<<<< HEAD
-    merged_init_opts =
-      @defaults
-      |> Keyword.merge(init_options)
-      |> Keyword.put(:state, {0, []})
-
-    Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
-=======
-    Indexer.Fetcher.Util.default_child_spec(init_options, gen_server_options, __MODULE__)
->>>>>>> 1a92f710716f2d5e8138e90f2d7e88cc26faeaec
+    Util.default_child_spec(init_options, gen_server_options, __MODULE__)
   end
 
   @impl BufferedTask
