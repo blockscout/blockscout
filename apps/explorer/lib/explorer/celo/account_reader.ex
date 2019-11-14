@@ -93,7 +93,9 @@ defmodule Explorer.Celo.AccountReader do
          %{
            validators: validators
          }}
-      _ -> :error
+
+      _ ->
+        :error
     end
   end
 
