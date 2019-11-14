@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.Schema do
   alias BlockScoutWeb.Resolvers.{
     Address,
     Block,
+    CeloAccount,
     InternalTransaction,
     TokenTransfer,
     Transaction
@@ -64,6 +65,12 @@ defmodule BlockScoutWeb.Schema do
     field :address, :address do
       arg(:hash, non_null(:address_hash))
       resolve(&Address.get_by/3)
+    end
+
+    @desc "Gets an account by address hash."
+    field :celo_account, :celo_account do
+      arg(:hash, non_null(:address_hash))
+      resolve(&CeloAccount.get_by/3)
     end
 
     @desc "Gets addresses by address hash."
