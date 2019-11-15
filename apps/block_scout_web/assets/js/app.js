@@ -11,7 +11,9 @@ import '../css/app.scss'
 //
 import '@babel/polyfill'
 import 'phoenix_html'
-import 'bootstrap'
+import 'bootstrap/js/dist/dropdown'
+import 'bootstrap/js/dist/tooltip'
+import 'bootstrap/js/dist/modal'
 
 // Import local files
 //

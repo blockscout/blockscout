@@ -52,7 +52,7 @@ const awesompleteJs = {
         use: [
           MiniCssExtractPlugin.loader,
           {
-            loader: "css-loader",
+            loader: 'css-loader'
           }
         ]
       }
@@ -73,6 +73,7 @@ const awesompleteJs = {
 const appJs =
   {
     entry: {
+      'main-page': './js/main-page.js',
       app: './js/app.js',
       stakes: './js/pages/stakes.js',
       'non-critical': './css/non-critical.scss'
