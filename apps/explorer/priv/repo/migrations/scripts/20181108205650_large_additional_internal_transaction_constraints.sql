@@ -34,11 +34,11 @@ BEGIN
       AND
         (last_block_number IS NULL OR i.block_number < last_block_number) AND
         -- call_has_call_type CONSTRAINT
-        ((type = 'call' AND i.call_type IS NULL) OR
+        ((i.type = 'call' AND i.call_type IS NULL) OR
         -- call_has_input CONSTRAINT
-        (type = 'call' AND i.input IS NULL) OR
+        (i.type = 'call' AND i.input IS NULL) OR
         -- create_has_init CONSTRAINT
-        (type = 'create' AND i.init is NULL))
+        (i.type = 'create' AND i.init is NULL))
       ORDER BY i.block_number DESC, i.transaction_index LIMIT batch_size
     ) a;
 
