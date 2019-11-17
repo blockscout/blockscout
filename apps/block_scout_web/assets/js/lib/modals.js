@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import Chart from 'chart.js'
+import Chart from 'chart.js/dist/Chart.min.js'
 
 $(function () {
   $('.js-become-candidate').on('click', function () {
