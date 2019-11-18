@@ -26,7 +26,7 @@ function transpileViewScript(file) {
           }
         }
       ]
-    }
+    },
   }
 };
 
@@ -36,47 +36,15 @@ const jsOptimizationParams = {
   sourceMap: true
 }
 
-const awesompleteJs = {
-  entry: {
-    awesomplete: './js/lib/awesomplete.js',
-    'awesomplete-util': './js/lib/awesomplete-util.js',
-  },
-  output: {
-    filename: '[name].min.js',
-    path: path.resolve(__dirname, '../priv/static/js')
-  },
-  module: {
-    rules: [
-      {
-        test: /\.css$/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          {
-            loader: 'css-loader'
-          }
-        ]
-      }
-    ]
-  },
-  optimization: {
-    minimizer: [
-      new TerserJSPlugin(jsOptimizationParams),
-    ]
-  },
-  plugins: [
-    new MiniCssExtractPlugin({
-      filename: '../css/awesomplete.css'
-    })
-  ]
-}
-
 const appJs =
   {
     entry: {
       'main-page': './js/main-page.js',
       app: './js/app.js',
       stakes: './js/pages/stakes.js',
-      'non-critical': './css/non-critical.scss'
+      'non-critical': './css/non-critical.scss',
+      awesomplete: './js/lib/awesomplete.js',
+      'awesomplete-util': './js/lib/awesomplete-util.js'
     },
     output: {
       filename: '[name].js',
@@ -106,19 +74,20 @@ const appJs =
             }, {
               loader: 'postcss-loader'
             }, {
-              loader: 'sass-loader',
-              options: {
-                sassOptions: {
-                  precision: 8,
-                  includePaths: [
-                    'node_modules/bootstrap/scss',
-                    'node_modules/@fortawesome/fontawesome-free/scss'
-                  ]
-                }
-              }
+              loader: 'sass-loader'
             }
           ]
-        }, {
+        },
+        {
+          test: /\.css$/,
+          use: [
+            MiniCssExtractPlugin.loader,
+            {
+              loader: 'css-loader'
+            }
+          ]
+        },
+        {
           test: /\.(svg|ttf|eot|woff|woff2)$/,
           use: {
             loader: 'file-loader',
@@ -142,4 +111,4 @@ const appJs =
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs, awesompleteJs)
+module.exports = viewScripts.concat(appJs)

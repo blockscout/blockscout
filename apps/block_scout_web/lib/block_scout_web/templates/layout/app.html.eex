@@ -4,7 +4,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+    <%= if Enum.at(@conn.path_info, -1) do %>
+      <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+    <% else %>
+      <link rel="stylesheet" href="<%= static_path(@conn, "/css/main-page.css") %>">
+    <% end %>
     <link rel="preload" href="/css/non-critical.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="/css/non-critical.css"></noscript>
 

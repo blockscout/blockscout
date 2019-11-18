@@ -1,7 +1,7 @@
 <link rel="preload" href="/css/awesomplete.css" as="style" onload="this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="/css/awesomplete.css"></noscript>
-<script src="/js/awesomplete.min.js"></script>
-<script src="/js/awesomplete-util.min.js"></script>
+<script src="/js/awesomplete.js"></script>
+<script src="/js/awesomplete-util.js"></script>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <script>
     if (localStorage.getItem("current-color-mode") === "dark") {

@@ -11,6 +11,7 @@ import '../css/app.scss'
 //
 import '@babel/polyfill'
 import 'phoenix_html'
+import 'bootstrap/js/dist/collapse'
 import 'bootstrap/js/dist/dropdown'
 import 'bootstrap/js/dist/tooltip'
 import 'bootstrap/js/dist/modal'

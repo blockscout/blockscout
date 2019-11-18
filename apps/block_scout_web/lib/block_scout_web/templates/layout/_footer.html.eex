@@ -17,7 +17,7 @@
         <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
         <div class="footer-social-icons">
           <a href="https://github.com/poanetwork/blockscout" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
-            <i class="fab fa-github"></i>
+            <div class="fab fa-github"></div>
           </a>
           <a href="https://www.twitter.com/_blockscout/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <i class="fab fa-twitter"></i>

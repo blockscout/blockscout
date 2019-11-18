@@ -24,9 +24,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "~bootstrap/scss/root";
 @import "~bootstrap/scss/reboot";
 @import "~bootstrap/scss/grid";
-@import "~bootstrap/scss/code";
-@import "~bootstrap/scss/close";
 @import "~bootstrap/scss/buttons";
+@import "~bootstrap/scss/forms";
 @import "~bootstrap/scss/input-group";
 @import "~bootstrap/scss/utilities/spacing";
 @import "~bootstrap/scss/utilities/sizing";
@@ -37,7 +36,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "~bootstrap/scss/utilities/background";
 @import "~bootstrap/scss/utilities/position";
 @import "~bootstrap/scss/utilities/borders";
-@import "~bootstrap/scss/progress";
 
 // Bootstrap Components
 @import "~bootstrap/scss/alert";
@@ -51,9 +49,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "~bootstrap/scss/tables";
 @import "~bootstrap/scss/transitions";
 
-// Code highlight
-@import "~highlight.js/styles/default";
-
 //Custom theme
 @import "theme/fonts";
 
@@ -64,8 +59,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "helpers";
 @import "components/panels";
 @import "components/nav_tabs";
-@import "components/dot";
-@import "components/pagination_container";
 @import "components/address_link";
 @import "components/footer";
 @import "components/filter";
@@ -77,42 +70,10 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/card";
 @import "components/tile";
 @import "components/dashboard-banner";
-@import "components/icon-link";
-@import "components/badge";
-@import "components/description-list";
-@import "components/nounderline-link";
-@import "components/token-balance-dropdown";
-@import "components/address-overview";
-@import "components/token_tile_view_more";
 @import "components/dropdown";
-@import "components/loading-spinner";
-@import "components/transaction-input";
-@import "components/coin-balance-tile";
-@import "components/highlight";
 @import "components/btn_full";
 @import "components/btn_line";
-@import "components/check";
-@import "components/stakes_variables";
-@import "components/stakes_table";
-@import "components/form";
-@import "components/btn_copy";
-@import "components/btn_qr";
-@import "components/btn_contract";
-@import "components/btn_address_card";
-@import "components/btn_dropdown_line";
-@import "components/transaction";
-@import "components/api";
-@import "components/verify_other_explorers";
 @import "components/errors";
-@import "components/log-search";
-@import "components/radio";
-@import "components/modal_variables";
-@import "components/new_smart_contract";
-@import "components/radio_big";
-@import "components/btn_no_border";
-@import "components/custom_tooltips_block_details";
-@import "components/_erc721_token_image_container";
-@import "components/_inventory_token_instance_image_container";
 
 @import "theme/dark-theme";
 
