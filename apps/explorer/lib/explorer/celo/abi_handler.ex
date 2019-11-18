@@ -12,7 +12,7 @@ defmodule Explorer.Celo.AbiHandler do
 
   @impl GenServer
   def init(_) do
-    contract_abi = abi("lockedgold.json") ++ abi("validators.json") ++ abi("election.json") ++ abi("accounts.json")
+    contract_abi = abi("lockedgold.json") ++ abi("validators.json") ++ abi("election.json") ++ abi("accounts.json") ++ abi("registry.json")
     {:ok, contract_abi}
   end
 

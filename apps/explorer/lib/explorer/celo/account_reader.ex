@@ -114,7 +114,7 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_account_data(account_address) do
-    call_methods([
+    res = call_methods([
       {:lockedgold, "getAccountTotalLockedGold", [account_address]},
       {:lockedgold, "getAccountNonvotingLockedGold", [account_address]},
       {:validators, "isValidator", [account_address]},
@@ -122,6 +122,7 @@ defmodule Explorer.Celo.AccountReader do
       {:accounts, "getName", [account_address]},
       {:accounts, "getMetadataURL", [account_address]}
     ])
+    res
   end
 
   defp fetch_validator_data(address) do
@@ -189,12 +190,39 @@ defmodule Explorer.Celo.AccountReader do
     }
   end
 
-  defp contract(:lockedgold), do: config(:lockedgold_contract_address)
-  defp contract(:validators), do: config(:validators_contract_address)
-  defp contract(:election), do: config(:election_contract_address)
-  defp contract(:accounts), do: config(:accounts_contract_address)
+  defp contract(:lockedgold), do: get_address("LockedGold")
+  defp contract(:validators), do: get_address("Validators")
+  defp contract(:election), do: get_address("Election")
+  defp contract(:accounts), do: get_address("Accounts")
 
-  defp config(key) do
-    Application.get_env(:explorer, __MODULE__, [])[key]
+  defp get_address(name) do
+    contract_abi = Explorer.Celo.AbiHandler.get_abi()
+
+    methods = [%{
+      contract_address: "0x000000000000000000000000000000000000ce10",
+      function_name: "getAddressForString",
+      args: [name]
+    }]
+
+    # IO.inspect(methods)
+
+    res = methods
+      |> Reader.query_contracts(contract_abi)
+      |> Enum.zip(methods)
+      |> Enum.into(%{}, fn {response, %{function_name: function_name}} ->
+        {function_name, response}
+      end)
+
+    # IO.inspect(res)
+
+    {:ok, [address]} = res["getAddressForString"]
+
+    "0x" <> Base.encode16(address)
+
   end
+
+#  defp config(key) do
+#    Application.get_env(:explorer, __MODULE__, [])[key]
+#  end
+
 end

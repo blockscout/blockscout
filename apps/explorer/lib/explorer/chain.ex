@@ -3671,7 +3671,7 @@ defmodule Explorer.Chain do
         GROUP BY competitors.address, multiplier, b.name
         ORDER BY score
       """)
-    IO.inspect(result)
+    # IO.inspect(result)
     case result do
       {:ok, %{rows: res}} -> {:ok, res}
       _ -> {:error, :not_found}

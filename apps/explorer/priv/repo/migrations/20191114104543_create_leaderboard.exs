@@ -5,6 +5,8 @@ defmodule Explorer.Repo.Migrations.CreateLeaderboard do
     create table(:competitors) do
       add(:address, :bytea, null: false)
       add(:multiplier, :real, null: false)
+      add(:old_gold, :numeric, precision: 100)
+      add(:old_usd, :numeric, precision: 100)
     end
 
     create(index(:competitors, [:address], unique: true))

@@ -94,7 +94,8 @@ config :explorer, Explorer.Celo.AccountReader,
   accounts_contract_address: System.get_env("ACCOUNTS_CONTRACT_ADDRESS"),
   validators_contract_address: System.get_env("VALIDATORS_CONTRACT_ADDRESS"),
   lockedgold_contract_address: System.get_env("LOCKEDGOLD_CONTRACT_ADDRESS"),
-  election_contract_address: System.get_env("ELECTION_CONTRACT_ADDRESS")
+  election_contract_address: System.get_env("ELECTION_CONTRACT_ADDRESS"),
+  registry_contract_address: System.get_env("REGISTRY_CONTRACT_ADDRESS")
 
 if System.get_env("POS_STAKING_CONTRACT") do
   config :explorer, Explorer.Staking.EpochCounter,
