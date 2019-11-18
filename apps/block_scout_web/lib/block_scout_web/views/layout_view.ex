@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.LayoutView do
 
   def issue_link(conn) do
     params = [
-      labels: "NextyScout",
+      labels: "NextyExplorer",
       body: issue_body(conn),
       title: subnetwork_title() <> ": <Issue Title>"
     ]
