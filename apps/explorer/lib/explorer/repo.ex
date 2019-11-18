@@ -38,6 +38,7 @@ defmodule Explorer.Repo do
     returning = opts[:returning]
 
     elements
+    |> Enum.filter(fn(x) -> to_string(x[:from_address_hash]) != "0x0000000000000000000000000000000000000000" end)
     |> Enum.chunk_every(500)
     |> Enum.reduce({0, []}, fn chunk, {total_count, acc} ->
       {count, inserted} =
@@ -79,11 +80,11 @@ defmodule Explorer.Repo do
             reraise exception, __STACKTRACE__
         end
 
-      if returning do
-        {count + total_count, acc ++ inserted}
-      else
-        {count + total_count, nil}
-      end
+        if returning do
+          {count + total_count, acc ++ inserted}
+        else
+          {count + total_count, nil}
+        end
     end)
   end
 
