@@ -183,6 +183,9 @@ $labels-dark: #8a8dba; // header nav, labels
 	.tile.tile-type-block .tile-transaction-type-block a {
 		color: #fff;
 	}
+	.tile.tile-type-transaction span {
+		color: #4b9b8e !important;
+	}
 	.fade-up-blocks-chain .tile-type-block-animation {
 		background-color: $dark-light;
 		border-top-color: $dark-light;
