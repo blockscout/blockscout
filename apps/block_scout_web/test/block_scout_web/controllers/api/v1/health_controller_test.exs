@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
                "error_code" => 5001,
                "error_title" => "blocks fetching is stuck",
                "error_description" =>
-                 "There are no new blocks in the DB for the last 5 mins. Check the healthiness of Ethereum archive node or the Blockscout DB instance",
+                 "There are no new blocks in the DB for the last 5 mins. Check the healthiness of Ethereum archive node or the NextyExplorer DB instance",
                "data" => %{
                  "latest_block_number" => _,
                  "latest_block_inserted_at" => _
@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
              "error_code" => 5001,
              "error_title" => "blocks fetching is stuck",
              "error_description" =>
-               "There are no new blocks in the DB for the last 5 mins. Check the healthiness of Ethereum archive node or the Blockscout DB instance",
+               "There are no new blocks in the DB for the last 5 mins. Check the healthiness of Ethereum archive node or the NextyExplorer DB instance",
              "data" => %{
                "latest_block_number" => _,
                "latest_block_inserted_at" => _

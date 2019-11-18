@@ -4,7 +4,7 @@
 
 * Elixir & Erlang/OTP versions (`elixir -version`):
 * Operating System:
-* Blockscout Version/branch: 
+* NextyExplorer Version/branch: 
 
 ### Steps to reproduce
 

@@ -19,7 +19,7 @@ ETHEREUM_JSONRPC_WS_URL=ws://host.docker.internal:2000 \
 make start
 ```
 
-Blockscout will be available on `localhost:4000`
+NextyExplorer will be available on `localhost:4000`
 
 **Note**
 On mac/Windows Docker provides with a special URL `host.docker.internal` that will be available into container and routed to your local machine.
