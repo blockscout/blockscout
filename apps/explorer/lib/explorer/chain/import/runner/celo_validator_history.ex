@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorHistory do
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, CeloValidatorHistory}
+  alias Explorer.Chain.{CeloValidatorHistory, Import}
   alias Explorer.Chain.Import.Runner.Util
 
   import Ecto.Query, only: [from: 2]
@@ -53,7 +53,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorHistory do
     # Enforce ShareLocks order (see docs: sharelocks.md)
     uniq_changes_list =
       changes_list
-      |> Enum.sort_by(changes_list, &{&1.block_number, &1.index})
+      |> Enum.sort_by(&{&1.block_number, &1.index})
       |> Enum.dedup_by(&{&1.block_number, &1.index})
 
     {:ok, _} =

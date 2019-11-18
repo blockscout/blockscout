@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Import.Runner.Util do
     |> Map.put(:timestamps, timestamps)
   end
 
-  @type insert_option :: %{
+  @type insert_options :: %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()

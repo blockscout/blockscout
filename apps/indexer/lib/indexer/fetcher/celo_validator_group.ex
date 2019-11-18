@@ -1,15 +1,20 @@
 defmodule Indexer.Fetcher.CeloValidatorGroup do
+  @moduledoc """
+  Fetches Celo validator groups.
+  """
   use Indexer.Fetcher
   use Spandex.Decorators
 
   require Logger
 
   alias Indexer.Fetcher.CeloValidatorGroup.Supervisor, as: CeloValidatorGroupSupervisor
-  alias Explorer.Chain.CeloValidatorGroup
-  alias Explorer.Chain
+
   alias Explorer.Celo.AccountReader
+  alias Explorer.Chain
+  alias Explorer.Chain.CeloValidatorGroup
 
   alias Indexer.BufferedTask
+  alias Indexer.Fetcher.Util
 
   @behaviour BufferedTask
 
@@ -36,7 +41,7 @@ defmodule Indexer.Fetcher.CeloValidatorGroup do
 
   @doc false
   def child_spec([init_options, gen_server_options]) do
-    Indexer.Fetcher.Util.default_child_spec(init_options, gen_server_options, __MODULE__)
+    Util.default_child_spec(init_options, gen_server_options, __MODULE__)
   end
 
   @impl BufferedTask

@@ -1,16 +1,20 @@
 defmodule Indexer.Fetcher.CeloValidator do
+  @moduledoc """
+  Fetches Celo validators.
+  """
   use Indexer.Fetcher
   use Spandex.Decorators
 
   require Logger
 
   alias Indexer.Fetcher.CeloValidator.Supervisor, as: CeloValidatorSupervisor
-  alias Explorer.Chain.CeloValidator
-  alias Explorer.Chain
+
   alias Explorer.Celo.AccountReader
-  alias Indexer.Fetcher.Util
+  alias Explorer.Chain
+  alias Explorer.Chain.CeloValidator
 
   alias Indexer.BufferedTask
+  alias Indexer.Fetcher.Util
 
   @behaviour BufferedTask
 

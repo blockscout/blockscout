@@ -1,15 +1,20 @@
 defmodule Indexer.Fetcher.CeloValidatorHistory do
+  @moduledoc """
+  Fetches Celo validator history.
+  """
   use Indexer.Fetcher
   use Spandex.Decorators
 
   require Logger
 
   alias Indexer.Fetcher.CeloValidatorHistory.Supervisor, as: CeloValidatorHistorySupervisor
-  alias Explorer.Chain.CeloValidatorHistory
-  alias Explorer.Chain
+
   alias Explorer.Celo.AccountReader
+  alias Explorer.Chain
+  alias Explorer.Chain.CeloValidatorHistory
 
   alias Indexer.BufferedTask
+  alias Indexer.Fetcher.Util
 
   @behaviour BufferedTask
 
@@ -36,7 +41,7 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
 
   @doc false
   def child_spec([init_options, gen_server_options]) do
-    Indexer.Fetcher.Util.default_child_spec(init_options, gen_server_options, __MODULE__)
+    Util.default_child_spec(init_options, gen_server_options, __MODULE__)
   end
 
   @impl BufferedTask

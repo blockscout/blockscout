@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, CeloValidatorGroup}
+  alias Explorer.Chain.{CeloValidatorGroup, Import}
   alias Explorer.Chain.Import.Runner.Util
 
   import Ecto.Query, only: [from: 2]
@@ -63,7 +63,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
     {:ok, accounts}
   end
 
-  @spec insert(Repo.t(), [map()], Util.insert_option()) :: {:ok, [CeloValidatorGroup.t()]} | {:error, [Changeset.t()]}
+  @spec insert(Repo.t(), [map()], Util.insert_options()) :: {:ok, [CeloValidatorGroup.t()]} | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 

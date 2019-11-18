@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.CeloWithdrawals do
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Import, CeloWithdrawal}
+  alias Explorer.Chain.{CeloWithdrawal, Import}
   alias Explorer.Chain.Import.Runner.Util
 
   import Ecto.Query, only: [from: 2]

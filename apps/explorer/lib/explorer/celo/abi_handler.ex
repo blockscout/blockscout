@@ -1,5 +1,6 @@
 defmodule Explorer.Celo.AbiHandler do
   @moduledoc """
+  Caching the Celo contract ABIs
   """
 
   use GenServer

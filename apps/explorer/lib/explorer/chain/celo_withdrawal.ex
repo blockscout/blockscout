@@ -7,7 +7,7 @@ defmodule Explorer.Chain.CeloWithdrawal do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, Wei, Address}
+  alias Explorer.Chain.{Address, Hash, Wei}
 
   @typedoc """
   * `address` - address of the validator.

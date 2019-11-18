@@ -10,6 +10,9 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Fetcher.{
     BlockReward,
+    CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup,
     CoinBalance,
     CoinBalanceOnDemand,
     ContractCode,
@@ -17,9 +20,6 @@ defmodule Indexer.Supervisor do
     PendingTransaction,
     ReplacedTransaction,
     StakingPools,
-    CeloAccount,
-    CeloValidator,
-    CeloValidatorGroup,
     Token,
     TokenBalance,
     TokenInstance,

@@ -1,15 +1,20 @@
 defmodule Indexer.Fetcher.CeloAccount do
+  @moduledoc """
+  Fetches Celo accounts.
+  """
   use Indexer.Fetcher
   use Spandex.Decorators
 
   require Logger
 
   alias Indexer.Fetcher.CeloAccount.Supervisor, as: CeloAccountSupervisor
-  alias Explorer.Chain.CeloAccount
-  alias Explorer.Chain
+
   alias Explorer.Celo.AccountReader
+  alias Explorer.Chain
+  alias Explorer.Chain.CeloAccount
 
   alias Indexer.BufferedTask
+  alias Indexer.Fetcher.Util
 
   @behaviour BufferedTask
 
@@ -36,7 +41,7 @@ defmodule Indexer.Fetcher.CeloAccount do
 
   @doc false
   def child_spec([init_options, gen_server_options]) do
-    Indexer.Fetcher.Util.default_child_spec(init_options, gen_server_options, __MODULE__)
+    Util.default_child_spec(init_options, gen_server_options, __MODULE__)
   end
 
   @impl BufferedTask
