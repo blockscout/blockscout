@@ -7,9 +7,10 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
       add(:account_type, :string)
       add(:nonvoting_locked_gold, :numeric, precision: 100)
       add(:locked_gold, :numeric, precision: 100)
-      add(:rewards, :numeric, precision: 100)
       add(:name, :string, size: 2048)
       add(:url, :string, size: 2048)
+      add(:attestations_requested, :integer)
+      add(:attestations_fulfilled, :integer)
 
       timestamps(null: false, type: :utc_datetime_usec)
     end

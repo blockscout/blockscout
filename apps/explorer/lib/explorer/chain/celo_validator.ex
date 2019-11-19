@@ -16,7 +16,8 @@ defmodule Explorer.Chain.CeloValidator do
 
   @type t :: %__MODULE__{
           address: Hash.Address.t(),
-          group_address_hash: Hash.Address.t()
+          group_address_hash: Hash.Address.t(),
+          score: Wei.t()
         }
 
   @attrs ~w(

@@ -9,7 +9,6 @@ defmodule Explorer.Celo.AccountReader do
 
   def account_data(%{address: account_address}) do
     data = fetch_account_data(account_address)
-
     with {:ok, [name]} <- data["getName"],
          {:ok, [url]} <- data["getMetadataURL"],
          {:ok, [is_validator]} <- data["isValidator"],
@@ -37,7 +36,7 @@ defmodule Explorer.Celo.AccountReader do
     data = fetch_validator_data(address)
 
     case data["getValidator"] do
-      {:ok, [_, affiliation, score]} ->
+      {:ok, [_, _, affiliation, score]} ->
         {:ok,
          %{
            address: address,
@@ -125,12 +124,22 @@ defmodule Explorer.Celo.AccountReader do
     res
   end
 
+  def fetch_claimed_account_data(address) do
+    call_methods([
+      {:lockedgold, "getAccountTotalLockedGold", [address]},
+      {:gold, "balanceOf", [address]},
+    ])
+  end
+
+  def fetch_account_usd(address) do
+    call_methods([{:usd, "balanceOf", [address]}])
+  end
+
   defp fetch_validator_data(address) do
     data =
       call_methods([
         {:validators, "getValidator", [address]}
       ])
-
     data
   end
 
@@ -194,6 +203,8 @@ defmodule Explorer.Celo.AccountReader do
   defp contract(:validators), do: get_address("Validators")
   defp contract(:election), do: get_address("Election")
   defp contract(:accounts), do: get_address("Accounts")
+  defp contract(:gold), do: get_address("GoldToken")
+  defp contract(:usd), do: get_address("StableToken")
 
   defp get_address(name) do
     contract_abi = Explorer.Celo.AbiHandler.get_abi()

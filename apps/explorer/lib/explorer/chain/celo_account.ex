@@ -24,11 +24,12 @@ defmodule Explorer.Chain.CeloAccount do
           account_type: String.t(),
           locked_gold: Wei.t(),
           nonvoting_locked_gold: Wei.t(),
-          rewards: Wei.t()
+          attestations_requested: non_neg_integer(),
+          attestations_fulfilled: non_neg_integer()
         }
 
   @attrs ~w(
-        address name url account_type nonvoting_locked_gold locked_gold rewards
+        address name url account_type nonvoting_locked_gold locked_gold attestations_requested attestations_fulfilled
     )a
 
   @required_attrs ~w(
@@ -103,13 +104,24 @@ defmodule Explorer.Chain.CeloAccount do
       @gold_locked
     ]
 
+  @attestation_issuer_selected "0xaf7f470b643316cf44c1f2898328a075e7602945b4f8584f48ba4ad2d8a2ea9d"
+  @attestation_completed "0x414ff2c18c092697c4b8de49f515ac44f8bebc19b24553cf58ace913a6ac639d"
+
+  def attestation_issuer_selected_event,
+    do: @attestation_issuer_selected
+
+  def attestation_completed_event,
+    do: @attestation_completed
+
   schema "celo_account" do
     field(:account_type, :string)
     field(:name, :string)
     field(:url, :string)
     field(:nonvoting_locked_gold, Wei)
     field(:locked_gold, Wei)
-    field(:rewards, Wei)
+
+    field(:attestations_requested, :integer)
+    field(:attestations_fulfilled, :integer)
 
     belongs_to(
       :account_address,

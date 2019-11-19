@@ -14,6 +14,9 @@ defmodule Explorer.Repo.Migrations.CreateLeaderboard do
     create table(:claims) do
       add(:address, :bytea, null: false)
       add(:claimed_address, :bytea, null: false)
+      add(:usd, :numeric, precision: 100)
+      add(:gold, :numeric, precision: 100)
+      add(:locked_gold, :numeric, precision: 100)
     end
 
     create(index(:claims, [:address, :claimed_address], unique: true))
