@@ -18,7 +18,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
     UncleBlock,
     CeloAccount,
     CeloValidator,
-    CeloValidatorGroup
+    CeloValidatorGroup,
+    CeloValidatorHistory
   }
 
   @moduletag capture_log: true
@@ -69,6 +70,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
@@ -195,8 +197,12 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              }
            ]}
         end)
+        |> expect(:json_rpc, fn
+          [%{id: id, jsonrpc: "2.0", method: "eth_getLogs", params: [%{fromBlock: "0x3C3660", toBlock: "0x3C365F"}]}], _ ->
+          {:ok, [ %{id: id, jsonrpc: "2.0", result: []}]}
+          end)
         |> expect(:json_rpc, fn [
-                                  %{
+            %{
                                     id: 0,
                                     jsonrpc: "2.0",
                                     method: "eth_getTransactionReceipt",

@@ -20,6 +20,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     UncleBlock,
     CeloAccount,
     CeloValidator,
+    CeloValidatorHistory,
     CeloValidatorGroup
   }
 
@@ -56,6 +57,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       parent = self()
@@ -151,6 +153,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       latest_block_number = 1
@@ -210,6 +213,10 @@ defmodule Indexer.Block.Catchup.FetcherTest do
            }
          ]}
       end)
+      |> expect(:json_rpc, fn
+        [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _ ->
+        {:ok, [ %{id: id, jsonrpc: "2.0", result: []}]}
+        end)
       |> expect(:json_rpc, fn [%{id: id, jsonrpc: "2.0", method: "trace_block", params: [^block_quantity]}], _options ->
         {
           :ok,
@@ -263,6 +270,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       latest_block_number = 1
@@ -322,6 +330,10 @@ defmodule Indexer.Block.Catchup.FetcherTest do
            }
          ]}
       end)
+      |> expect(:json_rpc, fn
+        [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _ ->
+        {:ok, [ %{id: id, jsonrpc: "2.0", result: []}]}
+        end)
       |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
         {:ok,
          [
@@ -372,6 +384,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       latest_block_number = 1
@@ -431,6 +444,10 @@ defmodule Indexer.Block.Catchup.FetcherTest do
            }
          ]}
       end)
+      |> expect(:json_rpc, fn
+        [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _ ->
+        {:ok, [ %{id: id, jsonrpc: "2.0", result: []}]}
+        end)
       |> expect(:json_rpc, fn [%{method: "trace_block", params: [^block_quantity]}], _options ->
         {:error, :boom}
       end)
