@@ -55,6 +55,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
 
     create(index(:celo_validator_history, [:block_number, :index], unique: true))
 
+    if Mix.env() != :test do
     Explorer.Repo.insert(
       Explorer.Chain.Address.changeset(%Explorer.Chain.Address{}, %{
         hash: "0x0000000000000000000000000000000000000000"
@@ -75,5 +76,6 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
         value: 0
       })
     )
+    end
   end
 end
