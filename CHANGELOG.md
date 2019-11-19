@@ -8,6 +8,7 @@
 - [#2822](https://github.com/poanetwork/blockscout/pull/2822) - Estimated address count on the main page, if cache is empty
 
 ### Fixes
+- [#2855](https://github.com/poanetwork/blockscout/pull/2855) - Fix favicons load
 - [#2854](https://github.com/poanetwork/blockscout/pull/2854) - Fix all npm vulnerabilities
 - [#2851](https://github.com/poanetwork/blockscout/pull/2851) - Fix paths for front assets
 - [#2843](https://github.com/poanetwork/blockscout/pull/2843) - fix realtime fetcher small skips feature
