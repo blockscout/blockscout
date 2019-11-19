@@ -52,6 +52,9 @@ defmodule EthereumJSONRPC.Contract do
       end
       |> Enum.into(%{}, &{&1.id, &1})
 
+      # IO.inspect(requests)
+      # IO.inspect(indexed_responses)
+
     Enum.map(requests_with_index, fn {%{function_name: function_name}, index} ->
       selectors = Enum.filter(parsed_abi, fn p_abi -> p_abi.function == function_name end)
 
