@@ -299,7 +299,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @block_eth_block_number_example_value %{
     "jsonrpc" => "2.0",
-    "result" => "767969",
+    "result" => "0xb33bf1",
     "id" => 1
   }
 
