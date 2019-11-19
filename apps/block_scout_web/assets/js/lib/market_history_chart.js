@@ -61,7 +61,7 @@ const config = {
       mode: 'index',
       intersect: false,
       callbacks: {
-        label: ({datasetIndex, yLabel}, {datasets}) => {
+        label: ({ datasetIndex, yLabel }, { datasets }) => {
           const label = datasets[datasetIndex].label
           if (datasets[datasetIndex].yAxisID === 'price') {
             return `${label}: ${formatUsdValue(yLabel)}`
@@ -77,14 +77,14 @@ const config = {
 }
 
 function getPriceData (marketHistoryData) {
-  return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice}))
+  return marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (availableSupply !== null && typeof availableSupply === 'object') {
-    return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply[date]}))
+    return marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice * availableSupply[date] }))
   } else {
-    return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply}))
+    return marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice * availableSupply }))
   }
 }
 
@@ -102,7 +102,7 @@ if (localStorage.getItem('current-color-mode') === 'dark') {
 class MarketHistoryChart {
   constructor (el, availableSupply, marketHistoryData) {
     this.price = {
-      label: window.localized['Price'],
+      label: window.localized.Price,
       yAxisID: 'price',
       data: getPriceData(marketHistoryData),
       fill: false,
@@ -125,6 +125,7 @@ class MarketHistoryChart {
     config.data.datasets = [this.price, this.marketCap]
     this.chart = new Chart(el, config)
   }
+
   update (availableSupply, marketHistoryData) {
     this.price.data = getPriceData(marketHistoryData)
     if (this.availableSupply !== null && typeof this.availableSupply === 'object') {
@@ -147,7 +148,7 @@ export function createMarketHistoryChart (el) {
 
   const $chartError = $('[data-chart-error-message]')
   const chart = new MarketHistoryChart(el, 0, [])
-  $.getJSON(dataPath, {type: 'JSON'})
+  $.getJSON(dataPath, { type: 'JSON' })
     .done(data => {
       const availableSupply = JSON.parse(data.supply_data)
       const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
