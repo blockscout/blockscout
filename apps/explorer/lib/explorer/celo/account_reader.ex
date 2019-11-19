@@ -9,7 +9,7 @@ defmodule Explorer.Celo.AccountReader do
 
   def account_data(%{address: account_address}) do
     data = fetch_account_data(account_address)
-    IO.inspect(data)
+    # IO.inspect(data)
 
     with {:ok, [name]} <- data["getName"],
          {:ok, [url]} <- data["getMetadataURL"],

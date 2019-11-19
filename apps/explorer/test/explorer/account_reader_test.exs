@@ -38,7 +38,6 @@ defmodule Explorer.Token.AccountReaderTest do
       fn requests, _opts ->
         {:ok,
          Enum.map(requests, fn
-
            # locked gold
            %{
              id: id,
@@ -143,22 +142,22 @@ defmodule Explorer.Token.AccountReaderTest do
                result:
                  "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
              }
-             
+
            # registry access
            %{
-            id: id,
-            method: "eth_call",
-            params: [
-              %{
-                data: _
-              },
-              "latest"
-            ]
-          } ->
-            %{
-              id: id,
-              result: "0x0000000000000000000000005765cd49b3da3942ea4a4fdb6d7bf257239fe182"
-            }
+             id: id,
+             method: "eth_call",
+             params: [
+               %{
+                 data: _
+               },
+               "latest"
+             ]
+           } ->
+             %{
+               id: id,
+               result: "0x0000000000000000000000005765cd49b3da3942ea4a4fdb6d7bf257239fe182"
+             }
          end)}
       end
     )
