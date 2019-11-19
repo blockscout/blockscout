@@ -74,7 +74,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     end
   end
 
-  def find_contructor_arguments(address_hash, contract_code, abi) do
+  def find_contructor_arguments(address_hash, abi) do
     creation_code =
       address_hash
       |> Chain.contract_creation_input_data()

@@ -80,7 +80,7 @@ defmodule Explorer.SmartContract.Verifier do
         {:error, :generated_bytecode}
 
       has_constructor_with_params?(abi) && autodetect_contructor_arguments ->
-        result = ConstructorArguments.find_contructor_arguments(address_hash, blockchain_bytecode_without_whisper, abi)
+        result = ConstructorArguments.find_contructor_arguments(address_hash, abi)
 
         if result do
           {:ok, %{abi: abi, contructor_arguments: result}}
