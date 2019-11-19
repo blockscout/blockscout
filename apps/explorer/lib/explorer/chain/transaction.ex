@@ -598,6 +598,46 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
+  def transactions_with_token_transfers_direction(direction, address_hash) do
+    query = transactions_with_token_transfers_query_direction(direction, address_hash)
+
+    from(
+      t in subquery(query),
+      order_by: [desc: t.block_number, desc: t.index],
+      preload: [:from_address, :to_address, :created_contract_address, :block]
+    )
+  end
+
+  defp transactions_with_token_transfers_query_direction(:from, address_hash) do
+    from(
+      t in Transaction,
+      inner_join: tt in TokenTransfer,
+      on: t.hash == tt.transaction_hash,
+      where: tt.from_address_hash == ^address_hash,
+      distinct: :hash
+    )
+  end
+
+  defp transactions_with_token_transfers_query_direction(:to, address_hash) do
+    from(
+      t in Transaction,
+      inner_join: tt in TokenTransfer,
+      on: t.hash == tt.transaction_hash,
+      where: tt.to_address_hash == ^address_hash,
+      distinct: :hash
+    )
+  end
+
+  defp transactions_with_token_transfers_query_direction(_, address_hash) do
+    from(
+      t in Transaction,
+      inner_join: tt in TokenTransfer,
+      on: t.hash == tt.transaction_hash,
+      where: tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash,
+      distinct: :hash
+    )
+  end
+
   @doc """
   Builds an `Ecto.Query` to fetch transactions with the specified block_number
   """

@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2825](https://github.com/poanetwork/blockscout/pull/2825) - separate token transfers and transactions
 - [#2787](https://github.com/poanetwork/blockscout/pull/2787) - async fetching of address counters
 - [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
@@ -8,6 +9,8 @@
 
 ### Fixes
 - [#2855](https://github.com/poanetwork/blockscout/pull/2855) - Fix favicons load
+- [#2854](https://github.com/poanetwork/blockscout/pull/2854) - Fix all npm vulnerabilities
+- [#2851](https://github.com/poanetwork/blockscout/pull/2851) - Fix paths for front assets
 - [#2843](https://github.com/poanetwork/blockscout/pull/2843) - fix realtime fetcher small skips feature
 - [#2841](https://github.com/poanetwork/blockscout/pull/2841) - LUKSO dashboard height fix
 - [#2837](https://github.com/poanetwork/blockscout/pull/2837) - fix txlist ordering issue
@@ -101,6 +104,7 @@ fixed menu hovers in dark mode desktop view
 - [#2724](https://github.com/poanetwork/blockscout/pull/2724) - fix ci by commenting a line in hackney library
 - [#2708](https://github.com/poanetwork/blockscout/pull/2708) - add log index to logs view
 - [#2723](https://github.com/poanetwork/blockscout/pull/2723) - get rid of ex_json_schema warnings
+- [#2740](https://github.com/poanetwork/blockscout/pull/2740) - add verify contract rpc doc
 
 
 ## 2.0.4-beta
