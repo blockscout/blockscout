@@ -1,9 +1,9 @@
 defmodule BlockScoutWeb.Resolvers.CeloAccount do
   @moduledoc false
 
+  alias Absinthe.Relay.Connection
   alias Explorer.{Chain, GraphQL, Repo}
   alias Explorer.Chain.Address
-  alias Absinthe.Relay.Connection
 
   def get_by(_, %{hash: hash}, _) do
     case Chain.get_celo_account(hash) do

@@ -12,12 +12,12 @@ defmodule Explorer.GraphQL do
     ]
 
   alias Explorer.Chain.{
+    Address,
+    CeloAccount,
     Hash,
     InternalTransaction,
     TokenTransfer,
-    Transaction,
-    CeloAccount,
-    Address
+    Transaction
   }
 
   alias Explorer.{Chain, Repo}

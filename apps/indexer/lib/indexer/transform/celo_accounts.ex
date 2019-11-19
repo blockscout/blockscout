@@ -45,7 +45,6 @@ defmodule Indexer.Transform.CeloAccounts do
   end
 
   defp parse_params(log, get_topic) do
-    IO.inspect(log)
     truncate_address_hash(get_topic.(log))
   end
 

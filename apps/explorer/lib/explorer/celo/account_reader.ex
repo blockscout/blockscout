@@ -175,7 +175,7 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp call_methods(methods, bn) do
-    contract_abi = Explorer.Celo.AbiHandler.get_abi()
+    contract_abi = AbiHandler.get_abi()
 
     methods
     |> Enum.map(fn a -> format_request(a, bn) end)
@@ -211,7 +211,7 @@ defmodule Explorer.Celo.AccountReader do
   defp contract(:usd), do: get_address("StableToken")
 
   defp get_address(name) do
-    contract_abi = Explorer.Celo.AbiHandler.get_abi()
+    contract_abi = AbiHandler.get_abi()
 
     methods = [
       %{

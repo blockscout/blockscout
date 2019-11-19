@@ -7,10 +7,10 @@ defmodule BlockScoutWeb.Schema.Types do
   import Absinthe.Resolution.Helpers
 
   alias BlockScoutWeb.Resolvers.{
-    InternalTransaction,
-    Transaction,
+    Address,
     CeloAccount,
-    Address
+    InternalTransaction,
+    Transaction
   }
 
   import_types(Absinthe.Type.Custom)
