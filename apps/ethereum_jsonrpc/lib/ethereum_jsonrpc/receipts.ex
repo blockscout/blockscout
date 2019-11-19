@@ -150,6 +150,7 @@ defmodule EthereumJSONRPC.Receipts do
       %{
         id: 123,
         method: "eth_getLogs",
+        jsonrpc: "2.0",
         params: [
           %{
             fromBlock: "0x" <> Integer.to_string(from, 16),

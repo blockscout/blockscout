@@ -11,11 +11,6 @@ defmodule Explorer.GraphQL do
       where: 3
     ]
 
-  import Ecto.Query.API,
-    only: [
-      fragment: 1
-    ]
-
   alias Explorer.Chain.{
     Hash,
     InternalTransaction,
@@ -50,24 +45,6 @@ defmodule Explorer.GraphQL do
   def address_query(address_hash) do
     Address
     |> where([account], account.hash == ^address_hash)
-  end
-
-  def leaderboard_query do
-    fragment("""
-      SELECT competitors.address, SUM(rate*value+fetched_coin_balance+locked_gold)*multiplier AS score
-      FROM addresses, exchange_rates, competitors, claims, celo_account,
-        (SELECT claims.claim_address AS address, COALESCE(SUM(value),0) AS value
-         FROM address_current_token_balances, claims
-         WHERE address_hash=claims.claim_address
-         AND token_contract_address_hash='\\x88f24de331525cf6cfd7455eb96a9e4d49b7f292'
-         GROUP BY claims.claim_address) AS get
-      WHERE  token='\\x88f24de331525cf6cfd7455eb96a9e4d49b7f292'
-      AND claims.claim_address = get.address
-      AND celo_account.address = addresses.hash
-      AND claims.address = competitors.address
-      GROUP BY competitors.address
-      ORDER BY score
-    """)
   end
 
   @doc """

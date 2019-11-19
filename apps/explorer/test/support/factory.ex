@@ -671,8 +671,7 @@ defmodule Explorer.Factory do
       account_type: "normal",
       name: "Validator #123",
       locked_gold: wei_per_ether * 4,
-      nonvoting_locked_gold: wei_per_ether * 4,
-      rewards: 0
+      nonvoting_locked_gold: wei_per_ether * 4
     }
   end
 end
