@@ -88,12 +88,19 @@ defmodule Explorer.Celo.AccountReader do
 
     case data["currentValidators"] do
       {:ok, [validators]} ->
+<<<<<<< HEAD
         list =
           validators
           |> Enum.with_index()
           |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx} end)
 
         {:ok, %{validators: list}}
+=======
+        {:ok,
+         %{
+           validators: validators
+         }}
+>>>>>>> 9fcacb14cc0d68cb62478454ddb5c4ff9d66e92b
 
       _ ->
         :error
@@ -143,8 +150,17 @@ defmodule Explorer.Celo.AccountReader do
     data
   end
 
+<<<<<<< HEAD
   defp fetch_validators(bn) do
     data = call_methods([{:election, "currentValidators", []}], bn)
+=======
+  defp fetch_validators do
+    data =
+      call_methods([
+        {:validators, "currentValidators", []}
+      ])
+
+>>>>>>> 9fcacb14cc0d68cb62478454ddb5c4ff9d66e92b
     data
   end
 
