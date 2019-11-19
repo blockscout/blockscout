@@ -198,11 +198,12 @@ defmodule Indexer.Block.Realtime.FetcherTest do
            ]}
         end)
         |> expect(:json_rpc, fn
-          [%{id: id, jsonrpc: "2.0", method: "eth_getLogs", params: [%{fromBlock: "0x3C3660", toBlock: "0x3C365F"}]}], _ ->
-          {:ok, [ %{id: id, jsonrpc: "2.0", result: []}]}
-          end)
+          [%{id: id, jsonrpc: "2.0", method: "eth_getLogs", params: [%{fromBlock: "0x3C3660", toBlock: "0x3C365F"}]}],
+          _ ->
+            {:ok, [%{id: id, jsonrpc: "2.0", result: []}]}
+        end)
         |> expect(:json_rpc, fn [
-            %{
+                                  %{
                                     id: 0,
                                     jsonrpc: "2.0",
                                     method: "eth_getTransactionReceipt",

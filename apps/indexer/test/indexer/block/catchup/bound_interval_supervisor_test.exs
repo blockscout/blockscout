@@ -85,7 +85,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
                  }}
 
               [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _ ->
-                  {:ok, [ %{id: id, jsonrpc: "2.0", result: []}]}
+                {:ok, [%{id: id, jsonrpc: "2.0", result: []}]}
 
               [%{method: "trace_block"} | _] = requests, _options ->
                 {:ok, Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)}

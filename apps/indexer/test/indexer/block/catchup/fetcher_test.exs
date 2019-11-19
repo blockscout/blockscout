@@ -215,8 +215,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       end)
       |> expect(:json_rpc, fn
         [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _ ->
-        {:ok, [ %{id: id, jsonrpc: "2.0", result: []}]}
-        end)
+          {:ok, [%{id: id, jsonrpc: "2.0", result: []}]}
+      end)
       |> expect(:json_rpc, fn [%{id: id, jsonrpc: "2.0", method: "trace_block", params: [^block_quantity]}], _options ->
         {
           :ok,
@@ -332,8 +332,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       end)
       |> expect(:json_rpc, fn
         [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _ ->
-        {:ok, [ %{id: id, jsonrpc: "2.0", result: []}]}
-        end)
+          {:ok, [%{id: id, jsonrpc: "2.0", result: []}]}
+      end)
       |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
         {:ok,
          [
@@ -446,8 +446,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       end)
       |> expect(:json_rpc, fn
         [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _ ->
-        {:ok, [ %{id: id, jsonrpc: "2.0", result: []}]}
-        end)
+          {:ok, [%{id: id, jsonrpc: "2.0", result: []}]}
+      end)
       |> expect(:json_rpc, fn [%{method: "trace_block", params: [^block_quantity]}], _options ->
         {:error, :boom}
       end)
