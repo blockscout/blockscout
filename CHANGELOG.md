@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2862](https://github.com/poanetwork/blockscout/pull/2862) - Coin total supply from DB API endpoint
 - [#2825](https://github.com/poanetwork/blockscout/pull/2825) - separate token transfers and transactions
 - [#2787](https://github.com/poanetwork/blockscout/pull/2787) - async fetching of address counters
 - [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
