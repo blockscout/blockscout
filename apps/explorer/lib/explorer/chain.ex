@@ -1322,6 +1322,17 @@ defmodule Explorer.Chain do
     Repo.one!(query)
   end
 
+  @spec fetch_sum_coin_total_supply() :: non_neg_integer
+  def fetch_sum_coin_total_supply do
+    query =
+      from(
+        a0 in Address,
+        select: fragment("SUM(a0.fetched_coin_balance)")
+      )
+
+    Repo.one!(query) || 0
+  end
+
   @doc """
   The number of `t:Explorer.Chain.InternalTransaction.t/0`.
 

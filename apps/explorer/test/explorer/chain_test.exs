@@ -1121,6 +1121,20 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "fetch_sum_coin_total_supply/0" do
+    test "fetches coin total supply" do
+      for index <- 0..4 do
+        insert(:address, fetched_coin_balance: index)
+      end
+
+      assert "10" = Decimal.to_string(Chain.fetch_sum_coin_total_supply())
+    end
+
+    test "fetches coin total supply when there are no blocks" do
+      assert 0 = Chain.fetch_sum_coin_total_supply()
+    end
+  end
+
   describe "address_hash_to_token_transfers/2" do
     test "returns just the token transfers related to the given contract address" do
       contract_address =
