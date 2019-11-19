@@ -97,7 +97,6 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
       end
     end
 
-    verify_older_version(creation_code, contract_code, check_func) ||
-      extract_constructor_arguments(creation_code, check_func)
+    extract_constructor_arguments(creation_code, check_func)
   end
 end
