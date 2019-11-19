@@ -8,12 +8,12 @@ defmodule Explorer.GraphQL do
       from: 2,
       order_by: 3,
       or_where: 3,
-      where: 3,
+      where: 3
     ]
-  
+
   import Ecto.Query.API,
     only: [
-      fragment: 1,
+      fragment: 1
     ]
 
   alias Explorer.Chain.{

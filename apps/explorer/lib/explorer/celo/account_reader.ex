@@ -9,6 +9,7 @@ defmodule Explorer.Celo.AccountReader do
 
   def account_data(%{address: account_address}) do
     data = fetch_account_data(account_address)
+
     with {:ok, [name]} <- data["getName"],
          {:ok, [url]} <- data["getMetadataURL"],
          {:ok, [is_validator]} <- data["isValidator"],
@@ -88,19 +89,12 @@ defmodule Explorer.Celo.AccountReader do
 
     case data["currentValidators"] do
       {:ok, [validators]} ->
-<<<<<<< HEAD
         list =
           validators
           |> Enum.with_index()
           |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx} end)
 
         {:ok, %{validators: list}}
-=======
-        {:ok,
-         %{
-           validators: validators
-         }}
->>>>>>> 9fcacb14cc0d68cb62478454ddb5c4ff9d66e92b
 
       _ ->
         :error
@@ -120,21 +114,23 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_account_data(account_address) do
-    res = call_methods([
-      {:lockedgold, "getAccountTotalLockedGold", [account_address]},
-      {:lockedgold, "getAccountNonvotingLockedGold", [account_address]},
-      {:validators, "isValidator", [account_address]},
-      {:validators, "isValidatorGroup", [account_address]},
-      {:accounts, "getName", [account_address]},
-      {:accounts, "getMetadataURL", [account_address]}
-    ])
+    res =
+      call_methods([
+        {:lockedgold, "getAccountTotalLockedGold", [account_address]},
+        {:lockedgold, "getAccountNonvotingLockedGold", [account_address]},
+        {:validators, "isValidator", [account_address]},
+        {:validators, "isValidatorGroup", [account_address]},
+        {:accounts, "getName", [account_address]},
+        {:accounts, "getMetadataURL", [account_address]}
+      ])
+
     res
   end
 
   def fetch_claimed_account_data(address) do
     call_methods([
       {:lockedgold, "getAccountTotalLockedGold", [address]},
-      {:gold, "balanceOf", [address]},
+      {:gold, "balanceOf", [address]}
     ])
   end
 
@@ -147,20 +143,12 @@ defmodule Explorer.Celo.AccountReader do
       call_methods([
         {:validators, "getValidator", [address]}
       ])
+
     data
   end
 
-<<<<<<< HEAD
   defp fetch_validators(bn) do
     data = call_methods([{:election, "currentValidators", []}], bn)
-=======
-  defp fetch_validators do
-    data =
-      call_methods([
-        {:validators, "currentValidators", []}
-      ])
-
->>>>>>> 9fcacb14cc0d68cb62478454ddb5c4ff9d66e92b
     data
   end
 
@@ -225,15 +213,18 @@ defmodule Explorer.Celo.AccountReader do
   defp get_address(name) do
     contract_abi = Explorer.Celo.AbiHandler.get_abi()
 
-    methods = [%{
-      contract_address: "0x000000000000000000000000000000000000ce10",
-      function_name: "getAddressForString",
-      args: [name]
-    }]
+    methods = [
+      %{
+        contract_address: "0x000000000000000000000000000000000000ce10",
+        function_name: "getAddressForString",
+        args: [name]
+      }
+    ]
 
     # IO.inspect(methods)
 
-    res = methods
+    res =
+      methods
       |> Reader.query_contracts(contract_abi)
       |> Enum.zip(methods)
       |> Enum.into(%{}, fn {response, %{function_name: function_name}} ->
@@ -245,11 +236,9 @@ defmodule Explorer.Celo.AccountReader do
     {:ok, [address]} = res["getAddressForString"]
 
     "0x" <> Base.encode16(address)
-
   end
 
-#  defp config(key) do
-#    Application.get_env(:explorer, __MODULE__, [])[key]
-#  end
-
+  #  defp config(key) do
+  #    Application.get_env(:explorer, __MODULE__, [])[key]
+  #  end
 end

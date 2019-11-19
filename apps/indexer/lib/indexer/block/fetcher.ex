@@ -155,9 +155,13 @@ defmodule Indexer.Block.Fetcher do
          transfer_logs = get_extra_logs(logs, extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(transfer_logs),
-         %{accounts: celo_accounts, validators: celo_validators, validator_groups: celo_validator_groups,
-           attestations_fulfilled: attestations_fulfilled, attestations_requested: attestations_requested} =
-           CeloAccounts.parse(logs),
+         %{
+           accounts: celo_accounts,
+           validators: celo_validators,
+           validator_groups: celo_validator_groups,
+           attestations_fulfilled: attestations_fulfilled,
+           attestations_requested: attestations_requested
+         } = CeloAccounts.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
@@ -202,8 +206,11 @@ defmodule Indexer.Block.Fetcher do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
 
       accounts = Enum.dedup(celo_accounts ++ attestations_fulfilled ++ attestations_requested)
-      async_import_celo_accounts(
-        %{celo_accounts: %{params: accounts, requested: attestations_requested, fulfilled: attestations_fulfilled}})
+
+      async_import_celo_accounts(%{
+        celo_accounts: %{params: accounts, requested: attestations_requested, fulfilled: attestations_fulfilled}
+      })
+
       async_import_celo_validators(%{celo_validators: %{params: celo_validators}})
       async_import_celo_validator_groups(%{celo_validator_groups: %{params: celo_validator_groups}})
       async_import_celo_validator_history(range)

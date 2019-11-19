@@ -27,7 +27,7 @@ defmodule Indexer.Fetcher.CeloAccount do
       params =
         accounts.params
         |> Enum.map(fn a -> entry(a, accounts.requested, accounts.fulfilled) end)
-      
+
       BufferedTask.buffer(__MODULE__, params, :infinity)
     end
   end

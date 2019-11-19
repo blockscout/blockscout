@@ -14,11 +14,12 @@ defmodule Explorer.Celo.AbiHandler do
   def init(_) do
     contract_abi =
       abi("lockedgold.json") ++
-      abi("validators.json") ++
-      abi("election.json") ++
-      abi("accounts.json") ++
-      abi("registry.json") ++
-      abi("erc20.json")
+        abi("validators.json") ++
+        abi("election.json") ++
+        abi("accounts.json") ++
+        abi("registry.json") ++
+        abi("erc20.json")
+
     {:ok, contract_abi}
   end
 

@@ -3655,7 +3655,8 @@ defmodule Explorer.Chain do
   end
 
   def query_leaderboard do
-    result = SQL.query(Repo,"""
+    result =
+      SQL.query(Repo, """
         SELECT competitors.address, b.name, SUM(rate*value+fetched_coin_balance+celo_account.locked_gold)*multiplier AS score
         FROM addresses, exchange_rates, competitors, claims, celo_account, celo_account as b,
           (SELECT claims.claimed_address AS address, COALESCE(SUM(value),0) AS value
@@ -3671,6 +3672,7 @@ defmodule Explorer.Chain do
         GROUP BY competitors.address, multiplier, b.name
         ORDER BY score
       """)
+
     # IO.inspect(result)
     case result do
       {:ok, %{rows: res}} -> {:ok, res}

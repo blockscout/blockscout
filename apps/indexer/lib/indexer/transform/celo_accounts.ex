@@ -16,15 +16,17 @@ defmodule Indexer.Transform.CeloAccounts do
       validators: get_addresses(logs, CeloAccount.validator_events()),
       validator_groups: get_addresses(logs, CeloAccount.validator_group_events()),
       withdrawals: get_addresses(logs, CeloAccount.withdrawal_events()),
-      attestations_fulfilled: get_addresses(logs, [CeloAccount.attestation_completed_event], fn a -> a.fourth_topic end),
-      attestations_requested: get_addresses(logs, [CeloAccount.attestation_issuer_selected_event], fn a -> a.fourth_topic end)
+      attestations_fulfilled:
+        get_addresses(logs, [CeloAccount.attestation_completed_event()], fn a -> a.fourth_topic end),
+      attestations_requested:
+        get_addresses(logs, [CeloAccount.attestation_issuer_selected_event()], fn a -> a.fourth_topic end)
     }
   end
 
   defp get_addresses(logs, topics, get_topic \\ fn a -> a.second_topic end) do
     logs
     |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
-    |> Enum.reduce([], fn (log, accounts) -> do_parse(log, accounts, get_topic) end)
+    |> Enum.reduce([], fn log, accounts -> do_parse(log, accounts, get_topic) end)
     |> Enum.map(fn address -> %{address: address} end)
   end
 
