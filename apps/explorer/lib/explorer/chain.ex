@@ -1324,16 +1324,13 @@ defmodule Explorer.Chain do
 
   @spec fetch_sum_coin_total_supply() :: non_neg_integer
   def fetch_sum_coin_total_supply do
-    {:ok, burn_address_hash} = Explorer.Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
-
     query =
       from(
         a0 in Address,
-        select: fragment("SUM(a0.fetched_coin_balance)"),
-        where: a0.hash != ^burn_address_hash
+        select: fragment("SUM(a0.fetched_coin_balance)")
       )
 
-    Repo.one!(query)
+    Repo.one!(query) || 0
   end
 
   @doc """
