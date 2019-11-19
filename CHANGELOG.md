@@ -2,12 +2,15 @@
 
 ### Features
 - [#2842](https://github.com/poanetwork/blockscout/pull/2842) - save transactions_root, state_root, receipts_root to block
+- [#2825](https://github.com/poanetwork/blockscout/pull/2825) - separate token transfers and transactions
 - [#2787](https://github.com/poanetwork/blockscout/pull/2787) - async fetching of address counters
 - [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
 - [#2822](https://github.com/poanetwork/blockscout/pull/2822) - Estimated address count on the main page, if cache is empty
 
 ### Fixes
+- [#2851](https://github.com/poanetwork/blockscout/pull/2851) - Fix paths for front assets
+- [#2843](https://github.com/poanetwork/blockscout/pull/2843) - fix realtime fetcher small skips feature
 - [#2841](https://github.com/poanetwork/blockscout/pull/2841) - LUKSO dashboard height fix
 - [#2837](https://github.com/poanetwork/blockscout/pull/2837) - fix txlist ordering issue
 - [#2830](https://github.com/poanetwork/blockscout/pull/2830) - Fix wrong color of contract icon on xDai chain
@@ -18,6 +21,9 @@
 - [#2803](https://github.com/poanetwork/blockscout/pull/2803) - Fix block validator custom tooltip
 
 ### Chore
+- [#2846](https://github.com/poanetwork/blockscout/pull/2846) - Remove networks images preload
+- [#2845](https://github.com/poanetwork/blockscout/pull/2845) - Set outline none for nav dropdown item in mobile view (fix for Safari)
+- [#2844](https://github.com/poanetwork/blockscout/pull/2844) - Extend external reward types up to 20
 - [#2827](https://github.com/poanetwork/blockscout/pull/2827) - Node js 12.13.0 (latest LTS release) support
 - [#2818](https://github.com/poanetwork/blockscout/pull/2818) - allow hiding marketcap percentage
 - [#2817](https://github.com/poanetwork/blockscout/pull/2817) - move docker integration documentation to blockscout docs
@@ -97,6 +103,7 @@ fixed menu hovers in dark mode desktop view
 - [#2724](https://github.com/poanetwork/blockscout/pull/2724) - fix ci by commenting a line in hackney library
 - [#2708](https://github.com/poanetwork/blockscout/pull/2708) - add log index to logs view
 - [#2723](https://github.com/poanetwork/blockscout/pull/2723) - get rid of ex_json_schema warnings
+- [#2740](https://github.com/poanetwork/blockscout/pull/2740) - add verify contract rpc doc
 
 
 ## 2.0.4-beta
