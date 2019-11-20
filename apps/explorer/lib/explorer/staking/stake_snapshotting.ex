@@ -7,22 +7,24 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
   import Ecto.Query, only: [from: 2]
 
+  require Logger
+
   alias Explorer.Chain
   alias Explorer.Chain.{StakingPool, StakingPoolsDelegator}
   alias Explorer.SmartContract.Reader
   alias Explorer.Staking.ContractReader
 
-  def start_snapshoting(%{contracts: contracts, abi: abi, global_responses: global_responses}, block_number) do
+  def start_snapshotting(%{contracts: contracts, abi: abi, global_responses: global_responses}, block_number) do
     %{
-      "getPendingValidators" => {:ok, [pending_validators_mining_addresses]},
-      "validatorsToBeFinalized" => {:ok, [be_finalized_validators_mining_addresses]}
+      "getPendingValidators" => {:ok, [pending_validators]},
+      "validatorsToBeFinalized" => {:ok, [to_be_finalized_validators]}
     } =
       Reader.query_contract(contracts.validator_set, abi, %{
         "getPendingValidators" => [],
         "validatorsToBeFinalized" => []
       })
 
-    pool_mining_addresses = Enum.uniq(pending_validators_mining_addresses ++ be_finalized_validators_mining_addresses)
+    pool_mining_addresses = Enum.uniq(pending_validators ++ to_be_finalized_validators)
 
     pool_staking_addresses =
       pool_mining_addresses
