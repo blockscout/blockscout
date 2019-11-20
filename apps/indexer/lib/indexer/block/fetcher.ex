@@ -157,7 +157,9 @@ defmodule Indexer.Block.Fetcher do
          %{logs: logs, receipts: receipts} = receipt_params,
          transfer_logs = get_extra_logs(logs, extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
-         %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(transfer_logs),
+         %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(transfer_logs),
+         %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
+           TokenTransfers.parse_fees(transactions_with_receipts),
          %{
            accounts: celo_accounts,
            validators: celo_validators,
@@ -168,6 +170,8 @@ defmodule Indexer.Block.Fetcher do
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
+         tokens = fee_tokens ++ normal_tokens,
+         token_transfers = fee_token_transfers ++ normal_token_transfers,
          addresses =
            Addresses.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
