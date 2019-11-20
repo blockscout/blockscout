@@ -97,7 +97,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
         %{
           staking_address_hash: staking_address,
           delegators_count: length(staking_response.active_delegators),
-          snapshotted_validator_reward_ratio: pool_reward_response.validator_share / 10_000
+          snapshotted_validator_reward_ratio: Float.floor(pool_reward_response.validator_share / 10_000, 2)
         }
         |> Map.merge(
           Map.take(staking_response, [
@@ -125,7 +125,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
           delegator_address_hash: delegator_address,
           pool_address_hash: pool_address,
           is_active: is_active,
-          snapshotted_reward_ratio: delegator_reward_response.delegator_share / 10_000
+          snapshotted_reward_ratio: Float.floor(delegator_reward_response.delegator_share / 10_000, 2)
         })
       end)
 

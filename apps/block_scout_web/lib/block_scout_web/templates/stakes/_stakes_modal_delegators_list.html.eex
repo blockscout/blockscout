@@ -15,7 +15,7 @@
             <div class="col-4">
               <%=
                 amount_col_title =
-                  if @is_show_snapshotted_data do
+                  if @show_snapshotted_data do
                     gettext("Current Stake Amount") <> "<br />(" <> gettext("Accounted Stake Amount")  <> ")"
                   else
                     gettext("Current Stake Amount")
@@ -27,7 +27,7 @@
             <div class="col-3">
               <%=
                 reward_col_title =
-                  if @is_show_snapshotted_data do
+                  if @show_snapshotted_data do
                     gettext("Potential Reward Percent") <> "<br />(" <> gettext("Current Reward Percent")  <> ")"
                   else
                     gettext("Potential Reward Percent")
@@ -69,7 +69,7 @@
                 </div>
                 <div class="col-4 stakes-td stakes-cell">
                   <%= format_token_amount(delegator.stake_amount, @token, symbol: false) %>
-                  <%= if @is_show_snapshotted_data do %>
+                  <%= if @show_snapshotted_data do %>
                     (
                       <%=
                         if delegator.snapshotted_stake_amount do
@@ -98,7 +98,7 @@
                   %>
                   <%= if reward.reward_ratio do %>
                     <%= reward.reward_ratio %>%
-                    <%= if @is_show_snapshotted_data do %>
+                    <%= if @show_snapshotted_data do %>
                       (
                         <%=
                           if reward.snapshotted_reward_ratio do
