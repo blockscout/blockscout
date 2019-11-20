@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.StakesChannel do
     token = ContractState.get(:token)
 
     html =
-      View.render_to_string(StakesView, "_stakes_modal_validator_info.html",
+      View.render_to_string(StakesView, "_stakes_modal_pool_info.html",
         validator: pool,
         delegator: delegator,
         average_block_time: average_block_time,

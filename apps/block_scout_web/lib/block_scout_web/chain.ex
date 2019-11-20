@@ -283,7 +283,7 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number}
   end
 
-  defp paging_params(%StakingPool{staking_address_hash: address_hash, staked_ratio: value}) do
+  defp paging_params(%StakingPool{staking_address_hash: address_hash, stakes_ratio: value}) do
     %{"address_hash" => address_hash, "value" => Decimal.to_string(value)}
   end
 

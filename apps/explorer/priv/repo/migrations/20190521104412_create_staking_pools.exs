@@ -14,7 +14,7 @@ defmodule Explorer.Repo.Migrations.CreateStakingPools do
       add(:was_banned_count, :integer)
       add(:banned_until, :bigint)
       add(:likelihood, :decimal, precision: 5, scale: 2)
-      add(:staked_ratio, :decimal, precision: 5, scale: 2)
+      add(:stakes_ratio, :decimal, precision: 5, scale: 2)
       add(:staking_address_hash, :bytea)
       add(:mining_address_hash, :bytea)
 
