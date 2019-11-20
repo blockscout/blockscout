@@ -24,7 +24,7 @@
     <div class="stakes-progress-info">
       <h2 class="stakes-progress-info-title"><%= gettext("Stakes Ratio") %></h2>
       <p class="stakes-progress-info-value">
-        <%= @pool.staked_ratio %>%
+        <%= @pool.stakes_ratio %>%
       </p>
     </div>
     <div class="stakes-progress-info">

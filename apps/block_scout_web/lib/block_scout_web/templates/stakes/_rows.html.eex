@@ -23,7 +23,7 @@
     <%= if @pools_type == :inactive do %>
       <%= if @pool.is_banned, do: gettext("Yes"), else: gettext("No") %>
     <% else %>
-      <%= if @pool.staked_ratio, do: "#{@pool.staked_ratio}%" %>
+      <%= if @pool.stakes_ratio, do: "#{@pool.stakes_ratio}%" %>
     <% end %>
   </div>
   <div class="col-2 stakes-td stakes-cell">
