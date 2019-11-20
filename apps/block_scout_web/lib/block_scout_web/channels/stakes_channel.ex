@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.StakesChannel do
     pool = Chain.staking_pool(staking_address)
     token = ContractState.get(:token)
 
-    is_show_snapshotted_data =
+    show_snapshotted_data =
       pool.is_validator && ContractState.get(:validator_set_apply_block) > 0 && ContractState.get(:is_snapshotted)
 
     delegators =
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.StakesChannel do
         pool: pool,
         delegators: delegators,
         token: token,
-        is_show_snapshotted_data: is_show_snapshotted_data
+        show_snapshotted_data: show_snapshotted_data
       )
 
     {:reply, {:ok, %{html: html}}, socket}
