@@ -221,7 +221,7 @@ defmodule Explorer.Staking.ContractState do
             if staking_response.is_active do
               ratio(staking_response.total_staked_amount, staked_total)
             end,
-          validator_reward_ratio: pool_reward_response.validator_share / 10_000,
+          validator_reward_ratio: Float.floor(pool_reward_response.validator_share / 10_000, 2),
           likelihood: ratio(likelihood[staking_address] || 0, total_likelihood),
           block_reward_ratio: staking_response.block_reward / 10_000,
           is_deleted: false,
@@ -257,7 +257,7 @@ defmodule Explorer.Staking.ContractState do
           delegator_address_hash: delegator_address,
           pool_address_hash: pool_address,
           is_active: is_active,
-          reward_ratio: delegator_reward_response.delegator_share / 10_000
+          reward_ratio: Float.floor(delegator_reward_response.delegator_share / 10_000, 2)
         })
       end)
 
