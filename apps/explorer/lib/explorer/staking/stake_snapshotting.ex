@@ -26,7 +26,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
     pool_staking_addresses =
       pool_mining_addresses
-      |> Enum.map(&transform_requests/1)
+      |> Enum.map(&staking_by_mining_requests/1)
       |> ContractReader.perform_grouped_requests(pool_mining_addresses, contracts, abi)
       |> Enum.flat_map(fn {_, value} -> value end)
       |> Enum.map(fn {_key, staking_address_hash} -> decode_data(staking_address_hash) end)
@@ -134,9 +134,9 @@ defmodule Explorer.Staking.StakeSnapshotting do
     })
   end
 
-  def transform_requests(minig_address) do
+  def staking_by_mining_requests(mining_address) do
     [
-      staking_address: {:validator_set, "stakingByMiningAddress", [minig_address]}
+      staking_address: {:validator_set, "stakingByMiningAddress", [mining_address]}
     ]
   end
 
@@ -152,14 +152,14 @@ defmodule Explorer.Staking.StakeSnapshotting do
     ]
   end
 
-  defp delegator_requests(pool_address, delegator_address, block_number) do
+  defp delegator_requests(pool_staking_address, delegator_address, block_number) do
     [
-      stake_amount: {:staking, "stakeAmount", [pool_address, delegator_address]},
-      snapshotted_stake_amount: {:staking, "stakeAmount", [pool_address, delegator_address], block_number - 1},
-      ordered_withdraw: {:staking, "orderedWithdrawAmount", [pool_address, delegator_address]},
-      max_withdraw_allowed: {:staking, "maxWithdrawAllowed", [pool_address, delegator_address]},
-      max_ordered_withdraw_allowed: {:staking, "maxWithdrawOrderAllowed", [pool_address, delegator_address]},
-      ordered_withdraw_epoch: {:staking, "orderWithdrawEpoch", [pool_address, delegator_address]}
+      stake_amount: {:staking, "stakeAmount", [pool_staking_address, delegator_address]},
+      snapshotted_stake_amount: {:staking, "stakeAmount", [pool_staking_address, delegator_address], block_number - 1},
+      ordered_withdraw: {:staking, "orderedWithdrawAmount", [pool_staking_address, delegator_address]},
+      max_withdraw_allowed: {:staking, "maxWithdrawAllowed", [pool_staking_address, delegator_address]},
+      max_ordered_withdraw_allowed: {:staking, "maxWithdrawOrderAllowed", [pool_staking_address, delegator_address]},
+      ordered_withdraw_epoch: {:staking, "orderWithdrawEpoch", [pool_staking_address, delegator_address]}
     ]
   end
 
@@ -182,7 +182,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
           are_delegators_banned: pool.are_delegators_banned,
           likelihood: pool.likelihood,
           block_reward_ratio: pool.block_reward_ratio,
-          staked_ratio: pool.staked_ratio,
+          stakes_ratio: pool.stakes_ratio,
           validator_reward_ratio: pool.validator_reward_ratio,
           ban_reason: pool.ban_reason,
           was_banned_count: pool.was_banned_count,
