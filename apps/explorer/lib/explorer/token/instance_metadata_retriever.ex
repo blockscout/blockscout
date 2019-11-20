@@ -101,7 +101,11 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       {:ok, %Response{body: body, status_code: 200}} ->
         {:ok, json} = decode_json(body)
 
-        {:ok, %{metadata: json}}
+        if is_map(json) do
+          {:ok, %{metadata: json}}
+        else
+          {:error, :wrong_metadata_type}
+        end
 
       {:ok, %Response{body: body}} ->
         {:error, body}
