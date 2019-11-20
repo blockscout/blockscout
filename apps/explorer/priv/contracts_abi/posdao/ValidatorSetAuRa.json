@@ -557,7 +557,7 @@
     "name": "getPendingValidators",
     "outputs": [
       {
-        "name": "_miningAddress",
+        "name": "",
         "type": "address[]"
       }
     ],
@@ -571,7 +571,7 @@
     "name": "validatorsToBeFinalized",
     "outputs": [
       {
-        "name": "_miningAddress",
+        "name": "miningAddresses",
         "type": "address[]"
       }
     ],
