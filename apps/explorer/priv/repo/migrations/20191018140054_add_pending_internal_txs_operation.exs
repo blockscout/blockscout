@@ -52,8 +52,6 @@ defmodule Explorer.Repo.Migrations.AddPendingInternalTxsOperation do
     ;
     """)
 
-    create(unique_index(:internal_transactions, [:block_hash, :block_index]))
-
     execute("""
     ALTER table internal_transactions
     DROP CONSTRAINT internal_transactions_pkey,
