@@ -41,12 +41,12 @@
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: gettext("Stakes Ratio"),
-          value: if(@validator.staked_ratio, do: "#{@validator.staked_ratio}%")
+          value: if(@validator.stakes_ratio, do: "#{@validator.stakes_ratio}%")
         %>
         <%=
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
-          title: gettext("Reward Percent"),
+          title: gettext("Share of Pool’s Reward"),
           value: "#{@validator.block_reward_ratio}%"
         %>
         <%=

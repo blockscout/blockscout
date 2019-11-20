@@ -173,7 +173,7 @@ defmodule Explorer.Staking.ContractState do
     [likelihood_values, total_likelihood] = global_responses.pools_likelihood
 
     likelihood =
-      global_responses.pools_likely
+      global_responses.pools_to_be_elected # array of pool addresses (staking addresses)
       |> Enum.zip(likelihood_values)
       |> Enum.into(%{})
 
@@ -217,7 +217,7 @@ defmodule Explorer.Staking.ContractState do
         %{
           staking_address_hash: staking_address,
           delegators_count: length(staking_response.active_delegators),
-          staked_ratio:
+          stakes_ratio:
             if staking_response.is_active do
               ratio(staking_response.total_staked_amount, staked_total)
             end,

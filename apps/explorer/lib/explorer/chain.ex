@@ -4587,15 +4587,15 @@ defmodule Explorer.Chain do
     paging_query =
       base_query
       |> limit(^paging_options.page_size)
-      |> order_by(desc: :staked_ratio, asc: :staking_address_hash)
+      |> order_by(desc: :stakes_ratio, asc: :staking_address_hash)
 
     case paging_options.key do
       {value, address_hash} ->
         where(
           paging_query,
           [p],
-          p.staked_ratio < ^value or
-            (p.staked_ratio == ^value and p.staking_address_hash > ^address_hash)
+          p.stakes_ratio < ^value or
+            (p.stakes_ratio == ^value and p.staking_address_hash > ^address_hash)
         )
 
       _ ->
