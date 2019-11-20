@@ -71,12 +71,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                                                   } ->
       valid_internal_transactions(transactions, internal_transactions_params, invalid_block_numbers)
     end)
-    |> Multi.run(:internal_transactions, fn repo, %{valid_internal_transactions: valid_internal_transactions} ->
-      insert(repo, valid_internal_transactions, insert_options)
-    end)
     |> Multi.run(:remove_left_over_internal_transactions, fn repo,
                                                              %{valid_internal_transactions: valid_internal_transactions} ->
       remove_left_over_internal_transactions(repo, valid_internal_transactions)
+    end)
+    |> Multi.run(:internal_transactions, fn repo, %{valid_internal_transactions: valid_internal_transactions} ->
+      insert(repo, valid_internal_transactions, insert_options)
     end)
     |> Multi.run(:update_transactions, fn repo, %{valid_internal_transactions: valid_internal_transactions} ->
       update_transactions(repo, valid_internal_transactions, update_transactions_options)
@@ -289,7 +289,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
       _ ->
         try do
-          delete_query =
+          delete_query_for_block_hash_block_index =
             valid_internal_transactions
             |> Enum.group_by(& &1.block_hash, & &1.block_index)
             |> Enum.map(fn {block_hash, indexes} -> {block_hash, Enum.max(indexes)} end)
@@ -297,10 +297,18 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
               or_where(acc, [it], it.block_hash == ^block_hash and it.block_index > ^max_index)
             end)
 
-          # ShareLocks order already enforced by `acquire_pending_internal_txs` (see docs: sharelocks.md)
-          {_count, result} = repo.delete_all(delete_query, [])
+          # removes old recoreds with the same primary key (transaction hash, transaction index)
+          delete_query =
+            valid_internal_transactions
+            |> Enum.map(fn params -> {params.transaction_hash, params.index} end)
+            |> Enum.reduce(delete_query_for_block_hash_block_index, fn {transaction_hash, index}, acc ->
+              or_where(acc, [it], it.transaction_hash == ^transaction_hash and it.index == ^index)
+            end)
 
-          {:ok, result}
+          # ShareLocks order already enforced by `acquire_pending_internal_txs` (see docs: sharelocks.md)
+          {count, result} = repo.delete_all(delete_query, [])
+
+          {:ok, {count, result}}
         rescue
           postgrex_error in Postgrex.Error -> {:error, %{exception: postgrex_error}}
         end
