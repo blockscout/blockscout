@@ -7,6 +7,8 @@ defmodule Explorer.Staking.ContractState do
 
   use GenServer
 
+  require Logger
+
   alias Explorer.Chain
   alias Explorer.Chain.Events.{Publisher, Subscriber}
   alias Explorer.SmartContract.Reader
@@ -118,8 +120,6 @@ defmodule Explorer.Staking.ContractState do
   end
 
   defp fetch_state(contracts, abi, block_number) do
-    previous_epoch = get(:epoch_number, 0)
-
     global_responses = ContractReader.perform_requests(ContractReader.global_requests(), contracts, abi)
     token = get_token(global_responses.token_contract_address)
 
@@ -268,11 +268,11 @@ defmodule Explorer.Staking.ContractState do
         timeout: :infinity
       })
 
-    if previous_epoch && previous_epoch != 0 && previous_epoch != global_responses.epoch_number do
+    if global_responses.epoch_start_block == block_number + 1 do
       with(
         true <- :ets.insert(@table_name, is_snapshotted: false),
         {:ok, _} <-
-          StakeSnapshotting.start_snapshoting(
+          StakeSnapshotting.start_snapshotting(
             %{contracts: contracts, abi: abi, global_responses: global_responses},
             block_number
           )
