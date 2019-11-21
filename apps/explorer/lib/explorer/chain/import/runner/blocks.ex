@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   alias Ecto.{Changeset, Multi, Repo}
 
-  alias Explorer.Chain.{Address, Block, Import, Log, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.{Address, Block, Import, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
