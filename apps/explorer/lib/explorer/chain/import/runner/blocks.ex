@@ -83,9 +83,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         transactions: transactions
       })
     end)
-    |> Multi.run(:remove_nonconsensus_logs, fn repo, %{derive_transaction_forks: transactions} ->
-      remove_nonconsensus_logs(repo, transactions, insert_options)
-    end)
     |> Multi.run(:remove_nonconsensus_internal_transactions, fn repo, %{derive_transaction_forks: transactions} ->
       remove_nonconsensus_internal_transactions(repo, transactions, insert_options)
     end)
@@ -368,35 +365,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     {_count, deleted_internal_transactions} = repo.delete_all(delete_query, timeout: timeout)
 
     {:ok, deleted_internal_transactions}
-  rescue
-    postgrex_error in Postgrex.Error ->
-      {:error, %{exception: postgrex_error, transactions: forked_transaction_hashes}}
-  end
-
-  defp remove_nonconsensus_logs(repo, forked_transaction_hashes, %{timeout: timeout}) do
-    ordered_logs =
-      from(
-        log in Log,
-        where: log.transaction_hash in ^forked_transaction_hashes,
-        select: log.transaction_hash,
-        # Enforce Log ShareLocks order (see docs: sharelocks.md)
-        order_by: [
-          log.transaction_hash,
-          log.index
-        ],
-        lock: "FOR UPDATE"
-      )
-
-    query =
-      from(log in Log,
-        select: map(log, [:transaction_hash, :index]),
-        inner_join: ordered_log in subquery(ordered_logs),
-        on: ordered_log.transaction_hash == log.transaction_hash
-      )
-
-    {_count, deleted_logs} = repo.delete_all(query, timeout: timeout)
-
-    {:ok, deleted_logs}
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error, transactions: forked_transaction_hashes}}
