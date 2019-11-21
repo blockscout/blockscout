@@ -1904,12 +1904,6 @@ msgid "Active Pools"
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:13
-msgid "All pool participant addresses. The top address belongs to the validator."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:18
 msgid "Already Ordered:"
 msgstr ""
@@ -1925,7 +1919,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:24
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:38
 msgid "Amount of STAKE placed by an address"
 msgstr ""
 
@@ -2028,7 +2022,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:63
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:89
 msgid "It's me!"
 msgstr ""
 
@@ -2039,7 +2033,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:65
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:91
 msgid "ME"
 msgstr ""
 
@@ -2099,8 +2093,8 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:31
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:33
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:45
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:47
 msgid "Potential Reward Percent"
 msgstr ""
 
@@ -2116,7 +2110,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:39
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:53
 msgid "Reward distribution is based on stake amount. Validator receives a minimum of 30%."
 msgstr ""
 
@@ -2162,7 +2156,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:13
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:24
 msgid "Staker's Address"
 msgstr ""
 
@@ -2205,7 +2199,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_rows.html.eex:5
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:53
 msgid "This is a validator"
 msgstr ""
 
@@ -2276,24 +2269,48 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:19
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:33
 msgid "Accounted Stake Amount"
 msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:31
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:45
 msgid "Current Reward Percent"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:19
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:21
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:33
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:35
 msgid "Current Stake Amount"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:49
 msgid "Share of Pool’s Reward"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:77
+msgid "This is a %{pool_type}. The rest addresses are delegators of its pool."
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:18
+msgid "candidate"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:16
+msgid "validator"
+msgstr ""
+
+#, elixir-format, fuzzy
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:25
+msgid "All pool participant addresses. The top address belongs to the %{pool_type}."
 msgstr ""
