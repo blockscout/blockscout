@@ -236,6 +236,8 @@ defmodule Explorer.Factory do
       block_hash: block_hash,
       block_number: block_number,
       cumulative_gas_used: cumulative_gas_used,
+      from_address_hash: transaction.from_address_hash,
+      to_address_hash: transaction.to_address_hash,
       error: error,
       gas_used: gas_used,
       index: next_transaction_index,
