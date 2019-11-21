@@ -75,6 +75,7 @@ defmodule BlockScoutWeb.StakesChannel do
       View.render_to_string(StakesView, "_stakes_modal_delegators_list.html",
         account: socket.assigns[:account],
         pool: pool,
+        conn: socket,
         delegators: delegators,
         token: token,
         show_snapshotted_data: show_snapshotted_data
