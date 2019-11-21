@@ -47,7 +47,11 @@
                 <div class="col-4 stakes-td stakes-cell">
                   <div class="stakes-address-container">
                     <span class="stakes-address">
-                      <%= BlockScoutWeb.AddressView.trimmed_hash(delegator.delegator_address_hash) %>
+                      <%= link(
+                            BlockScoutWeb.AddressView.trimmed_hash(delegator.delegator_address_hash),
+                            to: address_path(@conn, :show, delegator.delegator_address_hash),
+                            target: "_blank"
+                          ) %>
                     </span>
                     <%= if delegator.delegator_address_hash == @pool.staking_address_hash and @pool.is_validator do %>
                       <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: gettext("This is a validator") %>

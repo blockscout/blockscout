@@ -93,6 +93,11 @@ $stakes-stats-item-border-color: #fff !default;
     .stakes-tr-banned & {
       color: $stakes-banned-color;
     }
+
+    a {
+      text-decoration: none;
+      color: $stakes-address-color;
+    }
   }
 
   .stakes-address-active {
