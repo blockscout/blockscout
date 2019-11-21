@@ -63,13 +63,13 @@
                     <span class="stakes-address">
                       <%=
                         link(
-                          BlockScoutWeb.AddressView.trimmed_hash(staker.delegator_address_hash),
-                          to: address_path(@conn, :show, staker.delegator_address_hash),
+                          BlockScoutWeb.AddressView.trimmed_hash(staker.address_hash),
+                          to: address_path(@conn, :show, staker.address_hash),
                           target: "_blank"
                         )
                       %>
                     </span>
-                    <%= if staker.delegator_address_hash == @pool.staking_address_hash do %>
+                    <%= if staker.address_hash == @pool.staking_address_hash do %>
                       <%=
                         render(
                           BlockScoutWeb.CommonComponentsView,
@@ -78,7 +78,7 @@
                         )
                       %>
                     <% end %>
-                    <%= if to_string(staker.delegator_address_hash) == @account do %>
+                    <%= if to_string(staker.address_hash) == @account do %>
                       <div
                           class="me-tooltip"
                           data-boundary="window"
@@ -110,7 +110,7 @@
                 <div class="col-3 stakes-td stakes-cell">
                   <%
                     reward =
-                      if staker.delegator_address_hash == @pool.staking_address_hash do
+                      if staker.address_hash == @pool.staking_address_hash do
                         %{
                           reward_ratio: @pool.validator_reward_ratio,
                           snapshotted_reward_ratio: @pool.snapshotted_validator_reward_ratio

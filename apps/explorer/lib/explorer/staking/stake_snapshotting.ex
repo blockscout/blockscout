@@ -122,8 +122,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
         delegator_reward_response = delegator_reward_responses[{pool_address, delegator_address, is_active}]
 
         Map.merge(response, %{
-          delegator_address_hash: delegator_address,
-          pool_address_hash: pool_address,
+          address_hash: delegator_address,
+          staking_address_hash: pool_address,
           is_active: is_active,
           snapshotted_reward_ratio: Float.floor(delegator_reward_response.delegator_share / 10_000, 2)
         })

@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.StakesController do
     account =
       if account_address = conn.assigns[:account] do
         account_address
-        |> Chain.get_total_staked()
+        |> Chain.get_total_staked_and_ordered()
         |> Map.merge(%{
           address: account_address,
           balance: Chain.fetch_last_token_balance(account_address, token.contract_address_hash),
@@ -141,7 +141,7 @@ defmodule BlockScoutWeb.StakesController do
   end
 
   defp stake_allowed?(pool, delegator) do
-    Decimal.positive?(pool.self_staked_amount) or delegator.delegator_address_hash == pool.staking_address_hash
+    Decimal.positive?(pool.self_staked_amount) or delegator.address_hash == pool.staking_address_hash
   end
 
   defp move_allowed?(nil), do: false
