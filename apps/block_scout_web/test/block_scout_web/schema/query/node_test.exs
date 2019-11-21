@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
     end
 
     test "with 'id' for non-existent internal transaction", %{conn: conn} do
-      transaction = build(:transaction) |> with_block()
+      transaction = insert(:transaction) |> with_block()
 
       internal_transaction =
         build(:internal_transaction,
