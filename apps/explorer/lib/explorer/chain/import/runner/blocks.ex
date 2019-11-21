@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   import Ecto.Query, only: [from: 2, subquery: 1]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Address, Block, Import, InternalTransaction, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, Import, InternalTransaction, TokenTransfer, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
