@@ -9,7 +9,12 @@ defmodule Explorer.Chain.LogTest do
 
   describe "changeset/2" do
     test "accepts valid attributes" do
-      params = params_for(:log, address_hash: build(:address).hash, transaction_hash: build(:transaction).hash)
+      params =
+        params_for(:log,
+          address_hash: build(:address).hash,
+          transaction_hash: build(:transaction).hash,
+          block_hash: build(:block).hash
+        )
 
       assert %Changeset{valid?: true} = Log.changeset(%Log{}, params)
     end
@@ -26,7 +31,8 @@ defmodule Explorer.Chain.LogTest do
           :log,
           address_hash: build(:address).hash,
           first_topic: "ham",
-          transaction_hash: build(:transaction).hash
+          transaction_hash: build(:transaction).hash,
+          block_hash: build(:block).hash
         )
 
       assert %Changeset{changes: %{first_topic: "ham"}, valid?: true} = Log.changeset(%Log{}, params)
