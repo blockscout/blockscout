@@ -76,7 +76,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
        )
        when is_integer(block_number) and is_binary(from_address_hash) do
     # a transaction MUST have a `from_address_hash`
-    acc = MapSet.put(initial, %{address_hash: from_address_hash, block_number: block_number})
+    acc1 = MapSet.put(initial, %{address_hash: from_address_hash, block_number: block_number})
 
     # `to_address_hash` is optional
     acc =
@@ -85,11 +85,11 @@ defmodule Indexer.Transform.AddressCoinBalances do
           MapSet.put(acc, %{address_hash: to_address_hash, block_number: block_number})
 
         _ ->
-          acc
+          acc1
       end
 
     # also gas fee recipient
-    acc =
+    acc2 =
       case transaction_params do
         %{gas_fee_recipient_hash: hash, gas_currency_hash: nil} when is_binary(hash) ->
           MapSet.put(acc, %{address_hash: hash, block_number: block_number})
@@ -98,6 +98,6 @@ defmodule Indexer.Transform.AddressCoinBalances do
           acc
       end
 
-    acc
+    acc2
   end
 end
