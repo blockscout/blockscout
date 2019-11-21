@@ -115,22 +115,6 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       assert count(Address.CurrentTokenBalance) == count
     end
 
-    test "remove_nonconsensus_logs deletes nonconsensus logs", %{
-      consensus_block: %{number: block_number} = block,
-      options: options
-    } do
-      old_block = insert(:block, number: block_number, consensus: true)
-      forked_transaction = :transaction |> insert() |> with_block(old_block)
-      %Log{transaction_hash: hash, index: index} = insert(:log, transaction: forked_transaction)
-
-      assert count(Log) == 1
-
-      assert {:ok, %{remove_nonconsensus_logs: [%{transaction_hash: ^hash, index: ^index}]}} =
-               run_block_consensus_change(block, true, options)
-
-      assert count(Log) == 0
-    end
-
     test "derive_address_current_token_balances inserts rows if there is an address_token_balance left for the rows deleted by delete_address_current_token_balances",
          %{consensus_block: %{number: block_number} = block, options: options} do
       token = insert(:token)
