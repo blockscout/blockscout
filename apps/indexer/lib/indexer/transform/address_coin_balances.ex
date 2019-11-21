@@ -82,7 +82,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
     acc =
       case transaction_params do
         %{to_address_hash: to_address_hash} when is_binary(to_address_hash) ->
-          MapSet.put(acc, %{address_hash: to_address_hash, block_number: block_number})
+          MapSet.put(acc1, %{address_hash: to_address_hash, block_number: block_number})
 
         _ ->
           acc1

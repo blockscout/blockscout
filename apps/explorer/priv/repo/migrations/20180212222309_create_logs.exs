@@ -5,7 +5,7 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
     create table(:logs) do
       add(:data, :bytea, null: false)
       add(:index, :integer, null: false)
-      add(:block_number, :integer, null: false)
+      add(:block_number, :integer)
 
       # Parity supplies it; Geth does not.
       add(:type, :string, null: true)
