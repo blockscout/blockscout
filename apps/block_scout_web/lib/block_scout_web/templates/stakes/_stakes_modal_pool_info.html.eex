@@ -15,7 +15,7 @@
           <%= gettext("This pool is banned until block #%{banned_until} (%{estimated_unban_day})", banned_until: @validator.banned_until, estimated_unban_day: estimated_unban_day(@validator.banned_until, @average_block_time)) %><br />
           <%= gettext("Reason for Ban: %{ban_reason}", ban_reason: String.capitalize(@validator.ban_reason)) %>
           <%= if @delegator &&
-                 @delegator.delegator_address_hash != @validator.staking_address_hash &&
+                 @delegator.address_hash != @validator.staking_address_hash &&
                  @validator.are_delegators_banned &&
                  @validator.banned_until != @validator.banned_delegators_until do %>
             <br />

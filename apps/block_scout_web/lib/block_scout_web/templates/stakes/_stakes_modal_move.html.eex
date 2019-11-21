@@ -22,7 +22,7 @@
                 <option disabled <%= unless @pool_to do "selected" end %>><%= gettext("Choose Pool") %></option>
                 <%= for %{pool: pool} <- @pools,
                       pool.staking_address_hash != @pool_from.staking_address_hash,
-                      Decimal.positive?(pool.self_staked_amount) or pool.staking_address_hash == @delegator_from.delegator_address_hash do %>
+                      Decimal.positive?(pool.self_staked_amount) or pool.staking_address_hash == @delegator_from.address_hash do %>
                   <option
                     value="<%= pool.staking_address_hash %>"
                     <%= if @pool_to && pool.staking_address_hash == @pool_to.staking_address_hash do "selected" end %>
