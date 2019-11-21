@@ -158,8 +158,8 @@ defmodule Indexer.Block.Fetcher do
          logs = tx_logs ++ process_extra_logs(extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
-         #%{token_transfers: fee_token_transfers, tokens: fee_tokens} =
-           # TokenTransfers.parse_fees(transactions_with_receipts),
+         # %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
+         # TokenTransfers.parse_fees(transactions_with_receipts),
          fee_tokens = [],
          fee_token_transfers = [],
          %{

@@ -62,6 +62,8 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:account_type, :string)
     field(:nonvoting_locked_gold, :wei)
     field(:locked_gold, :wei)
+    field(:attestations_requested, :integer)
+    field(:attestations_fulfilled, :integer)
 
     connection field(:address_info, node_type: :address) do
       resolve(&Address.get_by/3)

@@ -39,7 +39,7 @@ defmodule Explorer.Chain.Log do
           block_hash: Hash.Full.t(),
           index: non_neg_integer(),
           type: String.t() | nil,
-          block_number: non_neg_integer(),
+          block_number: non_neg_integer()
         }
 
   @primary_key false
