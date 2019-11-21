@@ -91,7 +91,8 @@ defmodule Indexer.Transform.AddressCoinBalances do
     # also gas fee recipient
     acc2 =
       case transaction_params do
-        %{gas_fee_recipient_hash: hash, gas_currency_hash: nil} when is_binary(hash) ->
+        %{gas_fee_recipient_hash: hash, gas_currency_hash: nil}
+        when is_binary(hash) and hash != "0x0000000000000000000000000000000000000000" ->
           MapSet.put(acc, %{address_hash: hash, block_number: block_number})
 
         _ ->

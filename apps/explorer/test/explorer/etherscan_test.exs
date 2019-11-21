@@ -1019,11 +1019,14 @@ defmodule Explorer.EtherscanTest do
         |> insert()
         |> with_block(third_block)
 
-      second_block_token_transfers = insert_list(2, :token_transfer, from_address: address, transaction: transaction2, block: transaction2.block)
+      second_block_token_transfers =
+        insert_list(2, :token_transfer, from_address: address, transaction: transaction2, block: transaction2.block)
 
-      first_block_token_transfers = insert_list(2, :token_transfer, from_address: address, transaction: transaction3, block: transaction3.block)
+      first_block_token_transfers =
+        insert_list(2, :token_transfer, from_address: address, transaction: transaction3, block: transaction3.block)
 
-      third_block_token_transfers = insert_list(2, :token_transfer, from_address: address, transaction: transaction1, block: transaction1.block)
+      third_block_token_transfers =
+        insert_list(2, :token_transfer, from_address: address, transaction: transaction1, block: transaction1.block)
 
       options1 = %{page_number: 1, page_size: 2}
 
@@ -1160,7 +1163,13 @@ defmodule Explorer.EtherscanTest do
         |> with_block()
 
       insert(:token_transfer, from_address: address, transaction: transaction, block: transaction.block)
-      insert(:token_transfer, from_address: address, token_contract_address: contract_address, transaction: transaction, block: transaction.block)
+
+      insert(:token_transfer,
+        from_address: address,
+        token_contract_address: contract_address,
+        transaction: transaction,
+        block: transaction.block
+      )
 
       [found_token_transfer] = Etherscan.list_token_transfers(address.hash, contract_address.hash)
 

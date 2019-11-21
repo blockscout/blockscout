@@ -1896,7 +1896,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> with_block()
 
       insert(:token_transfer, from_address: address, transaction: transaction, block: transaction.block)
-      insert(:token_transfer, from_address: address, token_contract_address: contract_address, transaction: transaction, block: transaction.block)
+
+      insert(:token_transfer,
+        from_address: address,
+        token_contract_address: contract_address,
+        transaction: transaction,
+        block: transaction.block
+      )
 
       params = %{
         "module" => "account",

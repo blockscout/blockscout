@@ -275,7 +275,7 @@ defmodule Explorer.GraphQLTest do
       for transaction <- all_transactions do
         token_transfer_attrs1 = %{
           block_number: transaction.block_number,
-          log_index: 456+transaction.nonce,
+          log_index: 456 + transaction.nonce,
           block: transaction.block,
           transaction: transaction,
           token_contract_address: token_address
@@ -283,7 +283,7 @@ defmodule Explorer.GraphQLTest do
 
         token_transfer_attrs2 = %{
           block_number: transaction.block_number,
-          log_index: 123+transaction.nonce,
+          log_index: 123 + transaction.nonce,
           block: transaction.block,
           transaction: transaction,
           token_contract_address: token_address

@@ -1567,8 +1567,14 @@ defmodule Explorer.Chain.ImportTest do
                    timeout: 1
                  },
                  logs: %{
-                   params: [params_for(:log, transaction_hash: transaction_hash, address_hash: miner_hash, block_number: 35,
-                   block_hash: block_hash)],
+                   params: [
+                     params_for(:log,
+                       transaction_hash: transaction_hash,
+                       address_hash: miner_hash,
+                       block_number: 35,
+                       block_hash: block_hash
+                     )
+                   ],
                    timeout: 1
                  },
                  token_transfers: %{

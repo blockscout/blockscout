@@ -399,7 +399,7 @@ defmodule Indexer.Block.FetcherTest do
             end)
             # async requests need to be grouped in one expect because the order is non-deterministic while multiple expect
             # calls on the same name/arity are used in order
-            |> expect(:json_rpc, 5, fn json, _options ->
+            |> expect(:json_rpc, 6, fn json, _options ->
               [request] = json
 
               case request do
@@ -408,6 +408,9 @@ defmodule Indexer.Block.FetcherTest do
 
                 %{id: id, method: "eth_getBalance", params: [^from_address_hash, ^block_quantity]} ->
                   {:ok, [%{id: id, jsonrpc: "2.0", result: "0xd0d4a965ab52d8cd740000"}]}
+
+                %{id: id, method: "eth_getBalance", params: [_, ^block_quantity]} ->
+                  {:ok, [%{id: id, jsonrpc: "2.0", result: "0x1"}]}
 
                 %{id: id, method: "eth_call"} ->
                   {:ok,
@@ -467,6 +470,10 @@ defmodule Indexer.Block.FetcherTest do
           assert {:ok,
                   %{
                     addresses: [
+                      %Explorer.Chain.Hash{
+                        byte_count: 20,
+                        bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+                      },
                       %Explorer.Chain.Hash{
                         byte_count: 20,
                         bytes:
@@ -572,6 +579,13 @@ defmodule Indexer.Block.FetcherTest do
                           hash:
                             %Explorer.Chain.Hash{
                               byte_count: 20,
+                              bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+                            } = zero_address_hash
+                        },
+                        %Address{
+                          hash:
+                            %Explorer.Chain.Hash{
+                              byte_count: 20,
                               bytes:
                                 <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179,
                                   223, 65, 91>>
@@ -629,7 +643,7 @@ defmodule Indexer.Block.FetcherTest do
           wait_for_tasks(CoinBalance)
 
           assert Repo.aggregate(Chain.Block, :count, :hash) == 1
-          assert Repo.aggregate(Address, :count, :hash) == 2
+          assert Repo.aggregate(Address, :count, :hash) == 3
           assert Chain.log_count() == 1
           assert Repo.aggregate(Transaction, :count, :hash) == 1
 

@@ -12,7 +12,8 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
         |> insert(from_address: address)
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction, from_address: address, block: transaction.block)
+      token_transfer =
+        insert(:token_transfer, transaction: transaction, from_address: address, block: transaction.block)
 
       [result] =
         address

@@ -245,7 +245,9 @@ defmodule Explorer.ChainTest do
       log1 = insert(:log, transaction: transaction, index: 1, address: address, block: transaction.block)
 
       2..51
-      |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index, address: address, block: transaction.block) end)
+      |> Enum.map(fn index ->
+        insert(:log, transaction: transaction, index: index, address: address, block: transaction.block)
+      end)
       |> Enum.map(& &1.index)
 
       paging_options1 = %PagingOptions{page_size: 1}
@@ -448,7 +450,7 @@ defmodule Explorer.ChainTest do
         to_address: build(:address),
         transaction: transaction,
         block: transaction.block
-        )
+      )
 
       transaction =
         address_hash

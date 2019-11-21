@@ -82,7 +82,12 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
       insert(:token_transfer, transaction: transaction, block_number: 1000, log_index: 1, block: transaction.block)
 
       Enum.each(2..5, fn item ->
-        insert(:token_transfer, transaction: transaction, block_number: item + 1001, log_index: item + 1, block: transaction.block)
+        insert(:token_transfer,
+          transaction: transaction,
+          block_number: item + 1001,
+          log_index: item + 1,
+          block: transaction.block
+        )
       end)
 
       conn =

@@ -146,8 +146,7 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
       """
 
       id =
-        %{transaction_hash: to_string(token_transfer.transaction_hash),
-         log_index: token_transfer.log_index}
+        %{transaction_hash: to_string(token_transfer.transaction_hash), log_index: token_transfer.log_index}
         |> Jason.encode!()
         |> (fn unique_id -> "TokenTransfer:#{unique_id}" end).()
         |> Base.encode64()
