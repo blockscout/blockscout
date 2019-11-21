@@ -10,7 +10,21 @@
           <div class="stakes-table-head">
             <div class="col-1"></div>
             <div class="col-4">
-              <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Staker's Address"), tooltip: gettext("All pool participant addresses. The top address belongs to the validator.") %>
+              <%=
+                pool_type =
+                  if @pool.is_validator do
+                    gettext("validator")
+                  else
+                    gettext("candidate")
+                  end
+
+                render(
+                  BlockScoutWeb.StakesView,
+                  "_stakes_th.html",
+                  title: gettext("Staker's Address"),
+                  tooltip: gettext("All pool participant addresses. The top address belongs to the %{pool_type}.", pool_type: pool_type)
+                )
+              %>
             </div>
             <div class="col-4">
               <%=
@@ -41,22 +55,30 @@
             </div>
           </div>
           <div class="stakes-table-body">
-            <%= for {delegator, index} <- Enum.with_index(@delegators, 1) do %>
+            <%= for {staker, index} <- Enum.with_index(@stakers, 1) do %>
               <div class="row">
                 <div class="col-1 stakes-td stakes-cell"><div class="stakes-td-order"><%= index %></div></div>
                 <div class="col-4 stakes-td stakes-cell">
                   <div class="stakes-address-container">
                     <span class="stakes-address">
-                      <%= link(
-                            BlockScoutWeb.AddressView.trimmed_hash(delegator.delegator_address_hash),
-                            to: address_path(@conn, :show, delegator.delegator_address_hash),
-                            target: "_blank"
-                          ) %>
+                      <%=
+                        link(
+                          BlockScoutWeb.AddressView.trimmed_hash(staker.delegator_address_hash),
+                          to: address_path(@conn, :show, staker.delegator_address_hash),
+                          target: "_blank"
+                        )
+                      %>
                     </span>
-                    <%= if delegator.delegator_address_hash == @pool.staking_address_hash and @pool.is_validator do %>
-                      <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: gettext("This is a validator") %>
+                    <%= if staker.delegator_address_hash == @pool.staking_address_hash do %>
+                      <%=
+                        render(
+                          BlockScoutWeb.CommonComponentsView,
+                          "_check_tooltip.html",
+                          text: gettext("This is a %{pool_type}. The rest addresses are delegators of its pool.", pool_type: pool_type)
+                        )
+                      %>
                     <% end %>
-                    <%= if to_string(delegator.delegator_address_hash) == @account do %>
+                    <%= if to_string(staker.delegator_address_hash) == @account do %>
                       <div
                           class="me-tooltip"
                           data-boundary="window"
@@ -72,12 +94,12 @@
                   </div>
                 </div>
                 <div class="col-4 stakes-td stakes-cell">
-                  <%= format_token_amount(delegator.stake_amount, @token, symbol: false) %>
+                  <%= format_token_amount(staker.stake_amount, @token, symbol: false) %>
                   <%= if @show_snapshotted_data do %>
                     (
                       <%=
-                        if delegator.snapshotted_stake_amount do
-                          format_token_amount(delegator.snapshotted_stake_amount, @token, symbol: false)
+                        if staker.snapshotted_stake_amount do
+                          format_token_amount(staker.snapshotted_stake_amount, @token, symbol: false)
                         else
                           0
                         end
@@ -88,15 +110,15 @@
                 <div class="col-3 stakes-td stakes-cell">
                   <%
                     reward =
-                      if delegator.delegator_address_hash == @pool.staking_address_hash do
+                      if staker.delegator_address_hash == @pool.staking_address_hash do
                         %{
                           reward_ratio: @pool.validator_reward_ratio,
                           snapshotted_reward_ratio: @pool.snapshotted_validator_reward_ratio
                         }
                       else
                         %{
-                          reward_ratio: delegator.reward_ratio,
-                          snapshotted_reward_ratio: delegator.snapshotted_reward_ratio
+                          reward_ratio: staker.reward_ratio,
+                          snapshotted_reward_ratio: staker.snapshotted_reward_ratio
                         }
                       end
                   %>
