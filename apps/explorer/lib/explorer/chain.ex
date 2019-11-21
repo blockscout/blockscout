@@ -363,7 +363,7 @@ defmodule Explorer.Chain do
         or_where:
           transaction.block_number == ^block_number and transaction.index == ^transaction_index and
             log.index > ^log_index,
-        where: log.address_hash == ^address_hash,
+        where: log.address_hash == ^address_hash and log.block_hash == transaction.block_hash,
         limit: ^paging_options.page_size,
         select: log
       )
