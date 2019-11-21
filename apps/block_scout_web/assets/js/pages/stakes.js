@@ -122,6 +122,11 @@ if ($stakesPage.length) {
     $stakesTop.html(msg.top_html)
 
     const state = store.getState()
+
+    if (!state.account) {
+      $stakesPage.find('[pool-filter-my]').prop('checked', false);
+    }
+
     if (
       msg.staking_allowed !== state.stakingAllowed ||
       msg.epoch_number > state.lastEpochNumber ||
@@ -164,17 +169,24 @@ if ($stakesPage.length) {
     .on('click', '.js-claim-withdrawal', event => openClaimWithdrawalModal(event, store))
 
   $stakesPage
-    .on('change', '[pool-filter-banned]', () => updateFilters(store))
-    .on('change', '[pool-filter-my]', () => updateFilters(store))
+    .on('change', '[pool-filter-banned]', () => updateFilters(store, 'banned'))
+    .on('change', '[pool-filter-my]', () => updateFilters(store, 'my'))
 
   initializeWeb3(store)
 }
 
-function updateFilters (store) {
+function updateFilters (store, filterType) {
+  const filterBanned = $stakesPage.find('[pool-filter-banned]');
+  const filterMy = $stakesPage.find('[pool-filter-my]');
+  if (filterType == 'my' && !store.getState().account) {
+    filterMy.prop('checked', false);
+    openWarningModal('Unauthorized', 'Please login with MetaMask')
+    return
+  }
   store.dispatch({
     type: 'FILTERS_UPDATED',
-    filterBanned: $stakesPage.find('[pool-filter-banned]').prop('checked'),
-    filterMy: $stakesPage.find('[pool-filter-my]').prop('checked')
+    filterBanned: filterBanned.prop('checked'),
+    filterMy: filterMy.prop('checked')
   })
   refreshPage(store)
 }
