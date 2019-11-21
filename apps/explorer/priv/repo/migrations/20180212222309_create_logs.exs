@@ -5,6 +5,7 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
     create table(:logs) do
       add(:data, :bytea, null: false)
       add(:index, :integer, null: false)
+      add(:block_number, :integer, null: false)
 
       # Parity supplies it; Geth does not.
       add(:type, :string, null: true)
@@ -17,6 +18,7 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
       timestamps(null: false, type: :utc_datetime_usec)
 
       add(:address_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
+      add(:block_hash, references(:blocks, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
 
       add(
         :transaction_hash,
@@ -34,6 +36,7 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
     create(index(:logs, :second_topic))
     create(index(:logs, :third_topic))
     create(index(:logs, :fourth_topic))
-    create(unique_index(:logs, [:transaction_hash, :index]))
+    create(index(:logs, [:transaction_hash, :index]))
+    create(index(:logs, [:block_hash, :index]))
   end
 end
