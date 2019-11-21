@@ -86,6 +86,7 @@ defmodule Explorer.Chain.ImportTest do
       logs: %{
         params: [
           %{
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
@@ -1564,7 +1565,13 @@ defmodule Explorer.Chain.ImportTest do
                    timeout: 1
                  },
                  logs: %{
-                   params: [params_for(:log, transaction_hash: transaction_hash, address_hash: miner_hash)],
+                   params: [
+                     params_for(:log,
+                       transaction_hash: transaction_hash,
+                       address_hash: miner_hash,
+                       block_hash: block_hash
+                     )
+                   ],
                    timeout: 1
                  },
                  token_transfers: %{
