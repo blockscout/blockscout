@@ -51,22 +51,22 @@ defmodule BlockScoutWeb.StakesChannel do
     {:reply, {:ok, %{html: html}}, socket}
   end
 
-  def handle_in("render_delegators_list", %{"address" => staking_address}, socket) do
-    pool = Chain.staking_pool(staking_address)
+  def handle_in("render_delegators_list", %{"address" => pool_staking_address}, socket) do
+    pool = Chain.staking_pool(pool_staking_address)
     token = ContractState.get(:token)
 
     show_snapshotted_data =
       pool.is_validator && ContractState.get(:validator_set_apply_block) > 0 && ContractState.get(:is_snapshotted)
 
-    delegators =
-      staking_address
+    stakers =
+      pool_staking_address
       |> Chain.staking_pool_delegators()
-      |> Enum.sort_by(fn delegator ->
-        delegator_address = to_string(delegator.delegator_address_hash)
+      |> Enum.sort_by(fn staker ->
+        staker_address = to_string(staker.delegator_address_hash)
 
         cond do
-          delegator_address == staking_address -> 0
-          delegator_address == socket.assigns[:account] -> 1
+          staker_address == pool_staking_address -> 0
+          staker_address == socket.assigns[:account] -> 1
           true -> 2
         end
       end)
@@ -76,7 +76,7 @@ defmodule BlockScoutWeb.StakesChannel do
         account: socket.assigns[:account],
         pool: pool,
         conn: socket,
-        delegators: delegators,
+        stakers: stakers,
         token: token,
         show_snapshotted_data: show_snapshotted_data
       )
