@@ -10,6 +10,7 @@
 
 ### Fixes
 - [#2864](https://github.com/poanetwork/blockscout/pull/2864) - add token instance metadata type check
+- [#2868](https://github.com/poanetwork/blockscout/pull/2868) - do not remove non consensus logs
 - [#2855](https://github.com/poanetwork/blockscout/pull/2855) - Fix favicons load
 - [#2854](https://github.com/poanetwork/blockscout/pull/2854) - Fix all npm vulnerabilities
 - [#2851](https://github.com/poanetwork/blockscout/pull/2851) - Fix paths for front assets
