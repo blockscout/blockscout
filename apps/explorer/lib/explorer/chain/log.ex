@@ -62,7 +62,6 @@ defmodule Explorer.Chain.Log do
       type: Hash.Full
     )
 
-
     belongs_to(:block, Block,
       foreign_key: :block_hash,
       primary_key: true,
