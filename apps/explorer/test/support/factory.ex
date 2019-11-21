@@ -674,8 +674,8 @@ defmodule Explorer.Factory do
     wei_per_ether = 1_000_000_000_000_000_000
 
     %StakingPoolsDelegator{
-      pool_address_hash: address_hash(),
-      delegator_address_hash: address_hash(),
+      staking_address_hash: address_hash(),
+      address_hash: address_hash(),
       max_ordered_withdraw_allowed: wei_per_ether * 100,
       max_withdraw_allowed: wei_per_ether * 50,
       ordered_withdraw: wei_per_ether * 600,

@@ -4533,14 +4533,14 @@ defmodule Explorer.Chain do
   @spec staking_pools(
           filter :: :validator | :active | :inactive,
           paging_options :: PagingOptions.t() | :all,
-          delegator_address_hash :: Hash.t() | nil,
+          address_hash :: Hash.t() | nil,
           filter_banned :: boolean() | nil,
           filter_my :: boolean() | nil
         ) :: [map()]
   def staking_pools(
         filter,
         paging_options \\ @default_paging_options,
-        delegator_address_hash \\ nil,
+        address_hash \\ nil,
         filter_banned \\ false,
         filter_my \\ false
       ) do
@@ -4551,11 +4551,11 @@ defmodule Explorer.Chain do
       |> staking_pools_paging_query(paging_options)
 
     delegator_query =
-      if delegator_address_hash do
+      if address_hash do
         base_query
         |> join(:left, [p], pd in StakingPoolsDelegator,
           on:
-            p.staking_address_hash == pd.pool_address_hash and pd.delegator_address_hash == ^delegator_address_hash and
+            p.staking_address_hash == pd.staking_address_hash and pd.address_hash == ^address_hash and
               not pd.is_deleted
         )
         |> select([p, pd], %{pool: p, delegator: pd})
@@ -4572,7 +4572,7 @@ defmodule Explorer.Chain do
       end
 
     filtered_query =
-      if delegator_address_hash && filter_my do
+      if address_hash && filter_my do
         where(banned_query, [..., pd], not is_nil(pd))
       else
         banned_query
@@ -4630,22 +4630,22 @@ defmodule Explorer.Chain do
 
   def staking_pool_delegators(staking_address_hash) do
     StakingPoolsDelegator
-    |> where(pool_address_hash: ^staking_address_hash, is_active: true)
+    |> where(staking_address_hash: ^staking_address_hash, is_active: true)
     |> order_by(desc: :stake_amount)
     |> Repo.all()
   end
 
-  def staking_pool_delegator(pool_address_hash, delegator_address_hash) do
+  def staking_pool_delegator(staking_address_hash, address_hash) do
     Repo.get_by(StakingPoolsDelegator,
-      pool_address_hash: pool_address_hash,
-      delegator_address_hash: delegator_address_hash,
+      staking_address_hash: staking_address_hash,
+      address_hash: address_hash,
       is_deleted: false
     )
   end
 
-  def get_total_staked(address_hash) do
+  def get_total_staked_and_ordered(address_hash) do
     StakingPoolsDelegator
-    |> where([delegator], delegator.delegator_address_hash == ^address_hash and not delegator.is_deleted)
+    |> where([delegator], delegator.address_hash == ^address_hash and not delegator.is_deleted)
     |> select([delegator], %{
       stake_amount: coalesce(sum(delegator.stake_amount), 0),
       ordered_withdraw: coalesce(sum(delegator.ordered_withdraw), 0)

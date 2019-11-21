@@ -36,7 +36,7 @@
       <span class="stakes-td-banned-info">
         <%= gettext("Banned until block #%{banned_until} (%{estimated_unban_day})", banned_until: @pool.banned_until, estimated_unban_day: estimated_unban_day(@pool.banned_until, @average_block_time)) %>
         <%= if @delegator &&
-               @delegator.delegator_address_hash != @pool.staking_address_hash &&
+               @delegator.address_hash != @pool.staking_address_hash &&
                @pool.are_delegators_banned &&
                @pool.banned_until != @pool.banned_delegators_until do %>
           <%= raw(".<br />") %>
@@ -47,7 +47,7 @@
     <%= if !@pool.is_banned ||
            (!@pool.are_delegators_banned &&
             @delegator &&
-            @delegator.delegator_address_hash != @pool.staking_address_hash
+            @delegator.address_hash != @pool.staking_address_hash
             ) do %>
       <div class="stakes-controls">
         <%= if @buttons.move do %>
