@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.StakesChannel do
       pool_staking_address
       |> Chain.staking_pool_delegators()
       |> Enum.sort_by(fn staker ->
-        staker_address = to_string(staker.delegator_address_hash)
+        staker_address = to_string(staker.address_hash)
 
         cond do
           staker_address == pool_staking_address -> 0
@@ -148,7 +148,7 @@ defmodule BlockScoutWeb.StakesChannel do
     token = ContractState.get(:token)
 
     min_from_stake =
-      if delegator_from.delegator_address_hash == delegator_from.pool_address_hash do
+      if delegator_from.address_hash == delegator_from.staking_address_hash do
         ContractState.get(:min_candidate_stake)
       else
         ContractState.get(:min_delegator_stake)
@@ -201,7 +201,7 @@ defmodule BlockScoutWeb.StakesChannel do
     delegator = Chain.staking_pool_delegator(staking_address, socket.assigns.account)
 
     min_stake =
-      if delegator.delegator_address_hash == delegator.pool_address_hash do
+      if delegator.address_hash == delegator.staking_address_hash do
         ContractState.get(:min_candidate_stake)
       else
         ContractState.get(:min_delegator_stake)

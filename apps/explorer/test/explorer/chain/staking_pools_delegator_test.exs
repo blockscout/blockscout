@@ -11,7 +11,7 @@ defmodule Explorer.Chain.StakingPoolsDelegatorTest do
     end
 
     test "with invalid attributes" do
-      changeset = StakingPoolsDelegator.changeset(%StakingPoolsDelegator{}, %{pool_address_hash: 0})
+      changeset = StakingPoolsDelegator.changeset(%StakingPoolsDelegator{}, %{staking_address_hash: 0})
       refute changeset.valid?
     end
   end
