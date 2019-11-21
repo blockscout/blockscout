@@ -174,7 +174,7 @@ defmodule Indexer.Block.Fetcher do
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
          tokens = fee_tokens ++ normal_tokens,
          token_transfers = fee_token_transfers ++ normal_token_transfers,
-         addresses =
+         addresses_raw =
            Addresses.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
              blocks: blocks,
@@ -183,6 +183,7 @@ defmodule Indexer.Block.Fetcher do
              token_transfers: token_transfers,
              transactions: transactions_with_receipts
            }),
+         addresses = Enum.filter(addresses_raw, fn a -> a.hash != "0x0000000000000000000000000000000000000000" end),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),

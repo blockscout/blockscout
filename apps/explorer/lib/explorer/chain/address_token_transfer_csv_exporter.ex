@@ -68,6 +68,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
     row_names = [
       "TxHash",
       "BlockNumber",
+      "BlockHash",
       "UnixTimestamp",
       "FromAddress",
       "ToAddress",
@@ -85,6 +86,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
       |> Stream.map(fn token_transfer ->
         [
           to_string(token_transfer.transaction_hash),
+          to_string(token_transfer.block_hash),
           token_transfer.transaction.block_number,
           token_transfer.transaction.block.timestamp,
           token_transfer.from_address |> to_string() |> String.downcase(),

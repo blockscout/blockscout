@@ -1859,7 +1859,7 @@ defmodule Explorer.Chain do
   The number of `t:Explorer.Chain.Log.t/0`.
 
       iex> transaction = :transaction |> insert() |> with_block()
-      iex> insert(:log, transaction: transaction, index: 0)
+      iex> insert(:log, transaction: transaction, index: 0, block: transaction.block)
       iex> Explorer.Chain.log_count()
       1
 
@@ -3954,11 +3954,13 @@ defmodule Explorer.Chain do
   Returns `:ok` if found
 
       iex> contract_address = insert(:address)
+      iex> block = insert(:block)
       iex> token_id = 10
       iex> insert(:token_transfer,
       ...>  from_address: contract_address,
       ...>  token_contract_address: contract_address,
-      ...>  token_id: token_id
+      ...>  token_id: token_id,
+      ...>  block_hash: block.hash
       ...> )
       iex> Explorer.Chain.check_erc721_token_instance_exists(token_id, contract_address.hash)
       :ok
@@ -3982,11 +3984,13 @@ defmodule Explorer.Chain do
   Returns `true` if found
 
       iex> contract_address = insert(:address)
+      iex> block = insert(:block)
       iex> token_id = 10
       iex> insert(:token_transfer,
       ...>  from_address: contract_address,
       ...>  token_contract_address: contract_address,
-      ...>  token_id: token_id
+      ...>  token_id: token_id,
+      ...>  block_hash: block.hash
       ...> )
       iex> Explorer.Chain.erc721_token_instance_exist?(token_id, contract_address.hash)
       true

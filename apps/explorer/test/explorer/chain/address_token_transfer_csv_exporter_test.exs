@@ -12,7 +12,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
         |> insert(from_address: address)
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction, from_address: address)
+      token_transfer = insert(:token_transfer, transaction: transaction, from_address: address, block: transaction.block)
 
       [result] =
         address
@@ -21,6 +21,8 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
         |> Enum.drop(1)
         |> Enum.map(fn [
                          tx_hash,
+                         _,
+                         block_hash,
                          _,
                          block_number,
                          _,
@@ -48,6 +50,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporterTest do
           %{
             tx_hash: tx_hash,
             block_number: block_number,
+            block_hash: block_hash,
             timestamp: timestamp,
             from_address: from_address,
             to_address: to_address,

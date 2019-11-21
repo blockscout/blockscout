@@ -258,7 +258,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction, amount: Decimal.new(1))
+      token_transfer = insert(:token_transfer, transaction: transaction, amount: Decimal.new(1), block: transaction.block)
 
       result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
 
@@ -272,7 +272,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction, amount: nil)
+      token_transfer = insert(:token_transfer, transaction: transaction, amount: nil, block: transaction.block)
 
       result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
 

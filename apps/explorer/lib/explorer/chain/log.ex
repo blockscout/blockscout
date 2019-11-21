@@ -49,7 +49,7 @@ defmodule Explorer.Chain.Log do
     field(:second_topic, :string)
     field(:third_topic, :string)
     field(:fourth_topic, :string)
-    field(:block_number, :integer, primary_key: true)
+    field(:block_number, :integer)
     field(:index, :integer, primary_key: true)
     field(:type, :string)
 
@@ -83,9 +83,11 @@ defmodule Explorer.Chain.Log do
       ...>     first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
       ...>     fourth_topic: nil,
       ...>     index: 0,
+      ...>     block_number: 0,
       ...>     second_topic: nil,
       ...>     third_topic: nil,
       ...>     transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>     block_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
       ...>     type: "mined"
       ...>   }
       ...> )

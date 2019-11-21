@@ -187,7 +187,8 @@ defmodule Explorer.GraphQLTest do
   describe "get_token_transfer/1" do
     test "returns existing token transfer" do
       transaction = insert(:transaction)
-      token_transfer = insert(:token_transfer, transaction: transaction)
+      block = insert(:block)
+      token_transfer = insert(:token_transfer, transaction: transaction, block: block)
 
       clauses = %{transaction_hash: token_transfer.transaction_hash, log_index: token_transfer.log_index}
 
@@ -199,7 +200,8 @@ defmodule Explorer.GraphQLTest do
 
     test " returns error tuple for non-existing token transfer" do
       transaction = insert(:transaction)
-      token_transfer = build(:token_transfer, transaction: transaction)
+      block = insert(:block)
+      token_transfer = build(:token_transfer, transaction: transaction, block: block)
 
       clauses = %{transaction_hash: transaction.hash, log_index: token_transfer.log_index}
 
@@ -221,7 +223,8 @@ defmodule Explorer.GraphQLTest do
 
     test "returns all expected token transfer fields" do
       transaction = insert(:transaction)
-      token_transfer = insert(:token_transfer, transaction: transaction)
+      block = insert(:block)
+      token_transfer = insert(:token_transfer, transaction: transaction, block: block)
 
       [found_token_transfer] =
         token_transfer.token_contract_address_hash
@@ -272,14 +275,16 @@ defmodule Explorer.GraphQLTest do
       for transaction <- all_transactions do
         token_transfer_attrs1 = %{
           block_number: transaction.block_number,
-          log_index: 0,
+          log_index: 456+transaction.nonce,
+          block: transaction.block,
           transaction: transaction,
           token_contract_address: token_address
         }
 
         token_transfer_attrs2 = %{
           block_number: transaction.block_number,
-          log_index: 1,
+          log_index: 123+transaction.nonce,
+          block: transaction.block,
           transaction: transaction,
           token_contract_address: token_address
         }

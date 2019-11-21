@@ -410,6 +410,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         insert(:log,
           address: address,
           transaction: transaction,
+          block: block,
+          block_number: 222,
           first_topic: "first topic",
           second_topic: "second topic"
         )
@@ -486,7 +488,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
           address: address,
           transaction: transaction,
           first_topic: "first topic",
-          second_topic: "second topic"
+          second_topic: "second topic",
+          block: block,
+          block_number: 123
         )
 
       params = %{

@@ -76,7 +76,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       block = insert(:block, number: 0)
 
       transaction = insert(:transaction, from_address: address) |> with_block(block)
-      insert(:log, address: address, transaction: transaction, data: "0x010101")
+      insert(:log, address: address, transaction: transaction, data: "0x010101", block: block, block_number: 0)
 
       params = params(api_params, [%{"address" => to_string(address.hash)}])
 
@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       block = insert(:block, number: 0)
 
       transaction = insert(:transaction, from_address: address) |> with_block(block)
-      insert(:log, address: address, transaction: transaction, data: "0x010101", first_topic: "0x01")
+      insert(:log, address: address, transaction: transaction, data: "0x010101", first_topic: "0x01", block: block, block_number: 0)
 
       params = params(api_params, [%{"address" => to_string(address.hash), "topics" => ["0x01"]}])
 
@@ -112,8 +112,8 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       block = insert(:block, number: 0)
 
       transaction = insert(:transaction, from_address: address) |> with_block(block)
-      insert(:log, address: address, transaction: transaction, data: "0x010101", first_topic: "0x01")
-      insert(:log, address: address, transaction: transaction, data: "0x020202", first_topic: "0x00")
+      insert(:log, address: address, transaction: transaction, data: "0x010101", first_topic: "0x01", block: block, block_number: 1234)
+      insert(:log, address: address, transaction: transaction, data: "0x020202", first_topic: "0x00", block: block, block_number: 1234)
 
       params = params(api_params, [%{"address" => to_string(address.hash), "topics" => [["0x01", "0x00"]]}])
 
@@ -134,7 +134,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         |> with_block()
 
       inserted_records =
-        insert_list(2000, :log, address: contract_address, transaction: transaction, first_topic: "0x01")
+        insert_list(2000, :log, address: contract_address, transaction: transaction, first_topic: "0x01", block: transaction.block, block_number: 1234)
 
       params = params(api_params, [%{"address" => to_string(contract_address), "topics" => [["0x01"]]}])
 
@@ -191,10 +191,15 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         transaction: transaction,
         data: "0x010101",
         first_topic: "0x01",
-        second_topic: "0x02"
+        second_topic: "0x02",
+        block: block,
+        block_number: 0
       )
 
-      insert(:log, address: address, transaction: transaction, data: "0x020202", first_topic: "0x01")
+      insert(:log, address: address, transaction: transaction, data: "0x020202", first_topic: "0x01",
+      block: block,
+      block_number: 0
+      )
 
       params = params(api_params, [%{"address" => to_string(address.hash), "topics" => ["0x01", "0x02"]}])
 
@@ -219,6 +224,8 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         transaction: transaction,
         data: "0x010101",
         first_topic: "0x01",
+        block: block,
+        block_number: 0,
         second_topic: "0x02"
       )
 
@@ -226,6 +233,8 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
         address: address,
         transaction: transaction,
         data: "0x020202",
+        block: block,
+        block_number: 0,
         first_topic: "0x01",
         second_topic: "0x03"
       )
@@ -254,13 +263,13 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       transaction3 = insert(:transaction, from_address: address) |> with_block(block3)
       transaction4 = insert(:transaction, from_address: address) |> with_block(block4)
 
-      insert(:log, address: address, transaction: transaction1, data: "0x010101")
+      insert(:log, address: address, transaction: transaction1, data: "0x010101", block: block1, block_number: 0)
 
-      insert(:log, address: address, transaction: transaction2, data: "0x020202")
+      insert(:log, address: address, transaction: transaction2, data: "0x020202", block: block2, block_number: 1)
 
-      insert(:log, address: address, transaction: transaction3, data: "0x030303")
+      insert(:log, address: address, transaction: transaction3, data: "0x030303", block: block3, block_number: 2)
 
-      insert(:log, address: address, transaction: transaction4, data: "0x040404")
+      insert(:log, address: address, transaction: transaction4, data: "0x040404", block: block4, block_number: 3)
 
       params = params(api_params, [%{"address" => to_string(address.hash), "fromBlock" => 1, "toBlock" => 2}])
 
@@ -284,11 +293,11 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       transaction2 = insert(:transaction, from_address: address) |> with_block(block2)
       transaction3 = insert(:transaction, from_address: address) |> with_block(block3)
 
-      insert(:log, address: address, transaction: transaction1, data: "0x010101")
+      insert(:log, address: address, transaction: transaction1, data: "0x010101", block: block1, block_number: 0)
 
-      insert(:log, address: address, transaction: transaction2, data: "0x020202")
+      insert(:log, address: address, transaction: transaction2, data: "0x020202", block: block2, block_number: 1)
 
-      insert(:log, address: address, transaction: transaction3, data: "0x030303")
+      insert(:log, address: address, transaction: transaction3, data: "0x030303", block: block3, block_number: 2)
 
       params = params(api_params, [%{"address" => to_string(address.hash), "blockHash" => to_string(block2.hash)}])
 
@@ -312,11 +321,11 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       transaction2 = insert(:transaction, from_address: address) |> with_block(block2)
       transaction3 = insert(:transaction, from_address: address) |> with_block(block3)
 
-      insert(:log, address: address, transaction: transaction1, data: "0x010101")
+      insert(:log, address: address, transaction: transaction1, data: "0x010101", block: block1, block_number: 0)
 
-      insert(:log, address: address, transaction: transaction2, data: "0x020202")
+      insert(:log, address: address, transaction: transaction2, data: "0x020202", block: block2, block_number: 1)
 
-      insert(:log, address: address, transaction: transaction3, data: "0x030303")
+      insert(:log, address: address, transaction: transaction3, data: "0x030303", block: block3, block_number: 2)
 
       params =
         params(api_params, [%{"address" => to_string(address.hash), "fromBlock" => "earliest", "toBlock" => "earliest"}])
@@ -341,11 +350,11 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       transaction2 = insert(:transaction, from_address: address) |> with_block(block2)
       transaction3 = insert(:transaction, from_address: address) |> with_block(block3)
 
-      insert(:log, address: address, transaction: transaction1, data: "0x010101")
+      insert(:log, address: address, transaction: transaction1, data: "0x010101", block: block1, block_number: 0)
 
-      insert(:log, address: address, transaction: transaction2, data: "0x020202")
+      insert(:log, address: address, transaction: transaction2, data: "0x020202", block: block2, block_number: 1)
 
-      insert(:log, address: address, transaction: transaction3, data: "0x030303")
+      insert(:log, address: address, transaction: transaction3, data: "0x030303", block: block3, block_number: 2)
 
       changeset = Ecto.Changeset.change(block3, %{consensus: false})
 

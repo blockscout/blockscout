@@ -152,6 +152,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:to_address_hash, :address_hash)
     field(:token_contract_address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
+    field(:block_hash, :full_hash)
   end
 
   @desc """
