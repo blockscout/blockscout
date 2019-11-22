@@ -67,7 +67,7 @@ const elements = {
           })
 
           $('.js-btn-add-contract-library').on('click', function () {
-            let nextContractLibrary = $('.js-contract-library-form-group.active').next('.js-contract-library-form-group')
+            const nextContractLibrary = $('.js-contract-library-form-group.active').next('.js-contract-library-form-group')
 
             if (nextContractLibrary) {
               nextContractLibrary.addClass('active')
@@ -138,7 +138,7 @@ if ($contractVerificationPage.length) {
     })
 
     $('.js-btn-add-contract-library').on('click', function () {
-      let nextContractLibrary = $('.js-contract-library-form-group.active').next('.js-contract-library-form-group')
+      const nextContractLibrary = $('.js-contract-library-form-group.active').next('.js-contract-library-form-group')
 
       if (nextContractLibrary) {
         nextContractLibrary.addClass('active')

@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2862](https://github.com/poanetwork/blockscout/pull/2862) - Coin total supply from DB API endpoint
 - [#2822](https://github.com/poanetwork/blockscout/pull/2822) - Estimated address count on the main page, if cache is empty
 - [#2821](https://github.com/poanetwork/blockscout/pull/2821) - add autodetection of constructor arguments
 - [#2825](https://github.com/poanetwork/blockscout/pull/2825) - separate token transfers and transactions
@@ -10,6 +11,10 @@
 
 
 ### Fixes
+- [#2864](https://github.com/poanetwork/blockscout/pull/2864) - add token instance metadata type check
+- [#2855](https://github.com/poanetwork/blockscout/pull/2855) - Fix favicons load
+- [#2854](https://github.com/poanetwork/blockscout/pull/2854) - Fix all npm vulnerabilities
+- [#2851](https://github.com/poanetwork/blockscout/pull/2851) - Fix paths for front assets
 - [#2843](https://github.com/poanetwork/blockscout/pull/2843) - fix realtime fetcher small skips feature
 - [#2841](https://github.com/poanetwork/blockscout/pull/2841) - LUKSO dashboard height fix
 - [#2837](https://github.com/poanetwork/blockscout/pull/2837) - fix txlist ordering issue
@@ -21,6 +26,7 @@
 - [#2803](https://github.com/poanetwork/blockscout/pull/2803) - Fix block validator custom tooltip
 
 ### Chore
+- [#2859](https://github.com/poanetwork/blockscout/pull/2859) - Add eth_blockNumber API endpoint to eth_rpc section
 - [#2846](https://github.com/poanetwork/blockscout/pull/2846) - Remove networks images preload
 - [#2845](https://github.com/poanetwork/blockscout/pull/2845) - Set outline none for nav dropdown item in mobile view (fix for Safari)
 - [#2844](https://github.com/poanetwork/blockscout/pull/2844) - Extend external reward types up to 20
