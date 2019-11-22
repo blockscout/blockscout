@@ -300,7 +300,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
           "gasPrice" => decimal_to_hex(transaction.gas_price.value),
           "gasUsed" => decimal_to_hex(transaction.gas_used),
           "gatewayFeeRecipient" => "",
-          "gatewayFee" => "",
+          "gatewayFee" => "0",
           "feeCurrency" => "",
           "logIndex" => integer_to_hex(log.index),
           "transactionHash" => "#{transaction.hash}",
@@ -450,7 +450,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
           "gasUsed" => decimal_to_hex(transaction.gas_used),
           "logIndex" => integer_to_hex(log1.index),
           "gatewayFeeRecipient" => "",
-          "gatewayFee" => "",
+          "gatewayFee" => "0",
           "feeCurrency" => "",
           "transactionHash" => "#{transaction.hash}",
           "transactionIndex" => integer_to_hex(transaction.index)
