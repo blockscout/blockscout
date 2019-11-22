@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   import Ecto.Query, only: [from: 2, subquery: 1]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Address, Block, Import, InternalTransaction, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, Import, InternalTransaction, Log, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
@@ -91,9 +91,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
     |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
       acquire_contract_address_tokens(repo, consensus_block_numbers)
-    end)
-    |> Multi.run(:remove_nonconsensus_token_transfers, fn repo, %{derive_transaction_forks: transactions} ->
-      remove_nonconsensus_token_transfers(repo, transactions, insert_options)
     end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
       delete_address_token_balances(repo, consensus_block_numbers, insert_options)
@@ -315,35 +312,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error, consensus_block_numbers: consensus_block_numbers}}
-  end
-
-  defp remove_nonconsensus_token_transfers(repo, forked_transaction_hashes, %{timeout: timeout}) do
-    ordered_token_transfers =
-      from(
-        token_transfer in TokenTransfer,
-        where: token_transfer.transaction_hash in ^forked_transaction_hashes,
-        select: token_transfer.transaction_hash,
-        # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
-        order_by: [
-          token_transfer.transaction_hash,
-          token_transfer.log_index
-        ],
-        lock: "FOR UPDATE"
-      )
-
-    query =
-      from(token_transfer in TokenTransfer,
-        select: map(token_transfer, [:transaction_hash, :log_index]),
-        inner_join: ordered_token_transfer in subquery(ordered_token_transfers),
-        on: ordered_token_transfer.transaction_hash == token_transfer.transaction_hash
-      )
-
-    {_count, deleted_token_transfers} = repo.delete_all(query, timeout: timeout)
-
-    {:ok, deleted_token_transfers}
-  rescue
-    postgrex_error in Postgrex.Error ->
-      {:error, %{exception: postgrex_error, transactions: forked_transaction_hashes}}
   end
 
   defp remove_nonconsensus_internal_transactions(repo, forked_transaction_hashes, %{timeout: timeout}) do
