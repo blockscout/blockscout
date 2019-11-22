@@ -357,7 +357,8 @@ defmodule EthereumJSONRPC.Transaction do
   defp entry_to_elixir({"data", value}),
     do: {"input", value}
 
-  defp entry_to_elixir({key, quantity}) when key in ~w(gas gasPrice nonce r s standardV v value gatewayFee) and quantity != nil do
+  defp entry_to_elixir({key, quantity})
+       when key in ~w(gas gasPrice nonce r s standardV v value gatewayFee) and quantity != nil do
     {key, quantity_to_integer(quantity)}
   end
 

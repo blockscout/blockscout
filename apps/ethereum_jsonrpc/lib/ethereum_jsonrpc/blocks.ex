@@ -43,7 +43,7 @@ defmodule EthereumJSONRPC.Blocks do
 
     elixir_blocks = to_elixir(blocks)
 
-#    IO.inspect(responses)
+    #    IO.inspect(responses)
 
     elixir_uncles = elixir_to_uncles(elixir_blocks)
     elixir_transactions = elixir_to_transactions(elixir_blocks)

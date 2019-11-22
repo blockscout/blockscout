@@ -84,5 +84,4 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
       assert response["message"] == "OK"
     end
   end
-
 end
