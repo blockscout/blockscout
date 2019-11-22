@@ -220,14 +220,14 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction1, index: 1, address: address)
+      insert(:log, block: transaction1.block, transaction: transaction1, index: 1, address: address)
 
       transaction2 =
         :transaction
         |> insert(from_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction2, index: 2, address: address)
+      insert(:log, block: transaction2.block, transaction: transaction2, index: 2, address: address)
 
       assert Enum.count(Chain.address_to_logs(address_hash)) == 2
     end
@@ -243,7 +243,9 @@ defmodule Explorer.ChainTest do
       log1 = insert(:log, transaction: transaction, index: 1, address: address)
 
       2..51
-      |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index, address: address) end)
+      |> Enum.map(fn index ->
+        insert(:log, block: transaction.block, transaction: transaction, index: index, address: address)
+      end)
       |> Enum.map(& &1.index)
 
       paging_options1 = %PagingOptions{page_size: 1}
@@ -263,14 +265,14 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction1, index: 1, address: address)
+      insert(:log, block: transaction1.block, transaction: transaction1, index: 1, address: address)
 
       transaction2 =
         :transaction
         |> insert(from_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction2, index: 2, address: address, first_topic: "test")
+      insert(:log, block: transaction2.block, transaction: transaction2, index: 2, address: address, first_topic: "test")
 
       [found_log] = Chain.address_to_logs(address_hash, topic: "test")
 
@@ -285,14 +287,20 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction1, index: 1, address: address, fourth_topic: "test")
+      insert(:log,
+        block: transaction1.block,
+        transaction: transaction1,
+        index: 1,
+        address: address,
+        fourth_topic: "test"
+      )
 
       transaction2 =
         :transaction
         |> insert(from_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction2, index: 2, address: address)
+      insert(:log, block: transaction2.block, transaction: transaction2, index: 2, address: address)
 
       [found_log] = Chain.address_to_logs(address_hash, topic: "test")
 
