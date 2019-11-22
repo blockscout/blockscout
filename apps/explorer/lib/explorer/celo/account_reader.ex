@@ -88,7 +88,7 @@ defmodule Explorer.Celo.AccountReader do
   def validator_history(block_number) do
     data = fetch_validators(block_number)
 
-    case data["currentValidators"] do
+    case data["getCurrentValidatorSigners"] do
       {:ok, [validators]} ->
         list =
           validators
@@ -149,7 +149,7 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_validators(bn) do
-    data = call_methods([{:election, "currentValidators", []}], bn)
+    data = call_methods([{:election, "getCurrentValidatorSigners", []}], bn)
     data
   end
 

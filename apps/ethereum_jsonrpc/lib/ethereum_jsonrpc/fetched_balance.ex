@@ -15,9 +15,9 @@ defmodule EthereumJSONRPC.FetchedBalance do
   @spec from_response(%{id: id, result: String.t()}, %{id => %{block_quantity: block_quantity, hash_data: hash_data}}) ::
           {:ok, params()}
         when id: non_neg_integer(), block_quantity: String.t(), hash_data: String.t()
-  def from_response(%{id: id, result: fetched_balance_quantity}, id_to_params) when is_map(id_to_params) do
+  def from_response(%{id: id, result: fetched_balance_quantity} = _resp, id_to_params) when is_map(id_to_params) do
     %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
-
+    # IO.inspect(resp)
     {:ok,
      %{
        address_hash: hash_data,
