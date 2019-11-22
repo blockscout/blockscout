@@ -87,7 +87,7 @@ msgid "A string with the name of the module to be invoked."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:104
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:125
 msgid "ABI-encoded Constructor Arguments (if required by the contract)"
 msgstr ""
 
@@ -266,7 +266,7 @@ msgid "Call Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:253
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:274
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:54
 msgid "Cancel"
@@ -370,7 +370,7 @@ msgid "Contract Creation Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:118
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:139
 msgid "Contract Libraries"
 msgstr ""
 
@@ -971,20 +971,20 @@ msgid "Less than"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:133
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:155
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:177
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:199
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:221
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:154
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:176
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:198
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:220
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:242
 msgid "Library Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:123
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:145
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:167
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:189
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:211
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:144
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:166
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:188
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:210
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:232
 msgid "Library Name"
 msgstr ""
 
@@ -1010,7 +1010,7 @@ msgid "Loading..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:247
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:268
 msgid "Loading...."
 msgstr ""
 
@@ -1097,6 +1097,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:67
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:110
 msgid "No"
 msgstr ""
 
@@ -1217,7 +1218,7 @@ msgid "Request URL"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:250
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:271
 msgid "Reset"
 msgstr ""
 
@@ -1579,7 +1580,7 @@ msgid "Verify & Publish"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:249
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:270
 msgid "Verify & publish"
 msgstr ""
 
@@ -1654,6 +1655,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:72
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:115
 msgid "Yes"
 msgstr ""
 
