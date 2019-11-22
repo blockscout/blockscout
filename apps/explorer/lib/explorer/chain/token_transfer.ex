@@ -27,7 +27,7 @@ defmodule Explorer.Chain.TokenTransfer do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2, limit: 2, where: 3]
 
-  alias Explorer.Chain.{Address, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.Token.Instance
   alias Explorer.{PagingOptions, Repo}
 
@@ -35,6 +35,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
   @typedoc """
   * `:amount` - The token transferred amount
+  * `:block_hash` - hash of the block
   * `:block_number` - The block number that the transfer took place.
   * `:from_address` - The `t:Explorer.Chain.Address.t/0` that sent the tokens
   * `:from_address_hash` - Address hash foreign key
@@ -50,6 +51,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @type t :: %TokenTransfer{
           amount: Decimal.t(),
           block_number: non_neg_integer() | nil,
+          block_hash: Hash.Full.t(),
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
           from_address_hash: Hash.Address.t(),
           to_address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -88,6 +90,13 @@ defmodule Explorer.Chain.TokenTransfer do
 
     belongs_to(:transaction, Transaction,
       foreign_key: :transaction_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full
+    )
+
+    belongs_to(:block, Block,
+      foreign_key: :block_hash,
       primary_key: true,
       references: :hash,
       type: Hash.Full
