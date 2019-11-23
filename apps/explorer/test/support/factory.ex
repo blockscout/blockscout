@@ -417,6 +417,7 @@ defmodule Explorer.Factory do
     insert(:token, contract_address: token_address)
 
     %TokenTransfer{
+      block: build(:block),
       amount: Decimal.new(1),
       block_number: block_number(),
       from_address: from_address,
