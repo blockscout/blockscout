@@ -1817,7 +1817,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> insert()
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction)
+      token_transfer = insert(:token_transfer, block: transaction.block, transaction: transaction)
       {:ok, token} = Chain.token_from_address_hash(token_transfer.token_contract_address_hash)
 
       params = %{
