@@ -59,7 +59,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Log ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.index})
 
     {:ok, _} =
       Import.insert_changes_list(
