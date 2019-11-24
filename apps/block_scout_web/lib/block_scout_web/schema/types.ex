@@ -62,6 +62,8 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:account_type, :string)
     field(:nonvoting_locked_gold, :wei)
     field(:locked_gold, :wei)
+    field(:attestations_requested, :integer)
+    field(:attestations_fulfilled, :integer)
 
     connection field(:address_info, node_type: :address) do
       resolve(&Address.get_by/3)
@@ -150,6 +152,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:to_address_hash, :address_hash)
     field(:token_contract_address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
+    field(:block_hash, :full_hash)
   end
 
   @desc """

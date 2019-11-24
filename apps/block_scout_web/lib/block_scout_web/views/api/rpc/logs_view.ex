@@ -21,8 +21,9 @@ defmodule BlockScoutWeb.API.RPC.LogsView do
       "timeStamp" => datetime_to_hex(log.block_timestamp),
       "gasPrice" => decimal_to_hex(log.gas_price.value),
       "gasUsed" => decimal_to_hex(log.gas_used),
-      "gasCurrency" => "#{log.gas_currency_hash}",
-      "feeRecipient" => "#{log.gas_fee_recipient_hash}",
+      "feeCurrency" => "#{log.gas_currency_hash}",
+      "gatewayFeeRecipient" => "#{log.gas_fee_recipient_hash}",
+      "gatewayFee" => "#{0}",
       "logIndex" => integer_to_hex(log.index),
       "transactionHash" => "#{log.transaction_hash}",
       "transactionIndex" => integer_to_hex(log.transaction_index)

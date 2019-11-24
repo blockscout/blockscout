@@ -93,6 +93,8 @@ defmodule Explorer.Chain.ImportTest do
             third_topic: "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
             fourth_topic: nil,
             index: 0,
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             type: "mined"
           }
@@ -150,6 +152,7 @@ defmodule Explorer.Chain.ImportTest do
             amount: Decimal.new(1_000_000_000_000_000_000),
             block_number: 37,
             log_index: 0,
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
             to_address_hash: "0x515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
             token_contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
@@ -1564,7 +1567,14 @@ defmodule Explorer.Chain.ImportTest do
                    timeout: 1
                  },
                  logs: %{
-                   params: [params_for(:log, transaction_hash: transaction_hash, address_hash: miner_hash)],
+                   params: [
+                     params_for(:log,
+                       transaction_hash: transaction_hash,
+                       address_hash: miner_hash,
+                       block_number: 35,
+                       block_hash: block_hash
+                     )
+                   ],
                    timeout: 1
                  },
                  token_transfers: %{
@@ -1574,6 +1584,7 @@ defmodule Explorer.Chain.ImportTest do
                        block_number: 35,
                        from_address_hash: from_address_hash,
                        to_address_hash: to_address_hash,
+                       block_hash: block_hash,
                        token_contract_address_hash: token_contract_address_hash,
                        transaction_hash: transaction_hash
                      )

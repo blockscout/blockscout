@@ -6,10 +6,10 @@ defmodule Explorer.Chain.Log do
   require Logger
 
   alias ABI.{Event, FunctionSelector}
-  alias Explorer.Chain.{Address, ContractMethod, Data, Hash, Transaction}
+  alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Transaction}
   alias Explorer.Repo
 
-  @required_attrs ~w(address_hash data index transaction_hash)a
+  @required_attrs ~w(address_hash data index block_number block_hash transaction_hash)a
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type)a
 
   @typedoc """
@@ -35,8 +35,11 @@ defmodule Explorer.Chain.Log do
           fourth_topic: String.t(),
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
+          block: %Ecto.Association.NotLoaded{} | Block.t(),
+          block_hash: Hash.Full.t(),
           index: non_neg_integer(),
-          type: String.t() | nil
+          type: String.t() | nil,
+          block_number: non_neg_integer()
         }
 
   @primary_key false
@@ -46,6 +49,7 @@ defmodule Explorer.Chain.Log do
     field(:second_topic, :string)
     field(:third_topic, :string)
     field(:fourth_topic, :string)
+    field(:block_number, :integer)
     field(:index, :integer, primary_key: true)
     field(:type, :string)
 
@@ -55,6 +59,12 @@ defmodule Explorer.Chain.Log do
 
     belongs_to(:transaction, Transaction,
       foreign_key: :transaction_hash,
+      references: :hash,
+      type: Hash.Full
+    )
+
+    belongs_to(:block, Block,
+      foreign_key: :block_hash,
       primary_key: true,
       references: :hash,
       type: Hash.Full
@@ -73,9 +83,11 @@ defmodule Explorer.Chain.Log do
       ...>     first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
       ...>     fourth_topic: nil,
       ...>     index: 0,
+      ...>     block_number: 0,
       ...>     second_topic: nil,
       ...>     third_topic: nil,
       ...>     transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>     block_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
       ...>     type: "mined"
       ...>   }
       ...> )

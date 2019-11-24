@@ -347,7 +347,6 @@ defmodule EthereumJSONRPC do
   @spec json_rpc(Transport.batch_request(), json_rpc_named_arguments) ::
           {:ok, Transport.batch_response()} | {:error, reason :: term()}
   def json_rpc(request, named_arguments) when (is_map(request) or is_list(request)) and is_list(named_arguments) do
-    # IO.inspect(request)
     transport = Keyword.fetch!(named_arguments, :transport)
     transport_options = Keyword.fetch!(named_arguments, :transport_options)
     throttle_timeout = Keyword.get(named_arguments, :throttle_timeout, @default_throttle_timeout)

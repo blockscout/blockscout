@@ -148,8 +148,8 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         |> insert(from_address: address)
         |> with_block()
 
-      insert(:token_transfer, transaction: transaction, from_address: address)
-      insert(:token_transfer, transaction: transaction, to_address: address)
+      insert(:token_transfer, transaction: transaction, from_address: address, block: transaction.block)
+      insert(:token_transfer, transaction: transaction, to_address: address, block: transaction.block)
 
       conn = get(conn, "/token_transfers_csv", %{"address_id" => to_string(address.hash)})
 

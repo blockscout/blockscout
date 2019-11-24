@@ -19,9 +19,41 @@ defmodule Indexer.Transform.TokenTransfers do
     |> Enum.reduce(initial_acc, &do_parse/2)
   end
 
+  def parse_fees(txs) do
+    initial_acc = %{tokens: [], token_transfers: []}
+
+    Enum.reduce(txs, initial_acc, &do_parse_fees/2)
+  end
+
+  defp do_parse_fees(tx, %{tokens: tokens, token_transfers: token_transfers} = acc) do
+    case tx do
+      %{gas_fee_recipient_hash: recipient, gas_currency_hash: currency}
+      when is_binary(recipient) and is_binary(currency) ->
+        token = %{contract_address_hash: currency, type: "ERC-20"}
+
+        token_transfer = %{
+          amount: Decimal.new(0),
+          block_number: tx.block_number,
+          block_hash: tx.block_hash,
+          log_index: tx.index,
+          from_address_hash: tx.from_address_hash,
+          to_address_hash: recipient,
+          token_contract_address_hash: currency,
+          transaction_hash: tx.transaction_hash,
+          token_type: "ERC-20"
+        }
+
+        %{
+          tokens: [token | tokens],
+          token_transfers: [token_transfer | token_transfers]
+        }
+
+      _ ->
+        acc
+    end
+  end
+
   defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc) do
-    # IO.inspect("do_parse")
-    # IO.inspect(log)
     {token, token_transfer} = parse_params(log)
 
     %{
@@ -43,14 +75,13 @@ defmodule Indexer.Transform.TokenTransfers do
       amount: Decimal.new(amount || 0),
       block_number: log.block_number,
       log_index: log.index,
+      block_hash: log.block_hash,
       from_address_hash: truncate_address_hash(log.second_topic),
       to_address_hash: truncate_address_hash(log.third_topic),
       token_contract_address_hash: log.address_hash,
       transaction_hash: log.transaction_hash,
       token_type: "ERC-20"
     }
-
-    # IO.inspect(token_transfer)
 
     token = %{
       contract_address_hash: log.address_hash,
@@ -68,6 +99,7 @@ defmodule Indexer.Transform.TokenTransfers do
     token_transfer = %{
       block_number: log.block_number,
       log_index: log.index,
+      block_hash: log.block_hash,
       from_address_hash: truncate_address_hash(log.second_topic),
       to_address_hash: truncate_address_hash(log.third_topic),
       token_contract_address_hash: log.address_hash,
@@ -92,6 +124,7 @@ defmodule Indexer.Transform.TokenTransfers do
     token_transfer = %{
       block_number: log.block_number,
       log_index: log.index,
+      block_hash: log.block_hash,
       from_address_hash: encode_address_hash(from_address_hash),
       to_address_hash: encode_address_hash(to_address_hash),
       token_contract_address_hash: log.address_hash,

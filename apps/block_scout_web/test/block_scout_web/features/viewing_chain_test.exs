@@ -135,6 +135,7 @@ defmodule BlockScoutWeb.ViewingChainTest do
         3,
         :token_transfer,
         transaction: transaction,
+        block: transaction.block,
         token_contract_address: contract_token_address
       )
 

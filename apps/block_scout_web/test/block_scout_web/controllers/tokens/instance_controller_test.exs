@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.Tokens.InstanceControllerTest do
   describe "GET show/2" do
     test "redirects  with valid params", %{conn: conn} do
       contract_address = insert(:address)
+      block = insert(:block)
 
       insert(:token, contract_address: contract_address)
 
@@ -12,6 +13,7 @@ defmodule BlockScoutWeb.Tokens.InstanceControllerTest do
       insert(:token_transfer,
         from_address: contract_address,
         token_contract_address: contract_address,
+        block: block,
         token_id: token_id
       )
 

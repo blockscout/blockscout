@@ -25,7 +25,8 @@ defmodule EthereumJSONRPC.ReceiptsTest do
         status: status,
         type: type,
         transaction_hash: transaction_hash,
-        transaction_index: transaction_index
+        transaction_index: transaction_index,
+        block_hash: block_hash
       } =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Geth ->
@@ -42,7 +43,8 @@ defmodule EthereumJSONRPC.ReceiptsTest do
               status: nil,
               type: nil,
               transaction_hash: "0xd3efddbbeb6ad8d8bb3f6b8c8fb6165567e9dd868013146bdbeb60953c82822a",
-              transaction_index: 17
+              transaction_index: 17,
+              block_hash: "0xf6db2bace4ac8277384553ad9603d045220a91fb2448ab6130d7a6f044f9a8cf"
             }
 
           EthereumJSONRPC.Parity ->
@@ -58,7 +60,8 @@ defmodule EthereumJSONRPC.ReceiptsTest do
               status: :ok,
               type: "mined",
               transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-              transaction_index: 0
+              transaction_index: 0,
+              block_hash: "0xf6db2bace4ac8277384553ad9603d045220a91fb2448ab6130d7a6f044f9a8cf"
             }
         end
 
@@ -87,10 +90,12 @@ defmodule EthereumJSONRPC.ReceiptsTest do
                      "logIndex" => integer_to_quantity(index),
                      "topics" => [first_topic],
                      "transactionHash" => transaction_hash,
-                     "type" => type
+                     "type" => type,
+                     "blockHash" => block_hash
                    }
                  ],
                  "status" => native_status,
+                 "blockHash" => block_hash,
                  "transactionHash" => transaction_hash,
                  "transactionIndex" => integer_to_quantity(transaction_index)
                }

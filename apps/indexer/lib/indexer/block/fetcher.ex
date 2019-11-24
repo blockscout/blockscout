@@ -115,14 +115,17 @@ defmodule Indexer.Block.Fetcher do
   #    %{logs: logs ++ extra_logs, receipts: receipts}
   #  end
 
-  defp get_extra_logs(logs, extra_logs) do
+  defp process_extra_logs(extra_logs) do
     e_logs =
       extra_logs
-      |> Enum.filter(fn %{transaction_hash: hash} ->
-        hash == "0x0000000000000000000000000000000000000000000000000000000000000000"
+      |> Enum.filter(fn %{transaction_hash: tx_hash, block_hash: block_hash} ->
+        tx_hash == block_hash
+      end)
+      |> Enum.map(fn log ->
+        Map.put(log, :transaction_hash, "0x0000000000000000000000000000000000000000000000000000000000000000")
       end)
 
-    logs ++ e_logs
+    e_logs
   end
 
   @decorate span(tracer: Tracer)
@@ -151,10 +154,14 @@ defmodule Indexer.Block.Fetcher do
          blocks = TransformBlocks.transform_blocks(blocks_params),
          {:ok, %{logs: extra_logs}} <- EthereumJSONRPC.fetch_logs(range, json_rpc_named_arguments),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
-         %{logs: logs, receipts: receipts} = receipt_params,
-         transfer_logs = get_extra_logs(logs, extra_logs),
+         %{logs: tx_logs, receipts: receipts} = receipt_params,
+         logs = tx_logs ++ process_extra_logs(extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
-         %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(transfer_logs),
+         %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
+         # %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
+         # TokenTransfers.parse_fees(transactions_with_receipts),
+         fee_tokens = [],
+         fee_token_transfers = [],
          %{
            accounts: celo_accounts,
            validators: celo_validators,
@@ -165,6 +172,8 @@ defmodule Indexer.Block.Fetcher do
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
+         tokens = fee_tokens ++ normal_tokens,
+         token_transfers = fee_token_transfers ++ normal_token_transfers,
          addresses =
            Addresses.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
@@ -174,6 +183,7 @@ defmodule Indexer.Block.Fetcher do
              token_transfers: token_transfers,
              transactions: transactions_with_receipts
            }),
+         #         addresses = Enum.filter(addresses_raw, fn a -> a.hash != "0x0000000000000000000000000000000000000000" end),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
