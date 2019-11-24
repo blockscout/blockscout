@@ -9,7 +9,6 @@ defmodule Explorer.Celo.AccountReader do
 
   def account_data(%{address: account_address}) do
     data = fetch_account_data(account_address)
-    # IO.inspect(data)
 
     with {:ok, [name]} <- data["getName"],
          {:ok, [url]} <- data["getMetadataURL"],
@@ -222,8 +221,6 @@ defmodule Explorer.Celo.AccountReader do
       }
     ]
 
-    # IO.inspect(methods)
-
     res =
       methods
       |> Reader.query_contracts(contract_abi)
@@ -232,14 +229,8 @@ defmodule Explorer.Celo.AccountReader do
         {function_name, response}
       end)
 
-    # IO.inspect(res)
-
     {:ok, [address]} = res["getAddressForString"]
 
     "0x" <> Base.encode16(address)
   end
-
-  #  defp config(key) do
-  #    Application.get_env(:explorer, __MODULE__, [])[key]
-  #  end
 end

@@ -3655,6 +3655,7 @@ defmodule Explorer.Chain do
   end
 
   def query_leaderboard do
+    # \\x88f24de331525cf6cfd7455eb96a9e4d49b7f292 is the Stable token address
     result =
       SQL.query(Repo, """
         SELECT competitors.address, b.name, SUM(rate*value+fetched_coin_balance+celo_account.locked_gold)*multiplier AS score
@@ -3673,7 +3674,6 @@ defmodule Explorer.Chain do
         ORDER BY score
       """)
 
-    # IO.inspect(result)
     case result do
       {:ok, %{rows: res}} -> {:ok, res}
       _ -> {:error, :not_found}

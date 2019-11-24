@@ -2,8 +2,6 @@ defmodule BlockScoutWeb.Resolvers.Competitor do
   @moduledoc false
 
   alias Explorer.Chain
-  #    alias Explorer.Chain.Hash
-  #    alias Explorer.Chain.Hash.Address
 
   def get_by(_, _, _) do
     case Chain.query_leaderboard() do
