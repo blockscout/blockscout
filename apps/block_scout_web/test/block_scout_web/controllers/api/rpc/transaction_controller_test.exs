@@ -410,6 +410,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         insert(:log,
           address: address,
           transaction: transaction,
+          block: block,
+          block_number: 222,
           first_topic: "first topic",
           second_topic: "second topic"
         )
@@ -486,7 +488,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
           address: address,
           transaction: transaction,
           first_topic: "first topic",
-          second_topic: "second topic"
+          second_topic: "second topic",
+          block: block,
+          block_number: 123
         )
 
       params = %{
@@ -508,8 +512,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "gasLimit" => "#{transaction.gas}",
         "gasUsed" => "#{transaction.gas_used}",
         "gasPrice" => "#{transaction.gas_price.value}",
-        "gasCurrency" => "#{transaction.gas_currency_hash}",
-        "gasFeeRecipient" => "#{transaction.gas_fee_recipient_hash}",
+        "feeCurrency" => "#{transaction.gas_currency_hash}",
+        "gatewayFee" => "#{0}",
+        "gatewayFeeRecipient" => "#{transaction.gas_fee_recipient_hash}",
         "logs" => [
           %{
             "address" => "#{address.hash}",

@@ -21,6 +21,7 @@ defmodule Indexer.Block.Fetcher do
     CeloAccount,
     CeloValidator,
     CeloValidatorGroup,
+    CeloValidatorHistory,
     CoinBalance,
     ContractCode,
     InternalTransaction,
@@ -110,6 +111,23 @@ defmodule Indexer.Block.Fetcher do
     struct!(__MODULE__, named_arguments)
   end
 
+  #  defp append_logs(extra_logs, %{logs: logs, receipts: receipts}) do
+  #    %{logs: logs ++ extra_logs, receipts: receipts}
+  #  end
+
+  defp process_extra_logs(extra_logs) do
+    e_logs =
+      extra_logs
+      |> Enum.filter(fn %{transaction_hash: tx_hash, block_hash: block_hash} ->
+        tx_hash == block_hash
+      end)
+      |> Enum.map(fn log ->
+        Map.put(log, :transaction_hash, "0x0000000000000000000000000000000000000000000000000000000000000000")
+      end)
+
+    e_logs
+  end
+
   @decorate span(tracer: Tracer)
   @spec fetch_and_import_range(t, Range.t()) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
@@ -134,15 +152,28 @@ defmodule Indexer.Block.Fetcher do
              errors: blocks_errors
            }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
          blocks = TransformBlocks.transform_blocks(blocks_params),
+         {:ok, %{logs: extra_logs}} <- EthereumJSONRPC.fetch_logs(range, json_rpc_named_arguments),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
-         %{logs: logs, receipts: receipts} = receipt_params,
+         %{logs: tx_logs, receipts: receipts} = receipt_params,
+         logs = tx_logs ++ process_extra_logs(extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
-         %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
-         %{accounts: celo_accounts, validators: celo_validators, validator_groups: celo_validator_groups} =
-           CeloAccounts.parse(logs),
+         %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
+         # %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
+         # TokenTransfers.parse_fees(transactions_with_receipts),
+         fee_tokens = [],
+         fee_token_transfers = [],
+         %{
+           accounts: celo_accounts,
+           validators: celo_validators,
+           validator_groups: celo_validator_groups,
+           attestations_fulfilled: attestations_fulfilled,
+           attestations_requested: attestations_requested
+         } = CeloAccounts.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
+         tokens = fee_tokens ++ normal_tokens,
+         token_transfers = fee_token_transfers ++ normal_token_transfers,
          addresses =
            Addresses.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
@@ -152,6 +183,7 @@ defmodule Indexer.Block.Fetcher do
              token_transfers: token_transfers,
              transactions: transactions_with_receipts
            }),
+         #         addresses = Enum.filter(addresses_raw, fn a -> a.hash != "0x0000000000000000000000000000000000000000" end),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
@@ -183,9 +215,15 @@ defmodule Indexer.Block.Fetcher do
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
 
-      async_import_celo_accounts(%{celo_accounts: %{params: celo_accounts}})
+      accounts = Enum.dedup(celo_accounts ++ attestations_fulfilled ++ attestations_requested)
+
+      async_import_celo_accounts(%{
+        celo_accounts: %{params: accounts, requested: attestations_requested, fulfilled: attestations_fulfilled}
+      })
+
       async_import_celo_validators(%{celo_validators: %{params: celo_validators}})
       async_import_celo_validator_groups(%{celo_validator_groups: %{params: celo_validator_groups}})
+      async_import_celo_validator_history(range)
 
       update_block_cache(inserted[:blocks])
       update_transactions_cache(inserted[:transactions], inserted[:fork_transactions])
@@ -346,6 +384,10 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_celo_validators(_), do: :ok
+
+  def async_import_celo_validator_history(range) do
+    CeloValidatorHistory.async_fetch(range)
+  end
 
   def async_import_celo_validator_groups(%{celo_validator_groups: accounts}) do
     CeloValidatorGroup.async_fetch(accounts)

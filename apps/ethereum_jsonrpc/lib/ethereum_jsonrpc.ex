@@ -318,6 +318,10 @@ defmodule EthereumJSONRPC do
     Receipts.fetch(transactions_params, json_rpc_named_arguments)
   end
 
+  def fetch_logs(from..to, json_rpc_named_arguments) do
+    Receipts.fetch_logs(from, to, json_rpc_named_arguments)
+  end
+
   @doc """
   Assigns an id to each set of params in `params_list` for batch request-response correlation
   """
@@ -346,7 +350,6 @@ defmodule EthereumJSONRPC do
     transport = Keyword.fetch!(named_arguments, :transport)
     transport_options = Keyword.fetch!(named_arguments, :transport_options)
     throttle_timeout = Keyword.get(named_arguments, :throttle_timeout, @default_throttle_timeout)
-
     RequestCoordinator.perform(request, transport, transport_options, throttle_timeout)
   end
 

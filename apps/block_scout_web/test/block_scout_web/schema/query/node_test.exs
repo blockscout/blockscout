@@ -129,7 +129,8 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
 
     test "with valid argument 'id' for a token_transfer", %{conn: conn} do
       transaction = insert(:transaction)
-      token_transfer = insert(:token_transfer, transaction: transaction)
+      block = insert(:block)
+      token_transfer = insert(:token_transfer, transaction: transaction, block: block)
 
       query = """
       query($id: ID!) {
@@ -138,6 +139,7 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
             id
             transaction_hash
             log_index
+            block_hash
           }
         }
       }
@@ -157,6 +159,7 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
                "data" => %{
                  "node" => %{
                    "id" => id,
+                   "block_hash" => to_string(token_transfer.block_hash),
                    "transaction_hash" => to_string(token_transfer.transaction_hash),
                    "log_index" => token_transfer.log_index
                  }

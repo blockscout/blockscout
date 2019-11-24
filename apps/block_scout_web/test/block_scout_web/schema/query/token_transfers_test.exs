@@ -4,7 +4,8 @@ defmodule BlockScoutWeb.Schema.Query.TokenTransfersTest do
   describe "token_transfers field" do
     test "with valid argument, returns all expected fields", %{conn: conn} do
       transaction = insert(:transaction)
-      token_transfer = insert(:token_transfer, transaction: transaction)
+      block = insert(:block)
+      token_transfer = insert(:token_transfer, transaction: transaction, block: block)
       address_hash = to_string(token_transfer.token_contract_address_hash)
 
       query = """
@@ -176,12 +177,14 @@ defmodule BlockScoutWeb.Schema.Query.TokenTransfersTest do
       token_transfer_attrs1 = %{
         block_number: transaction1.block_number,
         transaction: transaction1,
+        block: transaction1.block,
         token_contract_address: address
       }
 
       token_transfer_attrs2 = %{
         block_number: transaction2.block_number,
         transaction: transaction2,
+        block: transaction2.block,
         token_contract_address: address
       }
 
@@ -232,7 +235,8 @@ defmodule BlockScoutWeb.Schema.Query.TokenTransfersTest do
         token_transfer_attrs = %{
           block_number: transaction.block_number,
           transaction: transaction,
-          token_contract_address: address
+          token_contract_address: address,
+          block: transaction.block
         }
 
         insert(:token_transfer, token_transfer_attrs)

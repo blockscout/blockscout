@@ -94,7 +94,8 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
           account_type: fragment("EXCLUDED.account_type"),
           nonvoting_locked_gold: fragment("EXCLUDED.nonvoting_locked_gold"),
           locked_gold: fragment("EXCLUDED.locked_gold"),
-          rewards: fragment("EXCLUDED.rewards"),
+          attestations_requested: fragment("EXCLUDED.attestations_requested + ?", account.attestations_requested),
+          attestations_fulfilled: fragment("EXCLUDED.attestations_fulfilled + ?", account.attestations_fulfilled),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", account.updated_at)
         ]

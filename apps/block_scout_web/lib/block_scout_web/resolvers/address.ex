@@ -1,7 +1,9 @@
 defmodule BlockScoutWeb.Resolvers.Address do
   @moduledoc false
 
-  alias Explorer.Chain
+  alias Absinthe.Relay.Connection
+  alias Explorer.{Chain, GraphQL, Repo}
+  alias Explorer.Chain.CeloAccount
 
   def get_by(_, %{hashes: hashes}, _) do
     case Chain.hashes_to_addresses(hashes) do
@@ -15,5 +17,11 @@ defmodule BlockScoutWeb.Resolvers.Address do
       {:error, :not_found} -> {:error, "Address not found."}
       {:ok, _} = result -> result
     end
+  end
+
+  def get_by(%CeloAccount{address: hash}, args, _) do
+    hash
+    |> GraphQL.address_query()
+    |> Connection.from_query(&Repo.all/1, args, [])
   end
 end

@@ -129,7 +129,8 @@ defmodule BlockScoutWeb.TransactionControllerTest do
 
     test "redirects to transactions/:transaction_id/token_transfers when there are token transfers", %{conn: conn} do
       transaction = insert(:transaction)
-      insert(:token_transfer, transaction: transaction)
+      block = insert(:block)
+      insert(:token_transfer, transaction: transaction, block: block)
       conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, transaction))
 
       assert redirected_to(conn) =~ transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction)

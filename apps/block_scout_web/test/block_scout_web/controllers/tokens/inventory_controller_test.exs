@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
         :token_transfer,
         transaction: transaction,
         token_contract_address: token_contract_address,
+        block: transaction.block,
         token: token
       )
 
@@ -55,6 +56,7 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
             :token_transfer,
             transaction: transaction,
             token_contract_address: token.contract_address,
+            block: transaction.block,
             token: token,
             token_id: &1 + 1000
           )
@@ -88,6 +90,7 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
         &insert(
           :token_transfer,
           transaction: transaction,
+          block: transaction.block,
           token_contract_address: token.contract_address,
           token: token,
           token_id: &1 + 1000
@@ -114,6 +117,7 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
       insert(
         :token_transfer,
         transaction: transaction,
+        block: transaction.block,
         token_contract_address: token.contract_address,
         token: token,
         token_id: 1000

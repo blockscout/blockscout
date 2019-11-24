@@ -642,7 +642,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     })
   end
 
-  defp resolve_schema(result \\ %{}) do
+  defp resolve_schema(result) do
     %{
       "type" => "object",
       "properties" => %{

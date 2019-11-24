@@ -20,6 +20,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
     UncleBlock,
     CeloAccount,
     CeloValidator,
+    CeloValidatorHistory,
     CeloValidatorGroup
   }
 
@@ -82,6 +83,9 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
                    "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
                    "uncles" => []
                  }}
+
+              [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _ ->
+                {:ok, [%{id: id, jsonrpc: "2.0", result: []}]}
 
               [%{method: "trace_block"} | _] = requests, _options ->
                 {:ok, Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)}
@@ -227,6 +231,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 

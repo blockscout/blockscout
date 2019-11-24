@@ -26,15 +26,17 @@ defmodule Indexer.Fetcher.CeloAccount do
     else
       params =
         accounts.params
-        |> Enum.map(&entry/1)
+        |> Enum.map(fn a -> entry(a, accounts.requested, accounts.fulfilled) end)
 
       BufferedTask.buffer(__MODULE__, params, :infinity)
     end
   end
 
-  def entry(address) do
+  def entry(account, requested, fulfilled) do
     %{
-      address: address,
+      address: account.address,
+      attestations_fulfilled: Enum.count(Enum.filter(fulfilled, fn a -> a.address == account.address end)),
+      attestations_requested: Enum.count(Enum.filter(requested, fn a -> a.address == account.address end)),
       retries_count: 0
     }
   end
@@ -54,6 +56,7 @@ defmodule Indexer.Fetcher.CeloAccount do
     failed_list =
       accounts
       |> Enum.map(&Map.put(&1, :retries_count, &1.retries_count + 1))
+      |> Enum.filter(&(&1.retries_count <= @max_retries))
       |> fetch_from_blockchain()
       |> import_accounts()
 
@@ -66,9 +69,8 @@ defmodule Indexer.Fetcher.CeloAccount do
 
   defp fetch_from_blockchain(addresses) do
     addresses
-    |> Enum.filter(&(&1.retries_count <= @max_retries))
-    |> Enum.map(fn %{address: address} = account ->
-      case AccountReader.account_data(address) do
+    |> Enum.map(fn account ->
+      case AccountReader.account_data(account) do
         {:ok, data} ->
           Map.merge(account, data)
 

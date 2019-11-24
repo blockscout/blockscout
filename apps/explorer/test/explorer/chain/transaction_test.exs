@@ -52,6 +52,7 @@ defmodule Explorer.Chain.TransactionTest do
         :token_transfer,
         from_address: address,
         transaction: transaction,
+        block: transaction.block,
         token_contract_address: token.contract_address
       )
 
@@ -77,6 +78,7 @@ defmodule Explorer.Chain.TransactionTest do
         :token_transfer,
         to_address: address,
         transaction: transaction,
+        block: transaction.block,
         token_contract_address: token.contract_address
       )
 
@@ -106,6 +108,7 @@ defmodule Explorer.Chain.TransactionTest do
         :token_transfer,
         to_address: address,
         transaction: transaction,
+        block: transaction.block,
         token_contract_address: token.contract_address
       )
 
@@ -113,6 +116,7 @@ defmodule Explorer.Chain.TransactionTest do
         :token_transfer,
         to_address: address,
         transaction: transaction,
+        block: transaction.block,
         token_contract_address: insert(:token).contract_address
       )
 
@@ -149,6 +153,7 @@ defmodule Explorer.Chain.TransactionTest do
         amount: 2,
         to_address: address,
         token_contract_address: token.contract_address,
+        block: transaction_a.block,
         transaction: transaction_a
       )
 
@@ -157,6 +162,7 @@ defmodule Explorer.Chain.TransactionTest do
         amount: 1,
         to_address: address,
         token_contract_address: token.contract_address,
+        block: transaction_b.block,
         transaction: transaction_b
       )
 
@@ -165,6 +171,7 @@ defmodule Explorer.Chain.TransactionTest do
         amount: 1,
         to_address: address,
         token_contract_address: token.contract_address,
+        block: transaction_c.block,
         transaction: transaction_c
       )
 

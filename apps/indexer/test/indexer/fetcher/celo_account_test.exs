@@ -4,7 +4,7 @@ defmodule Indexer.Fetcher.CeloAccountsTest do
 
   import Mox
 
-  alias Explorer.Chain.{Address, Hash, CeloAccount}
+  # alias Explorer.Chain.{Address, Hash, CeloAccount}
   # alias Indexer.Fetcher.CeloAccount
 
   @moduletag :capture_log
@@ -24,7 +24,7 @@ defmodule Indexer.Fetcher.CeloAccountsTest do
 
       get_account_data_from_blockchain()
 
-      entry = Indexer.Fetcher.CeloAccount.entry(%{address: address})
+      entry = Indexer.Fetcher.CeloAccount.entry(%{address: address}, [], [])
 
       assert Indexer.Fetcher.CeloAccount.run(
                [entry],
@@ -41,13 +41,11 @@ defmodule Indexer.Fetcher.CeloAccountsTest do
                 name: "CLabs Validator #0 on testing",
                 locked_gold: locked_gold,
                 nonvoting_locked_gold: nonvoting_locked_gold,
-                rewards: rewards,
                 url: nil
               }} = Explorer.Chain.get_celo_account(address)
 
       assert locked_gold.value == Decimal.new(10_001_000_000_000_000_000_000)
       assert nonvoting_locked_gold.value == Decimal.new(1_000_000_000_000_000_000)
-      assert rewards.value == Decimal.new(0)
     end
   end
 
@@ -55,7 +53,7 @@ defmodule Indexer.Fetcher.CeloAccountsTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      1,
+      7,
       fn requests, _opts ->
         {:ok,
          Enum.map(requests, fn
@@ -162,6 +160,22 @@ defmodule Indexer.Fetcher.CeloAccountsTest do
                id: id,
                result:
                  "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"
+             }
+
+           # registry access
+           %{
+             id: id,
+             method: "eth_call",
+             params: [
+               %{
+                 data: _
+               },
+               "latest"
+             ]
+           } ->
+             %{
+               id: id,
+               result: "0x0000000000000000000000005765cd49b3da3942ea4a4fdb6d7bf257239fe182"
              }
          end)}
       end

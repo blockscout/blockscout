@@ -20,13 +20,11 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
 
   @max_retries 3
 
-  def async_fetch(blocks) do
+  def async_fetch(range) do
     if CeloValidatorHistorySupervisor.disabled?() do
       :ok
     else
-      params =
-        blocks.params
-        |> Enum.map(&entry/1)
+      params = Enum.map(range, &entry/1)
 
       BufferedTask.buffer(__MODULE__, params, :infinity)
     end
@@ -78,6 +76,23 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
     end)
   end
 
+  defp get_items(block) do
+    Enum.reduce(block.validators, {[], []}, fn
+      %{error: _error} = item, {failed, success} ->
+        {[item | failed], success}
+
+      item, {failed, success} ->
+        changeset =
+          CeloValidatorHistory.changeset(%CeloValidatorHistory{}, Map.put(item, :block_number, block.block_number))
+
+        if changeset.valid? do
+          {failed, [changeset.changes | success]}
+        else
+          {[item | failed], success}
+        end
+    end)
+  end
+
   defp import_items(blocks) do
     {failed, success} =
       Enum.reduce(blocks, {[], []}, fn
@@ -85,13 +100,8 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
           {[block | failed], success}
 
         block, {failed, success} ->
-          changeset = CeloValidatorHistory.changeset(%CeloValidatorHistory{}, block)
-
-          if changeset.valid? do
-            {failed, [changeset.changes | success]}
-          else
-            {[block | failed], success}
-          end
+          {failed2, success2} = get_items(block)
+          {failed ++ failed2, success ++ success2}
       end)
 
     import_params = %{

@@ -1859,7 +1859,7 @@ defmodule Explorer.Chain do
   The number of `t:Explorer.Chain.Log.t/0`.
 
       iex> transaction = :transaction |> insert() |> with_block()
-      iex> insert(:log, transaction: transaction, index: 0)
+      iex> insert(:log, transaction: transaction, index: 0, block: transaction.block)
       iex> Explorer.Chain.log_count()
       1
 
@@ -3654,6 +3654,32 @@ defmodule Explorer.Chain do
     end
   end
 
+  def query_leaderboard do
+    # \\x88f24de331525cf6cfd7455eb96a9e4d49b7f292 is the Stable token address
+    result =
+      SQL.query(Repo, """
+        SELECT competitors.address, b.name, SUM(rate*value+fetched_coin_balance+celo_account.locked_gold)*multiplier AS score
+        FROM addresses, exchange_rates, competitors, claims, celo_account, celo_account as b,
+          (SELECT claims.claimed_address AS address, COALESCE(SUM(value),0) AS value
+          FROM address_current_token_balances, claims
+          WHERE address_hash=claims.claimed_address
+          AND token_contract_address_hash='\\x88f24de331525cf6cfd7455eb96a9e4d49b7f292'
+          GROUP BY claims.claimed_address) AS get
+        WHERE  token='\\x88f24de331525cf6cfd7455eb96a9e4d49b7f292'
+        AND claims.claimed_address = get.address
+        AND celo_account.address = addresses.hash
+        AND claims.address = competitors.address
+        AND competitors.address = b.address
+        GROUP BY competitors.address, multiplier, b.name
+        ORDER BY score
+      """)
+
+    case result do
+      {:ok, %{rows: res}} -> {:ok, res}
+      _ -> {:error, :not_found}
+    end
+  end
+
   defp with_decompiled_code_flag(query, _hash, false), do: query
 
   defp with_decompiled_code_flag(query, hash, true) do
@@ -3928,11 +3954,13 @@ defmodule Explorer.Chain do
   Returns `:ok` if found
 
       iex> contract_address = insert(:address)
+      iex> block = insert(:block)
       iex> token_id = 10
       iex> insert(:token_transfer,
       ...>  from_address: contract_address,
       ...>  token_contract_address: contract_address,
-      ...>  token_id: token_id
+      ...>  token_id: token_id,
+      ...>  block_hash: block.hash
       ...> )
       iex> Explorer.Chain.check_erc721_token_instance_exists(token_id, contract_address.hash)
       :ok
@@ -3956,11 +3984,13 @@ defmodule Explorer.Chain do
   Returns `true` if found
 
       iex> contract_address = insert(:address)
+      iex> block = insert(:block)
       iex> token_id = 10
       iex> insert(:token_transfer,
       ...>  from_address: contract_address,
       ...>  token_contract_address: contract_address,
-      ...>  token_id: token_id
+      ...>  token_id: token_id,
+      ...>  block_hash: block.hash
       ...> )
       iex> Explorer.Chain.erc721_token_instance_exist?(token_id, contract_address.hash)
       true

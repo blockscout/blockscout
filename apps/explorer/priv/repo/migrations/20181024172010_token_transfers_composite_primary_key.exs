@@ -8,7 +8,7 @@ defmodule Explorer.Repo.Migrations.TokenTransfersCompositePrimaryKey do
     end
 
     # Don't use `modify` as it requires restating the whole column description
-    execute("ALTER TABLE token_transfers ADD PRIMARY KEY (transaction_hash, log_index)")
+    execute("ALTER TABLE token_transfers ADD PRIMARY KEY (block_hash, log_index)")
   end
 
   def down do
