@@ -138,8 +138,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                      "creates" => nil,
                      "from" => "0x40b18103537c0f15d5e137dd8ddd019b84949d16",
                      "gas" => "0x3d9c5",
-                     "gasCurrency" => "0x0000000000000000000000000000000000000000",
-                     "gasFeeRecipient" => "0x0000000000000000000000000000000000000000",
+                     "feeCurrency" => "0x0000000000000000000000000000000000000000",
+                     "gatewayFeeRecipient" => "0x0000000000000000000000000000000000000000",
+                     "gatewayFee" => "0x0",
                      "gasPrice" => "0x3b9aca00",
                      "hash" => "0xd3937e70fab3fb2bfe8feefac36815408bf07de3b9e09fe81114b9a6b17f55c8",
                      "input" =>

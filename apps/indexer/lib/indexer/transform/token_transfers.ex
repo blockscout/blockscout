@@ -83,8 +83,6 @@ defmodule Indexer.Transform.TokenTransfers do
       token_type: "ERC-20"
     }
 
-    # IO.inspect(token_transfer)
-
     token = %{
       contract_address_hash: log.address_hash,
       type: "ERC-20"
