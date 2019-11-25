@@ -16,7 +16,7 @@ defmodule Explorer.Chain.TokenTest do
       assert Repo.all(Token.cataloged_tokens()) == [token.contract_address_hash]
     end
 
-    test "filter tokens by updated_at filed" do
+    test "filter tokens by updated_at field" do
       {:ok, date} = DateTime.now("Etc/UTC")
       hours_ago_date = DateTime.add(date, -:timer.hours(60), :millisecond)
 

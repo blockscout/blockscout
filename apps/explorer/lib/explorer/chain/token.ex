@@ -103,7 +103,7 @@ defmodule Explorer.Chain.Token do
   @doc """
   Builds an `Ecto.Query` to fetch the cataloged tokens.
 
-  These are tokens with cataloged field set to true.
+  These are tokens with cataloged field set to true and updated_at is earlier or equal than an hour ago.
   """
   def cataloged_tokens(hours \\ 48) do
     date_now = DateTime.utc_now()
