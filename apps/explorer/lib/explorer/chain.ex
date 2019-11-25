@@ -3659,13 +3659,15 @@ defmodule Explorer.Chain do
     result =
       SQL.query(Repo, """
         SELECT competitors.address, b.name, SUM(rate*value+fetched_coin_balance+celo_account.locked_gold)*multiplier AS score
-        FROM addresses, exchange_rates, competitors, claims, celo_account, celo_account as b,
+        FROM addresses, exchange_rates, competitors, claims, celo_account, celo_account as b, tokens,
           (SELECT claims.claimed_address AS address, COALESCE(SUM(value),0) AS value
-          FROM address_current_token_balances, claims
+          FROM address_current_token_balances, claims, tokens
           WHERE address_hash=claims.claimed_address
-          AND token_contract_address_hash='\\x88f24de331525cf6cfd7455eb96a9e4d49b7f292'
+          AND token_contract_address_hash=tokens.contract_address_hash
+          AND tokens.symbol='cUSD'
           GROUP BY claims.claimed_address) AS get
-        WHERE  token='\\x88f24de331525cf6cfd7455eb96a9e4d49b7f292'
+        WHERE exchange_rates.token=tokens.contract_address_hash
+        AND tokens.symbol='cUSD'
         AND claims.claimed_address = get.address
         AND celo_account.address = addresses.hash
         AND claims.address = competitors.address
