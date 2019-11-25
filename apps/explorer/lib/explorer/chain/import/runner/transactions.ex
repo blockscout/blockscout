@@ -155,12 +155,20 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     )
   end
 
-  defp put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
+  defp put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set) do
+    if Application.get_env(:explorer, :index_internal_transactions_for_token_transfers) do
+      changes_list
+    else
+      do_put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
+    end
+  end
+
+  defp do_put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
        when is_list(changes_list) do
     Enum.map(changes_list, &put_internal_transactions_indexed_at(&1, timestamp, token_transfer_transaction_hash_set))
   end
 
-  defp put_internal_transactions_indexed_at(%{hash: hash} = changes, timestamp, token_transfer_transaction_hash_set) do
+  defp do_put_internal_transactions_indexed_at(%{hash: hash} = changes, timestamp, token_transfer_transaction_hash_set) do
     token_transfer? = to_string(hash) in token_transfer_transaction_hash_set
 
     if put_internal_transactions_indexed_at?(changes, token_transfer?) do

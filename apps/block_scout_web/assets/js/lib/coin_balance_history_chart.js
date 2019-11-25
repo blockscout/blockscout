@@ -8,7 +8,7 @@ export function createCoinBalanceHistoryChart (el) {
   const $chartError = $('[data-chart-error-message]')
   const dataPath = el.dataset.coin_balance_history_data_path
 
-  $.getJSON(dataPath, {type: 'JSON'})
+  $.getJSON(dataPath, { type: 'JSON' })
     .done(data => {
       $chartContainer.show()
 
@@ -53,7 +53,7 @@ export function createCoinBalanceHistoryChart (el) {
               },
               scaleLabel: {
                 display: true,
-                labelString: window.localized['Ether']
+                labelString: window.localized.Ether
               }
             }]
           }

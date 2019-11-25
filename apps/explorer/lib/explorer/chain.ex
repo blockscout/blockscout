@@ -122,11 +122,21 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Gets from the cache the count of all `t:Explorer.Chain.Address.t/0`'s
+  Estimated count of `t:Explorer.Chain.Address.t/0`.
+
+  Estimated count of addresses.
   """
-  @spec count_addresses_from_cache :: non_neg_integer()
-  def count_addresses_from_cache do
-    AddressesCounter.fetch()
+  @spec address_estimated_count() :: non_neg_integer()
+  def address_estimated_count do
+    cached_value = AddressesCounter.fetch()
+
+    if is_nil(cached_value) do
+      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'addresses';")
+
+      count
+    else
+      cached_value
+    end
   end
 
   @doc """
@@ -211,7 +221,7 @@ defmodule Explorer.Chain do
     last_nonce =
       address_hash
       |> Transaction.last_nonce_by_address_query()
-      |> Repo.one()
+      |> Repo.one(timeout: :infinity)
 
     case last_nonce do
       nil -> 0
@@ -302,24 +312,10 @@ defmodule Explorer.Chain do
       paging_options
       |> fetch_transactions()
       |> join_associations(necessity_by_association)
-      |> Transaction.preload_token_transfers(address_hash)
 
-    direction_tasks =
-      base_query
-      |> Transaction.matching_address_queries_list(direction, address_hash)
-      |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
-
-    token_transfers_task =
-      Task.async(fn ->
-        transaction_hashes_from_token_transfers =
-          TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
-
-        final_query = where(base_query, [t], t.hash in ^transaction_hashes_from_token_transfers)
-
-        Repo.all(final_query)
-      end)
-
-    [token_transfers_task | direction_tasks]
+    base_query
+    |> Transaction.matching_address_queries_list(direction, address_hash)
+    |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
   end
 
   defp wait_for_address_transactions(tasks) do
@@ -337,6 +333,18 @@ defmodule Explorer.Chain do
           raise "Query fetching address transactions timed out."
       end
     end)
+  end
+
+  @spec address_hash_to_token_transfers(Hash.Address.t(), Keyword.t()) :: [Transaction.t()]
+  def address_hash_to_token_transfers(address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    direction = Keyword.get(options, :direction)
+
+    direction
+    |> Transaction.transactions_with_token_transfers_direction(address_hash)
+    |> Transaction.preload_token_transfers(address_hash)
+    |> handle_paging_options(paging_options)
+    |> Repo.all()
   end
 
   @spec address_to_logs(Hash.Address.t(), Keyword.t()) :: [Log.t()]
@@ -715,19 +723,28 @@ defmodule Explorer.Chain do
   """
   @spec finished_indexing?() :: boolean()
   def finished_indexing? do
-    min_block_number_transaction = Repo.aggregate(Transaction, :min, :block_number)
-
-    if min_block_number_transaction do
+    transaction_exists =
       Transaction
-      |> where([t], t.block_number == ^min_block_number_transaction and is_nil(t.internal_transactions_indexed_at))
       |> limit(1)
       |> Repo.one()
-      |> case do
-        nil -> true
-        _ -> false
+
+    min_block_number_transaction = Repo.aggregate(Transaction, :min, :block_number)
+
+    if transaction_exists do
+      if min_block_number_transaction do
+        Transaction
+        |> where([t], t.block_number == ^min_block_number_transaction and is_nil(t.internal_transactions_indexed_at))
+        |> limit(1)
+        |> Repo.one()
+        |> case do
+          nil -> true
+          _ -> false
+        end
+      else
+        false
       end
     else
-      false
+      true
     end
   end
 
@@ -1303,6 +1320,17 @@ defmodule Explorer.Chain do
       )
 
     Repo.one!(query)
+  end
+
+  @spec fetch_sum_coin_total_supply() :: non_neg_integer
+  def fetch_sum_coin_total_supply do
+    query =
+      from(
+        a0 in Address,
+        select: fragment("SUM(a0.fetched_coin_balance)")
+      )
+
+    Repo.one!(query) || 0
   end
 
   @doc """
