@@ -18,6 +18,7 @@ defmodule Explorer.ChainTest do
     Hash,
     InternalTransaction,
     Log,
+    PendingBlockOperation,
     Token,
     TokenTransfer,
     Transaction,
@@ -34,6 +35,21 @@ defmodule Explorer.ChainTest do
   setup :set_mox_global
 
   setup :verify_on_exit!
+
+  describe "remove_nonconsensus_blocks_from_pending_ops/0" do
+    test "removes pending ops for nonconsensus blocks" do
+      block = insert(:block)
+      insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
+
+      nonconsensus_block = insert(:block, consensus: false)
+      insert(:pending_block_operation, block: nonconsensus_block, fetch_internal_transactions: true)
+
+      :ok = Chain.remove_nonconsensus_blocks_from_pending_ops()
+
+      assert Repo.get(PendingBlockOperation, block.hash)
+      assert is_nil(Repo.get(PendingBlockOperation, nonconsensus_block.hash))
+    end
+  end
 
   describe "count_addresses_with_balance_from_cache/0" do
     test "returns the number of addresses with fetched_coin_balance > 0" do
