@@ -114,14 +114,14 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_account_data(account_address) do
-      call_methods([
-        {:lockedgold, "getAccountTotalLockedGold", [account_address]},
-        {:lockedgold, "getAccountNonvotingLockedGold", [account_address]},
-        {:validators, "isValidator", [account_address]},
-        {:validators, "isValidatorGroup", [account_address]},
-        {:accounts, "getName", [account_address]},
-        {:accounts, "getMetadataURL", [account_address]}
-      ])
+    call_methods([
+      {:lockedgold, "getAccountTotalLockedGold", [account_address]},
+      {:lockedgold, "getAccountNonvotingLockedGold", [account_address]},
+      {:validators, "isValidator", [account_address]},
+      {:validators, "isValidatorGroup", [account_address]},
+      {:accounts, "getName", [account_address]},
+      {:accounts, "getMetadataURL", [account_address]}
+    ])
   end
 
   def fetch_claimed_account_data(address) do
@@ -164,7 +164,7 @@ defmodule Explorer.Celo.AccountReader do
     methods
     |> Enum.map(&format_request/1)
     |> Enum.filter(fn req -> req.contract_address != :error end)
-    |> Enum.map(fn %{contract_address: {:ok, address} } = req -> Map.put(req, :contract_address, address) end)
+    |> Enum.map(fn %{contract_address: {:ok, address}} = req -> Map.put(req, :contract_address, address) end)
     |> Reader.query_contracts(contract_abi)
     |> Enum.zip(methods)
     |> Enum.into(%{}, fn {response, {_, function_name, _}} ->
@@ -178,7 +178,7 @@ defmodule Explorer.Celo.AccountReader do
     methods
     |> Enum.map(fn a -> format_request(a, bn) end)
     |> Enum.filter(fn req -> req.contract_address != :error end)
-    |> Enum.map(fn %{contract_address: {:ok, address} } = req -> Map.put(req, :contract_address, address) end)
+    |> Enum.map(fn %{contract_address: {:ok, address}} = req -> Map.put(req, :contract_address, address) end)
     |> Reader.query_contracts(contract_abi)
     |> Enum.zip(methods)
     |> Enum.into(%{}, fn {response, {_, function_name, _}} ->
