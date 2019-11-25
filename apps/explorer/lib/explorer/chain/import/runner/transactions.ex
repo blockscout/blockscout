@@ -42,12 +42,13 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       |> Map.put(:timestamps, timestamps)
       |> Map.put(:token_transfer_transaction_hash_set, token_transfer_transaction_hash_set(options))
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
+    |> Multi.run(:recollated_transactions, fn repo, _ ->
+      discard_blocks_for_recollated_transactions(repo, changes_list, insert_options)
+    end)
     |> Multi.run(:transactions, fn repo, _ ->
       insert(repo, changes_list, insert_options)
-    end)
-    |> Multi.run(:recollated_transactions, fn repo, %{transactions: transactions} ->
-      discard_blocks_for_recollated_transactions(repo, transactions, insert_options)
     end)
   end
 
@@ -81,7 +82,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     ordered_changes_list =
       changes_list
       |> put_internal_transactions_indexed_at(inserted_at, token_transfer_transaction_hash_set)
-      # order so that row ShareLocks are grabbed in a consistent order
+      # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(& &1.hash)
 
     Import.insert_changes_list(
@@ -154,12 +155,20 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     )
   end
 
-  defp put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
+  defp put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set) do
+    if Application.get_env(:explorer, :index_internal_transactions_for_token_transfers) do
+      changes_list
+    else
+      do_put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
+    end
+  end
+
+  defp do_put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
        when is_list(changes_list) do
     Enum.map(changes_list, &put_internal_transactions_indexed_at(&1, timestamp, token_transfer_transaction_hash_set))
   end
 
-  defp put_internal_transactions_indexed_at(%{hash: hash} = changes, timestamp, token_transfer_transaction_hash_set) do
+  defp do_put_internal_transactions_indexed_at(%{hash: hash} = changes, timestamp, token_transfer_transaction_hash_set) do
     token_transfer? = to_string(hash) in token_transfer_transaction_hash_set
 
     if put_internal_transactions_indexed_at?(changes, token_transfer?) do
@@ -186,41 +195,64 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
 
   defp put_internal_transactions_indexed_at?(_, _), do: false
 
-  defp discard_blocks_for_recollated_transactions(repo, transactions, %{
+  defp discard_blocks_for_recollated_transactions(repo, changes_list, %{
          timeout: timeout,
          timestamps: %{updated_at: updated_at}
        })
-       when is_list(transactions) do
-    ordered_block_hashes =
-      transactions
-      |> Enum.filter(fn %{block_hash: block_hash, old_block_hash: old_block_hash} ->
-        not is_nil(old_block_hash) and block_hash != old_block_hash
+       when is_list(changes_list) do
+    {transactions_hashes, transactions_block_hashes} =
+      changes_list
+      |> Enum.filter(&Map.has_key?(&1, :block_hash))
+      |> Enum.map(fn %{hash: hash, block_hash: block_hash} ->
+        {:ok, hash_bytes} = Hash.Full.dump(hash)
+        {:ok, block_hash_bytes} = Hash.Full.dump(block_hash)
+        {hash_bytes, block_hash_bytes}
       end)
-      |> MapSet.new(& &1.old_block_hash)
-      |> Enum.sort()
+      |> Enum.unzip()
 
-    if Enum.empty?(ordered_block_hashes) do
+    blocks_with_recollated_transactions =
+      from(
+        transaction in Transaction,
+        join:
+          new_transaction in fragment(
+            "(SELECT unnest(?::bytea[]) as hash, unnest(?::bytea[]) as block_hash)",
+            ^transactions_hashes,
+            ^transactions_block_hashes
+          ),
+        on: transaction.hash == new_transaction.hash,
+        where: transaction.block_hash != new_transaction.block_hash,
+        select: transaction.block_hash
+      )
+
+    block_hashes =
+      blocks_with_recollated_transactions
+      |> repo.all()
+      |> Enum.uniq()
+
+    if Enum.empty?(block_hashes) do
       {:ok, []}
     else
       query =
         from(
           block in Block,
-          where: block.hash in ^ordered_block_hashes,
-          update: [
-            set: [
-              consensus: false,
-              updated_at: ^updated_at
-            ]
-          ]
+          where: block.hash in ^block_hashes,
+          # Enforce Block ShareLocks order (see docs: sharelocks.md)
+          order_by: [asc: block.hash],
+          lock: "FOR UPDATE"
         )
 
       try do
-        {_, result} = repo.update_all(query, [], timeout: timeout)
+        {_, result} =
+          repo.update_all(
+            from(b in Block, join: s in subquery(query), on: b.hash == s.hash),
+            [set: [consensus: false, updated_at: updated_at]],
+            timeout: timeout
+          )
 
         {:ok, result}
       rescue
         postgrex_error in Postgrex.Error ->
-          {:error, %{exception: postgrex_error, block_hashes: ordered_block_hashes}}
+          {:error, %{exception: postgrex_error, block_hashes: block_hashes}}
       end
     end
   end

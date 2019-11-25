@@ -237,6 +237,16 @@ defmodule Explorer.Chain.Address do
     )
   end
 
+  @doc """
+  Counts all the addresses.
+  """
+  def count do
+    from(
+      a in Address,
+      select: fragment("COUNT(*)")
+    )
+  end
+
   defimpl String.Chars do
     @doc """
     Uses `hash` as string representation, formatting it according to the eip-55 specification

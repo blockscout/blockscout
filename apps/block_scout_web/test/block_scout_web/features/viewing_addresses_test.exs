@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     # Because ETS tables is shared for `Explorer.Counters.*`
     async: false
 
-  alias Explorer.Counters.AddressesWithBalanceCounter
+  alias Explorer.Counters.AddressesCounter
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
@@ -58,8 +58,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       [first_address | _] = addresses
       [last_address | _] = Enum.reverse(addresses)
 
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
+      start_supervised!(AddressesCounter)
+      AddressesCounter.consolidate()
 
       session
       |> AddressPage.visit_page()
@@ -259,143 +259,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       session
       |> assert_has(AddressPage.internal_transactions(count: 3))
       |> assert_has(AddressPage.internal_transaction(internal_transaction))
-    end
-  end
-
-  describe "viewing token transfers" do
-    test "contributor can see all token transfers that he sent", %{
-      addresses: addresses,
-      block: block,
-      session: session
-    } do
-      lincoln = addresses.lincoln
-      taft = addresses.taft
-
-      contract_address = insert(:contract_address)
-      insert(:token, contract_address: contract_address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: lincoln, to_address: contract_address)
-        |> with_block(block)
-
-      insert(
-        :token_transfer,
-        from_address: lincoln,
-        to_address: taft,
-        transaction: transaction,
-        token_contract_address: contract_address
-      )
-
-      session
-      |> AddressPage.visit_page(lincoln)
-      |> assert_has(AddressPage.token_transfers(transaction, count: 1))
-      |> assert_has(AddressPage.token_transfer(transaction, lincoln, count: 1))
-      |> assert_has(AddressPage.token_transfer(transaction, taft, count: 1))
-      |> refute_has(AddressPage.token_transfers_expansion(transaction))
-    end
-
-    test "contributor can see only token transfers related to him", %{
-      addresses: addresses,
-      block: block,
-      session: session
-    } do
-      lincoln = addresses.lincoln
-      taft = addresses.taft
-      morty = build(:address)
-
-      contract_address = insert(:contract_address)
-      insert(:token, contract_address: contract_address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: lincoln, to_address: contract_address)
-        |> with_block(block)
-
-      insert(
-        :token_transfer,
-        from_address: lincoln,
-        to_address: taft,
-        transaction: transaction,
-        token_contract_address: contract_address
-      )
-
-      insert(
-        :token_transfer,
-        from_address: lincoln,
-        to_address: morty,
-        transaction: transaction,
-        token_contract_address: contract_address
-      )
-
-      session
-      |> AddressPage.visit_page(morty)
-      |> assert_has(AddressPage.token_transfers(transaction, count: 1))
-      |> assert_has(AddressPage.token_transfer(transaction, lincoln, count: 1))
-      |> assert_has(AddressPage.token_transfer(transaction, morty, count: 1))
-      |> refute_has(AddressPage.token_transfer(transaction, taft, count: 1))
-    end
-
-    test "transactions with multiple token transfers shows only the first one by default", %{
-      addresses: addresses,
-      block: block,
-      session: session
-    } do
-      lincoln = addresses.lincoln
-      taft = addresses.taft
-
-      contract_address = insert(:contract_address)
-
-      insert(:token, contract_address: contract_address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: lincoln, to_address: contract_address)
-        |> with_block(block)
-
-      insert_list(
-        3,
-        :token_transfer,
-        from_address: lincoln,
-        to_address: taft,
-        transaction: transaction,
-        token_contract_address: contract_address
-      )
-
-      session
-      |> AddressPage.visit_page(lincoln)
-      |> assert_has(AddressPage.token_transfers(transaction, count: 1))
-    end
-
-    test "transaction with multiple token transfers shows all transfers if expanded", %{
-      addresses: addresses,
-      block: block,
-      session: session
-    } do
-      lincoln = addresses.lincoln
-      taft = addresses.taft
-
-      contract_address = insert(:contract_address)
-      insert(:token, contract_address: contract_address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: lincoln, to_address: contract_address)
-        |> with_block(block)
-
-      insert_list(
-        3,
-        :token_transfer,
-        from_address: lincoln,
-        to_address: taft,
-        transaction: transaction,
-        token_contract_address: contract_address
-      )
-
-      session
-      |> AddressPage.visit_page(lincoln)
-      |> click(AddressPage.token_transfers_expansion(transaction))
-      |> assert_has(AddressPage.token_transfers(transaction, count: 3))
     end
   end
 

@@ -1,7 +1,6 @@
+# credo:disable-for-this-file
 defmodule BlockScoutWeb.AddressContractController do
   use BlockScoutWeb, :controller
-
-  import BlockScoutWeb.AddressController, only: [transaction_and_validation_count: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -20,16 +19,13 @@ defmodule BlockScoutWeb.AddressContractController do
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
-      {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
-
       render(
         conn,
         "index.html",
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        transaction_count: transaction_count,
-        validation_count: validation_count
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
       )
     else
       :error ->
