@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1-node-browsers
+      - image: circleci/elixir:1.9.4-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -129,7 +129,7 @@ jobs:
   check_formatted:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -143,7 +143,7 @@ jobs:
   credo:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -177,7 +177,7 @@ jobs:
   dialyzer:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -247,7 +247,7 @@ jobs:
   gettext:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -286,7 +286,7 @@ jobs:
   release:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: prod
 
@@ -312,7 +312,7 @@ jobs:
   sobelow:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -336,7 +336,7 @@ jobs:
   # test_geth_http_websocket:
   #   docker:
   #     # Ensure .tool-versions matches
-  #     - image: circleci/elixir:1.9.1-node-browsers
+  #     - image: circleci/elixir:1.9.4-node-browsers
   #       environment:
   #         MIX_ENV: test
   #         # match POSTGRES_PASSWORD for postgres image below
@@ -390,7 +390,7 @@ jobs:
   # test_geth_mox:
   #   docker:
   #     # Ensure .tool-versions matches
-  #     - image: circleci/elixir:1.9.1-node-browsers
+  #     - image: circleci/elixir:1.9.4-node-browsers
   #       environment:
   #         MIX_ENV: test
   #         # match POSTGRES_PASSWORD for postgres image below
@@ -444,7 +444,7 @@ jobs:
   test_parity_http_websocket:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1-node-browsers
+      - image: circleci/elixir:1.9.4-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -498,7 +498,7 @@ jobs:
   test_parity_mox:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1-node-browsers
+      - image: circleci/elixir:1.9.4-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -552,7 +552,7 @@ jobs:
   coveralls_merge:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
