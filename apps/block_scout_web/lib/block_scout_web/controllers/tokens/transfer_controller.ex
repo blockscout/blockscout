@@ -25,8 +25,6 @@ defmodule BlockScoutWeb.Tokens.TransferController do
 
       transfers_json =
         Enum.map(token_transfers_paginated, fn transfer ->
-          IO.inspect(transfer)
-
           View.render_to_string(
             TransferView,
             "_token_transfer.html",
