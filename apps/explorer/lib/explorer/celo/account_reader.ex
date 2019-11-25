@@ -114,7 +114,6 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_account_data(account_address) do
-    res =
       call_methods([
         {:lockedgold, "getAccountTotalLockedGold", [account_address]},
         {:lockedgold, "getAccountNonvotingLockedGold", [account_address]},
@@ -123,8 +122,6 @@ defmodule Explorer.Celo.AccountReader do
         {:accounts, "getName", [account_address]},
         {:accounts, "getMetadataURL", [account_address]}
       ])
-
-    res
   end
 
   def fetch_claimed_account_data(address) do
@@ -148,8 +145,7 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_validators(bn) do
-    data = call_methods([{:election, "getCurrentValidatorSigners", []}], bn)
-    data
+    call_methods([{:election, "getCurrentValidatorSigners", []}], bn)
   end
 
   defp fetch_withdrawal_data(address) do
@@ -167,6 +163,8 @@ defmodule Explorer.Celo.AccountReader do
 
     methods
     |> Enum.map(&format_request/1)
+    |> Enum.filter(fn req -> req.contract_address != :error end)
+    |> Enum.map(fn %{contract_address: {:ok, address} } = req -> Map.put(req, :contract_address, address) end)
     |> Reader.query_contracts(contract_abi)
     |> Enum.zip(methods)
     |> Enum.into(%{}, fn {response, {_, function_name, _}} ->
@@ -179,6 +177,8 @@ defmodule Explorer.Celo.AccountReader do
 
     methods
     |> Enum.map(fn a -> format_request(a, bn) end)
+    |> Enum.filter(fn req -> req.contract_address != :error end)
+    |> Enum.map(fn %{contract_address: {:ok, address} } = req -> Map.put(req, :contract_address, address) end)
     |> Reader.query_contracts(contract_abi)
     |> Enum.zip(methods)
     |> Enum.into(%{}, fn {response, {_, function_name, _}} ->
@@ -229,8 +229,9 @@ defmodule Explorer.Celo.AccountReader do
         {function_name, response}
       end)
 
-    {:ok, [address]} = res["getAddressForString"]
-
-    "0x" <> Base.encode16(address)
+    case res["getAddressForString"] do
+      {:ok, [address]} -> {:ok, "0x" <> Base.encode16(address)}
+      _ -> :error
+    end
   end
 end

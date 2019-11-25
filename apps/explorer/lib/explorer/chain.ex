@@ -3655,6 +3655,10 @@ defmodule Explorer.Chain do
   end
 
   def query_leaderboard do
+    # Computes the leaderboard score
+    # For each account, the following is computed: cGLD balance + cUSD balance * exchange rate
+    # Each competitor can have several claimed accounts.
+    # Final final score is the sum of account scores modified with the multiplier that is read from Google sheets
     # \\x88f24de331525cf6cfd7455eb96a9e4d49b7f292 is the Stable token address
     result =
       SQL.query(Repo, """
