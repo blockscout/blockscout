@@ -11,6 +11,7 @@
 
 
 ### Fixes
+- [#2874](https://github.com/poanetwork/blockscout/pull/2874) - change index order blocks' number
 - [#2864](https://github.com/poanetwork/blockscout/pull/2864) - add token instance metadata type check
 - [#2855](https://github.com/poanetwork/blockscout/pull/2855) - Fix favicons load
 - [#2854](https://github.com/poanetwork/blockscout/pull/2854) - Fix all npm vulnerabilities
