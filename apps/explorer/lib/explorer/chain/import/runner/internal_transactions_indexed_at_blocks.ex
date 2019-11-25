@@ -49,36 +49,34 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsIndexedAtBlocks do
 
   defp update_blocks(_repo, [], %{}), do: {:ok, []}
 
-  defp update_blocks(repo, block_numbers, %{
+  defp update_blocks(repo, changes_list, %{
          timeout: timeout,
          timestamps: timestamps
        })
-       when is_list(block_numbers) do
-    ordered_block_numbers =
-      block_numbers
-      |> Enum.map(fn %{number: number} -> number end)
-      |> Enum.sort()
+       when is_list(changes_list) do
+    block_numbers = Enum.map(changes_list, fn %{number: number} -> number end)
 
     query =
       from(
         b in Block,
-        where: b.number in ^ordered_block_numbers and b.consensus,
-        update: [
-          set: [
-            internal_transactions_indexed_at: ^timestamps.updated_at
-          ]
-        ]
+        where: b.number in ^block_numbers and b.consensus,
+        # Enforce Block ShareLocks order (see docs: sharelocks.md)
+        order_by: [asc: b.hash],
+        lock: "FOR UPDATE"
       )
 
-    block_count = Enum.count(ordered_block_numbers)
-
     try do
-      {^block_count, result} = repo.update_all(query, [], timeout: timeout)
+      {_, result} =
+        repo.update_all(
+          from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.hash),
+          [set: [internal_transactions_indexed_at: timestamps.updated_at]],
+          timeout: timeout
+        )
 
       {:ok, result}
     rescue
       postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, block_numbers: ordered_block_numbers}}
+        {:error, %{exception: postgrex_error, block_numbers: block_numbers}}
     end
   end
 end

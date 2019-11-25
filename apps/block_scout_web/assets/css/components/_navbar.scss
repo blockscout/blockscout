@@ -25,6 +25,7 @@ $navbar-logo-width: auto !default;
   .navbar-nav {
     
     .nav-link {
+      outline: none;
       align-items: center;
       color: $header-links-color;
       display: flex;
@@ -92,7 +93,7 @@ $navbar-logo-width: auto !default;
   }
 
   .navbar-toggler {
-    border-color: $primary;
+    outline: none;
     color: $primary;
 
     .navbar-toggler-icon {
@@ -224,7 +225,7 @@ $navbar-logo-width: auto !default;
 }
 
 .navbar-logo {
-  max-height: $navbar-logo-height;
+  height: $navbar-logo-height;
   width: $navbar-logo-width;
 }
 

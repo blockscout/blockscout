@@ -32,7 +32,8 @@ defmodule BlockScoutWeb.AddressViewTest do
                partial: "_link.html",
                address: ^to_address,
                contract: false,
-               truncate: true
+               truncate: true,
+               use_custom_tooltip: false
              ] = AddressView.address_partial_selector(transaction, :to, nil, true)
     end
 
@@ -44,7 +45,8 @@ defmodule BlockScoutWeb.AddressViewTest do
                partial: "_link.html",
                address: ^to_address,
                contract: false,
-               truncate: false
+               truncate: false,
+               use_custom_tooltip: false
              ] = AddressView.address_partial_selector(transaction, :to, nil)
     end
 
@@ -56,7 +58,8 @@ defmodule BlockScoutWeb.AddressViewTest do
                partial: "_link.html",
                address: ^to_address,
                contract: false,
-               truncate: false
+               truncate: false,
+               use_custom_tooltip: false
              ] = AddressView.address_partial_selector(transaction, :to, nil)
     end
 
@@ -68,7 +71,8 @@ defmodule BlockScoutWeb.AddressViewTest do
                partial: "_responsive_hash.html",
                address: ^to_address,
                contract: false,
-               truncate: false
+               truncate: false,
+               use_custom_tooltip: false
              ] = AddressView.address_partial_selector(transaction, :to, transaction.to_address)
     end
 
@@ -81,7 +85,8 @@ defmodule BlockScoutWeb.AddressViewTest do
                partial: "_link.html",
                address: ^contract_address,
                contract: true,
-               truncate: false
+               truncate: false,
+               use_custom_tooltip: false
              ] = AddressView.address_partial_selector(transaction, :to, transaction.to_address)
     end
 
@@ -94,7 +99,8 @@ defmodule BlockScoutWeb.AddressViewTest do
                partial: "_responsive_hash.html",
                address: ^contract_address,
                contract: true,
-               truncate: false
+               truncate: false,
+               use_custom_tooltip: false
              ] = AddressView.address_partial_selector(transaction, :to, contract_address)
     end
 
@@ -106,7 +112,8 @@ defmodule BlockScoutWeb.AddressViewTest do
                partial: "_link.html",
                address: ^to_address,
                contract: false,
-               truncate: false
+               truncate: false,
+               use_custom_tooltip: false
              ] = AddressView.address_partial_selector(transaction, :to, nil)
     end
 
@@ -118,7 +125,8 @@ defmodule BlockScoutWeb.AddressViewTest do
                partial: "_responsive_hash.html",
                address: ^from_address,
                contract: false,
-               truncate: false
+               truncate: false,
+               use_custom_tooltip: false
              ] = AddressView.address_partial_selector(transaction, :from, transaction.from_address)
     end
   end

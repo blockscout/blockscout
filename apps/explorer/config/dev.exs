@@ -18,6 +18,11 @@ config :logger, :reading_token_functions,
   path: Path.absname("logs/dev/explorer/tokens/reading_functions.log"),
   metadata_filter: [fetcher: :token_functions]
 
+config :logger, :token_instances,
+  level: :debug,
+  path: Path.absname("logs/dev/explorer/tokens/token_instances.log"),
+  metadata_filter: [fetcher: :token_instances]
+
 import_config "dev.secret.exs"
 
 variant =

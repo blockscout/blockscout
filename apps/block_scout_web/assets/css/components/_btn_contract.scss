@@ -1,0 +1,6 @@
+$btn-contract-color: $primary !default;
+$btn-contract-dimensions: 31px !default;
+
+.btn-contract-icon {
+  @include square-icon-button($btn-contract-color, $btn-contract-dimensions);
+}

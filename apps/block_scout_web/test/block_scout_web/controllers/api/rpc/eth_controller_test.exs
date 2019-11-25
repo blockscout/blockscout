@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.EthControllerTest do
   use BlockScoutWeb.ConnCase, async: false
 
-  alias Explorer.Counters.{AddressesWithBalanceCounter, AverageBlockTime}
+  alias Explorer.Counters.{AddressesCounter, AverageBlockTime}
   alias Explorer.Repo
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
     start_supervised!(AverageBlockTime)
     start_supervised!({CoinBalanceOnDemand, [mocked_json_rpc_named_arguments, [name: CoinBalanceOnDemand]]})
-    start_supervised!(AddressesWithBalanceCounter)
+    start_supervised!(AddressesCounter)
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true)
 
