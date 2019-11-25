@@ -149,7 +149,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number),
-        preload: [{:transaction, :block}, :token, :from_address, :to_address],
+        preload: [{:transaction, :block}, :block, :token, :from_address, :to_address],
         order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
