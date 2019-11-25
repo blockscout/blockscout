@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
     # ETS tables are shared in `Explorer.Counters.*`
     async: false
 
-  alias Explorer.Counters.AddressesWithBalanceCounter
+  alias Explorer.Counters.AddressesCounter
 
   describe "GET index/2" do
     test "returns top addresses", %{conn: conn} do
@@ -12,8 +12,8 @@ defmodule BlockScoutWeb.AddressControllerTest do
         |> Enum.map(&insert(:address, fetched_coin_balance: &1))
         |> Enum.map(& &1.hash)
 
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
+      start_supervised!(AddressesCounter)
+      AddressesCounter.consolidate()
 
       conn = get(conn, address_path(conn, :index, %{type: "JSON"}))
       {:ok, %{"items" => items}} = Poison.decode(conn.resp_body)
@@ -25,8 +25,8 @@ defmodule BlockScoutWeb.AddressControllerTest do
       address = insert(:address, fetched_coin_balance: 1)
       insert(:address_name, address: address, primary: true, name: "POA Wallet")
 
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
+      start_supervised!(AddressesCounter)
+      AddressesCounter.consolidate()
 
       conn = get(conn, address_path(conn, :index, %{type: "JSON"}))
 
@@ -43,6 +43,19 @@ defmodule BlockScoutWeb.AddressControllerTest do
       conn = get(conn, "/address/0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
 
       assert redirected_to(conn) =~ "/address/0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed/transactions"
+    end
+  end
+
+  describe "GET address_counters/2" do
+    test "returns address counters" do
+      address = insert(:address)
+
+      conn = get(conn, "/address_counters", %{"id" => to_string(address.hash)})
+
+      assert conn.status == 200
+      {:ok, response} = Jason.decode(conn.resp_body)
+
+      assert %{"transaction_count" => 0, "validation_count" => 0} == response
     end
   end
 end

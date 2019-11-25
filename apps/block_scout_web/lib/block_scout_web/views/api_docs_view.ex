@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.APIDocsView do
     end)
   end
 
-  defp blockscout_url do
+  def blockscout_url do
     url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
     host = url_params[:host]
     path = url_params[:path]

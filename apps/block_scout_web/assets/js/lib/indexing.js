@@ -20,6 +20,6 @@ export function updateIndexStatus (msg = {}) {
 }
 updateIndexStatus()
 
-const indexingChannel = socket.channel(`blocks:indexing`)
+const indexingChannel = socket.channel('blocks:indexing')
 indexingChannel.join()
 indexingChannel.on('index_status', (msg) => updateIndexStatus(humps.camelizeKeys(msg)))

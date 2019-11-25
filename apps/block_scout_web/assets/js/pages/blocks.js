@@ -91,7 +91,7 @@ if ($blockListPage.length || $uncleListPage.length || $reorgListPage.length) {
   )
   connectElements({ store, elements })
 
-  const blocksChannel = socket.channel(`blocks:new_block`, {})
+  const blocksChannel = socket.channel('blocks:new_block', {})
   blocksChannel.join()
   blocksChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'
