@@ -25,6 +25,7 @@ defmodule Indexer.Block.Fetcher do
     StakingPools,
     Token,
     TokenBalance,
+    TokenInstance,
     UncleBlock
   }
 
@@ -228,6 +229,12 @@ defmodule Indexer.Block.Fetcher do
 
     callback_module.import(state, options_with_broadcast)
   end
+
+  def async_import_token_instances(%{token_transfers: token_transfers}) do
+    TokenInstance.async_fetch(token_transfers)
+  end
+
+  def async_import_token_instances(_), do: :ok
 
   def async_import_block_rewards([]), do: :ok
 

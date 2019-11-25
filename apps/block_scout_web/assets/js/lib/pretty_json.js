@@ -1,8 +1,8 @@
 import $ from 'jquery'
 
 function prettyPrint (element) {
-  let jsonString = element.dataset.json
-  let pretty = JSON.stringify(JSON.parse(jsonString), undefined, 2)
+  const jsonString = element.dataset.json
+  const pretty = JSON.stringify(JSON.parse(jsonString), undefined, 2)
   element.innerHTML = pretty
 }
 

@@ -38,11 +38,11 @@
         <div class="d-flex flex-column mt-2">
           <% [first_token_transfer | remaining_token_transfers] = @transaction.token_transfers %>
 
-          <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: first_token_transfer, conn: @conn %>
+          <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: first_token_transfer %>
 
           <div class="collapse token-transfer-toggle" id="transaction-<%= @transaction.hash %>">
             <%= for token_transfer <- remaining_token_transfers do %>
-              <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer, conn: @conn %>
+              <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer %>
             <% end %>
           </div>
         </div>

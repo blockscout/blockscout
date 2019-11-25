@@ -547,7 +547,8 @@ defmodule Explorer.Factory do
     %Instance{
       token_contract_address_hash: build(:address),
       token_id: 5,
-      metadata: %{key: "value"}
+      metadata: %{key: "value"},
+      error: nil
     }
   end
 

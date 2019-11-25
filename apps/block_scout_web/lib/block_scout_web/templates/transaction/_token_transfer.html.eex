@@ -22,7 +22,7 @@
   <span class="col-xs-12 col-lg-4 ml-3 ml-sm-0 text-truncate">
     <%= case token_transfer_amount(@token_transfer) do %>
       <% {:ok, :erc721_instance} -> %>
-        <%= "TokenID ["%><%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show,  @token_transfer.token.contract_address_hash, to_string(@token_transfer.token_id))) %><%= "] " %>
+        <%= "TokenID ["%><%= link(@token_transfer.token_id, to: token_instance_path(BlockScoutWeb.Endpoint, :show,  @token_transfer.token.contract_address_hash, to_string(@token_transfer.token_id))) %><%= "] " %>
       <% {:ok, value} -> %>
         <%= "#{value} " %>
     <% end %>

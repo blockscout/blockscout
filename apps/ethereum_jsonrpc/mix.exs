@@ -90,7 +90,9 @@ defmodule EthereumJsonrpc.MixProject do
       # `EthereumJSONRPC.WebSocket`
       {:websocket_client, "~> 1.3"},
       {:decimal, "~> 1.0"},
-      {:decorator, "~> 1.2"}
+      {:decorator, "~> 1.2"},
+      {:hackney, "~> 1.15.2"},
+      {:poolboy, "~> 1.5.2"}
     ]
   end
 end
