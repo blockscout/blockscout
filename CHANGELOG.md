@@ -24,6 +24,7 @@
 - [#2800](https://github.com/poanetwork/blockscout/pull/2800) - return not found for not verified contract for token read_contract
 - [#2806](https://github.com/poanetwork/blockscout/pull/2806) - Fix blocks fetching on the main page
 - [#2803](https://github.com/poanetwork/blockscout/pull/2803) - Fix block validator custom tooltip
+- [#2690](https://github.com/poanetwork/blockscout/pull/2690) - do not stich json rpc config into module for net version cache
 
 ### Chore
 - [#2859](https://github.com/poanetwork/blockscout/pull/2859) - Add eth_blockNumber API endpoint to eth_rpc section
