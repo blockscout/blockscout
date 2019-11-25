@@ -3661,25 +3661,23 @@ defmodule Explorer.Chain do
     # Final final score is the sum of account scores modified with the multiplier that is read from Google sheets
     result =
       SQL.query(Repo, """
-        SELECT competitors.address, b.name, SUM(rate*value+balance+locked_balance)*multiplier AS score
+        SELECT
+          competitors.address,
+          COALESCE(( SELECT name FROM celo_account WHERE address =  competitors.address), 'Unknown account'),
+          SUM(rate*token_balance+balance+locked_balance)*multiplier AS score
         FROM exchange_rates, competitors, celo_account as b, tokens, claims,
-          (SELECT claims.claimed_address AS address,
-             COALESCE(SUM(value),0) AS value,
-             COALESCE(SUM(fetched_coin_balance),0) AS balance,
-             COALESCE(SUM(a.locked_gold),0) AS locked_balance
-          FROM address_current_token_balances, claims, tokens, addresses, celo_account as a
-          WHERE address_hash = claims.claimed_address
-          AND a.address = address_hash
-          AND addresses.hash = a.address
-          AND token_contract_address_hash = tokens.contract_address_hash
-          AND tokens.symbol = 'cUSD'
-          GROUP BY claims.claimed_address) AS get
+         ( SELECT claims.address AS c_address, claims.claimed_address AS address,
+              COALESCE((SELECT value FROM address_current_token_balances, tokens WHERE claimed_address = address_hash
+                        AND token_contract_address_hash = tokens.contract_address_hash AND tokens.symbol = 'cUSD'), 0) as token_balance,
+              COALESCE((SELECT fetched_coin_balance FROM addresses WHERE claimed_address = hash), 0) as balance,
+              COALESCE((SELECT locked_gold FROM celo_account WHERE claimed_address = address), 0) as locked_balance 
+            FROM claims ) AS get
         WHERE exchange_rates.token = tokens.contract_address_hash
         AND tokens.symbol = 'cUSD'
         AND claims.claimed_address = get.address
         AND claims.address = competitors.address
-        AND competitors.address = b.address
-        GROUP BY competitors.address, multiplier, b.name
+        AND claims.address = c_address
+        GROUP BY competitors.address, multiplier
         ORDER BY score DESC
       """)
 
