@@ -76,6 +76,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
         reducer.(block_number, acc)
       end)
 
+    :ok = Chain.remove_nonconsensus_blocks_from_pending_ops()
+
     final
   end
 

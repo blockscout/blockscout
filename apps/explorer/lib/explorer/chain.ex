@@ -38,6 +38,7 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
+    PendingBlockOperation,
     SmartContract,
     StakingPool,
     Token,
@@ -1639,6 +1640,21 @@ defmodule Explorer.Chain do
       )
 
     Repo.stream_reduce(query, initial, reducer)
+  end
+
+  @spec remove_nonconsensus_blocks_from_pending_ops() :: :ok
+  def remove_nonconsensus_blocks_from_pending_ops do
+    query =
+      from(
+        po in PendingBlockOperation,
+        inner_join: block in Block,
+        on: block.hash == po.block_hash,
+        where: block.consensus == false
+      )
+
+    {_, _} = Repo.delete_all(query)
+
+    :ok
   end
 
   @spec stream_transactions_with_unfetched_created_contract_codes(
