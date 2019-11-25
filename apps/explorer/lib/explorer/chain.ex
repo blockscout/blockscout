@@ -3655,23 +3655,30 @@ defmodule Explorer.Chain do
   end
 
   def query_leaderboard do
-    # \\x88f24de331525cf6cfd7455eb96a9e4d49b7f292 is the Stable token address
+    # Computes the leaderboard score
+    # For each account, the following is computed: cGLD balance + cUSD balance * exchange rate
+    # Each competitor can have several claimed accounts.
+    # Final final score is the sum of account scores modified with the multiplier that is read from Google sheets
     result =
       SQL.query(Repo, """
-        SELECT competitors.address, b.name, SUM(rate*value+fetched_coin_balance+celo_account.locked_gold)*multiplier AS score
-        FROM addresses, exchange_rates, competitors, claims, celo_account, celo_account as b,
-          (SELECT claims.claimed_address AS address, COALESCE(SUM(value),0) AS value
-          FROM address_current_token_balances, claims
-          WHERE address_hash=claims.claimed_address
-          AND token_contract_address_hash='\\x88f24de331525cf6cfd7455eb96a9e4d49b7f292'
-          GROUP BY claims.claimed_address) AS get
-        WHERE  token='\\x88f24de331525cf6cfd7455eb96a9e4d49b7f292'
+        SELECT
+          competitors.address,
+          COALESCE(( SELECT name FROM celo_account WHERE address =  competitors.address), 'Unknown account'),
+          SUM(rate*token_balance+balance+locked_balance)*multiplier AS score
+        FROM exchange_rates, competitors, celo_account as b, tokens, claims,
+         ( SELECT claims.address AS c_address, claims.claimed_address AS address,
+              COALESCE((SELECT value FROM address_current_token_balances, tokens WHERE claimed_address = address_hash
+                        AND token_contract_address_hash = tokens.contract_address_hash AND tokens.symbol = 'cUSD'), 0) as token_balance,
+              COALESCE((SELECT fetched_coin_balance FROM addresses WHERE claimed_address = hash), 0) as balance,
+              COALESCE((SELECT locked_gold FROM celo_account WHERE claimed_address = address), 0) as locked_balance 
+            FROM claims ) AS get
+        WHERE exchange_rates.token = tokens.contract_address_hash
+        AND tokens.symbol = 'cUSD'
         AND claims.claimed_address = get.address
-        AND celo_account.address = addresses.hash
         AND claims.address = competitors.address
-        AND competitors.address = b.address
-        GROUP BY competitors.address, multiplier, b.name
-        ORDER BY score
+        AND claims.address = c_address
+        GROUP BY competitors.address, multiplier
+        ORDER BY score DESC
       """)
 
     case result do

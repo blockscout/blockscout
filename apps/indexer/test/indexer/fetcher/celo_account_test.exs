@@ -4,9 +4,6 @@ defmodule Indexer.Fetcher.CeloAccountsTest do
 
   import Mox
 
-  # alias Explorer.Chain.{Address, Hash, CeloAccount}
-  # alias Indexer.Fetcher.CeloAccount
-
   @moduletag :capture_log
 
   setup :verify_on_exit!

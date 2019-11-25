@@ -111,10 +111,6 @@ defmodule Indexer.Block.Fetcher do
     struct!(__MODULE__, named_arguments)
   end
 
-  #  defp append_logs(extra_logs, %{logs: logs, receipts: receipts}) do
-  #    %{logs: logs ++ extra_logs, receipts: receipts}
-  #  end
-
   defp process_extra_logs(extra_logs) do
     e_logs =
       extra_logs
@@ -183,7 +179,6 @@ defmodule Indexer.Block.Fetcher do
              token_transfers: token_transfers,
              transactions: transactions_with_receipts
            }),
-         #         addresses = Enum.filter(addresses_raw, fn a -> a.hash != "0x0000000000000000000000000000000000000000" end),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
