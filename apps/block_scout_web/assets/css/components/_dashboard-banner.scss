@@ -60,8 +60,8 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
 
   @include media-breakpoint-down(md) {
     flex-grow: 0;
-    margin-bottom: 20px;
-    margin-top: auto;
+    margin-top: 20px;
+    margin-bottom: auto;
     max-width: 100%;
   }
 
