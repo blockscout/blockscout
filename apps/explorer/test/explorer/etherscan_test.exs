@@ -846,7 +846,12 @@ defmodule Explorer.EtherscanTest do
         |> insert()
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction)
+      token_transfer =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number
+        )
 
       [found_token_transfer] = Etherscan.list_token_transfers(token_transfer.to_address_hash, nil)
 
