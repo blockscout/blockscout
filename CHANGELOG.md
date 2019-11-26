@@ -28,6 +28,7 @@
 - [#2690](https://github.com/poanetwork/blockscout/pull/2690) - do not stich json rpc config into module for net version cache
 
 ### Chore
+- [#2878](https://github.com/poanetwork/blockscout/pull/2878) - Decrease loaders showing delay on the main page
 - [#2859](https://github.com/poanetwork/blockscout/pull/2859) - Add eth_blockNumber API endpoint to eth_rpc section
 - [#2846](https://github.com/poanetwork/blockscout/pull/2846) - Remove networks images preload
 - [#2845](https://github.com/poanetwork/blockscout/pull/2845) - Set outline none for nav dropdown item in mobile view (fix for Safari)
