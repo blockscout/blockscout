@@ -4,7 +4,6 @@ import humps from 'humps'
 import numeral from 'numeral'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
-import { showLoader } from '../lib/utils'
 
 const config = {
   type: 'line',
@@ -76,7 +75,7 @@ const config = {
   }
 }
 
-function getDataFromLocalStorage(key) {
+function getDataFromLocalStorage (key) {
   const data = window.localStorage.getItem(key)
   return data ? JSON.parse(data) : []
 }
@@ -101,7 +100,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
     return { x: date, y: closingPrice * supply }
   })
   window.localStorage.setItem('marketCapData', JSON.stringify(data))
-  return data;
+  return data
 }
 
 // colors for light and dark theme
