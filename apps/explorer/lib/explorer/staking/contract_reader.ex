@@ -20,8 +20,6 @@ defmodule Explorer.Staking.ContractReader do
       pools_likelihood: {:staking, "getPoolsLikelihood", []},
       validators: {:validator_set, "getValidators", []},
       unremovable_validator: {:validator_set, "unremovableValidator", []},
-      # pending_validators: {:validator_set, "getPendingValidators", []},
-      # be_finalized_validators: {:validator_set, "validatorsToBeFinalized", []},
       validator_set_apply_block: {:validator_set, "validatorSetApplyBlock", []}
     ]
   end
@@ -50,13 +48,13 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
-  def delegator_requests(pool_staking_address, delegator_address) do
+  def staker_requests(pool_staking_address, staker_address) do
     [
-      stake_amount: {:staking, "stakeAmount", [pool_staking_address, delegator_address]},
-      ordered_withdraw: {:staking, "orderedWithdrawAmount", [pool_staking_address, delegator_address]},
-      max_withdraw_allowed: {:staking, "maxWithdrawAllowed", [pool_staking_address, delegator_address]},
-      max_ordered_withdraw_allowed: {:staking, "maxWithdrawOrderAllowed", [pool_staking_address, delegator_address]},
-      ordered_withdraw_epoch: {:staking, "orderWithdrawEpoch", [pool_staking_address, delegator_address]}
+      max_ordered_withdraw_allowed: {:staking, "maxWithdrawOrderAllowed", [pool_staking_address, staker_address]},
+      max_withdraw_allowed: {:staking, "maxWithdrawAllowed", [pool_staking_address, staker_address]},
+      ordered_withdraw: {:staking, "orderedWithdrawAmount", [pool_staking_address, staker_address]},
+      ordered_withdraw_epoch: {:staking, "orderWithdrawEpoch", [pool_staking_address, staker_address]},
+      stake_amount: {:staking, "stakeAmount", [pool_staking_address, staker_address]}
     ]
   end
 
