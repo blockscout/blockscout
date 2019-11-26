@@ -73,7 +73,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
   @doc """
   Builds an `Ecto.Query` to fetch the unfetched token balances.
 
-  Unfetched token balances are the ones that have the column `value_fetched_at` nil. This query also
+  Unfetched token balances are the ones that have the column `value_fetched_at` nil or the value is null. This query also
   ignores the burn_address for tokens ERC-721 since the most tokens ERC-721 don't allow get the
   balance for burn_address.
   """
@@ -82,7 +82,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
       tb in TokenBalance,
       join: t in Token,
       on: tb.token_contract_address_hash == t.contract_address_hash,
-      where: is_nil(tb.value_fetched_at),
+      where: is_nil(tb.value_fetched_at) or is_nil(tb.value),
       where: (tb.address_hash != ^@burn_address_hash and t.type != "ERC-721") or t.type == "ERC-20"
     )
   end
