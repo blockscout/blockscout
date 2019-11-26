@@ -120,6 +120,7 @@ defmodule Explorer.Staking.ContractState do
   end
 
   defp fetch_state(contracts, abi, block_number) do
+    # read general info from the contracts (including pool list and validator list)
     global_responses = ContractReader.perform_requests(ContractReader.global_requests(), contracts, abi)
     token = get_token(global_responses.token_contract_address)
 
@@ -138,12 +139,14 @@ defmodule Explorer.Staking.ContractState do
       |> Map.to_list()
       |> Enum.concat(token: token)
 
+    # save the general info in ETS (excluding pool list and validator list)
     :ets.insert(@table_name, settings)
 
     pools = global_responses.active_pools ++ global_responses.inactive_pools
     is_validator = Enum.into(global_responses.validators, %{}, &{hash_to_string(&1), true})
     unremovable_validator = global_responses.unremovable_validator
 
+    # read info about each pool from the contracts (including delegator list)
     pool_staking_responses =
       pools
       |> Enum.map(&ContractReader.pool_staking_requests/1)
@@ -154,20 +157,23 @@ defmodule Explorer.Staking.ContractState do
       |> Enum.map(&ContractReader.pool_mining_requests(pool_staking_responses[&1].mining_address_hash))
       |> ContractReader.perform_grouped_requests(pools, contracts, abi)
 
-    delegators =
-      Enum.flat_map(pool_staking_responses, fn {pool_address, responses} ->
-        [{pool_address, pool_address, true}] ++
-          Enum.map(responses.active_delegators, &{pool_address, &1, true}) ++
-          Enum.map(responses.inactive_delegators, &{pool_address, &1, false})
+    # form a flat list of all stakers in the form {pool_staking_address, staker_address, is_active}
+    stakers =
+      Enum.flat_map(pool_staking_responses, fn {pool_staking_address, resp} ->
+        [{pool_staking_address, pool_staking_address, true}] ++
+          Enum.map(resp.active_delegators, &{pool_staking_address, &1, true}) ++
+          Enum.map(resp.inactive_delegators, &{pool_staking_address, &1, false})
       end)
 
-    delegator_responses =
-      delegators
-      |> Enum.map(fn {pool_address, delegator_address, _} ->
-        ContractReader.delegator_requests(pool_address, delegator_address)
+    # get amounts for each of the stakers
+    staker_responses =
+      stakers
+      |> Enum.map(fn {pool_staking_address, staker_address, _} ->
+        ContractReader.staker_requests(pool_staking_address, staker_address)
       end)
-      |> ContractReader.perform_grouped_requests(delegators, contracts, abi)
+      |> ContractReader.perform_grouped_requests(stakers, contracts, abi)
 
+    # calculate total amount staked into all active pools
     staked_total = Enum.sum(for {_, pool} <- pool_staking_responses, pool.is_active, do: pool.total_staked_amount)
 
     [likelihood_values, total_likelihood] = global_responses.pools_likelihood
@@ -177,7 +183,7 @@ defmodule Explorer.Staking.ContractState do
       |> Enum.zip(likelihood_values)
       |> Enum.into(%{})
 
-    pool_staking_keys = Enum.map(pool_staking_responses, fn {key, _response} -> key end)
+    pool_staking_keys = Enum.map(pool_staking_responses, fn {key, _} -> key end)
 
     pool_reward_responses =
       pool_staking_responses
@@ -191,10 +197,10 @@ defmodule Explorer.Staking.ContractState do
       end)
       |> ContractReader.perform_grouped_requests(pool_staking_keys, contracts, abi)
 
-    delegator_keys = Enum.map(delegator_responses, fn {key, _response} -> key end)
+    delegator_keys = Enum.map(staker_responses, fn {key, _} -> key end)
 
     delegator_reward_responses =
-      delegator_responses
+      staker_responses
       |> Enum.map(fn {{pool_address, _, _}, response} ->
         staking_response = pool_staking_responses[pool_address]
 
@@ -231,26 +237,26 @@ defmodule Explorer.Staking.ContractState do
         }
         |> Map.merge(
           Map.take(staking_response, [
-            :mining_address_hash,
             :is_active,
-            :total_staked_amount,
-            :self_staked_amount
+            :mining_address_hash,
+            :self_staked_amount,
+            :total_staked_amount
           ])
         )
         |> Map.merge(
           Map.take(mining_response, [
-            :was_validator_count,
-            :is_banned,
             :are_delegators_banned,
-            :banned_until,
             :banned_delegators_until,
-            :was_banned_count
+            :banned_until,
+            :is_banned,
+            :was_banned_count,
+            :was_validator_count
           ])
         )
       end)
 
     delegator_entries =
-      Enum.map(delegator_responses, fn {{pool_address, delegator_address, is_active}, response} ->
+      Enum.map(staker_responses, fn {{pool_address, delegator_address, is_active}, response} ->
         delegator_reward_response = delegator_reward_responses[{pool_address, delegator_address, is_active}]
 
         Map.merge(response, %{
@@ -269,16 +275,12 @@ defmodule Explorer.Staking.ContractState do
       })
 
     if global_responses.epoch_start_block == block_number + 1 do
-      with(
-        true <- :ets.insert(@table_name, is_snapshotted: false),
-        {:ok, _} <-
-          StakeSnapshotting.start_snapshotting(
-            %{contracts: contracts, abi: abi, global_responses: global_responses},
-            block_number
-          )
-      ) do
-        :ets.insert(@table_name, is_snapshotted: true)
-      end
+      spawn(StakeSnapshotting, :do_snapshotting, [
+        %{contracts: contracts, abi: abi, epoch_number: global_responses.epoch_number, ets_table_name: @table_name},
+        pool_staking_responses,
+        Map.new(Enum.map(staker_responses, fn {key, resp} -> {pool_staking_address, staker_address, _} = key; {{pool_staking_address, staker_address}, resp} end)),
+        block_number # the last block of the finished staking epoch
+      ])
     end
 
     Publisher.broadcast(:staking_update)
