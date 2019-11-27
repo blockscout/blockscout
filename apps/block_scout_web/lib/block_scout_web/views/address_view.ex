@@ -325,7 +325,8 @@ defmodule BlockScoutWeb.AddressView do
 
   def short_contract_name(name, max_length) do
     part_length = Kernel.trunc(max_length / 4)
-    if (String.length(name) <= max_length),
+
+    if String.length(name) <= max_length,
       do: name,
       else: "#{String.slice(name, 0, max_length - part_length)}..#{String.slice(name, -part_length, part_length)}"
   end
