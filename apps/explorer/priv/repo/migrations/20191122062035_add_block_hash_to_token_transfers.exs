@@ -29,5 +29,7 @@ defmodule Explorer.Repo.Migrations.AddBlockHashToTokenTransfers do
     DROP CONSTRAINT token_transfers_pkey,
     ADD PRIMARY KEY (transaction_hash, block_hash, log_index);
     """)
+
+    drop(unique_index(:token_transfers, [:transaction_hash, :log_index]))
   end
 end
