@@ -134,7 +134,9 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
         transaction: transaction,
         index: 0,
         from_address: address,
-        call_type: :call
+        call_type: :call,
+        block_hash: transaction.block_hash,
+        block_index: 0
       }
 
       internal_transaction =
@@ -259,11 +261,28 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
     end
 
     test "internal transactions are ordered by ascending index", %{conn: conn} do
-      transaction = insert(:transaction)
+      transaction = insert(:transaction) |> with_block()
 
-      insert(:internal_transaction, transaction: transaction, index: 2)
-      insert(:internal_transaction, transaction: transaction, index: 0)
-      insert(:internal_transaction, transaction: transaction, index: 1)
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_hash: transaction.block_hash,
+        block_index: 2
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 0,
+        block_hash: transaction.block_hash,
+        block_index: 0
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_hash: transaction.block_hash,
+        block_index: 1
+      )
 
       query = """
       query ($hash: FullHash!, $first: Int!) {
@@ -370,11 +389,28 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
       #
       # This test ensures support for a 'count' argument.
 
-      transaction = insert(:transaction)
+      transaction = insert(:transaction) |> with_block()
 
-      insert(:internal_transaction, transaction: transaction, index: 2)
-      insert(:internal_transaction, transaction: transaction, index: 0)
-      insert(:internal_transaction, transaction: transaction, index: 1)
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_hash: transaction.block_hash,
+        block_index: 2
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 0,
+        block_hash: transaction.block_hash,
+        block_index: 0
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_hash: transaction.block_hash,
+        block_index: 1
+      )
 
       query = """
       query ($hash: FullHash!, $last: Int!, $count: Int!) {
@@ -407,10 +443,15 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
     end
 
     test "pagination support with 'first' and 'after' arguments", %{conn: conn} do
-      transaction = insert(:transaction)
+      transaction = insert(:transaction) |> with_block()
 
       for index <- 0..5 do
-        insert(:internal_transaction_create, transaction: transaction, index: index)
+        insert(:internal_transaction_create,
+          transaction: transaction,
+          index: index,
+          block_hash: transaction.block_hash,
+          block_index: index
+        )
       end
 
       query1 = """
