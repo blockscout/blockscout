@@ -1,9 +1,10 @@
 defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
   @moduledoc """
-  Bulk imports delegators to StakingPoolsDelegator tabe.
+  Bulk imports delegators to StakingPoolsDelegator table.
   """
 
   require Ecto.Query
+  require Logger
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Import, StakingPoolsDelegator}
@@ -106,13 +107,11 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
       update: [
         set: [
           stake_amount: fragment("EXCLUDED.stake_amount"),
-          snapshotted_stake_amount: delegator.snapshotted_stake_amount,
           ordered_withdraw: fragment("EXCLUDED.ordered_withdraw"),
           max_withdraw_allowed: fragment("EXCLUDED.max_withdraw_allowed"),
           max_ordered_withdraw_allowed: fragment("EXCLUDED.max_ordered_withdraw_allowed"),
           ordered_withdraw_epoch: fragment("EXCLUDED.ordered_withdraw_epoch"),
           reward_ratio: fragment("EXCLUDED.reward_ratio"),
-          snapshotted_reward_ratio: delegator.snapshotted_reward_ratio,
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", delegator.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", delegator.updated_at),
           is_active: fragment("EXCLUDED.is_active"),
