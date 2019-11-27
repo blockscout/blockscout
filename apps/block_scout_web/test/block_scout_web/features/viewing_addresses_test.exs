@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     test "see the contract creator and transaction links", %{session: session} do
       address = insert(:address)
       contract = insert(:contract_address)
-      transaction = insert(:transaction, from_address: address, created_contract_address: contract)
+      transaction = insert(:transaction, from_address: address, created_contract_address: contract) |> with_block()
 
       internal_transaction =
         insert(
@@ -88,7 +88,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           index: 1,
           transaction: transaction,
           from_address: address,
-          created_contract_address: contract
+          created_contract_address: contract,
+          block_hash: transaction.block_hash,
+          block_index: 1
         )
 
       address_hash = AddressView.trimmed_hash(address.hash)
@@ -102,7 +104,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     test "see the contract creator and transaction links even when the creator is another contract", %{session: session} do
       lincoln = insert(:address)
       contract = insert(:contract_address)
-      transaction = insert(:transaction)
+      transaction = insert(:transaction) |> with_block()
       another_contract = insert(:contract_address)
 
       insert(
@@ -112,7 +114,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: lincoln,
         to_address: contract,
         created_contract_address: contract,
-        type: :call
+        type: :call,
+        block_hash: transaction.block_hash,
+        block_index: 1
       )
 
       internal_transaction =
@@ -121,7 +125,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           index: 2,
           transaction: transaction,
           from_address: contract,
-          created_contract_address: another_contract
+          created_contract_address: another_contract,
+          block_hash: transaction.block_hash,
+          block_index: 2
         )
 
       contract_hash = AddressView.trimmed_hash(contract.hash)
@@ -208,7 +214,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           to_address: address,
           index: 1,
           block_number: 7000,
-          transaction_index: 1
+          transaction_index: 1,
+          block_hash: transaction.block_hash,
+          block_index: 1
         )
 
       insert(:internal_transaction,
@@ -216,7 +224,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: address,
         index: 2,
         block_number: 8000,
-        transaction_index: 2
+        transaction_index: 2,
+        block_hash: transaction.block_hash,
+        block_index: 2
       )
 
       {:ok, %{internal_transaction_lincoln_to_address: internal_transaction_lincoln_to_address}}
@@ -251,7 +261,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           index: 2,
           from_address: addresses.lincoln,
           block_number: transaction.block_number,
-          transaction_index: transaction.index
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
+          block_index: 2
         )
 
       Notifier.handle_event({:chain_event, :internal_transactions, :realtime, [internal_transaction]})
