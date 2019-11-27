@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Cache.BlockCountTest do
     :ok
   end
 
-  test "returns default transaction count" do
+  test "returns default block count" do
     result = BlockCount.get_count()
 
     assert is_nil(result)
