@@ -22,6 +22,7 @@ defmodule Explorer.Chain.Events.Publisher do
 
   defp send_data(event_type) do
     payload = encode_payload({:chain_event, event_type})
+
     if byte_size(payload) < 7500 do
       @sender.send_notify(payload)
     end
@@ -34,6 +35,7 @@ defmodule Explorer.Chain.Events.Publisher do
 
   defp send_data(event_type, broadcast_type, event_data) do
     payload = encode_payload({:chain_event, event_type, broadcast_type, event_data})
+
     if byte_size(payload) < 7500 do
       @sender.send_notify(payload)
     end
