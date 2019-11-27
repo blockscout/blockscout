@@ -1475,7 +1475,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/index.html.eex:6
-msgid "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests."
+msgid "This API is provided for developers transitioning their applications from NextyExplorer to BlockScout. It supports GET and POST requests."
 msgstr ""
 
 #, elixir-format
