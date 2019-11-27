@@ -1,4 +1,3 @@
 defmodule BlockScoutWeb.AddressCeloView do
-    use BlockScoutWeb, :view
-  
+  use BlockScoutWeb, :view
 end

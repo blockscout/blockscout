@@ -6,18 +6,44 @@
     <div class="card-body">
       <h2 class="card-title"><%= gettext "Celo Info" %></h2>
 
-      Name: <%= @address.celo_account.name %>
-      <%= if @address.celo_account.url do
-        gettext("Metadata URL:") <> @address.celo_account.url
-      end
-      %>
-      Type: <%= @address.celo_account.account_type %>
-      Attestations requested: <%= @address.celo_account.attestations_requested %>
-      Attestations fulfilled: <%= @address.celo_account.attestations_fulfilled %>
-      Locked gold:
-       <%= format_according_to_decimals(@address.celo_account.locked_gold.value, Decimal.new(18)) %>
-      Locked gold (nonvoting):
-       <%= format_according_to_decimals(@address.celo_account.nonvoting_locked_gold.value, Decimal.new(18)) %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Name</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Name of the Celo account."><%= @address.celo_account.name %></span>
+       </dd>
+      </dl>
+      <%= if @address.celo_account.url do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Metadata URL</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="URL pointing to the account metadata"><%= @address.celo_account.url %></span>
+       </dd>
+      </dl>
+      <% end %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Type</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Is the account a validator or a validator group"><%= @address.celo_account.account_type %></span>
+       </dd>
+      </dl>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Attestations requested</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been requested from this account"><%= @address.celo_account.attestations_requested %></span>
+       </dd>
+      </dl>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Attestations fulfilled</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been fulfilled by this account"><%= @address.celo_account.attestations_fulfilled %></span>
+       </dd>
+      </dl>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Locked Gold</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How much cGLD has the account deposited"><%= format_according_to_decimals(@address.celo_account.locked_gold.value, Decimal.new(18)) %> (<%= format_according_to_decimals(@address.celo_account.nonvoting_locked_gold.value, Decimal.new(18)) %> non-voting)</span>
+       </dd>
+      </dl>
     </div>
   </div>
 </section>
