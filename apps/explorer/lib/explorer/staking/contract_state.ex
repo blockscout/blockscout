@@ -124,6 +124,11 @@ defmodule Explorer.Staking.ContractState do
     global_responses = ContractReader.perform_requests(ContractReader.global_requests(), contracts, abi)
     token = get_token(global_responses.token_contract_address)
 
+    start_snapshotting = (global_responses.epoch_start_block == block_number + 1)
+    is_validator = Enum.into(global_responses.validators, %{}, &{hash_to_string(&1), true})
+    unremovable_validator = global_responses.unremovable_validator
+
+    # save the general info to ETS (excluding pool list and validator list)
     settings =
       global_responses
       |> Map.take([
@@ -139,12 +144,38 @@ defmodule Explorer.Staking.ContractState do
       |> Map.to_list()
       |> Enum.concat(token: token)
 
-    # save the general info in ETS (excluding pool list and validator list)
     :ets.insert(@table_name, settings)
 
-    pools = global_responses.active_pools ++ global_responses.inactive_pools
-    is_validator = Enum.into(global_responses.validators, %{}, &{hash_to_string(&1), true})
-    unremovable_validator = global_responses.unremovable_validator
+    # form the list of all pools
+    validators = if start_snapshotting do
+      %{
+        "getPendingValidators" => {:ok, [pending_validators]},
+        "validatorsToBeFinalized" => {:ok, [to_be_finalized_validators]}
+      } = Reader.query_contract(contracts.validator_set, abi, %{
+        "getPendingValidators" => [],
+        "validatorsToBeFinalized" => []
+      })
+      validators_pending = Enum.uniq(pending_validators ++ to_be_finalized_validators)
+      # get the list of all validators (the current and pending)
+      %{
+        all: Enum.uniq(global_responses.validators ++ validators_pending),
+        pending: validators_pending
+      }
+    else
+      %{all: global_responses.validators}
+    end
+
+    mining_to_staking_address =
+      validators.all
+      |> Enum.map(&ContractReader.staking_by_mining_requests/1)
+      |> ContractReader.perform_grouped_requests(validators.all, contracts, abi)
+      |> Map.new(fn {mining_address, resp} -> {mining_address, ContractReader.decode_data(resp.staking_address)} end)
+
+    pools = Enum.uniq(
+      Map.values(mining_to_staking_address) ++
+      global_responses.active_pools ++
+      global_responses.inactive_pools
+    )
 
     # read info about each pool from the contracts (including delegator list)
     pool_staking_responses =
@@ -185,7 +216,7 @@ defmodule Explorer.Staking.ContractState do
 
     pool_staking_keys = Enum.map(pool_staking_responses, fn {key, _} -> key end)
 
-    pool_reward_responses =
+    candidate_reward_responses =
       pool_staking_responses
       |> Enum.map(fn {_address, response} ->
         ContractReader.validator_reward_requests([
@@ -218,7 +249,7 @@ defmodule Explorer.Staking.ContractState do
       Enum.map(pools, fn staking_address ->
         staking_response = pool_staking_responses[staking_address]
         mining_response = pool_mining_responses[staking_address]
-        pool_reward_response = pool_reward_responses[staking_address]
+        candidate_reward_response = candidate_reward_responses[staking_address]
 
         %{
           staking_address_hash: staking_address,
@@ -227,7 +258,7 @@ defmodule Explorer.Staking.ContractState do
             if staking_response.is_active do
               ratio(staking_response.total_staked_amount, staked_total)
             end,
-          validator_reward_ratio: Float.floor(pool_reward_response.validator_share / 10_000, 2),
+          validator_reward_ratio: Float.floor(candidate_reward_response.validator_share / 10_000, 2),
           likelihood: ratio(likelihood[staking_address] || 0, total_likelihood),
           block_reward_ratio: staking_response.block_reward / 10_000,
           is_deleted: false,
@@ -274,11 +305,14 @@ defmodule Explorer.Staking.ContractState do
         timeout: :infinity
       })
 
-    if global_responses.epoch_start_block == block_number + 1 do
+    if start_snapshotting do
       spawn(StakeSnapshotting, :do_snapshotting, [
         %{contracts: contracts, abi: abi, epoch_number: global_responses.epoch_number, ets_table_name: @table_name},
         pool_staking_responses,
+        pool_mining_responses,
         Map.new(Enum.map(staker_responses, fn {key, resp} -> {pool_staking_address, staker_address, _} = key; {{pool_staking_address, staker_address}, resp} end)),
+        validators.pending, # mining addresses of pending validators
+        mining_to_staking_address,
         block_number # the last block of the finished staking epoch
       ])
     end
