@@ -3,6 +3,7 @@ defmodule Explorer.Staking.ContractReader do
   Routines for batched fetching of information from POSDAO contracts
   """
 
+  alias Explorer.Chain
   alias Explorer.SmartContract.Reader
 
   def global_requests do
@@ -26,13 +27,13 @@ defmodule Explorer.Staking.ContractReader do
 
   def pool_staking_requests(staking_address) do
     [
-      mining_address_hash: {:validator_set, "miningByStakingAddress", [staking_address]},
-      is_active: {:staking, "isPoolActive", [staking_address]},
       active_delegators: {:staking, "poolDelegators", [staking_address]},
+      block_reward: {:block_reward, "validatorRewardPercent", [staking_address]},
       inactive_delegators: {:staking, "poolDelegatorsInactive", [staking_address]},
-      total_staked_amount: {:staking, "stakeAmountTotal", [staking_address]},
+      is_active: {:staking, "isPoolActive", [staking_address]},
+      mining_address_hash: {:validator_set, "miningByStakingAddress", [staking_address]},
       self_staked_amount: {:staking, "stakeAmount", [staking_address, staking_address]},
-      block_reward: {:block_reward, "validatorRewardPercent", [staking_address]}
+      total_staked_amount: {:staking, "stakeAmountTotal", [staking_address]}
     ]
   end
 
@@ -58,6 +59,12 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  def staking_by_mining_requests(mining_address) do
+    [
+      staking_address: {:validator_set, "stakingByMiningAddress", [mining_address]}
+    ]
+  end
+
   # args = [staking_epoch, validator_staked, total_staked, pool_reward \\ 10_00000]
   def validator_reward_requests(args) do
     [
@@ -70,6 +77,18 @@ defmodule Explorer.Staking.ContractReader do
     [
       delegator_share: {:block_reward, "delegatorShare", args}
     ]
+  end
+
+  def decode_data(address_hash_string) do
+    {
+      :ok,
+      %Chain.Hash{
+        byte_count: _,
+        bytes: bytes
+      }
+    } = Chain.string_to_address_hash(address_hash_string)
+
+    bytes
   end
 
   def perform_requests(requests, contracts, abi) do
