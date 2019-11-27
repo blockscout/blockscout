@@ -82,6 +82,18 @@ $header-icon-color-hover: mix($white, $header-background-color, 75%);
 $header-links-color: $white;
 $header-links-color-active: rgba($white, 0.75);
 
+body:not(.dark-theme-applied) {   
+  .navbar.navbar-primary .form-control[placeholder] {
+    color: #666 !important;
+  }
+  .navbar.navbar-primary .form-control[placeholder]::placeholder {
+    color: #999;
+  }
+  .navbar.navbar-primary .input-group-append * {
+    fill: #AAA !important;
+  }
+}
+
 // buttons
 $btn-line-bg: #fff; // button bg
 $btn-line-color: $primary; // button border and font color && hover bg color
