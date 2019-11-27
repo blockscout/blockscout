@@ -68,11 +68,11 @@ function loadCounters (store) {
   const $element = $('[data-async-counters]')
   const path = $element.data() && $element.data().asyncCounters
   function fetchCounters () {
-    store.dispatch({type: 'START_REQUEST'})
+    store.dispatch({ type: 'START_REQUEST' })
     $.getJSON(path)
-      .done(response => store.dispatch(Object.assign({type: 'COUNTERS_FETCHED'}, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-      .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+      .done(response => store.dispatch(Object.assign({ type: 'COUNTERS_FETCHED' }, humps.camelizeKeys(response))))
+      .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
+      .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
   }
 
   fetchCounters()

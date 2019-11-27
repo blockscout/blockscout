@@ -45,6 +45,7 @@ export function formatAllUsdValues (root) {
 formatAllUsdValues()
 
 function tryUpdateCalculatedUsdValues (el, usdExchangeRate = el.dataset.usdExchangeRate) {
+  // eslint-disable-next-line no-prototype-builtins
   if (!el.dataset.hasOwnProperty('weiValue')) return
   const ether = weiToEther(el.dataset.weiValue)
   const usd = etherToUSD(ether, usdExchangeRate)
@@ -63,6 +64,6 @@ export function updateAllCalculatedUsdValues (usdExchangeRate) {
 }
 updateAllCalculatedUsdValues()
 
-export const exchangeRateChannel = socket.channel(`exchange_rate:new_rate`)
+export const exchangeRateChannel = socket.channel('exchange_rate:new_rate')
 exchangeRateChannel.join()
 exchangeRateChannel.on('new_rate', (msg) => updateAllCalculatedUsdValues(humps.camelizeKeys(msg).exchangeRate.usdValue))
