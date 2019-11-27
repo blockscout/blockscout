@@ -345,9 +345,12 @@ defmodule Explorer.Factory do
   end
 
   def log_factory do
+    block = build(:block)
+
     %Log{
       address: build(:address),
-      block: build(:block),
+      block: block,
+      block_number: block.number,
       data: data(:log_data),
       first_topic: nil,
       fourth_topic: nil,
