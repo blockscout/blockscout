@@ -1642,7 +1642,18 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
-  @spec remove_nonconsensus_blocks_from_pending_ops() :: :ok
+  def remove_nonconsensus_blocks_from_pending_ops(block_hashes) do
+    query =
+      from(
+        po in PendingBlockOperation,
+        where: po.block_hash in ^block_hashes
+      )
+
+    {_, _} = Repo.delete_all(query)
+
+    :ok
+  end
+
   def remove_nonconsensus_blocks_from_pending_ops do
     query =
       from(

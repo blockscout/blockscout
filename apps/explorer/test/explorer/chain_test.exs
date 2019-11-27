@@ -49,6 +49,23 @@ defmodule Explorer.ChainTest do
       assert Repo.get(PendingBlockOperation, block.hash)
       assert is_nil(Repo.get(PendingBlockOperation, nonconsensus_block.hash))
     end
+
+    test "removes pending ops for nonconsensus blocks by block hashes" do
+      block = insert(:block)
+      insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
+
+      nonconsensus_block = insert(:block, consensus: false)
+      insert(:pending_block_operation, block: nonconsensus_block, fetch_internal_transactions: true)
+
+      nonconsensus_block1 = insert(:block, consensus: false)
+      insert(:pending_block_operation, block: nonconsensus_block1, fetch_internal_transactions: true)
+
+      :ok = Chain.remove_nonconsensus_blocks_from_pending_ops([nonconsensus_block1.hash])
+
+      assert Repo.get(PendingBlockOperation, block.hash)
+      assert Repo.get(PendingBlockOperation, nonconsensus_block.hash)
+      assert is_nil(Repo.get(PendingBlockOperation, nonconsensus_block1.hash))
+    end
   end
 
   describe "count_addresses_with_balance_from_cache/0" do
