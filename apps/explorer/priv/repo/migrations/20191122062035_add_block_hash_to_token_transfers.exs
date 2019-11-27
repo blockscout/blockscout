@@ -31,5 +31,7 @@ defmodule Explorer.Repo.Migrations.AddBlockHashToTokenTransfers do
     """)
 
     drop(unique_index(:token_transfers, [:transaction_hash, :log_index]))
+
+    create_if_not_exists(index(:token_transfers, [:transaction_hash, :log_index]))
   end
 end
