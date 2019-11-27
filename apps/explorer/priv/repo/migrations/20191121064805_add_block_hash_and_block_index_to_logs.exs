@@ -4,14 +4,17 @@ defmodule Explorer.Repo.Migrations.AddBlockHashAndBlockIndexToLogs do
   def change do
     alter table(:logs) do
       add(:block_hash, :bytea)
+      add(:block_number, :integer)
     end
 
     execute("""
     UPDATE logs log
-    SET block_hash = with_block.block_hash
+    SET block_hash = with_block.block_hash,
+    block_number = with_block.block_number
     FROM (
       SELECT l.transaction_hash,
-      t.block_hash
+      t.block_hash,
+      t.block_number
       FROM logs l
       JOIN transactions t
       ON t.hash = l.transaction_hash

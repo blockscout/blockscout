@@ -10,11 +10,12 @@ defmodule Explorer.Chain.Log do
   alias Explorer.Repo
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
-  @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type)a
+  @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type block_number)a
 
   @typedoc """
    * `address` - address of contract that generate the event
    * `block_hash` - hash of the block
+   * `block_number` - The block number that the transfer took place.
    * `address_hash` - foreign key for `address`
    * `data` - non-indexed log parameters.
    * `first_topic` - `topics[0]`
@@ -30,6 +31,7 @@ defmodule Explorer.Chain.Log do
           address: %Ecto.Association.NotLoaded{} | Address.t(),
           address_hash: Hash.Address.t(),
           block_hash: Hash.Full.t(),
+          block_number: non_neg_integer() | nil,
           data: Data.t(),
           first_topic: String.t(),
           second_topic: String.t(),
@@ -50,6 +52,7 @@ defmodule Explorer.Chain.Log do
     field(:fourth_topic, :string)
     field(:index, :integer, primary_key: true)
     field(:type, :string)
+    field(:block_number, :integer)
 
     timestamps()
 
