@@ -682,7 +682,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:214
 #: lib/block_scout_web/views/wei_helpers.ex:78
 msgid "Ether"
-msgstr ""
+msgstr "NTY"
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:211
@@ -1475,12 +1475,12 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/index.html.eex:6
-msgid "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests."
+msgid "This API is provided for developers transitioning their applications from NextyExplorer to BlockScout. It supports GET and POST requests."
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
-msgid "This API is provided to support some rpc methods in the exact format specified for ethereum nodes, which can be found "
+msgid "This API is provided to support some rpc methods in the exact format specified for nexty nodes, which can be found "
 msgstr ""
 
 #, elixir-format
