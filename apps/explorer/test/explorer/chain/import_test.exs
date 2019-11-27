@@ -151,6 +151,7 @@ defmodule Explorer.Chain.ImportTest do
           %{
             amount: Decimal.new(1_000_000_000_000_000_000),
             block_number: 37,
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             log_index: 0,
             from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
             to_address_hash: "0x515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
@@ -1524,6 +1525,7 @@ defmodule Explorer.Chain.ImportTest do
                    params: [
                      params_for(
                        :token_transfer,
+                       block_hash: block_hash,
                        block_number: 35,
                        from_address_hash: from_address_hash,
                        to_address_hash: to_address_hash,

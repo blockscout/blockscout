@@ -1417,6 +1417,7 @@ defmodule Explorer.ChainTest do
       token_transfers: %{
         params: [
           %{
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             amount: Decimal.new(1_000_000_000_000_000_000),
             block_number: 37,
             log_index: 0,
@@ -2640,7 +2641,11 @@ defmodule Explorer.ChainTest do
         |> with_block()
 
       %TokenTransfer{transaction_hash: transaction_hash, log_index: log_index} =
-        insert(:token_transfer, transaction: transaction)
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number
+        )
 
       assert [%TokenTransfer{transaction_hash: ^transaction_hash, log_index: ^log_index}] =
                Chain.transaction_to_token_transfers(transaction.hash)
@@ -2652,7 +2657,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      insert(:token_transfer, transaction: transaction)
+      insert(:token_transfer, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
 
       assert [%TokenTransfer{token: %Token{}, transaction: %Transaction{}}] =
                Chain.transaction_to_token_transfers(
