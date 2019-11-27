@@ -35,6 +35,12 @@
       to: address_validation_path(@conn, :index, @address.hash)
     ) %>
   <% end %>
+  <%= link(
+      gettext("Celo Info"),
+      class: "card-tab #{tab_status("celo", @conn.request_path)}",
+      "data-test": "celo_tab_link",
+      to: address_celo_path(@conn, :index, @address.hash)
+  ) %>
   <%= if contract?(@address) do %>
     <%= link(
         to: address_contract_path(@conn, :index, @address.hash),

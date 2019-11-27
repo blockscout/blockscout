@@ -85,6 +85,13 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/celo",
+        AddressCeloController,
+        only: [:index],
+        as: :celo
+      )
+
+      resources(
         "/contracts",
         AddressContractController,
         only: [:index],

@@ -1,0 +1,10 @@
+<section class="container">
+  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+
+  <div class="card">
+    <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+    <div class="card-body">
+    Empty for now
+    </div>
+  </div>
+</section>
