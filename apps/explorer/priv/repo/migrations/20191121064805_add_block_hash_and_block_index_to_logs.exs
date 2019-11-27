@@ -34,5 +34,9 @@ defmodule Explorer.Repo.Migrations.AddBlockHashAndBlockIndexToLogs do
     DROP CONSTRAINT logs_pkey,
     ADD PRIMARY KEY (transaction_hash, block_hash, index);
     """)
+
+    drop(unique_index(:logs, [:transaction_hash, :index]))
+
+    create_if_not_exists(index(:logs, [:transaction_hash, :index]))
   end
 end
