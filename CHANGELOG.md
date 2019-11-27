@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 2.1.1-beta
+
+### Features
 - [#2862](https://github.com/poanetwork/blockscout/pull/2862) - Coin total supply from DB API endpoint
 - [#2822](https://github.com/poanetwork/blockscout/pull/2822) - Estimated address count on the main page, if cache is empty
 - [#2821](https://github.com/poanetwork/blockscout/pull/2821) - add autodetection of constructor arguments
@@ -8,7 +17,6 @@
 - [#2787](https://github.com/poanetwork/blockscout/pull/2787) - async fetching of address counters
 - [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
-
 
 ### Fixes
 - [#2864](https://github.com/poanetwork/blockscout/pull/2864) - add token instance metadata type check
