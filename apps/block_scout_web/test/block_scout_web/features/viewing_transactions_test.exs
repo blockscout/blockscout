@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       )
       |> with_block(block, gas_used: Decimal.new(1_230_000_000_000_123_000), status: :ok)
 
-    insert(:log, address: lincoln, index: 0, transaction: transaction)
+    insert(:log, address: lincoln, index: 0, transaction: transaction, block: block, block_number: block.number)
 
     internal =
       insert(:internal_transaction,
