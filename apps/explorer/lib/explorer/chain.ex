@@ -2411,7 +2411,11 @@ defmodule Explorer.Chain do
 
     TokenTransfer
     |> join(:inner, [token_transfer], transaction in assoc(token_transfer, :transaction))
-    |> where([_, transaction], transaction.hash == ^transaction_hash)
+    |> where(
+      [token_transfer, transaction],
+      transaction.hash == ^transaction_hash and token_transfer.block_hash == transaction.block_hash and
+        token_transfer.block_number == transaction.block_number
+    )
     |> TokenTransfer.page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([token_transfer], asc: token_transfer.inserted_at)
