@@ -7,6 +7,8 @@ defmodule Explorer.Repo.Migrations.AddBlockHashAndBlockIndexToLogs do
       add(:block_number, :integer)
     end
 
+    create(index(:logs, [:block_number]))
+
     execute("""
     UPDATE logs log
     SET block_hash = with_block.block_hash,
