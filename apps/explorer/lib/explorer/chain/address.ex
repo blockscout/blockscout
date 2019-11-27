@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Address do
   alias Explorer.Chain.{
     Address,
     Block,
+    CeloAccount,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -64,6 +65,7 @@ defmodule Explorer.Chain.Address do
            except: [
              :__meta__,
              :smart_contract,
+             :celo_account,
              :decompiled_smart_contracts,
              :token,
              :contracts_creation_internal_transaction,
@@ -84,6 +86,7 @@ defmodule Explorer.Chain.Address do
 
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)
+    has_one(:celo_account, CeloAccount, foreign_key: :address)
 
     has_one(
       :contracts_creation_internal_transaction,

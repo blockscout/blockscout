@@ -4,7 +4,20 @@
   <div class="card">
     <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
     <div class="card-body">
-    Empty for now
+      <h2 class="card-title"><%= gettext "Celo Info" %></h2>
+
+      Name: <%= @address.celo_account.name %>
+      <%= if @address.celo_account.url do
+        gettext("Metadata URL:") <> @address.celo_account.url
+      end
+      %>
+      Type: <%= @address.celo_account.account_type %>
+      Attestations requested: <%= @address.celo_account.attestations_requested %>
+      Attestations fulfilled: <%= @address.celo_account.attestations_fulfilled %>
+      Locked gold:
+       <%= format_according_to_decimals(@address.celo_account.locked_gold.value, Decimal.new(18)) %>
+      Locked gold (nonvoting):
+       <%= format_according_to_decimals(@address.celo_account.nonvoting_locked_gold.value, Decimal.new(18)) %>
     </div>
   </div>
 </section>
