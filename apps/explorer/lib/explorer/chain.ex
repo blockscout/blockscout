@@ -38,6 +38,7 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
+    PendingBlockOperation,
     SmartContract,
     StakingPool,
     Token,
@@ -184,6 +185,7 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     InternalTransaction
+    |> InternalTransaction.where_nonpending_block()
     |> InternalTransaction.where_address_fields_match(hash, direction)
     |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_block_number_is_not_null()
@@ -710,33 +712,25 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks to see if the chain is down indexing based on the transaction from the oldest block having
-  an `internal_transactions_indexed_at` date.
+  Checks to see if the chain is down indexing based on the transaction from the
+  oldest block and the `fetch_internal_transactions` pending operation
   """
   @spec finished_indexing?() :: boolean()
   def finished_indexing? do
-    transaction_exists =
-      Transaction
-      |> limit(1)
-      |> Repo.one()
+    with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
+         min_block_number when not is_nil(min_block_number) <- Repo.aggregate(Transaction, :min, :block_number) do
+      query =
+        from(
+          b in Block,
+          join: pending_ops in assoc(b, :pending_operations),
+          where: pending_ops.fetch_internal_transactions,
+          where: b.consensus and b.number == ^min_block_number
+        )
 
-    min_block_number_transaction = Repo.aggregate(Transaction, :min, :block_number)
-
-    if transaction_exists do
-      if min_block_number_transaction do
-        Transaction
-        |> where([t], t.block_number == ^min_block_number_transaction and is_nil(t.internal_transactions_indexed_at))
-        |> limit(1)
-        |> Repo.one()
-        |> case do
-          nil -> true
-          _ -> false
-        end
-      else
-        false
-      end
+      !Repo.exists?(query)
     else
-      true
+      {:transactions_exist, false} -> true
+      nil -> false
     end
   end
 
@@ -1317,11 +1311,8 @@ defmodule Explorer.Chain do
   @doc """
   The number of `t:Explorer.Chain.InternalTransaction.t/0`.
 
-      iex> transaction =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block()
-      iex> insert(:internal_transaction, index: 0, transaction: transaction)
+      iex> transaction = :transaction |> insert() |> with_block()
+      iex> insert(:internal_transaction, index: 0, transaction: transaction, block_hash: transaction.block_hash, block_index: 0)
       iex> Explorer.Chain.internal_transaction_count()
       1
 
@@ -1332,7 +1323,7 @@ defmodule Explorer.Chain do
 
   """
   def internal_transaction_count do
-    Repo.one!(from(it in "internal_transactions", select: fragment("COUNT(*)")))
+    Repo.aggregate(InternalTransaction.where_nonpending_block(), :count, :transaction_hash)
   end
 
   @doc """
@@ -1608,18 +1599,20 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of all blocks with unfetched internal transactions.
+  Returns a stream of all blocks with unfetched internal transactions, using
+  the `pending_block_operation` table.
 
   Only blocks with consensus are returned.
 
       iex> non_consensus = insert(:block, consensus: false)
+      iex> insert(:pending_block_operation, block: non_consensus, fetch_internal_transactions: true)
       iex> unfetched = insert(:block)
-      iex> fetched = insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
-      iex> to_be_refetched = insert(:block, refetch_needed: true)
+      iex> insert(:pending_block_operation, block: unfetched, fetch_internal_transactions: true)
+      iex> fetched = insert(:block)
+      iex> insert(:pending_block_operation, block: fetched, fetch_internal_transactions: false)
       iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
-      ...>   [:number],
       ...>   MapSet.new(),
-      ...>   fn %Explorer.Chain.Block{number: number}, acc ->
+      ...>   fn number, acc ->
       ...>     MapSet.put(acc, number)
       ...>   end
       ...> )
@@ -1629,112 +1622,44 @@ defmodule Explorer.Chain do
       true
       iex> fetched.hash in number_set
       false
-      iex> to_be_refetched.number in number_set
-      false
 
   """
   @spec stream_blocks_with_unfetched_internal_transactions(
-          fields :: [
-            :consensus
-            | :difficulty
-            | :gas_limit
-            | :gas_used
-            | :hash
-            | :miner
-            | :miner_hash
-            | :nonce
-            | :number
-            | :parent_hash
-            | :size
-            | :timestamp
-            | :total_difficulty
-            | :transactions
-            | :internal_transactions_indexed_at
-          ],
           initial :: accumulator,
           reducer :: (entry :: term(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_blocks_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+  def stream_blocks_with_unfetched_internal_transactions(initial, reducer) when is_function(reducer, 2) do
     query =
       from(
         b in Block,
+        join: pending_ops in assoc(b, :pending_operations),
+        where: pending_ops.fetch_internal_transactions,
         where: b.consensus,
-        where: is_nil(b.internal_transactions_indexed_at),
-        where: not b.refetch_needed,
-        select: ^fields
+        select: b.number
       )
 
     Repo.stream_reduce(query, initial, reducer)
   end
 
-  @doc """
-  Returns a stream of all collated transactions with unfetched internal transactions.
-
-  Only transactions that have been collated into a block are returned; pending transactions not in a block are filtered
-  out.
-
-      iex> pending = insert(:transaction)
-      iex> unfetched_collated =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block()
-      iex> fetched_collated =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block(internal_transactions_indexed_at: DateTime.utc_now())
-      iex> {:ok, hash_set} = Explorer.Chain.stream_transactions_with_unfetched_internal_transactions(
-      ...>   [:hash],
-      ...>   MapSet.new(),
-      ...>   fn %Explorer.Chain.Transaction{hash: hash}, acc ->
-      ...>     MapSet.put(acc, hash)
-      ...>   end
-      ...> )
-      iex> pending.hash in hash_set
-      false
-      iex> unfetched_collated.hash in hash_set
-      true
-      iex> fetched_collated.hash in hash_set
-      false
-
-  """
-  @spec stream_transactions_with_unfetched_internal_transactions(
-          fields :: [
-            :block_hash
-            | :internal_transactions_indexed_at
-            | :from_address_hash
-            | :gas
-            | :gas_price
-            | :hash
-            | :index
-            | :input
-            | :nonce
-            | :r
-            | :s
-            | :to_address_hash
-            | :v
-            | :value
-          ],
-          initial :: accumulator,
-          reducer :: (entry :: term(), accumulator -> accumulator)
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+  @spec remove_nonconsensus_blocks_from_pending_ops() :: :ok
+  def remove_nonconsensus_blocks_from_pending_ops do
     query =
       from(
-        t in Transaction,
-        # exclude pending transactions and replaced transactions
-        where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
-        select: ^fields
+        po in PendingBlockOperation,
+        inner_join: block in Block,
+        on: block.hash == po.block_hash,
+        where: block.consensus == false
       )
 
-    Repo.stream_reduce(query, initial, reducer)
+    {_, _} = Repo.delete_all(query)
+
+    :ok
   end
 
   @spec stream_transactions_with_unfetched_created_contract_codes(
           fields :: [
             :block_hash
-            | :internal_transactions_indexed_at
             | :created_contract_code_indexed_at
             | :from_address_hash
             | :gas
@@ -1769,7 +1694,6 @@ defmodule Explorer.Chain do
   @spec stream_mined_transactions(
           fields :: [
             :block_hash
-            | :internal_transactions_indexed_at
             | :created_contract_code_indexed_at
             | :from_address_hash
             | :gas
@@ -1801,7 +1725,6 @@ defmodule Explorer.Chain do
   @spec stream_pending_transactions(
           fields :: [
             :block_hash
-            | :internal_transactions_indexed_at
             | :created_contract_code_indexed_at
             | :from_address_hash
             | :gas
@@ -2183,8 +2106,8 @@ defmodule Explorer.Chain do
   ## Options
 
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
-      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.Transaction.t/0` will not be included in the list.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
       `:key` (a tuple of the lowest/oldest `{block_number, index}`) and. Results will be the transactions older than
       the `block_number` and `index` that are passed.
@@ -2238,8 +2161,8 @@ defmodule Explorer.Chain do
   ## Options
 
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
-      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.Transaction.t/0` will not be included in the list.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` (defaults to
       `#{@default_paging_options.page_size}`) and `:key` (a tuple of the lowest/oldest `{inserted_at, hash}`) and.
       Results will be the transactions older than the `inserted_at` and `hash` that are passed.
@@ -2419,6 +2342,7 @@ defmodule Explorer.Chain do
     |> for_parent_transaction(hash)
     |> join_associations(necessity_by_association)
     |> where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_nonpending_block()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
@@ -2511,7 +2435,7 @@ defmodule Explorer.Chain do
   def transaction_to_status(%Transaction{status: nil}), do: :awaiting_internal_transactions
   def transaction_to_status(%Transaction{status: :ok}), do: :success
 
-  def transaction_to_status(%Transaction{status: :error, internal_transactions_indexed_at: nil, error: nil}),
+  def transaction_to_status(%Transaction{status: :error, error: nil}),
     do: {:error, :awaiting_internal_transactions}
 
   def transaction_to_status(%Transaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
