@@ -130,7 +130,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           is_unremovable: fragment("EXCLUDED.is_unremovable"),
           are_delegators_banned: fragment("EXCLUDED.are_delegators_banned"),
           likelihood: fragment("EXCLUDED.likelihood"),
-          block_reward_ratio: fragment("EXCLUDED.block_reward_ratio"),
+          validator_reward_percent: fragment("EXCLUDED.validator_reward_percent"),
           stakes_ratio: fragment("EXCLUDED.stakes_ratio"),
           validator_reward_ratio: fragment("EXCLUDED.validator_reward_ratio"),
           self_staked_amount: fragment("EXCLUDED.self_staked_amount"),

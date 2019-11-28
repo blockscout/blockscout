@@ -28,6 +28,7 @@ defmodule Explorer.Staking.ContractState do
     :validator_set_contract,
     :block_reward_contract,
     :validator_set_apply_block,
+    :validator_min_reward_percent,
     :is_snapshotted
   ]
 
@@ -123,6 +124,9 @@ defmodule Explorer.Staking.ContractState do
     # read general info from the contracts (including pool list and validator list)
     global_responses = ContractReader.perform_requests(ContractReader.global_requests(), contracts, abi)
     token = get_token(global_responses.token_contract_address)
+    validator_min_reward_percent = ContractReader.perform_requests(
+      ContractReader.validator_min_reward_percent_request(global_responses.epoch_number), contracts, abi
+    ).value
 
     start_snapshotting = (global_responses.epoch_start_block == block_number + 1)
     is_validator = Enum.into(global_responses.validators, %{}, &{hash_to_string(&1), true})
@@ -143,6 +147,7 @@ defmodule Explorer.Staking.ContractState do
       ])
       |> Map.to_list()
       |> Enum.concat(token: token)
+      |> Enum.concat(validator_min_reward_percent: validator_min_reward_percent)
 
     :ets.insert(@table_name, settings)
 
@@ -199,14 +204,48 @@ defmodule Explorer.Staking.ContractState do
     # get amounts for each of the stakers
     staker_responses =
       stakers
-      |> Enum.map(fn {pool_staking_address, staker_address, _} ->
+      |> Enum.map(fn {pool_staking_address, staker_address, _is_active} ->
         ContractReader.staker_requests(pool_staking_address, staker_address)
       end)
       |> ContractReader.perform_grouped_requests(stakers, contracts, abi)
 
+    # to keep sort order
+    pool_staking_keys = Enum.map(pool_staking_responses, fn {key, _} -> key end)
+
+    candidate_reward_responses =
+      pool_staking_responses
+      |> Enum.map(fn {_pool_staking_address, resp} ->
+        ContractReader.validator_reward_requests([
+          global_responses.epoch_number,
+          resp.self_staked_amount,
+          resp.total_staked_amount,
+          1000_000
+        ])
+      end)
+      |> ContractReader.perform_grouped_requests(pool_staking_keys, contracts, abi)
+
+    # to keep sort order
+    delegator_keys = Enum.map(staker_responses, fn {key, _} -> key end)
+
+    delegator_reward_responses =
+      staker_responses
+      |> Enum.map(fn {{pool_staking_address, _staker_address, _is_active}, resp} ->
+        staking_resp = pool_staking_responses[pool_staking_address]
+
+        ContractReader.delegator_reward_requests([
+          global_responses.epoch_number,
+          resp.stake_amount,
+          staking_resp.self_staked_amount,
+          staking_resp.total_staked_amount,
+          1000_000
+        ])
+      end)
+      |> ContractReader.perform_grouped_requests(delegator_keys, contracts, abi)
+
     # calculate total amount staked into all active pools
     staked_total = Enum.sum(for {_, pool} <- pool_staking_responses, pool.is_active, do: pool.total_staked_amount)
 
+    # calculate likelihood of becoming a validator on the next epoch
     [likelihood_values, total_likelihood] = global_responses.pools_likelihood
 
     likelihood =
@@ -214,60 +253,30 @@ defmodule Explorer.Staking.ContractState do
       |> Enum.zip(likelihood_values)
       |> Enum.into(%{})
 
-    pool_staking_keys = Enum.map(pool_staking_responses, fn {key, _} -> key end)
-
-    candidate_reward_responses =
-      pool_staking_responses
-      |> Enum.map(fn {_address, response} ->
-        ContractReader.validator_reward_requests([
-          global_responses.epoch_number,
-          response.self_staked_amount,
-          response.total_staked_amount,
-          1000_000
-        ])
-      end)
-      |> ContractReader.perform_grouped_requests(pool_staking_keys, contracts, abi)
-
-    delegator_keys = Enum.map(staker_responses, fn {key, _} -> key end)
-
-    delegator_reward_responses =
-      staker_responses
-      |> Enum.map(fn {{pool_address, _, _}, response} ->
-        staking_response = pool_staking_responses[pool_address]
-
-        ContractReader.delegator_reward_requests([
-          global_responses.epoch_number,
-          response.stake_amount,
-          staking_response.self_staked_amount,
-          staking_response.total_staked_amount,
-          1000_000
-        ])
-      end)
-      |> ContractReader.perform_grouped_requests(delegator_keys, contracts, abi)
-
+    # form entries for writing to the `staking_pools` table in DB
     pool_entries =
-      Enum.map(pools, fn staking_address ->
-        staking_response = pool_staking_responses[staking_address]
-        mining_response = pool_mining_responses[staking_address]
-        candidate_reward_response = candidate_reward_responses[staking_address]
+      Enum.map(pools, fn pool_staking_address ->
+        staking_resp = pool_staking_responses[pool_staking_address]
+        mining_resp = pool_mining_responses[pool_staking_address]
+        candidate_reward_resp = candidate_reward_responses[pool_staking_address]
 
         %{
-          staking_address_hash: staking_address,
-          delegators_count: length(staking_response.active_delegators),
+          staking_address_hash: pool_staking_address,
+          delegators_count: length(staking_resp.active_delegators),
           stakes_ratio:
-            if staking_response.is_active do
-              ratio(staking_response.total_staked_amount, staked_total)
+            if staking_resp.is_active do
+              ratio(staking_resp.total_staked_amount, staked_total)
             end,
-          validator_reward_ratio: Float.floor(candidate_reward_response.validator_share / 10_000, 2),
-          likelihood: ratio(likelihood[staking_address] || 0, total_likelihood),
-          block_reward_ratio: staking_response.block_reward / 10_000,
+          validator_reward_ratio: Float.floor(candidate_reward_resp.validator_share / 10_000, 2),
+          likelihood: ratio(likelihood[pool_staking_address] || 0, total_likelihood),
+          validator_reward_percent: staking_resp.validator_reward_percent / 10_000,
           is_deleted: false,
-          is_validator: is_validator[staking_response.mining_address_hash] || false,
-          is_unremovable: hash_to_string(staking_address) == unremovable_validator,
-          ban_reason: binary_to_string(mining_response.ban_reason)
+          is_validator: is_validator[staking_resp.mining_address_hash] || false,
+          is_unremovable: hash_to_string(pool_staking_address) == unremovable_validator,
+          ban_reason: binary_to_string(mining_resp.ban_reason)
         }
         |> Map.merge(
-          Map.take(staking_response, [
+          Map.take(staking_resp, [
             :is_active,
             :mining_address_hash,
             :self_staked_amount,
@@ -275,7 +284,7 @@ defmodule Explorer.Staking.ContractState do
           ])
         )
         |> Map.merge(
-          Map.take(mining_response, [
+          Map.take(mining_resp, [
             :are_delegators_banned,
             :banned_delegators_until,
             :banned_until,
@@ -286,6 +295,7 @@ defmodule Explorer.Staking.ContractState do
         )
       end)
 
+    # form entries for writing to the `staking_pools_delegators` table in DB
     delegator_entries =
       Enum.map(staker_responses, fn {{pool_address, delegator_address, is_active}, response} ->
         delegator_reward_response = delegator_reward_responses[{pool_address, delegator_address, is_active}]

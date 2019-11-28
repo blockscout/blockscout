@@ -50,7 +50,7 @@
                 render BlockScoutWeb.StakesView,
                   "_stakes_th.html",
                   title: reward_col_title,
-                  tooltip: gettext("Reward distribution is based on stake amount. Validator receives a minimum of 30%.")
+                  tooltip: gettext("Reward distribution is based on stake amount. Validator receives a minimum of %{min}%.", min: @validator_min_reward_percent)
               %>
             </div>
           </div>

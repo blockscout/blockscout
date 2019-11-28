@@ -47,7 +47,7 @@
           render BlockScoutWeb.StakesView,
           "_stakes_validator_info_item.html",
           title: gettext("Share of Pool’s Reward"),
-          value: "#{@validator.block_reward_ratio}%"
+          value: "#{@validator.validator_reward_percent}%"
         %>
         <%=
           render BlockScoutWeb.StakesView,

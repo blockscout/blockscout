@@ -24,7 +24,7 @@ defmodule Explorer.Chain.StakingPool do
           is_unremovable: boolean,
           are_delegators_banned: boolean,
           likelihood: Decimal.t(),
-          block_reward_ratio: Decimal.t(),
+          validator_reward_percent: Decimal.t(),
           stakes_ratio: Decimal.t(),
           validator_reward_ratio: Decimal.t(),
           snapshotted_validator_reward_ratio: Decimal.t(),
@@ -41,7 +41,7 @@ defmodule Explorer.Chain.StakingPool do
   @attrs ~w(
     is_active delegators_count total_staked_amount self_staked_amount snapshotted_total_staked_amount snapshotted_self_staked_amount is_validator
     was_validator_count is_banned are_delegators_banned ban_reason was_banned_count banned_until banned_delegators_until likelihood
-    stakes_ratio validator_reward_ratio snapshotted_validator_reward_ratio staking_address_hash mining_address_hash block_reward_ratio
+    stakes_ratio validator_reward_ratio snapshotted_validator_reward_ratio staking_address_hash mining_address_hash validator_reward_percent
     is_unremovable
   )a
   @req_attrs ~w(
@@ -60,7 +60,7 @@ defmodule Explorer.Chain.StakingPool do
     field(:is_unremovable, :boolean, default: false)
     field(:are_delegators_banned, :boolean, default: false)
     field(:likelihood, :decimal)
-    field(:block_reward_ratio, :decimal)
+    field(:validator_reward_percent, :decimal)
     field(:stakes_ratio, :decimal)
     field(:validator_reward_ratio, :decimal)
     field(:snapshotted_validator_reward_ratio, :decimal)
