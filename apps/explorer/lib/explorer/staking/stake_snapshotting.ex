@@ -63,12 +63,11 @@ defmodule Explorer.Staking.StakeSnapshotting do
       |> Enum.zip(pool_staking_addresses)
       |> Map.new(fn {key, val} -> {val, key} end)
 
-    # form a flat list of all stakers in the form {pool_staking_address, staker_address}
+    # form a flat list of all active stakers in the form {pool_staking_address, staker_address}
     stakers =
       Enum.flat_map(pool_staking_responses, fn {pool_staking_address, resp} ->
         [{pool_staking_address, pool_staking_address}] ++
-          Enum.map(resp.active_delegators, &{pool_staking_address, &1}) ++
-          Enum.map(resp.inactive_delegators, &{pool_staking_address, &1})
+          Enum.map(resp.active_delegators, &{pool_staking_address, &1})
       end)
 
     # get amounts for each of the stakers
@@ -138,7 +137,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
         %{
           staking_address_hash: pool_staking_address,
-          delegators_count: length(staking_resp.active_delegators),
+          delegators_count: 0,
           snapshotted_validator_reward_ratio: Float.floor(validator_reward_resp.validator_share / 10_000, 2)
         }
         |> Map.merge(
@@ -171,8 +170,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
       end)
 
     case Chain.import(%{
-      staking_pools: %{params: pool_entries, on_conflict: staking_pools_update()},
-      staking_pools_delegators: %{params: delegator_entries, on_conflict: staking_pools_delegators_update()},
+      staking_pools: %{params: pool_entries, on_conflict: staking_pools_update(), clear_snapshotted_values: true},
+      staking_pools_delegators: %{params: delegator_entries, on_conflict: staking_pools_delegators_update(), clear_snapshotted_values: true},
       timeout: :infinity
     }) do
       {:ok, _} -> :ets.insert(ets_table_name, is_snapshotted: true)
