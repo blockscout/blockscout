@@ -16,6 +16,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 
 // Bootstrap Core CSS
 @import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
 @import "node_modules/bootstrap/scss/mixins";
 
 @import "theme/variables";
@@ -60,7 +61,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 // Custom SCSS
 @import "layout";
 @import "typography";
-@import "images-preload";
 @import "code";
 @import "helpers";
 @import "elements";
@@ -110,7 +110,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/log-search";
 @import "components/radio";
 @import "components/modal_variables";
-@import "components/network-selector";
 @import "components/new_smart_contract";
 @import "components/radio_big";
 @import "components/btn_no_border";

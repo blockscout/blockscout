@@ -5,7 +5,7 @@
       <div class="dashboard-banner-network-graph">
         <!-- Graph -->
         <div class="dashboard-banner-chart">
-          <div hidden data-chart-loading-message class="tile tile-muted text-center mt-5">
+          <div data-chart-loading-message class="tile tile-muted text-center dashboard-banner-chart-loader">
             <span class="loading-spinner-small mr-2">
               <span class="loading-spinner-block-1"></span>
               <span class="loading-spinner-block-2"></span>
@@ -91,49 +91,49 @@
             <%= gettext "Something went wrong, click to reload." %>
           </span>
         </button>
-         <div hidden data-selector="loading-message" class="col-lg-3" >
+        <div hidden data-selector="loading-message" class="col-lg-3" >
          <div data-selector="chain-block">
-         <div class="tile tile-type-block n-p d-flex flex-column">
-         <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a>
-         <div class="tile-bottom-contents">
-         <div class="dark-block-loader"></div>
-         <div class="dark-block-loader"></div>
+           <div class="tile tile-type-block n-p d-flex flex-column">
+             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a>
+             <div class="tile-bottom-contents">
+               <div class="dark-block-loader"></div>
+               <div class="dark-block-loader"></div>
+             </div>
+           </div>
          </div>
         </div>
-        </div>
-        </div>
-         <div hidden data-selector="loading-message" class="col-lg-3" >
+        <div hidden data-selector="loading-message" class="col-lg-3" >
          <div data-selector="chain-block">
-         <div class="tile tile-type-block n-p d-flex flex-column">
-         <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a> 
-         <div class="tile-bottom-contents">
-         <div class="dark-block-loader"></div>
-         <div class="dark-block-loader"></div>
+           <div class="tile tile-type-block n-p d-flex flex-column">
+             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a> 
+             <div class="tile-bottom-contents">
+               <div class="dark-block-loader"></div>
+               <div class="dark-block-loader"></div>
+             </div>
+           </div>
          </div>
         </div>
-        </div>
-        </div>
-         <div hidden data-selector="loading-message" class="col-lg-3" >
+        <div hidden data-selector="loading-message" class="col-lg-3" >
          <div data-selector="chain-block">
-         <div class="tile tile-type-block n-p d-flex flex-column">
-         <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a> 
-         <div class="tile-bottom-contents">
-         <div class="dark-block-loader"></div>
-         <div class="dark-block-loader"></div>
+           <div class="tile tile-type-block n-p d-flex flex-column">
+             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a> 
+             <div class="tile-bottom-contents">
+               <div class="dark-block-loader"></div>
+               <div class="dark-block-loader"></div>
+             </div>
+           </div>
          </div>
         </div>
-        </div>
-        </div>
-         <div hidden data-selector="loading-message" class="col-lg-3" >
+        <div hidden data-selector="loading-message" class="col-lg-3" >
          <div data-selector="chain-block">
-         <div class="tile tile-type-block n-p d-flex flex-column">
-         <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a>
-         <div class="tile-bottom-contents">
-        <div class="dark-block-loader"></div>
-         <div class="dark-block-loader"></div>
+           <div class="tile tile-type-block n-p d-flex flex-column">
+             <a class="tile-title"><span class="tile-loader tile-label-loader"></span> </a>
+             <div class="tile-bottom-contents">
+              <div class="dark-block-loader"></div>
+              <div class="dark-block-loader"></div>
+            </div>
+           </div>
          </div>
-        </div>
-        </div>
         </div>   
       </div>
     </div>

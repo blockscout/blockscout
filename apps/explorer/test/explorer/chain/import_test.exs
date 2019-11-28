@@ -470,27 +470,27 @@ defmodule Explorer.Chain.ImportTest do
     test "publishes addresses with updated fetched_coin_balance data to subscribers on insert" do
       Subscriber.to(:addresses, :realtime)
       Import.all(@import_data)
-      assert_received {:chain_event, :addresses, :realtime, [%Address{}, %Address{}, %Address{}]}
+      assert_receive {:chain_event, :addresses, :realtime, [%Address{}, %Address{}, %Address{}]}
     end
 
     test "publishes block data to subscribers on insert" do
       Subscriber.to(:blocks, :realtime)
       Import.all(@import_data)
-      assert_received {:chain_event, :blocks, :realtime, [%Block{}]}
+      assert_receive {:chain_event, :blocks, :realtime, [%Block{}]}
     end
 
     test "publishes internal_transaction data to subscribers on insert" do
       Subscriber.to(:internal_transactions, :realtime)
       Import.all(@import_data)
 
-      assert_received {:chain_event, :internal_transactions, :realtime,
-                       [%{transaction_hash: _, index: _}, %{transaction_hash: _, index: _}]}
+      assert_receive {:chain_event, :internal_transactions, :realtime,
+                      [%{transaction_hash: _, index: _}, %{transaction_hash: _, index: _}]}
     end
 
     test "publishes transactions data to subscribers on insert" do
       Subscriber.to(:transactions, :realtime)
       Import.all(@import_data)
-      assert_received {:chain_event, :transactions, :realtime, [%Transaction{}]}
+      assert_receive {:chain_event, :transactions, :realtime, [%Transaction{}]}
     end
 
     test "publishes token_transfers data to subscribers on insert" do
@@ -498,7 +498,7 @@ defmodule Explorer.Chain.ImportTest do
 
       Import.all(@import_data)
 
-      assert_received {:chain_event, :token_transfers, :realtime, [%TokenTransfer{}]}
+      assert_receive {:chain_event, :token_transfers, :realtime, [%TokenTransfer{}]}
     end
 
     test "does not broadcast if broadcast option is false" do
