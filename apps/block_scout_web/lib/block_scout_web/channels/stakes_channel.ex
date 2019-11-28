@@ -54,6 +54,7 @@ defmodule BlockScoutWeb.StakesChannel do
   def handle_in("render_delegators_list", %{"address" => pool_staking_address}, socket) do
     pool = Chain.staking_pool(pool_staking_address)
     token = ContractState.get(:token)
+    validator_min_reward_percent = ContractState.get(:validator_min_reward_percent)
 
     show_snapshotted_data =
       pool.is_validator && ContractState.get(:validator_set_apply_block) > 0 && ContractState.get(:is_snapshotted)
@@ -78,7 +79,8 @@ defmodule BlockScoutWeb.StakesChannel do
         conn: socket,
         stakers: stakers,
         token: token,
-        show_snapshotted_data: show_snapshotted_data
+        show_snapshotted_data: show_snapshotted_data,
+        validator_min_reward_percent: validator_min_reward_percent
       )
 
     {:reply, {:ok, %{html: html}}, socket}
