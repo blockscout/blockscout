@@ -117,7 +117,7 @@ if (localStorage.getItem('current-color-mode') === 'dark') {
 class MarketHistoryChart {
   constructor (el, availableSupply, marketHistoryData, animation) {
     this.price = {
-      label: window.localized ? window.localized['Price'] : 'Price',
+      label: window.localized ? window.localized.Price : 'Price',
       yAxisID: 'price',
       data: getPriceData(marketHistoryData),
       fill: false,
