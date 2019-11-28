@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Cache.BlockNumberTest do
     end)
   end
 
-  describe "get_max/1" do
+  describe "get_max/0" do
     test "returns max number" do
       insert(:block, number: 5)
 
@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Cache.BlockNumberTest do
     end
   end
 
-  describe "get_min/1" do
+  describe "get_min/0" do
     test "returns min number" do
       insert(:block, number: 2)
 
@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Cache.BlockNumberTest do
     end
   end
 
-  describe "get_all/1" do
+  describe "get_all/0" do
     test "returns min and max number" do
       insert(:block, number: 6)
 

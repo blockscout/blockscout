@@ -17,6 +17,7 @@ defmodule Indexer.Fetcher.BlockReward do
   alias EthereumJSONRPC.FetchedBeneficiaries
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Wei}
+  alias Explorer.Chain.Cache.Accounts
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.BlockReward.Supervisor, as: BlockRewardSupervisor
   alias Indexer.Fetcher.CoinBalance
@@ -130,7 +131,9 @@ defmodule Indexer.Fetcher.BlockReward do
         |> add_gas_payments()
         |> import_block_reward_params()
         |> case do
-          {:ok, %{address_coin_balances: address_coin_balances}} ->
+          {:ok, %{address_coin_balances: address_coin_balances, addresses: addresses}} ->
+            Accounts.drop(addresses)
+
             CoinBalance.async_fetch_balances(address_coin_balances)
 
             retry_errors(errors)

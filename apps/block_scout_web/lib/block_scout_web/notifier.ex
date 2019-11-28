@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Notifier do
   alias Phoenix.View
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
-    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.count_addresses_with_balance_from_cache()})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
 
     addresses
     |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)

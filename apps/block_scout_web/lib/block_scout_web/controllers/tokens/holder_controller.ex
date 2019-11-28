@@ -52,8 +52,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
         "index.html",
         current_path: current_path(conn),
         token: Market.add_price(token),
-        total_token_holders: token.holder_count || Chain.count_token_holders_from_token_hash(address_hash),
-        total_token_transfers: Chain.count_token_transfers_from_token_hash(address_hash)
+        counters_path: token_path(conn, :token_counters, %{"id" => to_string(address_hash)})
       )
     else
       :error ->

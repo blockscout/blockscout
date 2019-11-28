@@ -136,7 +136,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
           gas_used: nil
         )
 
-      expected_value = "Max of 0.009 POA"
+      expected_value = "Max of 0.009 Ether"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
     end
 
@@ -144,11 +144,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
       {:ok, gas_price} = Wei.cast(3_000_000_000)
       transaction = build(:transaction, gas_price: gas_price, gas_used: Decimal.from_float(1_034_234.0))
 
-      expected_value = "0.003102702 POA"
+      expected_value = "0.003102702 Ether"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
-    end
-
-    test "with fee but no available exchange_rate" do
     end
   end
 

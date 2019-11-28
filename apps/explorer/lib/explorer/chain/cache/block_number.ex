@@ -7,7 +7,9 @@ defmodule Explorer.Chain.Cache.BlockNumber do
 
   use Explorer.Chain.MapCache,
     name: :block_number,
-    keys: [:min, :max]
+    keys: [:min, :max],
+    ttl_check_interval: Application.get_env(:explorer, __MODULE__)[:ttl_check_interval],
+    global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl]
 
   alias Explorer.Chain
 

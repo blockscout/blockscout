@@ -47,7 +47,7 @@ if ($('[data-page="coin-balance-history"]').length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.blockNumber')
   const addressHash = $('[data-page="address-details"]')[0].dataset.pageAddressHash
 
-  store.dispatch({type: 'PAGE_LOAD', addressHash})
+  store.dispatch({ type: 'PAGE_LOAD', addressHash })
   connectElements({ store, elements })
 
   const addressChannel = socket.channel(`addresses:${addressHash}`, {})
