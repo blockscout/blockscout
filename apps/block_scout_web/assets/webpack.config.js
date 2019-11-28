@@ -1,10 +1,10 @@
-const path = require('path');
-const TerserJSPlugin = require('terser-webpack-plugin');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const { ContextReplacementPlugin } = require('webpack');
-const glob = require("glob");
+const path = require('path')
+const TerserJSPlugin = require('terser-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const { ContextReplacementPlugin } = require('webpack')
+const glob = require('glob')
 
 function transpileViewScript(file) {
   return {
@@ -19,9 +19,12 @@ function transpileViewScript(file) {
           test: /\.js$/,
           exclude: /node_modules/,
           use: {
-            loader: 'babel-loader'
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env']
+            }
           }
-        },
+        }
       ]
     }
   }
@@ -30,7 +33,7 @@ function transpileViewScript(file) {
 const jsOptimizationParams = {
   cache: true,
   parallel: true,
-  sourceMap: true,
+  sourceMap: true
 }
 
 const awesompleteJs = {
@@ -51,19 +54,19 @@ const awesompleteJs = {
           {
             loader: "css-loader",
           }
-        ],
-      },
-    ],
+        ]
+      }
+    ]
   },
   optimization: {
     minimizer: [
       new TerserJSPlugin(jsOptimizationParams),
-    ],
+    ]
   },
   plugins: [
     new MiniCssExtractPlugin({
       filename: '../css/awesomplete.css'
-    }),
+    })
   ]
 }
 
@@ -72,7 +75,7 @@ const appJs =
     entry: {
       app: './js/app.js',
       stakes: './js/pages/stakes.js',
-      'non-critical': './css/non-critical.scss',
+      'non-critical': './css/non-critical.scss'
     },
     output: {
       filename: '[name].js',
@@ -87,7 +90,10 @@ const appJs =
           test: /\.js$/,
           exclude: /node_modules/,
           use: {
-            loader: 'babel-loader'
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env']
+            }
           }
         },
         {
@@ -95,17 +101,19 @@ const appJs =
           use: [
             MiniCssExtractPlugin.loader,
             {
-              loader: "css-loader"
+              loader: 'css-loader'
             }, {
-              loader: "postcss-loader"
+              loader: 'postcss-loader'
             }, {
-              loader: "sass-loader",
+              loader: 'sass-loader',
               options: {
-                precision: 8,
-                includePaths: [
-                  'node_modules/bootstrap/scss',
-                  'node_modules/@fortawesome/fontawesome-free/scss'
-                ]
+                sassOptions: {
+                  precision: 8,
+                  includePaths: [
+                    'node_modules/bootstrap/scss',
+                    'node_modules/@fortawesome/fontawesome-free/scss'
+                  ]
+                }
               }
             }
           ]
@@ -131,6 +139,6 @@ const appJs =
     ]
   }
 
-const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript);
+const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs, awesompleteJs);
+module.exports = viewScripts.concat(appJs, awesompleteJs)

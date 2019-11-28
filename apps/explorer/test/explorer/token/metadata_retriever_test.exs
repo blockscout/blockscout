@@ -59,6 +59,62 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       assert MetadataRetriever.get_functions_of(token.contract_address_hash) == expected
     end
 
+    test "returns results for multiple coins" do
+      token = insert(:token, contract_address: build(:contract_address))
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        1,
+        fn requests, _opts ->
+          {:ok,
+           Enum.map(requests, fn
+             %{id: id, method: "eth_call", params: [%{data: "0x313ce567", to: _}, "latest"]} ->
+               %{
+                 id: id,
+                 result: "0x0000000000000000000000000000000000000000000000000000000000000012"
+               }
+
+             %{id: id, method: "eth_call", params: [%{data: "0x06fdde03", to: _}, "latest"]} ->
+               %{
+                 id: id,
+                 result:
+                   "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000642616e636f720000000000000000000000000000000000000000000000000000"
+               }
+
+             %{id: id, method: "eth_call", params: [%{data: "0x95d89b41", to: _}, "latest"]} ->
+               %{
+                 id: id,
+                 result:
+                   "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003424e540000000000000000000000000000000000000000000000000000000000"
+               }
+
+             %{id: id, method: "eth_call", params: [%{data: "0x18160ddd", to: _}, "latest"]} ->
+               %{
+                 id: id,
+                 result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+               }
+           end)}
+        end
+      )
+
+      assert {:ok,
+              [
+                %{
+                  name: "Bancor",
+                  symbol: "BNT",
+                  total_supply: 1_000_000_000_000_000_000,
+                  decimals: 18
+                },
+                %{
+                  name: "Bancor",
+                  symbol: "BNT",
+                  total_supply: 1_000_000_000_000_000_000,
+                  decimals: 18
+                }
+              ]} = MetadataRetriever.get_functions_of([token.contract_address_hash, token.contract_address_hash])
+    end
+
     test "returns only the functions that were read without error" do
       token = insert(:token, contract_address: build(:contract_address))
 
