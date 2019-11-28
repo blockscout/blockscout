@@ -187,7 +187,7 @@ defmodule Explorer.EtherscanTest do
 
       block_numbers_order = Enum.map(found_transactions, & &1.block_number)
 
-      assert block_numbers_order == Enum.sort(block_numbers_order)
+      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 >= &2))
     end
 
     test "orders transactions by block, in descending order" do
@@ -227,12 +227,12 @@ defmodule Explorer.EtherscanTest do
         |> insert_list(:transaction, from_address: address)
         |> with_block(second_block)
 
-      third_block_transactions =
+      first_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
         |> with_block(third_block)
 
-      first_block_transactions =
+      third_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
         |> with_block(first_block)
@@ -960,7 +960,7 @@ defmodule Explorer.EtherscanTest do
 
       block_numbers_order = Enum.map(found_token_transfers, & &1.block_number)
 
-      assert block_numbers_order == Enum.sort(block_numbers_order)
+      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 >= &2))
     end
 
     test "orders token transfers by block, in descending order" do
@@ -1021,9 +1021,9 @@ defmodule Explorer.EtherscanTest do
 
       second_block_token_transfers = insert_list(2, :token_transfer, from_address: address, transaction: transaction2)
 
-      third_block_token_transfers = insert_list(2, :token_transfer, from_address: address, transaction: transaction3)
+      first_block_token_transfers = insert_list(2, :token_transfer, from_address: address, transaction: transaction3)
 
-      first_block_token_transfers = insert_list(2, :token_transfer, from_address: address, transaction: transaction1)
+      third_block_token_transfers = insert_list(2, :token_transfer, from_address: address, transaction: transaction1)
 
       options1 = %{page_number: 1, page_size: 2}
 

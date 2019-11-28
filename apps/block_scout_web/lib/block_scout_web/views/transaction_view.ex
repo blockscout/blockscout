@@ -135,12 +135,12 @@ defmodule BlockScoutWeb.TransactionView do
 
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
-      nil ->
-        0
-
       %Block{consensus: true} ->
         {:ok, confirmations} = Chain.confirmations(block, named_arguments)
         BlockScoutWeb.Cldr.Number.to_string!(confirmations, format: "#,###")
+
+      _ ->
+        0
     end
   end
 
@@ -230,6 +230,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   def involves_token_transfers?(%Transaction{token_transfers: []}), do: false
   def involves_token_transfers?(%Transaction{token_transfers: transfers}) when is_list(transfers), do: true
+  def involves_token_transfers?(_), do: false
 
   def qr_code(%Transaction{hash: hash}) do
     hash

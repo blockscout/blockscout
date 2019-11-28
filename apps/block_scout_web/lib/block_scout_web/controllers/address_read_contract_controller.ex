@@ -12,8 +12,6 @@ defmodule BlockScoutWeb.AddressReadContractController do
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
-
   def index(conn, %{"address_id" => address_hash_string}) do
     address_options = [
       necessity_by_association: %{
@@ -26,21 +24,18 @@ defmodule BlockScoutWeb.AddressReadContractController do
     ]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
+         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true),
+         false <- is_nil(address.smart_contract) do
       render(
         conn,
         "index.html",
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        transaction_count: transaction_count(address_hash),
-        validation_count: validation_count(address_hash)
+        counters_path: address_path(conn, :address_counters, %{"id" => to_string(address_hash)})
       )
     else
-      :error ->
-        not_found(conn)
-
-      {:error, :not_found} ->
+      _ ->
         not_found(conn)
     end
   end

@@ -27,7 +27,8 @@ defmodule Explorer.Chain.TokenTransfer do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2, limit: 2, where: 3]
 
-  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.Token.Instance
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -92,6 +93,13 @@ defmodule Explorer.Chain.TokenTransfer do
       type: Hash.Full
     )
 
+    has_one(
+      :instance,
+      Instance,
+      foreign_key: :token_contract_address_hash,
+      references: :token_contract_address_hash
+    )
+
     has_one(:token, through: [:token_contract_address, :token])
 
     timestamps()
@@ -140,12 +148,44 @@ defmodule Explorer.Chain.TokenTransfer do
     |> Repo.all()
   end
 
+  @spec fetch_token_transfers_from_token_hash_and_token_id(Hash.t(), binary(), [paging_options]) :: []
+  def fetch_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    query =
+      from(
+        tt in TokenTransfer,
+        where: tt.token_contract_address_hash == ^token_address_hash,
+        where: tt.token_id == ^token_id,
+        where: not is_nil(tt.block_number),
+        preload: [{:transaction, :block}, :token, :from_address, :to_address],
+        order_by: [desc: tt.block_number, desc: tt.log_index]
+      )
+
+    query
+    |> page_token_transfer(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
   @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
   def count_token_transfers_from_token_hash(token_address_hash) do
     query =
       from(
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash,
+        select: fragment("COUNT(*)")
+      )
+
+    Repo.one(query)
+  end
+
+  @spec count_token_transfers_from_token_hash_and_token_id(Hash.t(), binary()) :: non_neg_integer()
+  def count_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id) do
+    query =
+      from(
+        tt in TokenTransfer,
+        where: tt.token_contract_address_hash == ^token_address_hash and tt.token_id == ^token_id,
         select: fragment("COUNT(*)")
       )
 
@@ -175,7 +215,8 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.to_address_hash == ^address_hash,
-        select: type(tt.transaction_hash, :binary)
+        select: type(tt.transaction_hash, :binary),
+        distinct: tt.transaction_hash
       )
 
     query
@@ -189,7 +230,8 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.from_address_hash == ^address_hash,
-        select: type(tt.transaction_hash, :binary)
+        select: type(tt.transaction_hash, :binary),
+        distinct: tt.transaction_hash
       )
 
     query
@@ -209,6 +251,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(token_transfer in TokenTransfer,
         where: token_transfer.to_address_hash == ^address_bytes or token_transfer.from_address_hash == ^address_bytes,
         select: type(token_transfer.transaction_hash, :binary),
+        distinct: token_transfer.transaction_hash,
         limit: ^page_size
       )
 
@@ -238,15 +281,13 @@ defmodule Explorer.Chain.TokenTransfer do
   def address_to_unique_tokens(contract_address_hash) do
     from(
       tt in TokenTransfer,
-      join: t in Token,
-      on: tt.token_contract_address_hash == t.contract_address_hash,
-      join: ts in Transaction,
-      on: tt.transaction_hash == ts.hash,
-      where: t.contract_address_hash == ^contract_address_hash and t.type == "ERC-721",
-      order_by: [desc: ts.block_number],
+      left_join: instance in Instance,
+      on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
+      where: tt.token_contract_address_hash == ^contract_address_hash,
+      order_by: [desc: tt.block_number],
       distinct: tt.token_id,
       preload: [:to_address],
-      select: tt
+      select: %{tt | instance: instance}
     )
   end
 end

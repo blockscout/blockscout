@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   use BlockScoutWeb.ConnCase
-  alias Explorer.Factory
+  alias Explorer.{Chain, Factory}
 
   describe "listcontracts" do
     setup do
@@ -450,7 +450,9 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       expected_result = [
         %{
           "Address" => to_string(contract.address_hash),
-          "SourceCode" => contract.contract_source_code,
+          "SourceCode" =>
+            "/**\n* Submitted for verification at blockscout.com on #{contract.inserted_at}\n*/\n" <>
+              contract.contract_source_code,
           "ABI" => Jason.encode!(contract.abi),
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
@@ -496,9 +498,13 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         |> get("/api", params)
         |> json_response(200)
 
+      verified_contract = Chain.address_hash_to_smart_contract(contract_address.hash)
+
       expected_result = %{
         "Address" => to_string(contract_address.hash),
-        "SourceCode" => contract_code_info.source_code,
+        "SourceCode" =>
+          "/**\n* Submitted for verification at blockscout.com on #{verified_contract.inserted_at}\n*/\n" <>
+            contract_code_info.source_code,
         "ABI" => Jason.encode!(contract_code_info.abi),
         "ContractName" => contract_code_info.name,
         "CompilerVersion" => contract_code_info.version,
@@ -563,8 +569,14 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
       result = response["result"]
 
+      verified_contract = Chain.address_hash_to_smart_contract(contract_address.hash)
+
       assert result["Address"] == to_string(contract_address.hash)
-      assert result["SourceCode"] == contract_source_code
+
+      assert result["SourceCode"] ==
+               "/**\n* Submitted for verification at blockscout.com on #{verified_contract.inserted_at}\n*/\n" <>
+                 contract_source_code
+
       assert result["ContractName"] == name
       assert result["DecompiledSourceCode"] == "Contract source code not decompiled."
       assert result["DecompilerVersion"] == ""

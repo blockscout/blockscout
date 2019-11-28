@@ -170,7 +170,7 @@ defmodule Explorer.Chain.Address do
   end
 
   def rsk_checksum(hash) do
-    chain_id = NetVersion.version()
+    chain_id = NetVersion.get_version()
 
     string_hash =
       hash
@@ -234,6 +234,16 @@ defmodule Explorer.Chain.Address do
       a in Address,
       select: fragment("COUNT(*)"),
       where: a.fetched_coin_balance > ^0
+    )
+  end
+
+  @doc """
+  Counts all the addresses.
+  """
+  def count do
+    from(
+      a in Address,
+      select: fragment("COUNT(*)")
     )
   end
 

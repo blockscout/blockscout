@@ -484,40 +484,26 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Modifies a query to filter for transactions whose hash is in a list or that are
-  linked to the given address_hash through a direction.
-
-  Be careful to not pass a large list, because this will lead to performance
-  problems.
+  Produces a list of queries starting from the given one and adding filters for
+  transactions that are linked to the given address_hash through a direction.
   """
-  def where_transaction_matches(query, transaction_hashes, :from, address_hash) do
-    where(
-      query,
-      [t],
-      t.hash in ^transaction_hashes or
-        t.from_address_hash == ^address_hash
-    )
+  def matching_address_queries_list(query, :from, address_hash) do
+    [where(query, [t], t.from_address_hash == ^address_hash)]
   end
 
-  def where_transaction_matches(query, transaction_hashes, :to, address_hash) do
-    where(
-      query,
-      [t],
-      t.hash in ^transaction_hashes or
-        t.to_address_hash == ^address_hash or
-        t.created_contract_address_hash == ^address_hash
-    )
+  def matching_address_queries_list(query, :to, address_hash) do
+    [
+      where(query, [t], t.to_address_hash == ^address_hash),
+      where(query, [t], t.created_contract_address_hash == ^address_hash)
+    ]
   end
 
-  def where_transaction_matches(query, transaction_hashes, _direction, address_hash) do
-    where(
-      query,
-      [t],
-      t.hash in ^transaction_hashes or
-        t.from_address_hash == ^address_hash or
-        t.to_address_hash == ^address_hash or
-        t.created_contract_address_hash == ^address_hash
-    )
+  def matching_address_queries_list(query, _direction, address_hash) do
+    [
+      where(query, [t], t.from_address_hash == ^address_hash),
+      where(query, [t], t.to_address_hash == ^address_hash),
+      where(query, [t], t.created_contract_address_hash == ^address_hash)
+    ]
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a
@@ -607,6 +593,46 @@ defmodule Explorer.Chain.Transaction do
       inner_join: tt in TokenTransfer,
       on: t.hash == tt.transaction_hash,
       where: tt.token_contract_address_hash == ^token_hash,
+      where: tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash,
+      distinct: :hash
+    )
+  end
+
+  def transactions_with_token_transfers_direction(direction, address_hash) do
+    query = transactions_with_token_transfers_query_direction(direction, address_hash)
+
+    from(
+      t in subquery(query),
+      order_by: [desc: t.block_number, desc: t.index],
+      preload: [:from_address, :to_address, :created_contract_address, :block]
+    )
+  end
+
+  defp transactions_with_token_transfers_query_direction(:from, address_hash) do
+    from(
+      t in Transaction,
+      inner_join: tt in TokenTransfer,
+      on: t.hash == tt.transaction_hash,
+      where: tt.from_address_hash == ^address_hash,
+      distinct: :hash
+    )
+  end
+
+  defp transactions_with_token_transfers_query_direction(:to, address_hash) do
+    from(
+      t in Transaction,
+      inner_join: tt in TokenTransfer,
+      on: t.hash == tt.transaction_hash,
+      where: tt.to_address_hash == ^address_hash,
+      distinct: :hash
+    )
+  end
+
+  defp transactions_with_token_transfers_query_direction(_, address_hash) do
+    from(
+      t in Transaction,
+      inner_join: tt in TokenTransfer,
+      on: t.hash == tt.transaction_hash,
       where: tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash,
       distinct: :hash
     )

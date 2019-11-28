@@ -3,89 +3,38 @@ defmodule Explorer.Chain.Cache.BlockNumber do
   Cache for max and min block numbers.
   """
 
+  @type value :: non_neg_integer()
+
+  use Explorer.Chain.MapCache,
+    name: :block_number,
+    keys: [:min, :max],
+    ttl_check_interval: Application.get_env(:explorer, __MODULE__)[:ttl_check_interval],
+    global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl]
+
   alias Explorer.Chain
 
-  @tab :block_number_cache
-  @key "min_max"
+  defp handle_update(_key, nil, value), do: {:ok, value}
 
-  @spec setup() :: :ok
-  def setup do
-    if :ets.whereis(@tab) == :undefined do
-      :ets.new(@tab, [
-        :set,
-        :named_table,
-        :public,
-        write_concurrency: true
-      ])
-    end
+  defp handle_update(:min, old_value, new_value), do: {:ok, min(new_value, old_value)}
 
-    update_cache()
+  defp handle_update(:max, old_value, new_value), do: {:ok, max(new_value, old_value)}
 
-    :ok
-  end
+  defp handle_fallback(key) do
+    result = fetch_from_db(key)
 
-  def max_number do
-    value(:max)
-  end
-
-  def min_number do
-    value(:min)
-  end
-
-  def min_and_max_numbers do
-    value(:all)
-  end
-
-  defp value(type) do
-    {min, max} =
-      if Application.get_env(:explorer, __MODULE__)[:enabled] do
-        cached_values()
-      else
-        min_and_max_from_db()
-      end
-
-    case type do
-      :max -> max
-      :min -> min
-      :all -> {min, max}
+    if Application.get_env(:explorer, __MODULE__)[:enabled] do
+      {:update, result}
+    else
+      {:return, result}
     end
   end
 
-  @spec update(non_neg_integer()) :: boolean()
-  def update(number) do
-    {old_min, old_max} = cached_values()
-
-    cond do
-      number > old_max ->
-        tuple = {old_min, number}
-        :ets.insert(@tab, {@key, tuple})
-
-      number < old_min ->
-        tuple = {number, old_max}
-        :ets.insert(@tab, {@key, tuple})
-
-      true ->
-        false
+  defp fetch_from_db(key) do
+    case key do
+      :min -> Chain.fetch_min_block_number()
+      :max -> Chain.fetch_max_block_number()
     end
-  end
-
-  defp update_cache do
-    {min, max} = min_and_max_from_db()
-    tuple = {min, max}
-
-    :ets.insert(@tab, {@key, tuple})
-  end
-
-  defp cached_values do
-    [{_, cached_values}] = :ets.lookup(@tab, @key)
-
-    cached_values
-  end
-
-  defp min_and_max_from_db do
-    Chain.fetch_min_and_max_block_numbers()
   rescue
-    _e ->
-      {0, 0}
+    _e -> 0
   end
 end

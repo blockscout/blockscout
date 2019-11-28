@@ -3,7 +3,6 @@ defmodule BlockScoutWeb.AddressLogsController do
   Manages events logs tab.
   """
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.AddressLogsView
@@ -63,8 +62,7 @@ defmodule BlockScoutWeb.AddressLogsController do
         current_path: current_path(conn),
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        transaction_count: transaction_count(address_hash),
-        validation_count: validation_count(address_hash)
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
       )
     else
       _ ->

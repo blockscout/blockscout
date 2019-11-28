@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
 
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.InternalTransactionView
@@ -71,8 +70,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         current_path: current_path(conn),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        transaction_count: transaction_count(address_hash),
-        validation_count: validation_count(address_hash)
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
       )
     else
       :error ->

@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.WeiHelpers do
       "10,000 Gwei"
 
       iex> format_wei_value(%Wei{value: Decimal.new(1, 10, 21)}, :ether)
-      "10,000 POA"
+      "10,000 Ether"
 
       # With formatting options
 
@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.WeiHelpers do
       ...>   %Wei{value: Decimal.new(1000500000000000000)},
       ...>   :ether
       ...> )
-      "1.0005 POA"
+      "1.0005 Ether"
 
       iex> format_wei_value(
       ...>   %Wei{value: Decimal.new(10)},

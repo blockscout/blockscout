@@ -3,7 +3,7 @@ $dashboard-banner-gradient-end: lighten(
   $dashboard-banner-gradient-start,
   5%
 ) !default;
-$dashboard-banner-network-plain-container-background-color: lighten($dashboard-banner-gradient-end, 5%)!default;
+$dashboard-banner-network-plain-container-background-color: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-price: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-market: $secondary !default;
 $dashboard-stats-item-label-color: #fff !default;
@@ -20,6 +20,13 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   overflow: hidden;
   padding: 0;
   position: relative;
+  height: 249px;
+  @include media-breakpoint-down(sm) {
+      height: auto;
+  }
+  @include media-breakpoint-down(md) {
+      height: auto;
+  }
 }
 
 .dashboard-banner {
@@ -46,14 +53,16 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
 
 .dashboard-banner-chart {
   flex-grow: 1;
-  margin: 0 0 35px 0;
+  margin: 15px 0 20px 0;
   max-width: 350px;
   position: relative;
+  min-height: 100px;
+  height: calc(100% - 86px);
 
   @include media-breakpoint-down(md) {
     flex-grow: 0;
-    margin-bottom: 20px;
-    margin-top: auto;
+    margin-top: 20px;
+    margin-bottom: auto;
     max-width: 100%;
   }
 
@@ -62,6 +71,19 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     max-width: 100%;
     width: 100%;
   }
+}
+
+.dashboard-banner-chart-loader {
+  opacity: 0.5;
+  position: absolute;
+  width: calc(100% - 100px);
+  top: 50%;
+  transform: translateY(-75%);
+  left: 50px;
+  right: 50px;
+  transition: opacity .25s ease-in-out;
+  -moz-transition: opacity .25s ease-in-out;
+  -webkit-transition: opacity .25s ease-in-out;
 }
 
 .dashboard-banner-chart-legend {
@@ -74,6 +96,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     padding-left: 12px;
     padding-top: 3px;
     position: relative;
+    padding-right: 12px;
 
     @include media-breakpoint-down(md) {
       display: flex;
@@ -140,7 +163,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   display: flex;
   height: $dashboard-banner-network-plain-container-height;
   justify-content: center;
-  margin: 0 0 0 30px;
+  margin: 45px 0 0 30px;
   max-width: 100%;
   padding: 30px 0 30px 60px;
   width: 750px;
