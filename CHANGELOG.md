@@ -4,6 +4,8 @@
 
 ### Fixes
 
+- [#2897]( https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
+
 ### Chore
 
 
