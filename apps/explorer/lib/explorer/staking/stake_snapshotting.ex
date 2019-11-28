@@ -97,9 +97,12 @@ defmodule Explorer.Staking.StakeSnapshotting do
       |> Enum.zip(stakers)
       |> Map.new(fn {key, val} -> {val, key} end)
 
+    # to keep sort order
+    pool_staking_keys = Enum.map(pool_staking_responses, fn {key, _} -> key end)
+
     validator_reward_responses =
       pool_staking_responses
-      |> Enum.map(fn {_address, resp} ->
+      |> Enum.map(fn {_pool_staking_address, resp} ->
         ContractReader.validator_reward_requests([
           epoch_number,
           resp.snapshotted_self_staked_amount,
@@ -107,36 +110,39 @@ defmodule Explorer.Staking.StakeSnapshotting do
           1000_000
         ])
       end)
-      |> ContractReader.perform_grouped_requests(pool_staking_addresses, contracts, abi)
+      |> ContractReader.perform_grouped_requests(pool_staking_keys, contracts, abi)
+
+    # to keep sort order
+    delegator_keys = Enum.map(staker_responses, fn {key, _} -> key end)
 
     delegator_reward_responses =
       staker_responses
-      |> Enum.map(fn {{pool_address, _delegator_address}, response} ->
-        staking_response = pool_staking_responses[pool_address]
+      |> Enum.map(fn {{pool_staking_address, _staker_address}, resp} ->
+        staking_resp = pool_staking_responses[pool_staking_address]
 
         ContractReader.delegator_reward_requests([
           epoch_number,
-          response.snapshotted_stake_amount,
-          staking_response.snapshotted_self_staked_amount,
-          staking_response.snapshotted_total_staked_amount,
+          resp.snapshotted_stake_amount,
+          staking_resp.snapshotted_self_staked_amount,
+          staking_resp.snapshotted_total_staked_amount,
           1000_000
         ])
       end)
-      |> ContractReader.perform_grouped_requests(stakers, contracts, abi)
+      |> ContractReader.perform_grouped_requests(delegator_keys, contracts, abi)
 
     pool_entries =
-      Enum.map(pool_staking_addresses, fn staking_address ->
-        staking_response = pool_staking_responses[staking_address]
-        mining_response = pool_mining_responses[staking_address]
-        validator_reward_response = validator_reward_responses[staking_address]
+      Enum.map(pool_staking_addresses, fn pool_staking_address ->
+        staking_resp = pool_staking_responses[pool_staking_address]
+        mining_resp = pool_mining_responses[pool_staking_address]
+        validator_reward_resp = validator_reward_responses[pool_staking_address]
 
         %{
-          staking_address_hash: staking_address,
-          delegators_count: length(staking_response.active_delegators),
-          snapshotted_validator_reward_ratio: Float.floor(validator_reward_response.validator_share / 10_000, 2)
+          staking_address_hash: pool_staking_address,
+          delegators_count: length(staking_resp.active_delegators),
+          snapshotted_validator_reward_ratio: Float.floor(validator_reward_resp.validator_share / 10_000, 2)
         }
         |> Map.merge(
-          Map.take(staking_response, [
+          Map.take(staking_resp, [
             :mining_address_hash,
             :self_staked_amount,
             :snapshotted_self_staked_amount,
@@ -145,7 +151,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
           ])
         )
         |> Map.merge(
-          Map.take(mining_response, [
+          Map.take(mining_resp, [
             :banned_until,
             :was_banned_count,
             :was_validator_count
@@ -154,13 +160,13 @@ defmodule Explorer.Staking.StakeSnapshotting do
       end)
 
     delegator_entries =
-      Enum.map(staker_responses, fn {{pool_staking_address, staker_address}, response} ->
-        delegator_reward_response = delegator_reward_responses[{pool_staking_address, staker_address}]
+      Enum.map(staker_responses, fn {{pool_staking_address, staker_address}, resp} ->
+        delegator_reward_resp = delegator_reward_responses[{pool_staking_address, staker_address}]
 
-        Map.merge(response, %{
+        Map.merge(resp, %{
           address_hash: staker_address,
           staking_address_hash: pool_staking_address,
-          snapshotted_reward_ratio: Float.floor(delegator_reward_response.delegator_share / 10_000, 2)
+          snapshotted_reward_ratio: Float.floor(delegator_reward_resp.delegator_share / 10_000, 2)
         })
       end)
 
