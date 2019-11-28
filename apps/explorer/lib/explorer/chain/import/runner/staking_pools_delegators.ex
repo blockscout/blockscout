@@ -37,12 +37,12 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
     insert_options =
       options
       |> Map.get(option_key(), %{})
-      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.take(~w(on_conflict timeout clear_snapshotted_values)a)
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
     multi
-    |> Multi.run(:delete_delegators, fn repo, _ ->
+    |> Multi.run(:clear_delegators, fn repo, _ ->
       mark_as_deleted(repo, insert_options)
     end)
     |> Multi.run(:insert_staking_pools_delegators, fn repo, _ ->
@@ -53,17 +53,23 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
   @impl Import.Runner
   def timeout, do: @timeout
 
-  defp mark_as_deleted(repo, %{timeout: timeout}) do
-    query =
+  defp mark_as_deleted(repo, %{timeout: timeout} = options) do
+    clear_snapshotted_values = case Map.fetch(options, :clear_snapshotted_values) do
+      {:ok, v} -> v
+      :error -> false
+    end
+
+    query = if clear_snapshotted_values do
       from(
         d in StakingPoolsDelegator,
-        update: [
-          set: [
-            is_active: false,
-            is_deleted: true
-          ]
-        ]
+        update: [set: [snapshotted_reward_ratio: nil, snapshotted_stake_amount: nil]]
       )
+    else
+      from(
+        d in StakingPoolsDelegator,
+        update: [set: [is_active: false, is_deleted: true]]
+      )
+    end
 
     try do
       {_, result} = repo.update_all(query, [], timeout: timeout)

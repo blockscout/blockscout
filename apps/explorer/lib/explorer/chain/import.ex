@@ -3,6 +3,8 @@ defmodule Explorer.Chain.Import do
   Bulk importing of data into `Explorer.Repo`
   """
 
+  require Logger
+
   alias Ecto.Changeset
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
@@ -247,7 +249,7 @@ defmodule Explorer.Chain.Import do
   defp validate_runner_option_params_required(runner_option_key, _),
     do: {:error, {:required, [runner_option_key, :params]}}
 
-  @local_options ~w(on_conflict params with timeout)a
+  @local_options ~w(on_conflict params with timeout clear_snapshotted_values)a
 
   defp validate_runner_options_known(runner_option_key, options) do
     unknown_option_keys = Map.keys(options) -- @local_options
