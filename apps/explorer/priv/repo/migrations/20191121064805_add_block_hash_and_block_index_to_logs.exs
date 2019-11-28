@@ -7,8 +7,6 @@ defmodule Explorer.Repo.Migrations.AddBlockHashAndBlockIndexToLogs do
       add(:block_number, :integer)
     end
 
-    create(index(:logs, [:block_number]))
-
     execute("""
     UPDATE logs log
     SET block_hash = with_block.block_hash,
@@ -24,6 +22,8 @@ defmodule Explorer.Repo.Migrations.AddBlockHashAndBlockIndexToLogs do
     WHERE log.transaction_hash = with_block.transaction_hash
     ;
     """)
+
+    create(index(:logs, [:block_number]))
 
     alter table(:logs) do
       modify(:block_hash, references(:blocks, column: :hash, type: :bytea), null: false)
