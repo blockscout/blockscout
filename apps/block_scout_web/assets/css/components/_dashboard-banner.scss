@@ -145,33 +145,28 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   align-self: flex-end;
   background-color: $dashboard-banner-network-plain-container-background-color;
   border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
   display: flex;
   height: $dashboard-banner-network-plain-container-height;
   justify-content: center;
-  margin: 45px 0 0 30px;
+  margin: 45px 30px 0 30px;
   max-width: 100%;
-  padding: 30px 0 30px 60px;
-  width: 750px;
+  padding: 30px 30px 30px 30px;
+  width: 100%;
   position: relative;
 
   @include media-breakpoint-down(lg) {
     margin-top: 15px;
-    width: 550px;
   }
 
   @include media-breakpoint-down(md) {
-    border-top-right-radius: 10px;
     height: auto;
     justify-content: flex-start;
-    margin-left: 0;
-    max-width: 100%;
     padding: 20px 0 20px 20px;
-    width: 250px;
-    box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
   }
 
   @include media-breakpoint-down(sm) {
-    width: 100%;
+    margin-right: 0px !important;
   }
 
   &::after {
@@ -182,7 +177,6 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     height: $dashboard-banner-network-plain-container-height;
     left: 0;
     position: absolute;
-    width: 9999px;
     z-index: -1;
     box-shadow: 0 0 35px 0 rgba(0, 0, 0, 0.2);
     border-top-left-radius: 10px;
@@ -194,17 +188,18 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
 }
 
 .dashboard-banner-network-stats {
-  column-gap: 25px;
+  column-gap: 50px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
+  row-gap: 30px;
 
   @include media-breakpoint-down(lg) {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     row-gap: 20px;
   }
 
   @include media-breakpoint-down(md) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     row-gap: 20px;
   }
 
