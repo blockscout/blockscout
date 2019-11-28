@@ -100,7 +100,6 @@ defmodule EthereumJSONRPC.Log do
       block_number: block_number,
       block_hash: block_hash,
       data: data,
-      block_hash: block_hash,
       index: index,
       transaction_hash: transaction_hash
     }
