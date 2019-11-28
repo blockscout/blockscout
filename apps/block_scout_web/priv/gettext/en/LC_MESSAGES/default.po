@@ -2181,12 +2181,6 @@ msgid "Remove My Pool"
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:53
-msgid "Reward distribution is based on stake amount. Validator receives a minimum of 30%."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:8
 msgid "Show banned only"
 msgstr ""
@@ -2453,8 +2447,14 @@ msgstr ""
 msgid "validator"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:25
 msgid "All pool participant addresses. The top address belongs to the %{pool_type}."
+msgstr ""
+
+#, elixir-format, fuzzy
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:53
+msgid "Reward distribution is based on stake amount. Validator receives a minimum of %{min}%."
 msgstr ""
