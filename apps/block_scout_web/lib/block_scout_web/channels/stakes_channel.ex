@@ -55,13 +55,11 @@ defmodule BlockScoutWeb.StakesChannel do
     pool = Chain.staking_pool(pool_staking_address)
     token = ContractState.get(:token)
     validator_min_reward_percent = ContractState.get(:validator_min_reward_percent)
-
-    show_snapshotted_data =
-      pool.is_validator && ContractState.get(:validator_set_apply_block) > 0 && ContractState.get(:is_snapshotted)
+    show_snapshotted_data = ContractState.show_snapshotted_data(pool.is_validator)
 
     stakers =
       pool_staking_address
-      |> Chain.staking_pool_delegators()
+      |> Chain.staking_pool_delegators(show_snapshotted_data)
       |> Enum.sort_by(fn staker ->
         staker_address = to_string(staker.address_hash)
 

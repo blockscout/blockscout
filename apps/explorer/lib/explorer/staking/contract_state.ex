@@ -253,16 +253,27 @@ defmodule Explorer.Staking.ContractState do
       |> Enum.zip(likelihood_values)
       |> Enum.into(%{})
 
+    is_snapshotted = get(:is_snapshotted)
+
     # form entries for writing to the `staking_pools` table in DB
     pool_entries =
       Enum.map(pools, fn pool_staking_address ->
         staking_resp = pool_staking_responses[pool_staking_address]
         mining_resp = pool_mining_responses[pool_staking_address]
         candidate_reward_resp = candidate_reward_responses[pool_staking_address]
+        is_validator = is_validator[staking_resp.mining_address_hash] || false
+
+        delegators_count = 
+          length(staking_resp.active_delegators) +
+          if show_snapshotted_data(is_validator, global_responses.validator_set_apply_block, is_snapshotted) do
+            Chain.staking_pool_snapshotted_inactive_delegators_count(pool_staking_address)
+          else
+            0
+          end
 
         %{
           staking_address_hash: pool_staking_address,
-          delegators_count: length(staking_resp.active_delegators),
+          delegators_count: delegators_count,
           stakes_ratio:
             if staking_resp.is_active do
               ratio(staking_resp.total_staked_amount, staked_total)
@@ -271,7 +282,7 @@ defmodule Explorer.Staking.ContractState do
           likelihood: ratio(likelihood[pool_staking_address] || 0, total_likelihood),
           validator_reward_percent: staking_resp.validator_reward_percent / 10_000,
           is_deleted: false,
-          is_validator: is_validator[staking_resp.mining_address_hash] || false,
+          is_validator: is_validator,
           is_unremovable: hash_to_string(pool_staking_address) == unremovable_validator,
           ban_reason: binary_to_string(mining_resp.ban_reason)
         }
@@ -328,6 +339,20 @@ defmodule Explorer.Staking.ContractState do
     end
 
     Publisher.broadcast(:staking_update)
+  end
+
+  def show_snapshotted_data(is_validator, validator_set_apply_block \\ nil, is_snapshotted \\ nil) do
+    validator_set_apply_block = if validator_set_apply_block !== nil do
+      validator_set_apply_block
+    else
+      get(:validator_set_apply_block)
+    end
+    is_snapshotted = if is_snapshotted !== nil do
+      is_snapshotted
+    else
+      get(:is_snapshotted)
+    end
+    is_validator && validator_set_apply_block > 0 && is_snapshotted
   end
 
   defp get_token(address) do
