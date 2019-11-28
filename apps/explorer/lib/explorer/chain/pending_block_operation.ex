@@ -16,7 +16,7 @@ defmodule Explorer.Chain.PendingBlockOperation do
   @type t :: %__MODULE__{
           block_hash: Hash.Full.t(),
           fetch_internal_transactions: boolean()
-  }
+        }
 
   @primary_key false
   schema "pending_block_operations" do

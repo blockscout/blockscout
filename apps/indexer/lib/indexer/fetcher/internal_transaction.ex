@@ -13,7 +13,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Transform.Addresses
