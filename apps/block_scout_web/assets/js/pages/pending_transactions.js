@@ -102,7 +102,7 @@ if ($transactionPendingListPage.length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
   connectElements({ store, elements })
 
-  const transactionsChannel = socket.channel(`transactions:new_transaction`)
+  const transactionsChannel = socket.channel('transactions:new_transaction')
   transactionsChannel.join()
   transactionsChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'
@@ -118,7 +118,7 @@ if ($transactionPendingListPage.length) {
     }), 1000)
   })
 
-  const pendingTransactionsChannel = socket.channel(`transactions:new_pending_transaction`)
+  const pendingTransactionsChannel = socket.channel('transactions:new_pending_transaction')
   pendingTransactionsChannel.join()
   pendingTransactionsChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'

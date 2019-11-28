@@ -271,7 +271,7 @@ export function createAsyncLoadStore (reducer, initialState, itemKey) {
     })
   }
 
-  connectElements({store, elements})
+  connectElements({ store, elements })
   firstPageLoad(store)
   return store
 }
@@ -280,20 +280,20 @@ function firstPageLoad (store) {
   const $element = $('[data-async-listing]')
   function loadItemsNext () {
     const path = store.getState().nextPagePath
-    store.dispatch({type: 'START_REQUEST'})
-    $.getJSON(path, {type: 'JSON'})
-      .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-      .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+    store.dispatch({ type: 'START_REQUEST' })
+    $.getJSON(path, { type: 'JSON' })
+      .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
+      .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
+      .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
   }
 
   function loadItemsPrev () {
     const path = store.getState().prevPagePath
-    store.dispatch({type: 'START_REQUEST'})
-    $.getJSON(path, {type: 'JSON'})
-      .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-      .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+    store.dispatch({ type: 'START_REQUEST' })
+    $.getJSON(path, { type: 'JSON' })
+      .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
+      .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
+      .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
   }
   loadItemsNext()
 
@@ -305,14 +305,14 @@ function firstPageLoad (store) {
   $element.on('click', '[data-next-page-button]', (event) => {
     event.preventDefault()
     loadItemsNext()
-    store.dispatch({type: 'NAVIGATE_TO_OLDER'})
+    store.dispatch({ type: 'NAVIGATE_TO_OLDER' })
     event.stopImmediatePropagation()
   })
 
   $element.on('click', '[data-prev-page-button]', (event) => {
     event.preventDefault()
     loadItemsPrev()
-    store.dispatch({type: 'NAVIGATE_TO_NEWER'})
+    store.dispatch({ type: 'NAVIGATE_TO_NEWER' })
     event.stopImmediatePropagation()
   })
 }
@@ -320,6 +320,6 @@ function firstPageLoad (store) {
 const $element = $('[data-async-load]')
 if ($element.length) {
   const store = createStore(asyncReducer)
-  connectElements({store, elements})
+  connectElements({ store, elements })
   firstPageLoad(store)
 }
