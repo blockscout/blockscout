@@ -25,6 +25,10 @@ defmodule Explorer.Repo.Migrations.AddBlockHashAndBlockIndexToLogs do
 
     create(index(:logs, [:block_number]))
 
+    execute("""
+    DELETE FROM logs WHERE block_hash IS NULL;
+    """)
+
     alter table(:logs) do
       modify(:block_hash, references(:blocks, column: :hash, type: :bytea), null: false)
     end
