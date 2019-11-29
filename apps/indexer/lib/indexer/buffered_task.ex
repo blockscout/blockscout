@@ -434,8 +434,13 @@ defmodule Indexer.BufferedTask do
     end
   end
 
-  # was shrunk and out of work, get more work from `init/2`
-  defp schedule_next(%BufferedTask{bound_queue: %BoundQueue{size: 0, maximum_size: maximum_size}} = state)
+  # was out of work, get more work from `init/2`
+  defp schedule_next(%BufferedTask{bound_queue: %BoundQueue{size: 0}} = state) do
+    do_initial_stream(state)
+  end
+
+  # was shrunk, get more work from `init/2`
+  defp schedule_next(%BufferedTask{bound_queue: %BoundQueue{maximum_size: maximum_size}} = state)
        when maximum_size != nil do
     Logger.info(fn ->
       [
