@@ -2,13 +2,17 @@ import $ from 'jquery'
 
 import { formatAllUsdValues, updateAllCalculatedUsdValues } from './lib/currency'
 import { createMarketHistoryChart } from './lib/market_history_chart'
+import { createCoinBalanceHistoryChart } from './lib/coin_balance_history_chart'
 
-const checkExist = setInterval(() => {
-  const el = $('[data-chart="marketHistoryChart"]')[0]
-  if (el) {
-    clearInterval(checkExist)
-    createMarketHistoryChart(el, true)
-    formatAllUsdValues()
-    updateAllCalculatedUsdValues()
+(function () {
+  const dashboardChartElement = $('[data-chart="marketHistoryChart"]')[0]
+  const coinBalanceHistoryChartElement = $('[data-chart="coinBalanceHistoryChart"]')[0]
+  if (dashboardChartElement) {
+    window.dashboardChart = createMarketHistoryChart(dashboardChartElement)
   }
-}, 100)
+  if (coinBalanceHistoryChartElement) {
+    window.coinBalanceHistoryChart = createCoinBalanceHistoryChart(coinBalanceHistoryChartElement)
+  }
+  formatAllUsdValues()
+  updateAllCalculatedUsdValues()
+})()

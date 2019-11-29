@@ -115,9 +115,9 @@ if (localStorage.getItem('current-color-mode') === 'dark') {
 }
 
 class MarketHistoryChart {
-  constructor (el, availableSupply, marketHistoryData, animation) {
+  constructor (el, availableSupply, marketHistoryData) {
     this.price = {
-      label: window.localized ? window.localized.Price : 'Price',
+      label: window.localized.Price,
       yAxisID: 'price',
       data: getPriceData(marketHistoryData),
       fill: false,
@@ -127,7 +127,7 @@ class MarketHistoryChart {
       lineTension: 0
     }
     this.marketCap = {
-      label: window.localized ? window.localized['Market Cap'] : 'Market Cap',
+      label: window.localized['Market Cap'],
       yAxisID: 'marketCap',
       data: getMarketCapData(marketHistoryData, availableSupply),
       fill: false,
@@ -138,9 +138,6 @@ class MarketHistoryChart {
     }
     this.availableSupply = availableSupply
     config.data.datasets = [this.price, this.marketCap]
-    if (!animation) {
-      config.options.animation = false
-    }
     this.chart = new Chart(el, config)
   }
 
@@ -157,11 +154,11 @@ class MarketHistoryChart {
   }
 }
 
-export function createMarketHistoryChart (el, animation = false) {
+export function createMarketHistoryChart (el) {
   const dataPath = el.dataset.market_history_chart_path
   const $chartLoading = $('[data-chart-loading-message]')
   const $chartError = $('[data-chart-error-message]')
-  const chart = new MarketHistoryChart(el, 0, [], animation)
+  const chart = new MarketHistoryChart(el, 0, [])
   $(el).show()
 
   $.getJSON(dataPath, { type: 'JSON' })
