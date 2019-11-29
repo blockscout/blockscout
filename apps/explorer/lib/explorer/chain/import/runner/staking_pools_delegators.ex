@@ -25,6 +25,9 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
   def option_key, do: :staking_pools_delegators
 
   @impl Import.Runner
+  def runner_specific_options, do: [:clear_snapshotted_values]
+
+  @impl Import.Runner
   def imported_table_row do
     %{
       value_type: "[#{ecto_schema_module()}.t()]",
