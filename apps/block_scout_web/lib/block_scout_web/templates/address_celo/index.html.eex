@@ -4,7 +4,7 @@
   <div class="card">
     <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
     <div class="card-body">
-      <h2 class="card-title"><%= gettext "Celo Info" %></h2>
+      <h2 class="card-title"><%= "Celo Info" %></h2>
 
       <dl class="row">
       <dt class="col-sm-3 text-muted">Name</dt>
