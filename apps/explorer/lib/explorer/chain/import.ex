@@ -3,8 +3,6 @@ defmodule Explorer.Chain.Import do
   Bulk importing of data into `Explorer.Repo`
   """
 
-  require Logger
-
   alias Ecto.Changeset
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
@@ -231,8 +229,15 @@ defmodule Explorer.Chain.Import do
   defp validate_runner_options(runner, options) when is_map(options) do
     option_key = runner.option_key()
 
+    runner_specific_options = 
+      if Map.has_key?(Enum.into(runner.__info__(:functions), %{}), :runner_specific_options) do
+        apply(runner, :runner_specific_options, [])
+      else
+        []
+      end
+
     case {validate_runner_option_params_required(option_key, options),
-          validate_runner_options_known(option_key, options)} do
+          validate_runner_options_known(option_key, options, runner_specific_options)} do
       {:ignore, :ok} -> :ignore
       {:ignore, {:error, _} = error} -> error
       {:ok, :ok} -> {:ok, {runner, options}}
@@ -252,10 +257,11 @@ defmodule Explorer.Chain.Import do
   defp validate_runner_option_params_required(runner_option_key, _),
     do: {:error, {:required, [runner_option_key, :params]}}
 
-  @local_options ~w(on_conflict params with timeout clear_snapshotted_values)a
+  @local_options ~w(on_conflict params with timeout)a
 
-  defp validate_runner_options_known(runner_option_key, options) do
+  defp validate_runner_options_known(runner_option_key, options, runner_specific_options) do
     unknown_option_keys = Map.keys(options) -- @local_options
+    unknown_option_keys = unknown_option_keys -- runner_specific_options
 
     if Enum.empty?(unknown_option_keys) do
       :ok
