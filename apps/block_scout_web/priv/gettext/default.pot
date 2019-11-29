@@ -72,7 +72,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:45
+#: lib/block_scout_web/templates/layout/app.html.eex:57
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -208,7 +208,7 @@ msgid "Block Height: %{height}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:60
+#: lib/block_scout_web/templates/layout/app.html.eex:11
 msgid "Block Mined, awaiting import..."
 msgstr ""
 
@@ -240,7 +240,7 @@ msgid "Blocks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:59
+#: lib/block_scout_web/templates/layout/app.html.eex:10
 msgid "Blocks Indexed"
 msgstr ""
 
@@ -643,7 +643,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:15
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20
-#: lib/block_scout_web/templates/layout/app.html.eex:65
+#: lib/block_scout_web/templates/layout/app.html.eex:16
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:29
 #: lib/block_scout_web/templates/transaction/overview.html.eex:180
@@ -966,7 +966,7 @@ msgid "Last Balance Update: Block #"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:62
+#: lib/block_scout_web/templates/layout/app.html.eex:13
 msgid "Less than"
 msgstr ""
 
@@ -1034,7 +1034,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:31
-#: lib/block_scout_web/templates/layout/app.html.eex:63
+#: lib/block_scout_web/templates/layout/app.html.eex:14
 #: lib/block_scout_web/views/address_view.ex:126
 #: lib/block_scout_web/views/address_view.ex:126
 msgid "Market Cap"
@@ -1170,7 +1170,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:24
-#: lib/block_scout_web/templates/layout/app.html.eex:64
+#: lib/block_scout_web/templates/layout/app.html.eex:15
 msgid "Price"
 msgstr ""
 
@@ -1755,7 +1755,7 @@ msgid "If it still does not show up after 1 hour, please check with your sender/
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:61
+#: lib/block_scout_web/templates/layout/app.html.eex:12
 msgid "Indexing Tokens"
 msgstr ""
 
