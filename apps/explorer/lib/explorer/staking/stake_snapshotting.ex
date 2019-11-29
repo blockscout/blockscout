@@ -1,6 +1,6 @@
 defmodule Explorer.Staking.StakeSnapshotting do
   @moduledoc """
-  Makes snapshots of staked amounts
+  Makes snapshots of staked amounts.
   """
 
   import Ecto.Query, only: [from: 2]
@@ -12,7 +12,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
   alias Explorer.Staking.ContractReader
 
   def do_snapshotting(
-    %{contracts: contracts, abi: abi, epoch_number: epoch_number, ets_table_name: ets_table_name},
+    %{contracts: contracts, abi: abi, ets_table_name: ets_table_name},
+    epoch_number,
     cached_pool_staking_responses,
     cached_pool_mining_responses,
     cached_staker_responses,
@@ -27,7 +28,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
       pending_validators_mining_addresses
       |> Enum.map(&mining_to_staking_address[&1])
 
-    # get snapshotted amounts and other pool info for each pending validator.
+    # get snapshotted amounts and other pool info for each
+    # pending validator by their staking address.
     # use `cached_pool_staking_responses` when possible
     pool_staking_responses =
       pool_staking_addresses
@@ -46,7 +48,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
       |> Enum.zip(pool_staking_addresses)
       |> Map.new(fn {key, val} -> {val, key} end)
 
-    # get pool info by its mining address.
+    # read pool info from the contracts by its mining address.
     # use `cached_pool_mining_responses` when possible
     pool_mining_responses =
       pool_staking_addresses
@@ -63,14 +65,15 @@ defmodule Explorer.Staking.StakeSnapshotting do
       |> Enum.zip(pool_staking_addresses)
       |> Map.new(fn {key, val} -> {val, key} end)
 
-    # form a flat list of all active stakers in the form {pool_staking_address, staker_address}
+    # get a flat list of all stakers of each validator
+    # in the form of {pool_staking_address, staker_address}
     stakers =
       Enum.flat_map(pool_staking_responses, fn {pool_staking_address, resp} ->
         [{pool_staking_address, pool_staking_address}] ++
           Enum.map(resp.active_delegators, &{pool_staking_address, &1})
       end)
 
-    # get amounts for each of the stakers
+    # read info of each staker from the contracts.
     # use `cached_staker_responses` when possible
     staker_responses =
       stakers
@@ -96,9 +99,11 @@ defmodule Explorer.Staking.StakeSnapshotting do
       |> Enum.zip(stakers)
       |> Map.new(fn {key, val} -> {val, key} end)
 
-    # to keep sort order
+    # to keep sort order when using `perform_grouped_requests` (see below)
     pool_staking_keys = Enum.map(pool_staking_responses, fn {key, _} -> key end)
 
+    # call `BlockReward.validatorShare` function for each pool
+    # to get validator's reward share of the pool (needed for the `Delegators` list in UI)
     validator_reward_responses =
       pool_staking_responses
       |> Enum.map(fn {_pool_staking_address, resp} ->
@@ -111,9 +116,11 @@ defmodule Explorer.Staking.StakeSnapshotting do
       end)
       |> ContractReader.perform_grouped_requests(pool_staking_keys, contracts, abi)
 
-    # to keep sort order
+    # to keep sort order when using `perform_grouped_requests` (see below)
     delegator_keys = Enum.map(staker_responses, fn {key, _} -> key end)
 
+    # call `BlockReward.delegatorShare` function for each delegator
+    # to get their reward share of the pool (needed for the `Delegators` list in UI)
     delegator_reward_responses =
       staker_responses
       |> Enum.map(fn {{pool_staking_address, _staker_address}, resp} ->
@@ -129,6 +136,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
       end)
       |> ContractReader.perform_grouped_requests(delegator_keys, contracts, abi)
 
+    # form entries for updating the `staking_pools` table in DB
     pool_entries =
       Enum.map(pool_staking_addresses, fn pool_staking_address ->
         staking_resp = pool_staking_responses[pool_staking_address]
@@ -158,6 +166,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
         )
       end)
 
+    # form entries for updating the `staking_pools_delegators` table in DB
     delegator_entries =
       Enum.map(staker_responses, fn {{pool_staking_address, staker_address}, resp} ->
         delegator_reward_resp = delegator_reward_responses[{pool_staking_address, staker_address}]
@@ -169,6 +178,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
         })
       end)
 
+    # perform SQL queries
     case Chain.import(%{
       staking_pools: %{params: pool_entries, on_conflict: staking_pools_update(), clear_snapshotted_values: true},
       staking_pools_delegators: %{params: delegator_entries, on_conflict: staking_pools_delegators_update(), clear_snapshotted_values: true},
