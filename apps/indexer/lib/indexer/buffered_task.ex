@@ -438,7 +438,7 @@ defmodule Indexer.BufferedTask do
   end
 
   # get more work from `init/2`
-  defp schedule_next(%BufferedTask{poll: true} = state) do
+  defp schedule_next(%BufferedTask{poll: true, bound_queue: %BoundQueue{size: 0}} = state) do
     do_initial_stream(state)
   end
 
