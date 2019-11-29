@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2899](https://github.com/poanetwork/blockscout/pull/2899) - fix empty buffered task
 
 ### Chore
 
