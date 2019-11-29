@@ -1,26 +1,25 @@
 defmodule Explorer.Staking.ContractReader do
   @moduledoc """
-  Routines for batched fetching of information from POSDAO contracts
+  Routines for batched fetching of information from POSDAO contracts.
   """
 
-  alias Explorer.Chain
   alias Explorer.SmartContract.Reader
 
   def global_requests do
     [
-      token_contract_address: {:staking, "erc677TokenContract", []},
-      min_candidate_stake: {:staking, "candidateMinStake", []},
-      min_delegator_stake: {:staking, "delegatorMinStake", []},
+      active_pools: {:staking, "getPools", []},
+      epoch_end_block: {:staking, "stakingEpochEndBlock", []},
       epoch_number: {:staking, "stakingEpoch", []},
       epoch_start_block: {:staking, "stakingEpochStartBlock", []},
-      epoch_end_block: {:staking, "stakingEpochEndBlock", []},
-      staking_allowed: {:staking, "areStakeAndWithdrawAllowed", []},
-      active_pools: {:staking, "getPools", []},
       inactive_pools: {:staking, "getPoolsInactive", []},
-      pools_to_be_elected: {:staking, "getPoolsToBeElected", []},
+      min_candidate_stake: {:staking, "candidateMinStake", []},
+      min_delegator_stake: {:staking, "delegatorMinStake", []},
       pools_likelihood: {:staking, "getPoolsLikelihood", []},
-      validators: {:validator_set, "getValidators", []},
+      pools_to_be_elected: {:staking, "getPoolsToBeElected", []},
+      staking_allowed: {:staking, "areStakeAndWithdrawAllowed", []},
+      token_contract_address: {:staking, "erc677TokenContract", []},
       unremovable_validator: {:validator_set, "unremovableValidator", []},
+      validators: {:validator_set, "getValidators", []},
       validator_set_apply_block: {:validator_set, "validatorSetApplyBlock", []}
     ]
   end
@@ -28,23 +27,23 @@ defmodule Explorer.Staking.ContractReader do
   def pool_staking_requests(staking_address) do
     [
       active_delegators: {:staking, "poolDelegators", [staking_address]},
-      validator_reward_percent: {:block_reward, "validatorRewardPercent", [staking_address]},
       inactive_delegators: {:staking, "poolDelegatorsInactive", [staking_address]},
       is_active: {:staking, "isPoolActive", [staking_address]},
       mining_address_hash: {:validator_set, "miningByStakingAddress", [staking_address]},
       self_staked_amount: {:staking, "stakeAmount", [staking_address, staking_address]},
-      total_staked_amount: {:staking, "stakeAmountTotal", [staking_address]}
+      total_staked_amount: {:staking, "stakeAmountTotal", [staking_address]},
+      validator_reward_percent: {:block_reward, "validatorRewardPercent", [staking_address]}
     ]
   end
 
   def pool_mining_requests(mining_address) do
     [
-      was_validator_count: {:validator_set, "validatorCounter", [mining_address]},
-      is_banned: {:validator_set, "isValidatorBanned", [mining_address]},
       are_delegators_banned: {:validator_set, "areDelegatorsBanned", [mining_address]},
       ban_reason: {:validator_set, "banReason", [mining_address]},
       banned_until: {:validator_set, "bannedUntil", [mining_address]},
       banned_delegators_until: {:validator_set, "bannedDelegatorsUntil", [mining_address]},
+      is_banned: {:validator_set, "isValidatorBanned", [mining_address]},
+      was_validator_count: {:validator_set, "validatorCounter", [mining_address]},
       was_banned_count: {:validator_set, "banCounter", [mining_address]}
     ]
   end
@@ -83,18 +82,6 @@ defmodule Explorer.Staking.ContractReader do
     [
       delegator_share: {:block_reward, "delegatorShare", args}
     ]
-  end
-
-  def decode_data(address_hash_string) do
-    {
-      :ok,
-      %Chain.Hash{
-        byte_count: _,
-        bytes: bytes
-      }
-    } = Chain.string_to_address_hash(address_hash_string)
-
-    bytes
   end
 
   def perform_requests(requests, contracts, abi) do
