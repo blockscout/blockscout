@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   import Ecto.Query, only: [from: 2, subquery: 1]
 
   alias Ecto.{Changeset, Multi, Repo}
-
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Import, Log, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
@@ -305,6 +305,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         [set: [consensus: false, updated_at: updated_at]],
         timeout: timeout
       )
+
+    :ok = Chain.remove_nonconsensus_blocks_from_pending_ops(removed_consensus_block_hashes)
 
     {:ok, removed_consensus_block_hashes}
   rescue
