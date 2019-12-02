@@ -70,6 +70,7 @@ defmodule Explorer.Chain.Block.Reward do
   """
   @spec fetch_emission_rewards_tuples(Hash.Address.t(), PagingOptions.t()) :: [{t(), t()}]
   def fetch_emission_rewards_tuples(address_hash, paging_options) do
+
     address_rewards =
       __MODULE__
       |> join_associations()
@@ -112,9 +113,16 @@ defmodule Explorer.Chain.Block.Reward do
   end
 
   defp join_associations(query) do
+    last_blocks_query =
+      from(block in Block,
+        limit: 1000,
+        order_by: [desc: block.number],
+        select: {block.number}
+      )
+
     query
     |> preload(:address)
     |> join(:inner, [reward], block in assoc(reward, :block))
-    |> preload(:block)
+    |> preload(block: ^last_blocks_query)
   end
 end
