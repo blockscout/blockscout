@@ -301,7 +301,7 @@ msgid "Clear"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_tabs.html.eex:42
+#: lib/block_scout_web/templates/address/_tabs.html.eex:50
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:165
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:187
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:126
@@ -532,7 +532,7 @@ msgid "Decompiled Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_tabs.html.eex:52
+#: lib/block_scout_web/templates/address/_tabs.html.eex:60
 msgid "Decompiled code"
 msgstr ""
 
@@ -1268,7 +1268,7 @@ msgid "Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_tabs.html.eex:58
+#: lib/block_scout_web/templates/address/_tabs.html.eex:66
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:25
 #: lib/block_scout_web/views/address_view.ex:309
 #: lib/block_scout_web/views/tokens/overview_view.ex:37
