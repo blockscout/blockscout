@@ -59,6 +59,14 @@ export function reducer (state = initialState, action) {
   }
 }
 
+let fetchedTokenBalanceBlockNumber = 0;
+function loadTokenBalance(blockNumber) {
+  if (blockNumber > fetchedTokenBalanceBlockNumber) {
+    fetchedTokenBalanceBlockNumber = blockNumber
+    setTimeout(loadTokenBalanceDropdown, 1000)
+  }
+}
+
 const elements = {
   '[data-selector="channel-disconnected-message"]': {
     render ($el, state) {
@@ -72,7 +80,7 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.balance === state.balance) return
       $el.empty().append(state.balanceCard)
-      loadTokenBalanceDropdown()
+      loadTokenBalance(state.fetchedCoinBalanceBlockNumber)
       updateAllCalculatedUsdValues()
     }
   },
@@ -127,6 +135,9 @@ if ($addressDetailsPage.length) {
     type: 'RECEIVED_UPDATED_BALANCE',
     msg: humps.camelizeKeys(msg)
   }))
+  addressChannel.on('token_balance', (msg) => loadTokenBalance(
+   msg.block_number
+  ))
   addressChannel.on('transaction', (msg) => {
     store.dispatch({
       type: 'RECEIVED_NEW_TRANSACTION',
