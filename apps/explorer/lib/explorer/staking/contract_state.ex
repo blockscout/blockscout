@@ -188,7 +188,7 @@ defmodule Explorer.Staking.ContractState do
       validators.all
       |> Enum.map(&ContractReader.staking_by_mining_requests/1)
       |> ContractReader.perform_grouped_requests(validators.all, contracts, abi)
-      |> Map.new(fn {mining_address, resp} -> {mining_address, address_string_to_bytes(resp.staking_address)} end)
+      |> Map.new(fn {mining_address, resp} -> {mining_address, address_string_to_bytes(resp.staking_address).bytes} end)
 
     # the list of all pools (validators + active pools + inactive pools)
     pools = Enum.uniq(
@@ -355,7 +355,7 @@ defmodule Explorer.Staking.ContractState do
 
         block_reward_balance = BalanceReader.get_balances_of([%{
           token_contract_address_hash: token_contract_address_hash,
-          address_hash: block_reward_address,
+          address_hash: block_reward_address.bytes,
           block_number: block_number
         }])[:ok]
 
@@ -367,10 +367,10 @@ defmodule Explorer.Staking.ContractState do
             type: "ERC-20"
           })
 
-        Chain.import(%{
-          addresses: %{params: [%{hash: block_reward_address}], on_conflict: :nothing},
+        import_result = Chain.import(%{
+          addresses: %{params: [%{hash: block_reward_address.bytes}], on_conflict: :nothing},
           address_current_token_balances: %{params: [%{
-            address_hash: block_reward_address,
+            address_hash: block_reward_address.bytes,
             token_contract_address_hash: token_contract_address_hash,
             block_number: block_number,
             value: block_reward_balance,
@@ -378,6 +378,15 @@ defmodule Explorer.Staking.ContractState do
           }]},
           tokens: %{params: [token_params]}
         })
+
+        with {:ok, _} <- import_result, do:
+          Publisher.broadcast([{
+              :address_token_balances, [
+                %{address_hash: block_reward_address.struct, block_number: block_number}
+              ]
+            }],
+            :on_demand
+          )
       end
 
       # start snapshotting at the beginning of the staking epoch
@@ -431,10 +440,10 @@ defmodule Explorer.Staking.ContractState do
       %Chain.Hash{
         byte_count: _,
         bytes: bytes
-      }
+      } = struct
     } = Chain.string_to_address_hash(address_string)
 
-    bytes
+    %{bytes: bytes, struct: struct}
   end
 
   # sobelow_skip ["Traversal"]
