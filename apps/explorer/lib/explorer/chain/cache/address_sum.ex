@@ -16,11 +16,13 @@ defmodule Explorer.Chain.Cache.AddressSum do
   alias Explorer.Chain
 
   defp handle_fallback(:sum) do
-    # This will get the task PID if one exists and launch a new task if not
-    # See next `handle_fallback` definition
-    get_async_task()
+    result = fetch_from_db()
 
-    {:return, nil}
+    if Application.get_env(:explorer, __MODULE__)[:enabled] do
+      {:update, result}
+    else
+      {:return, result}
+    end
   end
 
   defp handle_fallback(:async_task) do
@@ -29,7 +31,7 @@ defmodule Explorer.Chain.Cache.AddressSum do
     {:ok, task} =
       Task.start(fn ->
         try do
-          result = Chain.fetch_sum_coin_total_supply()
+          result = fetch_from_db()
 
           set_sum(result)
         rescue
@@ -43,6 +45,10 @@ defmodule Explorer.Chain.Cache.AddressSum do
       end)
 
     {:update, task}
+  end
+
+  defp fetch_from_db do
+    Chain.fetch_sum_coin_total_supply()
   end
 
   # By setting this as a `callback` an async task will be started each time the

@@ -7,6 +7,12 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
   alias Explorer.ExchangeRates.Token
   alias Explorer.ExchangeRates.Source.TestSource
 
+  setup do
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.AddressSum.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.AddressSum.child_id())
+    :ok
+  end
+
   describe "tokensupply" do
     test "with missing contract address", %{conn: conn} do
       params = %{
@@ -106,6 +112,8 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
 
   describe "ethsupply" do
     test "returns total supply from DB", %{conn: conn} do
+      insert(:address, fetched_coin_balance: 6)
+
       params = %{
         "module" => "stats",
         "action" => "ethsupply"
