@@ -3665,8 +3665,9 @@ defmodule Explorer.Chain do
         SELECT
           competitors.address,
           COALESCE(( SELECT name FROM celo_account WHERE address =  competitors.address), 'Unknown account'),
-          SUM(rate*token_balance+balance+locked_balance)*multiplier AS score
-        FROM exchange_rates, competitors, celo_account as b, tokens, claims,
+          (SUM(rate*token_balance+balance+locked_balance)+rate*COALESCE(old_usd,0)+COALESCE(old_gold,0))*
+           (multiplier+COALESCE(attestation_multiplier,0)) AS score
+        FROM exchange_rates, competitors, tokens, claims,
          ( SELECT claims.address AS c_address, claims.claimed_address AS address,
               COALESCE((SELECT value FROM address_current_token_balances, tokens WHERE claimed_address = address_hash
                         AND token_contract_address_hash = tokens.contract_address_hash AND tokens.symbol = 'cUSD'), 0) as token_balance,
@@ -3678,7 +3679,7 @@ defmodule Explorer.Chain do
         AND claims.claimed_address = get.address
         AND claims.address = competitors.address
         AND claims.address = c_address
-        GROUP BY competitors.address, multiplier
+        GROUP BY competitors.address, rate, old_usd, old_gold, attestation_multiplier, multiplier
         ORDER BY score DESC
       """)
 
