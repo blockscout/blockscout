@@ -80,12 +80,16 @@ function getDataFromLocalStorage (key) {
   return data ? JSON.parse(data) : []
 }
 
+function setDataToLocalStorage (key, data) {
+  window.localStorage.setItem(key, JSON.stringify(data))
+}
+
 function getPriceData (marketHistoryData) {
   if (marketHistoryData.length === 0) {
     return getDataFromLocalStorage('priceData')
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
-  window.localStorage.setItem('priceData', JSON.stringify(data))
+  setDataToLocalStorage('priceData', data)
   return data
 }
 
@@ -99,7 +103,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
       : availableSupply
     return { x: date, y: closingPrice * supply }
   })
-  window.localStorage.setItem('marketCapData', JSON.stringify(data))
+  setDataToLocalStorage('marketCapData', data)
   return data
 }
 
