@@ -18,7 +18,11 @@ defmodule Explorer.Chain.Cache.AddressSum do
   defp handle_fallback(:sum) do
     result = fetch_from_db()
 
-    {:update, result}
+    if Application.get_env(:explorer, __MODULE__)[:enabled] do
+      {:update, result}
+    else
+      {:return, result}
+    end
   end
 
   defp fetch_from_db do
