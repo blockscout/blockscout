@@ -142,6 +142,15 @@ class MarketHistoryChart {
     }
     this.availableSupply = availableSupply
     config.data.datasets = [this.price, this.marketCap]
+
+    const isChartLoadedKey = 'isChartLoaded'
+    const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
+    if (isChartLoaded) {
+      config.options.animation = false
+    } else {
+      window.sessionStorage.setItem(isChartLoadedKey, true)
+    }
+
     this.chart = new Chart(el, config)
   }
 
