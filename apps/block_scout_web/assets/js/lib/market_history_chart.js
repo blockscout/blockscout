@@ -163,6 +163,7 @@ export function createMarketHistoryChart (el) {
   const $chartLoading = $('[data-chart-loading-message]')
   const $chartError = $('[data-chart-error-message]')
   const chart = new MarketHistoryChart(el, 0, [])
+  $chartLoading.hide()
   $(el).show()
 
   $.getJSON(dataPath, { type: 'JSON' })
@@ -174,10 +175,6 @@ export function createMarketHistoryChart (el) {
     .fail(() => {
       $(el).hide()
       $chartError.show()
-    })
-    .always(() => {
-      $chartLoading.css({ opacity: 0 })
-      setTimeout($chartLoading.hide, 1000)
     })
   return chart
 }
