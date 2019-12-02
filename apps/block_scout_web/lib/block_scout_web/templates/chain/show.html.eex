@@ -1,4 +1,5 @@
 <div class='dashboard-banner-container' data-page="chain-details">
+  <script defer src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
   <div class="container">
     <div class="dashboard-banner">
       <!-- Graph and legend -->
