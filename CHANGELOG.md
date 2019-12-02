@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2908](https://github.com/poanetwork/blockscout/pull/2908) - Fix performance of address page
 
 ### Chore
 

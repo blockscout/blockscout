@@ -112,9 +112,15 @@ defmodule Explorer.Chain.Block.Reward do
   end
 
   defp join_associations(query) do
+    last_blocks_query =
+      from(block in Block,
+        limit: 1000,
+        order_by: [desc: block.number]
+      )
+
     query
     |> preload(:address)
-    |> join(:inner, [reward], block in assoc(reward, :block))
-    |> preload(:block)
+    |> join(:inner, [reward], block in subquery(last_blocks_query), on: block.hash == reward.block_hash)
+    |> preload(block: ^last_blocks_query)
   end
 end
