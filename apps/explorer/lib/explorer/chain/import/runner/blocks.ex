@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Import, Log, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.{Address, Block, Import, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
@@ -86,9 +86,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timestamps: timestamps,
         transactions: transactions
       })
-    end)
-    |> Multi.run(:remove_nonconsensus_logs, fn repo, %{derive_transaction_forks: transactions} ->
-      remove_nonconsensus_logs(repo, transactions, insert_options)
     end)
     |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
       acquire_contract_address_tokens(repo, consensus_block_numbers)
@@ -334,35 +331,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       timeout: timeout,
       timestamps: timestamps
     )
-  end
-
-  defp remove_nonconsensus_logs(repo, forked_transaction_hashes, %{timeout: timeout}) do
-    ordered_logs =
-      from(
-        log in Log,
-        where: log.transaction_hash in ^forked_transaction_hashes,
-        select: log.transaction_hash,
-        # Enforce Log ShareLocks order (see docs: sharelocks.md)
-        order_by: [
-          log.transaction_hash,
-          log.index
-        ],
-        lock: "FOR UPDATE"
-      )
-
-    query =
-      from(log in Log,
-        select: map(log, [:transaction_hash, :index]),
-        inner_join: ordered_log in subquery(ordered_logs),
-        on: ordered_log.transaction_hash == log.transaction_hash
-      )
-
-    {_count, deleted_logs} = repo.delete_all(query, timeout: timeout)
-
-    {:ok, deleted_logs}
-  rescue
-    postgrex_error in Postgrex.Error ->
-      {:error, %{exception: postgrex_error, transactions: forked_transaction_hashes}}
   end
 
   defp delete_address_token_balances(_, [], _), do: {:ok, []}

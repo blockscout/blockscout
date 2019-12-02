@@ -357,7 +357,10 @@ defmodule Explorer.Chain do
 
     base_query =
       from(log in Log,
-        inner_join: transaction in assoc(log, :transaction),
+        inner_join: transaction in Transaction,
+        on:
+          transaction.block_hash == log.block_hash and transaction.block_number == log.block_number and
+            transaction.hash == log.transaction_hash,
         order_by: [desc: transaction.block_number, desc: transaction.index],
         preload: [:transaction, transaction: [to_address: :smart_contract]],
         where: transaction.block_number < ^block_number,
@@ -365,7 +368,7 @@ defmodule Explorer.Chain do
         or_where:
           transaction.block_number == ^block_number and transaction.index == ^transaction_index and
             log.index > ^log_index,
-        where: log.address_hash == ^address_hash,
+        where: log.address_hash == ^address_hash and log.block_hash == transaction.block_hash,
         limit: ^paging_options.page_size,
         select: log
       )
@@ -2398,8 +2401,15 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    Log
-    |> join(:inner, [log], transaction in assoc(log, :transaction))
+    log_with_transactions =
+      from(log in Log,
+        inner_join: transaction in Transaction,
+        on:
+          transaction.block_hash == log.block_hash and transaction.block_number == log.block_number and
+            transaction.hash == log.transaction_hash
+      )
+
+    log_with_transactions
     |> where([_, transaction], transaction.hash == ^transaction_hash)
     |> page_logs(paging_options)
     |> limit(^paging_options.page_size)
