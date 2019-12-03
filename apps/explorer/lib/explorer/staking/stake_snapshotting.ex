@@ -31,7 +31,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
       |> Enum.zip(pending_validators_mining_addresses)
       |> Map.new()
 
-    # get snapshotted amounts and other pool info for each
+    # get snapshotted amounts and active delegator list for the pool for each
     # pending validator by their staking address.
     # use `cached_pool_staking_responses` when possible
     pool_staking_responses =
@@ -42,7 +42,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
             Map.merge(resp, ContractReader.perform_requests(snapshotted_pool_amounts_requests(staking_address_hash, block_number), contracts, abi))
           :error ->
             ContractReader.perform_requests(
-              ContractReader.active_delegators_request(staking_address_hash) ++
+              ContractReader.active_delegators_request(staking_address_hash, block_number) ++
                 snapshotted_pool_amounts_requests(staking_address_hash, block_number),
               contracts,
               abi
@@ -60,7 +60,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
           Enum.map(resp.active_delegators, &{pool_staking_address, &1})
       end)
 
-    # read info of each staker from the contracts
+    # read info about each staker from the contracts
     staker_responses =
       stakers
       |> Enum.map(fn {pool_staking_address, staker_address} ->
@@ -161,7 +161,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
       timeout: :infinity
     }) do
       {:ok, _} -> :ets.insert(ets_table_name, is_snapshotted: true)
-      _ -> Logger.error("Cannot finish snapshotting started at block #{block_number}")
+      _ -> Logger.error("Cannot successfully finish snapshotting for the epoch #{epoch_number - 1}")
     end
   end
 
