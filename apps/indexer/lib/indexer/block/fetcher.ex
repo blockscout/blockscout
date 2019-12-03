@@ -171,12 +171,13 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
          special_token_enabled = config(:enable_special_token),
-         {:ok, gold_token} <-
+         {:read_token_address, {:ok, gold_token}} <-
+           {:read_token_address,
            (if special_token_enabled do
               AccountReader.get_address("GoldToken")
             else
               {:ok, nil}
-            end),
+            end)},
          # TODO: handle non-gold transaction fees
          # %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
          # TokenTransfers.parse_fees(transactions_with_receipts),
@@ -271,6 +272,7 @@ defmodule Indexer.Block.Fetcher do
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
+      {step, :error} -> {:error, {step, "Unknown error"}}
       {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
     end
   end

@@ -432,6 +432,12 @@ defmodule Indexer.Transform.Addresses do
               required(:address_hash) => String.t(),
               required(:block_number) => non_neg_integer()
             }
+          ],
+          optional(:special_token) => [
+            %{
+              required(:hash) => String.t(),
+              required(:block_number) => non_neg_integer()
+            }
           ]
         }) :: [params]
   def extract_addresses(fetched_data, options \\ []) when is_map(fetched_data) and is_list(options) do
