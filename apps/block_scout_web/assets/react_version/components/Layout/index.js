@@ -3,10 +3,11 @@ import styled from 'styled-components'
 
 import Header from '../Header'
 
-export default () => {
+export default ({ children }) => {
   return (
     <Layout>
       <Header />
+      {children}
     </Layout>
   )
 }
