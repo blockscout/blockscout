@@ -75,6 +75,7 @@ const appJs =
     entry: {
       app: './js/app.js',
       stakes: './js/pages/stakes.js',
+      'react-app': './react_version/index.js',
       'non-critical': './css/non-critical.scss'
     },
     output: {
@@ -87,12 +88,12 @@ const appJs =
     module: {
       rules: [
         {
-          test: /\.js$/,
+          test: /\.(js|jsx)$/,
           exclude: /node_modules/,
           use: {
             loader: 'babel-loader',
             options: {
-              presets: ['@babel/preset-env']
+              presets: ['@babel/preset-env', '@babel/preset-react']
             }
           }
         },
