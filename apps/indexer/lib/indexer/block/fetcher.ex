@@ -173,11 +173,11 @@ defmodule Indexer.Block.Fetcher do
          special_token_enabled = config(:enable_special_token),
          {:read_token_address, {:ok, gold_token}} <-
            {:read_token_address,
-           (if special_token_enabled do
+            if special_token_enabled do
               AccountReader.get_address("GoldToken")
             else
               {:ok, nil}
-            end)},
+            end},
          # TODO: handle non-gold transaction fees
          # %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
          # TokenTransfers.parse_fees(transactions_with_receipts),
