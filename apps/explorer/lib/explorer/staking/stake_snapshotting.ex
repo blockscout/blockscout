@@ -15,20 +15,20 @@ defmodule Explorer.Staking.StakeSnapshotting do
     %{contracts: contracts, abi: abi, ets_table_name: ets_table_name},
     epoch_number,
     cached_pool_staking_responses,
-    pending_validators_mining_addresses,
+    pools_mining_addresses,
     mining_to_staking_address,
     block_number
   ) do
-    :ets.insert(ets_table_name, is_snapshotted: false)
+    :ets.insert(ets_table_name, is_snapshotting: true)
 
     # get staking addresses for the pending validators
     pool_staking_addresses =
-      pending_validators_mining_addresses
+      pools_mining_addresses
       |> Enum.map(&mining_to_staking_address[&1])
 
     staking_to_mining_address =
       pool_staking_addresses
-      |> Enum.zip(pending_validators_mining_addresses)
+      |> Enum.zip(pools_mining_addresses)
       |> Map.new()
 
     # get snapshotted amounts and active delegator list for the pool for each
@@ -160,9 +160,11 @@ defmodule Explorer.Staking.StakeSnapshotting do
       staking_pools_delegators: %{params: delegator_entries, on_conflict: staking_pools_delegators_update(), clear_snapshotted_values: true},
       timeout: :infinity
     }) do
-      {:ok, _} -> :ets.insert(ets_table_name, is_snapshotted: true)
+      {:ok, _} -> :ets.insert(ets_table_name, snapshotted_epoch_number: epoch_number)
       _ -> Logger.error("Cannot successfully finish snapshotting for the epoch #{epoch_number - 1}")
     end
+
+    :ets.insert(ets_table_name, is_snapshotting: false)
   end
 
   defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
