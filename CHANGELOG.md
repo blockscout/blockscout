@@ -3,7 +3,6 @@
 ### Features
 
 ### Fixes
-- [#2901](https://github.com/poanetwork/blockscout/pull/2901) - fix address sum cache
 
 ### Chore
 

@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Cache.AddressSumTest do
   test "returns default address sum" do
     result = AddressSum.get_sum()
 
-    assert result == 0
+    assert is_nil(result)
   end
 
   test "updates cache if initial value is zero" do
