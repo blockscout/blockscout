@@ -107,7 +107,7 @@ defmodule Explorer.Chain.StakingPool do
 
   defp validate_staked_amount(changeset) do
     if get_field(changeset, :total_staked_amount) < get_field(changeset, :self_staked_amount) do
-      add_error(changeset, :total_staked_amount, "must be greater than self_staked_amount")
+      add_error(changeset, :total_staked_amount, "must be greater or equal to self_staked_amount")
     else
       changeset
     end
