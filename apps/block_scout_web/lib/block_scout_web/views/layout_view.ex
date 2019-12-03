@@ -17,8 +17,8 @@ defmodule BlockScoutWeb.LayoutView do
       test_net?: true
     },
     %{
-      title: "Celo Betanet",
-      url: "https://betanet-blockscout.celo-testnet.org/",
+      title: "Celo Baklava",
+      url: "https://baklava-blockscout.celo-testnet.org/",
       test_net?: true
     }
   ]
