@@ -4,6 +4,8 @@ config :indexer, Indexer.Tracer, disabled?: false
 
 config :indexer, Indexer.Fetcher.CeloValidatorHistory.Supervisor, disabled?: true
 
+config :indexer, Indexer.Block.Fetcher, enable_special_token: false
+
 config :logger, :indexer,
   level: :warn,
   path: Path.absname("logs/test/indexer.log")
