@@ -210,7 +210,14 @@ defmodule Explorer.Celo.AccountReader do
   defp contract(:gold), do: get_address("GoldToken")
   defp contract(:usd), do: get_address("StableToken")
 
-  defp get_address(name) do
+  def get_address(name) do
+    case get_address_raw(name) do
+      {:ok, address} -> {:ok, "0x" <> Base.encode16(address, case: :lower)}
+      _ -> :error
+    end
+  end
+
+  def get_address_raw(name) do
     contract_abi = AbiHandler.get_abi()
 
     methods = [
@@ -230,7 +237,7 @@ defmodule Explorer.Celo.AccountReader do
       end)
 
     case res["getAddressForString"] do
-      {:ok, [address]} -> {:ok, "0x" <> Base.encode16(address)}
+      {:ok, [address]} -> {:ok, address}
       _ -> :error
     end
   end

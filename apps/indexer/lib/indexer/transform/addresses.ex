@@ -137,6 +137,12 @@ defmodule Indexer.Transform.Addresses do
         %{from: :block_number, to: :fetched_coin_balance_block_number},
         %{from: :address_hash, to: :hash}
       ]
+    ],
+    special_token: [
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :hash, to: :hash}
+      ]
     ]
   }
 

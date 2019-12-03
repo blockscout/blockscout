@@ -36,7 +36,9 @@
     ) %>
   <% end %>
   <%= if @address.celo_account != nil do %>
-    <%= link(
+    <%= 
+      IO.inspect(@address) 
+      link(
       "Celo Info",
       class: "card-tab #{tab_status("celo", @conn.request_path)}",
       "data-test": "celo_tab_link",
