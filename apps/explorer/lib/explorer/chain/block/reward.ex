@@ -116,7 +116,7 @@ defmodule Explorer.Chain.Block.Reward do
       from(block in Block,
         limit: 1000,
         order_by: [desc: block.number],
-        select: {block.number}
+        select: {block.number, block.hash}
       )
 
     query
