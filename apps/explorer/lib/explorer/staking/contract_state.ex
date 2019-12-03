@@ -199,7 +199,9 @@ defmodule Explorer.Staking.ContractState do
     # read pool info from the contracts by its staking address
     pool_staking_responses =
       pools
-      |> Enum.map(&ContractReader.pool_staking_requests/1)
+      |> Enum.map(fn staking_address_hash ->
+        ContractReader.pool_staking_requests(staking_address_hash, block_number)
+      end)
       |> ContractReader.perform_grouped_requests(pools, contracts, abi)
 
     # read pool info from the contracts by its mining address
@@ -395,7 +397,7 @@ defmodule Explorer.Staking.ContractState do
         pool_staking_responses,
         validators.pending, # mining addresses of pending validators
         mining_to_staking_address,
-        block_number # the last block of the finished staking epoch
+        global_responses.epoch_start_block - 1 # the last block of the finished staking epoch
       ])
     end
 
