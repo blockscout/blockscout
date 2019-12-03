@@ -3,7 +3,7 @@ defmodule Explorer.Etherscan do
   The etherscan context.
   """
 
-  import Ecto.Query, only: [from: 2, where: 3, or_where: 3]
+  import Ecto.Query, only: [from: 2, where: 3, or_where: 3, union: 2]
 
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
@@ -97,6 +97,7 @@ defmodule Explorer.Etherscan do
 
     query
     |> Chain.where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_is_different_from_parent_transaction()
     |> Repo.all()
   end
 
@@ -120,27 +121,90 @@ defmodule Explorer.Etherscan do
       ) do
     options = Map.merge(@default_options, raw_options)
 
-    query =
+    direction =
+      case options do
+        %{filter_by: "to"} -> :to
+        %{filter_by: "from"} -> :from
+        _ -> nil
+      end
+
+    consensus_blocks =
       from(
-        it in InternalTransaction,
-        inner_join: t in assoc(it, :transaction),
-        inner_join: b in assoc(t, :block),
-        order_by: [{^options.order_by_direction, t.block_number}],
-        limit: ^options.page_size,
-        offset: ^offset(options),
-        select:
-          merge(map(it, ^@internal_transaction_fields), %{
-            block_timestamp: b.timestamp,
-            block_number: b.number
-          })
+        b in Block,
+        where: b.consensus == true
       )
 
-    query
-    |> Chain.where_transaction_has_multiple_internal_transactions()
-    |> where_address_match(address_hash, options)
-    |> where_start_block_match(options)
-    |> where_end_block_match(options)
-    |> Repo.all()
+    if direction == nil do
+      query =
+        from(
+          it in InternalTransaction,
+          inner_join: b in subquery(consensus_blocks),
+          on: it.block_number == b.number,
+          order_by: [
+            {^options.order_by_direction, it.block_number},
+            {:desc, it.transaction_index},
+            {:desc, it.index}
+          ],
+          limit: ^options.page_size,
+          offset: ^offset(options),
+          select:
+            merge(map(it, ^@internal_transaction_fields), %{
+              block_timestamp: b.timestamp,
+              block_number: b.number
+            })
+        )
+
+      query_to_address_hash_wrapped =
+        query
+        |> InternalTransaction.where_address_fields_match(address_hash, :to_address_hash)
+        |> InternalTransaction.where_is_different_from_parent_transaction()
+        |> where_start_block_match(options)
+        |> where_end_block_match(options)
+        |> Chain.wrapped_union_subquery()
+
+      query_from_address_hash_wrapped =
+        query
+        |> InternalTransaction.where_address_fields_match(address_hash, :from_address_hash)
+        |> InternalTransaction.where_is_different_from_parent_transaction()
+        |> where_start_block_match(options)
+        |> where_end_block_match(options)
+        |> Chain.wrapped_union_subquery()
+
+      query_created_contract_address_hash_wrapped =
+        query
+        |> InternalTransaction.where_address_fields_match(address_hash, :created_contract_address_hash)
+        |> InternalTransaction.where_is_different_from_parent_transaction()
+        |> where_start_block_match(options)
+        |> where_end_block_match(options)
+        |> Chain.wrapped_union_subquery()
+
+      query_to_address_hash_wrapped
+      |> union(^query_from_address_hash_wrapped)
+      |> union(^query_created_contract_address_hash_wrapped)
+      |> Repo.all()
+    else
+      query =
+        from(
+          it in InternalTransaction,
+          inner_join: t in assoc(it, :transaction),
+          inner_join: b in assoc(t, :block),
+          order_by: [{^options.order_by_direction, t.block_number}],
+          limit: ^options.page_size,
+          offset: ^offset(options),
+          select:
+            merge(map(it, ^@internal_transaction_fields), %{
+              block_timestamp: b.timestamp,
+              block_number: b.number
+            })
+        )
+
+      query
+      |> InternalTransaction.where_address_fields_match(address_hash, direction)
+      |> InternalTransaction.where_is_different_from_parent_transaction()
+      |> where_start_block_match(options)
+      |> where_end_block_match(options)
+      |> Repo.all()
+    end
   end
 
   @doc """

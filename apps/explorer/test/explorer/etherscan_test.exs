@@ -533,7 +533,8 @@ defmodule Explorer.EtherscanTest do
 
       found_internal_transactions = Etherscan.list_internal_transactions(transaction.hash)
 
-      assert length(found_internal_transactions) == 3
+      # excluding of internal transactions with type=call and index=0
+      assert length(found_internal_transactions) == 2
     end
 
     test "only returns internal transactions that belong to the transaction" do
@@ -571,7 +572,8 @@ defmodule Explorer.EtherscanTest do
 
       internal_transactions1 = Etherscan.list_internal_transactions(transaction1.hash)
 
-      assert length(internal_transactions1) == 2
+      # excluding of internal transactions with type=call and index=0
+      assert length(internal_transactions1) == 1
 
       internal_transactions2 = Etherscan.list_internal_transactions(transaction2.hash)
 
@@ -659,7 +661,7 @@ defmodule Explorer.EtherscanTest do
         |> insert()
         |> with_block()
 
-      for index <- 0..2 do
+      for index <- 0..3 do
         internal_transaction_details = %{
           transaction: transaction,
           index: index,
@@ -719,7 +721,8 @@ defmodule Explorer.EtherscanTest do
 
       internal_transactions1 = Etherscan.list_internal_transactions(address1.hash)
 
-      assert length(internal_transactions1) == 3
+      # excluding of internal transactions with type=call and index=0
+      assert length(internal_transactions1) == 2
 
       internal_transactions2 = Etherscan.list_internal_transactions(address2.hash)
 
@@ -734,7 +737,7 @@ defmodule Explorer.EtherscanTest do
         |> insert()
         |> with_block()
 
-      for index <- 0..2 do
+      for index <- 0..3 do
         internal_transaction_details = %{
           transaction: transaction,
           index: index,
@@ -795,7 +798,8 @@ defmodule Explorer.EtherscanTest do
 
       expected_block_numbers = [second_block.number, third_block.number]
 
-      assert length(found_internal_transactions) == 4
+      # excluding of internal transactions with type=call and index=0
+      assert length(found_internal_transactions) == 2
 
       for internal_transaction <- found_internal_transactions do
         assert internal_transaction.block_number in expected_block_numbers

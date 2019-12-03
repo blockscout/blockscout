@@ -64,7 +64,8 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
 
       assert json_response(conn, 200)
 
-      assert Enum.count(items) == 2
+      # excluding of internal transactions with type=call and index=0
+      assert Enum.count(items) == 1
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
