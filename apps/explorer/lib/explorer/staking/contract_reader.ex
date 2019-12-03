@@ -24,9 +24,15 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  def active_delegators_request(staking_address) do
+    [
+      active_delegators: {:staking, "poolDelegators", [staking_address]}
+    ]
+  end
+
   def pool_staking_requests(staking_address) do
     [
-      active_delegators: {:staking, "poolDelegators", [staking_address]},
+      active_delegators: active_delegators_request(staking_address)[:active_delegators],
       inactive_delegators: {:staking, "poolDelegatorsInactive", [staking_address]},
       is_active: {:staking, "isPoolActive", [staking_address]},
       mining_address_hash: {:validator_set, "miningByStakingAddress", [staking_address]},
