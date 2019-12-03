@@ -25,6 +25,28 @@ defmodule Explorer.Chain.Cache.AddressSum do
     end
   end
 
+  defp handle_fallback(:async_task) do
+    # If this gets called it means an async task was requested, but none exists
+    # so a new one needs to be launched
+    {:ok, task} =
+      Task.start(fn ->
+        try do
+          result = fetch_from_db()
+
+          set_sum(result)
+        rescue
+          e ->
+            Logger.debug([
+              "Coudn't update address sum test #{inspect(e)}"
+            ])
+        end
+
+        set_async_task(nil)
+      end)
+
+    {:update, task}
+  end
+
   defp fetch_from_db do
     Chain.fetch_sum_coin_total_supply()
   end
