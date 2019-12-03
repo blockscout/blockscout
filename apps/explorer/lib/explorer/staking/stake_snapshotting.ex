@@ -15,7 +15,6 @@ defmodule Explorer.Staking.StakeSnapshotting do
     %{contracts: contracts, abi: abi, ets_table_name: ets_table_name},
     epoch_number,
     cached_pool_staking_responses,
-    cached_pool_mining_responses,
     cached_staker_responses,
     pending_validators_mining_addresses,
     mining_to_staking_address,
@@ -43,23 +42,6 @@ defmodule Explorer.Staking.StakeSnapshotting do
               contracts,
               abi
             )
-        end
-      end)
-      |> Enum.zip(pool_staking_addresses)
-      |> Map.new(fn {key, val} -> {val, key} end)
-
-    # read pool info from the contracts by its mining address.
-    # use `cached_pool_mining_responses` when possible
-    pool_mining_responses =
-      pool_staking_addresses
-      |> Enum.map(fn staking_address_hash -> 
-        case Map.fetch(cached_pool_mining_responses, staking_address_hash) do
-          {:ok, resp} ->
-            resp
-          :error ->
-            pool_staking_responses[staking_address_hash].mining_address_hash
-            |> ContractReader.pool_mining_requests()
-            |> ContractReader.perform_requests(contracts, abi)
         end
       end)
       |> Enum.zip(pool_staking_addresses)
@@ -140,7 +122,6 @@ defmodule Explorer.Staking.StakeSnapshotting do
     pool_entries =
       Enum.map(pool_staking_addresses, fn pool_staking_address ->
         staking_resp = pool_staking_responses[pool_staking_address]
-        mining_resp = pool_mining_responses[pool_staking_address]
         validator_reward_resp = validator_reward_responses[pool_staking_address]
 
         %{
@@ -157,13 +138,11 @@ defmodule Explorer.Staking.StakeSnapshotting do
             :total_staked_amount
           ])
         )
-        |> Map.merge(
-          Map.take(mining_resp, [
-            :banned_until,
-            :was_banned_count,
-            :was_validator_count
-          ])
-        )
+        |> Map.merge(%{
+          banned_until: 0,
+          was_banned_count: 0,
+          was_validator_count: 0
+        })
       end)
 
     # form entries for updating the `staking_pools_delegators` table in DB
@@ -174,6 +153,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
         Map.merge(resp, %{
           address_hash: staker_address,
           staking_address_hash: pool_staking_address,
+          is_active: false,
           snapshotted_reward_ratio: Float.floor(delegator_reward_resp.delegator_share / 10_000, 2)
         })
       end)
