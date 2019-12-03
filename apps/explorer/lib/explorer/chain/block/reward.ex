@@ -70,7 +70,6 @@ defmodule Explorer.Chain.Block.Reward do
   """
   @spec fetch_emission_rewards_tuples(Hash.Address.t(), PagingOptions.t()) :: [{t(), t()}]
   def fetch_emission_rewards_tuples(address_hash, paging_options) do
-
     address_rewards =
       __MODULE__
       |> join_associations()
