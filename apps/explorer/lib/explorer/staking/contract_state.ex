@@ -21,9 +21,10 @@ defmodule Explorer.Staking.ContractState do
     :epoch_end_block,
     :epoch_number,
     :epoch_start_block,
-    :is_snapshotted,
+    :is_snapshotting,
     :min_candidate_stake,
     :min_delegator_stake,
+    :snapshotted_epoch_number,
     :staking_allowed,
     :staking_contract,
     :token_contract_address,
@@ -98,7 +99,8 @@ defmodule Explorer.Staking.ContractState do
 
     :ets.insert(@table_name,
       block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address},
-      is_snapshotted: false,
+      is_snapshotting: false,
+      snapshotted_epoch_number: -1,
       staking_contract: %{abi: staking_abi, address: staking_contract_address},
       token_contract_address: token_contract_address,
       token: token,
@@ -132,8 +134,9 @@ defmodule Explorer.Staking.ContractState do
       ContractReader.validator_min_reward_percent_request(global_responses.epoch_number), contracts, abi
     ).value
 
-    epoch_finished = (global_responses.epoch_start_block == block_number + 1)
+    epoch_very_beginning = (global_responses.epoch_start_block == block_number + 1)
     is_validator = Enum.into(global_responses.validators, %{}, &{address_bytes_to_string(&1), true})
+    start_snapshotting = (global_responses.epoch_number > get(:snapshotted_epoch_number) && global_responses.epoch_number > 0 && not get(:is_snapshotting))
 
     # save the general info to ETS (excluding pool list and validator list)
     settings =
@@ -163,21 +166,27 @@ defmodule Explorer.Staking.ContractState do
 
     :ets.insert(@table_name, settings)
 
-    # form the list of all pools
-    validators = if epoch_finished do
-      %{
-        "getPendingValidators" => {:ok, [validators_pending]},
-        "validatorsToBeFinalized" => {:ok, [validators_to_be_finalized]}
-      } = Reader.query_contract(contracts.validator_set, abi, %{
-        "getPendingValidators" => [],
-        "validatorsToBeFinalized" => []
-      })
-      validators_pending = Enum.uniq(validators_pending ++ validators_to_be_finalized)
-      %{
-        # get the list of all validators (the current and pending)
-        all: Enum.uniq(global_responses.validators ++ validators_pending),
-        pending: validators_pending
-      }
+    # form the list of validator pools
+    validators = if start_snapshotting do
+      if global_responses.validator_set_apply_block == 0 do
+        %{
+          "getPendingValidators" => {:ok, [validators_pending]},
+          "validatorsToBeFinalized" => {:ok, [validators_to_be_finalized]}
+        } = Reader.query_contract(contracts.validator_set, abi, %{
+          "getPendingValidators" => [],
+          "validatorsToBeFinalized" => []
+        })
+        validators_pending = Enum.uniq(validators_pending ++ validators_to_be_finalized)
+        %{
+          all: Enum.uniq(global_responses.validators ++ validators_pending),
+          for_snapshot: validators_pending
+        }
+      else
+        %{
+          all: global_responses.validators,
+          for_snapshot: global_responses.validators
+        }
+      end
     else
       %{all: global_responses.validators}
     end
@@ -273,7 +282,7 @@ defmodule Explorer.Staking.ContractState do
       |> Enum.zip(likelihood_values)
       |> Enum.into(%{})
 
-    is_snapshotted = get(:is_snapshotted)
+    snapshotted_epoch_number = get(:snapshotted_epoch_number)
 
     # form entries for writing to the `staking_pools` table in DB
     pool_entries =
@@ -285,7 +294,7 @@ defmodule Explorer.Staking.ContractState do
 
         delegators_count = 
           length(staking_resp.active_delegators) +
-          if show_snapshotted_data(is_validator, global_responses.validator_set_apply_block, is_snapshotted) do
+          if show_snapshotted_data(is_validator, global_responses.validator_set_apply_block, snapshotted_epoch_number, global_responses.epoch_number) do
             Chain.staking_pool_snapshotted_inactive_delegators_count(pool_staking_address)
           else
             0
@@ -347,7 +356,7 @@ defmodule Explorer.Staking.ContractState do
         timeout: :infinity
       })
 
-    if epoch_finished do
+    if epoch_very_beginning or start_snapshotting do
       # update ERC balance of the BlockReward contract
       token = get(:token)
       if token != nil do
@@ -389,15 +398,23 @@ defmodule Explorer.Staking.ContractState do
             :on_demand
           )
       end
+    end
 
+    if start_snapshotting do
       # start snapshotting at the beginning of the staking epoch
+      cached_pool_staking_responses = if epoch_very_beginning do
+        pool_staking_responses
+      else
+        %{}
+      end
+
       spawn(StakeSnapshotting, :do_snapshotting, [
         %{contracts: contracts, abi: abi, ets_table_name: @table_name},
         global_responses.epoch_number,
-        pool_staking_responses,
-        validators.pending, # mining addresses of pending validators
+        cached_pool_staking_responses,
+        validators.for_snapshot, # mining addresses of pending/current validators
         mining_to_staking_address,
-        global_responses.epoch_start_block - 1 # the last block of the finished staking epoch
+        global_responses.epoch_start_block - 1 # the last block of the previous staking epoch
       ])
     end
 
@@ -405,18 +422,23 @@ defmodule Explorer.Staking.ContractState do
     Publisher.broadcast(:staking_update)
   end
 
-  def show_snapshotted_data(is_validator, validator_set_apply_block \\ nil, is_snapshotted \\ nil) do
+  def show_snapshotted_data(is_validator, validator_set_apply_block \\ nil, snapshotted_epoch_number \\ nil, epoch_number \\ nil) do
     validator_set_apply_block = if validator_set_apply_block !== nil do
       validator_set_apply_block
     else
       get(:validator_set_apply_block)
     end
-    is_snapshotted = if is_snapshotted !== nil do
-      is_snapshotted
+    snapshotted_epoch_number = if snapshotted_epoch_number !== nil do
+      snapshotted_epoch_number
     else
-      get(:is_snapshotted)
+      get(:snapshotted_epoch_number)
     end
-    is_validator && validator_set_apply_block > 0 && is_snapshotted
+    epoch_number = if epoch_number !== nil do
+      epoch_number
+    else
+      get(:epoch_number)
+    end
+    is_validator && validator_set_apply_block > 0 && snapshotted_epoch_number === epoch_number
   end
 
   defp get_token(address) do
