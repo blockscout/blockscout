@@ -393,7 +393,6 @@ defmodule Explorer.Staking.ContractState do
         %{contracts: contracts, abi: abi, ets_table_name: @table_name},
         global_responses.epoch_number,
         pool_staking_responses,
-        Map.new(Enum.map(staker_responses, fn {key, resp} -> {pool_staking_address, staker_address, _} = key; {{pool_staking_address, staker_address}, resp} end)),
         validators.pending, # mining addresses of pending validators
         mining_to_staking_address,
         block_number # the last block of the finished staking epoch
