@@ -106,6 +106,8 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
 
   describe "ethsupply" do
     test "returns total supply from DB", %{conn: conn} do
+      insert(:address, fetched_coin_balance: 6)
+
       params = %{
         "module" => "stats",
         "action" => "ethsupply"
