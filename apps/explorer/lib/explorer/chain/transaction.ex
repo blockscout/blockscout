@@ -151,6 +151,8 @@ defmodule Explorer.Chain.Transaction do
           hash: Hash.t(),
           index: transaction_index | nil,
           input: Data.t(),
+          first_trace_output: Data.t() | nil,
+          first_trace_gas_used: Gas.t() | nil,
           internal_transactions: %Ecto.Association.NotLoaded{} | [InternalTransaction.t()],
           internal_transactions_indexed_at: DateTime.t(),
           logs: %Ecto.Association.NotLoaded{} | [Log.t()],
@@ -194,6 +196,8 @@ defmodule Explorer.Chain.Transaction do
     field(:gas, :decimal)
     field(:gas_price, Wei)
     field(:gas_used, :decimal)
+    field(:first_trace_gas_used, :decimal)
+    field(:first_trace_output, Data)
     field(:index, :integer)
     field(:internal_transactions_indexed_at, :utc_datetime_usec)
     field(:created_contract_code_indexed_at, :utc_datetime_usec)
@@ -388,6 +392,11 @@ defmodule Explorer.Chain.Transaction do
     |> check_status()
     |> foreign_key_constraint(:block_hash)
     |> unique_constraint(:hash)
+  end
+
+  def first_trace_changeset(%__MODULE__{} = transaction, attrs \\ %{}) do
+    transaction
+    |> cast(attrs, [:first_trace_gas_used, :first_trace_output])
   end
 
   def preload_token_transfers(query, address_hash) do

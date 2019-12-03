@@ -44,6 +44,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
+    changes_list_without_first_traces = Enum.reject(changes_list, fn changes -> changes[:index] == 0 end)
+    first_traces = Enum.filter(changes_list, fn changes -> changes[:index] == 0 end)
+
     transactions_timeout = options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout()
 
     update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
@@ -54,10 +57,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       acquire_transactions(repo, changes_list)
     end)
     |> Multi.run(:internal_transactions, fn repo, %{acquire_transactions: transactions} ->
-      insert(repo, changes_list, transactions, insert_options)
+      insert(repo, changes_list_without_first_traces, transactions, insert_options)
     end)
     |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo, %{acquire_transactions: transactions} ->
       update_transactions(repo, transactions, update_transactions_options)
+    end)
+    |> Multi.run(:set_first_trace_fields, fn repo, %{acquire_transactions: transactions} ->
+      set_first_trace_fields(repo, transactions, first_traces)
     end)
     |> Multi.run(
       :remove_consensus_of_missing_transactions_blocks,
@@ -221,6 +227,43 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, transaction_hashes: transaction_hashes}}
+    end
+  end
+
+  defp set_first_trace_fields(repo, transactions, first_traces) do
+    params =
+      Enum.map(first_traces, fn first_trace ->
+        %{
+          first_trace_gas_used: first_trace.gas_used,
+          first_trace_output: first_trace.output,
+          hash: first_trace.transaction_hash
+        }
+      end)
+
+    valid_params =
+      transactions
+      |> Enum.map(fn transaction ->
+        found_params =
+          Enum.find(params, fn param ->
+            param.hash == transaction.hash
+          end)
+
+        {transaction, found_params}
+      end)
+      |> Enum.reject(fn {tx, params} -> is_nil(params) || is_nil(tx.block_hash) end)
+      |> Enum.map(fn {_tx, params} -> params end)
+
+    try do
+      {_transaction_count, result} =
+        repo.insert_all(Transaction, valid_params,
+          on_conflict: {:replace, [:first_trace_gas_used, :first_trace_output]},
+          conflict_target: :hash
+        )
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, first_traces: first_traces}}
     end
   end
 
