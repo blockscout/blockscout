@@ -15,7 +15,6 @@ defmodule Explorer.Staking.StakeSnapshotting do
     %{contracts: contracts, abi: abi, ets_table_name: ets_table_name},
     epoch_number,
     cached_pool_staking_responses,
-    cached_staker_responses,
     pending_validators_mining_addresses,
     mining_to_staking_address,
     block_number
@@ -26,6 +25,11 @@ defmodule Explorer.Staking.StakeSnapshotting do
     pool_staking_addresses =
       pending_validators_mining_addresses
       |> Enum.map(&mining_to_staking_address[&1])
+
+    staking_to_mining_address =
+      pool_staking_addresses
+      |> Enum.zip(pending_validators_mining_addresses)
+      |> Map.new()
 
     # get snapshotted amounts and other pool info for each
     # pending validator by their staking address.
@@ -38,7 +42,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
             Map.merge(resp, ContractReader.perform_requests(snapshotted_pool_amounts_requests(staking_address_hash, block_number), contracts, abi))
           :error ->
             ContractReader.perform_requests(
-              ContractReader.pool_staking_requests(staking_address_hash) ++ snapshotted_pool_amounts_requests(staking_address_hash, block_number),
+              ContractReader.active_delegators_request(staking_address_hash) ++
+                snapshotted_pool_amounts_requests(staking_address_hash, block_number),
               contracts,
               abi
             )
@@ -55,28 +60,15 @@ defmodule Explorer.Staking.StakeSnapshotting do
           Enum.map(resp.active_delegators, &{pool_staking_address, &1})
       end)
 
-    # read info of each staker from the contracts.
-    # use `cached_staker_responses` when possible
+    # read info of each staker from the contracts
     staker_responses =
       stakers
-      |> Enum.map(fn {pool_staking_address, staker_address} = key ->
-        case Map.fetch(cached_staker_responses, key) do
-          {:ok, resp} ->
-            Map.merge(
-              resp,
-              ContractReader.perform_requests(
-                snapshotted_staker_amount_request(pool_staking_address, staker_address, block_number),
-                contracts,
-                abi
-              )
-            )
-          :error ->
-            ContractReader.perform_requests(
-              ContractReader.staker_requests(pool_staking_address, staker_address) ++ snapshotted_staker_amount_request(pool_staking_address, staker_address, block_number),
-              contracts,
-              abi
-            )
-        end
+      |> Enum.map(fn {pool_staking_address, staker_address} ->
+        ContractReader.perform_requests(
+          snapshotted_staker_amount_request(pool_staking_address, staker_address, block_number),
+          contracts,
+          abi
+        )
       end)
       |> Enum.zip(stakers)
       |> Map.new(fn {key, val} -> {val, key} end)
@@ -125,24 +117,22 @@ defmodule Explorer.Staking.StakeSnapshotting do
         validator_reward_resp = validator_reward_responses[pool_staking_address]
 
         %{
+          banned_until: 0,
+          is_active: false,
+          is_banned: false,
+          is_unremovable: false,
+          is_validator: false,
           staking_address_hash: pool_staking_address,
           delegators_count: 0,
-          snapshotted_validator_reward_ratio: Float.floor(validator_reward_resp.validator_share / 10_000, 2)
-        }
-        |> Map.merge(
-          Map.take(staking_resp, [
-            :mining_address_hash,
-            :self_staked_amount,
-            :snapshotted_self_staked_amount,
-            :snapshotted_total_staked_amount,
-            :total_staked_amount
-          ])
-        )
-        |> Map.merge(%{
-          banned_until: 0,
+          mining_address_hash: address_bytes_to_string(staking_to_mining_address[pool_staking_address]),
+          self_staked_amount: 0,
+          snapshotted_self_staked_amount: staking_resp.snapshotted_self_staked_amount,
+          snapshotted_total_staked_amount: staking_resp.snapshotted_total_staked_amount,
+          snapshotted_validator_reward_ratio: Float.floor(validator_reward_resp.validator_share / 10_000, 2),
+          total_staked_amount: 0,
           was_banned_count: 0,
           was_validator_count: 0
-        })
+        }
       end)
 
     # form entries for updating the `staking_pools_delegators` table in DB
@@ -150,12 +140,18 @@ defmodule Explorer.Staking.StakeSnapshotting do
       Enum.map(staker_responses, fn {{pool_staking_address, staker_address}, resp} ->
         delegator_reward_resp = delegator_reward_responses[{pool_staking_address, staker_address}]
 
-        Map.merge(resp, %{
+        %{
           address_hash: staker_address,
-          staking_address_hash: pool_staking_address,
           is_active: false,
-          snapshotted_reward_ratio: Float.floor(delegator_reward_resp.delegator_share / 10_000, 2)
-        })
+          max_ordered_withdraw_allowed: 0,
+          max_withdraw_allowed: 0,
+          ordered_withdraw: 0,
+          ordered_withdraw_epoch: 0,
+          snapshotted_reward_ratio: Float.floor(delegator_reward_resp.delegator_share / 10_000, 2),
+          snapshotted_stake_amount: resp.snapshotted_stake_amount,
+          stake_amount: 0,
+          staking_address_hash: pool_staking_address
+        }
       end)
 
     # perform SQL queries
@@ -168,6 +164,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
       _ -> Logger.error("Cannot finish snapshotting started at block #{block_number}")
     end
   end
+
+  defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
   defp snapshotted_pool_amounts_requests(pool_staking_address, block_number) do
     [
