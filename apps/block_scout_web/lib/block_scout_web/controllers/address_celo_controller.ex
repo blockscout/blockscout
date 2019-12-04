@@ -6,9 +6,12 @@ defmodule BlockScoutWeb.AddressCeloController do
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
+  alias Explorer.Chain.CeloAccount
+
   def index(conn, %{"address_id" => address_hash_string}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash),
+         %CeloAccount{address: _} <- address.celo_account do
       {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
 
       render(
