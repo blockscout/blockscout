@@ -101,7 +101,7 @@ export default () => {
           { title: 'Price', value: '$0.014236 USD', color: '#bf9cff' },
           { title: 'Market Cap', value: '$3,134,205 USD', color: '#87e1a9' },
         ].map(item =>
-          <LegendItem>
+          <LegendItem key={item.title}>
             <LegendMarker style={{ backgroundColor: item.color }} />
             <span>{item.title}</span>
             <span>{item.value}</span>
