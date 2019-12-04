@@ -114,7 +114,7 @@ defmodule Explorer.Chain.Block.Reward do
   defp join_associations(query) do
     last_blocks_query =
       from(block in Block,
-        limit: 10000,
+        limit: 2000,
         order_by: [desc: block.number]
       )
 
