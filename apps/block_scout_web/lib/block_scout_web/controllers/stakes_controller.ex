@@ -15,6 +15,9 @@ defmodule BlockScoutWeb.StakesController do
     render_template(assigns.filter, conn, params)
   end
 
+  # this is called when account in MetaMask is changed on client side (see `staking_update` event handled in `StakesChannel`),
+  # when a new block appears (see `staking_update` event handled in `StakesChannel`),
+  # or when the page is loaded for the first time or reloaded by a user (i.e. it is called by the `render_template(filter, conn, _)`)
   def render_top(conn) do
     epoch_number = ContractState.get(:epoch_number, 0)
     epoch_end_block = ContractState.get(:epoch_end_block, 0)
@@ -43,6 +46,8 @@ defmodule BlockScoutWeb.StakesController do
     )
   end
 
+  # this is called when account in MetaMask is changed on client side
+  # or when UI periodically reloads the pool list (e.g. once per 10 blocks)
   defp render_template(filter, conn, %{"type" => "JSON"} = params) do
     [paging_options: options] = paging_options(params)
 
@@ -114,6 +119,8 @@ defmodule BlockScoutWeb.StakesController do
     )
   end
 
+  # this is called when the page is loaded for the first time
+  # or when it is reloaded by a user
   defp render_template(filter, conn, _) do
     render(conn, "index.html",
       top: render_top(conn),
