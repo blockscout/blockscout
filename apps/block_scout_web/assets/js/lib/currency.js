@@ -38,7 +38,7 @@ export function formatAllUsdValues (root) {
   root = root || $(':root')
 
   root.find('[data-usd-value]').each((i, el) => {
-    el.innerHTML = formatCGValue(el.dataset.usdValue)
+    el.innerHTML = formatUsdValue(el.dataset.usdValue)
   })
   root.find('[data-cg-value]').each((i, el) => {
     el.innerHTML = formatCGValue(el.dataset.usdValue)
@@ -55,7 +55,7 @@ function tryUpdateCalculatedUsdValues (el, usdExchangeRate = el.dataset.usdExcha
   if (!el.dataset.hasOwnProperty('weiValue')) return
   const ether = weiToEther(el.dataset.weiValue)
   const usd = etherToUSD(ether, usdExchangeRate)
-  const formattedUsd = formatCGValue(usd)
+  const formattedUsd = formatUsdValue(usd)
   if (formattedUsd !== el.innerHTML) el.innerHTML = formattedUsd
 }
 

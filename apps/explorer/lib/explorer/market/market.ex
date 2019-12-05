@@ -6,7 +6,7 @@ defmodule Explorer.Market do
   alias Explorer.Chain
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Hash
-#  alias Explorer.ExchangeRates
+  #  alias Explorer.ExchangeRates
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market.{MarketHistory, MarketHistoryCache}
   alias Explorer.{KnownTokens, Repo}
@@ -17,10 +17,16 @@ defmodule Explorer.Market do
   @spec get_exchange_rate(String.t()) :: Token.t() | nil
   def get_exchange_rate(symbol) do
     case {Chain.get_exchange_rate(symbol), Chain.get_exchange_rate("cUSD")} do
-      {{:ok, {token, rate}}, {:ok, {_, usd_rate}}} -> 
-        cusd_rate = Decimal.from_float(rate.rate/usd_rate.rate)
-        Token.from_tuple({symbol, nil, symbol, token.total_supply, token.total_supply, cusd_rate, nil, Decimal.mult(cusd_rate,token.total_supply), nil, token.updated_at})
-        _ -> nil
+      {{:ok, {token, rate}}, {:ok, {_, usd_rate}}} ->
+        cusd_rate = Decimal.from_float(rate.rate / usd_rate.rate)
+
+        Token.from_tuple(
+          {symbol, nil, symbol, token.total_supply, token.total_supply, cusd_rate, nil,
+           Decimal.mult(cusd_rate, token.total_supply), nil, token.updated_at}
+        )
+
+      _ ->
+        nil
     end
   end
 
