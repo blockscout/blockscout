@@ -95,15 +95,13 @@ defmodule Explorer.Staking.ContractState do
       abi: staking_abi ++ validator_set_abi ++ block_reward_abi
     }
 
-    token = get_token(token_contract_address)
-
     :ets.insert(@table_name,
       block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address},
       is_snapshotting: false,
       snapshotted_epoch_number: -1,
       staking_contract: %{abi: staking_abi, address: staking_contract_address},
       token_contract_address: token_contract_address,
-      token: token,
+      token: get_token(token_contract_address),
       validator_set_contract: %{abi: validator_set_abi, address: validator_set_contract_address}
     )
 
@@ -442,11 +440,49 @@ defmodule Explorer.Staking.ContractState do
   end
 
   defp get_token(address) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address),
-         {:ok, token} <- Chain.token_from_address_hash(address_hash) do
-      token
+    if address == "0x0000000000000000000000000000000000000000" do
+      nil # the token address is empty, so return nil
     else
-      _ -> nil
+      with {:ok, address_hash} <- Chain.string_to_address_hash(address) do
+        # the token address has correct format, so try to read the token
+        # from DB or from its contract
+        case Chain.token_from_address_hash(address_hash) do
+          {:ok, token} ->
+            token # the token is read from DB
+          _ ->
+            # the token doesn't exist in DB, so try
+            # to read it from a contract and then write to DB
+            token_functions = MetadataRetriever.get_functions_of(address)
+
+            if map_size(token_functions) > 0 do
+              # the token is successfully read from its contract
+              token_params = Map.merge(token_functions, %{
+                contract_address_hash: address,
+                type: "ERC-20"
+              })
+
+              # try to write the token info to DB
+              import_result = Chain.import(%{
+                addresses: %{params: [%{hash: address}], on_conflict: :nothing},
+                tokens: %{params: [token_params]}
+              })
+
+              with {:ok, _} <- import_result do
+                # the token is successfully added to DB, so return it as a result
+                case Chain.token_from_address_hash(address_hash) do
+                  {:ok, token} -> token
+                  _ -> nil
+                end
+              else
+                _ -> nil # cannot write the token info to DB
+              end
+            else
+              nil # cannot read the token info from its contract
+            end
+        end
+      else
+        _ -> nil # the token address has incorrect format
+      end
     end
   end
 
