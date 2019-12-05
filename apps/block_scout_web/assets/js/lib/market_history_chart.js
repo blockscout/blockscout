@@ -2,7 +2,7 @@ import $ from 'jquery'
 import Chart from 'chart.js'
 import humps from 'humps'
 import numeral from 'numeral'
-import { formatUsdValue } from '../lib/currency'
+import { formatCGValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
 import { showLoader } from '../lib/utils'
 
@@ -39,7 +39,7 @@ const config = {
         },
         ticks: {
           beginAtZero: true,
-          callback: (value, index, values) => `$${numeral(value).format('0,0.00')}`,
+          callback: (value, index, values) => `CG${numeral(value).format('0,0.00')}`,
           maxTicksLimit: 4,
           fontColor: sassVariables.dashboardBannerChartAxisFontColor
         }
@@ -64,9 +64,9 @@ const config = {
         label: ({datasetIndex, yLabel}, {datasets}) => {
           const label = datasets[datasetIndex].label
           if (datasets[datasetIndex].yAxisID === 'price') {
-            return `${label}: ${formatUsdValue(yLabel)}`
+            return `${label}: ${formatCGValue(yLabel)}`
           } else if (datasets[datasetIndex].yAxisID === 'marketCap') {
-            return `${label}: ${formatUsdValue(yLabel)}`
+            return `${label}: ${formatCGValue(yLabel)}`
           } else {
             return yLabel
           }
