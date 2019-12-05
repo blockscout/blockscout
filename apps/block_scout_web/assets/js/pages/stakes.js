@@ -17,18 +17,19 @@ import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
 import { openWarningModal } from '../lib/modals'
 
 export const initialState = {
-  channel: null,
-  web3: null,
   account: null,
-  network: null,
-  stakingContract: null,
   blockRewardContract: null,
+  channel: null,
+  lastBlockNumber: 0,
+  lastEpochNumber: 0,
+  network: null,
+  refreshInterval: null,
+  stakingAllowed: false,
+  stakingContract: null,
   tokenDecimals: 0,
   tokenSymbol: '',
-  refreshInterval: null,
-  lastEpochNumber: 0,
-  lastBlockNumber: 0,
-  stakingAllowed: false
+  validatorSetApplyBlock: 0,
+  web3: null
 }
 
 // 100 - id of xDai network, 101 - id of xDai test network
@@ -72,9 +73,10 @@ export function reducer (state = initialState, action) {
     }
     case 'RECEIVED_UPDATE': {
       return Object.assign({}, state, {
-        lastEpochNumber: action.lastEpochNumber,
         lastBlockNumber: action.lastBlockNumber,
-        stakingAllowed: action.stakingAllowed
+        lastEpochNumber: action.lastEpochNumber,
+        stakingAllowed: action.stakingAllowed,
+        validatorSetApplyBlock: action.validatorSetApplyBlock
       })
     }
     case 'RECEIVED_CONTRACTS': {
@@ -130,13 +132,15 @@ if ($stakesPage.length) {
     if (
       msg.staking_allowed !== state.stakingAllowed ||
       msg.epoch_number > state.lastEpochNumber ||
+      msg.validator_set_apply_block != state.validatorSetApplyBlock ||
       (state.refreshInterval && msg.block_number >= state.lastBlockNumber + state.refreshInterval)
     ) {
       store.dispatch({
         type: 'RECEIVED_UPDATE',
-        lastEpochNumber: msg.epoch_number,
         lastBlockNumber: msg.block_number,
-        stakingAllowed: msg.staking_allowed
+        lastEpochNumber: msg.epoch_number,
+        stakingAllowed: msg.staking_allowed,
+        validatorSetApplyBlock: msg.validator_set_apply_block
       })
       refreshPage(store)
     }
