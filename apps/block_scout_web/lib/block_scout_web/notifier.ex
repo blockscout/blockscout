@@ -101,16 +101,11 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :staking_update}) do
-    epoch_number = ContractState.get(:epoch_number, 0)
-    epoch_end_block = ContractState.get(:epoch_end_block, 0)
-    staking_allowed = ContractState.get(:staking_allowed, false)
-    block_number = BlockNumber.get_max()
-
     Endpoint.broadcast("stakes:staking_update", "staking_update", %{
-      epoch_number: epoch_number,
-      epoch_end_block: epoch_end_block,
-      staking_allowed: staking_allowed,
-      block_number: block_number
+      block_number: BlockNumber.get_max(),
+      epoch_number: ContractState.get(:epoch_number, 0),
+      staking_allowed: ContractState.get(:staking_allowed, false),
+      validator_set_apply_block: ContractState.get(:validator_set_apply_block, 0)
     })
   end
 
