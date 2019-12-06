@@ -16,6 +16,8 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
 
+  alias Explorer.Celo.AccountReader
+
   alias Indexer.Fetcher.{
     BlockReward,
     CeloAccount,
@@ -124,6 +126,20 @@ defmodule Indexer.Block.Fetcher do
     e_logs
   end
 
+  defp add_gold_token_balances(gold_token, addresses, acc) do
+    Enum.reduce(addresses, acc, fn
+      %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
+        MapSet.put(acc, %{address_hash: hash, token_contract_address_hash: gold_token, block_number: bn})
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  defp config(key) do
+    Application.get_env(:indexer, __MODULE__, [])[key]
+  end
+
   @decorate span(tracer: Tracer)
   @spec fetch_and_import_range(t, Range.t()) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
@@ -136,7 +152,7 @@ defmodule Indexer.Block.Fetcher do
           callback_module: callback_module,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state,
-        _.._ = range
+        _..last_block = range
       )
       when callback_module != nil do
     with {:blocks,
@@ -154,6 +170,15 @@ defmodule Indexer.Block.Fetcher do
          logs = tx_logs ++ process_extra_logs(extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
+         gold_token_enabled = config(:enable_gold_token),
+         {:read_token_address, {:ok, gold_token}} <-
+           {:read_token_address,
+            if gold_token_enabled do
+              AccountReader.get_address("GoldToken")
+            else
+              {:ok, nil}
+            end},
+         # TODO: handle non-gold transaction fees
          # %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
          # TokenTransfers.parse_fees(transactions_with_receipts),
          fee_tokens = [],
@@ -170,7 +195,14 @@ defmodule Indexer.Block.Fetcher do
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
-         tokens = fee_tokens ++ normal_tokens,
+         tokens =
+           fee_tokens ++
+             normal_tokens ++
+             (if gold_token_enabled do
+                [%{contract_address_hash: gold_token, type: "ERC-20"}]
+              else
+                []
+              end),
          token_transfers = fee_token_transfers ++ normal_token_transfers,
          addresses =
            Addresses.extract_addresses(%{
@@ -179,7 +211,14 @@ defmodule Indexer.Block.Fetcher do
              logs: logs,
              mint_transfers: mint_transfers,
              token_transfers: token_transfers,
-             transactions: transactions_with_receipts
+             transactions: transactions_with_receipts,
+             # The address of the Gold token has to be added to the addresses table
+             gold_token:
+               if gold_token_enabled do
+                 [%{hash: gold_token, block_number: last_block}]
+               else
+                 []
+               end
            }),
          coin_balances_params_set =
            %{
@@ -193,7 +232,15 @@ defmodule Indexer.Block.Fetcher do
            beneficiary_params_set
            |> add_gas_payments(transactions_with_receipts)
            |> BlockReward.reduce_uncle_rewards(),
-         address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         address_token_balances_from_transfers =
+           AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         # Also update the Gold token balances
+         address_token_balances =
+           (if gold_token_enabled do
+              add_gold_token_balances(gold_token, addresses, address_token_balances_from_transfers)
+            else
+              address_token_balances_from_transfers
+            end),
          {:ok, inserted} <-
            __MODULE__.import(
              state,
@@ -230,6 +277,7 @@ defmodule Indexer.Block.Fetcher do
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
+      {step, :error} -> {:error, {step, "Unknown error"}}
       {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
     end
   end
