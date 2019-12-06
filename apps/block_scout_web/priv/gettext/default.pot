@@ -1985,3 +1985,9 @@ msgstr ""
 #: lib/block_scout_web/templates/bridged_tokens/index.html.eex:4
 msgid "Bridged Tokens"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_rows.html.eex:26
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:27
+msgid "(inactive pool)"
+msgstr ""
