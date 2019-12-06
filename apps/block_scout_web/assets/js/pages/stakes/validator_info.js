@@ -1,7 +1,7 @@
 import $ from 'jquery'
 import { openModal } from '../../lib/modals'
 
-export function openValidatorInfoModal (event, store) {
+export function openPoolInfoModal (event, store) {
   const address = $(event.target).closest('[data-address]').data('address')
 
   store.getState().channel

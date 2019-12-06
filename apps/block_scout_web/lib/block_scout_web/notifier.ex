@@ -112,6 +112,7 @@ defmodule BlockScoutWeb.Notifier do
       block_number: BlockNumber.get_max(),
       epoch_number: ContractState.get(:epoch_number, 0),
       staking_allowed: ContractState.get(:staking_allowed, false),
+      staking_token_defined: ContractState.get(:token, nil) != nil,
       validator_set_apply_block: ContractState.get(:validator_set_apply_block, 0)
     })
   end

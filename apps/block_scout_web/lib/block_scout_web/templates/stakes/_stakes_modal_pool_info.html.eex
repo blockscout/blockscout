@@ -27,49 +27,49 @@
       <div class="modal-validator-info-content">
         <%=
           render BlockScoutWeb.StakesView,
-          "_stakes_validator_info_item.html",
+          "_stakes_pool_info_item.html",
           title: gettext("Candidate’s Staked Amount"),
           value: format_token_amount(@validator.self_staked_amount, @token)
         %>
         <%=
           render BlockScoutWeb.StakesView,
-          "_stakes_validator_info_item.html",
+          "_stakes_pool_info_item.html",
           title: gettext("Delegators’ Staked Amount"),
           value: format_token_amount(Decimal.sub(@validator.total_staked_amount, @validator.self_staked_amount), @token)
         %>
         <%=
           render BlockScoutWeb.StakesView,
-          "_stakes_validator_info_item.html",
+          "_stakes_pool_info_item.html",
           title: gettext("Stakes Ratio"),
           value: if(@validator.is_active, do: "#{@validator.stakes_ratio}%")
         %>
         <%=
           render BlockScoutWeb.StakesView,
-          "_stakes_validator_info_item.html",
+          "_stakes_pool_info_item.html",
           title: gettext("Share of Pool’s Reward"),
           value: "#{@validator.validator_reward_percent}%"
         %>
         <%=
           render BlockScoutWeb.StakesView,
-          "_stakes_validator_info_item.html",
+          "_stakes_pool_info_item.html",
           title: gettext("How Many Times this Address has been a Validator"),
           value: @validator.was_validator_count
         %>
         <%=
           render BlockScoutWeb.StakesView,
-          "_stakes_validator_info_item.html",
+          "_stakes_pool_info_item.html",
           title: gettext("How Many Times this Address has been Banned"),
           value: @validator.was_banned_count
         %>
         <%=
           render BlockScoutWeb.StakesView,
-          "_stakes_validator_info_item.html",
+          "_stakes_pool_info_item.html",
           title: gettext("Likelihood of Becoming a Validator on the Next Epoch"),
           value: "#{@validator.likelihood}%"
         %>
         <%=
           render BlockScoutWeb.StakesView,
-          "_stakes_validator_info_item.html",
+          "_stakes_pool_info_item.html",
           title: gettext("The Number of Delegators in the Pool"),
           value: @validator.delegators_count
         %>
