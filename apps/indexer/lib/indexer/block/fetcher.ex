@@ -204,7 +204,7 @@ defmodule Indexer.Block.Fetcher do
            exchange_rates
            |> Enum.filter(fn el -> "0x" <> Base.encode16(el.token, case: :lower) == stable_token end)
            |> Enum.map(fn %{rate: rate, stamp: time} ->
-             inv_rate = 1 / rate
+             inv_rate = Decimal.from_float(1 / rate)
              date = DateTime.to_date(DateTime.from_unix!(time))
              %{opening_price: inv_rate, closing_price: inv_rate, date: date}
            end),
