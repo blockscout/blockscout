@@ -2453,8 +2453,14 @@ msgstr ""
 msgid "All pool participant addresses. The top address belongs to the %{pool_type}."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:53
 msgid "Reward distribution is based on stake amount. Validator receives a minimum of %{min}%."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_rows.html.eex:26
+#: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:27
+msgid "(inactive pool)"
 msgstr ""
