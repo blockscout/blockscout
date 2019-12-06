@@ -86,6 +86,13 @@ $stakes-link-color: $primary !default;
   padding: 0 15px;
   min-width: 930px;
   min-height: 311px;
+
+  .refresh-informer {
+    text-align: right;
+    padding-top: 15px;
+    padding-right: 15px;
+    display: none;
+  }
 }
 
 .stakes-table-th {
