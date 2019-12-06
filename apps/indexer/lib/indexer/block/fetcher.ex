@@ -170,10 +170,10 @@ defmodule Indexer.Block.Fetcher do
          logs = tx_logs ++ process_extra_logs(extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
-         special_token_enabled = config(:enable_special_token),
+         gold_token_enabled = config(:enable_gold_token),
          {:read_token_address, {:ok, gold_token}} <-
            {:read_token_address,
-            if special_token_enabled do
+            if gold_token_enabled do
               AccountReader.get_address("GoldToken")
             else
               {:ok, nil}
@@ -196,7 +196,7 @@ defmodule Indexer.Block.Fetcher do
          tokens =
            fee_tokens ++
              normal_tokens ++
-             (if special_token_enabled do
+             (if gold_token_enabled do
                 [%{contract_address_hash: gold_token, type: "ERC-20"}]
               else
                 []
@@ -210,8 +210,9 @@ defmodule Indexer.Block.Fetcher do
              mint_transfers: mint_transfers,
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
-             special_token:
-               if special_token_enabled do
+             # The address of the Gold token has to be added to the addresses table
+             gold_token:
+               if gold_token_enabled do
                  [%{hash: gold_token, block_number: last_block}]
                else
                  []
@@ -231,8 +232,9 @@ defmodule Indexer.Block.Fetcher do
            |> BlockReward.reduce_uncle_rewards(),
          address_token_balances_from_transfers =
            AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         # Also update the Gold token balances
          address_token_balances =
-           (if special_token_enabled do
+           (if gold_token_enabled do
               add_gold_token_balances(gold_token, addresses, address_token_balances_from_transfers)
             else
               address_token_balances_from_transfers

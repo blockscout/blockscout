@@ -64,7 +64,7 @@ config :logger, :indexer,
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :indexer]
 
-config :indexer, Indexer.Block.Fetcher, enable_special_token: true
+config :indexer, Indexer.Block.Fetcher, enable_gold_token: true
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
