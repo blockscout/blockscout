@@ -6,7 +6,7 @@ import { subscribeChannel } from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
 import { createAsyncLoadStore, refreshPage } from '../lib/async_listing_load'
 import Web3 from 'web3'
-import { openValidatorInfoModal } from './stakes/validator_info'
+import { openPoolInfoModal } from './stakes/validator_info'
 import { openDelegatorsListModal } from './stakes/delegators_list'
 import { openBecomeCandidateModal } from './stakes/become_candidate'
 import { openRemovePoolModal } from './stakes/remove_pool'
@@ -14,6 +14,7 @@ import { openMakeStakeModal } from './stakes/make_stake'
 import { openMoveStakeModal } from './stakes/move_stake'
 import { openWithdrawStakeModal } from './stakes/withdraw_stake'
 import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
+import { checkForTokenDefinition } from './stakes/utils'
 import { openWarningModal } from '../lib/modals'
 
 const stakesPageSelector = '[data-page="stakes"]'
@@ -27,6 +28,7 @@ export const initialState = {
   network: null,
   refreshInterval: null,
   stakingAllowed: false,
+  stakingTokenDefined: false,
   stakingContract: null,
   tokenDecimals: 0,
   tokenSymbol: '',
@@ -78,6 +80,7 @@ export function reducer (state = initialState, action) {
         lastBlockNumber: action.lastBlockNumber,
         lastEpochNumber: action.lastEpochNumber,
         stakingAllowed: action.stakingAllowed,
+        stakingTokenDefined: action.stakingTokenDefined,
         validatorSetApplyBlock: action.validatorSetApplyBlock
       })
     }
@@ -104,6 +107,7 @@ function reloadPoolList(msg, store) {
     lastBlockNumber: msg.block_number,
     lastEpochNumber: msg.epoch_number,
     stakingAllowed: msg.staking_allowed,
+    stakingTokenDefined: msg.staking_token_defined,
     validatorSetApplyBlock: msg.validator_set_apply_block
   })
   refreshPage(store)
@@ -195,14 +199,42 @@ if ($stakesPage.length) {
   })
 
   $(document.body)
-    .on('click', '.js-validator-info', event => openValidatorInfoModal(event, store))
-    .on('click', '.js-delegators-list', event => openDelegatorsListModal(event, store))
-    .on('click', '.js-become-candidate', () => openBecomeCandidateModal(store))
-    .on('click', '.js-remove-pool', () => openRemovePoolModal(store))
-    .on('click', '.js-make-stake', event => openMakeStakeModal(event, store))
-    .on('click', '.js-move-stake', event => openMoveStakeModal(event, store))
-    .on('click', '.js-withdraw-stake', event => openWithdrawStakeModal(event, store))
-    .on('click', '.js-claim-withdrawal', event => openClaimWithdrawalModal(event, store))
+    .on('click', '.js-pool-info', event => {
+      if (checkForTokenDefinition(store)) {
+        openPoolInfoModal(event, store)
+      }
+    })
+    .on('click', '.js-delegators-list', event => {
+      openDelegatorsListModal(event, store)
+    })
+    .on('click', '.js-become-candidate', () => {
+      if (checkForTokenDefinition(store)) {
+        openBecomeCandidateModal(store)
+      }
+    })
+    .on('click', '.js-remove-pool', () => {
+      openRemovePoolModal(store)
+    })
+    .on('click', '.js-make-stake', event => {
+      if (checkForTokenDefinition(store)) {
+        openMakeStakeModal(event, store)
+      }
+    })
+    .on('click', '.js-move-stake', event => {
+      if (checkForTokenDefinition(store)) {
+        openMoveStakeModal(event, store)
+      }
+    })
+    .on('click', '.js-withdraw-stake', event => {
+      if (checkForTokenDefinition(store)) {
+        openWithdrawStakeModal(event, store)
+      }
+    })
+    .on('click', '.js-claim-withdrawal', event => {
+      if (checkForTokenDefinition(store)) {
+        openClaimWithdrawalModal(event, store)
+      }
+    })
 
   $stakesPage
     .on('change', '[pool-filter-banned]', () => updateFilters(store, 'banned'))

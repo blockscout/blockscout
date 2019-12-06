@@ -29,6 +29,7 @@ defmodule BlockScoutWeb.StakesChannel do
         block_number: BlockNumber.get_max(),
         epoch_number: ContractState.get(:epoch_number, 0),
         staking_allowed: ContractState.get(:staking_allowed, false),
+        staking_token_defined: ContractState.get(:token, nil) != nil,
         validator_set_apply_block: ContractState.get(:validator_set_apply_block, 0)
       },
       socket
@@ -255,6 +256,7 @@ defmodule BlockScoutWeb.StakesChannel do
       block_number: data.block_number,
       epoch_number: data.epoch_number,
       staking_allowed: data.staking_allowed,
+      staking_token_defined: data.staking_token_defined,
       validator_set_apply_block: data.validator_set_apply_block,
       top_html: StakesController.render_top(socket)
     })
