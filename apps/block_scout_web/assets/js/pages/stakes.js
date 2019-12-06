@@ -16,6 +16,8 @@ import { openWithdrawStakeModal } from './stakes/withdraw_stake'
 import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
 import { openWarningModal } from '../lib/modals'
 
+const stakesPageSelector = '[data-page="stakes"]'
+
 export const initialState = {
   account: null,
   blockRewardContract: null,
@@ -87,9 +89,24 @@ export function reducer (state = initialState, action) {
         tokenSymbol: action.tokenSymbol
       })
     }
+    case 'FINISH_REQUEST': {
+      $(stakesPageSelector).fadeTo(0, 1)
+      return state
+    }
     default:
       return state
   }
+}
+
+function reloadPoolList(msg, store) {
+  store.dispatch({
+    type: 'RECEIVED_UPDATE',
+    lastBlockNumber: msg.block_number,
+    lastEpochNumber: msg.epoch_number,
+    stakingAllowed: msg.staking_allowed,
+    validatorSetApplyBlock: msg.validator_set_apply_block
+  })
+  refreshPage(store)
 }
 
 const elements = {
@@ -106,7 +123,7 @@ const elements = {
   }
 }
 
-const $stakesPage = $('[data-page="stakes"]')
+const $stakesPage = $(stakesPageSelector)
 const $stakesTop = $('[data-selector="stakes-top"]')
 if ($stakesPage.length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierPool')
@@ -114,6 +131,8 @@ if ($stakesPage.length) {
 
   const channel = subscribeChannel('stakes:staking_update')
   store.dispatch({ type: 'CHANNEL_CONNECTED', channel })
+
+  const $refreshInformer = $('.refresh-informer', $stakesPage)
 
   channel.on('staking_update', msg => {
     // hide tooltip on tooltip triggering element reloading
@@ -129,21 +148,34 @@ if ($stakesPage.length) {
       $stakesPage.find('[pool-filter-my]').prop('checked', false);
     }
 
+    let lastBlockNumber = state.lastBlockNumber
+
     if (
       msg.staking_allowed !== state.stakingAllowed ||
       msg.epoch_number > state.lastEpochNumber ||
       msg.validator_set_apply_block != state.validatorSetApplyBlock ||
       (state.refreshInterval && msg.block_number >= state.lastBlockNumber + state.refreshInterval)
     ) {
-      store.dispatch({
-        type: 'RECEIVED_UPDATE',
-        lastBlockNumber: msg.block_number,
-        lastEpochNumber: msg.epoch_number,
-        stakingAllowed: msg.staking_allowed,
-        validatorSetApplyBlock: msg.validator_set_apply_block
-      })
-      refreshPage(store)
+      reloadPoolList(msg, store)
+      lastBlockNumber = msg.block_number
     }
+
+    const refreshGap = msg.block_number - lastBlockNumber
+    $refreshInformer.find('span').html(refreshGap)
+    if (refreshGap > 0) {
+      $refreshInformer.show()
+    } else {
+      $refreshInformer.hide()
+    }
+
+    const $refreshInformerLink = $refreshInformer.find('a')
+    $refreshInformerLink.off('click')
+    $refreshInformerLink.on('click', (event) => {
+      event.preventDefault()
+      $refreshInformer.hide()
+      $stakesPage.fadeTo(0, 0.5)
+      reloadPoolList(msg, store)
+    })
   })
 
   channel.on('contracts', msg => {

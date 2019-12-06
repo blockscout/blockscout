@@ -29,5 +29,7 @@
     </div>
 
     <div data-items></div>
+
+    <div class="refresh-informer"><%= raw gettext("The table refreshed <span></span> block(s) ago.") %> <a href="#"><%= gettext("Refresh now") %></a></div>
   </div>
 </div>
