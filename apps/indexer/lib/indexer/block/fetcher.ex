@@ -14,6 +14,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
+  alias Explorer.Market
   alias Indexer.Block.Fetcher.Receipts
 
   alias Explorer.Celo.AccountReader
@@ -178,6 +179,13 @@ defmodule Indexer.Block.Fetcher do
             else
               {:ok, nil}
             end},
+         {:read_stable_token_address, {:ok, stable_token}} <-
+           {:read_stable_token_address,
+            if gold_token_enabled do
+              AccountReader.get_address("StableToken")
+            else
+              {:ok, nil}
+            end},
          # TODO: handle non-gold transaction fees
          # %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
          # TokenTransfers.parse_fees(transactions_with_receipts),
@@ -191,7 +199,22 @@ defmodule Indexer.Block.Fetcher do
            attestations_requested: attestations_requested,
            exchange_rates: exchange_rates
          } = CeloAccounts.parse(logs),
-         exchange_rates = if Enum.length exchange_rates == 0 and do [] else ,
+         IO.inspect(stable_token),
+         market_history =
+           exchange_rates
+           |> Enum.filter(fn el -> "0x" <> Base.encode16(el.token, case: :lower) == stable_token end)
+           |> Enum.map(fn %{rate: rate, stamp: time} ->
+             inv_rate = 1 / rate
+             date = DateTime.to_date(DateTime.from_unix!(time))
+             %{opening_price: inv_rate, closing_price: inv_rate, date: date}
+           end),
+         IO.inspect(market_history),
+         exchange_rates =
+           (if Enum.count(exchange_rates) > 0 and gold_token != nil do
+              exchange_rates ++ [%{token: gold_token, rate: 1.0}]
+            else
+              []
+            end),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
@@ -265,6 +288,8 @@ defmodule Indexer.Block.Fetcher do
       async_import_celo_accounts(%{
         celo_accounts: %{params: accounts, requested: attestations_requested, fulfilled: attestations_fulfilled}
       })
+
+      Market.bulk_insert_history(market_history)
 
       async_import_celo_validators(%{celo_validators: %{params: celo_validators}})
       async_import_celo_validator_groups(%{celo_validator_groups: %{params: celo_validator_groups}})

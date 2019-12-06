@@ -31,11 +31,11 @@ defmodule Indexer.Transform.CeloAccounts do
     |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
   end
 
-#    defp get_rates(logs) do
-#    logs
-#    |> Enum.filter(fn log -> log.first_topic == CeloAccount.median_updated_event() end)
-#    |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
-#  end
+  #    defp get_rates(logs) do
+  #    logs
+  #    |> Enum.filter(fn log -> log.first_topic == CeloAccount.median_updated_event() end)
+  #    |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
+  #  end
 
   defp get_addresses(logs, topics, get_topic \\ fn a -> a.second_topic end) do
     logs
@@ -60,7 +60,7 @@ defmodule Indexer.Transform.CeloAccounts do
 
   defp do_parse_rate(log, rates) do
     IO.inspect(log)
-    {token, numerator, denumerator} = parse_rate_params(log.data)
+    {token, numerator, denumerator, stamp} = parse_rate_params(log.data)
     numerator = Decimal.new(numerator)
     denumerator = Decimal.new(denumerator)
 
@@ -69,7 +69,7 @@ defmodule Indexer.Transform.CeloAccounts do
     else
       rate = Decimal.to_float(Decimal.div(numerator, denumerator))
       IO.inspect(rate)
-      res = %{token: token, rate: rate}
+      res = %{token: token, rate: rate, stamp: stamp}
       [res | rates]
     end
   rescue
@@ -79,8 +79,10 @@ defmodule Indexer.Transform.CeloAccounts do
   end
 
   defp parse_rate_params(data) do
-    [token, _oracle, _timestamp, num, denum] = decode_data(data, [:address, :address, {:uint, 256}, {:uint, 256}, {:uint, 256}])
-    {token, num, denum}
+    [token, _oracle, timestamp, num, denum] =
+      decode_data(data, [:address, :address, {:uint, 256}, {:uint, 256}, {:uint, 256}])
+
+    {token, num, denum, timestamp}
   end
 
   defp parse_params(log, get_topic) do
