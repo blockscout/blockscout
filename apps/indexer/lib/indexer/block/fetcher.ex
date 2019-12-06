@@ -199,7 +199,6 @@ defmodule Indexer.Block.Fetcher do
            attestations_requested: attestations_requested,
            exchange_rates: exchange_rates
          } = CeloAccounts.parse(logs),
-         IO.inspect(stable_token),
          market_history =
            exchange_rates
            |> Enum.filter(fn el -> "0x" <> Base.encode16(el.token, case: :lower) == stable_token end)
@@ -208,7 +207,6 @@ defmodule Indexer.Block.Fetcher do
              date = DateTime.to_date(DateTime.from_unix!(time))
              %{opening_price: inv_rate, closing_price: inv_rate, date: date}
            end),
-         IO.inspect(market_history),
          exchange_rates =
            (if Enum.count(exchange_rates) > 0 and gold_token != nil do
               exchange_rates ++ [%{token: gold_token, rate: 1.0}]

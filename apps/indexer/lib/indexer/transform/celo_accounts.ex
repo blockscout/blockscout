@@ -59,7 +59,6 @@ defmodule Indexer.Transform.CeloAccounts do
   end
 
   defp do_parse_rate(log, rates) do
-    IO.inspect(log)
     {token, numerator, denumerator, stamp} = parse_rate_params(log.data)
     numerator = Decimal.new(numerator)
     denumerator = Decimal.new(denumerator)
@@ -68,7 +67,6 @@ defmodule Indexer.Transform.CeloAccounts do
       rates
     else
       rate = Decimal.to_float(Decimal.div(numerator, denumerator))
-      IO.inspect(rate)
       res = %{token: token, rate: rate, stamp: stamp}
       [res | rates]
     end
