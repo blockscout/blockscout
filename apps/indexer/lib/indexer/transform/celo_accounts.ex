@@ -6,6 +6,7 @@ defmodule Indexer.Transform.CeloAccounts do
   require Logger
 
   alias Explorer.Chain.CeloAccount
+  alias ABI.TypeDecoder
 
   @doc """
   Returns a list of account addresses given a list of logs.
@@ -19,9 +20,22 @@ defmodule Indexer.Transform.CeloAccounts do
       attestations_fulfilled:
         get_addresses(logs, [CeloAccount.attestation_completed_event()], fn a -> a.fourth_topic end),
       attestations_requested:
-        get_addresses(logs, [CeloAccount.attestation_issuer_selected_event()], fn a -> a.fourth_topic end)
+        get_addresses(logs, [CeloAccount.attestation_issuer_selected_event()], fn a -> a.fourth_topic end),
+      exchange_rates: get_rates(logs)
     }
   end
+
+  defp get_rates(logs) do
+    logs
+    |> Enum.filter(fn log -> log.first_topic == CeloAccount.oracle_reported_event() end)
+    |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
+  end
+
+#    defp get_rates(logs) do
+#    logs
+#    |> Enum.filter(fn log -> log.first_topic == CeloAccount.median_updated_event() end)
+#    |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
+#  end
 
   defp get_addresses(logs, topics, get_topic \\ fn a -> a.second_topic end) do
     logs
@@ -44,6 +58,31 @@ defmodule Indexer.Transform.CeloAccounts do
       accounts
   end
 
+  defp do_parse_rate(log, rates) do
+    IO.inspect(log)
+    {token, numerator, denumerator} = parse_rate_params(log.data)
+    numerator = Decimal.new(numerator)
+    denumerator = Decimal.new(denumerator)
+
+    if Decimal.new(0) == denumerator do
+      rates
+    else
+      rate = Decimal.to_float(Decimal.div(numerator, denumerator))
+      IO.inspect(rate)
+      res = %{token: token, rate: rate}
+      [res | rates]
+    end
+  rescue
+    _ in [FunctionClauseError, MatchError] ->
+      Logger.error(fn -> "Unknown account event format: #{inspect(log)}" end)
+      rates
+  end
+
+  defp parse_rate_params(data) do
+    [token, _oracle, _timestamp, num, denum] = decode_data(data, [:address, :address, {:uint, 256}, {:uint, 256}, {:uint, 256}])
+    {token, num, denum}
+  end
+
   defp parse_params(log, get_topic) do
     truncate_address_hash(get_topic.(log))
   end
@@ -52,5 +91,15 @@ defmodule Indexer.Transform.CeloAccounts do
 
   defp truncate_address_hash("0x000000000000000000000000" <> truncated_hash) do
     "0x#{truncated_hash}"
+  end
+
+  defp decode_data("0x", types) do
+    for _ <- types, do: nil
+  end
+
+  defp decode_data("0x" <> encoded_data, types) do
+    encoded_data
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw(types)
   end
 end

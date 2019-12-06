@@ -19,10 +19,11 @@ defmodule Explorer.Market do
     case {Chain.get_exchange_rate(symbol), Chain.get_exchange_rate("cUSD")} do
       {{:ok, {token, rate}}, {:ok, {_, usd_rate}}} ->
         cusd_rate = Decimal.from_float(rate.rate / usd_rate.rate)
+        total_supply = Decimal.div(token.total_supply, Decimal.new("1000000000000000000"))
 
         Token.from_tuple(
-          {symbol, nil, symbol, token.total_supply, token.total_supply, cusd_rate, nil,
-           Decimal.mult(cusd_rate, token.total_supply), nil, token.updated_at}
+          {symbol, nil, symbol, total_supply, total_supply, cusd_rate, nil, Decimal.mult(cusd_rate, total_supply), nil,
+           token.updated_at}
         )
 
       _ ->

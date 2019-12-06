@@ -163,8 +163,10 @@ defmodule Indexer.Block.Fetcher do
            validators: celo_validators,
            validator_groups: celo_validator_groups,
            attestations_fulfilled: attestations_fulfilled,
-           attestations_requested: attestations_requested
+           attestations_requested: attestations_requested,
+           exchange_rates: exchange_rates
          } = CeloAccounts.parse(logs),
+         exchange_rates = if Enum.length exchange_rates == 0 and do [] else ,
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
@@ -205,7 +207,8 @@ defmodule Indexer.Block.Fetcher do
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts}
+               transactions: %{params: transactions_with_receipts},
+               exchange_rate: %{params: exchange_rates}
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}

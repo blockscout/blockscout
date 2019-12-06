@@ -17,6 +17,10 @@ defmodule Explorer.Chain.ExchangeRate do
           rate: float
         }
 
+  @attrs ~w( token rate )a
+
+  @required_attrs ~w( token rate )a
+
   schema "exchange_rates" do
     field(:rate, :float)
 
@@ -27,5 +31,14 @@ defmodule Explorer.Chain.ExchangeRate do
       references: :hash,
       type: Hash.Address
     )
+
+    timestamps(null: false, type: :utc_datetime_usec)
+  end
+
+  def changeset(%__MODULE__{} = data, attrs) do
+    data
+    |> cast(attrs, @attrs)
+    |> validate_required(@required_attrs)
+    |> unique_constraint(:token)
   end
 end
