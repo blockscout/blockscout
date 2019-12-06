@@ -304,6 +304,8 @@ defmodule Explorer.Staking.ContractState do
           stakes_ratio:
             if staking_resp.is_active do
               ratio(staking_resp.total_staked_amount, staked_total)
+            else
+              0
             end,
           validator_reward_ratio: Float.floor(candidate_reward_resp.validator_share / 10_000, 2),
           likelihood: ratio(likelihood[pool_staking_address] || 0, total_likelihood),
