@@ -1,30 +1,11 @@
 defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
-  use BlockScoutWeb.ConnCase, async: false
+  use BlockScoutWeb.ConnCase
 
   import Mox
 
   alias Explorer.ExchangeRates
   alias Explorer.ExchangeRates.Token
   alias Explorer.ExchangeRates.Source.TestSource
-
-  setup do
-    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.AddressSum.child_id())
-    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.AddressSum.child_id())
-
-    # Use TestSource mock for this test set
-    configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
-    Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
-    Application.put_env(:explorer, Explorer.ExchangeRates, table_name: :rates)
-    Application.put_env(:explorer, Explorer.ExchangeRates, enabled: true)
-
-    ExchangeRates.init([])
-
-    on_exit(fn ->
-      Application.put_env(:explorer, Explorer.ExchangeRates, configuration)
-    end)
-
-    :ok
-  end
 
   describe "tokensupply" do
     test "with missing contract address", %{conn: conn} do
@@ -125,8 +106,6 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
 
   describe "ethsupply" do
     test "returns total supply from DB", %{conn: conn} do
-      insert(:address, fetched_coin_balance: 6)
-
       params = %{
         "module" => "stats",
         "action" => "ethsupply"
@@ -137,7 +116,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == "6"
+      assert response["result"] == "0"
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(ethsupply_schema(), response)
@@ -146,6 +125,22 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
 
   describe "ethprice" do
     setup :set_mox_global
+
+    setup do
+      # Use TestSource mock for this test set
+      configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
+      Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
+      Application.put_env(:explorer, Explorer.ExchangeRates, table_name: :rates)
+      Application.put_env(:explorer, Explorer.ExchangeRates, enabled: true)
+
+      ExchangeRates.init([])
+
+      :ok
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.ExchangeRates, configuration)
+      end)
+    end
 
     test "returns the configured coin's price information", %{conn: conn} do
       symbol = Application.get_env(:explorer, :coin)
