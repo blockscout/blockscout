@@ -2967,21 +2967,33 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_token_instances(initial, reducer) when is_function(reducer, 2) do
+    nft_tokens =
+      from(
+        token in Token,
+        where: token.type == ^"ERC-721",
+        select: token.contract_address_hash
+      )
+
     query =
       from(
         token_transfer in TokenTransfer,
-        inner_join: token in Token,
+        inner_join: token in subquery(nft_tokens),
         on: token.contract_address_hash == token_transfer.token_contract_address_hash,
         left_join: instance in Instance,
         on:
           token_transfer.token_id == instance.token_id and
             token_transfer.token_contract_address_hash == instance.token_contract_address_hash,
-        where: token.type == ^"ERC-721" and is_nil(instance.token_id) and not is_nil(token_transfer.token_id),
-        distinct: [token_transfer.token_contract_address_hash, token_transfer.token_id],
+        where: is_nil(instance.token_id) and not is_nil(token_transfer.token_id),
         select: %{contract_address_hash: token_transfer.token_contract_address_hash, token_id: token_transfer.token_id}
       )
 
-    Repo.stream_reduce(query, initial, reducer)
+    distinct_query =
+      from(
+        q in subquery(query),
+        distinct: [q.token_contract_address_hash, q.token_id]
+      )
+
+    Repo.stream_reduce(distinct_query, initial, reducer)
   end
 
   @doc """
