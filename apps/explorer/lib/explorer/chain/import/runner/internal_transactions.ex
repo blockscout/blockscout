@@ -234,9 +234,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     params =
       Enum.map(first_traces, fn first_trace ->
         %{
-          first_trace_gas_used: first_trace.gas_used,
-          first_trace_output: first_trace.output,
-          hash: first_trace.transaction_hash
+          first_trace_gas_used: Map.get(first_trace, :gas_used),
+          first_trace_output: Map.get(first_trace, :output),
+          hash: Map.get(first_trace, :transaction_hash)
         }
       end)
 
