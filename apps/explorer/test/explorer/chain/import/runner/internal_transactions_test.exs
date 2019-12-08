@@ -28,7 +28,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert :ok == transaction.status
       assert is_nil(pending.block_hash)
 
-      index = 0
+      index = 1
 
       transaction_changes = make_internal_transaction_changes(transaction.hash, index, nil)
       pending_changes = make_internal_transaction_changes(pending.hash, index, nil)
@@ -54,7 +54,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert full_block.hash == inserted.block_hash
 
-      index = 0
+      index = 1
 
       pending_transaction_changes =
         pending.hash
@@ -90,7 +90,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert full_block.hash == inserted.block_hash
 
-      index = 0
+      index = 1
 
       transaction_changes =
         inserted.hash
