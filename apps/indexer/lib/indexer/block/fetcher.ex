@@ -10,7 +10,7 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
-  alias Explorer.{Chain,Market}
+  alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
