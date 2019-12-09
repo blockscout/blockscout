@@ -33,7 +33,7 @@ defmodule Explorer.Chain.CeloAccount do
     )a
 
   @required_attrs ~w(
-        address name
+        address
     )a
 
   # Event topics that are used to find out when accounts, validators or validator groups have changed
