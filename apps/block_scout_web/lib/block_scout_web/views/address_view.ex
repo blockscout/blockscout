@@ -310,6 +310,7 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
   defp tab_name(["logs"]), do: gettext("Logs")
+  defp tab_name(["celo"]), do: "Celo Info"
 
   def short_hash(%Address{hash: hash}) do
     <<

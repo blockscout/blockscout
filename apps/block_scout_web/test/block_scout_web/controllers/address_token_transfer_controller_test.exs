@@ -69,6 +69,7 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
             :token_transfer,
             to_address: address,
             transaction: transaction,
+            block: transaction.block,
             token_contract_address: token.contract_address
           )
 
@@ -116,6 +117,7 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
         :token_transfer,
         to_address: address,
         transaction: transaction,
+        block: block,
         token_contract_address: token.contract_address
       )
 
@@ -147,6 +149,7 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
             :token_transfer,
             to_address: address,
             transaction: transaction,
+            block: block,
             token_contract_address: token.contract_address
           )
 
@@ -166,6 +169,7 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
           :token_transfer,
           to_address: address,
           transaction: transaction,
+          block: block,
           token_contract_address: token.contract_address
         )
       end)

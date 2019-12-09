@@ -2,6 +2,8 @@ use Mix.Config
 
 config :indexer, Indexer.Tracer, disabled?: false
 
+config :indexer, Indexer.Fetcher.CeloValidatorHistory.Supervisor, disabled?: true
+
 config :logger, :indexer,
   level: :warn,
   path: Path.absname("logs/test/indexer.log")
@@ -20,4 +22,3 @@ config :logger, :addresses_without_code,
   level: :debug,
   path: Path.absname("logs/test/indexer/addresses_without_code.log"),
   metadata_filter: [fetcher: :addresses_without_code]
-

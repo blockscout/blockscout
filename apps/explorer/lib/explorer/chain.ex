@@ -34,6 +34,7 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
+    CeloAccount,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -778,6 +779,7 @@ defmodule Explorer.Chain do
             :names => :optional,
             :smart_contract => :optional,
             :token => :optional,
+            :celo_account => :optional,
             :contracts_creation_transaction => :optional
           }
         ],
@@ -1858,7 +1860,7 @@ defmodule Explorer.Chain do
   The number of `t:Explorer.Chain.Log.t/0`.
 
       iex> transaction = :transaction |> insert() |> with_block()
-      iex> insert(:log, transaction: transaction, index: 0)
+      iex> insert(:log, transaction: transaction, index: 0, block: transaction.block)
       iex> Explorer.Chain.log_count()
       1
 
@@ -2632,36 +2634,33 @@ defmodule Explorer.Chain do
     address_hash = Changeset.get_field(smart_contract_changeset, :address_hash)
 
     insert_result =
-    if proxy_address != nil do
-      proxy_address= attrs[:proxy_address]
-      Logger.debug(fn -> "Adding Proxy Address Mapping: #{proxy_address}" end)
+      if proxy_address != nil do
+        proxy_address = attrs[:proxy_address]
+        Logger.debug(fn -> "Adding Proxy Address Mapping: #{proxy_address}" end)
 
-      Multi.new()
-      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
-      |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
-      |> Multi.run(:insert_address_name, fn repo, _ ->
-        name = Changeset.get_field(smart_contract_changeset, :name)
-        create_address_name(repo, name, address_hash)
-      end)
-      |> Multi.run(:proxy_address_contract, fn repo, _ -> set_address_proxy(repo, proxy_address, address_hash) end)
-      |> Multi.insert(:smart_contract, smart_contract_changeset)
-      |> Repo.transaction()
-
-    else
-      Multi.new()
-      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
-      |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
-      |> Multi.run(:insert_address_name, fn repo, _ ->
-        name = Changeset.get_field(smart_contract_changeset, :name)
-        create_address_name(repo, name, address_hash)
-      end)
-      |> Multi.insert(:smart_contract, smart_contract_changeset)
-      |> Repo.transaction()
-
-    end
+        Multi.new()
+        |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
+        |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
+        |> Multi.run(:insert_address_name, fn repo, _ ->
+          name = Changeset.get_field(smart_contract_changeset, :name)
+          create_address_name(repo, name, address_hash)
+        end)
+        |> Multi.run(:proxy_address_contract, fn repo, _ -> set_address_proxy(repo, proxy_address, address_hash) end)
+        |> Multi.insert(:smart_contract, smart_contract_changeset)
+        |> Repo.transaction()
+      else
+        Multi.new()
+        |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
+        |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
+        |> Multi.run(:insert_address_name, fn repo, _ ->
+          name = Changeset.get_field(smart_contract_changeset, :name)
+          create_address_name(repo, name, address_hash)
+        end)
+        |> Multi.insert(:smart_contract, smart_contract_changeset)
+        |> Repo.transaction()
+      end
 
     case insert_result do
-
       {:ok, %{smart_contract: smart_contract}} ->
         {:ok, smart_contract}
 
@@ -2670,7 +2669,6 @@ defmodule Explorer.Chain do
 
       {:error, :set_address_verified, message, _} ->
         {:error, message}
-
     end
   end
 
@@ -2711,9 +2709,9 @@ defmodule Explorer.Chain do
     %ProxyContract{}
     |> ProxyContract.changeset(params)
     |> repo.insert(
-         on_conflict: :replace_all,
-         conflict_target: [:proxy_address])
-
+      on_conflict: :replace_all,
+      conflict_target: [:proxy_address]
+    )
   end
 
   defp clear_primary_address_names(repo, address_hash) do
@@ -3642,6 +3640,55 @@ defmodule Explorer.Chain do
 
   defp staking_pool_filter(query, _), do: query
 
+  @spec get_celo_account(Hash.Address.t()) :: {:ok, CeloAccount.t()} | {:error, :not_found}
+  def get_celo_account(address_hash) do
+    query =
+      from(account in CeloAccount,
+        where: account.address == ^address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  def query_leaderboard do
+    # Computes the leaderboard score
+    # For each account, the following is computed: cGLD balance + cUSD balance * exchange rate
+    # Each competitor can have several claimed accounts.
+    # Final final score is the sum of account scores modified with the multiplier that is read from Google sheets
+    result =
+      SQL.query(Repo, """
+        SELECT
+          competitors.address,
+          COALESCE(( SELECT name FROM celo_account WHERE address =  competitors.address), 'Unknown account'),
+          (SUM(rate*token_balance+balance+locked_balance)+rate*COALESCE(old_usd,0)+COALESCE(old_gold,0))*
+           (multiplier+COALESCE(attestation_multiplier,0)) AS score
+        FROM exchange_rates, competitors, tokens, claims,
+         ( SELECT claims.address AS c_address, claims.claimed_address AS address,
+              COALESCE((SELECT value FROM address_current_token_balances, tokens WHERE claimed_address = address_hash
+                        AND token_contract_address_hash = tokens.contract_address_hash AND tokens.symbol = 'cUSD'), 0) as token_balance,
+              COALESCE((SELECT fetched_coin_balance FROM addresses WHERE claimed_address = hash), 0) as balance,
+              COALESCE((SELECT locked_gold FROM celo_account WHERE claimed_address = address), 0) as locked_balance 
+            FROM claims ) AS get
+        WHERE exchange_rates.token = tokens.contract_address_hash
+        AND tokens.symbol = 'cUSD'
+        AND claims.claimed_address = get.address
+        AND claims.address = competitors.address
+        AND claims.address = c_address
+        GROUP BY competitors.address, rate, old_usd, old_gold, attestation_multiplier, multiplier
+        ORDER BY score DESC
+      """)
+
+    case result do
+      {:ok, %{rows: res}} -> {:ok, res}
+      _ -> {:error, :not_found}
+    end
+  end
+
   defp with_decompiled_code_flag(query, _hash, false), do: query
 
   defp with_decompiled_code_flag(query, hash, true) do
@@ -3916,11 +3963,13 @@ defmodule Explorer.Chain do
   Returns `:ok` if found
 
       iex> contract_address = insert(:address)
+      iex> block = insert(:block)
       iex> token_id = 10
       iex> insert(:token_transfer,
       ...>  from_address: contract_address,
       ...>  token_contract_address: contract_address,
-      ...>  token_id: token_id
+      ...>  token_id: token_id,
+      ...>  block_hash: block.hash
       ...> )
       iex> Explorer.Chain.check_erc721_token_instance_exists(token_id, contract_address.hash)
       :ok
@@ -3944,11 +3993,13 @@ defmodule Explorer.Chain do
   Returns `true` if found
 
       iex> contract_address = insert(:address)
+      iex> block = insert(:block)
       iex> token_id = 10
       iex> insert(:token_transfer,
       ...>  from_address: contract_address,
       ...>  token_contract_address: contract_address,
-      ...>  token_id: token_id
+      ...>  token_id: token_id,
+      ...>  block_hash: block.hash
       ...> )
       iex> Explorer.Chain.erc721_token_instance_exist?(token_id, contract_address.hash)
       true

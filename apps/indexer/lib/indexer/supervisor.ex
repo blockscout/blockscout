@@ -10,6 +10,10 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Fetcher.{
     BlockReward,
+    CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup,
+    CeloValidatorHistory,
     CoinBalance,
     CoinBalanceOnDemand,
     ContractCode,
@@ -120,6 +124,14 @@ defmodule Indexer.Supervisor do
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
         {StakingPools.Supervisor, [[memory_monitor: memory_monitor]]},
+        {CeloAccount.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CeloValidator.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CeloValidatorGroup.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CeloValidatorHistory.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
 
         # Out-of-band fetchers
         {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},

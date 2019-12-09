@@ -22,6 +22,7 @@ defmodule BlockScoutWeb.Tokens.ReadContractControllerTest do
         :token_transfer,
         to_address: build(:address),
         transaction: transaction,
+        block: transaction.block,
         token_contract_address: token_contract_address,
         token: token
       )

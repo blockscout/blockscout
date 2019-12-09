@@ -6,7 +6,5 @@ defmodule Explorer.Repo.Migrations.CreateProxyContract do
       add(:proxy_address, :bytea, null: false)
       add(:implementation_address, :bytea, null: false)
     end
-
   end
 end
-

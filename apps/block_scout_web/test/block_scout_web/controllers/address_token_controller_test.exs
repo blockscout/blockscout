@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
 
     test "returns tokens that have balance for the address", %{conn: conn} do
       address = insert(:address)
+      block = insert(:block)
 
       token1 =
         :token
@@ -47,12 +48,14 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         :token_transfer,
         token_contract_address: token1.contract_address,
         from_address: address,
+        block: block,
         to_address: build(:address)
       )
 
       insert(
         :token_transfer,
         token_contract_address: token2.contract_address,
+        block: block,
         from_address: build(:address),
         to_address: address
       )
@@ -128,7 +131,9 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
           value: 1000
         )
 
-        insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
+        block = insert(:block)
+
+        insert(:token_transfer, token_contract_address: token.contract_address, from_address: address, block: block)
       end)
 
       conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash), type: "JSON")
@@ -143,7 +148,8 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
     test "next_page_params are empty if on last page", %{conn: conn} do
       address = insert(:address)
       token = insert(:token)
-      insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
+      block = insert(:block)
+      insert(:token_transfer, token_contract_address: token.contract_address, from_address: address, block: block)
 
       conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash), type: "JSON")
 

@@ -122,7 +122,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       transaction = insert(:transaction) |> with_block(consensus_block)
 
       %TokenTransfer{transaction_hash: transaction_hash, log_index: log_index} =
-        insert(:token_transfer, block_number: block_number, transaction: transaction)
+        insert(:token_transfer, block_number: block_number, transaction: transaction, block: transaction.block)
 
       assert count(TokenTransfer) == 1
 
@@ -142,7 +142,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       transaction = insert(:transaction) |> with_block(consensus_block)
 
-      insert(:token_transfer, block_number: block_number, transaction: transaction)
+      insert(:token_transfer, block_number: block_number, transaction: transaction, block: transaction.block)
 
       count = 1
 

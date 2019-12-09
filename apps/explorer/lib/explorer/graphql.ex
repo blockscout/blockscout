@@ -12,6 +12,8 @@ defmodule Explorer.GraphQL do
     ]
 
   alias Explorer.Chain.{
+    Address,
+    CeloAccount,
     Hash,
     InternalTransaction,
     TokenTransfer,
@@ -33,6 +35,16 @@ defmodule Explorer.GraphQL do
     |> where([transaction], transaction.to_address_hash == ^address_hash)
     |> or_where([transaction], transaction.from_address_hash == ^address_hash)
     |> or_where([transaction], transaction.created_contract_address_hash == ^address_hash)
+  end
+
+  def address_to_account_query(address_hash) do
+    CeloAccount
+    |> where([account], account.address == ^address_hash)
+  end
+
+  def address_query(address_hash) do
+    Address
+    |> where([account], account.hash == ^address_hash)
   end
 
   @doc """

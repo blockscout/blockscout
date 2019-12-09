@@ -74,7 +74,8 @@ defmodule EthereumJSONRPC.Receipt do
         gas_used: 269607,
         status: :ok,
         transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
-        transaction_index: 0
+        transaction_index: 0,
+        block_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47"
       }
 
   Geth, when showing pre-[Byzantium](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-609.md) does not include
@@ -107,7 +108,8 @@ defmodule EthereumJSONRPC.Receipt do
         gas_used: 21001,
         status: nil,
         transaction_hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-        transaction_index: 0
+        transaction_index: 0,
+        block_hash: "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd"
       }
 
   """
@@ -116,6 +118,7 @@ defmodule EthereumJSONRPC.Receipt do
           gas_used: non_neg_integer,
           created_contract_address_hash: String.t() | nil,
           status: status(),
+          block_hash: String.t(),
           transaction_hash: String.t(),
           transaction_index: non_neg_integer()
         }
@@ -125,7 +128,8 @@ defmodule EthereumJSONRPC.Receipt do
           "gasUsed" => gas_used,
           "contractAddress" => created_contract_address_hash,
           "transactionHash" => transaction_hash,
-          "transactionIndex" => transaction_index
+          "transactionIndex" => transaction_index,
+          "blockHash" => block_hash
         } = elixir
       ) do
     status = elixir_to_status(elixir)
@@ -135,6 +139,7 @@ defmodule EthereumJSONRPC.Receipt do
       gas_used: gas_used,
       created_contract_address_hash: created_contract_address_hash,
       status: status,
+      block_hash: block_hash,
       transaction_hash: transaction_hash,
       transaction_index: transaction_index
     }

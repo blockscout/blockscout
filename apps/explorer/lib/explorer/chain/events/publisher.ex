@@ -20,9 +20,14 @@ defmodule Explorer.Chain.Events.Publisher do
     :ok
   end
 
+  @max_payload 7500
+
   defp send_data(event_type) do
     payload = encode_payload({:chain_event, event_type})
-    @sender.send_notify(payload)
+
+    if byte_size(payload) < @max_payload do
+      @sender.send_notify(payload)
+    end
   end
 
   # The :catchup type of event is not being consumed right now.
@@ -32,7 +37,10 @@ defmodule Explorer.Chain.Events.Publisher do
 
   defp send_data(event_type, broadcast_type, event_data) do
     payload = encode_payload({:chain_event, event_type, broadcast_type, event_data})
-    @sender.send_notify(payload)
+
+    if byte_size(payload) < @max_payload do
+      @sender.send_notify(payload)
+    end
   end
 
   defp encode_payload(payload) do

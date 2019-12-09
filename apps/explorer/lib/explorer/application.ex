@@ -77,6 +77,7 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.AddressesWithBalanceCounter),
       configure(Explorer.Counters.AddressesCounter),
       configure(Explorer.Counters.AverageBlockTime),
+      configure(Explorer.Celo.AbiHandler),
       configure(Explorer.Validator.MetadataProcessor),
       configure(Explorer.Staking.EpochCounter)
     ]

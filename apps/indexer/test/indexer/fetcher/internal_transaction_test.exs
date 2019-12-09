@@ -33,8 +33,9 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
                  "condition" => nil,
                  "creates" => "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
                  "from" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-                 "gasCurrency" => "0x0000000000000000000000000000000000000000",
-                 "gasFeeRecipient" => "0x0000000000000000000000000000000000000000",
+                 "feeCurrency" => "0x0000000000000000000000000000000000000000",
+                 "gatewayFeeRecipient" => "0x0000000000000000000000000000000000000000",
+                 "gatewayFee" => "0x0",
                  "gas" => "0x47b760",
                  "gasPrice" => "0x174876e800",
                  "hash" => "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
@@ -294,7 +295,6 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
     @tag :no_parity
     test "duplicate transaction hashes only retry uniques", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      IO.inspect(json_rpc_named_arguments)
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
           {:ok, [%{id: 0, error: %{code: -32602, message: "Invalid params"}}]}

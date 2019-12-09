@@ -30,6 +30,8 @@ config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
   period: average_block_period
 
+config :explorer, Explorer.Celo.AbiHandler, enabled: true
+
 config :explorer, Explorer.ChainSpec.GenesisData,
   enabled: true,
   chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
@@ -59,7 +61,7 @@ config :explorer, Explorer.Counters.AddressesCounter,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
 
-config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
+config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets
 
 config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
 

@@ -19,7 +19,11 @@ defmodule Indexer.Block.FetcherTest do
     ReplacedTransaction,
     Token,
     TokenBalance,
-    UncleBlock
+    UncleBlock,
+    CeloAccount,
+    CeloValidator,
+    CeloValidatorHistory,
+    CeloValidatorGroup
   }
 
   @moduletag capture_log: true
@@ -55,6 +59,10 @@ defmodule Indexer.Block.FetcherTest do
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       UncleBlock.Supervisor.Case.start_supervised!(
@@ -120,6 +128,10 @@ defmodule Indexer.Block.FetcherTest do
                    }
                  }
                ]}
+            end)
+            |> expect(:json_rpc, fn
+              [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _ ->
+                {:ok, [%{id: id, jsonrpc: "2.0", result: []}]}
             end)
             |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
               {:ok, [%{id: id, result: []}]}
@@ -310,8 +322,9 @@ defmodule Indexer.Block.FetcherTest do
                          "from" => from_address_hash,
                          "gas" => "0x47b760",
                          "gasPrice" => "0x174876e800",
-                         "gasCurrency" => "0x0000000000000000000000000000000000000000",
-                         "gasFeeRecipient" => "0x0000000000000000000000000000000000000000",
+                         "feeCurrency" => "0x0000000000000000000000000000000000000000",
+                         "gatewayFeeRecipient" => "0x0000000000000000000000000000000000000000",
+                         "gatewayFee" => "0x0",
                          "hash" => transaction_hash,
                          "input" => "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
                          "nonce" => "0x4",
@@ -333,6 +346,10 @@ defmodule Indexer.Block.FetcherTest do
                    }
                  }
                ]}
+            end)
+            |> expect(:json_rpc, fn
+              [%{id: id, jsonrpc: "2.0", method: "eth_getLogs"}], _ ->
+                {:ok, [%{id: id, jsonrpc: "2.0", result: []}]}
             end)
             |> expect(:json_rpc, fn json, _options ->
               assert [
@@ -383,7 +400,7 @@ defmodule Indexer.Block.FetcherTest do
             end)
             # async requests need to be grouped in one expect because the order is non-deterministic while multiple expect
             # calls on the same name/arity are used in order
-            |> expect(:json_rpc, 5, fn json, _options ->
+            |> expect(:json_rpc, 6, fn json, _options ->
               [request] = json
 
               case request do
@@ -392,6 +409,19 @@ defmodule Indexer.Block.FetcherTest do
 
                 %{id: id, method: "eth_getBalance", params: [^from_address_hash, ^block_quantity]} ->
                   {:ok, [%{id: id, jsonrpc: "2.0", result: "0xd0d4a965ab52d8cd740000"}]}
+
+                %{id: id, method: "eth_getBalance", params: [_, ^block_quantity]} ->
+                  {:ok, [%{id: id, jsonrpc: "2.0", result: "0x1"}]}
+
+                %{id: id, method: "eth_call"} ->
+                  {:ok,
+                   [
+                     %{
+                       id: id,
+                       jsonrpc: "2.0",
+                       result: "0x0000000000000000000000005765cd49b3da3942ea4a4fdb6d7bf257239fe182"
+                     }
+                   ]}
 
                 %{id: id, method: "trace_replayBlockTransactions", params: [^block_quantity, ["trace"]]} ->
                   {:ok,
@@ -441,6 +471,10 @@ defmodule Indexer.Block.FetcherTest do
           assert {:ok,
                   %{
                     addresses: [
+                      %Explorer.Chain.Hash{
+                        byte_count: 20,
+                        bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+                      },
                       %Explorer.Chain.Hash{
                         byte_count: 20,
                         bytes:
@@ -546,6 +580,13 @@ defmodule Indexer.Block.FetcherTest do
                           hash:
                             %Explorer.Chain.Hash{
                               byte_count: 20,
+                              bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+                            } = zero_address_hash
+                        },
+                        %Address{
+                          hash:
+                            %Explorer.Chain.Hash{
+                              byte_count: 20,
                               bytes:
                                 <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179,
                                   223, 65, 91>>
@@ -603,7 +644,7 @@ defmodule Indexer.Block.FetcherTest do
           wait_for_tasks(CoinBalance)
 
           assert Repo.aggregate(Chain.Block, :count, :hash) == 1
-          assert Repo.aggregate(Address, :count, :hash) == 2
+          assert Repo.aggregate(Address, :count, :hash) == 3
           assert Chain.log_count() == 1
           assert Repo.aggregate(Transaction, :count, :hash) == 1
 
@@ -630,7 +671,7 @@ defmodule Indexer.Block.FetcherTest do
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, 2, fn requests, _options ->
+        |> expect(:json_rpc, 3, fn requests, _options ->
           {:ok,
            Enum.map(requests, fn
              %{id: id, method: "eth_getBlockByNumber", params: ["0x708677", true]} ->
@@ -665,6 +706,9 @@ defmodule Indexer.Block.FetcherTest do
                    "uncles" => []
                  }
                }
+
+             %{id: id, jsonrpc: "2.0", method: "eth_getLogs"} ->
+               %{id: id, jsonrpc: "2.0", result: []}
 
              %{id: id, method: "trace_block"} ->
                %{

@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.Schema.Types do
   import Absinthe.Resolution.Helpers
 
   alias BlockScoutWeb.Resolvers.{
+    Address,
+    CeloAccount,
     InternalTransaction,
     Transaction
   }
@@ -14,6 +16,9 @@ defmodule BlockScoutWeb.Schema.Types do
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.Schema.Scalars)
 
+  connection(node_type: :celo_account)
+  connection(node_type: :competitor)
+  connection(node_type: :address)
   connection(node_type: :transaction)
   connection(node_type: :internal_transaction)
   connection(node_type: :token_transfer)
@@ -31,6 +36,10 @@ defmodule BlockScoutWeb.Schema.Types do
       resolve(dataloader(:db, :smart_contract))
     end
 
+    connection field(:celo_account, node_type: :celo_account) do
+      resolve(&CeloAccount.get_by/3)
+    end
+
     connection field(:transactions, node_type: :transaction) do
       arg(:count, :integer)
       resolve(&Transaction.get_by/3)
@@ -42,6 +51,24 @@ defmodule BlockScoutWeb.Schema.Types do
         %{last: last}, child_complexity ->
           last * child_complexity
       end)
+    end
+  end
+
+  @desc """
+  Celo account information
+  """
+  object :celo_account do
+    field(:address, :address_hash)
+    field(:account_type, :string)
+    field(:nonvoting_locked_gold, :wei)
+    field(:locked_gold, :wei)
+    field(:attestations_requested, :integer)
+    field(:attestations_fulfilled, :integer)
+    field(:name, :string)
+    field(:url, :string)
+
+    connection field(:address_info, node_type: :address) do
+      resolve(&Address.get_by/3)
     end
   end
 
@@ -63,6 +90,15 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:total_difficulty, :decimal)
     field(:miner_hash, :address_hash)
     field(:parent_hash, :full_hash)
+  end
+
+  @desc """
+  Leaderboard entry 
+  """
+  object :competitor do
+    field(:address, :address_hash)
+    field(:points, :float)
+    field(:identity, :string)
   end
 
   @desc """
@@ -118,6 +154,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:to_address_hash, :address_hash)
     field(:token_contract_address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
+    field(:block_hash, :full_hash)
   end
 
   @desc """

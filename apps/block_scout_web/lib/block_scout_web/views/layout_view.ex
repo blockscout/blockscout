@@ -17,10 +17,10 @@ defmodule BlockScoutWeb.LayoutView do
       test_net?: true
     },
     %{
-      title: "Celo Betanet",
-      url: "https://betanet-blockscout.celo-testnet.org/",
+      title: "Celo Baklava",
+      url: "https://baklava-blockscout.celo-testnet.org/",
       test_net?: true
-    },
+    }
   ]
 
   alias BlockScoutWeb.SocialMedia
@@ -39,11 +39,11 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   def subnetwork_title do
-    Keyword.get(application_config(), :subnetwork) || "Sokol Testnet"
+    Keyword.get(application_config(), :subnetwork) || "Testnet"
   end
 
   def network_title do
-    Keyword.get(application_config(), :network) || "POA"
+    Keyword.get(application_config(), :network) || "Celo"
   end
 
   defp application_config do
@@ -109,7 +109,7 @@ defmodule BlockScoutWeb.LayoutView do
           nil
 
         release_link_env_var == "" || release_link_env_var == nil ->
-          "https://github.com/poanetwork/blockscout/releases/tag/" <> version
+          "https://github.com/celo-org/blockscout/releases/tag/" <> version
 
         true ->
           release_link_env_var
