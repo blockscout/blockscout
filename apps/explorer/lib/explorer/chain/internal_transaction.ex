@@ -263,11 +263,10 @@ defmodule Explorer.Chain.InternalTransaction do
       false
       iex> changeset.errors
       [
-        output: {"can't be present for failed call", []},
         gas_used: {"can't be present for failed call", []}
       ]
 
-  Likewise, successful `:call`s require `input`, `gas_used` and `output` to be set.
+  Likewise, successful `:call`s require `input`, `gas_used` and `output` to be set. Looks like `output` might be unset now???
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -290,8 +289,7 @@ defmodule Explorer.Chain.InternalTransaction do
       false
       iex> changeset.errors
       [
-        gas_used: {"can't be blank for successful call", [validation: :required]},
-        output: {"can't be blank for successful call", [validation: :required]}
+        gas_used: {"can't be blank for successful call", [validation: :required]}
       ]
 
   For failed `:create`, `created_contract_code`, `created_contract_address_hash`, and `gas_used` are not allowed to be
