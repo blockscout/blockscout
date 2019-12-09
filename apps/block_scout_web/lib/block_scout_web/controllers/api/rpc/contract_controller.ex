@@ -68,18 +68,28 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
+  
   def getsourcecode(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
-      address =
-        case Chain.get_proxied_address(address_hash) do
-          {:ok, proxy_contract} ->
-            Logger.debug("Implementation address FOUND in proxy table")
-            Chain.address_hash_to_address_with_source_code(proxy_contract)
 
-          {:error, :not_found} ->
-            Logger.debug("Implementation address NOT found in proxy table")
+      ignore_proxy = Map.get(params, "ignoreProxy", "0")
+      Logger.debug("Ignore proxy flag set to #{ignore_proxy} and #{is_integer(ignore_proxy)}}")
+
+      address =
+        cond do
+          ignore_proxy == "1" ->
+            Logger.debug("Not checking if contract is proxied")
             Chain.address_hash_to_address_with_source_code(address_hash)
+          true ->
+            case Chain.get_proxied_address(address_hash) do
+              {:ok, proxy_contract} ->
+                Logger.debug("Implementation address FOUND in proxy table")
+                Chain.address_hash_to_address_with_source_code(proxy_contract)
+              {:error, :not_found} ->
+                Logger.debug("Implementation address NOT found in proxy table")
+                Chain.address_hash_to_address_with_source_code(address_hash)
+            end
         end
 
       render(conn, :getsourcecode, %{

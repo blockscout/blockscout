@@ -2139,7 +2139,15 @@ defmodule BlockScoutWeb.Etherscan do
         description: "A 160-bit code used for identifying contracts."
       }
     ],
-    optional_params: [],
+    optional_params: [
+      %{
+        key: "ignoreProxy",
+        placeholder: "ignoreProxy",
+        type: "integer",
+        enum: ~s(["0", "1"]),
+        description: "Indicates if we want to ignore if the contract is a proxy (0 false, 1 true. Default false)."
+      }
+    ],
     responses: [
       %{
         code: "200",
