@@ -5,8 +5,8 @@ defmodule Indexer.Transform.CeloAccounts do
 
   require Logger
 
-  alias Explorer.Chain.CeloAccount
   alias ABI.TypeDecoder
+  alias Explorer.Chain.CeloAccount
 
   @doc """
   Returns a list of account addresses given a list of logs.

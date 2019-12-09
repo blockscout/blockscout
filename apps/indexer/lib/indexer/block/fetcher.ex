@@ -10,11 +10,10 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
-  alias Explorer.Chain
+  alias Explorer.{Chain,Market}
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
-  alias Explorer.Market
   alias Indexer.Block.Fetcher.Receipts
 
   alias Explorer.Celo.AccountReader
@@ -209,7 +208,7 @@ defmodule Indexer.Block.Fetcher do
            end),
          exchange_rates =
            (if Enum.count(exchange_rates) > 0 and gold_token != nil do
-              exchange_rates ++ [%{token: gold_token, rate: 1.0}]
+              [%{token: gold_token, rate: 1.0} | exchange_rates]
             else
               []
             end),
