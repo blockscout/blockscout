@@ -16,7 +16,7 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">Metadata URL</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="URL pointing to the account metadata"><%= @address.celo_account.url %></span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="URL pointing to the account metadata"><a href="<%= @address.celo_account.url %>"><%= @address.celo_account.url %></a></span>
        </dd>
       </dl>
       <% end %>
