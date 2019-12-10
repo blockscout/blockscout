@@ -6,7 +6,7 @@
         <h5 class="modal-title"><%= gettext("Claim Reward") %></h5>
       </div>
       <div class="modal-body">
-        <p><%= gettext("Searching for pools you ever staked into. Please, wait...") %></p>
+        <p><%= gettext("Searching for pools you have ever staked into. Please, wait...") %></p>
       </div>
     </div>
   </div>
