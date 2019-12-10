@@ -54,28 +54,5 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
     end
 
     create(index(:celo_validator_history, [:block_number, :index], unique: true))
-
-    if Mix.env() != :test do
-      Explorer.Repo.insert(
-        Explorer.Chain.Address.changeset(%Explorer.Chain.Address{}, %{
-          hash: "0x0000000000000000000000000000000000000000"
-        })
-      )
-
-      Explorer.Repo.insert(
-        Explorer.Chain.Transaction.changeset(%Explorer.Chain.Transaction{}, %{
-          gas: 0,
-          gas_price: 0,
-          hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-          v: 27,
-          r: 123,
-          s: 234,
-          nonce: 1_000_000_000,
-          input: "0x1234",
-          from_address_hash: "0x0000000000000000000000000000000000000000",
-          value: 0
-        })
-      )
-    end
   end
 end

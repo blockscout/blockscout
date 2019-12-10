@@ -120,7 +120,7 @@ defmodule Indexer.Block.Fetcher do
         tx_hash == block_hash
       end)
       |> Enum.map(fn log ->
-        Map.put(log, :transaction_hash, "0x0000000000000000000000000000000000000000000000000000000000000000")
+        Map.put(log, :transaction_hash, nil)
       end)
 
     e_logs
