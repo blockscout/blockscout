@@ -40,8 +40,6 @@ defmodule Explorer.Chain.CeloSigners do
   ]
 
   schema "celo_signers" do
-    field(:block_number, :integer, primary_key: true)
-    field(:index, :integer, primary_key: true)
 
     belongs_to(
       :account_address,

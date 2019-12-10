@@ -162,6 +162,7 @@ defmodule Indexer.Block.Fetcher do
            accounts: celo_accounts,
            validators: celo_validators,
            validator_groups: celo_validator_groups,
+           signers: signers,
            attestations_fulfilled: attestations_fulfilled,
            attestations_requested: attestations_requested
          } = CeloAccounts.parse(logs),
@@ -203,6 +204,7 @@ defmodule Indexer.Block.Fetcher do
                block_second_degree_relations: %{params: block_second_degree_relations_params},
                block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
                logs: %{params: logs},
+               celo_signers: %{params: signers},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts}
