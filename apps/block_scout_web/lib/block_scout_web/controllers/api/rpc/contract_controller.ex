@@ -68,9 +68,11 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
+
   def getsourcecode(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
+
       ignore_proxy = Map.get(params, "ignoreProxy", "0")
       Logger.debug("Ignore proxy flag set to #{ignore_proxy} and #{is_integer(ignore_proxy)}}")
 
@@ -83,7 +85,6 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
             {:ok, proxy_contract} ->
               Logger.debug("Implementation address FOUND in proxy table")
               Chain.address_hash_to_address_with_source_code(proxy_contract)
-
             {:error, :not_found} ->
               Logger.debug("Implementation address NOT found in proxy table")
               Chain.address_hash_to_address_with_source_code(address_hash)
@@ -183,7 +184,11 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp contracts_filter(filter), do: {:error, contracts_filter_error_message(filter)}
 
   defp contracts_filter_error_message(filter) do
-    "#{filter} isn't a valid value for `filter`. Please use: verified, decompiled, unverified, not_decompiled, 1, 2, 3, 4."
+    "#{
+      filter
+    } is not a valid value for `filter`.
+    Please use one of: verified, decompiled, unverified, not_decompiled, 1, 2, 3, 4."
+    
   end
 
   defp fetch_address(params) do
