@@ -11,8 +11,6 @@ defmodule BlockScoutWeb.StakesChannel do
   alias Explorer.Staking.ContractState
   alias Phoenix.View
 
-  import BlockScoutWeb.Gettext
-
   intercept(["staking_update"])
 
   def join("stakes:staking_update", _params, socket) do
@@ -236,16 +234,8 @@ defmodule BlockScoutWeb.StakesChannel do
     html = if data["preload"] do
       View.render_to_string(StakesView, "_stakes_modal_claim_reward.html", %{})
     else
-      task = Task.async(__MODULE__, :find_claim_reward_pools, [])
-      case Task.yield(task, data["timeout"]) do
-        {:ok, html} ->
-          html
-        {:exit, _} ->
-          gettext("<p>Unknown error. Please, contact Support.</p>")
-        nil ->
-          Task.shutdown(task, :brutal_kill)
-          gettext("<p>Unable to find the pools in a reasonable time. Please, contact Support.</p>")
-      end
+      Task.async(__MODULE__, :find_claim_reward_pools, [socket])
+      "OK"
     end
     result = %{html: html}
     {:reply, {:ok, result}, socket}
@@ -285,10 +275,13 @@ defmodule BlockScoutWeb.StakesChannel do
     {:noreply, socket}
   end
 
-  def find_claim_reward_pools() do
+  def find_claim_reward_pools(socket) do
     pools = []
     :timer.sleep(20000) # emulate working
-    View.render_to_string(StakesView, "_stakes_modal_claim_reward_content.html", pools: pools)
+    html = View.render_to_string(StakesView, "_stakes_modal_claim_reward_content.html", pools: pools)
+    push(socket, "claim_reward_pools", %{
+      html: html
+    })
   end
 
   defp push_staking_contract(socket) do
