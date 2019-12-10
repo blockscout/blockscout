@@ -33,14 +33,18 @@ export function openClaimRewardModal(store) {
 
     closeButton.hide()
     lockModal($modal)
+    channel.on('claim_reward_pools', msg_pools => {
+      channel.off('claim_reward_pools')
+      closeButton.show()
+      unlockModal($modal)
+      clearInterval(dotCounterInterval)
+      modalBody.html(msg_pools.html)
+    })
     $modal.on('shown.bs.modal', () => {
-      const timeout = 15000; // ms
-      channel.push('render_claim_reward', { timeout: timeout }, timeout * 2).receive('ok', msg_pools => {
-        closeButton.show()
-        unlockModal($modal)
-        clearInterval(dotCounterInterval)
-        modalBody.html(msg_pools.html)
-      })
+      channel.push('render_claim_reward', {})
+    })
+    $modal.on('hidden.bs.modal', () => {
+      $(this).remove()
     })
 
     openModal($modal);
