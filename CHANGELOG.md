@@ -3,8 +3,13 @@
 ### Features
 
 ### Fixes
+- [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
+
+- [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
 
 ### Chore
+
+- [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
 
 
 ## 2.1.1-beta

@@ -88,21 +88,24 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       mining_address =
         insert(:address,
           fetched_coin_balance: 0,
-          fetched_coin_balance_block_number: 2,
+          fetched_coin_balance_block_number: 102,
           inserted_at: Timex.shift(now, minutes: -10)
         )
 
       mining_address_hash = to_string(mining_address.hash)
       # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
       # back we'd need to go to get 24 hours in the past)
-      insert(:block, number: 0, timestamp: Timex.shift(now, hours: -50), miner: mining_address)
-      insert(:block, number: 1, timestamp: Timex.shift(now, hours: -25), miner: mining_address)
+      Enum.each(0..100, fn i ->
+        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(102 - i) * 25), miner: mining_address)
+      end)
+
+      insert(:block, number: 101, timestamp: Timex.shift(now, hours: -25), miner: mining_address)
       AverageBlockTime.refresh()
 
       address =
         insert(:address,
           fetched_coin_balance: 100,
-          fetched_coin_balance_block_number: 0,
+          fetched_coin_balance_block_number: 100,
           inserted_at: Timex.shift(now, minutes: -5)
         )
 
@@ -112,7 +115,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^address_hash, "0x1"]
+                                                       params: [^address_hash, "0x65"]
                                                      }
                                                    ],
                                                    _options ->
@@ -148,7 +151,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       assert received_address.hash == address.hash
       assert received_address.fetched_coin_balance == expected_wei
-      assert received_address.fetched_coin_balance_block_number == 1
+      assert received_address.fetched_coin_balance_block_number == 101
     end
   end
 

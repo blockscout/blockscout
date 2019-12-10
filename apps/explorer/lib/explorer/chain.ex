@@ -2871,7 +2871,7 @@ defmodule Explorer.Chain do
   """
   @spec total_supply :: non_neg_integer() | nil
   def total_supply do
-    supply_module().total()
+    supply_module().total() || 0
   end
 
   @doc """
