@@ -4,7 +4,6 @@ import humps from 'humps'
 import numeral from 'numeral'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
-import { showLoader } from '../lib/utils'
 
 const config = {
   type: 'line',
@@ -76,16 +75,32 @@ const config = {
   }
 }
 
+function getDataFromLocalStorage (key) {
+  const data = window.localStorage.getItem(key)
+  return data ? JSON.parse(data) : []
+}
+
 function getPriceData (marketHistoryData) {
-  return marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
+  if (marketHistoryData.length === 0) {
+    return getDataFromLocalStorage('priceData')
+  }
+  const data = marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
+  window.localStorage.setItem('priceData', JSON.stringify(data))
+  return data
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
-  if (availableSupply !== null && typeof availableSupply === 'object') {
-    return marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice * availableSupply[date] }))
-  } else {
-    return marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice * availableSupply }))
+  if (marketHistoryData.length === 0) {
+    return getDataFromLocalStorage('marketCapData')
   }
+  const data = marketHistoryData.map(({ date, closingPrice }) => {
+    const supply = (availableSupply !== null && typeof availableSupply === 'object')
+      ? availableSupply[date]
+      : availableSupply
+    return { x: date, y: closingPrice * supply }
+  })
+  window.localStorage.setItem('marketCapData', JSON.stringify(data))
+  return data
 }
 
 // colors for light and dark theme
@@ -142,25 +157,23 @@ class MarketHistoryChart {
 export function createMarketHistoryChart (el) {
   const dataPath = el.dataset.market_history_chart_path
   const $chartLoading = $('[data-chart-loading-message]')
-
-  const isTimeout = true
-  const timeoutID = showLoader(isTimeout, $chartLoading)
-
   const $chartError = $('[data-chart-error-message]')
   const chart = new MarketHistoryChart(el, 0, [])
+  $(el).show()
+
   $.getJSON(dataPath, { type: 'JSON' })
     .done(data => {
       const availableSupply = JSON.parse(data.supply_data)
       const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
-      $(el).show()
       chart.update(availableSupply, marketHistoryData)
     })
     .fail(() => {
+      $(el).hide()
       $chartError.show()
     })
     .always(() => {
-      $chartLoading.hide()
-      clearTimeout(timeoutID)
+      $chartLoading.css({ opacity: 0 })
+      setTimeout($chartLoading.hide, 1000)
     })
   return chart
 }
