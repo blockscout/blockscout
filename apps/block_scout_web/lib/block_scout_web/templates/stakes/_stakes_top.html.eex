@@ -28,6 +28,8 @@
             %>
           <% end %>
         <% end %>
+
+        <%= render BlockScoutWeb.StakesView, "_stakes_btn_claim_reward.html", text: gettext("Claim Reward") %>
       </div>
     </div>
   </div>
