@@ -82,16 +82,12 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     end
   end
 
-  defp set_constructor_arguments(contract_output, contract) do
-    constructor_arguments = Map.get(contract, :constructor_arguments, "")
-
-    if constructor_arguments && constructor_arguments != "" do
-      contract_output
-      |> Map.put_new(:ConstructorArguments, constructor_arguments)
-    else
-      contract_output
-    end
+  defp set_constructor_arguments(contract_output, %{constructor_arguments: constructor_arguments}) do
+    contract_output
+    |> Map.put_new(:ConstructorArguments, constructor_arguments)
   end
+
+  defp set_constructor_arguments(contract_output, _), do: contract_output
 
   defp set_external_libraries(contract_output, contract) do
     external_libraries = Map.get(contract, :external_libraries, [])
