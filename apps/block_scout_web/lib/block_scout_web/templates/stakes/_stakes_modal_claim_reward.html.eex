@@ -1,0 +1,13 @@
+<div class="modal modal-fullwidth-xs fade" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-stake" role="document">
+    <div class="modal-content">
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
+      <div class="modal-header">
+        <h5 class="modal-title"><%= gettext("Claim Reward") %></h5>
+      </div>
+      <div class="modal-body">
+        <p><%= gettext("Searching for pools you ever staked into. Please, wait...") %></p>
+      </div>
+    </div>
+  </div>
+</div>

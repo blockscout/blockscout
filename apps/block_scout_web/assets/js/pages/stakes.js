@@ -13,6 +13,7 @@ import { openRemovePoolModal } from './stakes/remove_pool'
 import { openMakeStakeModal } from './stakes/make_stake'
 import { openMoveStakeModal } from './stakes/move_stake'
 import { openWithdrawStakeModal } from './stakes/withdraw_stake'
+import { openClaimRewardModal } from './stakes/claim_reward'
 import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
 import { checkForTokenDefinition } from './stakes/utils'
 import { openWarningModal } from '../lib/modals'
@@ -228,6 +229,11 @@ if ($stakesPage.length) {
     .on('click', '.js-withdraw-stake', event => {
       if (checkForTokenDefinition(store)) {
         openWithdrawStakeModal(event, store)
+      }
+    })
+    .on('click', '.js-claim-reward', () => {
+      if (checkForTokenDefinition(store)) {
+        openClaimRewardModal(store)
       }
     })
     .on('click', '.js-claim-withdrawal', event => {
