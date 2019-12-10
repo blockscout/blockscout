@@ -1,0 +1,3 @@
+<button class="btn-full-primary js-claim-reward">
+    <span class="btn-full-primary-text"><%= @text %></span>
+</button>
