@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   alias BlockScoutWeb.API.RPC.RPCView
   alias Explorer.Chain.{Address, DecompiledSmartContract, SmartContract}
 
+  defguardp is_empty_string(input) when input == "" or input == nil
+
   def render("listcontracts.json", %{contracts: contracts}) do
     contracts = Enum.map(contracts, &prepare_contract/1)
 
@@ -82,12 +84,13 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     end
   end
 
-  defp set_constructor_arguments(contract_output, %{constructor_arguments: constructor_arguments}) do
-    contract_output
-    |> Map.put_new(:ConstructorArguments, constructor_arguments)
-  end
+  defp set_constructor_arguments(contract_output, %{constructor_arguments: arguments}) when is_empty_string(arguments),
+    do: contract_output
 
-  defp set_constructor_arguments(contract_output, _), do: contract_output
+  defp set_constructor_arguments(contract_output, %{constructor_arguments: arguments}) do
+    contract_output
+    |> Map.put_new(:ConstructorArguments, arguments)
+  end
 
   defp set_external_libraries(contract_output, contract) do
     external_libraries = Map.get(contract, :external_libraries, [])
