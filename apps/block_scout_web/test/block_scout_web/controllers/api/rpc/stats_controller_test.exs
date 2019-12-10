@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == "0"
+      assert response["result"] == 0
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(ethsupply_schema(), response)
