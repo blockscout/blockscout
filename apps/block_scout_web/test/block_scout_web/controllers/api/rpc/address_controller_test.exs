@@ -1807,7 +1807,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert result["value"] == to_string(token_transfer.token_id)
+      assert result["tokenID"] == to_string(token_transfer.token_id)
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
@@ -2618,6 +2618,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "logIndex" => %{"type" => "string"},
           "value" => %{"type" => "string"},
           "tokenName" => %{"type" => "string"},
+          "tokenID" => %{"type" => "string"},
           "tokenSymbol" => %{"type" => "string"},
           "tokenDecimal" => %{"type" => "string"},
           "transactionIndex" => %{"type" => "string"},
