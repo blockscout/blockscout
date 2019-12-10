@@ -76,23 +76,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         reducer.(block_number, acc)
       end)
 
-    schedule_next_removal_nonconsensus_pending_ops()
-
     final
-  end
-
-  defp schedule_next_removal_nonconsensus_pending_ops do
-    Process.send_after(self(), :remove_nonconsensus_blocks_from_pending_transactions, :timer.minutes(30))
-  end
-
-  def handle_info(:remove_nonconsensus_blocks_from_pending_transactions, state) do
-    Task.async(fn ->
-      :ok = Chain.remove_nonconsensus_blocks_from_pending_ops()
-    end)
-
-    schedule_next_removal_nonconsensus_pending_ops()
-
-    {:noreply, state}
   end
 
   defp params(%{block_number: block_number, hash: hash, index: index}) when is_integer(block_number) do
