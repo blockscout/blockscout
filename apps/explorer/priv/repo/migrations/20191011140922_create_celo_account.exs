@@ -55,6 +55,14 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
 
     create(index(:celo_validator_history, [:block_number, :index], unique: true))
 
+    create table(:celo_signers) do
+      add(:address, :bytea, null: false)
+      add(:signer, :bytea, null: false)
+      timestamps(null: false, type: :utc_datetime_usec)
+    end
+
+    create(index(:celo_signers, [:address, :signer], unique: true))
+
     if Mix.env() != :test do
       Explorer.Repo.insert(
         Explorer.Chain.Address.changeset(%Explorer.Chain.Address{}, %{
