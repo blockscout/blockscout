@@ -92,6 +92,8 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     |> Map.put_new(:ConstructorArguments, arguments)
   end
 
+  defp set_constructor_arguments(contract_output, _), do: contract_output
+
   defp set_external_libraries(contract_output, contract) do
     external_libraries = Map.get(contract, :external_libraries, [])
 
