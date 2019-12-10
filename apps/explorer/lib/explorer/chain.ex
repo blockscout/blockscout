@@ -355,8 +355,14 @@ defmodule Explorer.Chain do
 
     {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
+    address_logs_query =
+      from(
+        log in Log,
+        where: log.address_hash == ^address_hash
+      )
+
     base_query =
-      from(log in Log,
+      from(log in subquery(address_logs_query),
         inner_join: transaction in Transaction,
         on:
           transaction.block_hash == log.block_hash and transaction.block_number == log.block_number and
@@ -368,7 +374,6 @@ defmodule Explorer.Chain do
         or_where:
           transaction.block_number == ^block_number and transaction.index == ^transaction_index and
             log.index > ^log_index,
-        where: log.address_hash == ^address_hash and log.block_hash == transaction.block_hash,
         limit: ^paging_options.page_size,
         select: log
       )
