@@ -2990,7 +2990,7 @@ defmodule Explorer.Chain do
     distinct_query =
       from(
         q in subquery(query),
-        distinct: [q.token_contract_address_hash, q.token_id]
+        distinct: [q.contract_address_hash, q.token_id]
       )
 
     Repo.stream_reduce(distinct_query, initial, reducer)
