@@ -2018,3 +2018,8 @@ msgstr ""
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward.html.eex:9
 msgid "Searching for pools you have ever staked into. Please, wait..."
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:237
+msgid "Pools searching is already in progress"
+msgstr ""
