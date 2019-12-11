@@ -11,9 +11,14 @@ defmodule BlockScoutWeb.SmartContractView do
   def named_argument?(_), do: false
 
   def values(addresses, type) when type == "address[]" do
-    addresses
-    |> Enum.map(&values(&1, "address"))
-    |> Enum.join(", ")
+    try do
+      addresses
+      |> Enum.map(&values(&1, "address"))
+      |> Enum.join(", ")
+    rescue
+      _ ->
+        ""
+    end
   end
 
   def values(value, type) when type in ["address", "address payable"] do
