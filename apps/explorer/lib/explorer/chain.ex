@@ -898,7 +898,6 @@ defmodule Explorer.Chain do
             :contracts_creation_internal_transaction => :optional,
             :names => :optional,
             :smart_contract => :optional,
-            :celo_account => :optional,
             :token => :optional,
             :celo_account => :optional,
             :celo_delegator => :optional,
