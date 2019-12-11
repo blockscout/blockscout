@@ -16,7 +16,7 @@ defmodule Explorer.Chain.Import.Runner.CeloSigners do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [CeloValidatorSigners.t()]
+  @type imported :: [CeloSigners.t()]
 
   @impl Import.Runner
   def ecto_schema_module, do: CeloSigners

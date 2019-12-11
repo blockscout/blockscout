@@ -33,7 +33,8 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
-  def validator_data(%{address: address}) do
+  @spec validator_data(String.t()) :: {:ok, %{address: String.t(), group_address_hash: String.t(), score: Decimal.t()}} | :error
+  def validator_data(address) do
     data = fetch_validator_data(address)
 
     case data["getValidator"] do
@@ -50,7 +51,7 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
-  def validator_group_data(%{address: address}) do
+  def validator_group_data(address) do
     data = fetch_validator_group_data(address)
 
     case data["getValidatorGroup"] do

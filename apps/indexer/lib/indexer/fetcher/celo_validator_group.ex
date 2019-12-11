@@ -32,6 +32,7 @@ defmodule Indexer.Fetcher.CeloValidatorGroup do
     end
   end
 
+  @spec entry(String.t()) :: %{ address: String.t(), retries_count: integer }
   def entry(address) do
     %{
       address: address,
