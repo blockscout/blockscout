@@ -21,6 +21,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
       add(:address, :bytea, null: false)
       # affiliation
       add(:group_address_hash, :bytea)
+      add(:signer_address_hash, :bytea)
       add(:score, :numeric, precision: 100)
 
       timestamps(null: false, type: :utc_datetime_usec)

@@ -17,11 +17,14 @@ defmodule Explorer.Chain.CeloValidator do
   @type t :: %__MODULE__{
           address: Hash.Address.t(),
           group_address_hash: Hash.Address.t(),
+          group_address: %Ecto.Association.NotLoaded{} | Address.t(),
+          signer_address_hash: Hash.Address.t(),
+          signer: %Ecto.Association.NotLoaded{} | Address.t(),
           score: Wei.t()
         }
 
   @attrs ~w(
-        address group_address_hash score
+        address group_address_hash score signer_address_hash
     )a
 
   @required_attrs ~w(
@@ -43,6 +46,14 @@ defmodule Explorer.Chain.CeloValidator do
       :group_address,
       Address,
       foreign_key: :group_address_hash,
+      references: :hash,
+      type: Hash.Address
+    )
+
+    belongs_to(
+      :signer,
+      Address,
+      foreign_key: :signer_address_hash,
       references: :hash,
       type: Hash.Address
     )

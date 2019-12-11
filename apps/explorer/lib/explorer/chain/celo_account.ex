@@ -46,6 +46,8 @@ defmodule Explorer.Chain.CeloAccount do
   @validator_affiliated "0x91ef92227057e201e406c3451698dd780fe7672ad74328591c88d281af31581d"
   @validator_deaffiliated "0x71815121f0622b31a3e7270eb28acb9fd10825ff418c9a18591f617bb8a31a6c"
 
+  @validator_signer_authorized "0x16e382723fb40543364faf68863212ba253a099607bf6d3a5b47e50a8bf94943"
+
   # Account events
   @account_created "0x805996f252884581e2f74cf3d2b03564d5ec26ccc90850ae12653dc1b72d1fa2"
   @account_wallet_address_set "0xf81d74398fd47e35c36b714019df15f200f623dde569b5b531d6a0b4da5c5f26"
@@ -86,7 +88,8 @@ defmodule Explorer.Chain.CeloAccount do
     do: [
       @validator_registered,
       @validator_affiliated,
-      @validator_deaffiliated
+      @validator_deaffiliated,
+      @validator_signer_authorized
     ]
 
   # Events for updating validator group
