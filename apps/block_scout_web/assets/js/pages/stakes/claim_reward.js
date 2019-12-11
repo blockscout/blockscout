@@ -1,5 +1,5 @@
 import $ from 'jquery'
-import { openModal, openWarningModal, lockModal, unlockModal } from '../../lib/modals'
+import { openModal, openErrorModal, openWarningModal, lockModal, unlockModal } from '../../lib/modals'
 import { isSupportedNetwork } from './utils'
 
 export function openClaimRewardModal(store) {
@@ -41,7 +41,9 @@ export function openClaimRewardModal(store) {
       modalBody.html(msg_pools.html)
     })
     $modal.on('shown.bs.modal', () => {
-      channel.push('render_claim_reward', {})
+      channel.push('render_claim_reward', {}).receive('error', (error) => {
+        openErrorModal('Claim Reward', error.reason)
+      })
     })
     $modal.on('hidden.bs.modal', () => {
       $(this).remove()

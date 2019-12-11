@@ -11,6 +11,8 @@ defmodule BlockScoutWeb.StakesChannel do
   alias Explorer.Staking.ContractState
   alias Phoenix.View
 
+  import BlockScoutWeb.Gettext
+
   intercept(["staking_update"])
 
   def join("stakes:staking_update", _params, socket) do
@@ -231,14 +233,24 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("render_claim_reward", data, socket) do
-    html = if data["preload"] do
-      View.render_to_string(StakesView, "_stakes_modal_claim_reward.html", %{})
+    if socket.assigns[:searching_claim_reward_pools] do
+      {:reply, {:error, %{reason: gettext("Pools searching is already in progress")}}, socket}
     else
-      Task.async(__MODULE__, :find_claim_reward_pools, [socket])
-      "OK"
+      result = if data["preload"] do
+        %{
+          html: View.render_to_string(StakesView, "_stakes_modal_claim_reward.html", %{}),
+          socket: socket
+        }
+      else
+        task = Task.async(__MODULE__, :find_claim_reward_pools, [socket])
+        %{
+          html: "OK",
+          socket: assign(socket, :searching_claim_reward_pools, task)
+        }
+      end
+
+      {:reply, {:ok, %{html: result.html}}, result.socket}
     end
-    result = %{html: html}
-    {:reply, {:ok, result}, socket}
   end
 
   def handle_in("render_claim_withdrawal", %{"address" => staking_address}, socket) do
@@ -262,6 +274,20 @@ defmodule BlockScoutWeb.StakesChannel do
     {:reply, {:ok, result}, socket}
   end
 
+  def handle_info({:DOWN, ref, :process, pid, :normal}, socket) do
+    task = socket.assigns[:searching_claim_reward_pools]
+    socket = if task && task.ref == ref && task.pid == pid do
+      assign(socket, :searching_claim_reward_pools, nil)
+    else
+      socket
+    end
+    {:noreply, socket}
+  end
+
+  def handle_info(_, socket) do
+    {:noreply, socket}
+  end
+
   def handle_out("staking_update", data, socket) do
     push(socket, "staking_update", %{
       block_number: data.block_number,
@@ -277,7 +303,7 @@ defmodule BlockScoutWeb.StakesChannel do
 
   def find_claim_reward_pools(socket) do
     pools = []
-    :timer.sleep(20000) # emulate working
+    :timer.sleep(5000) # emulate working
     html = View.render_to_string(StakesView, "_stakes_modal_claim_reward_content.html", pools: pools)
     push(socket, "claim_reward_pools", %{
       html: html
