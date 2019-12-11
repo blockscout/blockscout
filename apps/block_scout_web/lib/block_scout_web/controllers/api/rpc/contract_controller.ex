@@ -183,8 +183,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp contracts_filter(filter), do: {:error, contracts_filter_error_message(filter)}
 
   defp contracts_filter_error_message(filter) do
-    "#{filter} is not a valid value for `filter`.
-    Please use one of: verified, decompiled, unverified, not_decompiled, 1, 2, 3, 4."
+    "#{filter} is not a valid value for `filter`. Please use one of: verified, decompiled, unverified, not_decompiled, 1, 2, 3, 4."
   end
 
   defp fetch_address(params) do
