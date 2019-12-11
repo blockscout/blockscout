@@ -7,7 +7,7 @@ defmodule Explorer.Chain.CeloSigners do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.{Address, CeloAccount, Hash}
 
   @typedoc """
   * `address` - address of the validator.
@@ -56,6 +56,8 @@ defmodule Explorer.Chain.CeloSigners do
       references: :hash,
       type: Hash.Address
     )
+
+    has_one(:celo_account, CeloAccount, foreign_key: :address, references: :address)
 
     timestamps(null: false, type: :utc_datetime_usec)
   end

@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Address do
     Address,
     Block,
     CeloAccount,
+    CeloSigners,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -87,6 +88,8 @@ defmodule Explorer.Chain.Address do
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)
     has_one(:celo_account, CeloAccount, foreign_key: :address)
+
+    has_one(:celo_delegator, CeloSigners, foreign_key: :signer)
 
     has_one(
       :contracts_creation_internal_transaction,

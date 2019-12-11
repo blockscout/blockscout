@@ -6,6 +6,14 @@
     <div class="card-body">
       <h2 class="card-title"><%= "Celo Info" %></h2>
 
+      <%= if @address.celo_delegator != nil do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Address</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Address of the Celo account."><%= @address.celo_delegator |> BlockScoutWeb.AddressView.address_partial_selector(:signer_account, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial() %></span>
+       </dd>
+      </dl>
+      <% end %>
       <dl class="row">
       <dt class="col-sm-3 text-muted">Name</dt>
        <dd class="col-sm-9">

@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressView do
 
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.{Address, CeloSigners, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
 
@@ -89,6 +89,10 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def address_partial_selector(%Reward{address: address}, _, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloSigners{account_address: address}, :signer_account, current_address, truncate) do
     matching_address_check(current_address, address, false, truncate)
   end
 
