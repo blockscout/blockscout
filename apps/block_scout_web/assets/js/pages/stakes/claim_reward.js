@@ -5,13 +5,7 @@ import { isSupportedNetwork } from './utils'
 export function openClaimRewardModal(store) {
   if (!isSupportedNetwork(store)) return
 
-  const state = store.getState();
-
-  if (!state.account) {
-    openWarningModal('Unauthorized', 'Please login with MetaMask')
-    return
-  }
-
+  const state = store.getState()
   const channel = state.channel
 
   channel.push('render_claim_reward', { preload: true }).receive('ok', msg => {
@@ -50,5 +44,7 @@ export function openClaimRewardModal(store) {
     })
 
     openModal($modal);
+  }).receive('error', (error) => {
+    openErrorModal('Claim Reward', error.reason)
   })
 }
