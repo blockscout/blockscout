@@ -783,6 +783,10 @@ defmodule Explorer.Chain do
             :celo_delegator => :optional,
             [{:celo_delegator, :celo_account}] => :optional,
             [{:celo_delegator, :account_address}] => :optional,
+            :celo_validator => :optional,
+            [{:celo_validator, :group_address}] => :optional,
+            [{:celo_validator, :signer}] => :optional,
+            :celo_validator_group => :optional,
             :contracts_creation_transaction => :optional
           }
         ],
@@ -894,6 +898,7 @@ defmodule Explorer.Chain do
             :contracts_creation_internal_transaction => :optional,
             :names => :optional,
             :smart_contract => :optional,
+            :celo_account => :optional,
             :token => :optional,
             :celo_account => :optional,
             :celo_delegator => :optional,

@@ -6,7 +6,7 @@ defmodule Explorer.Repo.Migrations.CreateTokenTransfers do
       add(
         :transaction_hash,
         references(:transactions, column: :hash, on_delete: :delete_all, type: :bytea),
-        null: false
+        null: true
       )
 
       add(
