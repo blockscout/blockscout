@@ -13,10 +13,19 @@ defmodule BlockScoutWeb.StakesChannel do
 
   import BlockScoutWeb.Gettext
 
+  @searching_claim_reward_pools :searching_claim_reward_pools
+
   intercept(["staking_update"])
 
   def join("stakes:staking_update", _params, socket) do
     {:ok, %{}, socket}
+  end
+
+  def terminate(_, socket) do
+    s = socket.assigns[@searching_claim_reward_pools]
+    if s != nil do
+      :ets.delete(ContractState, searching_claim_reward_pools_key(s.staker))
+    end
   end
 
   def handle_in("set_account", account, socket) do
@@ -233,23 +242,36 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("render_claim_reward", data, socket) do
-    if socket.assigns[:searching_claim_reward_pools] do
-      {:reply, {:error, %{reason: gettext("Pools searching is already in progress")}}, socket}
-    else
-      result = if data["preload"] do
-        %{
-          html: View.render_to_string(StakesView, "_stakes_modal_claim_reward.html", %{}),
-          socket: socket
-        }
-      else
-        task = Task.async(__MODULE__, :find_claim_reward_pools, [socket])
-        %{
-          html: "OK",
-          socket: assign(socket, :searching_claim_reward_pools, task)
-        }
-      end
+    staker = socket.assigns[:account]
 
-      {:reply, {:ok, %{html: result.html}}, result.socket}
+    search_in_progress = if socket.assigns[@searching_claim_reward_pools] do
+      true
+    else
+      with [{_, true}] <- :ets.lookup(ContractState, searching_claim_reward_pools_key(staker)) do
+        true
+      end
+    end
+    
+    cond do
+      search_in_progress == true ->
+        {:reply, {:error, %{reason: gettext("Pools searching is already in progress for this address")}}, socket}
+      staker == nil || staker == "" || staker == "0x0000000000000000000000000000000000000000" ->
+        {:reply, {:error, %{reason: gettext("Unknown staker address. Please, choose your account in MetaMask")}}, socket}
+      true ->
+        result = if data["preload"] do
+          %{
+            html: View.render_to_string(StakesView, "_stakes_modal_claim_reward.html", %{}),
+            socket: socket
+          }
+        else
+          task = Task.async(__MODULE__, :find_claim_reward_pools, [socket, staker])
+          %{
+            html: "OK",
+            socket: assign(socket, @searching_claim_reward_pools, %{task: task, staker: staker})
+          }
+        end
+
+        {:reply, {:ok, %{html: result.html}}, result.socket}
     end
   end
 
@@ -274,10 +296,11 @@ defmodule BlockScoutWeb.StakesChannel do
     {:reply, {:ok, result}, socket}
   end
 
-  def handle_info({:DOWN, ref, :process, pid, :normal}, socket) do
-    task = socket.assigns[:searching_claim_reward_pools]
-    socket = if task && task.ref == ref && task.pid == pid do
-      assign(socket, :searching_claim_reward_pools, nil)
+  def handle_info({:DOWN, ref, :process, pid, _reason}, socket) do
+    s = socket.assigns[@searching_claim_reward_pools]
+    socket = if s && s.task.ref == ref && s.task.pid == pid do
+      :ets.delete(ContractState, searching_claim_reward_pools_key(s.staker))
+      assign(socket, @searching_claim_reward_pools, nil)
     else
       socket
     end
@@ -301,13 +324,18 @@ defmodule BlockScoutWeb.StakesChannel do
     {:noreply, socket}
   end
 
-  def find_claim_reward_pools(socket) do
-    pools = []
-    :timer.sleep(5000) # emulate working
-    html = View.render_to_string(StakesView, "_stakes_modal_claim_reward_content.html", pools: pools)
-    push(socket, "claim_reward_pools", %{
-      html: html
-    })
+  def find_claim_reward_pools(socket, staker) do
+    :ets.insert(ContractState, {searching_claim_reward_pools_key(staker), true})
+    try do
+      pools = []
+      :timer.sleep(15000) # emulate working
+      html = View.render_to_string(StakesView, "_stakes_modal_claim_reward_content.html", pools: pools)
+      push(socket, "claim_reward_pools", %{
+        html: html
+      })
+    after
+      :ets.delete(ContractState, searching_claim_reward_pools_key(staker))
+    end
   end
 
   defp push_staking_contract(socket) do
@@ -325,5 +353,10 @@ defmodule BlockScoutWeb.StakesChannel do
 
       assign(socket, :contract_sent, true)
     end
+  end
+
+  defp searching_claim_reward_pools_key(staker) do
+    staker = if staker == nil, do: "", else: staker
+    Atom.to_string(@searching_claim_reward_pools) <> "_" <> staker
   end
 end
