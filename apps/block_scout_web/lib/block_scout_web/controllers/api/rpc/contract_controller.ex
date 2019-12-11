@@ -81,11 +81,11 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         else
           case Chain.get_proxied_address(address_hash) do
             {:ok, proxy_contract} ->
-              Logger.debug("Implementation address FOUND in proxy table")
+              Logger.debug("Implementation address found in proxy table")
               Chain.address_hash_to_address_with_source_code(proxy_contract)
 
             {:error, :not_found} ->
-              Logger.debug("Implementation address NOT found in proxy table")
+              Logger.debug("Implementation address not found in proxy table")
               Chain.address_hash_to_address_with_source_code(address_hash)
           end
         end
