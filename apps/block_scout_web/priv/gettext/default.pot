@@ -2020,6 +2020,11 @@ msgid "Searching for pools you have ever staked into. Please, wait..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:237
-msgid "Pools searching is already in progress"
+#: lib/block_scout_web/channels/stakes_channel.ex:257
+msgid "Pools searching is already in progress for this address"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:259
+msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
