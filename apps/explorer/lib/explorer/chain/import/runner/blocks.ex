@@ -525,6 +525,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           token_contract_address_hash: new_current_token_balance.token_contract_address_hash,
           block_number: new_current_token_balance.block_number,
           value: address_token_balance.value,
+          token_id: address_token_balance.token_id,
           inserted_at: over(min(address_token_balance.inserted_at), :w),
           updated_at: over(max(address_token_balance.updated_at), :w)
         },

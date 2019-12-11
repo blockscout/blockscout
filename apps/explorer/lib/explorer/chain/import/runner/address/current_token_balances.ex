@@ -222,6 +222,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         set: [
           block_number: fragment("EXCLUDED.block_number"),
           value: fragment("EXCLUDED.value"),
+          token_id: fragment("EXCLUDED.token_id"),
           value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
           old_value: current_token_balance.value,
           inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", current_token_balance.inserted_at),

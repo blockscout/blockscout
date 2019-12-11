@@ -32,11 +32,13 @@ defmodule Explorer.Chain.Address.TokenBalance do
           block_number: Block.block_number(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t(),
-          value: Decimal.t() | nil
+          value: Decimal.t() | nil,
+          token_id: Decimal.t() | nil
         }
 
   schema "address_token_balances" do
     field(:value, :decimal)
+    field(:token_id, :decimal)
     field(:block_number, :integer)
     field(:value_fetched_at, :utc_datetime_usec)
 
@@ -53,7 +55,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
     timestamps()
   end
 
-  @optional_fields ~w(value value_fetched_at)a
+  @optional_fields ~w(value value_fetched_at token_id)a
   @required_fields ~w(address_hash block_number token_contract_address_hash)a
   @allowed_fields @optional_fields ++ @required_fields
 

@@ -13,7 +13,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
 
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Block, Hash, Token}
-
   @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
@@ -23,6 +22,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
    *  `token_contract_address_hash` - The contract address hash foreign key.
    *  `block_number` - The block's number that the transfer took place.
    *  `value` - The value that's represents the balance.
+   *  `token_id` - ID of token in case of non-fungible tokens
   """
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -32,11 +32,13 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
           block_number: Block.block_number(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t(),
-          value: Decimal.t() | nil
+          value: Decimal.t() | nil,
+          token_id: non_neg_integer() | nil,
         }
 
   schema "address_current_token_balances" do
     field(:value, :decimal)
+    field(:token_id, :decimal)
     field(:block_number, :integer)
     field(:value_fetched_at, :utc_datetime_usec)
 
@@ -56,7 +58,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     timestamps()
   end
 
-  @optional_fields ~w(value value_fetched_at)a
+  @optional_fields ~w(value value_fetched_at token_id)a
   @required_fields ~w(address_hash block_number token_contract_address_hash)a
   @allowed_fields @optional_fields ++ @required_fields
 
@@ -101,7 +103,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     from(
       tb in __MODULE__,
       where: tb.address_hash == ^address_hash,
-      where: tb.value > 0,
+      where: tb.value > 0 or (tb.value == 0 and not is_nil(tb.token_id)),
       preload: :token
     )
   end
@@ -116,7 +118,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       tb in __MODULE__,
       where: tb.token_contract_address_hash == ^token_contract_address_hash,
       where: tb.address_hash != ^@burn_address_hash,
-      where: tb.value > 0
+      where: tb.value > 0 or (tb.value == 0 and not is_nil(tb.token_id))
     )
   end
 
