@@ -81,11 +81,11 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         else
           case Chain.get_proxied_address(address_hash) do
             {:ok, proxy_contract} ->
-              Logger.debug("Implementation address FOUND in proxy table")
+              Logger.debug("Implementation address found in proxy table")
               Chain.address_hash_to_address_with_source_code(proxy_contract)
 
             {:error, :not_found} ->
-              Logger.debug("Implementation address NOT found in proxy table")
+              Logger.debug("Implementation address not found in proxy table")
               Chain.address_hash_to_address_with_source_code(address_hash)
           end
         end
@@ -183,8 +183,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp contracts_filter(filter), do: {:error, contracts_filter_error_message(filter)}
 
   defp contracts_filter_error_message(filter) do
-    "#{filter} is not a valid value for `filter`.
-    Please use one of: verified, decompiled, unverified, not_decompiled, 1, 2, 3, 4."
+    "#{filter} is not a valid value for `filter`. Please use one of: verified, decompiled, unverified, not_decompiled, 1, 2, 3, 4."
   end
 
   defp fetch_address(params) do
