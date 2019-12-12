@@ -1,5 +1,16 @@
 <%= if not Enum.empty?(@pools) do %>
-  <p>Pool list...</p>
+  <p>
+    Pool list:<br />
+    <%= for pool <- @pools do %>
+      <%= pool %><br />
+    <% end %>
+  </p>
 <% else %>
-  <p><%= gettext("Unable to find any pools you staked into.") %></p>
+  <p>
+    <%= if @error do %>
+      <%= @error %>
+    <% else %>
+      <%= gettext("Unable to find any pools you staked into.") %>
+    <% end %>
+  </p>
 <% end %>
