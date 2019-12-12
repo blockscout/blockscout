@@ -251,12 +251,16 @@ defmodule BlockScoutWeb.StakesChannel do
         true
       end
     end
+
+    staking_contract_address = try do ContractState.get(:staking_contract).address after end
     
     cond do
       search_in_progress == true ->
         {:reply, {:error, %{reason: gettext("Pools searching is already in progress for this address")}}, socket}
       staker == nil || staker == "" || staker == "0x0000000000000000000000000000000000000000" ->
         {:reply, {:error, %{reason: gettext("Unknown staker address. Please, choose your account in MetaMask")}}, socket}
+      staking_contract_address == nil || staking_contract_address == "" || staking_contract_address == "0x0000000000000000000000000000000000000000" ->
+        {:reply, {:error, %{reason: gettext("Unknown address of Staking contract. Please, contact support")}}, socket}
       true ->
         result = if data["preload"] do
           %{
@@ -264,7 +268,7 @@ defmodule BlockScoutWeb.StakesChannel do
             socket: socket
           }
         else
-          task = Task.async(__MODULE__, :find_claim_reward_pools, [socket, staker])
+          task = Task.async(__MODULE__, :find_claim_reward_pools, [socket, staker, staking_contract_address])
           %{
             html: "OK",
             socket: assign(socket, @searching_claim_reward_pools, %{task: task, staker: staker})
@@ -324,17 +328,75 @@ defmodule BlockScoutWeb.StakesChannel do
     {:noreply, socket}
   end
 
-  def find_claim_reward_pools(socket, staker) do
+  def find_claim_reward_pools(socket, staker, staking_contract_address) do
     :ets.insert(ContractState, {searching_claim_reward_pools_key(staker), true})
     try do
-      pools = []
-      :timer.sleep(15000) # emulate working
-      html = View.render_to_string(StakesView, "_stakes_modal_claim_reward_content.html", pools: pools)
+      staker_padded =
+        staker
+        |> String.replace_leading("0x", "")
+        |> String.pad_leading(64, ["0"])
+
+      json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+      # Search for `PlacedStake` events
+      {error, pools_staked_into} = find_claim_reward_pools_by_logs(staking_contract_address, [
+        # keccak-256 of `PlacedStake(address,address,uint256,uint256)`
+        "0x2273de02cb1f69ba6259d22c4bc22c60e4c94c193265ef6afee324a04a9b6d22",
+        nil, # don't filter by `toPoolStakingAddress`
+        "0x" <> staker_padded # filter by `staker`
+      ], json_rpc_named_arguments, 1)
+
+      # Search for `MovedStake` events
+      {error, pools_moved_into} = if error == nil do
+        find_claim_reward_pools_by_logs(staking_contract_address, [
+          # keccak-256 of `MovedStake(address,address,address,uint256,uint256)`
+          "0x4480d8e4b1e9095b94bf513961d26fe1d32386ebdd103d18fe8738cf4b2223ff",
+          nil, # fromPoolStakingAddress,
+          nil, # toPoolStakingAddress
+          "0x" <> staker_padded
+        ], json_rpc_named_arguments, 2)
+      else
+        {error, []}
+      end
+
+      html = View.render_to_string(
+        StakesView,
+        "_stakes_modal_claim_reward_content.html",
+        pools: Enum.uniq(pools_staked_into ++ pools_moved_into),
+        error: error
+      )
+
       push(socket, "claim_reward_pools", %{
         html: html
       })
     after
       :ets.delete(ContractState, searching_claim_reward_pools_key(staker))
+    end
+  end
+
+  defp find_claim_reward_pools_by_logs(staking_contract_address, topics, json_rpc_named_arguments, topic_index) do
+    result = EthereumJSONRPC.request(%{
+      id: 0,
+      method: "eth_getLogs",
+      params: [%{
+        fromBlock: "0x0",
+        toBlock: "latest",
+        address: staking_contract_address,
+        topics: topics
+      }]
+    }) |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+    case result do
+      {:ok, response} ->
+        pools = Enum.uniq(Enum.map(response, fn event -> 
+          truncate_address(Enum.at(event["topics"], topic_index))
+        end))
+        {nil, pools}
+      {:error, reason} ->
+        if is_map(reason) && Map.has_key?(reason, :message) && String.length(String.trim(reason.message)) > 0 do
+          {reason.message, []}
+        else
+          {gettext("JSON RPC error") <> ": " <> inspect(reason), []}
+        end
     end
   end
 
@@ -358,5 +420,9 @@ defmodule BlockScoutWeb.StakesChannel do
   defp searching_claim_reward_pools_key(staker) do
     staker = if staker == nil, do: "", else: staker
     Atom.to_string(@searching_claim_reward_pools) <> "_" <> staker
+  end
+
+  defp truncate_address("0x000000000000000000000000" <> truncated_address) do
+    "0x#{truncated_address}"
   end
 end
