@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.Notifier do
 
   alias Absinthe.Subscription
   alias BlockScoutWeb.{AddressContractVerificationView, Endpoint}
-  alias Explorer.{Chain, Market, Repo}
+  alias Explorer.{Chain, ExchangeRates, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Counters.AverageBlockTime
@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :exchange_rate}) do
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = ExchangeRates.lookup(Explorer.coin()) || Token.null()
 
     market_history_data =
       case Market.fetch_recent_history() do

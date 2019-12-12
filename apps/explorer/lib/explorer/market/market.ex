@@ -3,18 +3,32 @@ defmodule Explorer.Market do
   Context for data related to the cryptocurrency market.
   """
 
+  alias Explorer.Chain
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Hash
+  #  alias Explorer.ExchangeRates
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market.{MarketHistory, MarketHistoryCache}
-  alias Explorer.{ExchangeRates, KnownTokens, Repo}
+  alias Explorer.{KnownTokens, Repo}
 
   @doc """
   Get most recent exchange rate for the given symbol.
   """
   @spec get_exchange_rate(String.t()) :: Token.t() | nil
   def get_exchange_rate(symbol) do
-    ExchangeRates.lookup(symbol)
+    case {Chain.get_exchange_rate(symbol), Chain.get_exchange_rate("cUSD")} do
+      {{:ok, {token, rate}}, {:ok, {_, usd_rate}}} ->
+        cusd_rate = Decimal.from_float(rate.rate / usd_rate.rate)
+        total_supply = Decimal.div(token.total_supply, Decimal.new("1000000000000000000"))
+
+        Token.from_tuple(
+          {symbol, nil, symbol, total_supply, total_supply, cusd_rate, nil, Decimal.mult(cusd_rate, total_supply), nil,
+           token.updated_at}
+        )
+
+      _ ->
+        nil
+    end
   end
 
   @doc """

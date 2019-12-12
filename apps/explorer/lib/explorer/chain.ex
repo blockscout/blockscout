@@ -37,6 +37,7 @@ defmodule Explorer.Chain do
     CeloAccount,
     Data,
     DecompiledSmartContract,
+    ExchangeRate,
     Hash,
     Import,
     InternalTransaction,
@@ -3650,6 +3651,23 @@ defmodule Explorer.Chain do
     query =
       from(account in CeloAccount,
         where: account.address == ^address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  def get_exchange_rate(symbol) do
+    query =
+      from(token in Token,
+        join: rate in ExchangeRate,
+        where: token.symbol == ^symbol,
+        where: rate.token == token.contract_address_hash,
+        select: {token, rate}
       )
 
     query
