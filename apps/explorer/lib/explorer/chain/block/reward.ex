@@ -115,16 +115,10 @@ defmodule Explorer.Chain.Block.Reward do
   end
 
   defp join_associations(query) do
-    last_blocks_query =
-      from(block in Block,
-        limit: 2000,
-        order_by: [desc: block.number]
-      )
-
     query
     |> preload(:address)
-    |> join(:inner, [reward], block in subquery(last_blocks_query), on: block.hash == reward.block_hash)
-    |> preload(block: ^last_blocks_query)
+    |> join(:inner, [reward], block in assoc(reward, :block))
+    |> preload(:block)
   end
 
   defp address_rewards_blocks_ranges_clause(query, min_block_number, max_block_number, paging_options) do
