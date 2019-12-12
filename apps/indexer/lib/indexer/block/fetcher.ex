@@ -28,7 +28,6 @@ defmodule Indexer.Block.Fetcher do
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
-    StakingPools,
     Token,
     TokenBalance,
     TokenInstance,
@@ -194,6 +193,7 @@ defmodule Indexer.Block.Fetcher do
            accounts: celo_accounts,
            validators: celo_validators,
            validator_groups: celo_validator_groups,
+           signers: signers,
            attestations_fulfilled: attestations_fulfilled,
            attestations_requested: attestations_requested,
            exchange_rates: exchange_rates
@@ -272,6 +272,7 @@ defmodule Indexer.Block.Fetcher do
                block_second_degree_relations: %{params: block_second_degree_relations_params},
                block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
                logs: %{params: logs},
+               celo_signers: %{params: signers},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts},
@@ -436,10 +437,6 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_token_balances(_), do: :ok
-
-  def async_import_staking_pools do
-    StakingPools.async_fetch()
-  end
 
   def async_import_celo_accounts(%{celo_accounts: accounts}) do
     CeloAccount.async_fetch(accounts)

@@ -21,8 +21,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_token_balances: 1,
       async_import_token_instances: 1,
       async_import_uncles: 1,
-      fetch_and_import_range: 2,
-      async_import_staking_pools: 0
+      fetch_and_import_range: 2
     ]
 
   alias Ecto.Changeset
@@ -70,7 +69,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @impl GenServer
   def handle_continue({:init, subscribe_named_arguments}, %__MODULE__{subscription: nil} = state) do
     timer = schedule_polling()
-    {:noreply, %__MODULE__{state | timer: timer} |> subscribe_to_new_heads(subscribe_named_arguments)}
+    new_state = %__MODULE__{state | timer: timer} |> subscribe_to_new_heads(subscribe_named_arguments)
+    {:noreply, new_state}
   end
 
   @impl GenServer
@@ -140,13 +140,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     timer = schedule_polling()
 
-    {:noreply,
-     %{
-       state
-       | previous_number: number,
-         max_number_seen: new_max_number,
-         timer: timer
-     }}
+    new_state = %{
+      state
+      | previous_number: number,
+        max_number_seen: new_max_number,
+        timer: timer
+    }
+
+    {:noreply, new_state}
   end
 
   defp subscribe_to_new_heads(%__MODULE__{subscription: nil} = state, subscribe_named_arguments)
@@ -248,6 +249,10 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
       is_nil(previous_number) ->
         [number]
+
+      # do not try to import all blocks here
+      number > previous_number + 100 ->
+        (number - 100)..number
 
       true ->
         (previous_number + 1)..number
@@ -388,7 +393,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_token_instances(imported)
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
-    async_import_staking_pools()
   end
 
   defp balances(

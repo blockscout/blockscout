@@ -781,6 +781,11 @@ defmodule Explorer.Chain do
             :smart_contract => :optional,
             :token => :optional,
             :celo_account => :optional,
+            :celo_delegator => :optional,
+            :celo_signers => :optional,
+            [{:celo_delegator, :celo_account}] => :optional,
+            [{:celo_delegator, :account_address}] => :optional,
+            [{:celo_signers, :signer_address}] => :optional,
             :celo_validator => :optional,
             [{:celo_validator, :group_address}] => :optional,
             [{:celo_validator, :signer}] => :optional,
@@ -803,8 +808,15 @@ defmodule Explorer.Chain do
     |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
     |> Repo.one()
     |> case do
-      nil -> {:error, :not_found}
-      address -> {:ok, address}
+      nil ->
+        {:error, :not_found}
+
+      address ->
+        if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
+          {:ok, Map.put(address, :celo_account, address.celo_delegator.celo_account)}
+        else
+          {:ok, address}
+        end
     end
   end
 
@@ -891,8 +903,10 @@ defmodule Explorer.Chain do
             :contracts_creation_internal_transaction => :optional,
             :names => :optional,
             :smart_contract => :optional,
-            :celo_account => :optional,
             :token => :optional,
+            :celo_account => :optional,
+            :celo_delegator => :optional,
+            [{:celo_delegator, :celo_account}] => :optional,
             :contracts_creation_transaction => :optional
           }
         ],

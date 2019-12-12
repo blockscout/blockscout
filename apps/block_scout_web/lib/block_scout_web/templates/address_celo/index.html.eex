@@ -6,6 +6,14 @@
     <div class="card-body">
       <h2 class="card-title"><%= "Celo Info" %></h2>
 
+      <%= if @address.celo_delegator != nil do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Associated address</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Address of the Celo account associated with the signer."><%= @address.celo_delegator |> BlockScoutWeb.AddressView.address_partial_selector(:signer_account, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial() %></span>
+       </dd>
+      </dl>
+      <% end %>
       <dl class="row">
       <dt class="col-sm-3 text-muted">Name</dt>
        <dd class="col-sm-9">
@@ -65,6 +73,20 @@
       <dt class="col-sm-3 text-muted">Validator signer</dt>
        <dd class="col-sm-9">
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Authorized validator signer"><%= @address.celo_validator |> BlockScoutWeb.AddressView.address_partial_selector(:signer, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial() %></span>
+       </dd>
+      </dl>
+      <% end %>
+      <%= if @address.celo_signers != nil and Enum.count(@address.celo_signers) > 0 do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">All signers</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All signers for this account that have existed">
+       <%= for signer <- @address.celo_signers do %>
+         <%= if signer.signer_address != nil do 
+             signer |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
+            end %>
+       <% end %>
+       </span>
        </dd>
       </dl>
       <% end %>

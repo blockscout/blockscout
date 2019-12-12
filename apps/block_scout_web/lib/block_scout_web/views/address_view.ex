@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.AddressView do
 
   alias Explorer.Chain.{
     Address,
+    CeloSigners,
     CeloValidator,
     Hash,
     InternalTransaction,
@@ -109,6 +110,14 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def address_partial_selector(%Reward{address: address}, _, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloSigners{account_address: address}, :signer_account, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloSigners{signer_address: address}, :signers, current_address, truncate) do
     matching_address_check(current_address, address, false, truncate)
   end
 

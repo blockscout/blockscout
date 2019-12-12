@@ -6,7 +6,7 @@ defmodule Indexer.Transform.CeloAccounts do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Explorer.Chain.CeloAccount
+  alias Explorer.Chain.{CeloAccount, CeloSigners}
 
   @doc """
   Returns a list of account addresses given a list of logs.
@@ -17,6 +17,7 @@ defmodule Indexer.Transform.CeloAccounts do
       validators: get_addresses(logs, CeloAccount.validator_events()),
       validator_groups: get_addresses(logs, CeloAccount.validator_group_events()),
       withdrawals: get_addresses(logs, CeloAccount.withdrawal_events()),
+      signers: get_signers(logs, CeloSigners.signer_events()),
       attestations_fulfilled:
         get_addresses(logs, [CeloAccount.attestation_completed_event()], fn a -> a.fourth_topic end),
       attestations_requested:
@@ -44,6 +45,12 @@ defmodule Indexer.Transform.CeloAccounts do
     |> Enum.map(fn address -> %{address: address} end)
   end
 
+  defp get_signers(logs, topics) do
+    logs
+    |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
+    |> Enum.reduce([], fn log, accounts -> do_parse_signers(log, accounts) end)
+  end
+
   defp do_parse(log, accounts, get_topic) do
     account_address = parse_params(log, get_topic)
 
@@ -55,6 +62,15 @@ defmodule Indexer.Transform.CeloAccounts do
   rescue
     _ in [FunctionClauseError, MatchError] ->
       Logger.error(fn -> "Unknown account event format: #{inspect(log)}" end)
+      accounts
+  end
+
+  defp do_parse_signers(log, accounts) do
+    signer_pair = parse_signer_params(log)
+    [signer_pair | accounts]
+  rescue
+    _ in [FunctionClauseError, MatchError] ->
+      Logger.error(fn -> "Unknown signer authorization event format: #{inspect(log)}" end)
       accounts
   end
 
@@ -85,6 +101,12 @@ defmodule Indexer.Transform.CeloAccounts do
 
   defp parse_params(log, get_topic) do
     truncate_address_hash(get_topic.(log))
+  end
+
+  defp parse_signer_params(log) do
+    address = truncate_address_hash(log.second_topic)
+    [signer] = decode_data(log.data, [:address])
+    %{address: address, signer: signer}
   end
 
   defp truncate_address_hash(nil), do: "0x0000000000000000000000000000000000000000"
