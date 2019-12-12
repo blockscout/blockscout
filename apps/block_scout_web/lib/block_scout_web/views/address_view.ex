@@ -191,7 +191,7 @@ defmodule BlockScoutWeb.AddressView do
   def primary_name(%Address{names: _} = _address) do
     nil
   end
-  
+
   def primary_validator_metadata(%Address{names: [_ | _] = address_names}) do
     case Enum.find(address_names, &(&1.primary == true)) do
       %Address.Name{

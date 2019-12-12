@@ -27,17 +27,22 @@ defmodule BlockScoutWeb.BlockView do
   def block_type(_block), do: "Block"
 
   def name_block(block) do
-    if block.miner.names == [] and 
-       Ecto.assoc_loaded?(block.celo_delegator) and
-       block.celo_delegator != nil and
-       block.celo_delegator.celo_account != nil do
-      named = %Address.Name{address: block.celo_delegator.celo_account.account_address,
-      address_hash: block.celo_delegator.celo_account.address,
-      name: block.celo_delegator.celo_account.name <> " (signer)",
-      primary: true,
-      metadata: %{} }
+    if block.miner.names == [] and
+         Ecto.assoc_loaded?(block.celo_delegator) and
+         block.celo_delegator != nil and
+         block.celo_delegator.celo_account != nil do
+      named = %Address.Name{
+        address: block.celo_delegator.celo_account.account_address,
+        address_hash: block.celo_delegator.celo_account.address,
+        name: block.celo_delegator.celo_account.name <> " (signer)",
+        primary: true,
+        metadata: %{}
+      }
+
       %{block.miner | names: [named]}
-    else block.miner end
+    else
+      block.miner
+    end
   end
 
   @doc """
