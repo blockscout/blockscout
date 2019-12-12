@@ -351,10 +351,9 @@ defmodule BlockScoutWeb.StakesChannel do
         find_claim_reward_pools_by_logs(staking_contract_address, [
           # keccak-256 of `MovedStake(address,address,address,uint256,uint256)`
           "0x4480d8e4b1e9095b94bf513961d26fe1d32386ebdd103d18fe8738cf4b2223ff",
-          nil, # fromPoolStakingAddress,
-          nil, # toPoolStakingAddress
-          "0x" <> staker_padded
-        ], json_rpc_named_arguments, 2)
+          nil, # don't filter by `toPoolStakingAddress`
+          "0x" <> staker_padded # filter by `staker`
+        ], json_rpc_named_arguments, 1)
       else
         {error, []}
       end
