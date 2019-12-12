@@ -2487,7 +2487,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:4
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:13
 msgid "Unable to find any pools you staked into."
 msgstr ""
 
@@ -2497,11 +2497,21 @@ msgid "Searching for pools you have ever staked into. Please, wait..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:257
+#: lib/block_scout_web/channels/stakes_channel.ex:259
 msgid "Pools searching is already in progress for this address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:259
+#: lib/block_scout_web/channels/stakes_channel.ex:261
 msgid "Unknown staker address. Please, choose your account in MetaMask"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:398
+msgid "JSON RPC error"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:263
+msgid "Unknown address of Staking contract. Please, contact support"
 msgstr ""
