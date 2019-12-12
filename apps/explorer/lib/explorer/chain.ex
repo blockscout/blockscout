@@ -348,11 +348,11 @@ defmodule Explorer.Chain do
       current_max_number = Map.get(extremums_result, :max_block_number)
 
       extremums_result =
-        if is_nil(current_min_number) do
+        if not is_number(current_min_number) do
           extremums_result
           |> Map.put(:min_block_number, min_number)
         else
-          if not is_nil(min_number) and min_number < current_min_number do
+          if is_number(min_number) and min_number > 0 and min_number < current_min_number do
             extremums_result
             |> Map.put(:min_block_number, min_number)
           else
@@ -360,7 +360,7 @@ defmodule Explorer.Chain do
           end
         end
 
-      if not is_nil(max_number) and (max_number > current_max_number || is_nil(current_min_number)) do
+      if is_number(max_number) and max_number > 0 and max_number > current_max_number do
         extremums_result
         |> Map.put(:max_block_number, max_number)
       else

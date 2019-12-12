@@ -122,7 +122,7 @@ defmodule Explorer.Chain.Block.Reward do
   end
 
   defp address_rewards_blocks_ranges_clause(query, min_block_number, max_block_number, paging_options) do
-    if not is_nil(min_block_number) and max_block_number > 0 and min_block_number > 0 do
+    if is_number(min_block_number) and max_block_number > 0 and min_block_number > 0 do
       cond do
         paging_options.page_number == 1 ->
           query
