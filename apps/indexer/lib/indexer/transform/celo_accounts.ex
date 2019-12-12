@@ -53,7 +53,6 @@ defmodule Indexer.Transform.CeloAccounts do
   end
 
   defp do_parse_signers(log, accounts) do
-    IO.inspect(log)
     signer_pair = parse_signer_params(log)
     [signer_pair | accounts]
   rescue

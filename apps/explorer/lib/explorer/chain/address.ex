@@ -94,6 +94,7 @@ defmodule Explorer.Chain.Address do
     has_one(:celo_validator_group, CeloValidatorGroup, foreign_key: :address)
 
     has_one(:celo_delegator, CeloSigners, foreign_key: :signer)
+    has_many(:celo_signers, CeloSigners, foreign_key: :address)
 
     has_one(
       :contracts_creation_internal_transaction,

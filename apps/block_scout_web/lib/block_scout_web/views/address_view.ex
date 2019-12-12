@@ -117,6 +117,10 @@ defmodule BlockScoutWeb.AddressView do
     matching_address_check(current_address, address, false, truncate)
   end
 
+  def address_partial_selector(%CeloSigners{signer_address: address}, :signers, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
   def address_title(%Address{} = address) do
     if contract?(address) do
       gettext("Contract Address")
