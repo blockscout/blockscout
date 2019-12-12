@@ -33,14 +33,14 @@ defmodule Explorer.Chain.CeloSigners do
   @attestation_signer_authorized "0x9dfbc5a621c3e2d0d83beee687a17dfc796bbce2118793e5e254409bb265ca0b"
 
   # Events for updating account
-  def signer_events, do: [
-    @validator_signer_authorized,
-    @vote_signer_authorized,
-    @attestation_signer_authorized
-  ]
+  def signer_events,
+    do: [
+      @validator_signer_authorized,
+      @vote_signer_authorized,
+      @attestation_signer_authorized
+    ]
 
   schema "celo_signers" do
-
     belongs_to(
       :account_address,
       Address,

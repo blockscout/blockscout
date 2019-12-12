@@ -42,12 +42,12 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    multi |> 
-    Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
+    multi
+    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
       contract_address_hashes = changes_list |> Enum.map(& &1.token_contract_address_hash) |> Enum.uniq()
       Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
-    end) |>
-    Multi.run(:address_token_balances, fn repo, _ ->
+    end)
+    |> Multi.run(:address_token_balances, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
   end

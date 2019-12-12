@@ -86,5 +86,4 @@ defmodule Indexer.Transform.CeloAccounts do
     |> Base.decode16!(case: :mixed)
     |> TypeDecoder.decode_raw(types)
   end
-
 end

@@ -63,6 +63,5 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
     end
 
     create(index(:celo_signers, [:address, :signer], unique: true))
-
   end
 end

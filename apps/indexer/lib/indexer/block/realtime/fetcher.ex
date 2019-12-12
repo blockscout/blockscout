@@ -251,12 +251,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
         [number]
 
       # do not try to import all blocks here
-      number > previous_number+100 ->
-          (number-100)..number
-      
+      number > previous_number + 100 ->
+        (number - 100)..number
+
       true ->
-          (previous_number + 1)..number
-      end
+        (previous_number + 1)..number
+    end
   end
 
   defp reorg?(number, max_number_seen) when is_integer(max_number_seen) and number <= max_number_seen do

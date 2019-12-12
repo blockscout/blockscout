@@ -807,11 +807,13 @@ defmodule Explorer.Chain do
     |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
     |> Repo.one()
     |> case do
-      nil -> {:error, :not_found}
+      nil ->
+        {:error, :not_found}
+
       address ->
         if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
           {:ok, Map.put(address, :celo_account, address.celo_delegator.celo_account)}
-        else 
+        else
           {:ok, address}
         end
     end
