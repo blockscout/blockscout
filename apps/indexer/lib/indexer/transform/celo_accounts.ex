@@ -21,9 +21,22 @@ defmodule Indexer.Transform.CeloAccounts do
       attestations_fulfilled:
         get_addresses(logs, [CeloAccount.attestation_completed_event()], fn a -> a.fourth_topic end),
       attestations_requested:
-        get_addresses(logs, [CeloAccount.attestation_issuer_selected_event()], fn a -> a.fourth_topic end)
+        get_addresses(logs, [CeloAccount.attestation_issuer_selected_event()], fn a -> a.fourth_topic end),
+      exchange_rates: get_rates(logs)
     }
   end
+
+  defp get_rates(logs) do
+    logs
+    |> Enum.filter(fn log -> log.first_topic == CeloAccount.oracle_reported_event() end)
+    |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
+  end
+
+  #    defp get_rates(logs) do
+  #    logs
+  #    |> Enum.filter(fn log -> log.first_topic == CeloAccount.median_updated_event() end)
+  #    |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
+  #  end
 
   defp get_addresses(logs, topics, get_topic \\ fn a -> a.second_topic end) do
     logs
@@ -59,6 +72,31 @@ defmodule Indexer.Transform.CeloAccounts do
     _ in [FunctionClauseError, MatchError] ->
       Logger.error(fn -> "Unknown signer authorization event format: #{inspect(log)}" end)
       accounts
+  end
+
+  defp do_parse_rate(log, rates) do
+    {token, numerator, denumerator, stamp} = parse_rate_params(log.data)
+    numerator = Decimal.new(numerator)
+    denumerator = Decimal.new(denumerator)
+
+    if Decimal.new(0) == denumerator do
+      rates
+    else
+      rate = Decimal.to_float(Decimal.div(numerator, denumerator))
+      res = %{token: token, rate: rate, stamp: stamp}
+      [res | rates]
+    end
+  rescue
+    _ in [FunctionClauseError, MatchError] ->
+      Logger.error(fn -> "Unknown account event format: #{inspect(log)}" end)
+      rates
+  end
+
+  defp parse_rate_params(data) do
+    [token, _oracle, timestamp, num, denum] =
+      decode_data(data, [:address, :address, {:uint, 256}, {:uint, 256}, {:uint, 256}])
+
+    {token, num, denum, timestamp}
   end
 
   defp parse_params(log, get_topic) do

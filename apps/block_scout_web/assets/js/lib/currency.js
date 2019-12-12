@@ -5,7 +5,11 @@ import { BigNumber } from 'bignumber.js'
 import socket from '../socket'
 
 export function formatUsdValue (value) {
-  return `${formatCurrencyValue(value)} USD`
+  return `${formatCurrencyValue(value)} cUSD`
+}
+
+export function formatCGValue (value) {
+  return `${formatCurrencyValue(value, '')} cGLD`
 }
 
 function formatTokenUsdValue (value) {
@@ -13,7 +17,7 @@ function formatTokenUsdValue (value) {
 }
 
 function formatCurrencyValue (value, symbol) {
-  symbol = symbol || '$'
+  symbol = symbol === undefined ? '$' : symbol
   if (value === 0) return `${symbol}0.000000`
   if (value < 0.000001) return `${window.localized['Less than']} ${symbol}0.000001`
   if (value < 1) return `${symbol}${numeral(value).format('0.000000')}`
@@ -35,6 +39,9 @@ export function formatAllUsdValues (root) {
 
   root.find('[data-usd-value]').each((i, el) => {
     el.innerHTML = formatUsdValue(el.dataset.usdValue)
+  })
+  root.find('[data-cg-value]').each((i, el) => {
+    el.innerHTML = formatCGValue(el.dataset.usdValue)
   })
   root.find('[data-token-usd-value]').each((i, el) => {
     el.innerHTML = formatTokenUsdValue(el.dataset.tokenUsdValue)

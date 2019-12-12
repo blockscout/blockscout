@@ -10,7 +10,7 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
-  alias Explorer.Chain
+  alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
@@ -177,6 +177,13 @@ defmodule Indexer.Block.Fetcher do
             else
               {:ok, nil}
             end},
+         {:read_stable_token_address, {:ok, stable_token}} <-
+           {:read_stable_token_address,
+            if gold_token_enabled do
+              AccountReader.get_address("StableToken")
+            else
+              {:ok, nil}
+            end},
          # TODO: handle non-gold transaction fees
          # %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
          # TokenTransfers.parse_fees(transactions_with_receipts),
@@ -188,8 +195,23 @@ defmodule Indexer.Block.Fetcher do
            validator_groups: celo_validator_groups,
            signers: signers,
            attestations_fulfilled: attestations_fulfilled,
-           attestations_requested: attestations_requested
+           attestations_requested: attestations_requested,
+           exchange_rates: exchange_rates
          } = CeloAccounts.parse(logs),
+         market_history =
+           exchange_rates
+           |> Enum.filter(fn el -> "0x" <> Base.encode16(el.token, case: :lower) == stable_token end)
+           |> Enum.map(fn %{rate: rate, stamp: time} ->
+             inv_rate = Decimal.from_float(1 / rate)
+             date = DateTime.to_date(DateTime.from_unix!(time))
+             %{opening_price: inv_rate, closing_price: inv_rate, date: date}
+           end),
+         exchange_rates =
+           (if Enum.count(exchange_rates) > 0 and gold_token != nil do
+              [%{token: gold_token, rate: 1.0} | exchange_rates]
+            else
+              []
+            end),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
@@ -253,7 +275,8 @@ defmodule Indexer.Block.Fetcher do
                celo_signers: %{params: signers},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts}
+               transactions: %{params: transactions_with_receipts},
+               exchange_rate: %{params: exchange_rates}
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
@@ -263,6 +286,8 @@ defmodule Indexer.Block.Fetcher do
       async_import_celo_accounts(%{
         celo_accounts: %{params: accounts, requested: attestations_requested, fulfilled: attestations_fulfilled}
       })
+
+      Market.bulk_insert_history(market_history)
 
       async_import_celo_validators(%{celo_validators: %{params: celo_validators}})
       async_import_celo_validator_groups(%{celo_validator_groups: %{params: celo_validator_groups}})

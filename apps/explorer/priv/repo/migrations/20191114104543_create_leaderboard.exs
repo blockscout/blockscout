@@ -25,6 +25,7 @@ defmodule Explorer.Repo.Migrations.CreateLeaderboard do
     create table(:exchange_rates) do
       add(:token, :bytea, null: false)
       add(:rate, :real, null: false)
+      timestamps(null: false, type: :utc_datetime_usec)
     end
 
     create(index(:exchange_rates, [:token], unique: true))

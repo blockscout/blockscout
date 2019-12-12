@@ -39,7 +39,7 @@ const config = {
         },
         ticks: {
           beginAtZero: true,
-          callback: (value, index, values) => `$${numeral(value).format('0,0.00')}`,
+          callback: (value, index, values) => `C$${numeral(value).format('0,0.00')}`,
           maxTicksLimit: 4,
           fontColor: sassVariables.dashboardBannerChartAxisFontColor
         }
