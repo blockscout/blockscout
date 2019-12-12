@@ -78,6 +78,7 @@ defmodule BlockScoutWeb.ChainController do
           paging_options: %PagingOptions{page_size: 4},
           necessity_by_association: %{
             [miner: :names] => :optional,
+            [celo_delegator: :celo_account] => :optional,
             :transactions => :optional,
             :rewards => :optional
           }

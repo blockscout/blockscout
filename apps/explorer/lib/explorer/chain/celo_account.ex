@@ -122,8 +122,11 @@ defmodule Explorer.Chain.CeloAccount do
   def median_updated_event,
     do: @median_updated
 
-  def oracle_reported_event,
+    def oracle_reported_event,
     do: @oracle_reported
+
+    def account_name_event,
+    do: @account_name_set
 
   schema "celo_account" do
     field(:account_type, :string)

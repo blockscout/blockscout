@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Gas, Hash, Transaction}
+  alias Explorer.Chain.{Address, CeloSigners, Gas, Hash, Transaction}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
   @optional_attrs ~w(internal_transactions_indexed_at size refetch_needed total_difficulty difficulty)a
@@ -97,6 +97,7 @@ defmodule Explorer.Chain.Block do
     has_many(:transaction_forks, Transaction.Fork, foreign_key: :uncle_hash)
 
     has_many(:rewards, Reward, foreign_key: :block_hash)
+    has_one(:celo_delegator, CeloSigners, foreign_key: :signer, references: :miner_hash)
   end
 
   def changeset(%__MODULE__{} = block, attrs) do
