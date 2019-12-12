@@ -37,7 +37,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorHistory do
     insert_options = Util.make_insert_options(option_key(), @timeout, options)
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    Multi.run(multi, :insert_items, fn repo, _ ->
+    Multi.run(multi, :insert_validator_history_items, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
   end
