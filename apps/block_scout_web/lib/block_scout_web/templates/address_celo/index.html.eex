@@ -64,7 +64,8 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">Affiliation</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Affiliated group"><%= @address.celo_validator |> BlockScoutWeb.AddressView.address_partial_selector(:group, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial() %></span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Affiliated group"><%= @address.celo_validator |> BlockScoutWeb.AddressView.address_partial_selector(:group, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial() %>
+       (<%= @address.celo_validator.member %>)</span>
        </dd>
       </dl>
       <% end %>
@@ -82,9 +83,24 @@
        <dd class="col-sm-9">
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All signers for this account that have existed">
        <%= for signer <- @address.celo_signers do %>
-         <%= if signer.signer_address != nil do 
+         <%= if signer.signer_address != nil do
              signer |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
             end %>
+       <% end %>
+       </span>
+       </dd>
+      </dl>
+      <% end %>
+      <%= if @address.celo_members != nil and Enum.count(@address.celo_members) > 0 do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Group members</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All affliated members for this group">
+       <%= for member <- @address.celo_members do %>
+         (<%= member.member %>:
+         <%= if member.validator_address != nil do
+             member |> BlockScoutWeb.AddressView.address_partial_selector(:members, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
+            end %>)
        <% end %>
        </span>
        </dd>

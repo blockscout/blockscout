@@ -65,6 +65,10 @@ defmodule Explorer.Chain.CeloAccount do
   @validator_group_vote_activated "0x50363f7a646042bcb294d6afdef2d53f4122379845e67627b6db367f31934f16"
   @validator_group_vote_cast "0xd3532f70444893db82221041edb4dc26c94593aeb364b0b14dfc77d5ee905152"
 
+  @validator_group_member_added "0xbdf7e616a6943f81e07a7984c9d4c00197dc2f481486ce4ffa6af52a113974ad"
+  @validator_group_member_removed "0xc7666a52a66ff601ff7c0d4d6efddc9ac20a34792f6aa003d1804c9d4d5baa57"
+  @validator_group_member_reordered "0x38819cc49a343985b478d72f531a35b15384c398dd80fd191a14662170f895c6"
+
   # Events for updating account
   def account_events,
     do: [
@@ -89,7 +93,14 @@ defmodule Explorer.Chain.CeloAccount do
       @validator_registered,
       @validator_affiliated,
       @validator_deaffiliated,
-      @validator_signer_authorized
+      @validator_signer_authorized,
+    ]
+
+  def membership_events,
+    do: [
+      @validator_group_member_added,
+      @validator_group_member_removed,
+      @validator_group_member_reordered
     ]
 
   # Events for updating validator group
