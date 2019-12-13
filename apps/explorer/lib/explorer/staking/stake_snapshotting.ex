@@ -81,7 +81,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
     validator_reward_responses =
       pool_staking_responses
       |> Enum.map(fn {_pool_staking_address, resp} ->
-        ContractReader.validator_reward_requests([
+        ContractReader.validator_reward_request([
           epoch_number,
           resp.snapshotted_self_staked_amount,
           resp.snapshotted_total_staked_amount,
@@ -100,7 +100,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
       |> Enum.map(fn {{pool_staking_address, _staker_address}, resp} ->
         staking_resp = pool_staking_responses[pool_staking_address]
 
-        ContractReader.delegator_reward_requests([
+        ContractReader.delegator_reward_request([
           epoch_number,
           resp.snapshotted_stake_amount,
           staking_resp.snapshotted_self_staked_amount,
