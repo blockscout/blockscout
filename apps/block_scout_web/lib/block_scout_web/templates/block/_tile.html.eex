@@ -39,7 +39,7 @@
         <%= gettext "Miner" %>
         <%= render BlockScoutWeb.AddressView,
           "_link.html",
-          address: name_block(@block),
+          address: block_miner(@block),
           contract: false %>
       </div>
       <%= if show_reward?(@block.rewards) do %>

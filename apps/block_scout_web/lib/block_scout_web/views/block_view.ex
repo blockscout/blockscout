@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.BlockView do
   def block_type(%Block{consensus: false}), do: "Uncle"
   def block_type(_block), do: "Block"
 
-  def name_block(block) do
+  def block_miner(block) do
     if block.miner.names == [] and
          Ecto.assoc_loaded?(block.celo_delegator) and
          block.celo_delegator != nil and

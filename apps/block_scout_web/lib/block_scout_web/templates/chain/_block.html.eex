@@ -15,7 +15,7 @@
         <%= gettext "Miner" %>
         <%= render BlockScoutWeb.AddressView,
           "_link.html",
-          address: @block.miner,
+          address: BlockScoutWeb.BlockView.block_miner(@block),
           contract: false %>
       </div>
       <%= if BlockScoutWeb.BlockView.show_reward?(@block.rewards) do %>
