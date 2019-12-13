@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.StakesChannel do
   alias Explorer.Chain
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Counters.AverageBlockTime
-  alias Explorer.Staking.ContractState
+  alias Explorer.Staking.{ContractReader, ContractState}
   alias Phoenix.View
 
   import BlockScoutWeb.Gettext
@@ -331,11 +331,7 @@ defmodule BlockScoutWeb.StakesChannel do
   def find_claim_reward_pools(socket, staker, staking_contract_address) do
     :ets.insert(ContractState, {searching_claim_reward_pools_key(staker), true})
     try do
-      staker_padded =
-        staker
-        |> String.replace_leading("0x", "")
-        |> String.pad_leading(64, ["0"])
-
+      staker_padded = address_pad_to_64(staker)
       json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
       # Search for `PlacedStake` events
@@ -358,7 +354,39 @@ defmodule BlockScoutWeb.StakesChannel do
         {error, []}
       end
 
-      pools = Enum.uniq(pools_staked_into ++ pools_moved_into)
+      {error, pools} = if error == nil do
+        pools = Enum.uniq(pools_staked_into ++ pools_moved_into)
+
+        pools_amounts = Enum.map(pools, fn pool_staking_address ->
+          ContractReader.call_get_reward_amount(
+            staking_contract_address,
+            [],
+            pool_staking_address,
+            staker,
+            json_rpc_named_arguments
+          )
+        end)
+
+        error = Enum.find_value(pools_amounts, fn result ->
+          case result do
+            {:error, reason} -> error_reason_to_string(reason)
+            _ -> nil
+          end
+        end)
+
+        pools = if error != nil do
+          %{}
+        else
+          Enum.map(pools_amounts, fn {_, amounts} -> amounts end)
+          |> Enum.zip(pools)
+          |> Enum.filter(fn {amounts, _} -> amounts.token_reward_sum > 0 || amounts.native_reward_sum > 0 end)
+          |> Map.new(fn {val, key} -> {key, val} end)
+        end
+
+        {error, pools}
+      else
+        {error, %{}}
+      end
 
       html = View.render_to_string(
         StakesView,
@@ -393,11 +421,21 @@ defmodule BlockScoutWeb.StakesChannel do
         end))
         {nil, pools}
       {:error, reason} ->
-        if is_map(reason) && Map.has_key?(reason, :message) && String.length(String.trim(reason.message)) > 0 do
-          {reason.message, []}
-        else
-          {gettext("JSON RPC error") <> ": " <> inspect(reason), []}
-        end
+        {error_reason_to_string(reason), []}
+    end
+  end
+
+  defp address_pad_to_64(address) do
+    address
+    |> String.replace_leading("0x", "")
+    |> String.pad_leading(64, ["0"])
+  end
+
+  defp error_reason_to_string(reason) do
+    if is_map(reason) && Map.has_key?(reason, :message) && String.length(String.trim(reason.message)) > 0 do
+      reason.message
+    else
+      gettext("JSON RPC error") <> ": " <> inspect(reason)
     end
   end
 
