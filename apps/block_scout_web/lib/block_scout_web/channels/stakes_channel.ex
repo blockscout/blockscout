@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.StakesChannel do
   alias BlockScoutWeb.{StakesController, StakesView}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Token
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Staking.{ContractReader, ContractState}
   alias Phoenix.View
@@ -391,8 +392,10 @@ defmodule BlockScoutWeb.StakesChannel do
       html = View.render_to_string(
         StakesView,
         "_stakes_modal_claim_reward_content.html",
+        coin: %Token{symbol: Explorer.coin(), decimals: Decimal.new(18)},
+        error: error,
         pools: pools,
-        error: error
+        token: ContractState.get(:token)
       )
 
       push(socket, "claim_reward_pools", %{
