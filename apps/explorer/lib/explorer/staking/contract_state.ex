@@ -192,7 +192,7 @@ defmodule Explorer.Staking.ContractState do
     # miningToStakingAddress mapping
     mining_to_staking_address =
       validators.all
-      |> Enum.map(&ContractReader.staking_by_mining_requests/1)
+      |> Enum.map(&ContractReader.staking_by_mining_request/1)
       |> ContractReader.perform_grouped_requests(validators.all, contracts, abi)
       |> Map.new(fn {mining_address, resp} -> {mining_address, address_string_to_bytes(resp.staking_address).bytes} end)
 
@@ -241,7 +241,7 @@ defmodule Explorer.Staking.ContractState do
     candidate_reward_responses =
       pool_staking_responses
       |> Enum.map(fn {_pool_staking_address, resp} ->
-        ContractReader.validator_reward_requests([
+        ContractReader.validator_reward_request([
           global_responses.epoch_number,
           resp.self_staked_amount,
           resp.total_staked_amount,
@@ -260,7 +260,7 @@ defmodule Explorer.Staking.ContractState do
       |> Enum.map(fn {{pool_staking_address, _staker_address, _is_active}, resp} ->
         staking_resp = pool_staking_responses[pool_staking_address]
 
-        ContractReader.delegator_reward_requests([
+        ContractReader.delegator_reward_request([
           global_responses.epoch_number,
           resp.stake_amount,
           staking_resp.self_staked_amount,

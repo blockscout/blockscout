@@ -285,7 +285,7 @@ defmodule BlockScoutWeb.StakesChannel do
     delegator = Chain.staking_pool_delegator(staking_address, socket.assigns.account)
 
     html =
-      View.render_to_string(StakesView, "_stakes_modal_claim.html",
+      View.render_to_string(StakesView, "_stakes_modal_claim_withdrawal.html",
         token: token,
         delegator: delegator,
         pool: pool
@@ -344,7 +344,7 @@ defmodule BlockScoutWeb.StakesChannel do
         "0x2273de02cb1f69ba6259d22c4bc22c60e4c94c193265ef6afee324a04a9b6d22",
         nil, # don't filter by `toPoolStakingAddress`
         "0x" <> staker_padded # filter by `staker`
-      ], json_rpc_named_arguments, 1)
+      ], json_rpc_named_arguments)
 
       # Search for `MovedStake` events
       {error, pools_moved_into} = if error == nil do
@@ -353,15 +353,17 @@ defmodule BlockScoutWeb.StakesChannel do
           "0x4480d8e4b1e9095b94bf513961d26fe1d32386ebdd103d18fe8738cf4b2223ff",
           nil, # don't filter by `toPoolStakingAddress`
           "0x" <> staker_padded # filter by `staker`
-        ], json_rpc_named_arguments, 1)
+        ], json_rpc_named_arguments)
       else
         {error, []}
       end
 
+      pools = Enum.uniq(pools_staked_into ++ pools_moved_into)
+
       html = View.render_to_string(
         StakesView,
         "_stakes_modal_claim_reward_content.html",
-        pools: Enum.uniq(pools_staked_into ++ pools_moved_into),
+        pools: pools,
         error: error
       )
 
@@ -373,7 +375,7 @@ defmodule BlockScoutWeb.StakesChannel do
     end
   end
 
-  defp find_claim_reward_pools_by_logs(staking_contract_address, topics, json_rpc_named_arguments, topic_index) do
+  defp find_claim_reward_pools_by_logs(staking_contract_address, topics, json_rpc_named_arguments) do
     result = EthereumJSONRPC.request(%{
       id: 0,
       method: "eth_getLogs",
@@ -387,7 +389,7 @@ defmodule BlockScoutWeb.StakesChannel do
     case result do
       {:ok, response} ->
         pools = Enum.uniq(Enum.map(response, fn event -> 
-          truncate_address(Enum.at(event["topics"], topic_index))
+          truncate_address(Enum.at(event["topics"], 1))
         end))
         {nil, pools}
       {:error, reason} ->
