@@ -1,8 +1,24 @@
 <%= if map_size(@pools) > 0 do %>
-  <p>Pool list:
-  <%= for {pool_staking_address, amounts} <- @pools do %>
-    <p><%= pool_staking_address %> (token_reward_sum = <%= amounts.token_reward_sum %>, native_reward_sum = <%= amounts.native_reward_sum %>)</p>
-  <% end %>
+  <p><%= gettext("We found the following pools you can claim your reward from:") %></p>
+  <form>
+    <div class="input-group form-group">
+      <select pool-select class="form-control">
+        <option disabled selected><%= gettext("Choose Pool") %></option>
+        <%= for {pool_staking_address, amounts} <- @pools do %>
+          <option value="<%= pool_staking_address %>">
+            <%=
+              BlockScoutWeb.AddressView.trimmed_hash(pool_staking_address) <>
+              " (" <>
+              format_token_amount(amounts.token_reward_sum, @token, digits: 5, ellipsize: false, symbol: true) <>
+              ", " <>
+              format_token_amount(amounts.native_reward_sum, @coin, digits: 5, ellipsize: false, symbol: true) <>
+              ")"
+            %>
+          </option>
+        <% end %>
+      </select>
+    </div>
+  </form>
 <% else %>
   <p>
     <%= if @error do %>
