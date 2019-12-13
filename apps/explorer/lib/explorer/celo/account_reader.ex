@@ -131,21 +131,27 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_group_membership(account_address, group_address) do
-    data = call_methods([
-      {:validators, "getValidatorGroup", [group_address]},
-    ])
+    data =
+      call_methods([
+        {:validators, "getValidatorGroup", [group_address]}
+      ])
+
     IO.inspect(%{data: data, address: account_address})
+
     case data["getValidatorGroup"] do
-      {:ok, [members,_,_]} ->
+      {:ok, [members, _, _]} ->
         idx =
-           Enum.zip((1..1000), members)
-        |> Enum.filter(fn({_, addr}) -> account_address == "0x" <> Base.encode16(addr, case: :lower) end)
-        |> Enum.map(fn ({idx,_}) -> idx end)
+          Enum.zip(1..1000, members)
+          |> Enum.filter(fn {_, addr} -> account_address == "0x" <> Base.encode16(addr, case: :lower) end)
+          |> Enum.map(fn {idx, _} -> idx end)
+
         case idx do
           [order] -> order
           _ -> -1
         end
-      _ -> -1
+
+      _ ->
+        -1
     end
   end
 
