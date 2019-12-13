@@ -56,7 +56,7 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">Score</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Validator score"><%= format_according_to_decimals(@address.celo_validator.score.value, Decimal.new(18)) %></span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Validator score"><%= format_according_to_decimals(@address.celo_validator.score.value, Decimal.new(18+4)) %>%</span>
        </dd>
       </dl>
       <% end %>

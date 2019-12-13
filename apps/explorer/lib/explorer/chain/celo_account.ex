@@ -69,6 +69,8 @@ defmodule Explorer.Chain.CeloAccount do
   @validator_group_member_removed "0xc7666a52a66ff601ff7c0d4d6efddc9ac20a34792f6aa003d1804c9d4d5baa57"
   @validator_group_member_reordered "0x38819cc49a343985b478d72f531a35b15384c398dd80fd191a14662170f895c6"
 
+  @validator_epoch_payment_distributed "0x6f5937add2ec38a0fa4959bccd86e3fcc2aafb706cd3e6c0565f87a7b36b9975"
+
   # Events for updating account
   def account_events,
     do: [
@@ -94,6 +96,7 @@ defmodule Explorer.Chain.CeloAccount do
       @validator_affiliated,
       @validator_deaffiliated,
       @validator_signer_authorized,
+      @validator_epoch_payment_distributed
     ]
 
   def membership_events,
