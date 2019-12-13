@@ -2044,12 +2044,14 @@ msgid "Choose Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:7
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_withdrawal.html.eex:7
 msgid "Claim Ordered Withdraw"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:18
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_withdrawal.html.eex:18
 msgid "Claim the Amount"
 msgstr ""
 
@@ -2371,7 +2373,8 @@ msgid "Withdraw after block #%{banned_delegators_until} (%{estimated_unban_day})
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:22
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_withdrawal.html.eex:22
 msgid "Withdrawal orders made during an active staking epoch are available to claim after the epoch is complete."
 msgstr ""
 
@@ -2400,7 +2403,8 @@ msgid "Your Mining Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim.html.eex:11
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_withdrawal.html.eex:11
 msgid "Your ordered amount"
 >>>>>>> Update gettext locale files
 msgstr ""
@@ -2503,7 +2507,7 @@ msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:398
+#: lib/block_scout_web/channels/stakes_channel.ex:399
 msgid "JSON RPC error"
 msgstr ""
 
