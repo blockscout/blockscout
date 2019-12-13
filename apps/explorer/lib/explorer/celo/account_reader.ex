@@ -35,7 +35,13 @@ defmodule Explorer.Celo.AccountReader do
 
   @spec validator_data(String.t()) ::
           {:ok,
-           %{address: String.t(), group_address_hash: String.t(), score: Decimal.t(), signer_address_hash: String.t()}}
+           %{
+             address: String.t(),
+             group_address_hash: String.t(),
+             score: Decimal.t(),
+             signer_address_hash: String.t(),
+             member: integer
+           }}
           | :error
   def validator_data(address) do
     data = fetch_validator_data(address)
@@ -136,14 +142,13 @@ defmodule Explorer.Celo.AccountReader do
         {:validators, "getValidatorGroup", [group_address]}
       ])
 
-    IO.inspect(%{data: data, address: account_address})
-
     case data["getValidatorGroup"] do
       {:ok, [members, _, _]} ->
         idx =
-          Enum.zip(1..1000, members)
-          |> Enum.filter(fn {_, addr} -> account_address == "0x" <> Base.encode16(addr, case: :lower) end)
-          |> Enum.map(fn {idx, _} -> idx end)
+          members
+          |> Enum.zip(1..1000)
+          |> Enum.filter(fn {addr, _} -> account_address == "0x" <> Base.encode16(addr, case: :lower) end)
+          |> Enum.map(fn {_, idx} -> idx end)
 
         case idx do
           [order] -> order
