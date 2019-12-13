@@ -2487,7 +2487,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:13
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:11
 msgid "Unable to find any pools you staked into."
 msgstr ""
 
@@ -2507,7 +2507,7 @@ msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:399
+#: lib/block_scout_web/channels/stakes_channel.ex:438
 msgid "JSON RPC error"
 msgstr ""
 

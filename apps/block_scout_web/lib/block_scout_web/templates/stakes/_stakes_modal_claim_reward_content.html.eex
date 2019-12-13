@@ -1,10 +1,8 @@
-<%= if not Enum.empty?(@pools) do %>
-  <p>
-    Pool list:<br />
-    <%= for pool <- @pools do %>
-      <%= pool %><br />
-    <% end %>
-  </p>
+<%= if map_size(@pools) > 0 do %>
+  <p>Pool list:
+  <%= for {pool_staking_address, amounts} <- @pools do %>
+    <p><%= pool_staking_address %> (token_reward_sum = <%= amounts.token_reward_sum %>, native_reward_sum = <%= amounts.native_reward_sum %>)</p>
+  <% end %>
 <% else %>
   <p>
     <%= if @error do %>
