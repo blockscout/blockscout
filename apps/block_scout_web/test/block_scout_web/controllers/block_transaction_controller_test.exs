@@ -187,7 +187,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       miner_name = "POA Miner Pool"
       %{address: miner_address} = insert(:address_name, name: miner_name, primary: true)
 
-      block = insert(:block, miner: miner_address, miner_hash: nil)
+      block = insert(:block, miner: miner_address, miner_hash: nil, celo_delegator: nil)
 
       conn = get(conn, block_transaction_path(conn, :index, block))
       assert html_response(conn, 200) =~ miner_name
