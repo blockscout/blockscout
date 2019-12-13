@@ -30,6 +30,68 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  # makes a raw `eth_call` for the `getRewardAmount` function of the Staking contract:
+  # function getRewardAmount(
+  #   uint256[] memory _stakingEpochs,
+  #   address _poolStakingAddress,
+  #   address _staker
+  # ) public view returns(uint256 tokenRewardSum, uint256 nativeRewardSum);
+  def call_get_reward_amount(
+    staking_contract_address,
+    staking_epochs,
+    pool_staking_address,
+    staker,
+    json_rpc_named_arguments
+  ) do
+    staking_epochs_joint =
+      staking_epochs
+      |> Enum.map(fn epoch ->
+        epoch
+        |> Integer.to_string(16)
+        |> String.pad_leading(64, ["0"])
+      end)
+      |> Enum.join("")
+
+    pool_staking_address = address_pad_to_64(pool_staking_address)
+    staker = address_pad_to_64(staker)
+
+    staking_epochs_length =
+      Enum.count(staking_epochs)
+      |> Integer.to_string(16)
+      |> String.pad_leading(64, ["0"])
+
+    data = "0xfb367a9b" # `getRewardAmount` function signature
+    data = data <> String.pad_leading("60", 64, ["0"]) # offset to the `_stakingEpochs` array
+    data = data <> pool_staking_address # `_poolStakingAddress` parameter
+    data = data <> staker # `_staker` parameter
+    data = data <> staking_epochs_length # the length of `_stakingEpochs` array
+    data = data <> staking_epochs_joint # encoded `_stakingEpochs` array
+
+    result = EthereumJSONRPC.request(%{
+      id: 0,
+      method: "eth_call",
+      params: [%{
+        to: staking_contract_address,
+        data: data
+      }]
+    }) |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+
+    case result do
+      {:ok, response} ->
+        response = String.replace_leading(response, "0x", "")
+        if String.length(response) != 64 * 2 do
+          {:error, "Invalid getRewardAmount response."}
+        else
+          {token_reward_sum, native_reward_sum} = String.split_at(response, 64)
+          token_reward_sum = String.to_integer(token_reward_sum, 16)
+          native_reward_sum = String.to_integer(native_reward_sum, 16)
+          {:ok, %{token_reward_sum: token_reward_sum, native_reward_sum: native_reward_sum}}
+        end
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   # args = [staking_epoch, delegator_staked, validator_staked, total_staked, pool_reward \\ 10_00000]
   def delegator_reward_request(args) do
     [
@@ -103,6 +165,12 @@ defmodule Explorer.Staking.ContractReader do
     |> generate_requests(contracts)
     |> Reader.query_contracts(abi)
     |> parse_grouped_responses(keys, requests)
+  end
+
+  defp address_pad_to_64(address) do
+    address
+    |> String.replace_leading("0x", "")
+    |> String.pad_leading(64, ["0"])
   end
 
   defp generate_requests(functions, contracts) do
