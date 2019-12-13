@@ -30,6 +30,13 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  # args = [staking_epoch, delegator_staked, validator_staked, total_staked, pool_reward \\ 10_00000]
+  def delegator_reward_request(args) do
+    [
+      delegator_share: {:block_reward, "delegatorShare", args}
+    ]
+  end
+
   def pool_staking_requests(staking_address, block_number) do
     [
       active_delegators: active_delegators_request(staking_address, block_number)[:active_delegators],
@@ -64,7 +71,7 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
-  def staking_by_mining_requests(mining_address) do
+  def staking_by_mining_request(mining_address) do
     [
       staking_address: {:validator_set, "stakingByMiningAddress", [mining_address]}
     ]
@@ -77,16 +84,9 @@ defmodule Explorer.Staking.ContractReader do
   end
 
   # args = [staking_epoch, validator_staked, total_staked, pool_reward \\ 10_00000]
-  def validator_reward_requests(args) do
+  def validator_reward_request(args) do
     [
       validator_share: {:block_reward, "validatorShare", args}
-    ]
-  end
-
-  # args = [staking_epoch, delegator_staked, validator_staked, total_staked, pool_reward \\ 10_00000]
-  def delegator_reward_requests(args) do
-    [
-      delegator_share: {:block_reward, "delegatorShare", args}
     ]
   end
 
