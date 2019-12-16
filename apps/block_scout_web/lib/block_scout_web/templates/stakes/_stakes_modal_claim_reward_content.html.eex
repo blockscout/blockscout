@@ -4,14 +4,18 @@
     <div class="input-group form-group">
       <select pool-select class="form-control">
         <option disabled selected><%= gettext("Choose Pool") %></option>
-        <%= for {pool_staking_address, amounts} <- @pools do %>
-          <option value="<%= pool_staking_address %>">
+        <%= for {pool_staking_address, data} <- @pools do %>
+          <%
+            token_reward_sum = format_token_amount(data.token_reward_sum, @token, digits: 5, ellipsize: false, symbol: false)
+            native_reward_sum = format_token_amount(data.native_reward_sum, @coin, digits: 5, ellipsize: false, symbol: false)
+          %>
+          <option value="<%= pool_staking_address %>" data-token-reward-sum="<%= token_reward_sum %>" data-native-reward-sum="<%= native_reward_sum %>" data-epochs="<%= data.epochs %>">
             <%=
               BlockScoutWeb.AddressView.trimmed_hash(pool_staking_address) <>
               " (" <>
-              format_token_amount(amounts.token_reward_sum, @token, digits: 5, ellipsize: false, symbol: true) <>
+              token_reward_sum <> " " <> @token.symbol <>
               ", " <>
-              format_token_amount(amounts.native_reward_sum, @coin, digits: 5, ellipsize: false, symbol: true) <>
+              native_reward_sum <> " " <> @coin.symbol <>
               ")"
             %>
           </option>
@@ -24,7 +28,7 @@
     <%= if @error do %>
       <%= @error %>
     <% else %>
-      <%= gettext("Unable to find any pools you staked into.") %>
+      <%= gettext("Unable to find any pools you could claim a reward from.") %>
     <% end %>
   </p>
 <% end %>
