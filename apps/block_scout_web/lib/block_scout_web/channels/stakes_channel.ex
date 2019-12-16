@@ -378,9 +378,25 @@ defmodule BlockScoutWeb.StakesChannel do
         pools = if error != nil do
           %{}
         else
+          block_reward_contract = ContractState.get(:block_reward_contract)
+
           Enum.map(pools_amounts, fn {_, amounts} -> amounts end)
           |> Enum.zip(pools)
           |> Enum.filter(fn {amounts, _} -> amounts.token_reward_sum > 0 || amounts.native_reward_sum > 0 end)
+          |> Enum.map(fn {amounts, pool_staking_address} ->
+            responses =
+              ContractReader.epochs_to_claim_reward_from_request(pool_staking_address, staker)
+              |> ContractReader.perform_requests(%{block_reward: block_reward_contract.address}, block_reward_contract.abi)
+
+            epochs =
+              array_to_ranges(responses[:epochs])
+              |> Enum.map(fn {first, last} ->
+                Integer.to_string(first) <> (if first != last, do: "-" <> Integer.to_string(last), else: "")
+              end)
+            data = Map.put(amounts, :epochs, Enum.join(epochs, ","))
+
+            {data, pool_staking_address}
+          end)
           |> Map.new(fn {val, key} -> {key, val} end)
         end
 
@@ -434,12 +450,40 @@ defmodule BlockScoutWeb.StakesChannel do
     |> String.pad_leading(64, ["0"])
   end
 
+  defp array_to_ranges(numbers, prev_ranges \\ []) do
+    length = Enum.count(numbers)
+    if length > 0 do
+      {first, last, next_index} = get_range(numbers)
+      ranges = prev_ranges ++ [{first, last}]
+      if next_index == 0 || next_index >= length do
+        ranges
+      else
+        Enum.slice(numbers, next_index, length - next_index)
+        |> array_to_ranges(ranges)
+      end
+    else
+      []
+    end
+  end
+
   defp error_reason_to_string(reason) do
     if is_map(reason) && Map.has_key?(reason, :message) && String.length(String.trim(reason.message)) > 0 do
       reason.message
     else
       gettext("JSON RPC error") <> ": " <> inspect(reason)
     end
+  end
+
+  defp get_range(numbers) do
+    last_index = 
+      Enum.with_index(numbers)
+      |> Enum.find_index(fn {n, i} ->
+        if i > 0, do: n != Enum.at(numbers, i - 1) + 1, else: false
+      end)
+    next_index = if last_index == nil, do: Enum.count(numbers), else: last_index
+    first = Enum.at(numbers, 0)
+    last = Enum.at(numbers, next_index - 1)
+    {first, last, next_index}
   end
 
   defp push_staking_contract(socket) do

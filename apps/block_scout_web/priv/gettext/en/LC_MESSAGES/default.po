@@ -2344,12 +2344,6 @@ msgid "Claim Reward"
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:27
-msgid "Unable to find any pools you staked into."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward.html.eex:9
 msgid "Searching for pools you have ever staked into. Please, wait..."
 msgstr ""
@@ -2365,7 +2359,7 @@ msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:441
+#: lib/block_scout_web/channels/stakes_channel.ex:473
 msgid "JSON RPC error"
 msgstr ""
 
@@ -2378,4 +2372,10 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:2
 msgid "We found the following pools you can claim your reward from:"
+msgstr ""
+
+#, elixir-format, fuzzy
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:31
+msgid "Unable to find any pools you could claim a reward from."
 msgstr ""

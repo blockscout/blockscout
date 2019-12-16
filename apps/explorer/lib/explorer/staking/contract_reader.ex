@@ -99,6 +99,12 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  def epochs_to_claim_reward_from_request(staking_address, staker) do
+    [
+      epochs: {:block_reward, "epochsToClaimRewardFrom", [staking_address, staker]}
+    ]
+  end
+
   def pool_staking_requests(staking_address, block_number) do
     [
       active_delegators: active_delegators_request(staking_address, block_number)[:active_delegators],
