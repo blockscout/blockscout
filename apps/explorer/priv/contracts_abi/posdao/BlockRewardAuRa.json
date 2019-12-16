@@ -1,6 +1,29 @@
 [
   {
     "constant": true,
+    "inputs": [
+      {
+        "name": "_poolStakingAddress",
+        "type": "address"
+      },
+      {
+        "name": "_staker",
+        "type": "address"
+      }
+    ],
+    "name": "epochsToClaimRewardFrom",
+    "outputs": [
+      {
+        "name": "epochsToClaimFrom",
+        "type": "uint256[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
     "inputs": [],
     "name": "bridgeTokenFee",
     "outputs": [
