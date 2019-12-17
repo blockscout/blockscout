@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.BlockView do
   import Math.Enum, only: [mean: 1]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, Wei}
+  alias Explorer.Chain.{Address, Block, Wei}
   alias Explorer.Chain.Block.Reward
 
   @dialyzer :no_match
@@ -25,6 +25,25 @@ defmodule BlockScoutWeb.BlockView do
   def block_type(%Block{consensus: false, nephews: []}), do: "Reorg"
   def block_type(%Block{consensus: false}), do: "Uncle"
   def block_type(_block), do: "Block"
+
+  def block_miner(block) do
+    if block.miner.names == [] and
+         Ecto.assoc_loaded?(block.celo_delegator) and
+         block.celo_delegator != nil and
+         block.celo_delegator.celo_account != nil do
+      named = %Address.Name{
+        address: block.celo_delegator.celo_account.account_address,
+        address_hash: block.celo_delegator.celo_account.address,
+        name: block.celo_delegator.celo_account.name <> " (signer)",
+        primary: true,
+        metadata: %{}
+      }
+
+      %{block.miner | names: [named]}
+    else
+      block.miner
+    end
+  end
 
   @doc """
   Work-around for spec issue in `Cldr.Unit.to_string!/1`
