@@ -1,0 +1,39 @@
+.modal-claim-reward {
+  max-width: 400px;
+  width: 100%;
+
+  @include media-breakpoint-down(sm) {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.modal-claim-reward {
+  label {
+    margin-bottom: 0;
+  }
+
+  p {
+    margin-bottom: 0.3rem;
+    width: 100%;
+
+    &.m-b-0 {
+      margin-bottom: 0;
+    }
+
+    &.left {
+      width: 49%;
+      float: left;
+    }
+
+    &.right {
+      width: 49%;
+      float: right;
+    }
+  }
+
+  textarea {
+    background: #fff!important;
+    height: 38px;
+  }
+}
