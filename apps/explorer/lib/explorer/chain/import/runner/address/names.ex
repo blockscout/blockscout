@@ -63,7 +63,7 @@ defmodule Explorer.Chain.Import.Runner.Address.Names do
   end
 
   @spec insert(Repo.t(), [map()], Util.insert_options()) :: {:ok, [Address.Name.t()]} | {:error, [Changeset.t()]}
-  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = _options) when is_list(changes_list) do
+  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     uniq_changes_list =
       changes_list
       |> Enum.sort_by(&{&1.address_hash, &1.name})
