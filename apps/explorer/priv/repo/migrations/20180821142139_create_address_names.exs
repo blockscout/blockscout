@@ -11,7 +11,7 @@ defmodule Explorer.Repo.Migrations.CreateAddressNames do
     end
 
     # Only 1 primary per address
-    create(unique_index(:address_names, [:address_hash], where: ~s|"primary" = true|))
+    create(index(:address_names, [:address_hash]))
     # No duplicate names per address
     create(unique_index(:address_names, [:address_hash, :name], name: :unique_address_names))
 
