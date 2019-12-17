@@ -20,11 +20,12 @@ defmodule Explorer.Chain.CeloValidator do
           group_address: %Ecto.Association.NotLoaded{} | Address.t(),
           signer_address_hash: Hash.Address.t(),
           signer: %Ecto.Association.NotLoaded{} | Address.t(),
-          score: Wei.t()
+          score: Wei.t(),
+          member: integer
         }
 
   @attrs ~w(
-        address group_address_hash score signer_address_hash
+        address group_address_hash score signer_address_hash member
     )a
 
   @required_attrs ~w(
@@ -33,6 +34,7 @@ defmodule Explorer.Chain.CeloValidator do
 
   schema "celo_validator" do
     field(:score, Wei)
+    field(:member, :integer)
 
     belongs_to(
       :validator_address,

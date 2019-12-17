@@ -23,11 +23,13 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
       add(:group_address_hash, :bytea)
       add(:signer_address_hash, :bytea)
       add(:score, :numeric, precision: 100)
+      add(:member, :integer)
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
     create(index(:celo_validator, [:address], unique: true))
+    create(index(:celo_validator, [:group_address_hash]))
 
     create table(:celo_validator_group) do
       add(:address, :bytea, null: false)
@@ -63,5 +65,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
     end
 
     create(index(:celo_signers, [:address, :signer], unique: true))
+    create(index(:celo_signers, [:address]))
+    create(index(:celo_signers, [:signer]))
   end
 end

@@ -14,8 +14,10 @@ defmodule Indexer.Transform.CeloAccounts do
   def parse(logs) do
     %{
       accounts: get_addresses(logs, CeloAccount.account_events()),
+      validators:
+        get_addresses(logs, CeloAccount.validator_events()) ++
+          get_addresses(logs, CeloAccount.membership_events(), fn a -> a.third_topic end),
       account_names: get_names(logs),
-      validators: get_addresses(logs, CeloAccount.validator_events()),
       validator_groups: get_addresses(logs, CeloAccount.validator_group_events()),
       withdrawals: get_addresses(logs, CeloAccount.withdrawal_events()),
       signers: get_signers(logs, CeloSigners.signer_events()),
