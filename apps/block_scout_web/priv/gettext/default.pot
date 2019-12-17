@@ -2339,6 +2339,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward.html.eex:6
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:52
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:32
 msgid "Claim Reward"
 msgstr ""
@@ -2359,7 +2360,7 @@ msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:473
+#: lib/block_scout_web/channels/stakes_channel.ex:505
 msgid "JSON RPC error"
 msgstr ""
 
@@ -2370,12 +2371,66 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:2
-msgid "We found the following pools you can claim your reward from:"
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:60
+msgid "Unable to find any pools you could claim a reward from."
 msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:31
-msgid "Unable to find any pools you could claim a reward from."
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:33
+msgid "Claim for"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:37
+msgid "Epochs range(s) or enum, e.g.: 5-9,23-27,47,50"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:47
+msgid "Tx Gas Limit:"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:2
+msgid "We found the following pools you can claim reward from:"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:41
+msgid "You will receive:"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:34
+msgid "all epochs"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:35
+msgid "specified epochs only"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward.html.eex:11
+msgid "You can get your reward for all staking epochs during which the pool was a validator or specify separate epochs if <b>Tx Gas Limit</b> is too high. <b>Tx Gas Limit</b> depends on how long the pool was a validator and how many staking epochs you held your stake in the pool without movement."
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:44
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:49
+msgid "Recalculate"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:27
+msgid "The staking epochs for which the reward could be claimed:"
 msgstr ""

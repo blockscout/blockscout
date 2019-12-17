@@ -375,29 +375,61 @@ defmodule BlockScoutWeb.StakesChannel do
           end
         end)
 
-        pools = if error != nil do
-          %{}
+        {error, pools} = if error != nil do
+          {error, %{}}
         else
           block_reward_contract = ContractState.get(:block_reward_contract)
 
-          Enum.map(pools_amounts, fn {_, amounts} -> amounts end)
-          |> Enum.zip(pools)
-          |> Enum.filter(fn {amounts, _} -> amounts.token_reward_sum > 0 || amounts.native_reward_sum > 0 end)
-          |> Enum.map(fn {amounts, pool_staking_address} ->
-            responses =
-              ContractReader.epochs_to_claim_reward_from_request(pool_staking_address, staker)
-              |> ContractReader.perform_requests(%{block_reward: block_reward_contract.address}, block_reward_contract.abi)
+          pools = 
+            pools_amounts
+            |> Enum.map(fn {_, amounts} -> amounts end)
+            |> Enum.zip(pools)
+            |> Enum.filter(fn {amounts, _} -> amounts.token_reward_sum > 0 || amounts.native_reward_sum > 0 end)
+            |> Enum.map(fn {amounts, pool_staking_address} ->
+              responses =
+                ContractReader.epochs_to_claim_reward_from_request(pool_staking_address, staker)
+                |> ContractReader.perform_requests(%{block_reward: block_reward_contract.address}, block_reward_contract.abi)
 
-            epochs =
-              array_to_ranges(responses[:epochs])
-              |> Enum.map(fn {first, last} ->
-                Integer.to_string(first) <> (if first != last, do: "-" <> Integer.to_string(last), else: "")
-              end)
-            data = Map.put(amounts, :epochs, Enum.join(epochs, ","))
+              epochs =
+                array_to_ranges(responses[:epochs])
+                |> Enum.map(fn {first, last} ->
+                  Integer.to_string(first) <> (if first != last, do: "-" <> Integer.to_string(last), else: "")
+                end)
+              data = Map.put(amounts, :epochs, Enum.join(epochs, ","))
 
-            {data, pool_staking_address}
+              {data, pool_staking_address}
+            end)
+
+          pools_gas_estimates = Enum.map(pools, fn {_data, pool_staking_address} ->
+            result = ContractReader.claim_reward_estimate_gas(
+              staking_contract_address,
+              [],
+              pool_staking_address,
+              staker,
+              json_rpc_named_arguments
+            )
+            {pool_staking_address, result}
           end)
-          |> Map.new(fn {val, key} -> {key, val} end)
+
+          error = Enum.find_value(pools_gas_estimates, fn {_, result} ->
+            case result do
+              {:error, reason} -> error_reason_to_string(reason)
+              _ -> nil
+            end
+          end)
+
+          pools = if error == nil do
+            pools_gas_estimates = Map.new(pools_gas_estimates)
+            Map.new(pools, fn {data, pool_staking_address} ->
+              {:ok, estimate} = pools_gas_estimates[pool_staking_address]
+              data = Map.put(data, :gas_estimate, estimate)
+              {pool_staking_address, data}
+            end)
+          else
+            %{}
+          end
+
+          {error, pools}
         end
 
         {error, pools}
