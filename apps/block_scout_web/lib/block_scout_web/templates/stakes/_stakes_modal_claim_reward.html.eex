@@ -1,5 +1,5 @@
 <div class="modal modal-fullwidth-xs fade" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-stake" role="document">
+  <div class="modal-dialog modal-dialog-centered modal-claim-reward" role="document">
     <div class="modal-content">
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-header">
@@ -8,6 +8,7 @@
       <div class="modal-body">
         <p><%= gettext("Searching for pools you have ever staked into. Please, wait...") %></p>
       </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("You can get your reward for all staking epochs during which the pool was a validator or specify separate epochs if <b>Tx Gas Limit</b> is too high. <b>Tx Gas Limit</b> depends on how long the pool was a validator and how many staking epochs you held your stake in the pool without movement.") |> raw(), extra_class: "hidden" %>
     </div>
   </div>
 </div>

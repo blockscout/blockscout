@@ -92,6 +92,63 @@ defmodule Explorer.Staking.ContractReader do
     end
   end
 
+  # makes a raw `eth_estimateGas` for the `claimReward` function of the Staking contract:
+  # function claimReward(
+  #   uint256[] memory _stakingEpochs,
+  #   address _poolStakingAddress
+  # ) public;
+  def claim_reward_estimate_gas(
+    staking_contract_address,
+    staking_epochs,
+    pool_staking_address,
+    staker,
+    json_rpc_named_arguments
+  ) do
+    staking_epochs_joint =
+      staking_epochs
+      |> Enum.map(fn epoch ->
+        epoch
+        |> Integer.to_string(16)
+        |> String.pad_leading(64, ["0"])
+      end)
+      |> Enum.join("")
+
+    pool_staking_address = address_pad_to_64(pool_staking_address)
+
+    staking_epochs_length =
+      Enum.count(staking_epochs)
+      |> Integer.to_string(16)
+      |> String.pad_leading(64, ["0"])
+
+    data = "0x3ea15d62" # `claimReward` function signature
+    data = data <> String.pad_leading("40", 64, ["0"]) # offset to the `_stakingEpochs` array
+    data = data <> pool_staking_address # `_poolStakingAddress` parameter
+    data = data <> staking_epochs_length # the length of `_stakingEpochs` array
+    data = data <> staking_epochs_joint # encoded `_stakingEpochs` array
+
+    result = EthereumJSONRPC.request(%{
+      id: 0,
+      method: "eth_estimateGas",
+      params: [%{
+        from: staker,
+        to: staking_contract_address,
+        gasPrice: "0x3B9ACA00", # 1 gwei
+        data: data
+      }]
+    }) |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+
+    case result do
+      {:ok, response} ->
+        estimate = 
+          response
+          |> String.replace_leading("0x", "")
+          |> String.to_integer(16)
+        {:ok, estimate}
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   # args = [staking_epoch, delegator_staked, validator_staked, total_staked, pool_reward \\ 10_00000]
   def delegator_reward_request(args) do
     [
