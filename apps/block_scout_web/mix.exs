@@ -51,7 +51,9 @@ defmodule BlockScoutWeb.Mixfile do
   defp extra_applications,
     do: [
       :logger,
-      :runtime_tools
+      :runtime_tools,
+      :jason,
+      :logger_json
     ]
 
   # Specifies your project dependencies.
@@ -131,7 +133,10 @@ defmodule BlockScoutWeb.Mixfile do
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
       {:phoenix_form_awesomplete, "~> 0.1.4"},
-      {:ex_json_schema, "~> 0.6.2"}
+      {:ex_json_schema, "~> 0.6.2"},
+      # Log json format
+      {:logger_json, "~> 3.2"}
+      # {:jason, "~> 1.1"}
     ]
   end
 

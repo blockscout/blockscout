@@ -28,7 +28,11 @@ defmodule Indexer.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [
+        :logger,
+        :jason,
+        :logger_json
+      ],
       mod: {Indexer.Application, []}
     ]
   end
@@ -66,7 +70,10 @@ defmodule Indexer.MixProject do
       # Tracing
       {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
       # `:spandex` integration with Datadog
-      {:spandex_datadog, "~> 0.4.0"}
+      {:spandex_datadog, "~> 0.4.0"},
+      # Log json format
+      {:logger_json, "~> 3.2"},
+      {:jason, "~> 1.1"}
     ]
   end
 

@@ -36,7 +36,11 @@ defmodule EthereumJsonrpc.MixProject do
   def application do
     [
       mod: {EthereumJSONRPC.Application, []},
-      extra_applications: [:logger]
+      extra_applications: [
+        :logger,
+        :jason,
+        :logger_json
+      ]
     ]
   end
 
@@ -91,7 +95,10 @@ defmodule EthereumJsonrpc.MixProject do
       {:websocket_client, "~> 1.3"},
       {:decimal, "~> 1.0"},
       {:decorator, "~> 1.2"},
-      {:hackney, "~> 1.15.2"}
+      {:hackney, "~> 1.15.2"},
+      # Log json format
+      {:logger_json, "~> 3.2"}
+      # {:jason, "~> 1.1"}
     ]
   end
 end

@@ -113,7 +113,10 @@ defmodule Explorer.Mixfile do
       {:telemetry, "~> 0.4.0"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.6"},
-      {:con_cache, "~> 0.13"}
+      {:con_cache, "~> 0.13"},
+      # Log json format
+      {:logger_json, "~> 3.2"}
+      # {:jason, "~> 1.1"}
     ]
   end
 

@@ -12,7 +12,8 @@ import_config "../apps/*/config/config.exs"
 config :logger,
   backends: [
     # all applications and all levels
-    :console,
+    #    :console,
+    {LoggerJSON, level: :warn},
     # all applications, but only errors
     {LoggerFileBackend, :error},
     # only :ecto, but all levels
@@ -31,28 +32,45 @@ config :logger,
     {LoggerFileBackend, :reading_token_functions}
   ]
 
-config :logger, :console,
-  # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$dateT$time $metadata[$level] $message\n",
+config :logger_json, :console,
   metadata:
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
        block_number step count error_count shrunk import_id transaction_id)a
 
-config :logger, :ecto,
-  # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$dateT$time $metadata[$level] $message\n",
+config :logger_json, :ecto,
+  level: :warn,
   metadata:
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-       block_number step count error_count shrunk import_id transaction_id)a,
-  metadata_filter: [application: :ecto]
+       block_number step count error_count shrunk import_id transaction_id)a
 
-config :logger, :error,
-  # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$dateT$time $metadata[$level] $message\n",
+config :logger_json, :error,
   level: :error,
   metadata:
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
        block_number step count error_count shrunk import_id transaction_id)a
+
+# config :logger, :console,
+#  # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
+#  format: "$dateT$time $metadata[$level] $message\n",
+#  metadata:
+#    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+#       block_number step count error_count shrunk import_id transaction_id)a
+#
+# config :logger, :ecto,
+#  # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
+#  format: "$dateT$time $metadata[$level] $message\n",
+#  metadata:
+#    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+#       block_number step count error_count shrunk import_id transaction_id)a,
+#  metadata_filter: [application: :ecto]
+#
+# config :logger, :error,
+#  # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
+#  format: "$dateT$time $metadata[$level] $message\n",
+#  level: :error,
+#  metadata:
+#    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+#       block_number step count error_count shrunk import_id transaction_id)a
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
