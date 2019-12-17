@@ -69,16 +69,32 @@ defmodule Explorer.Chain.Import.Runner.Address.Names do
       |> Enum.sort_by(&{&1.address_hash, &1.name})
       |> Enum.dedup_by(&{&1.address_hash, &1.name})
 
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+
     {:ok, _} =
       Import.insert_changes_list(
         repo,
         uniq_changes_list,
         conflict_target: [:address_hash, :name],
-        on_conflict: :nothing,
+        on_conflict: on_conflict,
         for: Address.Name,
         returning: true,
         timeout: timeout,
         timestamps: timestamps
       )
+  end
+
+  defp default_on_conflict do
+    from(
+      name in Address.Name,
+      update: [
+        set: [
+          primary: fragment("EXCLUDED.primary"),
+          metadata: fragment("EXCLUDED.metadata"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", name.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", name.updated_at)
+        ]
+      ]
+    )
   end
 end
