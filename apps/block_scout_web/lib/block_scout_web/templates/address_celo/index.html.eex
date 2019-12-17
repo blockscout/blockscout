@@ -10,7 +10,7 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">Associated address</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Address of the Celo account associated with the signer."><%= @address.celo_delegator |> BlockScoutWeb.AddressView.address_partial_selector(:signer_account, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial() %></span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Address of the Celo account associated with the signer."><%= @address.celo_delegator |> BlockScoutWeb.AddressView.address_partial_selector(:signer_account, @address) |> BlockScoutWeb.RenderHelpers.render_partial() %></span>
        </dd>
       </dl>
       <% end %>
@@ -64,16 +64,15 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">Affiliation</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Affiliated group"><%= @address.celo_validator |> BlockScoutWeb.AddressView.address_partial_selector(:group, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial() %>
-       (<%= @address.celo_validator.member %>)</span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Affiliated group"><%= @address.celo_validator |> BlockScoutWeb.AddressView.address_partial_selector(:group, @address) |> BlockScoutWeb.RenderHelpers.render_partial() (<%= @address.celo_validator.member %>) %></span>
        </dd>
       </dl>
       <% end %>
-      <%= if @address.celo_validator != nil and @address.celo_validator.signer_address_hash != nil do %>
+      <%= if @address.celo_validator != nil and @address.celo_validator.signer != nil do %>
       <dl class="row">
       <dt class="col-sm-3 text-muted">Validator signer</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Authorized validator signer"><%= @address.celo_validator |> BlockScoutWeb.AddressView.address_partial_selector(:signer, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial() %></span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Authorized validator signer"><%= @address.celo_validator |> BlockScoutWeb.AddressView.address_partial_selector(:signer, @address) |> BlockScoutWeb.RenderHelpers.render_partial() %></span>
        </dd>
       </dl>
       <% end %>
@@ -83,8 +82,8 @@
        <dd class="col-sm-9">
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All signers for this account that have existed">
        <%= for signer <- @address.celo_signers do %>
-         <%= if signer.signer_address != nil do
-             signer |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
+         <%= if signer.signer_address != nil do 
+             signer |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address) |> BlockScoutWeb.RenderHelpers.render_partial()
             end %>
        <% end %>
        </span>

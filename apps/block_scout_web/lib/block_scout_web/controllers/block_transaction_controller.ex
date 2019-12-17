@@ -84,6 +84,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
     case param_block_hash_or_number_to_block(formatted_block_hash_or_number,
            necessity_by_association: %{
              [miner: :names] => :required,
+             [celo_delegator: :celo_account] => :optional,
              :uncles => :optional,
              :nephews => :optional,
              :rewards => :optional

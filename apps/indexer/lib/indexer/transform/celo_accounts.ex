@@ -17,6 +17,7 @@ defmodule Indexer.Transform.CeloAccounts do
       validators:
         get_addresses(logs, CeloAccount.validator_events()) ++
           get_addresses(logs, CeloAccount.membership_events(), fn a -> a.third_topic end),
+      account_names: get_names(logs),
       validator_groups: get_addresses(logs, CeloAccount.validator_group_events()),
       withdrawals: get_addresses(logs, CeloAccount.withdrawal_events()),
       signers: get_signers(logs, CeloSigners.signer_events()),
@@ -32,6 +33,12 @@ defmodule Indexer.Transform.CeloAccounts do
     logs
     |> Enum.filter(fn log -> log.first_topic == CeloAccount.oracle_reported_event() end)
     |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
+  end
+
+  defp get_names(logs) do
+    logs
+    |> Enum.filter(fn log -> log.first_topic == CeloAccount.account_name_event() end)
+    |> Enum.reduce([], fn log, names -> do_parse_name(log, names) end)
   end
 
   #    defp get_rates(logs) do
@@ -90,8 +97,18 @@ defmodule Indexer.Transform.CeloAccounts do
     end
   rescue
     _ in [FunctionClauseError, MatchError] ->
-      Logger.error(fn -> "Unknown account event format: #{inspect(log)}" end)
+      Logger.error(fn -> "Unknown oracle event format: #{inspect(log)}" end)
       rates
+  end
+
+  defp do_parse_name(log, names) do
+    [{name}] = decode_data(log.data, [{:tuple, [:string]}])
+    entry = %{name: String.slice(name, 0..30), address_hash: truncate_address_hash(log.second_topic), primary: true}
+    [entry | names]
+  rescue
+    _ in [FunctionClauseError, MatchError] ->
+      Logger.error(fn -> "Unknown account name event format: #{inspect(log)}" end)
+      names
   end
 
   defp parse_rate_params(data) do
