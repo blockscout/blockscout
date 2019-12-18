@@ -399,6 +399,7 @@ defmodule BlockScoutWeb.StakesChannel do
 
               {data, pool_staking_address}
             end)
+            |> Enum.filter(fn {data, _} -> data.epochs != "" end)
 
           pools_gas_estimates = Enum.map(pools, fn {_data, pool_staking_address} ->
             result = ContractReader.claim_reward_estimate_gas(
