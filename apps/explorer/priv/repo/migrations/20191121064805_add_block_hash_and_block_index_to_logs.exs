@@ -19,11 +19,8 @@ defmodule Explorer.Repo.Migrations.AddBlockHashAndBlockIndexToLogs do
       JOIN transactions t
       ON t.hash = l.transaction_hash
     ) AS with_block
-    WHERE log.transaction_hash = with_block.transaction_hash
-    ;
+    WHERE log.transaction_hash = with_block.transaction_hash;
     """)
-
-    create(index(:logs, [:block_number]))
 
     execute("""
     DELETE FROM logs WHERE block_hash IS NULL;
