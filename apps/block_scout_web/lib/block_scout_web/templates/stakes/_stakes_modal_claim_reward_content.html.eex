@@ -41,15 +41,14 @@
           <%= gettext("You will receive:") %><br />
           <span class="text-dark" id="token-reward-sum"></span> <span class="text-dark"><%= @token.symbol %></span><br />
           <span class="text-dark" id="native-reward-sum"></span> <span class="text-dark"><%= @coin.symbol %></span><br />
-          <a href="#" class="recalculate hidden"><%= gettext("Recalculate") %></a>
         </p>
         <p class="form-p right">
           <%= gettext("Tx Gas Limit:") %><br />
           <span class="text-dark" id="tx-gas-limit"></span><br />
-          <a href="#" class="recalculate hidden"><%= gettext("Recalculate") %></a>
         </p>
       </div>
-      <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Claim Reward"), extra_class: "full-width" %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_btn_recalculate.html", text: gettext("Recalculate"), extra_class: "full-width recalculate hidden" %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Claim Reward"), extra_class: "full-width submit" %>
     </div>
   </form>
 <% else %>
