@@ -2339,7 +2339,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward.html.eex:6
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:52
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:51
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:32
 msgid "Claim Reward"
 msgstr ""
@@ -2360,7 +2360,7 @@ msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:505
+#: lib/block_scout_web/channels/stakes_channel.ex:506
 msgid "JSON RPC error"
 msgstr ""
 
@@ -2371,7 +2371,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:60
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:59
 msgid "Unable to find any pools you could claim a reward from."
 msgstr ""
 
@@ -2389,7 +2389,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:47
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:46
 msgid "Tx Gas Limit:"
 msgstr ""
 
@@ -2424,8 +2424,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:44
-#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:49
+#: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:50
 msgid "Recalculate"
 msgstr ""
 
