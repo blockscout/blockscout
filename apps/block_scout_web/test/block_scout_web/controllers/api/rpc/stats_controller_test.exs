@@ -116,10 +116,26 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == "6"
+      assert response["result"] == "0"
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(ethsupply_schema(), response)
+    end
+  end
+
+  describe "coinsupply" do
+    test "returns total supply minus a burnt number from DB in coins denomination", %{conn: conn} do
+      params = %{
+        "module" => "stats",
+        "action" => "coinsupply"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response == 0.0
     end
   end
 
@@ -199,6 +215,12 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
   end
 
   defp ethsupplyexchange_schema do
+    resolve_schema(%{
+      "type" => ["string", "null"]
+    })
+  end
+
+  defp coinsupply_schema do
     resolve_schema(%{
       "type" => ["string", "null"]
     })

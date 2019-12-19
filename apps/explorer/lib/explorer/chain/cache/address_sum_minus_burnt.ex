@@ -1,13 +1,13 @@
-defmodule Explorer.Chain.Cache.AddressSum do
+defmodule Explorer.Chain.Cache.AddressSumMinusBurnt do
   @moduledoc """
-  Cache for address sum.
+  Cache for address sum minus burnt number.
   """
 
   require Logger
 
   use Explorer.Chain.MapCache,
-    name: :address_sum,
-    key: :sum,
+    name: :address_sum_minus_burnt,
+    key: :sum_minus_burnt,
     key: :async_task,
     ttl_check_interval: Application.get_env(:explorer, __MODULE__)[:ttl_check_interval],
     global_ttl: Application.get_env(:explorer, __MODULE__)[:global_ttl],
@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Cache.AddressSum do
 
   alias Explorer.Chain
 
-  defp handle_fallback(:sum) do
+  defp handle_fallback(:sum_minus_burnt) do
     # This will get the task PID if one exists and launch a new task if not
     # See next `handle_fallback` definition
     get_async_task()
@@ -29,9 +29,9 @@ defmodule Explorer.Chain.Cache.AddressSum do
     {:ok, task} =
       Task.start(fn ->
         try do
-          result = Chain.fetch_sum_coin_total_supply()
+          result = Chain.fetch_sum_coin_total_supply_minus_burnt()
 
-          set_sum(result)
+          set_sum_minus_burnt(result)
         rescue
           e ->
             Logger.debug([
@@ -46,8 +46,8 @@ defmodule Explorer.Chain.Cache.AddressSum do
   end
 
   # By setting this as a `callback` an async task will be started each time the
-  # `sum` expires (unless there is one already running)
-  defp async_task_on_deletion({:delete, _, :sum}), do: get_async_task()
+  # `sum_minus_burnt` expires (unless there is one already running)
+  defp async_task_on_deletion({:delete, _, :sum_minus_burnt}), do: get_async_task()
 
   defp async_task_on_deletion(_data), do: nil
 end
