@@ -123,6 +123,22 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
     end
   end
 
+  describe "coinsupply" do
+    test "returns total supply minus a burnt number from DB in coins denomination", %{conn: conn} do
+      params = %{
+        "module" => "stats",
+        "action" => "coinsupply"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response == 0.0
+    end
+  end
+
   describe "ethprice" do
     setup :set_mox_global
 
