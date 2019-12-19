@@ -1,16 +1,14 @@
 ## Current
 
 ### Features
+- [#2926](https://github.com/poanetwork/blockscout/pull/2926) - API endpoint: sum balances except burnt address
 
 ### Fixes
 - [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
-
 - [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
-
 - [#2900](https://github.com/poanetwork/blockscout/pull/2900) - check fetched instance metadata in multiple places
 
 ### Chore
-
 - [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
 
 

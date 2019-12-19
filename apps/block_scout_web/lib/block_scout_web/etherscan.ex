@@ -273,6 +273,8 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => "101959776311500000000000000"
   }
 
+  @stats_coinsupply_example_value 101_959_776.3115
+
   @stats_ethprice_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -1821,8 +1823,32 @@ defmodule BlockScoutWeb.Etherscan do
             message: @message_type,
             result: %{
               type: "integer",
-              description: "The total supply.",
+              description: "The total supply in Wei from DB.",
               example: ~s("101959776311500000000000000")
+            }
+          }
+        }
+      }
+    ]
+  }
+
+  @stats_coinsupply_action %{
+    name: "coinsupply",
+    description: "Get total coin supply from DB minus burnt number.",
+    required_params: [],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@stats_coinsupply_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            result: %{
+              type: "integer",
+              description: "The total supply from DB minus burnt number in coin dimension.",
+              example: 101_959_776.3115
             }
           }
         }
@@ -2336,6 +2362,7 @@ defmodule BlockScoutWeb.Etherscan do
       @stats_tokensupply_action,
       @stats_ethsupplyexchange_action,
       @stats_ethsupply_action,
+      @stats_coinsupply_action,
       @stats_ethprice_action
     ]
   }
