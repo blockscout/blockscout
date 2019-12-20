@@ -589,6 +589,12 @@ defmodule BlockScoutWeb.Etherscan do
     example: ~s("Some Token Name")
   }
 
+  @token_id_type %{
+    type: "integer",
+    definition: "id of token",
+    example: ~s("0")
+  }
+
   @token_symbol_type %{
     type: "string",
     definition: "Trading symbol of the token.",
@@ -752,6 +758,7 @@ defmodule BlockScoutWeb.Etherscan do
         example: ~s("663046792267785498951364")
       },
       tokenName: @token_name_type,
+      tokenID: @token_id_type,
       tokenSymbol: @token_symbol_type,
       tokenDecimal: @token_decimal_type,
       transactionIndex: @transaction_index_type,
