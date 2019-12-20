@@ -1,5 +1,6 @@
 import $ from 'jquery'
-import { openModal, openErrorModal, openWarningModal, lockModal, unlockModal } from '../../lib/modals'
+import { isModalLocked, lockModal, openErrorModal, openModal, unlockModal } from '../../lib/modals'
+import { displayInputError, hideInputError } from '../../lib/validation'
 import { isSupportedNetwork } from './utils'
 
 export function openClaimRewardModal(store) {
@@ -12,52 +13,75 @@ export function openClaimRewardModal(store) {
     const $modal = $(msg.html)
     const $closeButton = $modal.find('.close-modal')
     const $modalBody = $('.modal-body', $modal)
-    const $waitingMessageContainer = $modalBody.find('p')
 
-    let dotCounter = 0
-    const dotCounterInterval = setInterval(() => {
-      let waitingMessage = $.trim($waitingMessageContainer.text())
-      if (!waitingMessage.endsWith('.')) {
-        waitingMessage = waitingMessage + '.'
-      }
-      waitingMessage = waitingMessage.replace(/\.+$/g, " " + ".".repeat(dotCounter))
-      $waitingMessageContainer.text(waitingMessage)
-      dotCounter = (dotCounter + 1) % 4
-    }, 500)
+    const dotCounterInterval = poolsSearchingStarted()
 
-    $closeButton.hide()
-    lockModal($modal)
-    channel.on('claim_reward_pools', msg_pools => {
-      channel.off('claim_reward_pools')
-      $closeButton.show()
-      unlockModal($modal)
-      clearInterval(dotCounterInterval)
+    const ref = channel.on('claim_reward_pools', msg_pools => {
       $modalBody.html(msg_pools.html)
-      onPoolsFound($modal, $modalBody)
+      poolsSearchingFinished()
     })
     $modal.on('shown.bs.modal', () => {
-      channel.push('render_claim_reward', {}).receive('error', (error) => {
-        openErrorModal('Claim Reward', error.reason)
+      channel.push('render_claim_reward', {
+      }).receive('error', (error) => {
+        poolsSearchingFinished(error.reason)
+      }).receive('timeout', () => {
+        poolsSearchingFinished('Connection timeout')
       })
     })
     $modal.on('hidden.bs.modal', () => {
       $modal.remove()
     })
+    function poolsSearchingStarted() {
+      $closeButton.hide()
+      lockModal($modal)
+
+      const $waitingMessageContainer = $modalBody.find('p')
+      let dotCounter = 0
+
+      return setInterval(() => {
+        let waitingMessage = $.trim($waitingMessageContainer.text())
+        if (!waitingMessage.endsWith('.')) {
+          waitingMessage = waitingMessage + '.'
+        }
+        waitingMessage = waitingMessage.replace(/\.+$/g, " " + ".".repeat(dotCounter))
+        $waitingMessageContainer.text(waitingMessage)
+        dotCounter = (dotCounter + 1) % 4
+      }, 500)
+    }
+    function poolsSearchingFinished(error) {
+      channel.off('claim_reward_pools', ref)
+      $closeButton.show()
+      unlockModal($modal)
+      clearInterval(dotCounterInterval)
+      if (error) {
+        openErrorModal('Claim Reward', error)
+      } else {
+        onPoolsFound($modal, $modalBody, channel)
+      }
+    }
 
     openModal($modal);
   }).receive('error', (error) => {
     openErrorModal('Claim Reward', error.reason)
+  }).receive('timeout', () => {
+    openErrorModal('Claim Reward', 'Connection timeout')
   })
 }
 
-function onPoolsFound($modal, $modalBody) {
-  const $poolsDropdown = $('[pool-select]', $modalBody)
+function onPoolsFound($modal, $modalBody, channel) {
+  const $poolsDropdown = $('select', $modalBody)
   const $epochChoiceRadio = $('input[name="epoch_choice"]', $modalBody)
-  const $specifiedEpochsText = $('.specified-epochs', $modalBody)
+  const $specifiedEpochsText = $('input.specified-epochs', $modalBody)
+  const $recalculateButton = $('button.recalculate', $modalBody)
   let allowedEpochs = []
 
   $poolsDropdown.on('change', () => {
+    if (isModalLocked()) return false
+
     const data = $('option:selected', this).data()
+    const tokenRewardSum = data.tokenRewardSum ? data.tokenRewardSum : '0'
+    const nativeRewardSum = data.nativeRewardSum ? data.nativeRewardSum : '0'
+    const gasLimit = data.gasLimit ? data.gasLimit : '0'
     const $poolInfo = $('.selected-pool-info', $modalBody)
     const epochs = data.epochs ? data.epochs : ''
 
@@ -65,19 +89,22 @@ function onPoolsFound($modal, $modalBody) {
 
     $poolsDropdown.blur()
     $('textarea', $poolInfo).val(epochs)
-    $('#token-reward-sum', $poolInfo).html(data.tokenRewardSum ? data.tokenRewardSum : '0')
-    $('#native-reward-sum', $poolInfo).html(data.nativeRewardSum ? data.nativeRewardSum : '0')
-    $('#tx-gas-limit', $poolInfo).html(data.gasLimit ? '~' + data.gasLimit : '0')
+    $('#token-reward-sum', $poolInfo).html(tokenRewardSum).data('default', tokenRewardSum)
+    $('#native-reward-sum', $poolInfo).html(nativeRewardSum).data('default', nativeRewardSum)
+    $('#tx-gas-limit', $poolInfo).html('~' + gasLimit).data('default', gasLimit)
     $('#epoch-choice-all', $poolInfo).click()
     $specifiedEpochsText.val('')
     $poolInfo.removeClass('hidden')
     $('.modal-bottom-disclaimer', $modal).removeClass('hidden')
+    hideInputError($recalculateButton)
   })
 
   $epochChoiceRadio.on('change', () => {
+    if (isModalLocked()) return false
     if ($('#epoch-choice-all', $modalBody).is(':checked')) {
       $specifiedEpochsText.addClass('hidden')
-      showRecalcButton(false, $modalBody)
+      showButton('submit', $modalBody)
+      hideInputError($recalculateButton)
     } else {
       $specifiedEpochsText.removeClass('hidden')
       $specifiedEpochsText.trigger('input')
@@ -85,26 +112,99 @@ function onPoolsFound($modal, $modalBody) {
   })
 
   $specifiedEpochsText.on('input', () => {
+    if (isModalLocked()) return false
+
     const filtered = filterSpecifiedEpochs($specifiedEpochsText.val())
-    const pointedEpochs = expandEpochsToArray(filtered)
-    const needsRecalc = pointedEpochs.length > 0 && !isArrayIncludedToArray(allowedEpochs, pointedEpochs)
-    showRecalcButton(needsRecalc, $modalBody)
     $specifiedEpochsText.val(filtered)
+
+    const pointedEpochs = expandEpochsToArray(filtered)
+    const pointedEpochsAllowed = pointedEpochs.filter(item => allowedEpochs.indexOf(item) != -1)
+    
+    const needsRecalc = pointedEpochs.length > 0 && pointedEpochsAllowed.length != allowedEpochs.length
+    showButton(needsRecalc ? 'recalculate' : 'submit', $modalBody)
+
+    if (needsRecalc && pointedEpochsAllowed.length == 0) {
+      $recalculateButton.prop('disabled', true)
+      displayInputError($recalculateButton, 'The specified staking epochs are not in the allowed range')
+    } else {
+      $recalculateButton.prop('disabled', false)
+      hideInputError($recalculateButton)
+    }
+  })
+
+  $recalculateButton.on('click', (e) => {
+    if (isModalLocked()) return false
+    e.preventDefault()
+    recalcStarted()
+
+    const specifiedEpochs = $specifiedEpochsText.val().replace(/[-|,]$/g, '').trim()
+    $specifiedEpochsText.val(specifiedEpochs)
+
+    const epochs = expandEpochsToArray(specifiedEpochs).filter(item => allowedEpochs.indexOf(item) != -1)
+    const poolStakingAddress = $poolsDropdown.val()
+    const ref = channel.on('claim_reward_recalculations', result => {
+      recalcFinished(result)
+    })
+    channel.push('recalc_claim_reward', {
+      epochs,
+      pool_staking_address: poolStakingAddress
+    }).receive('error', (error) => {
+      recalcFinished({error: error.reason})
+    }).receive('timeout', () => {
+      recalcFinished({error: 'Connection timeout'})
+    })
+    function recalcStarted() {
+      hideInputError($recalculateButton)
+      lockUI(true, $modal, $recalculateButton, $poolsDropdown, $epochChoiceRadio, $specifiedEpochsText);
+    }
+    function recalcFinished(result) {
+      channel.off('claim_reward_recalculations', ref)
+      if (result.error) {
+        displayInputError($recalculateButton, result.error)
+      } else {
+        showButton('submit', $modalBody, result)
+      }
+      lockUI(false, $modal, $recalculateButton, $poolsDropdown, $epochChoiceRadio, $specifiedEpochsText);
+    }
   })
 }
 
-function showRecalcButton(show, $modalBody) {
-  const $itemsToStrikeOut = $('#token-reward-sum, #native-reward-sum, #tx-gas-limit', $modalBody)
+function lockUI(lock, $modal, $button, $poolsDropdown, $epochChoiceRadio, $specifiedEpochsText) {
+  if (lock) {
+    lockModal($modal, $button)
+  } else {
+    unlockModal($modal, $button)
+  }
+  $poolsDropdown.prop('disabled', lock)
+  $epochChoiceRadio.prop('disabled', lock)
+  $specifiedEpochsText.prop('disabled', lock)
+}
+
+function showButton(type, $modalBody, calculations) {
   const $recalculateButton = $('button.recalculate', $modalBody)
   const $submitButton = $('button.submit', $modalBody)
-  if (show) {
-    $itemsToStrikeOut.css('text-decoration', 'line-through')
-    $recalculateButton.removeClass('hidden')
-    $submitButton.addClass('hidden')
-  } else {
-    $itemsToStrikeOut.css('text-decoration', '')
+
+  const $tokenRewardSum = $('#token-reward-sum', $modalBody)
+  const $nativeRewardSum = $('#native-reward-sum', $modalBody)
+  const $gasLimit = $('#tx-gas-limit', $modalBody)
+
+  if (type == 'submit') {
     $recalculateButton.addClass('hidden')
     $submitButton.removeClass('hidden')
+
+    const tokenRewardSum = !calculations ? $tokenRewardSum.data('default') : calculations.token_reward_sum
+    const nativeRewardSum = !calculations ? $nativeRewardSum.data('default') : calculations.native_reward_sum
+    const gasLimit = !calculations ? $gasLimit.data('default') : calculations.gas_limit
+
+    $tokenRewardSum.text(tokenRewardSum).css('text-decoration', '')
+    $nativeRewardSum.text(nativeRewardSum).css('text-decoration', '')
+    $gasLimit.text('~' + gasLimit).css('text-decoration', '')
+  } else {
+    $recalculateButton.removeClass('hidden')
+    $submitButton.addClass('hidden');
+    [$tokenRewardSum, $nativeRewardSum, $gasLimit].forEach(
+      $item => $item.css('text-decoration', 'line-through')
+    )
   }
 }
 
@@ -146,9 +246,4 @@ function filterSpecifiedEpochs(epochs) {
   filtered = filtered.replace(/(-[0-9]+)-/g, '$1,')
   filtered = filtered.replace(/^[,|-|0]/g, '')
   return filtered
-}
-
-function isArrayIncludedToArray(source, target) {
-  const filtered = target.filter(item => source.indexOf(item) != -1)
-  return filtered.length == source.length
 }
