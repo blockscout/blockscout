@@ -16,8 +16,11 @@ defmodule Explorer.Repo.Migrations.AddBlockHashToTokenTransfers do
       JOIN transactions t
       ON t.hash = transfer.transaction_hash
     ) AS with_block
-    WHERE token_transfer.transaction_hash = with_block.transaction_hash
-    ;
+    WHERE token_transfer.transaction_hash = with_block.transaction_hash;
+    """)
+
+    execute("""
+    DELETE FROM token_transfers WHERE block_hash IS NULL;
     """)
 
     alter table(:token_transfers) do
