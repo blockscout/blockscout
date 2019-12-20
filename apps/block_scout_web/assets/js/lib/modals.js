@@ -25,6 +25,10 @@ export function currentModal () {
   return $currentModal
 }
 
+export function isModalLocked() {
+  return modalLocked
+}
+
 export function openModal ($modal, unclosable) {
   // Hide all tooltips before showing a modal,
   // since they are sticking on top of modal

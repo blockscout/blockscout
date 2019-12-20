@@ -2,8 +2,8 @@
   <p class="form-p"><%= gettext("We found the following pools you can claim reward from:") %></p>
   <form>
     <div class="input-group form-group">
-      <select pool-select class="form-control">
-        <option disabled selected><%= gettext("Choose Pool") %></option>
+      <select class="form-control">
+        <option disabled="disabled" selected="selected"><%= gettext("Choose Pool") %></option>
         <%= for {pool_staking_address, data} <- @pools do %>
           <%
             token_reward_sum = format_token_amount(data.token_reward_sum, @token, digits: 5, ellipsize: false, symbol: false)
@@ -47,8 +47,11 @@
           <span class="text-dark" id="tx-gas-limit"></span><br />
         </p>
       </div>
-      <%= render BlockScoutWeb.StakesView, "_stakes_btn_recalculate.html", text: gettext("Recalculate"), extra_class: "full-width recalculate hidden" %>
-      <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Claim Reward"), extra_class: "full-width submit" %>
+      <div class="input-group">
+        <%= render BlockScoutWeb.StakesView, "_stakes_btn_recalculate.html", text: gettext("Recalculate"), extra_class: "full-width recalculate hidden" %>
+        <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Claim Reward"), extra_class: "full-width submit" %>
+        <div class="input-group-message"></div>
+      </div>
     </div>
   </form>
 <% else %>
