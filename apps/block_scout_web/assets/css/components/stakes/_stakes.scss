@@ -171,7 +171,7 @@ $stakes-stats-item-border-color: #fff !default;
   @include media-breakpoint-down(md) {
     grid-column-start: 2;
     grid-row-start: 2;
-    justify-self: end;
+    justify-self: left;
   }
 
   @include media-breakpoint-down(sm) {
