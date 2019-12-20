@@ -14,7 +14,7 @@
             <% end %>
           <% else %>
             <%=
-              button_class =
+              button_class = "full-width " <>
                 if @account[:pool] do
                   "js-make-stake"
                 else
@@ -29,7 +29,7 @@
           <% end %>
         <% end %>
 
-        <%= render BlockScoutWeb.StakesView, "_stakes_btn_claim_reward.html", text: gettext("Claim Reward") %>
+        <%= render BlockScoutWeb.StakesView, "_stakes_btn_claim_reward.html", text: gettext("Claim Reward"), extra_class: "full-width" %>
       </div>
     </div>
   </div>
