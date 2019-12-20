@@ -4,6 +4,7 @@
 - [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action
 
 ### Fixes
+- [#2915](https://github.com/poanetwork/blockscout/pull/2915) - Speedup of blocks_without_reward_query
 - [#2914](https://github.com/poanetwork/blockscout/pull/2914) - Reduce execution time of stream_unfetched_token_instances query
 - [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
 - [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
