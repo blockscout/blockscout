@@ -358,22 +358,31 @@ defmodule Explorer.Chain do
     base_query =
       from(log in Log,
         inner_join: transaction in Transaction,
-        on:
-          transaction.block_hash == log.block_hash and transaction.block_number == log.block_number and
-            transaction.hash == log.transaction_hash,
-        order_by: [desc: transaction.block_number, desc: transaction.index],
-        preload: [:transaction, transaction: [to_address: :smart_contract]],
+        on: transaction.hash == log.transaction_hash,
+        order_by: [desc: log.block_number, desc: log.index],
         where: transaction.block_number < ^block_number,
         or_where: transaction.block_number == ^block_number and transaction.index > ^transaction_index,
         or_where:
           transaction.block_number == ^block_number and transaction.index == ^transaction_index and
             log.index > ^log_index,
-        where: log.address_hash == ^address_hash and log.block_hash == transaction.block_hash,
+        where: log.address_hash == ^address_hash,
         limit: ^paging_options.page_size,
         select: log
       )
 
-    base_query
+    wrapped_query =
+      from(
+        log in subquery(base_query),
+        inner_join: transaction in Transaction,
+        preload: [:transaction, transaction: [to_address: :smart_contract]],
+        where:
+          log.block_hash == transaction.block_hash and
+            log.block_number == transaction.block_number and
+            log.transaction_hash == transaction.hash,
+        select: log
+      )
+
+    wrapped_query
     |> filter_topic(options)
     |> Repo.all()
     |> Enum.take(paging_options.page_size)

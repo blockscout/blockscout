@@ -5,6 +5,7 @@
 
 ### Fixes
 - [#2928](https://github.com/poanetwork/blockscout/pull/2928) - Speedup pending block ops int txs to fetch query
+- [#2924](https://github.com/poanetwork/blockscout/pull/2924) - Speedup address to logs query
 - [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
 - [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
 
