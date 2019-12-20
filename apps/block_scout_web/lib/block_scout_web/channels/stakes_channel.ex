@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.StakesChannel do
   """
   use BlockScoutWeb, :channel
 
-  alias BlockScoutWeb.{StakesController, StakesView}
+  alias BlockScoutWeb.{StakesController, StakesHelpers, StakesView}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Token
@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.StakesChannel do
 
   import BlockScoutWeb.Gettext
 
-  @searching_claim_reward_pools :searching_claim_reward_pools
+  @claim_reward_long_op :claim_reward_long_op
 
   intercept(["staking_update"])
 
@@ -23,9 +23,9 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def terminate(_, socket) do
-    s = socket.assigns[@searching_claim_reward_pools]
+    s = socket.assigns[@claim_reward_long_op]
     if s != nil do
-      :ets.delete(ContractState, searching_claim_reward_pools_key(s.staker))
+      :ets.delete(ContractState, claim_reward_long_op_key(s.staker))
     end
   end
 
@@ -244,19 +244,10 @@ defmodule BlockScoutWeb.StakesChannel do
 
   def handle_in("render_claim_reward", data, socket) do
     staker = socket.assigns[:account]
-
-    search_in_progress = if socket.assigns[@searching_claim_reward_pools] do
-      true
-    else
-      with [{_, true}] <- :ets.lookup(ContractState, searching_claim_reward_pools_key(staker)) do
-        true
-      end
-    end
-
     staking_contract_address = try do ContractState.get(:staking_contract).address after end
     
     cond do
-      search_in_progress == true ->
+      claim_reward_long_op_active(socket) == true ->
         {:reply, {:error, %{reason: gettext("Pools searching is already in progress for this address")}}, socket}
       staker == nil || staker == "" || staker == "0x0000000000000000000000000000000000000000" ->
         {:reply, {:error, %{reason: gettext("Unknown staker address. Please, choose your account in MetaMask")}}, socket}
@@ -272,11 +263,35 @@ defmodule BlockScoutWeb.StakesChannel do
           task = Task.async(__MODULE__, :find_claim_reward_pools, [socket, staker, staking_contract_address])
           %{
             html: "OK",
-            socket: assign(socket, @searching_claim_reward_pools, %{task: task, staker: staker})
+            socket: assign(socket, @claim_reward_long_op, %{task: task, staker: staker})
           }
         end
 
         {:reply, {:ok, %{html: result.html}}, result.socket}
+    end
+  end
+
+  def handle_in("recalc_claim_reward", data, socket) do
+    epochs = data["epochs"]
+    pool_staking_address = data["pool_staking_address"]
+    staker = socket.assigns[:account]
+    staking_contract_address = try do ContractState.get(:staking_contract).address after end
+    
+    cond do
+      claim_reward_long_op_active(socket) == true ->
+        {:reply, {:error, %{reason: gettext("Reward calculating is already in progress for this address")}}, socket}
+      Enum.count(epochs) == 0 ->
+        {:reply, {:error, %{reason: gettext("Staking epochs are not specified or not in the allowed range")}}, socket}
+      pool_staking_address == nil || pool_staking_address == "" || pool_staking_address == "0x0000000000000000000000000000000000000000" ->
+        {:reply, {:error, %{reason: gettext("Unknown pool staking address. Please, contact support")}}, socket}
+      staker == nil || staker == "" || staker == "0x0000000000000000000000000000000000000000" ->
+        {:reply, {:error, %{reason: gettext("Unknown staker address. Please, choose your account in MetaMask")}}, socket}
+      staking_contract_address == nil || staking_contract_address == "" || staking_contract_address == "0x0000000000000000000000000000000000000000" ->
+        {:reply, {:error, %{reason: gettext("Unknown address of Staking contract. Please, contact support")}}, socket}
+      true ->
+        task = Task.async(__MODULE__, :recalc_claim_reward, [socket, staking_contract_address, epochs, pool_staking_address, staker])
+        socket = assign(socket, @claim_reward_long_op, %{task: task, staker: staker})
+        {:reply, {:ok, %{html: "OK"}}, socket}
     end
   end
 
@@ -302,10 +317,10 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_info({:DOWN, ref, :process, pid, _reason}, socket) do
-    s = socket.assigns[@searching_claim_reward_pools]
+    s = socket.assigns[@claim_reward_long_op]
     socket = if s && s.task.ref == ref && s.task.pid == pid do
-      :ets.delete(ContractState, searching_claim_reward_pools_key(s.staker))
-      assign(socket, @searching_claim_reward_pools, nil)
+      :ets.delete(ContractState, claim_reward_long_op_key(s.staker))
+      assign(socket, @claim_reward_long_op, nil)
     else
       socket
     end
@@ -330,7 +345,7 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def find_claim_reward_pools(socket, staker, staking_contract_address) do
-    :ets.insert(ContractState, {searching_claim_reward_pools_key(staker), true})
+    :ets.insert(ContractState, {claim_reward_long_op_key(staker), true})
     try do
       staker_padded = address_pad_to_64(staker)
       json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
@@ -451,7 +466,71 @@ defmodule BlockScoutWeb.StakesChannel do
         html: html
       })
     after
-      :ets.delete(ContractState, searching_claim_reward_pools_key(staker))
+      :ets.delete(ContractState, claim_reward_long_op_key(staker))
+    end
+  end
+
+  def recalc_claim_reward(socket, staking_contract_address, epochs, pool_staking_address, staker) do
+    :ets.insert(ContractState, {claim_reward_long_op_key(staker), true})
+    try do
+      json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+      amounts_result = ContractReader.call_get_reward_amount(
+        staking_contract_address,
+        epochs,
+        pool_staking_address,
+        staker,
+        json_rpc_named_arguments
+      )
+
+      {error, amounts} = case amounts_result do
+        {:ok, amounts} ->
+          {nil, amounts}
+        {:error, reason} ->
+          {error_reason_to_string(reason), %{token_reward_sum: 0, native_reward_sum: 0}}
+      end
+
+      {error, gas_limit} = if error == nil do
+        estimate_gas_result = ContractReader.claim_reward_estimate_gas(
+          staking_contract_address,
+          epochs,
+          pool_staking_address,
+          staker,
+          json_rpc_named_arguments
+        )
+
+        case estimate_gas_result do
+          {:ok, gas_limit} ->
+            {nil, gas_limit}
+          {:error, reason} ->
+            {error_reason_to_string(reason), 0}
+        end
+      else
+        {error, 0}
+      end
+
+      token = ContractState.get(:token)
+      coin = %Token{symbol: Explorer.coin(), decimals: Decimal.new(18)}
+
+      push(socket, "claim_reward_recalculations", %{
+        token_reward_sum: StakesHelpers.format_token_amount(amounts.token_reward_sum, token, digits: 5, ellipsize: false, symbol: false),
+        native_reward_sum: StakesHelpers.format_token_amount(amounts.native_reward_sum, coin, digits: 5, ellipsize: false, symbol: false),
+        gas_limit: gas_limit,
+        error: error
+      })
+    after
+      :ets.delete(ContractState, claim_reward_long_op_key(staker))
+    end
+  end
+
+  defp claim_reward_long_op_active(socket) do
+    if socket.assigns[@claim_reward_long_op] do
+      true
+    else
+      staker = socket.assigns[:account]
+      with [{_, true}] <- :ets.lookup(ContractState, claim_reward_long_op_key(staker)) do
+        true
+      end
     end
   end
 
@@ -536,9 +615,9 @@ defmodule BlockScoutWeb.StakesChannel do
     end
   end
 
-  defp searching_claim_reward_pools_key(staker) do
+  defp claim_reward_long_op_key(staker) do
     staker = if staker == nil, do: "", else: staker
-    Atom.to_string(@searching_claim_reward_pools) <> "_" <> staker
+    Atom.to_string(@claim_reward_long_op) <> "_" <> staker
   end
 
   defp truncate_address("0x000000000000000000000000" <> truncated_address) do

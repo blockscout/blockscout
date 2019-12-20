@@ -21,6 +21,10 @@ $(document.body).on('hide.bs.modal', e => {
   $currentModal = null
 })
 
+export function isModalLocked() {
+  return modalLocked
+}
+
 export function openModal ($modal) {
   // Hide all tooltips before showing a modal,
   // since they are sticking on top of modal
@@ -48,7 +52,15 @@ export function lockModal ($modal, $submitButton = null) {
   $button
     .attr('data-text', $button.text())
     .attr('disabled', true)
-    .html(spinner)
+
+  const $span = $('span', $button)
+
+  if ($span.length) {
+    $('svg', $button).hide()
+    $span.html(spinner)
+  } else {
+    $button.html(spinner)
+  }
 
   modalLocked = true
 }
@@ -57,10 +69,17 @@ export function unlockModal ($modal, $submitButton = null) {
   $modal.find('.close-modal').attr('disabled', false)
 
   const $button = $submitButton || $modal.find('.btn-add-full')
+  const buttonText = $button.attr('data-text');
 
-  $button
-    .text($button.attr('data-text'))
-    .attr('disabled', false)
+  $button.attr('disabled', false)
+
+  const $span = $('span', $button)
+  if ($span.length) {
+    $('svg', $button).show()
+    $span.text(buttonText)
+  } else {
+    $button.text(buttonText)
+  }
 
   modalLocked = false
 }
