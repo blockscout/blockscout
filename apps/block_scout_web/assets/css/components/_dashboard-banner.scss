@@ -73,15 +73,6 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   }
 }
 
-.dashboard-banner-chart-loader {
-  position: absolute;
-  width: calc(100% - 100px);
-  top: 50%;
-  transform: translateY(-75%);
-  left: 50px;
-  right: 50px;
-}
-
 .dashboard-banner-chart-legend {
   display: grid;
   grid-template-columns: 1fr 1fr;

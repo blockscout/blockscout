@@ -169,10 +169,8 @@ class MarketHistoryChart {
 
 export function createMarketHistoryChart (el) {
   const dataPath = el.dataset.market_history_chart_path
-  const $chartLoading = $('[data-chart-loading-message]')
   const $chartError = $('[data-chart-error-message]')
   const chart = new MarketHistoryChart(el, 0, [])
-  $chartLoading.hide()
   $(el).show()
 
   $.getJSON(dataPath, { type: 'JSON' })
@@ -189,7 +187,6 @@ export function createMarketHistoryChart (el) {
 }
 
 $('[data-chart-error-message]').on('click', _event => {
-  $('[data-chart-loading-message]').show()
   $('[data-chart-error-message]').hide()
   createMarketHistoryChart($('[data-chart="marketHistoryChart"]')[0])
 })
