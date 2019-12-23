@@ -66,6 +66,10 @@ $modal-status-graph-question: #329ae9 !default;
   line-height: 1.5;
   margin: 0 0 25px;
   text-align: center;
+
+  &.m-b-0 {
+    margin-bottom: 0;
+  }
 }
 
 .modal-status-button-wrapper {
