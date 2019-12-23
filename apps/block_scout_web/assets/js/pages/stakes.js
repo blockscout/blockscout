@@ -13,20 +13,21 @@ import { openRemovePoolModal } from './stakes/remove_pool'
 import { openMakeStakeModal } from './stakes/make_stake'
 import { openMoveStakeModal } from './stakes/move_stake'
 import { openWithdrawStakeModal } from './stakes/withdraw_stake'
-import { openClaimRewardModal } from './stakes/claim_reward'
+import { openClaimRewardModal, connectionLost } from './stakes/claim_reward'
 import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
 import { checkForTokenDefinition } from './stakes/utils'
-import { openWarningModal } from '../lib/modals'
+import { openWarningModal, openErrorModal } from '../lib/modals'
 
 const stakesPageSelector = '[data-page="stakes"]'
 
 export const initialState = {
   account: null,
+  blockNumber: 0, // current block number
   blockRewardContract: null,
   channel: null,
-  lastBlockNumber: 0,
   lastEpochNumber: 0,
   network: null,
+  refreshBlockNumber: 0, // last refresh block number
   refreshInterval: null,
   stakingAllowed: false,
   stakingTokenDefined: false,
@@ -60,6 +61,11 @@ export function reducer (state = initialState, action) {
         })
       })
     }
+    case 'BLOCK_CREATED': {
+      return Object.assign({}, state, {
+        blockNumber: action.blockNumber
+      })
+    }
     case 'NETWORK_UPDATED': {
       return Object.assign({}, state, {
         network: action.network,
@@ -71,14 +77,18 @@ export function reducer (state = initialState, action) {
     case 'FILTERS_UPDATED': {
       return Object.assign({}, state, {
         additionalParams: Object.assign({}, state.additionalParams, {
-          filterBanned: action.filterBanned,
-          filterMy: action.filterMy
+          filterBanned: 'filterBanned' in action ? action.filterBanned : state.additionalParams.filterBanned,
+          filterMy: 'filterMy' in action ? action.filterMy : state.additionalParams.filterMy
         })
+      })
+    }
+    case 'PAGE_REFRESHED': {
+      return Object.assign({}, state, {
+        refreshBlockNumber: action.refreshBlockNumber
       })
     }
     case 'RECEIVED_UPDATE': {
       return Object.assign({}, state, {
-        lastBlockNumber: action.lastBlockNumber,
         lastEpochNumber: action.lastEpochNumber,
         stakingAllowed: action.stakingAllowed,
         stakingTokenDefined: action.stakingTokenDefined,
@@ -102,16 +112,26 @@ export function reducer (state = initialState, action) {
   }
 }
 
+function refreshPageWrapper(store) {
+  refreshPage(store)
+  store.dispatch({
+    type: 'PAGE_REFRESHED',
+    refreshBlockNumber: store.getState().blockNumber
+  })
+  $refreshInformer.hide()
+}
+
 function reloadPoolList(msg, store) {
   store.dispatch({
     type: 'RECEIVED_UPDATE',
-    lastBlockNumber: msg.block_number,
     lastEpochNumber: msg.epoch_number,
     stakingAllowed: msg.staking_allowed,
     stakingTokenDefined: msg.staking_token_defined,
     validatorSetApplyBlock: msg.validator_set_apply_block
   })
-  refreshPage(store)
+  if (!msg.dont_refresh_page) {
+    refreshPageWrapper(store)
+  }
 }
 
 const elements = {
@@ -130,14 +150,13 @@ const elements = {
 
 const $stakesPage = $(stakesPageSelector)
 const $stakesTop = $('[data-selector="stakes-top"]')
+const $refreshInformer = $('.refresh-informer', $stakesPage)
 if ($stakesPage.length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierPool')
   connectElements({ store, elements })
 
   const channel = subscribeChannel('stakes:staking_update')
   store.dispatch({ type: 'CHANNEL_CONNECTED', channel })
-
-  const $refreshInformer = $('.refresh-informer', $stakesPage)
 
   channel.on('staking_update', msg => {
     // hide tooltip on tooltip triggering element reloading
@@ -149,23 +168,27 @@ if ($stakesPage.length) {
 
     const state = store.getState()
 
-    if (!state.account) {
+    if (msg.account != state.account) {
       $stakesPage.find('[pool-filter-my]').prop('checked', false);
+      store.dispatch({ type: 'FILTERS_UPDATED', filterMy: false })
+      store.dispatch({ type: 'ACCOUNT_UPDATED', account: msg.account })
     }
-
-    let lastBlockNumber = state.lastBlockNumber
 
     if (
       msg.staking_allowed !== state.stakingAllowed ||
       msg.epoch_number > state.lastEpochNumber ||
       msg.validator_set_apply_block != state.validatorSetApplyBlock ||
-      (state.refreshInterval && msg.block_number >= state.lastBlockNumber + state.refreshInterval)
+      (state.refreshInterval && msg.block_number >= state.refreshBlockNumber + state.refreshInterval)
     ) {
+      if (state.blockNumber == 0) {
+        // don't refresh the page for the first load
+        // as it is already refreshed by `initialize` function
+        msg.dont_refresh_page = true
+      }
       reloadPoolList(msg, store)
-      lastBlockNumber = msg.block_number
     }
 
-    const refreshGap = msg.block_number - lastBlockNumber
+    const refreshGap = msg.block_number - store.getState().refreshBlockNumber
     $refreshInformer.find('span').html(refreshGap)
     if (refreshGap > 0) {
       $refreshInformer.show()
@@ -179,8 +202,11 @@ if ($stakesPage.length) {
       event.preventDefault()
       $refreshInformer.hide()
       $stakesPage.fadeTo(0, 0.5)
+      delete msg.dont_refresh_page // refresh anyway
       reloadPoolList(msg, store)
     })
+
+    store.dispatch({ type: 'BLOCK_CREATED', blockNumber: msg.block_number })
   })
 
   channel.on('contracts', msg => {
@@ -198,6 +224,8 @@ if ($stakesPage.length) {
       tokenSymbol: msg.token_symbol
     })
   })
+
+  channel.onError(connectionLost)
 
   $(document.body)
     .on('click', '.js-pool-info', event => {
@@ -231,9 +259,9 @@ if ($stakesPage.length) {
         openWithdrawStakeModal(event, store)
       }
     })
-    .on('click', '.js-claim-reward', () => {
+    .on('click', '.js-claim-reward', event => {
       if (checkForTokenDefinition(store)) {
-        openClaimRewardModal(store)
+        openClaimRewardModal(event, store)
       }
     })
     .on('click', '.js-claim-withdrawal', event => {
@@ -246,13 +274,14 @@ if ($stakesPage.length) {
     .on('change', '[pool-filter-banned]', () => updateFilters(store, 'banned'))
     .on('change', '[pool-filter-my]', () => updateFilters(store, 'my'))
 
-  initializeWeb3(store)
+  initialize(store)
 }
 
-function updateFilters (store, filterType) {
+function updateFilters(store, filterType) {
   const filterBanned = $stakesPage.find('[pool-filter-banned]');
   const filterMy = $stakesPage.find('[pool-filter-my]');
-  if (filterType == 'my' && !store.getState().account) {
+  const state = store.getState()
+  if (filterType == 'my' && !state.account) {
     filterMy.prop('checked', false);
     openWarningModal('Unauthorized', 'Please login with MetaMask')
     return
@@ -262,39 +291,66 @@ function updateFilters (store, filterType) {
     filterBanned: filterBanned.prop('checked'),
     filterMy: filterMy.prop('checked')
   })
-  refreshPage(store)
+  refreshPageWrapper(store)
 }
 
-function initializeWeb3 (store) {
+function initialize(store) {
   if (window.ethereum) {
     const web3 = new Web3(window.ethereum)
     store.dispatch({ type: 'WEB3_DETECTED', web3 })
 
-    setInterval(async function () {
+    let timeoutId
+
+    checkNetworkAndAccount()
+
+    async function checkNetworkAndAccount() {
       const networkId = await web3.eth.net.getId()
-      if (!store.getState().network || (networkId !== store.getState().network.id)) {
+      const state = store.getState()
+      let refresh = false
+
+      if (!state.network || (networkId !== state.network.id)) {
         setNetwork(networkId, store)
+        refresh = true
       }
 
       const accounts = await web3.eth.getAccounts()
       const account = accounts[0] ? accounts[0].toLowerCase() : null
 
-      if (account !== store.getState().account) {
+      if (account !== state.account) {
         setAccount(account, store)
+      } else if (refresh) {
+        refreshPageWrapper(store)
       }
-    }, 100)
+
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(checkNetworkAndAccount, 100)
+    }
 
     $stakesTop.on('click', '[data-selector="login-button"]', loginByMetamask)
+  } else {
+    refreshPageWrapper(store)
   }
 }
 
-function setAccount (account, store) {
+function setAccount(account, store) {
   store.dispatch({ type: 'ACCOUNT_UPDATED', account })
-  store.getState().channel.push('set_account', account)
-  refreshPage(store)
+
+  const errorMsg = 'Cannot properly set account due to connection loss. Please, reload the page.'
+  const $addressField = $('.stakes-top-stats-item-address .stakes-top-stats-value')
+  $addressField.html('Loading...')
+  store.getState().channel.push(
+    'set_account', account
+  ).receive('ok', () => {
+    $addressField.html(account)
+    refreshPageWrapper(store)
+  }).receive('error', () => {
+    openErrorModal('Change account', errorMsg, true)
+  }).receive('timeout', () => {
+    openErrorModal('Change account', errorMsg, true)
+  })
 }
 
-function setNetwork (networkId, store) {
+function setNetwork(networkId, store) {
   let network = {
     id: networkId,
     authorized: false
@@ -307,13 +363,11 @@ function setNetwork (networkId, store) {
   }
 
   store.dispatch({ type: 'NETWORK_UPDATED', network })
-  refreshPage(store)
 }
 
-async function loginByMetamask (event) {
+async function loginByMetamask() {
   event.stopPropagation()
   event.preventDefault()
-
   try {
     await window.ethereum.enable()
   } catch (e) {

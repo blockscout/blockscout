@@ -1,15 +1,20 @@
 import $ from 'jquery'
-import { isModalLocked, lockModal, openErrorModal, openModal, unlockModal } from '../../lib/modals'
+import { currentModal, isModalLocked, lockModal, openErrorModal, openModal, unlockModal } from '../../lib/modals'
 import { displayInputError, hideInputError } from '../../lib/validation'
 import { isSupportedNetwork } from './utils'
 
-export function openClaimRewardModal(store) {
+let status = 'modalClosed'
+
+export function openClaimRewardModal(event, store) {
   if (!isSupportedNetwork(store)) return
 
   const state = store.getState()
   const channel = state.channel
 
+  $(event.currentTarget).prop('disabled', true)
   channel.push('render_claim_reward', { preload: true }).receive('ok', msg => {
+    $(event.currentTarget).prop('disabled', false)
+
     const $modal = $(msg.html)
     const $closeButton = $modal.find('.close-modal')
     const $modalBody = $('.modal-body', $modal)
@@ -21,6 +26,7 @@ export function openClaimRewardModal(store) {
       poolsSearchingFinished()
     })
     $modal.on('shown.bs.modal', () => {
+      status = 'modalOpened'
       channel.push('render_claim_reward', {
       }).receive('error', (error) => {
         poolsSearchingFinished(error.reason)
@@ -29,12 +35,10 @@ export function openClaimRewardModal(store) {
       })
     })
     $modal.on('hidden.bs.modal', () => {
+      status = 'modalClosed'
       $modal.remove()
     })
     function poolsSearchingStarted() {
-      $closeButton.hide()
-      lockModal($modal)
-
       const $waitingMessageContainer = $modalBody.find('p')
       let dotCounter = 0
 
@@ -50,7 +54,7 @@ export function openClaimRewardModal(store) {
     }
     function poolsSearchingFinished(error) {
       channel.off('claim_reward_pools', ref)
-      $closeButton.show()
+      $closeButton.removeClass('hidden')
       unlockModal($modal)
       clearInterval(dotCounterInterval)
       if (error) {
@@ -60,12 +64,25 @@ export function openClaimRewardModal(store) {
       }
     }
 
-    openModal($modal);
+    openModal($modal, true);
   }).receive('error', (error) => {
+    $(event.currentTarget).prop('disabled', false)
     openErrorModal('Claim Reward', error.reason)
   }).receive('timeout', () => {
+    $(event.currentTarget).prop('disabled', false)
     openErrorModal('Claim Reward', 'Connection timeout')
   })
+}
+
+export function connectionLost() {
+  const errorMsg = 'Connection with server is lost. Please, reload the page.'
+  if (status == 'modalOpened') {
+    status = 'modalClosed'
+    openErrorModal('Claim Reward', errorMsg, true)
+  } else if (status == 'recalculation') {
+    const $recalculateButton = $('button.recalculate', currentModal())
+    displayInputError($recalculateButton, errorMsg)
+  }
 }
 
 function onPoolsFound($modal, $modalBody, channel) {
@@ -154,11 +171,13 @@ function onPoolsFound($modal, $modalBody, channel) {
       recalcFinished({error: 'Connection timeout'})
     })
     function recalcStarted() {
+      status = 'recalculation'
       hideInputError($recalculateButton)
       lockUI(true, $modal, $recalculateButton, $poolsDropdown, $epochChoiceRadio, $specifiedEpochsText);
     }
     function recalcFinished(result) {
       channel.off('claim_reward_recalculations', ref)
+      status = 'modalOpened'
       if (result.error) {
         displayInputError($recalculateButton, result.error)
       } else {
