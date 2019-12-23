@@ -1919,6 +1919,28 @@ msgid "Write Contract"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:254
+msgid "Pools searching is already in progress for this address"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:256
+#: lib/block_scout_web/channels/stakes_channel.ex:291
+msgid "Unknown staker address. Please, choose your account in MetaMask"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:595
+msgid "JSON RPC error"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:258
+#: lib/block_scout_web/channels/stakes_channel.ex:293
+msgid "Unknown address of Staking contract. Please, contact support"
+msgstr ""
+
+#, elixir-format
 #:
 #: lib/block_scout_web/templates/smart_contract/_pending_contract_write.html.eex:12
 msgid "Waiting for transaction's confirmation..."
@@ -1984,4 +2006,19 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/bridged_tokens/index.html.eex:4
 msgid "Bridged Tokens"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:287
+msgid "Staking epochs are not specified or not in the allowed range"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:289
+msgid "Unknown pool staking address. Please, contact support"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:285
+msgid "Reward calculating is already in progress for this address"
 msgstr ""
