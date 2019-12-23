@@ -21,26 +21,44 @@ $(document.body).on('hide.bs.modal', e => {
   $currentModal = null
 })
 
+export function currentModal() {
+  return $currentModal
+}
+
 export function isModalLocked() {
   return modalLocked
 }
 
-export function openModal ($modal) {
+export function openModal($modal, unclosable) {
   // Hide all tooltips before showing a modal,
   // since they are sticking on top of modal
   $('.tooltip').tooltip('hide')
+
+  if (unclosable) {
+    $('.close-modal, .modal-status-button-wrapper', $modal).addClass('hidden')
+    $('.modal-status-text', $modal).addClass('m-b-0')
+  }
+
   if ($currentModal) {
-    modalLocked = false
+    if (!unclosable) {
+      modalLocked = false
+    }
 
     $currentModal
       .one('hidden.bs.modal', () => {
         $modal.modal('show')
         $currentModal = $modal
+        if (unclosable) {
+          modalLocked = true
+        }
       })
       .modal('hide')
   } else {
     $modal.modal('show')
     $currentModal = $modal
+    if (unclosable) {
+      modalLocked = true
+    }
   }
 }
 
@@ -84,11 +102,11 @@ export function unlockModal ($modal, $submitButton = null) {
   modalLocked = false
 }
 
-export function openErrorModal (title, text) {
+export function openErrorModal (title, text, unclosable) {
   const $modal = $('#errorStatusModal')
   $modal.find('.modal-status-title').text(title)
   $modal.find('.modal-status-text').html(text)
-  openModal($modal)
+  openModal($modal, unclosable)
 }
 
 export function openWarningModal (title, text) {

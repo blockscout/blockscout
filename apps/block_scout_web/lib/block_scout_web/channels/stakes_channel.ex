@@ -39,6 +39,7 @@ defmodule BlockScoutWeb.StakesChannel do
       "staking_update",
       %{
         block_number: BlockNumber.get_max(),
+        dont_refresh_page: true,
         epoch_number: ContractState.get(:epoch_number, 0),
         staking_allowed: ContractState.get(:staking_allowed, false),
         staking_token_defined: ContractState.get(:token, nil) != nil,
@@ -46,6 +47,8 @@ defmodule BlockScoutWeb.StakesChannel do
       },
       socket
     )
+
+    {:reply, :ok, socket}
   end
 
   def handle_in("render_validator_info", %{"address" => staking_address}, socket) do
@@ -332,8 +335,15 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_out("staking_update", data, socket) do
+    dont_refresh_page = case Map.fetch(data, :dont_refresh_page) do
+      {:ok, value} -> value
+      _ -> false
+    end
+
     push(socket, "staking_update", %{
+      account: socket.assigns[:account],
       block_number: data.block_number,
+      dont_refresh_page: dont_refresh_page,
       epoch_number: data.epoch_number,
       staking_allowed: data.staking_allowed,
       staking_token_defined: data.staking_token_defined,

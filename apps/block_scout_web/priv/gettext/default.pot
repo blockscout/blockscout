@@ -1890,6 +1890,7 @@ msgid " Token Minting"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:10
 #: lib/block_scout_web/templates/transaction_token_transfer/_token_transfer.html.eex:8
 #: lib/block_scout_web/views/transaction_view.ex:331
@@ -1910,6 +1911,27 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:77
 #: lib/block_scout_web/views/address_view.ex:350
 msgid "Read Proxy"
+=======
+#: lib/block_scout_web/channels/stakes_channel.ex:254
+msgid "Pools searching is already in progress for this address"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:256
+#: lib/block_scout_web/channels/stakes_channel.ex:291
+msgid "Unknown staker address. Please, choose your account in MetaMask"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:595
+msgid "JSON RPC error"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:258
+#: lib/block_scout_web/channels/stakes_channel.ex:293
+msgid "Unknown address of Staking contract. Please, contact support"
+>>>>>>> Handle disconnections on client side and remove excess requests
 msgstr ""
 
 #, elixir-format
@@ -1984,4 +2006,19 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/bridged_tokens/index.html.eex:4
 msgid "Bridged Tokens"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:287
+msgid "Staking epochs are not specified or not in the allowed range"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:289
+msgid "Unknown pool staking address. Please, contact support"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/channels/stakes_channel.ex:285
+msgid "Reward calculating is already in progress for this address"
 msgstr ""
