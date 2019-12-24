@@ -474,6 +474,24 @@
     "constant": false,
     "inputs": [
       {
+        "name": "_stakingEpochs",
+        "type": "uint256[]"
+      },
+      {
+        "name": "_poolStakingAddress",
+        "type": "address"
+      }
+    ],
+    "name": "claimReward",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
         "name": "_unremovableStakingAddress",
         "type": "address"
       }

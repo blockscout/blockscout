@@ -16,7 +16,7 @@ import { openWithdrawStakeModal } from './stakes/withdraw_stake'
 import { openClaimRewardModal, connectionLost } from './stakes/claim_reward'
 import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
 import { checkForTokenDefinition } from './stakes/utils'
-import { openWarningModal, openErrorModal } from '../lib/modals'
+import { currentModal, openWarningModal, openErrorModal } from '../lib/modals'
 
 const stakesPageSelector = '[data-page="stakes"]'
 
@@ -354,6 +354,10 @@ function setAccount(account, store) {
   ).receive('ok', () => {
     $addressField.html(account)
     refreshPageWrapper(store)
+    const $modal = currentModal()
+    if ($modal) {
+      $modal.modal('hide')
+    }
   }).receive('error', () => {
     openErrorModal('Change account', errorMsg, true)
   }).receive('timeout', () => {
