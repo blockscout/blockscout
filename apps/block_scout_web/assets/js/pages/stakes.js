@@ -22,12 +22,12 @@ const stakesPageSelector = '[data-page="stakes"]'
 
 export const initialState = {
   account: null,
-  blockNumber: 0, // current block number
   blockRewardContract: null,
   channel: null,
+  currentBlockNumber: 0, // current block number
   lastEpochNumber: 0,
   network: null,
-  refreshBlockNumber: 0, // last refresh block number
+  refreshBlockNumber: 0, // last page refresh block number
   refreshInterval: null,
   stakingAllowed: false,
   stakingTokenDefined: false,
@@ -63,7 +63,7 @@ export function reducer (state = initialState, action) {
     }
     case 'BLOCK_CREATED': {
       return Object.assign({}, state, {
-        blockNumber: action.blockNumber
+        currentBlockNumber: action.currentBlockNumber
       })
     }
     case 'NETWORK_UPDATED': {
@@ -112,28 +112,6 @@ export function reducer (state = initialState, action) {
   }
 }
 
-function refreshPageWrapper(store) {
-  refreshPage(store)
-  store.dispatch({
-    type: 'PAGE_REFRESHED',
-    refreshBlockNumber: store.getState().blockNumber
-  })
-  $refreshInformer.hide()
-}
-
-function reloadPoolList(msg, store) {
-  store.dispatch({
-    type: 'RECEIVED_UPDATE',
-    lastEpochNumber: msg.epoch_number,
-    stakingAllowed: msg.staking_allowed,
-    stakingTokenDefined: msg.staking_token_defined,
-    validatorSetApplyBlock: msg.validator_set_apply_block
-  })
-  if (!msg.dont_refresh_page) {
-    refreshPageWrapper(store)
-  }
-}
-
 const elements = {
   '[data-page="stakes"]': {
     load ($el) {
@@ -159,6 +137,12 @@ if ($stakesPage.length) {
   store.dispatch({ type: 'CHANNEL_CONNECTED', channel })
 
   channel.on('staking_update', msg => {
+    const state = store.getState()
+    const firstMsg = (state.currentBlockNumber == 0)
+    const accountChanged = (msg.account != state.account)
+
+    store.dispatch({ type: 'BLOCK_CREATED', currentBlockNumber: msg.block_number })
+
     // hide tooltip on tooltip triggering element reloading
     // due to issues with bootstrap tooltips https://github.com/twbs/bootstrap/issues/13133
     const stakesTopTooltipID = $('[aria-describedby]', $stakesTop).attr('aria-describedby')
@@ -166,12 +150,9 @@ if ($stakesPage.length) {
 
     $stakesTop.html(msg.top_html)
 
-    const state = store.getState()
-
-    if (msg.account != state.account) {
-      $stakesPage.find('[pool-filter-my]').prop('checked', false);
-      store.dispatch({ type: 'FILTERS_UPDATED', filterMy: false })
+    if (accountChanged) {
       store.dispatch({ type: 'ACCOUNT_UPDATED', account: msg.account })
+      resetFilterMy(store)
     }
 
     if (
@@ -180,17 +161,20 @@ if ($stakesPage.length) {
       msg.validator_set_apply_block != state.validatorSetApplyBlock ||
       (state.refreshInterval && msg.block_number >= state.refreshBlockNumber + state.refreshInterval)
     ) {
-      if (state.blockNumber == 0) {
-        // don't refresh the page for the first load
-        // as it is already refreshed by `initialize` function
+      if (firstMsg || accountChanged) {
+        // Don't refresh the page for the first load
+        // as it is already refreshed by `initialize` function.
+        // Also, don't refresh that after reconnect
+        // as it is already refreshed by `setAccount` function.
         msg.dont_refresh_page = true
       }
       reloadPoolList(msg, store)
     }
 
-    const refreshGap = msg.block_number - store.getState().refreshBlockNumber
+    const refreshBlockNumber = store.getState().refreshBlockNumber
+    const refreshGap = msg.block_number - refreshBlockNumber
     $refreshInformer.find('span').html(refreshGap)
-    if (refreshGap > 0) {
+    if (refreshGap > 0 && refreshBlockNumber > 0) {
       $refreshInformer.show()
     } else {
       $refreshInformer.hide()
@@ -205,8 +189,6 @@ if ($stakesPage.length) {
       delete msg.dont_refresh_page // refresh anyway
       reloadPoolList(msg, store)
     })
-
-    store.dispatch({ type: 'BLOCK_CREATED', blockNumber: msg.block_number })
   })
 
   channel.on('contracts', msg => {
@@ -277,23 +259,6 @@ if ($stakesPage.length) {
   initialize(store)
 }
 
-function updateFilters(store, filterType) {
-  const filterBanned = $stakesPage.find('[pool-filter-banned]');
-  const filterMy = $stakesPage.find('[pool-filter-my]');
-  const state = store.getState()
-  if (filterType == 'my' && !state.account) {
-    filterMy.prop('checked', false);
-    openWarningModal('Unauthorized', 'Please login with MetaMask')
-    return
-  }
-  store.dispatch({
-    type: 'FILTERS_UPDATED',
-    filterBanned: filterBanned.prop('checked'),
-    filterMy: filterMy.prop('checked')
-  })
-  refreshPageWrapper(store)
-}
-
 function initialize(store) {
   if (window.ethereum) {
     const web3 = new Web3(window.ethereum)
@@ -332,8 +297,54 @@ function initialize(store) {
   }
 }
 
+async function loginByMetamask() {
+  event.stopPropagation()
+  event.preventDefault()
+  try {
+    await window.ethereum.enable()
+  } catch (e) {
+    console.log(e)
+    console.error('User denied account access')
+  }
+}
+
+function refreshPageWrapper(store) {
+  let currentBlockNumber = store.getState().currentBlockNumber
+  if (!currentBlockNumber) {
+    currentBlockNumber = $('[data-block-number]', $stakesTop).data('blockNumber')
+  }
+
+  refreshPage(store)
+  store.dispatch({
+    type: 'PAGE_REFRESHED',
+    refreshBlockNumber: currentBlockNumber
+  })
+  $refreshInformer.hide()
+}
+
+function reloadPoolList(msg, store) {
+  store.dispatch({
+    type: 'RECEIVED_UPDATE',
+    lastEpochNumber: msg.epoch_number,
+    stakingAllowed: msg.staking_allowed,
+    stakingTokenDefined: msg.staking_token_defined,
+    validatorSetApplyBlock: msg.validator_set_apply_block
+  })
+  if (!msg.dont_refresh_page) {
+    refreshPageWrapper(store)
+  }
+}
+
+function resetFilterMy(store) {
+  $stakesPage.find('[pool-filter-my]').prop('checked', false);
+  store.dispatch({ type: 'FILTERS_UPDATED', filterMy: false })
+}
+
 function setAccount(account, store) {
   store.dispatch({ type: 'ACCOUNT_UPDATED', account })
+  if (!account) {
+    resetFilterMy(store)
+  }
 
   const errorMsg = 'Cannot properly set account due to connection loss. Please, reload the page.'
   const $addressField = $('.stakes-top-stats-item-address .stakes-top-stats-value')
@@ -359,19 +370,25 @@ function setNetwork(networkId, store) {
   if (allowedNetworkIds.includes(networkId)) {
     network.authorized = true
   } else {
-    openWarningModal('Unauthorized', 'Connect to the xDai Chain for staking.<br /> <a href="https://docs.xdaichain.com" target="_blank">Instructions</a>')
+    openWarningModal('Unauthorized', 'Please, connect to the xDai Chain.<br /><a href="https://xdaichain.com" target="_blank">Instructions</a>')
   }
 
   store.dispatch({ type: 'NETWORK_UPDATED', network })
 }
 
-async function loginByMetamask() {
-  event.stopPropagation()
-  event.preventDefault()
-  try {
-    await window.ethereum.enable()
-  } catch (e) {
-    console.log(e)
-    console.error('User denied account access')
+function updateFilters(store, filterType) {
+  const filterBanned = $stakesPage.find('[pool-filter-banned]');
+  const filterMy = $stakesPage.find('[pool-filter-my]');
+  const state = store.getState()
+  if (filterType == 'my' && !state.account) {
+    filterMy.prop('checked', false);
+    openWarningModal('Unauthorized', 'Please login with MetaMask')
+    return
   }
+  store.dispatch({
+    type: 'FILTERS_UPDATED',
+    filterBanned: filterBanned.prop('checked'),
+    filterMy: filterMy.prop('checked')
+  })
+  refreshPageWrapper(store)
 }
