@@ -7,7 +7,7 @@ import map from 'lodash/map'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
+import { updateAllCalculatedUsdValues, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
@@ -258,10 +258,15 @@ if ($chainDetailsPage.length) {
   loadBlocks(store)
   bindBlockErrorMessage(store)
 
-  exchangeRateChannel.on('new_rate', (msg) => store.dispatch({
-    type: 'RECEIVED_NEW_EXCHANGE_RATE',
-    msg: humps.camelizeKeys(msg)
-  }))
+  const exchangeRateChannel = socket.channel('exchange_rate:new_rate')
+  exchangeRateChannel.join()
+  exchangeRateChannel.on('new_rate', (msg) => {
+    updateAllCalculatedUsdValues(humps.camelizeKeys(msg).exchangeRate.usdValue)
+    store.dispatch({
+      type: 'RECEIVED_NEW_EXCHANGE_RATE',
+      msg: humps.camelizeKeys(msg)
+    })
+  })
 
   const addressesChannel = socket.channel('addresses:new_address')
   addressesChannel.join()

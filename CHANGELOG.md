@@ -10,6 +10,8 @@
 - [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
 - [#2900](https://github.com/poanetwork/blockscout/pull/2900) - check fetched instance metadata in multiple places
 - [#2899](https://github.com/poanetwork/blockscout/pull/2899) - fix empty buffered task
+- [#2887](https://github.com/poanetwork/blockscout/pull/2887) - increase chart loading speed
+- [#2932](https://github.com/poanetwork/blockscout/pull/2932) - fix duplicate websocket connection
 
 ### Chore
 - [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
