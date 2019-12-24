@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.StakesChannel do
     socket =
       socket
       |> assign(:account, account)
-      |> push_staking_contract()
+      |> push_contracts()
 
     handle_out(
       "staking_update",
@@ -612,8 +612,8 @@ defmodule BlockScoutWeb.StakesChannel do
     {first, last, next_index}
   end
 
-  defp push_staking_contract(socket) do
-    if socket.assigns[:contract_sent] do
+  defp push_contracts(socket) do
+    if socket.assigns[:contracts_sent] do
       socket
     else
       token = ContractState.get(:token)
@@ -625,7 +625,7 @@ defmodule BlockScoutWeb.StakesChannel do
         token_symbol: token.symbol
       })
 
-      assign(socket, :contract_sent, true)
+      assign(socket, :contracts_sent, true)
     end
   end
 
