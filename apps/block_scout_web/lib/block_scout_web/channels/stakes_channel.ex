@@ -22,7 +22,11 @@ defmodule BlockScoutWeb.StakesChannel do
     {:ok, %{}, socket}
   end
 
-  def terminate(_, socket) do
+  # called when socket is closed on a client side
+  # or socket timeout is reached - see `timeout` option in
+  # https://hexdocs.pm/phoenix/Phoenix.Endpoint.html#socket/3-websocket-configuration
+  # apps/block_scout_web/lib/block_scout_web/endpoint.ex
+  def terminate(_reason, socket) do
     s = socket.assigns[@claim_reward_long_op]
     if s != nil do
       :ets.delete(ContractState, claim_reward_long_op_key(s.staker))
