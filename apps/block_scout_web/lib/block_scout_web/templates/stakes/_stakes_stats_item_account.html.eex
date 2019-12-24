@@ -3,7 +3,7 @@
 >
   <span class="stakes-top-stats-value">
     <%= if @account do %>
-      <div data-placement="top" data-toggle="tooltip" title=<%= @account.address %>>
+      <div data-placement="bottom" data-toggle="tooltip" title=<%= @account.address %>>
         <%= @account.address %>
       </div>
       <div class="copy-icon" data-clipboard-text="<%= @account.address %>">
@@ -16,15 +16,20 @@
     <% end %>
   </span>
   <span class="stakes-top-stats-label">
-    <span class="stakes-top-stats-label-item"><%= gettext "Balance" %>:
-      <%= format_token_amount(@account[:balance], @token) %>
+    <%
+      balance = format_token_amount(@account[:balance], @token)
+      stake_amount = format_token_amount(@account[:stake_amount], @token)
+      ordered_withdraw = format_token_amount(@account[:ordered_withdraw], @token)
+    %>
+    <span class="stakes-top-stats-label-item" data-placement="bottom" data-toggle="tooltip" title="<%= gettext "Balance" %>: <%= balance %>">
+      <%= gettext "Balance" %>: <%= balance %>
     </span>
-    <span class="stakes-top-stats-label-item"><%= gettext "Staked" %>:
-      <%= format_token_amount(@account[:stake_amount], @token) %>
+    <span class="stakes-top-stats-label-item" data-placement="bottom" data-toggle="tooltip" title="<%= gettext "Staked" %>: <%= stake_amount %>">
+      <%= gettext "Staked" %>: <%= stake_amount %>
     </span>
     <%= if @account[:ordered_withdraw] && @account[:ordered_withdraw] > 0 do %>
-      <span class="stakes-top-stats-label-item"><%= gettext "Ordered" %>:
-        <%= format_token_amount(@account[:ordered_withdraw], @token) %>
+      <span class="stakes-top-stats-label-item" data-placement="bottom" data-toggle="tooltip" title="<%= gettext "Ordered" %>: <%= ordered_withdraw %>">
+        <%= gettext "Ordered" %>: <%= ordered_withdraw %>
       </span>
     <% end %>
   </span>

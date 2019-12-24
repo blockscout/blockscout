@@ -1,6 +1,6 @@
 <div class="stakes-top">
   <div class="container">
-    <div class="stakes-top-stats">
+    <div class="stakes-top-stats" data-block-number="<%= @block_number %>">
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Epoch number"), value: @epoch_number %>
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Block number"), value: @block_number %>
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Next epoch in"), value: ngettext("%{blocks} block", "%{blocks} blocks", @epoch_end_in, blocks: @epoch_end_in) %>

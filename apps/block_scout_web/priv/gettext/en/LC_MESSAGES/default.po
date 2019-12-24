@@ -165,7 +165,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:3
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:19
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:24
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:25
 msgid "Balance"
 msgstr ""
 
@@ -2080,7 +2081,8 @@ msgid "Order Withdrawal"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:26
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:31
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:32
 msgid "Ordered"
 msgstr ""
 
@@ -2143,7 +2145,8 @@ msgid "Stake placed on a pool is <strong>pending</strong> for the current stakin
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:22
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:27
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:28
 msgid "Staked"
 msgstr ""
 
