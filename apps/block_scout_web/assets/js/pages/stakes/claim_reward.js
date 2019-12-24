@@ -1,14 +1,22 @@
 import $ from 'jquery'
-import { currentModal, isModalLocked, lockModal, openErrorModal, openModal, unlockModal } from '../../lib/modals'
+import { currentModal, isModalLocked, lockModal, openErrorModal, openModal, openWarningModal, unlockModal } from '../../lib/modals'
 import { displayInputError, hideInputError } from '../../lib/validation'
 import { isSupportedNetwork } from './utils'
 
 let status = 'modalClosed'
 
 export function openClaimRewardModal(event, store) {
-  if (!isSupportedNetwork(store)) return
-
   const state = store.getState()
+
+  if (!state.account) {
+    openWarningModal('Unauthorized', 'Please login with MetaMask')
+    return
+  }
+
+  if (!isSupportedNetwork(store)) {
+    return
+  }
+
   const channel = state.channel
 
   $(event.currentTarget).prop('disabled', true)

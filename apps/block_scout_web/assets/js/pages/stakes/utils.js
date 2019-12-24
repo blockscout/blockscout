@@ -92,9 +92,10 @@ export function checkForTokenDefinition(store) {
 }
 
 export function isSupportedNetwork(store) {
-  if (store.getState().network.authorized) {
+  const state = store.getState()
+  if (state.network && state.network.authorized) {
     return true
   }
-  openWarningModal('Unauthorized', 'Connect to the xDai Chain for staking.<br /> <a href="https://docs.xdaichain.com" target="_blank">Instructions</a>')
+  openWarningModal('Unauthorized', 'Please, connect to the xDai Chain.<br /><a href="https://xdaichain.com" target="_blank">Instructions</a>')
   return false
 }
