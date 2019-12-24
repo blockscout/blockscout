@@ -17,9 +17,9 @@
   </span>
   <span class="stakes-top-stats-label">
     <%
-      balance = format_token_amount(@account[:balance], @token)
-      stake_amount = format_token_amount(@account[:stake_amount], @token)
-      ordered_withdraw = format_token_amount(@account[:ordered_withdraw], @token)
+      balance = format_token_amount(@account[:balance], @token, digits: 5, ellipsize: false, symbol: true)
+      stake_amount = format_token_amount(@account[:stake_amount], @token, digits: 5, ellipsize: false, symbol: true)
+      ordered_withdraw = format_token_amount(@account[:ordered_withdraw], @token, digits: 5, ellipsize: false, symbol: true)
     %>
     <span class="stakes-top-stats-label-item" data-placement="bottom" data-toggle="tooltip" title="<%= gettext "Balance" %>: <%= balance %>">
       <%= gettext "Balance" %>: <%= balance %>
