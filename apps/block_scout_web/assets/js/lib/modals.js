@@ -40,9 +40,7 @@ export function openModal ($modal, unclosable) {
   }
 
   if ($currentModal) {
-    if (!unclosable) {
-      modalLocked = false
-    }
+    modalLocked = false
 
     $currentModal
       .one('hidden.bs.modal', () => {

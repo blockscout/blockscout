@@ -1,5 +1,13 @@
 import $ from 'jquery'
-import { currentModal, isModalLocked, lockModal, openErrorModal, openModal, openWarningModal, unlockModal } from '../../lib/modals'
+import {
+  currentModal,
+  lockModal,
+  openErrorModal,
+  openModal,
+  openSuccessModal,
+  openWarningModal,
+  unlockModal
+} from '../../lib/modals'
 import { displayInputError, hideInputError } from '../../lib/validation'
 import { isSupportedNetwork } from './utils'
 
@@ -68,7 +76,7 @@ export function openClaimRewardModal(event, store) {
       if (error) {
         openErrorModal('Claim Reward', error)
       } else {
-        onPoolsFound($modal, $modalBody, channel)
+        onPoolsFound($modal, $modalBody, channel, store)
       }
     }
 
@@ -93,22 +101,23 @@ export function connectionLost() {
   }
 }
 
-function onPoolsFound($modal, $modalBody, channel) {
+function onPoolsFound($modal, $modalBody, channel, store) {
   const $poolsDropdown = $('select', $modalBody)
   const $epochChoiceRadio = $('input[name="epoch_choice"]', $modalBody)
   const $specifiedEpochsText = $('input.specified-epochs', $modalBody)
   const $recalculateButton = $('button.recalculate', $modalBody)
+  const $submitButton = $('button.submit', $modalBody)
   let allowedEpochs = []
 
   $poolsDropdown.on('change', () => {
-    if (isModalLocked()) return false
+    if (status == 'recalculation' || status == 'claiming') return false
 
     const data = $('option:selected', this).data()
     const tokenRewardSum = data.tokenRewardSum ? data.tokenRewardSum : '0'
     const nativeRewardSum = data.nativeRewardSum ? data.nativeRewardSum : '0'
     const gasLimit = data.gasLimit ? data.gasLimit : '0'
     const $poolInfo = $('.selected-pool-info', $modalBody)
-    const epochs = data.epochs ? data.epochs : ''
+    const epochs = data.epochs ? data.epochs.toString() : ''
 
     allowedEpochs = expandEpochsToArray(epochs)
 
@@ -125,7 +134,7 @@ function onPoolsFound($modal, $modalBody, channel) {
   })
 
   $epochChoiceRadio.on('change', () => {
-    if (isModalLocked()) return false
+    if (status == 'recalculation' || status == 'claiming') return false
     if ($('#epoch-choice-all', $modalBody).is(':checked')) {
       $specifiedEpochsText.addClass('hidden')
       showButton('submit', $modalBody)
@@ -137,9 +146,9 @@ function onPoolsFound($modal, $modalBody, channel) {
   })
 
   $specifiedEpochsText.on('input', () => {
-    if (isModalLocked()) return false
+    if (status == 'recalculation' || status == 'claiming') return false
 
-    const filtered = filterSpecifiedEpochs($specifiedEpochsText.val())
+    const filtered = filterSpecifiedEpochs($specifiedEpochsText.val()).toString()
     $specifiedEpochsText.val(filtered)
 
     const pointedEpochs = expandEpochsToArray(filtered)
@@ -158,11 +167,11 @@ function onPoolsFound($modal, $modalBody, channel) {
   })
 
   $recalculateButton.on('click', (e) => {
-    if (isModalLocked()) return false
+    if (status == 'recalculation' || status == 'claiming') return false
     e.preventDefault()
     recalcStarted()
 
-    const specifiedEpochs = $specifiedEpochsText.val().replace(/[-|,]$/g, '').trim()
+    const specifiedEpochs = $specifiedEpochsText.val().toString().replace(/[-|,]$/g, '').trim()
     $specifiedEpochsText.val(specifiedEpochs)
 
     const epochs = expandEpochsToArray(specifiedEpochs).filter(item => allowedEpochs.indexOf(item) != -1)
@@ -194,6 +203,76 @@ function onPoolsFound($modal, $modalBody, channel) {
       lockUI(false, $modal, $recalculateButton, $poolsDropdown, $epochChoiceRadio, $specifiedEpochsText);
     }
   })
+
+  $submitButton.on('click', async (e) => {
+    if (status == 'recalculation' || status == 'claiming') return false
+    e.preventDefault()
+
+    const specifiedEpochs = $specifiedEpochsText.val().toString().replace(/[-|,]$/g, '').trim()
+    const epochs = expandEpochsToArray(specifiedEpochs).filter(item => allowedEpochs.indexOf(item) != -1)
+    const poolStakingAddress = $poolsDropdown.val()
+
+    claimStarted()
+
+    function claimStarted() {
+      status = 'claiming'
+      hideInputError($submitButton)
+      lockUI(true, $modal, $submitButton, $poolsDropdown, $epochChoiceRadio, $specifiedEpochsText);
+
+      const gasLimit = parseInt($('#tx-gas-limit', $modalBody).text().replace(/~/g, '').trim(), 10)
+      const state = store.getState()
+      const stakingContract = state.stakingContract
+      const from = state.account
+      const web3 = state.web3
+
+      if (gasLimit === NaN) {
+        claimFinished('Invalid gas limit. Please, contact support.')
+      } else if (!stakingContract) {
+        claimFinished('Staking contract is undefined. Please, contact support.')
+      } else if (!from) {
+        claimFinished('Your MetaMask account is undefined. Please, contact support.')
+      } else if (!web3) {
+        claimFinished('Web3 is undefined. Please, contact support.')
+      } else if (!poolStakingAddress) {
+        claimFinished('Pool staking address is undefined. Please, contact support.')
+      } else {
+        stakingContract.methods.claimReward(epochs, poolStakingAddress).send({
+          from,
+          gasPrice: 1000000000,
+          gas: Math.ceil(gasLimit * 1.2)
+        }, async function(error, txHash) {
+          if (error) {
+            claimFinished(error.message)
+          } else {
+            try {
+              let tx
+              do {
+                await sleep(5000)
+                tx = await web3.eth.getTransactionReceipt(txHash)
+              } while (tx === null)
+              if (tx.status === true || tx.status === '0x1') {
+                claimFinished()
+              } else {
+                claimFinished('Transaction reverted')
+              }
+            } catch (e) {
+              claimFinished(e.message)
+            }
+          }
+        })
+      }
+    }
+    function claimFinished(error) {
+      lockUI(false, $modal, $submitButton, $poolsDropdown, $epochChoiceRadio, $specifiedEpochsText);
+      if (error) {
+        status = 'modalOpened'
+        displayInputError($submitButton, error)
+      } else {
+        status = 'modalClosed'
+        openSuccessModal('Success', 'Transaction is confirmed.')
+      }
+    }
+  })
 }
 
 function lockUI(lock, $modal, $button, $poolsDropdown, $epochChoiceRadio, $specifiedEpochsText) {
@@ -205,6 +284,10 @@ function lockUI(lock, $modal, $button, $poolsDropdown, $epochChoiceRadio, $speci
   $poolsDropdown.prop('disabled', lock)
   $epochChoiceRadio.prop('disabled', lock)
   $specifiedEpochsText.prop('disabled', lock)
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 function showButton(type, $modalBody, calculations) {
@@ -236,7 +319,7 @@ function showButton(type, $modalBody, calculations) {
 }
 
 function expandEpochsToArray(epochs) {
-  let filtered = epochs.replace(/[-|,]$/g, '').trim()
+  let filtered = epochs.toString().replace(/[-|,]$/g, '').trim()
   if (filtered == '') return []
   let ranges = filtered.split(',')
   ranges = ranges.map((v) => {
@@ -264,7 +347,7 @@ function expandEpochsToArray(epochs) {
 }
 
 function filterSpecifiedEpochs(epochs) {
-  let filtered = epochs
+  let filtered = epochs.toString()
   filtered = filtered.replace(/[^0-9,-]+/g, '')
   filtered = filtered.replace(/-{2,}/g, '-')
   filtered = filtered.replace(/,{2,}/g, ',')
