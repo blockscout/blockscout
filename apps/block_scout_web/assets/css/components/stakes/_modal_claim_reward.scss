@@ -20,20 +20,17 @@
     &.m-b-0 {
       margin-bottom: 0;
     }
-
-    &.left {
-      width: 49%;
-      float: left;
-    }
-
-    &.right {
-      width: 49%;
-      float: right;
-    }
   }
 
   textarea {
     background: #fff!important;
     height: 38px;
+  }
+
+  .amounts {
+    display: grid;
+    grid-template-rows: 1fr;
+    grid-template-columns: 1fr 80px;
+    grid-gap: 2vw;
   }
 }

@@ -56,7 +56,7 @@ export function openModal($modal, unclosable) {
   }
 }
 
-export function lockModal ($modal, $submitButton = null) {
+export function lockModal($modal, $submitButton = null, spinnerText = '') {
   $modal.find('.close-modal').attr('disabled', true)
 
   const $button = $submitButton || $modal.find('.btn-add-full')
@@ -66,18 +66,19 @@ export function lockModal ($modal, $submitButton = null) {
     .attr('disabled', true)
 
   const $span = $('span', $button)
+  const waitHtml = spinner + (spinnerText ? ` ${spinnerText}` : '')
 
   if ($span.length) {
     $('svg', $button).hide()
-    $span.html(spinner)
+    $span.html(waitHtml)
   } else {
-    $button.html(spinner)
+    $button.html(waitHtml)
   }
 
   modalLocked = true
 }
 
-export function unlockModal ($modal, $submitButton = null) {
+export function unlockModal($modal, $submitButton = null) {
   $modal.find('.close-modal').attr('disabled', false)
 
   const $button = $submitButton || $modal.find('.btn-add-full')
@@ -96,28 +97,28 @@ export function unlockModal ($modal, $submitButton = null) {
   modalLocked = false
 }
 
-export function openErrorModal (title, text, unclosable) {
+export function openErrorModal(title, text, unclosable) {
   const $modal = $('#errorStatusModal')
   $modal.find('.modal-status-title').text(title)
   $modal.find('.modal-status-text').html(text)
   openModal($modal, unclosable)
 }
 
-export function openWarningModal (title, text) {
+export function openWarningModal(title, text) {
   const $modal = $('#warningStatusModal')
   $modal.find('.modal-status-title').text(title)
   $modal.find('.modal-status-text').html(text)
   openModal($modal)
 }
 
-export function openSuccessModal (title, text) {
+export function openSuccessModal(title, text) {
   const $modal = $('#successStatusModal')
   $modal.find('.modal-status-title').text(title)
   $modal.find('.modal-status-text').text(text)
   openModal($modal)
 }
 
-export function openQuestionModal (title, text, acceptCallback = null, exceptCallback = null, acceptText = 'Yes', exceptText = 'No') {
+export function openQuestionModal(title, text, acceptCallback = null, exceptCallback = null, acceptText = 'Yes', exceptText = 'No') {
   const $modal = $('#questionStatusModal')
 
   $modal.find('.modal-status-title').text(title)
