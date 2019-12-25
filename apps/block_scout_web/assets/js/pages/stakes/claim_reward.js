@@ -123,9 +123,9 @@ function onPoolsFound($modal, $modalBody, channel, store) {
 
     $poolsDropdown.blur()
     $('textarea', $poolInfo).val(epochs)
-    $('#token-reward-sum', $poolInfo).html(tokenRewardSum).data('default', tokenRewardSum)
-    $('#native-reward-sum', $poolInfo).html(nativeRewardSum).data('default', nativeRewardSum)
-    $('#tx-gas-limit', $poolInfo).html('~' + gasLimit).data('default', gasLimit)
+    $('#token-reward-sum', $poolInfo).text(tokenRewardSum).data('default', tokenRewardSum)
+    $('#native-reward-sum', $poolInfo).text(nativeRewardSum).data('default', nativeRewardSum)
+    $('#tx-gas-limit', $poolInfo).text('~' + gasLimit).data('default', gasLimit)
     $('#epoch-choice-all', $poolInfo).click()
     $specifiedEpochsText.val('')
     $poolInfo.removeClass('hidden')
@@ -217,7 +217,15 @@ function onPoolsFound($modal, $modalBody, channel, store) {
     function claimStarted() {
       status = 'claiming'
       hideInputError($submitButton)
-      lockUI(true, $modal, $submitButton, $poolsDropdown, $epochChoiceRadio, $specifiedEpochsText);
+      lockUI(
+        true,
+        $modal,
+        $submitButton,
+        $poolsDropdown,
+        $epochChoiceRadio,
+        $specifiedEpochsText,
+        'Please, sign transaction in MetaMask'
+      )
 
       const gasLimit = parseInt($('#tx-gas-limit', $modalBody).text().replace(/~/g, '').trim(), 10)
       const state = store.getState()
@@ -238,22 +246,31 @@ function onPoolsFound($modal, $modalBody, channel, store) {
       } else {
         stakingContract.methods.claimReward(epochs, poolStakingAddress).send({
           from,
-          gasPrice: 1000000000,
-          gas: Math.ceil(gasLimit * 1.2)
+          gasPrice: web3.utils.toWei('1', 'gwei'),
+          gas: Math.ceil(gasLimit * 1.2) // +20% reserve to ensure enough gas
         }, async function(error, txHash) {
           if (error) {
             claimFinished(error.message)
           } else {
             try {
               let tx
+              let currentBlockNumber
+              const maxWaitBlocks = 6
+              const startBlockNumber = (await web3.eth.getBlockNumber()) - 0
+              const finishBlockNumber = startBlockNumber + maxWaitBlocks
               do {
-                await sleep(5000)
+                await sleep(5) // seconds
                 tx = await web3.eth.getTransactionReceipt(txHash)
-              } while (tx === null)
-              if (tx.status === true || tx.status === '0x1') {
-                claimFinished()
+                currentBlockNumber = await web3.eth.getBlockNumber()
+              } while (tx === null && currentBlockNumber <= finishBlockNumber)
+              if (tx) {
+                if (tx.status === true || tx.status === '0x1') {
+                  claimFinished()
+                } else {
+                  claimFinished('Transaction reverted')
+                }
               } else {
-                claimFinished('Transaction reverted')
+                claimFinished(`Your transaction was not mined in ${maxWaitBlocks} blocks. Please, try again with the increased gas price or fixed nonce (use Reset Account feature of MetaMask).`)
               }
             } catch (e) {
               claimFinished(e.message)
@@ -275,9 +292,9 @@ function onPoolsFound($modal, $modalBody, channel, store) {
   })
 }
 
-function lockUI(lock, $modal, $button, $poolsDropdown, $epochChoiceRadio, $specifiedEpochsText) {
+function lockUI(lock, $modal, $button, $poolsDropdown, $epochChoiceRadio, $specifiedEpochsText, spinnerText) {
   if (lock) {
-    lockModal($modal, $button)
+    lockModal($modal, $button, spinnerText)
   } else {
     unlockModal($modal, $button)
   }
@@ -286,8 +303,8 @@ function lockUI(lock, $modal, $button, $poolsDropdown, $epochChoiceRadio, $speci
   $specifiedEpochsText.prop('disabled', lock)
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
+function sleep(seconds) {
+  return new Promise(resolve => setTimeout(resolve, seconds * 1000))
 }
 
 function showButton(type, $modalBody, calculations) {
@@ -325,8 +342,8 @@ function expandEpochsToArray(epochs) {
   ranges = ranges.map((v) => {
     if (v.indexOf('-') > -1) {
       v = v.split('-')
-      v[0] = parseInt(v[0])
-      v[1] = parseInt(v[1])
+      v[0] = parseInt(v[0], 10)
+      v[1] = parseInt(v[1], 10)
       v.sort((a, b) => a - b)
       const min = v[0]
       const max = v[1]
@@ -336,7 +353,7 @@ function expandEpochsToArray(epochs) {
       }
       return expanded
     } else {
-      return parseInt(v)
+      return parseInt(v, 10)
     }
   })
   ranges = ranges.reduce((acc, val) => acc.concat(val), []) // similar to ranges.flat()

@@ -202,7 +202,7 @@ if ($stakesPage.length) {
       type: 'RECEIVED_CONTRACTS',
       stakingContract,
       blockRewardContract,
-      tokenDecimals: parseInt(msg.token_decimals),
+      tokenDecimals: parseInt(msg.token_decimals, 10),
       tokenSymbol: msg.token_symbol
     })
   })
@@ -257,6 +257,11 @@ if ($stakesPage.length) {
     .on('change', '[pool-filter-my]', () => updateFilters(store, 'my'))
 
   initialize(store)
+}
+
+function hideCurrentModal() {
+  const $modal = currentModal()
+  if ($modal) $modal.modal('hide')
 }
 
 function initialize(store) {
@@ -354,10 +359,7 @@ function setAccount(account, store) {
   ).receive('ok', () => {
     $addressField.html(account)
     refreshPageWrapper(store)
-    const $modal = currentModal()
-    if ($modal) {
-      $modal.modal('hide')
-    }
+    hideCurrentModal()
   }).receive('error', () => {
     openErrorModal('Change account', errorMsg, true)
   }).receive('timeout', () => {
@@ -366,6 +368,8 @@ function setAccount(account, store) {
 }
 
 function setNetwork(networkId, store) {
+  hideCurrentModal()
+
   let network = {
     id: networkId,
     authorized: false
