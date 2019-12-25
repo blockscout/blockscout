@@ -527,8 +527,8 @@ defmodule BlockScoutWeb.StakesChannel do
       coin = %Token{symbol: Explorer.coin(), decimals: Decimal.new(18)}
 
       push(socket, "claim_reward_recalculations", %{
-        token_reward_sum: StakesHelpers.format_token_amount(amounts.token_reward_sum, token, digits: 5, ellipsize: false, symbol: false),
-        native_reward_sum: StakesHelpers.format_token_amount(amounts.native_reward_sum, coin, digits: 5, ellipsize: false, symbol: false),
+        token_reward_sum: StakesHelpers.format_token_amount(amounts.token_reward_sum, token, digits: token.decimals, ellipsize: false, symbol: false),
+        native_reward_sum: StakesHelpers.format_token_amount(amounts.native_reward_sum, coin, digits: coin.decimals, ellipsize: false, symbol: false),
         gas_limit: gas_limit,
         error: error
       })
