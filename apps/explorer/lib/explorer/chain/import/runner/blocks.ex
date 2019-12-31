@@ -119,7 +119,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     query =
       from(address_current_token_balance in Address.CurrentTokenBalance,
         where: address_current_token_balance.block_number in ^consensus_block_numbers,
-        select: address_current_token_balance.token_contract_address_hash
+        select: address_current_token_balance.token_contract_address_hash,
+        distinct: address_current_token_balance.token_contract_address_hash
       )
 
     contract_address_hashes = repo.all(query)
