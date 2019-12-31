@@ -3710,7 +3710,7 @@ defmodule Explorer.Chain do
   end
 
   #  @spec get_celo_validator_groups() :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
-  def get_celo_validator_groups() do
+  def get_celo_validator_groups do
     CeloValidatorGroup
     |> Repo.all()
     |> case do
