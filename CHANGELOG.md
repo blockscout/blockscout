@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2926](https://github.com/poanetwork/blockscout/pull/2926) - API endpoint: sum balances except burnt address
 - [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action
 
 ### Fixes
