@@ -116,7 +116,6 @@ defmodule BlockScoutWeb.Schema.Types do
     connection field(:affiliates, node_type: :celo_validator) do
       resolve(&CeloValidator.get_by/3)
     end
-
   end
 
   @desc """

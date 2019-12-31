@@ -36,5 +36,4 @@ defmodule BlockScoutWeb.Resolvers.Address do
     |> GraphQL.address_query()
     |> Connection.from_query(&Repo.all/1, args, [])
   end
-
 end
