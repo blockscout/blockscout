@@ -116,11 +116,23 @@ defmodule Explorer.Chain.Block do
   end
 
   def blocks_without_reward_query do
+    consensus_blocks_query =
+      from(
+        b in __MODULE__,
+        where: b.consensus == true
+      )
+
+    validator_rewards =
+      from(
+        r in Reward,
+        where: r.address_type == ^"validator"
+      )
+
     from(
-      b in __MODULE__,
-      left_join: r in Reward,
+      b in subquery(consensus_blocks_query),
+      left_join: r in subquery(validator_rewards),
       on: [block_hash: b.hash],
-      where: is_nil(r.block_hash) and b.consensus == true
+      where: is_nil(r.block_hash)
     )
   end
 

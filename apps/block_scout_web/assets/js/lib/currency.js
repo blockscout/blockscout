@@ -1,8 +1,6 @@
 import $ from 'jquery'
-import humps from 'humps'
 import numeral from 'numeral'
 import { BigNumber } from 'bignumber.js'
-import socket from '../socket'
 
 export function formatUsdValue (value) {
   return `${formatCurrencyValue(value)} USD`
@@ -63,7 +61,3 @@ export function updateAllCalculatedUsdValues (usdExchangeRate) {
   $('[data-usd-unit-price]').each((i, el) => tryUpdateUnitPriceValues(el, usdExchangeRate))
 }
 updateAllCalculatedUsdValues()
-
-export const exchangeRateChannel = socket.channel('exchange_rate:new_rate')
-exchangeRateChannel.join()
-exchangeRateChannel.on('new_rate', (msg) => updateAllCalculatedUsdValues(humps.camelizeKeys(msg).exchangeRate.usdValue))
