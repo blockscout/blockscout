@@ -11,6 +11,8 @@ defmodule BlockScoutWeb.Schema do
     Address,
     Block,
     CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup,
     Competitor,
     InternalTransaction,
     TokenTransfer,
@@ -77,6 +79,18 @@ defmodule BlockScoutWeb.Schema do
     field :celo_account, :celo_account do
       arg(:hash, non_null(:address_hash))
       resolve(&CeloAccount.get_by/3)
+    end
+
+    @desc "Gets a validator by address hash."
+    field :celo_validator, :celo_validator do
+      arg(:hash, non_null(:address_hash))
+      resolve(&CeloValidator.get_by/3)
+    end
+
+    @desc "Gets a validator group by address hash."
+    field :celo_validator_group, :celo_validator_group do
+      arg(:hash, non_null(:address_hash))
+      resolve(&CeloValidatorGroup.get_by/3)
     end
 
     @desc "Gets addresses by address hash."

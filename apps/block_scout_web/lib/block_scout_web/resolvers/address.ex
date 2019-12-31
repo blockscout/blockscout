@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Resolvers.Address do
 
   alias Absinthe.Relay.Connection
   alias Explorer.{Chain, GraphQL, Repo}
-  alias Explorer.Chain.CeloAccount
+  alias Explorer.Chain.{CeloAccount, CeloValidator, CeloValidatorGroup}
 
   def get_by(_, %{hashes: hashes}, _) do
     case Chain.hashes_to_addresses(hashes) do
@@ -24,4 +24,17 @@ defmodule BlockScoutWeb.Resolvers.Address do
     |> GraphQL.address_query()
     |> Connection.from_query(&Repo.all/1, args, [])
   end
+
+  def get_by(%CeloValidator{address: hash}, args, _) do
+    hash
+    |> GraphQL.address_query()
+    |> Connection.from_query(&Repo.all/1, args, [])
+  end
+
+  def get_by(%CeloValidatorGroup{address: hash}, args, _) do
+    hash
+    |> GraphQL.address_query()
+    |> Connection.from_query(&Repo.all/1, args, [])
+  end
+
 end
