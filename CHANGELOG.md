@@ -2,13 +2,13 @@
 
 ### Features
 - [#2835](https://github.com/poanetwork/blockscout/pull/2835), [#2871](https://github.com/poanetwork/blockscout/pull/2871), [#2872](https://github.com/poanetwork/blockscout/pull/2872), [#2886](https://github.com/poanetwork/blockscout/pull/2886), [#2925](https://github.com/poanetwork/blockscout/pull/2925) - Add "block_hash" to logs, token_transfers and internal transactions and "pending blocks operations" approach
+- [#2926](https://github.com/poanetwork/blockscout/pull/2926) - API endpoint: sum balances except burnt address
+- [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action explicitly
 
 ### Fixes
 - [#2932](https://github.com/poanetwork/blockscout/pull/2932) - fix duplicate websocket connection
 - [#2928](https://github.com/poanetwork/blockscout/pull/2928) - Speedup pending block ops int txs to fetch query
-- [#2926](https://github.com/poanetwork/blockscout/pull/2926) - API endpoint: sum balances except burnt address
 - [#2924](https://github.com/poanetwork/blockscout/pull/2924) - Speedup address to logs query
-- [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action
 - [#2915](https://github.com/poanetwork/blockscout/pull/2915) - Speedup of blocks_without_reward_query
 - [#2914](https://github.com/poanetwork/blockscout/pull/2914) - Reduce execution time of stream_unfetched_token_instances query
 - [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
