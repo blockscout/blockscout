@@ -3709,6 +3709,16 @@ defmodule Explorer.Chain do
     end
   end
 
+  #  @spec get_celo_validator_groups() :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
+  def get_celo_validator_groups() do
+    CeloValidatorGroup
+    |> Repo.all()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
   def get_exchange_rate(symbol) do
     query =
       from(token in Token,

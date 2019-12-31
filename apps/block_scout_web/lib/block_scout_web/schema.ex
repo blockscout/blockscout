@@ -93,6 +93,11 @@ defmodule BlockScoutWeb.Schema do
       resolve(&CeloValidatorGroup.get_by/3)
     end
 
+    @desc "Gets all validator groups."
+    field :celo_validator_groups, list_of(:celo_validator_group) do
+      resolve(&CeloValidatorGroup.get_by/3)
+    end
+
     @desc "Gets addresses by address hash."
     field :addresses, list_of(:address) do
       arg(:hashes, non_null(list_of(non_null(:address_hash))))
