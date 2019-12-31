@@ -79,7 +79,7 @@ defmodule Explorer.Etherscan.Logs do
     logs_query = where_topic_match(Log, prepared_filter)
 
     internal_transaction_log_query =
-      from(internal_transaction in InternalTransaction,
+      from(internal_transaction in InternalTransaction.where_nonpending_block(),
         join: transaction in assoc(internal_transaction, :transaction),
         join: log in ^logs_query,
         on: log.transaction_hash == internal_transaction.transaction_hash,
