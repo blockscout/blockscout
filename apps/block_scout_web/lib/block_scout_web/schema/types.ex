@@ -17,6 +17,8 @@ defmodule BlockScoutWeb.Schema.Types do
   import_types(BlockScoutWeb.Schema.Scalars)
 
   connection(node_type: :celo_account)
+  connection(node_type: :celo_validator)
+  connection(node_type: :celo_validator_group)
   connection(node_type: :competitor)
   connection(node_type: :address)
   connection(node_type: :transaction)
@@ -66,6 +68,32 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:attestations_fulfilled, :integer)
     field(:name, :string)
     field(:url, :string)
+
+    connection field(:address_info, node_type: :address) do
+      resolve(&Address.get_by/3)
+    end
+  end
+
+  @desc """
+  Celo validator information
+  """
+  object :celo_validator do
+    field(:address, :address_hash)
+    field(:group_address_hash, :address_hash)
+    field(:signer_address_hash, :address_hash)
+    field(:member, :integer)
+
+    connection field(:address_info, node_type: :address) do
+      resolve(&Address.get_by/3)
+    end
+  end
+
+  @desc """
+  Celo validator group information
+  """
+  object :celo_validator_group do
+    field(:address, :address_hash)
+    field(:commission, :wei)
 
     connection field(:address_info, node_type: :address) do
       resolve(&Address.get_by/3)
