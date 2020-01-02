@@ -9,7 +9,7 @@ export default () => {
         { title: 'Average block time', value: '5 seconds' },
         { title: 'Total transactions', value: '8,704,244' },
         { title: 'Total blocks', value: '12,343,450' },
-        { title: 'Wallett addresses', value: '96,817' },
+        { title: 'Wallet addresses', value: '96,817' },
       ].map(item =>
         <Item key={item.title}>
           <ItemTitle>{item.title}</ItemTitle>
