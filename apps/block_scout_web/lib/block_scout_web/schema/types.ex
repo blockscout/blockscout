@@ -92,9 +92,14 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:group_address_hash, :address_hash)
     field(:signer_address_hash, :address_hash)
     field(:member, :integer)
+    field(:score, :wei)
 
     connection field(:address_info, node_type: :address) do
       resolve(&Address.get_by/3)
+    end
+
+    connection field(:account, node_type: :celo_account) do
+      resolve(&CeloAccount.get_by/3)
     end
 
     connection field(:group_info, node_type: :celo_validator_group) do
@@ -111,6 +116,10 @@ defmodule BlockScoutWeb.Schema.Types do
 
     connection field(:address_info, node_type: :address) do
       resolve(&Address.get_by/3)
+    end
+
+    connection field(:account, node_type: :celo_account) do
+      resolve(&CeloAccount.get_by/3)
     end
 
     connection field(:affiliates, node_type: :celo_validator) do
