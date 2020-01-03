@@ -66,7 +66,7 @@ defmodule Explorer.Celo.AccountReader do
     data = fetch_validator_group_data(address)
 
     case data["getValidatorGroup"] do
-      {:ok, [_members, commission, _size_history, _, _]} ->
+      {:ok, [_ | [commission | _]]} ->
         {:ok,
          %{
            address: address,
@@ -143,7 +143,7 @@ defmodule Explorer.Celo.AccountReader do
       ])
 
     case data["getValidatorGroup"] do
-      {:ok, [members, _, _, _, _]} ->
+      {:ok, [members | _]} ->
         idx =
           members
           |> Enum.zip(1..1000)
