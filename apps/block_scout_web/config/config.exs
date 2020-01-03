@@ -63,13 +63,21 @@ config :ex_cldr,
   default_locale: "en",
   default_backend: BlockScoutWeb.Cldr
 
-config :logger, :block_scout_web,
-  # keep synced with `config/config.exs`
-  format: "$dateT$time $metadata[$level] $message\n",
+config :logger_json, :block_scout_web,
   metadata:
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :block_scout_web]
+
+config :logger, :block_scout_web, backends: [LoggerJSON]
+
+# config :logger, :block_scout_web,
+#  # keep synced with `config/config.exs`
+#  format: "$dateT$time $metadata[$level] $message\n",
+#  metadata:
+#    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+#       block_number step count error_count shrunk import_id transaction_id)a,
+#  metadata_filter: [application: :block_scout_web]
 
 config :prometheus, BlockScoutWeb.Prometheus.Instrumenter,
   # override default for Phoenix 1.4 compatibility

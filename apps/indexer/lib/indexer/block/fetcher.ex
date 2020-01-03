@@ -10,11 +10,13 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
-  alias Explorer.Chain
+  alias Explorer.{Chain, Market}
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
+
+  alias Explorer.Celo.AccountReader
 
   alias Indexer.Fetcher.{
     BlockReward,
@@ -26,7 +28,6 @@ defmodule Indexer.Block.Fetcher do
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
-    StakingPools,
     Token,
     TokenBalance,
     TokenInstance,
@@ -118,10 +119,24 @@ defmodule Indexer.Block.Fetcher do
         tx_hash == block_hash
       end)
       |> Enum.map(fn log ->
-        Map.put(log, :transaction_hash, "0x0000000000000000000000000000000000000000000000000000000000000000")
+        Map.put(log, :transaction_hash, nil)
       end)
 
     e_logs
+  end
+
+  defp add_gold_token_balances(gold_token, addresses, acc) do
+    Enum.reduce(addresses, acc, fn
+      %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
+        MapSet.put(acc, %{address_hash: hash, token_contract_address_hash: gold_token, block_number: bn})
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  defp config(key) do
+    Application.get_env(:indexer, __MODULE__, [])[key]
   end
 
   @decorate span(tracer: Tracer)
@@ -136,7 +151,7 @@ defmodule Indexer.Block.Fetcher do
           callback_module: callback_module,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state,
-        _.._ = range
+        _..last_block = range
       )
       when callback_module != nil do
     with {:blocks,
@@ -154,6 +169,22 @@ defmodule Indexer.Block.Fetcher do
          logs = tx_logs ++ process_extra_logs(extra_logs),
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
+         gold_token_enabled = config(:enable_gold_token),
+         {:read_token_address, {:ok, gold_token}} <-
+           {:read_token_address,
+            if gold_token_enabled do
+              AccountReader.get_address("GoldToken")
+            else
+              {:ok, nil}
+            end},
+         {:read_stable_token_address, {:ok, stable_token}} <-
+           {:read_stable_token_address,
+            if gold_token_enabled do
+              AccountReader.get_address("StableToken")
+            else
+              {:ok, nil}
+            end},
+         # TODO: handle non-gold transaction fees
          # %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
          # TokenTransfers.parse_fees(transactions_with_receipts),
          fee_tokens = [],
@@ -162,13 +193,37 @@ defmodule Indexer.Block.Fetcher do
            accounts: celo_accounts,
            validators: celo_validators,
            validator_groups: celo_validator_groups,
+           signers: signers,
            attestations_fulfilled: attestations_fulfilled,
-           attestations_requested: attestations_requested
+           attestations_requested: attestations_requested,
+           exchange_rates: exchange_rates,
+           account_names: account_names
          } = CeloAccounts.parse(logs),
+         market_history =
+           exchange_rates
+           |> Enum.filter(fn el -> "0x" <> Base.encode16(el.token, case: :lower) == stable_token end)
+           |> Enum.map(fn %{rate: rate, stamp: time} ->
+             inv_rate = Decimal.from_float(1 / rate)
+             date = DateTime.to_date(DateTime.from_unix!(time))
+             %{opening_price: inv_rate, closing_price: inv_rate, date: date}
+           end),
+         exchange_rates =
+           (if Enum.count(exchange_rates) > 0 and gold_token != nil do
+              [%{token: gold_token, rate: 1.0} | exchange_rates]
+            else
+              []
+            end),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
-         tokens = fee_tokens ++ normal_tokens,
+         tokens =
+           fee_tokens ++
+             normal_tokens ++
+             (if gold_token_enabled do
+                [%{contract_address_hash: gold_token, type: "ERC-20"}]
+              else
+                []
+              end),
          token_transfers = fee_token_transfers ++ normal_token_transfers,
          addresses =
            Addresses.extract_addresses(%{
@@ -177,7 +232,14 @@ defmodule Indexer.Block.Fetcher do
              logs: logs,
              mint_transfers: mint_transfers,
              token_transfers: token_transfers,
-             transactions: transactions_with_receipts
+             transactions: transactions_with_receipts,
+             # The address of the Gold token has to be added to the addresses table
+             gold_token:
+               if gold_token_enabled do
+                 [%{hash: gold_token, block_number: last_block}]
+               else
+                 []
+               end
            }),
          coin_balances_params_set =
            %{
@@ -191,7 +253,15 @@ defmodule Indexer.Block.Fetcher do
            beneficiary_params_set
            |> add_gas_payments(transactions_with_receipts)
            |> BlockReward.reduce_uncle_rewards(),
-         address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         address_token_balances_from_transfers =
+           AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         # Also update the Gold token balances
+         address_token_balances =
+           (if gold_token_enabled do
+              add_gold_token_balances(gold_token, addresses, address_token_balances_from_transfers)
+            else
+              address_token_balances_from_transfers
+            end),
          {:ok, inserted} <-
            __MODULE__.import(
              state,
@@ -203,9 +273,12 @@ defmodule Indexer.Block.Fetcher do
                block_second_degree_relations: %{params: block_second_degree_relations_params},
                block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
                logs: %{params: logs},
+               account_names: %{params: account_names},
+               celo_signers: %{params: signers},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts}
+               transactions: %{params: transactions_with_receipts},
+               exchange_rate: %{params: exchange_rates}
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
@@ -215,6 +288,8 @@ defmodule Indexer.Block.Fetcher do
       async_import_celo_accounts(%{
         celo_accounts: %{params: accounts, requested: attestations_requested, fulfilled: attestations_fulfilled}
       })
+
+      Market.bulk_insert_history(market_history)
 
       async_import_celo_validators(%{celo_validators: %{params: celo_validators}})
       async_import_celo_validator_groups(%{celo_validator_groups: %{params: celo_validator_groups}})
@@ -227,6 +302,7 @@ defmodule Indexer.Block.Fetcher do
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
+      {step, :error} -> {:error, {step, "Unknown error"}}
       {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
     end
   end
@@ -363,10 +439,6 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_token_balances(_), do: :ok
-
-  def async_import_staking_pools do
-    StakingPools.async_fetch()
-  end
 
   def async_import_celo_accounts(%{celo_accounts: accounts}) do
     CeloAccount.async_fetch(accounts)

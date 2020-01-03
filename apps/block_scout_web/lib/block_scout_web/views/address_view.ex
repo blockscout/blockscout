@@ -5,7 +5,20 @@ defmodule BlockScoutWeb.AddressView do
 
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    CeloSigners,
+    CeloValidator,
+    Hash,
+    InternalTransaction,
+    SmartContract,
+    Token,
+    TokenTransfer,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
 
@@ -84,11 +97,31 @@ defmodule BlockScoutWeb.AddressView do
     matching_address_check(current_address, address, contract?(address), truncate)
   end
 
+  def address_partial_selector(%CeloValidator{group_address: address}, :group, current_address, truncate) do
+    matching_address_check(current_address, address, contract?(address), truncate)
+  end
+
+  def address_partial_selector(%CeloValidator{signer: address}, :signer, current_address, truncate) do
+    matching_address_check(current_address, address, contract?(address), truncate)
+  end
+
   def address_partial_selector(%Transaction{from_address: address}, :from, current_address, truncate) do
     matching_address_check(current_address, address, contract?(address), truncate)
   end
 
   def address_partial_selector(%Reward{address: address}, _, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloSigners{account_address: address}, :signer_account, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloSigners{signer_address: address}, :signers, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloValidator{validator_address: address}, :members, current_address, truncate) do
     matching_address_check(current_address, address, false, truncate)
   end
 
@@ -159,7 +192,9 @@ defmodule BlockScoutWeb.AddressView do
     end
   end
 
-  def primary_name(%Address{names: _}), do: nil
+  def primary_name(%Address{names: _} = _address) do
+    nil
+  end
 
   def primary_validator_metadata(%Address{names: [_ | _] = address_names}) do
     case Enum.find(address_names, &(&1.primary == true)) do

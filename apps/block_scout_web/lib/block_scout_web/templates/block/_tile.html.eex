@@ -1,7 +1,8 @@
 <div class="tile tile-type-<%= String.downcase(@block_type) %> fade-up" data-selector="block-tile" data-block-number="<%= to_string(@block.number) %>" data-block-hash="<%= @block.hash %>">
   <div class="row">
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
-      <%= if @block_type == "Block" do %>
+      <%=
+      if @block_type == "Block" do %>
         <%= link(
               class: "tile-label",
               to: block_path(BlockScoutWeb.Endpoint, :show, @block),
@@ -38,7 +39,7 @@
         <%= gettext "Miner" %>
         <%= render BlockScoutWeb.AddressView,
           "_link.html",
-          address: @block.miner,
+          address: block_miner(@block),
           contract: false %>
       </div>
       <%= if show_reward?(@block.rewards) do %>

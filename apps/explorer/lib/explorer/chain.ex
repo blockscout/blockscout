@@ -37,6 +37,7 @@ defmodule Explorer.Chain do
     CeloAccount,
     Data,
     DecompiledSmartContract,
+    ExchangeRate,
     Hash,
     Import,
     InternalTransaction,
@@ -780,6 +781,17 @@ defmodule Explorer.Chain do
             :smart_contract => :optional,
             :token => :optional,
             :celo_account => :optional,
+            :celo_delegator => :optional,
+            :celo_signers => :optional,
+            :celo_members => :optional,
+            [{:celo_delegator, :celo_account}] => :optional,
+            [{:celo_delegator, :account_address}] => :optional,
+            [{:celo_signers, :signer_address}] => :optional,
+            [{:celo_members, :validator_address}] => :optional,
+            :celo_validator => :optional,
+            [{:celo_validator, :group_address}] => :optional,
+            [{:celo_validator, :signer}] => :optional,
+            :celo_validator_group => :optional,
             :contracts_creation_transaction => :optional
           }
         ],
@@ -798,8 +810,15 @@ defmodule Explorer.Chain do
     |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
     |> Repo.one()
     |> case do
-      nil -> {:error, :not_found}
-      address -> {:ok, address}
+      nil ->
+        {:error, :not_found}
+
+      address ->
+        if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
+          {:ok, Map.put(address, :celo_account, address.celo_delegator.celo_account)}
+        else
+          {:ok, address}
+        end
     end
   end
 
@@ -887,6 +906,9 @@ defmodule Explorer.Chain do
             :names => :optional,
             :smart_contract => :optional,
             :token => :optional,
+            :celo_account => :optional,
+            :celo_delegator => :optional,
+            [{:celo_delegator, :celo_account}] => :optional,
             :contracts_creation_transaction => :optional
           }
         ],
@@ -3645,6 +3667,23 @@ defmodule Explorer.Chain do
     query =
       from(account in CeloAccount,
         where: account.address == ^address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  def get_exchange_rate(symbol) do
+    query =
+      from(token in Token,
+        join: rate in ExchangeRate,
+        where: token.symbol == ^symbol,
+        where: rate.token == token.contract_address_hash,
+        select: {token, rate}
       )
 
     query

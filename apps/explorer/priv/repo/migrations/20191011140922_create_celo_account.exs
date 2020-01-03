@@ -21,12 +21,15 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
       add(:address, :bytea, null: false)
       # affiliation
       add(:group_address_hash, :bytea)
+      add(:signer_address_hash, :bytea)
       add(:score, :numeric, precision: 100)
+      add(:member, :integer)
 
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
     create(index(:celo_validator, [:address], unique: true))
+    create(index(:celo_validator, [:group_address_hash]))
 
     create table(:celo_validator_group) do
       add(:address, :bytea, null: false)
@@ -55,27 +58,14 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
 
     create(index(:celo_validator_history, [:block_number, :index], unique: true))
 
-    if Mix.env() != :test do
-      Explorer.Repo.insert(
-        Explorer.Chain.Address.changeset(%Explorer.Chain.Address{}, %{
-          hash: "0x0000000000000000000000000000000000000000"
-        })
-      )
-
-      Explorer.Repo.insert(
-        Explorer.Chain.Transaction.changeset(%Explorer.Chain.Transaction{}, %{
-          gas: 0,
-          gas_price: 0,
-          hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
-          v: 27,
-          r: 123,
-          s: 234,
-          nonce: 1_000_000_000,
-          input: "0x1234",
-          from_address_hash: "0x0000000000000000000000000000000000000000",
-          value: 0
-        })
-      )
+    create table(:celo_signers) do
+      add(:address, :bytea, null: false)
+      add(:signer, :bytea, null: false)
+      timestamps(null: false, type: :utc_datetime_usec)
     end
+
+    create(index(:celo_signers, [:address, :signer], unique: true))
+    create(index(:celo_signers, [:address]))
+    create(index(:celo_signers, [:signer]))
   end
 end

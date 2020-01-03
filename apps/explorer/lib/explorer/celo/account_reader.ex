@@ -33,16 +33,28 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
-  def validator_data(%{address: address}) do
+  @spec validator_data(String.t()) ::
+          {:ok,
+           %{
+             address: String.t(),
+             group_address_hash: String.t(),
+             score: Decimal.t(),
+             signer_address_hash: String.t(),
+             member: integer
+           }}
+          | :error
+  def validator_data(address) do
     data = fetch_validator_data(address)
 
     case data["getValidator"] do
-      {:ok, [_, _, affiliation, score]} ->
+      {:ok, [_, _, affiliation, score, signer]} ->
         {:ok,
          %{
            address: address,
            group_address_hash: affiliation,
-           score: score
+           score: score,
+           signer_address_hash: signer,
+           member: fetch_group_membership(address, affiliation)
          }}
 
       _ ->
@@ -50,7 +62,7 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
-  def validator_group_data(%{address: address}) do
+  def validator_group_data(address) do
     data = fetch_validator_group_data(address)
 
     case data["getValidatorGroup"] do
@@ -122,6 +134,30 @@ defmodule Explorer.Celo.AccountReader do
       {:accounts, "getName", [account_address]},
       {:accounts, "getMetadataURL", [account_address]}
     ])
+  end
+
+  defp fetch_group_membership(account_address, group_address) do
+    data =
+      call_methods([
+        {:validators, "getValidatorGroup", [group_address]}
+      ])
+
+    case data["getValidatorGroup"] do
+      {:ok, [members, _, _]} ->
+        idx =
+          members
+          |> Enum.zip(1..1000)
+          |> Enum.filter(fn {addr, _} -> account_address == "0x" <> Base.encode16(addr, case: :lower) end)
+          |> Enum.map(fn {_, idx} -> idx end)
+
+        case idx do
+          [order] -> order
+          _ -> -1
+        end
+
+      _ ->
+        -1
+    end
   end
 
   def fetch_claimed_account_data(address) do
@@ -210,7 +246,14 @@ defmodule Explorer.Celo.AccountReader do
   defp contract(:gold), do: get_address("GoldToken")
   defp contract(:usd), do: get_address("StableToken")
 
-  defp get_address(name) do
+  def get_address(name) do
+    case get_address_raw(name) do
+      {:ok, address} -> {:ok, "0x" <> Base.encode16(address, case: :lower)}
+      _ -> :error
+    end
+  end
+
+  def get_address_raw(name) do
     contract_abi = AbiHandler.get_abi()
 
     methods = [
@@ -230,7 +273,7 @@ defmodule Explorer.Celo.AccountReader do
       end)
 
     case res["getAddressForString"] do
-      {:ok, [address]} -> {:ok, "0x" <> Base.encode16(address)}
+      {:ok, [address]} -> {:ok, address}
       _ -> :error
     end
   end

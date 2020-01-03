@@ -12,7 +12,8 @@ defmodule Explorer.Chain.Cache.BlocksTest do
 
   describe "update/1" do
     test "adds a new value to cache" do
-      block = insert(:block) |> Repo.preload([:transactions, [miner: :names], :rewards])
+      block =
+        insert(:block) |> Repo.preload([:transactions, [miner: :names], [celo_delegator: :celo_account], :rewards])
 
       Blocks.update(block)
 
