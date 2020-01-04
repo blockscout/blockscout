@@ -263,10 +263,10 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
+      blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
+
       rewards_task =
-        Task.async(fn ->
-          Reward.fetch_emission_rewards_tuples(address_hash, paging_options)
-        end)
+        Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
 
       [rewards_task | address_to_transactions_tasks(address_hash, options)]
       |> wait_for_address_transactions()
@@ -305,19 +305,70 @@ defmodule Explorer.Chain do
     |> Enum.take(paging_options.page_size)
   end
 
+  defp address_to_transactions_tasks_query(options) do
+    options
+    |> Keyword.get(:paging_options, @default_paging_options)
+    |> fetch_transactions()
+  end
+
   defp address_to_transactions_tasks(address_hash, options) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    base_query =
-      paging_options
-      |> fetch_transactions()
-      |> join_associations(necessity_by_association)
-
-    base_query
+    options
+    |> address_to_transactions_tasks_query()
+    |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
+  end
+
+  defp address_to_transactions_tasks_range_of_blocks(address_hash, options) do
+    direction = Keyword.get(options, :direction)
+
+    extremums_list =
+      options
+      |> address_to_transactions_tasks_query()
+      |> Transaction.matching_address_queries_list(direction, address_hash)
+      |> Enum.map(fn query ->
+        max_query =
+          from(
+            q in subquery(query),
+            select: %{min_block_number: min(q.block_number), max_block_number: max(q.block_number)}
+          )
+
+        max_query
+        |> Repo.one!()
+      end)
+
+    extremums_list
+    |> Enum.reduce(%{min_block_number: nil, max_block_number: 0}, fn %{
+                                                                       min_block_number: min_number,
+                                                                       max_block_number: max_number
+                                                                     },
+                                                                     extremums_result ->
+      current_min_number = Map.get(extremums_result, :min_block_number)
+      current_max_number = Map.get(extremums_result, :max_block_number)
+
+      extremums_result =
+        if is_number(current_min_number) do
+          if is_number(min_number) and min_number > 0 and min_number < current_min_number do
+            extremums_result
+            |> Map.put(:min_block_number, min_number)
+          else
+            extremums_result
+          end
+        else
+          extremums_result
+          |> Map.put(:min_block_number, min_number)
+        end
+
+      if is_number(max_number) and max_number > 0 and max_number > current_max_number do
+        extremums_result
+        |> Map.put(:max_block_number, max_number)
+      else
+        extremums_result
+      end
+    end)
   end
 
   defp wait_for_address_transactions(tasks) do

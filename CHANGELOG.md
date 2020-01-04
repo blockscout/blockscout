@@ -12,6 +12,7 @@
 - [#2924](https://github.com/poanetwork/blockscout/pull/2924) - Speedup address to logs query
 - [#2915](https://github.com/poanetwork/blockscout/pull/2915) - Speedup of blocks_without_reward_query
 - [#2914](https://github.com/poanetwork/blockscout/pull/2914) - Reduce execution time of stream_unfetched_token_instances query
+- [#2908](https://github.com/poanetwork/blockscout/pull/2908) - Fix performance of address page
 - [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
 - [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
 - [#2900](https://github.com/poanetwork/blockscout/pull/2900) - check fetched instance metadata in multiple places

@@ -615,10 +615,39 @@ defmodule Explorer.ChainTest do
 
       :transaction
       |> insert(from_address: block.miner)
-      |> with_block()
+      |> with_block(block)
       |> Repo.preload(:token_transfers)
 
       assert [_, {_, _}] = Chain.address_to_transactions_with_rewards(block.miner.hash, direction: :from)
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+    end
+
+    test "with transactions if rewards are not in the range of blocks" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
+
+      block = insert(:block)
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+      :transaction
+      |> insert(from_address: block.miner)
+      |> with_block()
+      |> Repo.preload(:token_transfers)
+
+      assert [_] = Chain.address_to_transactions_with_rewards(block.miner.hash, direction: :from)
 
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
     end
