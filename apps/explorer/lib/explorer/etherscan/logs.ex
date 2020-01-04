@@ -7,9 +7,8 @@ defmodule Explorer.Etherscan.Logs do
 
   import Ecto.Query, only: [from: 2, where: 3, subquery: 1, order_by: 3, union: 2]
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, InternalTransaction, Log, Transaction}
-  alias Explorer.Repo
 
   @base_filter %{
     from_block: nil,
@@ -259,20 +258,23 @@ defmodule Explorer.Etherscan.Logs do
   end
 
   defp internal_transaction_query(logs_query, direction, prepared_filter, address_hash) do
-    from(internal_transaction in InternalTransaction.where_nonpending_block(),
-      join: transaction in assoc(internal_transaction, :transaction),
-      join: log in ^logs_query,
-      on: log.transaction_hash == internal_transaction.transaction_hash,
-      where: internal_transaction.block_number >= ^prepared_filter.from_block,
-      where: internal_transaction.block_number <= ^prepared_filter.to_block,
-      select:
-        merge(map(log, ^@log_fields), %{
-          gas_price: transaction.gas_price,
-          gas_used: transaction.gas_used,
-          transaction_index: transaction.index,
-          block_number: transaction.block_number
-        })
-    )
+    query =
+      from(internal_transaction in InternalTransaction.where_nonpending_block(),
+        join: transaction in assoc(internal_transaction, :transaction),
+        join: log in ^logs_query,
+        on: log.transaction_hash == internal_transaction.transaction_hash,
+        where: internal_transaction.block_number >= ^prepared_filter.from_block,
+        where: internal_transaction.block_number <= ^prepared_filter.to_block,
+        select:
+          merge(map(log, ^@log_fields), %{
+            gas_price: transaction.gas_price,
+            gas_used: transaction.gas_used,
+            transaction_index: transaction.index,
+            block_number: transaction.block_number
+          })
+      )
+
+    query
     |> InternalTransaction.where_address_fields_match(address_hash, direction)
   end
 end

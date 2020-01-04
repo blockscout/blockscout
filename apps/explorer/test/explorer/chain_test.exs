@@ -2598,6 +2598,8 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           index: 2,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 2,
           transaction_index: transaction.index
         )
 
