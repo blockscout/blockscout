@@ -6,6 +6,7 @@
 - [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action explicitly
 
 ### Fixes
+- [#2934](https://github.com/poanetwork/blockscout/pull/2934) - RSK release 1.2.0 breaking changes support
 - [#2933](https://github.com/poanetwork/blockscout/pull/2933) - Get rid of deadlock in the query to address_current_token_balance table
 - [#2932](https://github.com/poanetwork/blockscout/pull/2932) - fix duplicate websocket connection
 - [#2928](https://github.com/poanetwork/blockscout/pull/2928) - Speedup pending block ops int txs to fetch query
