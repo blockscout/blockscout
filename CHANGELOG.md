@@ -20,6 +20,8 @@
 - [#2899](https://github.com/poanetwork/blockscout/pull/2899) - fix empty buffered task
 - [#2887](https://github.com/poanetwork/blockscout/pull/2887) - increase chart loading speed
 
+- [2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
+
 ### Chore
 - [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
 

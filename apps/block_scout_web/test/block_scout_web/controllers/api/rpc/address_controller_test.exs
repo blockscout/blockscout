@@ -1626,6 +1626,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           transaction: transaction,
           index: 0,
           from_address: address,
+          block_number: block.number,
           block_hash: transaction.block_hash,
           block_index: 0
         )
@@ -1681,6 +1682,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         index: 0,
         type: :reward,
         error: "some error",
+        block_number: transaction.block_number,
         block_hash: transaction.block_hash,
         block_index: 0
       ]
@@ -1718,6 +1720,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           from_address: address,
           transaction: transaction,
           index: index,
+          block_number: transaction.block_number,
           block_hash: transaction.block_hash,
           block_index: index
         }
