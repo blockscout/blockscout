@@ -8,7 +8,7 @@ defmodule Explorer.Etherscan do
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.TokenBalance
-  alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Block, Hash, InternalTransaction, TokenTransfer, Transaction}
 
   @default_options %{
     order_by_direction: :desc,
@@ -98,6 +98,7 @@ defmodule Explorer.Etherscan do
     query
     |> Chain.where_transaction_has_multiple_internal_transactions()
     |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> InternalTransaction.where_nonpending_block()
     |> Repo.all()
   end
 
@@ -199,10 +200,12 @@ defmodule Explorer.Etherscan do
         )
 
       query
+      |> Chain.where_transaction_has_multiple_internal_transactions()
       |> InternalTransaction.where_address_fields_match(address_hash, direction)
       |> InternalTransaction.where_is_different_from_parent_transaction()
       |> where_start_block_match(options)
       |> where_end_block_match(options)
+      |> InternalTransaction.where_nonpending_block()
       |> Repo.all()
     end
   end
@@ -382,7 +385,8 @@ defmodule Explorer.Etherscan do
     query =
       from(
         t in Transaction,
-        inner_join: tt in assoc(t, :token_transfers),
+        inner_join: tt in TokenTransfer,
+        on: tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash,
         inner_join: tkn in assoc(tt, :token),
         inner_join: b in assoc(t, :block),
         where: tt.from_address_hash == ^address_hash,

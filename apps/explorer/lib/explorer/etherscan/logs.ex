@@ -259,7 +259,7 @@ defmodule Explorer.Etherscan.Logs do
   end
 
   defp internal_transaction_query(logs_query, direction, prepared_filter, address_hash) do
-    from(internal_transaction in InternalTransaction,
+    from(internal_transaction in InternalTransaction.where_nonpending_block(),
       join: transaction in assoc(internal_transaction, :transaction),
       join: log in ^logs_query,
       on: log.transaction_hash == internal_transaction.transaction_hash,
