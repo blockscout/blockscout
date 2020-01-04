@@ -12,6 +12,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
           %{
             address_hash: "0xf2eec76e45b328df99a34fa696320a262cb92154",
             block_number: 3_530_917,
+            block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
             data: "0x000000000000000000000000000000000000000000000000ebec21ee1da40000",
             first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
             fourth_topic: nil,
@@ -23,6 +24,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
           },
           %{
             address_hash: "0x6ea5ec9cb832e60b6b1654f5826e9be638f276a5",
+            block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
             block_number: 3_586_935,
             data: "0x",
             first_topic: "0x55e10366a5f552746106978b694d7ef3bbddec06bd5f9b9d15ad46f475c653ef",
@@ -36,6 +38,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
           %{
             address_hash: "0x91932e8c6776fb2b04abb71874a7988747728bb2",
             block_number: 3_664_064,
+            block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
             data: "0x000000000000000000000000000000000000000000000000ebec21ee1da40000",
             first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
             fourth_topic: "0x00000000000000000000000000000000000000000000000000000000000000b7",
@@ -67,7 +70,8 @@ defmodule Indexer.Transform.TokenTransfersTest do
             token_contract_address_hash: log_3.address_hash,
             token_id: 183,
             transaction_hash: log_3.transaction_hash,
-            token_type: "ERC-721"
+            token_type: "ERC-721",
+            block_hash: log_3.block_hash
           },
           %{
             amount: Decimal.new(17_000_000_000_000_000_000),
@@ -77,7 +81,8 @@ defmodule Indexer.Transform.TokenTransfersTest do
             to_address_hash: truncated_hash(log_1.third_topic),
             token_contract_address_hash: log_1.address_hash,
             transaction_hash: log_1.transaction_hash,
-            token_type: "ERC-20"
+            token_type: "ERC-20",
+            block_hash: log_1.block_hash
           }
         ]
       }
@@ -97,6 +102,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
         second_topic: nil,
         third_topic: nil,
         transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
         type: "mined"
       }
 
@@ -113,6 +119,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             log_index: log.index,
             from_address_hash: "0x58ab73cb79c8275628e0213742a85b163fe0a9fb",
             to_address_hash: "0xbe8cdfc13ffda20c844ac3da2b53a23ac5787f1e",
+            block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
             token_contract_address_hash: log.address_hash,
             token_id: 14_939,
             transaction_hash: log.transaction_hash,
@@ -128,6 +135,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
       log = %{
         address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",
         block_number: 8_683_457,
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
         data: "0x",
         first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
         fourth_topic: nil,
