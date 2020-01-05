@@ -84,7 +84,7 @@ defmodule Explorer.Repo.Migrations.AddPendingInternalTxsOperation do
                 END IF;
 
                 DELETE FROM internal_transactions
-                WHERE block_hash = temprow.hash;
+                WHERE block_hash = temprow.block_hash;
 
                 RAISE NOTICE 'DELETED';
             END LOOP;
