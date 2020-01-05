@@ -524,6 +524,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         created_contract_address: created_contract_address,
         created_contract_code: smart_contract_bytecode,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index
       )
 
