@@ -7,12 +7,13 @@ defmodule Explorer.Validator.MetadataRetriever do
 
   def fetch_data do
     {:ok, binary_moc_address} = Explorer.Chain.Hash.Address.cast("0xcf260ea317555637c55f70e55dba8d5ad8414cb0")
+
     validators_list_excluding_moc =
-    fetch_validators_list()
-    |> Enum.reject(fn binary_validator_address ->
-      binary_validator_address == binary_moc_address.bytes
-    end
-    )
+      fetch_validators_list()
+      |> Enum.reject(fn binary_validator_address ->
+        binary_validator_address == binary_moc_address.bytes
+      end)
+
     validators_list_excluding_moc
     |> Enum.map(fn validator ->
       validator
