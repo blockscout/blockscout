@@ -66,6 +66,11 @@ config :explorer, Explorer.Chain.Cache.AddressSum,
   ttl_check_interval: :timer.seconds(1),
   global_ttl: address_sum_global_ttl
 
+config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt,
+  enabled: true,
+  ttl_check_interval: :timer.seconds(1),
+  global_ttl: address_sum_global_ttl
+
 balances_update_interval =
   if System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
     case Integer.parse(System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL")) do

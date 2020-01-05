@@ -1,14 +1,28 @@
 ## Current
 
 ### Features
+- [#2926](https://github.com/poanetwork/blockscout/pull/2926) - API endpoint: sum balances except burnt address
+
+### Fixes
+- [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
+- [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
+- [#2900](https://github.com/poanetwork/blockscout/pull/2900) - check fetched instance metadata in multiple places
+
+### Chore
+- [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
+
+
+## 2.1.1-beta
+
+### Features
 - [#2862](https://github.com/poanetwork/blockscout/pull/2862) - Coin total supply from DB API endpoint
+- [#2857](https://github.com/poanetwork/blockscout/pull/2857) - Extend getsourcecode API view with new output fields
 - [#2822](https://github.com/poanetwork/blockscout/pull/2822) - Estimated address count on the main page, if cache is empty
 - [#2821](https://github.com/poanetwork/blockscout/pull/2821) - add autodetection of constructor arguments
 - [#2825](https://github.com/poanetwork/blockscout/pull/2825) - separate token transfers and transactions
 - [#2787](https://github.com/poanetwork/blockscout/pull/2787) - async fetching of address counters
 - [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
-
 
 ### Fixes
 - [#2864](https://github.com/poanetwork/blockscout/pull/2864) - add token instance metadata type check
