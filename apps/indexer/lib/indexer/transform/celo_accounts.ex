@@ -18,7 +18,9 @@ defmodule Indexer.Transform.CeloAccounts do
         get_addresses(logs, CeloAccount.validator_events()) ++
           get_addresses(logs, CeloAccount.membership_events(), fn a -> a.third_topic end),
       account_names: get_names(logs),
-      validator_groups: get_addresses(logs, CeloAccount.validator_group_events()),
+      validator_groups:
+        get_addresses(logs, CeloAccount.validator_group_events()) ++
+          get_addresses(logs, CeloAccount.vote_events(), fn a -> a.third_topic end),
       withdrawals: get_addresses(logs, CeloAccount.withdrawal_events()),
       signers: get_signers(logs, CeloSigners.signer_events()),
       attestations_fulfilled:

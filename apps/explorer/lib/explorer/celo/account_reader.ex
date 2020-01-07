@@ -65,14 +65,15 @@ defmodule Explorer.Celo.AccountReader do
   def validator_group_data(address) do
     data = fetch_validator_group_data(address)
 
-    case data["getValidatorGroup"] do
-      {:ok, [_ | [commission | _]]} ->
-        {:ok,
-         %{
-           address: address,
-           commission: commission
-         }}
-
+    with {:ok, [_ | [commission | _]]} <- data["getValidatorGroup"],
+         {:ok, votes} <- data["getTotalVotesForGroup"] do
+      {:ok,
+       %{
+         address: address,
+         votes: votes,
+         commission: commission
+       }}
+    else
       _ ->
         :error
     end
@@ -190,6 +191,7 @@ defmodule Explorer.Celo.AccountReader do
 
   defp fetch_validator_group_data(address) do
     call_methods([
+      {:election, "getTotalVotesForGroup", [address]},
       {:validators, "getValidatorGroup", [address]}
     ])
   end
