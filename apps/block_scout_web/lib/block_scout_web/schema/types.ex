@@ -40,15 +40,15 @@ defmodule BlockScoutWeb.Schema.Types do
       resolve(dataloader(:db, :smart_contract))
     end
 
-    connection field(:celo_account, node_type: :celo_account) do
+    field(:celo_account, :celo_account) do
       resolve(&CeloAccount.get_by/3)
     end
 
-    connection field(:celo_validator, node_type: :celo_validator) do
+    field(:celo_validator, :celo_validator) do
       resolve(&CeloValidator.get_by/3)
     end
 
-    connection field(:celo_validator_group, node_type: :celo_validator_group) do
+    field(:celo_validator_group, :celo_validator_group) do
       resolve(&CeloValidatorGroup.get_by/3)
     end
 
@@ -79,9 +79,18 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:name, :string)
     field(:url, :string)
 
-    connection field(:address_info, node_type: :address) do
+    field(:address_info, :address) do
       resolve(&Address.get_by/3)
     end
+
+    field(:validator, :celo_validator) do
+      resolve(&CeloValidator.get_by/3)
+    end
+
+    field(:group, :celo_validator_group) do
+      resolve(&CeloValidatorGroup.get_by/3)
+    end
+
   end
 
   @desc """
@@ -94,15 +103,15 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:member, :integer)
     field(:score, :wei)
 
-    connection field(:address_info, node_type: :address) do
+    field(:address_info, :address) do
       resolve(&Address.get_by/3)
     end
 
-    connection field(:account, node_type: :celo_account) do
+    field(:account, :celo_account) do
       resolve(&CeloAccount.get_by/3)
     end
 
-    connection field(:group_info, node_type: :celo_validator_group) do
+    field(:group_info, :celo_validator_group) do
       resolve(&CeloValidatorGroup.get_by/3)
     end
   end
@@ -114,11 +123,11 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:address, :address_hash)
     field(:commission, :wei)
 
-    connection field(:address_info, node_type: :address) do
+    field(:address_info, :address) do
       resolve(&Address.get_by/3)
     end
 
-    connection field(:account, node_type: :celo_account) do
+    field(:account, :celo_account) do
       resolve(&CeloAccount.get_by/3)
     end
 
