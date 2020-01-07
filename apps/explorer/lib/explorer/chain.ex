@@ -26,7 +26,7 @@ defmodule Explorer.Chain do
 
   alias ABI.TypeDecoder
   alias Ecto.Adapters.SQL
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.{Changeset, Multi, Query}
 
   alias Explorer.Chain.{
     Address,
@@ -3762,7 +3762,7 @@ defmodule Explorer.Chain do
     query = from(q in subquery(union_query), select: q.block_number, order_by: [desc: q.block_number])
 
     query
-    |> Ecto.Query.first()
+    |> Query.first()
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
