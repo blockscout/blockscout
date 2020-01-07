@@ -35,8 +35,10 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     CeloAccount,
+    CeloSigners,
     CeloValidator,
     CeloValidatorGroup,
+    CeloValidatorHistory,
     Data,
     DecompiledSmartContract,
     ExchangeRate,
@@ -3734,6 +3736,37 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       {data} -> {:ok, %{value: data}}
+    end
+  end
+
+  def get_latest_validating_block(address) do
+    signer_query =
+      from(history in CeloValidatorHistory,
+      join: validator in CeloValidator,
+      join: signer in CeloSigners,
+      where: validator.address == ^address,
+        where: history.address == signer.signer,
+        where: signer.address == validator.address,
+        select: history.block_number
+      )
+
+    union_query =
+      from(history in CeloValidatorHistory,
+        join: validator in CeloValidator,
+        where: validator.address == ^address,
+        where: history.address == ^address,
+        select: history.block_number,
+        union: ^signer_query
+      )
+    
+    query = from(q in subquery(union_query), select: q.block_number, order_by: [desc: q.block_number])
+
+    query
+    |> Ecto.Query.first()
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
     end
   end
 
