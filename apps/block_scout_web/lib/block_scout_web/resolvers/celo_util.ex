@@ -11,5 +11,4 @@ defmodule BlockScoutWeb.Resolvers.CeloUtil do
   def get_elected(%CeloValidator{address: hash}, _, _) do
     Chain.get_latest_validating_block(hash)
   end
-
 end
