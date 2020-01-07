@@ -80,6 +80,7 @@ function getPriceData (marketHistoryData) {
   return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice}))
 }
 
+/*
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (availableSupply !== null && typeof availableSupply === 'object') {
     return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply[date]}))
@@ -87,6 +88,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
     return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply}))
   }
 }
+*/
 
 // colors for light and dark theme
 var priceLineColor
@@ -122,7 +124,7 @@ class MarketHistoryChart {
       lineTension: 0
     }
     this.availableSupply = availableSupply
-    config.data.datasets = [this.price, this.marketCap ]
+    config.data.datasets = [this.price, this.marketCap]
     this.chart = new Chart(el, config)
   }
   update (availableSupply, marketHistoryData) {
