@@ -31,4 +31,8 @@ defmodule BlockScoutWeb.Resolvers.CeloValidator do
     |> GraphQL.address_to_affiliates_query()
     |> Connection.from_query(&Repo.all/1, args, [])
   end
+
+  def get_usd(%CeloAccount{address: hash}, _, _) do
+    Chain.get_token_balance(hash, "cUSD")
+  end
 end

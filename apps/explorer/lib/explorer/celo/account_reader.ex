@@ -64,9 +64,10 @@ defmodule Explorer.Celo.AccountReader do
 
   def validator_group_data(address) do
     data = fetch_validator_group_data(address)
+    IO.inspect(data)
 
     with {:ok, [_ | [commission | _]]} <- data["getValidatorGroup"],
-         {:ok, votes} <- data["getTotalVotesForGroup"] do
+         {:ok, [votes]} <- data["getTotalVotesForGroup"] do
       {:ok,
        %{
          address: address,

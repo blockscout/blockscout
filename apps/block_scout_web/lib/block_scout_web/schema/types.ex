@@ -74,6 +74,11 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:account_type, :string)
     field(:nonvoting_locked_gold, :wei)
     field(:locked_gold, :wei)
+
+    field(:usd, :wei) do
+      resolve(&CeloValidator.get_usd/3)
+    end
+
     field(:attestations_requested, :integer)
     field(:attestations_fulfilled, :integer)
     field(:name, :string)

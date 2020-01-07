@@ -3719,6 +3719,24 @@ defmodule Explorer.Chain do
     end
   end
 
+  def get_token_balance(address, symbol) do
+    query =
+      from(token in Token,
+        join: balance in CurrentTokenBalance,
+        where: token.symbol == ^symbol,
+        where: balance.address_hash == ^address,
+        where: balance.token_contract_address_hash == token.contract_address_hash,
+        select: {balance.value}
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      {data} -> {:ok, %{value: data}}
+    end
+  end
+
   def get_exchange_rate(symbol) do
     query =
       from(token in Token,
