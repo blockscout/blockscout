@@ -90,7 +90,6 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:group, :celo_validator_group) do
       resolve(&CeloValidatorGroup.get_by/3)
     end
-
   end
 
   @desc """

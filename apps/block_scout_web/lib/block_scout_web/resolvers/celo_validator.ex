@@ -31,5 +31,4 @@ defmodule BlockScoutWeb.Resolvers.CeloValidator do
     |> GraphQL.address_to_affiliates_query()
     |> Connection.from_query(&Repo.all/1, args, [])
   end
-
 end
