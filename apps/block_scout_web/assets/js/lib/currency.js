@@ -5,7 +5,7 @@ import { BigNumber } from 'bignumber.js'
 import socket from '../socket'
 
 export function formatUsdValue (value) {
-  return `${formatCurrencyValue(value)} cUSD`
+  return `${formatCurrencyValue(value)} USD`
 }
 
 export function formatCGValue (value) {

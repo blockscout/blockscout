@@ -39,7 +39,7 @@ const config = {
         },
         ticks: {
           beginAtZero: true,
-          callback: (value, index, values) => `C$${numeral(value).format('0,0.00')}`,
+          callback: (value, index, values) => `$${numeral(value).format('0,0.00')}`,
           maxTicksLimit: 4,
           fontColor: sassVariables.dashboardBannerChartAxisFontColor
         }
@@ -114,7 +114,7 @@ class MarketHistoryChart {
     this.marketCap = {
       label: window.localized['Market Cap'],
       yAxisID: 'marketCap',
-      data: getMarketCapData(marketHistoryData, availableSupply),
+      data: [], // getMarketCapData(marketHistoryData, availableSupply),
       fill: false,
       pointRadius: 0,
       backgroundColor: mcapLineColor,
@@ -122,7 +122,7 @@ class MarketHistoryChart {
       lineTension: 0
     }
     this.availableSupply = availableSupply
-    config.data.datasets = [this.price, this.marketCap]
+    config.data.datasets = [this.price, this.marketCap ]
     this.chart = new Chart(el, config)
   }
   update (availableSupply, marketHistoryData) {
@@ -130,9 +130,9 @@ class MarketHistoryChart {
     if (this.availableSupply !== null && typeof this.availableSupply === 'object') {
       const today = new Date().toJSON().slice(0, 10)
       this.availableSupply[today] = availableSupply
-      this.marketCap.data = getMarketCapData(marketHistoryData, this.availableSupply)
+      // this.marketCap.data = getMarketCapData(marketHistoryData, this.availableSupply)
     } else {
-      this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
+      // this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
     }
     this.chart.update()
   }
