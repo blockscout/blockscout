@@ -38,8 +38,8 @@ const config = {
           drawBorder: false
         },
         ticks: {
-          beginAtZero: true,
-          callback: (value, index, values) => `$${numeral(value).format('0,0.00')}`,
+          beginAtZero: false,
+          callback: (value, index, values) => `$${numeral(value).format('0,0.000')}`,
           maxTicksLimit: 4,
           fontColor: sassVariables.dashboardBannerChartAxisFontColor
         }
