@@ -9,6 +9,8 @@ defmodule BlockScoutWeb.Schema.Types do
   alias BlockScoutWeb.Resolvers.{
     Address,
     CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup,
     InternalTransaction,
     Transaction
   }
@@ -17,6 +19,8 @@ defmodule BlockScoutWeb.Schema.Types do
   import_types(BlockScoutWeb.Schema.Scalars)
 
   connection(node_type: :celo_account)
+  connection(node_type: :celo_validator)
+  connection(node_type: :celo_validator_group)
   connection(node_type: :competitor)
   connection(node_type: :address)
   connection(node_type: :transaction)
@@ -36,8 +40,16 @@ defmodule BlockScoutWeb.Schema.Types do
       resolve(dataloader(:db, :smart_contract))
     end
 
-    connection field(:celo_account, node_type: :celo_account) do
+    field(:celo_account, :celo_account) do
       resolve(&CeloAccount.get_by/3)
+    end
+
+    field(:celo_validator, :celo_validator) do
+      resolve(&CeloValidator.get_by/3)
+    end
+
+    field(:celo_validator_group, :celo_validator_group) do
+      resolve(&CeloValidatorGroup.get_by/3)
     end
 
     connection field(:transactions, node_type: :transaction) do
@@ -67,8 +79,59 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:name, :string)
     field(:url, :string)
 
-    connection field(:address_info, node_type: :address) do
+    field(:address_info, :address) do
       resolve(&Address.get_by/3)
+    end
+
+    field(:validator, :celo_validator) do
+      resolve(&CeloValidator.get_by/3)
+    end
+
+    field(:group, :celo_validator_group) do
+      resolve(&CeloValidatorGroup.get_by/3)
+    end
+  end
+
+  @desc """
+  Celo validator information
+  """
+  object :celo_validator do
+    field(:address, :address_hash)
+    field(:group_address_hash, :address_hash)
+    field(:signer_address_hash, :address_hash)
+    field(:member, :integer)
+    field(:score, :wei)
+
+    field(:address_info, :address) do
+      resolve(&Address.get_by/3)
+    end
+
+    field(:account, :celo_account) do
+      resolve(&CeloAccount.get_by/3)
+    end
+
+    field(:group_info, :celo_validator_group) do
+      resolve(&CeloValidatorGroup.get_by/3)
+    end
+  end
+
+  @desc """
+  Celo validator group information
+  """
+  object :celo_validator_group do
+    field(:address, :address_hash)
+    field(:commission, :wei)
+
+    field(:address_info, :address) do
+      resolve(&Address.get_by/3)
+    end
+
+    field(:account, :celo_account) do
+      resolve(&CeloAccount.get_by/3)
+    end
+
+    connection field(:affiliates, node_type: :celo_validator) do
+      resolve(&CeloValidator.get_by/3)
     end
   end
 

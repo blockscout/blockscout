@@ -14,6 +14,8 @@ defmodule Explorer.GraphQL do
   alias Explorer.Chain.{
     Address,
     CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup,
     Hash,
     InternalTransaction,
     TokenTransfer,
@@ -39,6 +41,21 @@ defmodule Explorer.GraphQL do
 
   def address_to_account_query(address_hash) do
     CeloAccount
+    |> where([account], account.address == ^address_hash)
+  end
+
+  def address_to_validator_query(address_hash) do
+    CeloValidator
+    |> where([account], account.address == ^address_hash)
+  end
+
+  def address_to_affiliates_query(address_hash) do
+    CeloValidator
+    |> where([account], account.group_address_hash == ^address_hash)
+  end
+
+  def address_to_validator_group_query(address_hash) do
+    CeloValidatorGroup
     |> where([account], account.address == ^address_hash)
   end
 

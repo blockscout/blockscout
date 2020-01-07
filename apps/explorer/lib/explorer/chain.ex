@@ -35,6 +35,8 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup,
     Data,
     DecompiledSmartContract,
     ExchangeRate,
@@ -3671,6 +3673,46 @@ defmodule Explorer.Chain do
 
     query
     |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  @spec get_celo_validator(Hash.Address.t()) :: {:ok, CeloValidator.t()} | {:error, :not_found}
+  def get_celo_validator(address_hash) do
+    query =
+      from(account in CeloValidator,
+        where: account.address == ^address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  @spec get_celo_validator_group(Hash.Address.t()) :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
+  def get_celo_validator_group(address_hash) do
+    query =
+      from(account in CeloValidatorGroup,
+        where: account.address == ^address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  #  @spec get_celo_validator_groups() :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
+  def get_celo_validator_groups do
+    CeloValidatorGroup
+    |> Repo.all()
     |> case do
       nil -> {:error, :not_found}
       data -> {:ok, data}
