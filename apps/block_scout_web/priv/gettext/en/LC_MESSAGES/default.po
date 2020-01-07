@@ -1165,7 +1165,6 @@ msgid "Potential matches from our contract method database:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:24
 #: lib/block_scout_web/templates/layout/app.html.eex:61
 msgid "Price"
 msgstr ""
@@ -1913,4 +1912,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/address_contract_view.ex:22
 msgid "true"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/chain/show.html.eex:24
+msgid "cGLD Price"
 msgstr ""
