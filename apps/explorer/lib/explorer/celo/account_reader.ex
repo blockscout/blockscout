@@ -33,6 +33,24 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
+  def is_validator_group(address) do
+    data = call_methods([{:validators, "isValidatorGroup", [address]}])
+
+    case data["isValidatorGroup"] do
+      {:ok, [res]} -> {:ok, res}
+      _ -> :error
+    end
+  end
+
+  def validator_group_members(address) do
+    data = call_methods([{:validators, "getValidatorGroup", [address]}])
+
+    case data["getValidatorGroup"] do
+      {:ok, [res | _]} -> {:ok, res}
+      _ -> :error
+    end
+  end
+
   @spec validator_data(String.t()) ::
           {:ok,
            %{

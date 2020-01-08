@@ -14,9 +14,10 @@ defmodule Indexer.Transform.CeloAccounts do
   def parse(logs) do
     %{
       accounts: get_addresses(logs, CeloAccount.account_events()),
+      # Adding a group to updated validators means to update all members of the group
       validators:
         get_addresses(logs, CeloAccount.validator_events()) ++
-          get_addresses(logs, CeloAccount.membership_events(), fn a -> a.third_topic end),
+          get_addresses(logs, CeloAccount.membership_events()),
       account_names: get_names(logs),
       validator_groups:
         get_addresses(logs, CeloAccount.validator_group_events()) ++
