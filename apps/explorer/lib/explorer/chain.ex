@@ -3803,6 +3803,22 @@ defmodule Explorer.Chain do
     end
   end
 
+  def get_latest_history_block() do
+    query =
+      from(history in CeloValidatorHistory,
+        order_by: [desc: history.block_number],
+        select: history.block_number
+      )
+
+    query
+    |> Query.first()
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
   def get_exchange_rate(symbol) do
     query =
       from(token in Token,
