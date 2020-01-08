@@ -135,6 +135,7 @@ defmodule BlockScoutWeb.Schema.Types do
   object :celo_validator_group do
     field(:address, :address_hash)
     field(:commission, :wei)
+    field(:votes, :wei)
 
     field(:address_info, :address) do
       resolve(&Address.get_by/3)
