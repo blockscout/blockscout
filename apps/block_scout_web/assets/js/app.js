@@ -20,7 +20,6 @@ import 'bootstrap'
 
 import './locale'
 
-import './pages/blocks'
 import './pages/pending_transactions'
 import './pages/transaction'
 import './pages/transactions'
