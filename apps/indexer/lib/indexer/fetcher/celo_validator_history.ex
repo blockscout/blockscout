@@ -100,8 +100,8 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
           {[block | failed], success}
 
         block, {failed, success} ->
-          {failed2, success2} = get_items(block)
-          {failed ++ failed2, success ++ success2}
+          {_, success2} = get_items(block)
+          {failed, success ++ success2}
       end)
 
     import_params = %{

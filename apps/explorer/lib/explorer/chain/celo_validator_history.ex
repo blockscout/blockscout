@@ -17,20 +17,22 @@ defmodule Explorer.Chain.CeloValidatorHistory do
   @type t :: %__MODULE__{
           address: Hash.Address.t(),
           block_number: Explorer.Chain.Block.block_number(),
+          online: boolean,
           index: non_neg_integer()
         }
 
   @attrs ~w(
-        address block_number index
+        address block_number index online
     )a
 
   @required_attrs ~w(
-        address block_number index
+        address block_number index online
     )a
 
   schema "celo_validator_history" do
     field(:block_number, :integer, primary_key: true)
     field(:index, :integer, primary_key: true)
+    field(:online, :boolean)
 
     belongs_to(
       :validator_address,

@@ -54,6 +54,8 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
       add(:index, :integer, null: false)
       add(:block_number, :integer, null: false)
       add(:address, :bytea, null: false)
+      add(:online, :boolean, null: false)
+
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
