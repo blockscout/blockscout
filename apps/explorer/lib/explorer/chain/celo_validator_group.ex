@@ -16,11 +16,12 @@ defmodule Explorer.Chain.CeloValidatorGroup do
 
   @type t :: %__MODULE__{
           address: Hash.Address.t(),
-          commission: Wei.t()
+          commission: Wei.t(),
+          votes: Wei.t()
         }
 
   @attrs ~w(
-        address commission
+        address commission votes
     )a
 
   @required_attrs ~w(
@@ -29,6 +30,7 @@ defmodule Explorer.Chain.CeloValidatorGroup do
 
   schema "celo_validator_group" do
     field(:commission, Wei)
+    field(:votes, Wei)
 
     belongs_to(
       :validator_address,

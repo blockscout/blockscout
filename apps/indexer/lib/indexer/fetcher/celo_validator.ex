@@ -65,9 +65,36 @@ defmodule Indexer.Fetcher.CeloValidator do
     end
   end
 
+  defp group_to_member_aux(entry) do
+    case AccountReader.validator_group_members(entry.address) do
+      {:ok, res} ->
+        Enum.map(res, fn a -> entry(%{address: "0x" <> Base.encode16(a, lower: true)}) end)
+
+      _ ->
+        [entry]
+    end
+  end
+
+  defp group_to_member(entry) do
+    case AccountReader.is_validator_group(entry.address) do
+      {:ok, true} ->
+        group_to_member_aux(entry)
+
+      _ ->
+        [entry]
+    end
+  end
+
+  defp groups_to_members(entries) do
+    Enum.reduce(entries, [], fn entry, acc ->
+      group_to_member(entry) ++ acc
+    end)
+  end
+
   defp fetch_from_blockchain(addresses) do
     addresses
     |> Enum.filter(&(&1.retries_count <= @max_retries))
+    |> groups_to_members()
     |> Enum.map(fn %{address: address} = account ->
       case AccountReader.validator_data(address) do
         {:ok, data} ->

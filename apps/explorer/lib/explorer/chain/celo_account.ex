@@ -113,6 +113,12 @@ defmodule Explorer.Chain.CeloAccount do
       @validator_group_deregistered
     ]
 
+  def vote_events,
+    do: [
+      @validator_group_vote_revoked,
+      @validator_group_vote_cast
+    ]
+
   # Events for notifications
   def withdrawal_events,
     do: [

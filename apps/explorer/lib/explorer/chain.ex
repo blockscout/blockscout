@@ -26,7 +26,7 @@ defmodule Explorer.Chain do
 
   alias ABI.TypeDecoder
   alias Ecto.Adapters.SQL
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.{Changeset, Multi, Query}
 
   alias Explorer.Chain.{
     Address,
@@ -35,8 +35,10 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     CeloAccount,
+    CeloSigners,
     CeloValidator,
     CeloValidatorGroup,
+    CeloValidatorHistory,
     Data,
     DecompiledSmartContract,
     ExchangeRate,
@@ -3713,6 +3715,104 @@ defmodule Explorer.Chain do
   def get_celo_validator_groups do
     CeloValidatorGroup
     |> Repo.all()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  def get_token_balance(address, symbol) do
+    query =
+      from(token in Token,
+        join: balance in CurrentTokenBalance,
+        where: token.symbol == ^symbol,
+        where: balance.address_hash == ^address,
+        where: balance.token_contract_address_hash == token.contract_address_hash,
+        select: {balance.value}
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      {data} -> {:ok, %{value: data}}
+    end
+  end
+
+  def get_latest_validating_block(address) do
+    signer_query =
+      from(history in CeloValidatorHistory,
+        join: validator in CeloValidator,
+        join: signer in CeloSigners,
+        where: validator.address == ^address,
+        where: history.address == signer.signer,
+        where: signer.address == validator.address,
+        select: history.block_number
+      )
+
+    union_query =
+      from(history in CeloValidatorHistory,
+        join: validator in CeloValidator,
+        where: validator.address == ^address,
+        where: history.address == ^address,
+        select: history.block_number,
+        union: ^signer_query
+      )
+
+    query = from(q in subquery(union_query), select: q.block_number, order_by: [desc: q.block_number])
+
+    query
+    |> Query.first()
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  def get_latest_active_block(address) do
+    signer_query =
+      from(history in CeloValidatorHistory,
+        join: validator in CeloValidator,
+        join: signer in CeloSigners,
+        where: validator.address == ^address,
+        where: history.address == signer.signer,
+        where: history.online == true,
+        where: signer.address == validator.address,
+        select: history.block_number
+      )
+
+    union_query =
+      from(history in CeloValidatorHistory,
+        join: validator in CeloValidator,
+        where: validator.address == ^address,
+        where: history.online == true,
+        where: history.address == ^address,
+        select: history.block_number,
+        union: ^signer_query
+      )
+
+    query = from(q in subquery(union_query), select: q.block_number, order_by: [desc: q.block_number])
+
+    query
+    |> Query.first()
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  def get_latest_history_block do
+    query =
+      from(history in CeloValidatorHistory,
+        order_by: [desc: history.block_number],
+        select: history.block_number
+      )
+
+    query
+    |> Query.first()
+    |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
       data -> {:ok, data}

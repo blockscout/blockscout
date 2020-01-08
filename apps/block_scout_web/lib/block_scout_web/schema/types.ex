@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schema.Types do
   alias BlockScoutWeb.Resolvers.{
     Address,
     CeloAccount,
+    CeloUtil,
     CeloValidator,
     CeloValidatorGroup,
     InternalTransaction,
@@ -74,6 +75,11 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:account_type, :string)
     field(:nonvoting_locked_gold, :wei)
     field(:locked_gold, :wei)
+
+    field(:usd, :wei) do
+      resolve(&CeloValidator.get_usd/3)
+    end
+
     field(:attestations_requested, :integer)
     field(:attestations_fulfilled, :integer)
     field(:name, :string)
@@ -110,6 +116,14 @@ defmodule BlockScoutWeb.Schema.Types do
       resolve(&CeloAccount.get_by/3)
     end
 
+    field(:elected, :integer) do
+      resolve(&CeloUtil.get_elected/3)
+    end
+
+    field(:online, :integer) do
+      resolve(&CeloUtil.get_online/3)
+    end
+
     field(:group_info, :celo_validator_group) do
       resolve(&CeloValidatorGroup.get_by/3)
     end
@@ -121,6 +135,7 @@ defmodule BlockScoutWeb.Schema.Types do
   object :celo_validator_group do
     field(:address, :address_hash)
     field(:commission, :wei)
+    field(:votes, :wei)
 
     field(:address_info, :address) do
       resolve(&Address.get_by/3)

@@ -34,6 +34,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
     create table(:celo_validator_group) do
       add(:address, :bytea, null: false)
       add(:commission, :numeric, precision: 100)
+      add(:votes, :numeric, precision: 100)
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
@@ -53,6 +54,8 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
       add(:index, :integer, null: false)
       add(:block_number, :integer, null: false)
       add(:address, :bytea, null: false)
+      add(:online, :boolean, null: false)
+
       timestamps(null: false, type: :utc_datetime_usec)
     end
 
