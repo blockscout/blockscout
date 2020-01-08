@@ -23,6 +23,7 @@
 - [2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
 
 ### Chore
+- [#2940](https://github.com/poanetwork/blockscout/pull/2940) - Actualize additional_internal_transaction_constraints script
 - [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
 
 
