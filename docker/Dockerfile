@@ -1,12 +1,10 @@
-FROM bitwalker/alpine-elixir-phoenix:1.9.0
+FROM bitwalker/alpine-elixir-phoenix:1.9.1
 
 RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python
 
 EXPOSE 4000
 
-ENV PORT=4000 \
-    MIX_ENV="prod" \
-    SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
+ENV MIX_ENV="prod"
 
 # Cache elixir deps
 ADD mix.exs mix.lock ./
