@@ -120,6 +120,10 @@ defmodule BlockScoutWeb.Schema.Types do
       resolve(&CeloUtil.get_elected/3)
     end
 
+    field(:online, :integer) do
+      resolve(&CeloUtil.get_online/3)
+    end
+
     field(:group_info, :celo_validator_group) do
       resolve(&CeloValidatorGroup.get_by/3)
     end

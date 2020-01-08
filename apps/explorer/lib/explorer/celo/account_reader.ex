@@ -128,7 +128,6 @@ defmodule Explorer.Celo.AccountReader do
 
   def validator_history(block_number) do
     data = fetch_validators(block_number)
-#    IO.inspect(data)
     with {:ok, [bm]} <- data["getParentSealBitmap"],
          {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
         list =

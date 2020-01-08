@@ -3770,6 +3770,39 @@ defmodule Explorer.Chain do
     end
   end
 
+  def get_latest_active_block(address) do
+    signer_query =
+      from(history in CeloValidatorHistory,
+        join: validator in CeloValidator,
+        join: signer in CeloSigners,
+        where: validator.address == ^address,
+        where: history.address == signer.signer,
+        where: history.online == true,
+        where: signer.address == validator.address,
+        select: history.block_number
+      )
+
+    union_query =
+      from(history in CeloValidatorHistory,
+        join: validator in CeloValidator,
+        where: validator.address == ^address,
+        where: history.online == true,
+        where: history.address == ^address,
+        select: history.block_number,
+        union: ^signer_query
+      )
+
+    query = from(q in subquery(union_query), select: q.block_number, order_by: [desc: q.block_number])
+
+    query
+    |> Query.first()
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
   def get_exchange_rate(symbol) do
     query =
       from(token in Token,
