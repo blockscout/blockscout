@@ -119,7 +119,8 @@ defmodule Explorer.Celo.AccountReader do
 
   defp get_index(bm, idx) do
     byte = :binary.at(bm, 31 - floor(idx / 8))
-    if ((byte >>> (7-rem(255-idx,8))) &&& 1) == 1 do
+
+    if (byte >>> (7 - rem(255 - idx, 8)) &&& 1) == 1 do
       true
     else
       false
@@ -128,16 +129,16 @@ defmodule Explorer.Celo.AccountReader do
 
   def validator_history(block_number) do
     data = fetch_validators(block_number)
+
     with {:ok, [bm]} <- data["getParentSealBitmap"],
          {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
-        list =
-          validators
-          |> Enum.with_index()
-          |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx, online: get_index(bm, idx)} end)
+      list =
+        validators
+        |> Enum.with_index()
+        |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx, online: get_index(bm, idx)} end)
 
-        {:ok, %{validators: list}}
-      
-      else
+      {:ok, %{validators: list}}
+    else
       _ ->
         :error
     end
@@ -211,10 +212,13 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_validators(bn) do
-    call_methods([
-      {:election, "getCurrentValidatorSigners", []},
-      {:election, "getParentSealBitmap", [bn]}
-    ], bn)
+    call_methods(
+      [
+        {:election, "getCurrentValidatorSigners", []},
+        {:election, "getParentSealBitmap", [bn]}
+      ],
+      bn
+    )
   end
 
   defp fetch_withdrawal_data(address) do
