@@ -384,7 +384,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     end
 
     test "removes duplicate blocks (by hash) before inserting",
-         %{consensus_block: %{number: block_number, hash: block_hash, miner_hash: miner_hash}, options: options} do
+         %{consensus_block: %{number: _, hash: block_hash, miner_hash: miner_hash}, options: options} do
       new_block = params_for(:block, miner_hash: miner_hash, consensus: true)
 
       %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block)
