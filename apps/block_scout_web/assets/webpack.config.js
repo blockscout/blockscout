@@ -84,6 +84,9 @@ const appJs =
       'address-internal-transactions': './js/pages/address/internal_transactions.js',
       'address-logs': './js/pages/address/logs.js',
       'address-validations': './js/pages/address/validations.js',
+      'validated-transactions': './js/pages/transactions.js',
+      'pending-transactions': './js/pages/pending_transactions.js',
+      'transaction': './js/pages/transaction.js',
       'non-critical': './css/non-critical.scss'
     },
     output: {
