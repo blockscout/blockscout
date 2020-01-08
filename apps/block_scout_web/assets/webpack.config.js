@@ -77,6 +77,12 @@ const appJs =
       stakes: './js/pages/stakes.js',
       'chart-loader': './js/chart-loader.js',
       'chain': './js/pages/chain.js',
+      'address': './js/pages/address.js',
+      'address-transactions': './js/pages/address/transactions.js',
+      'address-coin-balances': './js/pages/address/coin_balances.js',
+      'address-internal-transactions': './js/pages/address/internal_transactions.js',
+      'address-logs': './js/pages/address/logs.js',
+      'address-validations': './js/pages/address/validations.js',
       'non-critical': './css/non-critical.scss'
     },
     output: {

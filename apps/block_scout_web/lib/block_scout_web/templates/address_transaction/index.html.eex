@@ -82,5 +82,6 @@
 
       </div>
     </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address-transactions.js") %>"></script>
   </section>
 </section>
