@@ -76,6 +76,7 @@ const appJs =
       app: './js/app.js',
       stakes: './js/pages/stakes.js',
       'chart-loader': './js/chart-loader.js',
+      'chain': './js/pages/chain.js',
       'non-critical': './css/non-critical.scss'
     },
     output: {
