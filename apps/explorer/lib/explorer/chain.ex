@@ -3803,7 +3803,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  def get_latest_history_block() do
+  def get_latest_history_block do
     query =
       from(history in CeloValidatorHistory,
         order_by: [desc: history.block_number],
