@@ -12,13 +12,14 @@ defmodule Explorer.Chain.Cache.AddressSumTest do
   test "returns default address sum" do
     result = AddressSum.get_sum()
 
-    assert is_nil(result)
+    assert result == Decimal.new(0)
   end
 
   test "updates cache if initial value is zero" do
     insert(:address, fetched_coin_balance: 1)
     insert(:address, fetched_coin_balance: 2)
     insert(:address, fetched_coin_balance: 3)
+    insert(:address, hash: "0x0000000000000000000000000000000000000000", fetched_coin_balance: 4)
 
     _result = AddressSum.get_sum()
 
@@ -26,7 +27,7 @@ defmodule Explorer.Chain.Cache.AddressSumTest do
 
     updated_value = Decimal.to_integer(AddressSum.get_sum())
 
-    assert updated_value == 6
+    assert updated_value == 10
   end
 
   test "does not update cache if cache period did not pass" do

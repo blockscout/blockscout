@@ -437,7 +437,8 @@ defmodule EthereumJSONRPC.Block do
   end
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice number size totalDifficulty paidFees) and not is_nil(quantity) do
+       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice number size totalDifficulty paidFees) and
+              not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
   end
 

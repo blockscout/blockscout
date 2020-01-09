@@ -80,18 +80,22 @@ function getDataFromLocalStorage (key) {
   return data ? JSON.parse(data) : []
 }
 
+function setDataToLocalStorage (key, data) {
+  window.localStorage.setItem(key, JSON.stringify(data))
+}
+
 function getPriceData (marketHistoryData) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('priceData')
+    return getDataFromLocalStorage('priceDataRSK')
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
-  window.localStorage.setItem('priceData', JSON.stringify(data))
+  setDataToLocalStorage('priceDataRSK', data)
   return data
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('marketCapData')
+    return getDataFromLocalStorage('marketCapDataRSK')
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => {
     const supply = (availableSupply !== null && typeof availableSupply === 'object')
@@ -99,7 +103,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
       : availableSupply
     return { x: date, y: closingPrice * supply }
   })
-  window.localStorage.setItem('marketCapData', JSON.stringify(data))
+  setDataToLocalStorage('marketCapDataRSK', data)
   return data
 }
 
@@ -138,6 +142,15 @@ class MarketHistoryChart {
     }
     this.availableSupply = availableSupply
     config.data.datasets = [this.price, this.marketCap]
+
+    const isChartLoadedKey = 'isChartLoadedRSK'
+    const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
+    if (isChartLoaded) {
+      config.options.animation = false
+    } else {
+      window.sessionStorage.setItem(isChartLoadedKey, true)
+    }
+
     this.chart = new Chart(el, config)
   }
 
@@ -156,7 +169,6 @@ class MarketHistoryChart {
 
 export function createMarketHistoryChart (el) {
   const dataPath = el.dataset.market_history_chart_path
-  const $chartLoading = $('[data-chart-loading-message]')
   const $chartError = $('[data-chart-error-message]')
   const chart = new MarketHistoryChart(el, 0, [])
   $(el).show()
@@ -171,15 +183,10 @@ export function createMarketHistoryChart (el) {
       $(el).hide()
       $chartError.show()
     })
-    .always(() => {
-      $chartLoading.css({ opacity: 0 })
-      setTimeout($chartLoading.hide, 1000)
-    })
   return chart
 }
 
 $('[data-chart-error-message]').on('click', _event => {
-  $('[data-chart-loading-message]').show()
   $('[data-chart-error-message]').hide()
   createMarketHistoryChart($('[data-chart="marketHistoryChart"]')[0])
 })

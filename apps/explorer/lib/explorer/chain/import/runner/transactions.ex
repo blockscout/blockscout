@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Multi, Repo}
-  alias Explorer.Chain.{Block, Data, Hash, Import, Transaction}
+  alias Explorer.Chain.{Block, Hash, Import, Transaction}
   alias Explorer.Chain.Import.Runner.TokenTransfers
 
   @behaviour Import.Runner
@@ -72,18 +72,14 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
          changes_list,
          %{
            timeout: timeout,
-           timestamps: %{inserted_at: inserted_at} = timestamps,
-           token_transfer_transaction_hash_set: token_transfer_transaction_hash_set
+           timestamps: timestamps
          } = options
        )
        when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    ordered_changes_list =
-      changes_list
-      |> put_internal_transactions_indexed_at(inserted_at, token_transfer_transaction_hash_set)
-      # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
-      |> Enum.sort_by(& &1.hash)
+    # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
 
     Import.insert_changes_list(
       repo,
@@ -114,7 +110,6 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           gas_price: fragment("EXCLUDED.gas_price"),
           gas_used: fragment("EXCLUDED.gas_used"),
           index: fragment("EXCLUDED.index"),
-          internal_transactions_indexed_at: fragment("EXCLUDED.internal_transactions_indexed_at"),
           input: fragment("EXCLUDED.input"),
           nonce: fragment("EXCLUDED.nonce"),
           r: fragment("EXCLUDED.r"),
@@ -130,7 +125,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       ],
       where:
         fragment(
-          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.internal_transactions_indexed_at, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           transaction.block_hash,
           transaction.block_number,
           transaction.created_contract_address_hash,
@@ -142,7 +137,6 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           transaction.gas_price,
           transaction.gas_used,
           transaction.index,
-          transaction.internal_transactions_indexed_at,
           transaction.input,
           transaction.nonce,
           transaction.r,
@@ -154,46 +148,6 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
         )
     )
   end
-
-  defp put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set) do
-    if Application.get_env(:explorer, :index_internal_transactions_for_token_transfers) do
-      changes_list
-    else
-      do_put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
-    end
-  end
-
-  defp do_put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
-       when is_list(changes_list) do
-    Enum.map(changes_list, &put_internal_transactions_indexed_at(&1, timestamp, token_transfer_transaction_hash_set))
-  end
-
-  defp do_put_internal_transactions_indexed_at(%{hash: hash} = changes, timestamp, token_transfer_transaction_hash_set) do
-    token_transfer? = to_string(hash) in token_transfer_transaction_hash_set
-
-    if put_internal_transactions_indexed_at?(changes, token_transfer?) do
-      Map.put(changes, :internal_transactions_indexed_at, timestamp)
-    else
-      changes
-    end
-  end
-
-  # A post-Byzantium validated transaction will have a status and if it has no input, it is a value transfer only.
-  # Internal transactions are only needed when status is `:error` to set `error`.
-  defp put_internal_transactions_indexed_at?(%{status: :ok, input: %Data{bytes: <<>>}}, _), do: true
-
-  # A post-Byzantium validated transaction will have a status and if it transfers tokens, the token transfer is in the
-  # log and the internal transactions.
-  # `created_contract_address_hash` must be `nil` because if a contract is created the internal transactions are needed
-  # to get
-  defp put_internal_transactions_indexed_at?(%{status: :ok} = changes, true) do
-    case Map.fetch(changes, :created_contract_address_hash) do
-      {:ok, created_contract_address_hash} when not is_nil(created_contract_address_hash) -> false
-      :error -> true
-    end
-  end
-
-  defp put_internal_transactions_indexed_at?(_, _), do: false
 
   defp discard_blocks_for_recollated_transactions(repo, changes_list, %{
          timeout: timeout,
