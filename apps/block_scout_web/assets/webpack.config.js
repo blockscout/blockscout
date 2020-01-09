@@ -91,6 +91,9 @@ const appJs =
       'token-counters': './js/pages/token_counters.js',
       'admin-tasks': './js/pages/admin/tasks.js',
       'smart-contract-helpers': './js/lib/smart_contract/index.js',
+      'token-transfers-toggle': './js/lib/token_transfers_toggle.js',
+      'try-api': './js/lib/try_api.js',
+      'try-eth-api': './js/lib/try_eth_api.js',
       'non-critical': './css/non-critical.scss'
     },
     output: {
