@@ -6,18 +6,18 @@ defmodule Explorer.Repo.Migrations.AddPendingInternalTxsOperation do
       add(:fetch_internal_transactions, :boolean, null: false)
     end
 
-    execute("""
-    INSERT INTO pending_block_operations
-    (block_hash, inserted_at, updated_at, fetch_internal_transactions)
-    SELECT b.hash, now(), now(), TRUE FROM blocks b
-    WHERE b.internal_transactions_indexed_at IS NULL
-    AND EXISTS (
-      SELECT 1
-      FROM transactions t
-      WHERE b.hash = t.block_hash
-      AND t.internal_transactions_indexed_at IS NULL
-    );
-    """)
+    # execute("""
+    # INSERT INTO pending_block_operations
+    # (block_hash, inserted_at, updated_at, fetch_internal_transactions)
+    # SELECT b.hash, now(), now(), TRUE FROM blocks b
+    # WHERE b.internal_transactions_indexed_at IS NULL
+    # AND EXISTS (
+    #   SELECT 1
+    #   FROM transactions t
+    #   WHERE b.hash = t.block_hash
+    #   AND t.internal_transactions_indexed_at IS NULL
+    # );
+    # """)
 
     alter table(:blocks) do
       remove(:internal_transactions_indexed_at)
