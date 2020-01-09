@@ -90,6 +90,7 @@ const appJs =
       'verification-form': './js/pages/verification_form.js',
       'token-counters': './js/pages/token_counters.js',
       'admin-tasks': './js/pages/admin/tasks.js',
+      'smart-contract-helpers': './js/lib/smart_contract/index.js',
       'non-critical': './css/non-critical.scss'
     },
     output: {

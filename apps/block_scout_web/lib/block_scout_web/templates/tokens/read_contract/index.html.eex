@@ -22,4 +22,5 @@
       </div>
     </div>
   </section>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/smart-contract-helpers.js") %>"></script>
 </section>
