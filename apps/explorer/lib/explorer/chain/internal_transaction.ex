@@ -3,7 +3,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Data, Gas, Hash, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Data, Gas, Hash, PendingBlockOperation, Transaction, Wei}
   alias Explorer.Chain.InternalTransaction.{Action, CallType, Result, Type}
 
   @typedoc """
@@ -22,11 +22,15 @@ defmodule Explorer.Chain.InternalTransaction do
    * `to_address` - the sink of the `value`
    * `to_address_hash` - hash of the sink of the `value`
    * `trace_address` - list of traces
-   * `transaction` - transaction in which this transaction occurred
+   * `transaction` - transaction in which this internal transaction occurred
    * `transaction_hash` - foreign key for `transaction`
    * `transaction_index` - the `t:Explorer.Chain.Transaction.t/0` `index` of `transaction` in `block_number`.
    * `type` - type of internal transaction
    * `value` - value of transferred from `from_address` to `to_address`
+   * `block` - block in which this internal transaction occurred
+   * `block_hash` - foreign key for `block`
+   * `block_index` - the index of this internal transaction inside the `block`
+   * `pending_block` - `nil` if `block` has all its internal transactions fetched
   """
   @type t :: %__MODULE__{
           block_number: Explorer.Chain.Block.block_number() | nil,
@@ -50,7 +54,9 @@ defmodule Explorer.Chain.InternalTransaction do
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.t(),
           transaction_index: Transaction.transaction_index() | nil,
-          value: Wei.t()
+          value: Wei.t(),
+          block_hash: Hash.Full.t(),
+          block_index: non_neg_integer()
         }
 
   @primary_key false
@@ -69,6 +75,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:value, Wei)
     field(:block_number, :integer)
     field(:transaction_index, :integer)
+    field(:block_index, :integer)
 
     timestamps()
 
@@ -102,6 +109,20 @@ defmodule Explorer.Chain.InternalTransaction do
       references: :hash,
       type: Hash.Full
     )
+
+    belongs_to(:block, Block,
+      foreign_key: :block_hash,
+      references: :hash,
+      type: Hash.Full
+    )
+
+    belongs_to(:pending_block, PendingBlockOperation,
+      foreign_key: :block_hash,
+      define_field: false,
+      references: :block_hash,
+      type: Hash.Full,
+      where: [fetch_internal_transactions: true]
+    )
   end
 
   @doc """
@@ -125,7 +146,9 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     type: "create",
       ...>     value: 0,
-      ...>     block_number: 35
+      ...>     block_number: 35,
+      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>     block_index: 0
       ...>   }
       ...> )
       iex> changeset.valid?
@@ -165,6 +188,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
+      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>     block_index: 0,
       ...>     transaction_index: 0
       ...>   }
       iex> )
@@ -182,6 +207,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
+      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>     block_index: 0,
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     index: 0,
@@ -206,6 +233,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
+      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>     block_index: 0,
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
       ...>     index: 0,
@@ -230,6 +259,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
+      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>     block_index: 0,
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
       ...>     index: 0,
@@ -260,6 +291,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
+      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>     block_index: 0,
       ...>     transaction_index: 0,
       ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
       ...>     index: 0,
@@ -300,6 +333,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
+      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>     block_index: 0,
       ...>     transaction_index: 0
       ...>   }
       iex> )
@@ -326,6 +361,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
+      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>     block_index: 0,
       ...>     transaction_index: 0
       ...>   }
       ...> )
@@ -351,6 +388,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     type: "selfdestruct",
       ...>     value: 0,
       ...>     block_number: 35,
+      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>     block_index: 0,
       ...>     transaction_index: 0
       ...>   }
       ...> )
@@ -362,7 +401,32 @@ defmodule Explorer.Chain.InternalTransaction do
     internal_transaction
     |> cast(attrs, ~w(type)a)
     |> validate_required(~w(type)a)
+    |> validate_block_required(attrs)
     |> type_changeset(attrs)
+  end
+
+  @doc """
+  Accepts changes without `:type` but with `:block_number`, if `:type` is defined
+  works like `changeset`, except allowing `:block_hash` and `:block_index` to be undefined.
+
+  This is used because the `internal_transactions` runner can derive such values
+  on its own or use empty types to know that a block has no internal transactions.
+  """
+  def blockless_changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
+    changeset = cast(internal_transaction, attrs, ~w(type block_number)a)
+
+    if validate_required(changeset, ~w(type)a).valid? do
+      type_changeset(changeset, attrs)
+    else
+      validate_required(changeset, ~w(block_number)a)
+    end
+  end
+
+  defp validate_block_required(changeset, attrs) do
+    changeset
+    |> cast(attrs, ~w(block_hash block_index)a)
+    |> validate_required(~w(block_hash block_index)a)
+    |> foreign_key_constraint(:block_hash)
   end
 
   defp type_changeset(changeset, attrs) do
@@ -491,6 +555,18 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
+  def where_address_fields_match(query, address_hash, :to_address_hash) do
+    where(query, [it], it.to_address_hash == ^address_hash)
+  end
+
+  def where_address_fields_match(query, address_hash, :from_address_hash) do
+    where(query, [it], it.from_address_hash == ^address_hash)
+  end
+
+  def where_address_fields_match(query, address_hash, :created_contract_address_hash) do
+    where(query, [it], it.created_contract_address_hash == ^address_hash)
+  end
+
   def where_is_different_from_parent_transaction(query) do
     where(
       query,
@@ -501,6 +577,16 @@ defmodule Explorer.Chain.InternalTransaction do
 
   def where_block_number_is_not_null(query) do
     where(query, [t], not is_nil(t.block_number))
+  end
+
+  @doc """
+  Filters out internal_transactions of blocks that are flagged as needing fethching
+  of internal_transactions
+  """
+  def where_nonpending_block(query \\ nil) do
+    (query || __MODULE__)
+    |> join(:left, [it], pending in assoc(it, :pending_block), as: :pending)
+    |> where([it, pending: pending], is_nil(pending.block_hash))
   end
 
   def internal_transactions_to_raw(internal_transactions) when is_list(internal_transactions) do
