@@ -37,4 +37,6 @@ RUN cd apps/explorer/ && \
 
 # USER default
 
+RUN mix phx.digest
+
 # CMD ["mix", "phx.server"]
