@@ -87,6 +87,9 @@ const appJs =
       'validated-transactions': './js/pages/transactions.js',
       'pending-transactions': './js/pages/pending_transactions.js',
       'transaction': './js/pages/transaction.js',
+      'verification-form': './js/pages/verification_form.js',
+      'token-counters': './js/pages/token_counters.js',
+      'admin-tasks': './js/pages/admin/tasks.js',
       'non-critical': './css/non-critical.scss'
     },
     output: {

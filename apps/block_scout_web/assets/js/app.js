@@ -21,11 +21,7 @@ import 'bootstrap'
 import './locale'
 
 import './pages/layout'
-import './pages/verification_form'
-import './pages/token_counters'
 import './pages/dark-mode-switcher'
-
-import './pages/admin/tasks.js'
 
 import './lib/clipboard_buttons'
 import './lib/currency'
