@@ -346,6 +346,7 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
   defp tab_name(["logs"]), do: gettext("Logs")
   defp tab_name(["celo"]), do: "Celo Info"
+  defp tab_name(["signed"]), do: "Blocks Signed"
 
   def short_hash(%Address{hash: hash}) do
     <<

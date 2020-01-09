@@ -92,6 +92,13 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/signed",
+        AddressSignedController,
+        only: [:index],
+        as: :signed
+      )
+
+      resources(
         "/contracts",
         AddressContractController,
         only: [:index],
