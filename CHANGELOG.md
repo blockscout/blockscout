@@ -1,14 +1,42 @@
 ## Current
 
 ### Features
+- [#2835](https://github.com/poanetwork/blockscout/pull/2835), [#2871](https://github.com/poanetwork/blockscout/pull/2871), [#2872](https://github.com/poanetwork/blockscout/pull/2872), [#2886](https://github.com/poanetwork/blockscout/pull/2886), [#2925](https://github.com/poanetwork/blockscout/pull/2925), [#2936](https://github.com/poanetwork/blockscout/pull/2936) - Add "block_hash" to logs, token_transfers and internal transactions and "pending blocks operations" approach
+- [#2926](https://github.com/poanetwork/blockscout/pull/2926) - API endpoint: sum balances except burnt address
+- [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action explicitly
+
+### Fixes
+- [#2934](https://github.com/poanetwork/blockscout/pull/2934) - RSK release 1.2.0 breaking changes support
+- [#2933](https://github.com/poanetwork/blockscout/pull/2933) - Get rid of deadlock in the query to address_current_token_balance table
+- [#2932](https://github.com/poanetwork/blockscout/pull/2932) - fix duplicate websocket connection
+- [#2928](https://github.com/poanetwork/blockscout/pull/2928) - Speedup pending block ops int txs to fetch query
+- [#2924](https://github.com/poanetwork/blockscout/pull/2924) - Speedup address to logs query
+- [#2915](https://github.com/poanetwork/blockscout/pull/2915) - Speedup of blocks_without_reward_query
+- [#2914](https://github.com/poanetwork/blockscout/pull/2914) - Reduce execution time of stream_unfetched_token_instances query
+- [#2908](https://github.com/poanetwork/blockscout/pull/2908) - Fix performance of address page
+- [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
+- [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
+- [#2900](https://github.com/poanetwork/blockscout/pull/2900) - check fetched instance metadata in multiple places
+- [#2899](https://github.com/poanetwork/blockscout/pull/2899) - fix empty buffered task
+- [#2887](https://github.com/poanetwork/blockscout/pull/2887) - increase chart loading speed
+
+- [2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
+
+### Chore
+- [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
+
+
+## 2.1.1-beta
+
+### Features
 - [#2862](https://github.com/poanetwork/blockscout/pull/2862) - Coin total supply from DB API endpoint
+- [#2857](https://github.com/poanetwork/blockscout/pull/2857) - Extend getsourcecode API view with new output fields
 - [#2822](https://github.com/poanetwork/blockscout/pull/2822) - Estimated address count on the main page, if cache is empty
 - [#2821](https://github.com/poanetwork/blockscout/pull/2821) - add autodetection of constructor arguments
 - [#2825](https://github.com/poanetwork/blockscout/pull/2825) - separate token transfers and transactions
 - [#2787](https://github.com/poanetwork/blockscout/pull/2787) - async fetching of address counters
 - [#2791](https://github.com/poanetwork/blockscout/pull/2791) - add ipc client
 - [#2449](https://github.com/poanetwork/blockscout/pull/2449) - add ability to send notification events through postgres notify
-
 
 ### Fixes
 - [#2864](https://github.com/poanetwork/blockscout/pull/2864) - add token instance metadata type check
