@@ -18,18 +18,7 @@ export function reducer (state = initialState, action) {
     }
     case 'CHANNEL_DISCONNECTED': {
       return Object.assign({}, state, { channelDisconnected: true })
-    }/*
-    case 'RECEIVED_NEW_BLOCK': {
-      if (state.channelDisconnected) return state
-      if (state.beyondPageOne) return state
-
-      return Object.assign({}, state, {
-        items: [
-          action.blockHtml,
-          ...state.items
-        ]
-      })
-    }*/
+    }
     default:
       return state
   }
