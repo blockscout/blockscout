@@ -63,6 +63,7 @@ defmodule Explorer.Chain.Block do
           timestamp: DateTime.t(),
           total_difficulty: difficulty(),
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
+          signers: %Ecto.Association.NotLoaded{} | [Address.t()],
           internal_transactions_indexed_at: DateTime.t(),
           refetch_needed: boolean(),
           online: %Ecto.Association.NotLoaded{} | boolean()
@@ -100,6 +101,7 @@ defmodule Explorer.Chain.Block do
     has_many(:rewards, Reward, foreign_key: :block_hash)
     has_one(:celo_delegator, CeloSigners, foreign_key: :signer, references: :miner_hash)
     has_one(:online, CeloValidatorHistory, foreign_key: :block_number, references: :number)
+    has_many(:signers, CeloValidatorHistory, foreign_key: :block_number, references: :number)
   end
 
   def changeset(%__MODULE__{} = block, attrs) do

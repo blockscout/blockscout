@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.AddressView do
     Address,
     CeloSigners,
     CeloValidator,
+    CeloValidatorHistory,
     Hash,
     InternalTransaction,
     SmartContract,
@@ -122,6 +123,10 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def address_partial_selector(%CeloValidator{validator_address: address}, :members, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloValidatorHistory{validator_address: address}, :signers, current_address, truncate) do
     matching_address_check(current_address, address, false, truncate)
   end
 

@@ -95,12 +95,14 @@
       <dt class="col-sm-3 text-muted">Group members</dt>
        <dd class="col-sm-9">
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All affiliated members for this group">
+       <ul>
        <%= for member <- @address.celo_members do %>
-         (<%= member.member %>:
+         <li><%= member.member %>:
          <%= if member.validator_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:members, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
-            end %>)
+            end %></li>
        <% end %>
+       </ul>
        </span>
        </dd>
       </dl>

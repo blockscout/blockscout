@@ -16,8 +16,6 @@ defmodule BlockScoutWeb.AddressSignedController do
   alias Phoenix.View
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
-    IO.inspect("where do they come from?")
-
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, _} <- Chain.find_or_insert_address_from_hash(address_hash, [], false) do
       full_options =
@@ -69,8 +67,6 @@ defmodule BlockScoutWeb.AddressSignedController do
   end
 
   def index(conn, %{"address_id" => address_hash_string}) do
-    IO.inspect("signed page")
-
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_or_insert_address_from_hash(address_hash) do
       {transaction_count, validation_count} = transaction_and_validation_count(address_hash)

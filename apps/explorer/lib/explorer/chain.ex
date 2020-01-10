@@ -1553,27 +1553,28 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    query = from(
-      b in Block,
-      join: h in CeloValidatorHistory,
-      where: b.number == h.block_number,
-      where: h.address == ^address_hash,
-      select: b)
-    
-    online_query = from(
-      h in CeloValidatorHistory,
-      where: h.address == ^address_hash,
-      select: h.online
-    )
+    query =
+      from(b in Block,
+        join: h in CeloValidatorHistory,
+        where: b.number == h.block_number,
+        where: h.address == ^address_hash,
+        select: b
+      )
+
+    online_query =
+      from(
+        h in CeloValidatorHistory,
+        where: h.address == ^address_hash,
+        select: h.online
+      )
 
     query
     |> join_associations(necessity_by_association)
     |> page_blocks(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(desc: :number)
-    |> preload([online: ^online_query])
+    |> preload(online: ^online_query)
     |> Repo.all()
-
   end
 
   @doc """
@@ -2893,6 +2894,10 @@ defmodule Explorer.Chain do
       :required ->
         from(q in query, inner_join: a in assoc(q, ^association), preload: [{^association, a}])
     end
+  end
+
+  defp join_association(query, [{arg1, arg2, arg3}], :optional) do
+    preload(query, [{^arg1, [{^arg2, ^arg3}]}])
   end
 
   defp join_associations(query, necessity_by_association) when is_map(necessity_by_association) do

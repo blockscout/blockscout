@@ -1,0 +1,45 @@
+<section class="container">
+
+  <%= render BlockScoutWeb.BlockView, "overview.html", assigns %>
+
+  <section>
+    <div class="card mb-3">
+      <div class="card-tabs js-card-tabs">
+        <%=
+          link(
+            gettext("Transactions"),
+            class: "card-tab #{tab_status("transactions", @conn.request_path)}",
+            to: block_transaction_path(@conn, :index, @conn.params["block_hash_or_number"])
+            )
+        %>
+        <%=
+          link(
+            gettext("Signers"),
+            class: "card-tab #{tab_status("signers", @conn.request_path)}",
+            to: block_signers_path(@conn, :index, @conn.params["block_hash_or_number"])
+            )
+        %>
+      </div>
+
+      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+      <h2 class="card-title"><%= gettext "Signers" %></h2>
+
+      <ul>
+      <%= for member <- @block.signers do %>
+          <li>
+          <%= if member.validator_address != nil do
+            member |> BlockScoutWeb.AddressView.address_partial_selector(:signers, nil) |> BlockScoutWeb.RenderHelpers.render_partial()
+            end %>
+                <%= if member.online == true do %>
+             <%= gettext "Online" %>
+            <% end %>
+         <%= if member.online == false do %>
+          <%= gettext "Downtime" %>
+         <% end %>
+          </li>
+       <% end %>
+      </ul>
+
+    </div>
+  </section>
+</section>
