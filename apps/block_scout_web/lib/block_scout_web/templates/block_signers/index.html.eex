@@ -28,7 +28,7 @@
       <%= for member <- @block.signers do %>
           <li>
           <%= if member.validator_address != nil do
-            member |> BlockScoutWeb.AddressView.address_partial_selector(:signers, nil) |> BlockScoutWeb.RenderHelpers.render_partial()
+            get_member(member.validator_address) |> BlockScoutWeb.AddressView.address_partial_selector(:signers, nil) |> BlockScoutWeb.RenderHelpers.render_partial()
             end %>
                 <%= if member.online == true do %>
              <%= gettext "Online" %>

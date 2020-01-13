@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.BlockSignersController do
            necessity_by_association: %{
              [miner: :names] => :required,
              [{:signers, :validator_address, :names}] => :optional,
+             [{:signers, :validator_address, :celo_delegator, :celo_account}] => :optional,
              [celo_delegator: :celo_account] => :optional,
              :uncles => :optional,
              :nephews => :optional,

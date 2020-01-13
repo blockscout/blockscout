@@ -2900,6 +2900,14 @@ defmodule Explorer.Chain do
     preload(query, [{^arg1, [{^arg2, ^arg3}]}])
   end
 
+  defp join_association(query, [{arg1, arg2, arg3, arg4}], :optional) do
+    preload(query, [{^arg1, [{^arg2, [{^arg3, ^arg4}]}]}])
+  end
+
+  defp join_association(query, [{arg1, arg2, arg3, arg4, arg5}], :optional) do
+    preload(query, [{^arg1, [{^arg2, [{^arg3, [{^arg4, ^arg5}]}]}]}])
+  end
+
   defp join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)

@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.AddressSignedController do
             nil
 
           next_page_params ->
-            address_validation_path(
+            address_signed_path(
               conn,
               :index,
               address_hash_string,
