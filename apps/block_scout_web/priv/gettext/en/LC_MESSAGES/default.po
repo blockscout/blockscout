@@ -245,7 +245,7 @@ msgid "Block Rewards"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_signers_view.ex:15
+#: lib/block_scout_web/views/block_signers_view.ex:36
 #: lib/block_scout_web/views/block_transaction_view.ex:15
 msgid "Block not found, please try again later."
 msgstr ""
@@ -651,7 +651,7 @@ msgid "EVM Version"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_signers_view.ex:7
+#: lib/block_scout_web/views/block_signers_view.ex:28
 #: lib/block_scout_web/views/block_transaction_view.ex:7
 msgid "Easy Cowboy! This block does not exist yet!"
 msgstr ""
@@ -1500,7 +1500,7 @@ msgid "This API is provided to support some rpc methods in the exact format spec
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_signers_view.ex:11
+#: lib/block_scout_web/views/block_signers_view.ex:32
 #: lib/block_scout_web/views/block_transaction_view.ex:11
 msgid "This block has not been processed yet."
 msgstr ""
@@ -1925,7 +1925,7 @@ msgstr ""
 msgid "cGLD Price"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:31
 #: lib/block_scout_web/templates/address_signed/index.html.eex:13
 msgid "Blocks Signed"
@@ -1950,7 +1950,7 @@ msgstr ""
 msgid "Signers"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_signed/index.html.eex:18
 msgid "There are no blocks signed by this address."
 msgstr ""
