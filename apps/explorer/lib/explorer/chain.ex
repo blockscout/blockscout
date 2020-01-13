@@ -35,7 +35,7 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     CeloAccount,
-    CeloSigners,
+#    CeloSigners,
     CeloValidator,
     CeloValidatorGroup,
     CeloValidatorHistory,
@@ -3796,10 +3796,8 @@ defmodule Explorer.Chain do
     signer_query =
       from(history in CeloValidatorHistory,
         join: validator in CeloValidator,
-        join: signer in CeloSigners,
         where: validator.address == ^address,
-        where: history.address == signer.signer,
-        where: signer.address == validator.address,
+        where: history.address == validator.signer_address_hash,
         select: history.block_number
       )
 
@@ -3812,10 +3810,9 @@ defmodule Explorer.Chain do
         union: ^signer_query
       )
 
-    query = from(q in subquery(union_query), select: q.block_number, order_by: [desc: q.block_number])
+    query = from(q in subquery(union_query), select: max(q.block_number))
 
     query
-    |> Query.first()
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -3824,35 +3821,35 @@ defmodule Explorer.Chain do
   end
 
   def get_latest_active_block(address) do
+
     signer_query =
       from(history in CeloValidatorHistory,
         join: validator in CeloValidator,
-        join: signer in CeloSigners,
         where: validator.address == ^address,
-        where: history.address == signer.signer,
+        where: history.address == validator.signer_address_hash,
         where: history.online == true,
-        where: signer.address == validator.address,
-        select: history.block_number
+        select: max(history.block_number)
       )
 
-    union_query =
+    direct_query =
       from(history in CeloValidatorHistory,
         join: validator in CeloValidator,
         where: validator.address == ^address,
         where: history.online == true,
         where: history.address == ^address,
-        select: history.block_number,
-        union: ^signer_query
+        select: max(history.block_number)
       )
 
-    query = from(q in subquery(union_query), select: q.block_number, order_by: [desc: q.block_number])
-
-    query
-    |> Query.first()
+    signer_result = signer_query
     |> Repo.one()
-    |> case do
-      nil -> {:error, :not_found}
-      data -> {:ok, data}
+
+    direct_result = direct_query
+    |> Repo.one()
+
+    case {signer_result, direct_result} do
+      {data, _} when data != nil -> {:ok, data}
+      {_, data} when data != nil -> {:ok, data}
+      _ -> {:error, :not_found}
     end
   end
 
