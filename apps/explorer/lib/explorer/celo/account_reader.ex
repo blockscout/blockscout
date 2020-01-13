@@ -173,12 +173,14 @@ defmodule Explorer.Celo.AccountReader do
         {:validators, "getValidatorGroup", [group_address]}
       ])
 
-    res = case data["getValidatorGroup"] do
+    case data["getValidatorGroup"] do
       {:ok, [members | _]} ->
         idx =
           members
           |> Enum.zip(1..1000)
-          |> Enum.filter(fn {addr, _} -> String.downcase(account_address) == "0x" <> Base.encode16(addr, case: :lower) end)
+          |> Enum.filter(fn {addr, _} ->
+            String.downcase(account_address) == "0x" <> Base.encode16(addr, case: :lower)
+          end)
           |> Enum.map(fn {_, idx} -> idx end)
 
         case idx do
@@ -189,8 +191,6 @@ defmodule Explorer.Celo.AccountReader do
       _ ->
         -1
     end
-    IO.inspect(%{data: data, res: res, account: account_address, group: group_address})
-    res
   end
 
   def fetch_claimed_account_data(address) do
