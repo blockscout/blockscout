@@ -35,7 +35,7 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     CeloAccount,
-#    CeloSigners,
+    #    CeloSigners,
     CeloValidator,
     CeloValidatorGroup,
     CeloValidatorHistory,
@@ -3794,61 +3794,60 @@ defmodule Explorer.Chain do
 
   def get_latest_validating_block(address) do
     signer_query =
-      from(history in CeloValidatorHistory,
-        join: validator in CeloValidator,
-        where: validator.address == ^address,
-        where: history.address == validator.signer_address_hash,
-        select: history.block_number
+      from(validator in CeloValidator,
+        select: validator.signer_address_hash,
+        where: validator.address == ^address
       )
 
-    union_query =
+    signer_address =
+      case Repo.one(signer_query) do
+        nil -> address
+        data -> data
+      end
+
+    direct_query =
       from(history in CeloValidatorHistory,
-        join: validator in CeloValidator,
-        where: validator.address == ^address,
-        where: history.address == ^address,
-        select: history.block_number,
-        union: ^signer_query
+        where: history.online == true,
+        where: history.address == ^signer_address,
+        select: max(history.block_number)
       )
 
-    query = from(q in subquery(union_query), select: max(q.block_number))
+    direct_result =
+      direct_query
+      |> Repo.one()
 
-    query
-    |> Repo.one()
-    |> case do
-      nil -> {:error, :not_found}
-      data -> {:ok, data}
+    case direct_result do
+      data when data != nil -> {:ok, data}
+      _ -> {:error, :not_found}
     end
   end
 
   def get_latest_active_block(address) do
-
     signer_query =
-      from(history in CeloValidatorHistory,
-        join: validator in CeloValidator,
-        where: validator.address == ^address,
-        where: history.address == validator.signer_address_hash,
-        where: history.online == true,
-        select: max(history.block_number)
+      from(validator in CeloValidator,
+        select: validator.signer_address_hash,
+        where: validator.address == ^address
       )
+
+    signer_address =
+      case Repo.one(signer_query) do
+        nil -> address
+        data -> data
+      end
 
     direct_query =
       from(history in CeloValidatorHistory,
-        join: validator in CeloValidator,
-        where: validator.address == ^address,
         where: history.online == true,
-        where: history.address == ^address,
+        where: history.address == ^signer_address,
         select: max(history.block_number)
       )
 
-    signer_result = signer_query
-    |> Repo.one()
+    direct_result =
+      direct_query
+      |> Repo.one()
 
-    direct_result = direct_query
-    |> Repo.one()
-
-    case {signer_result, direct_result} do
-      {data, _} when data != nil -> {:ok, data}
-      {_, data} when data != nil -> {:ok, data}
+    case direct_result do
+      data when data != nil -> {:ok, data}
       _ -> {:error, :not_found}
     end
   end
