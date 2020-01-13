@@ -35,7 +35,6 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     CeloAccount,
-    #    CeloSigners,
     CeloValidator,
     CeloValidatorGroup,
     CeloValidatorHistory,
