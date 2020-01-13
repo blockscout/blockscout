@@ -64,7 +64,7 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">Affiliation</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Affiliated group"><%= @address.celo_validator |> BlockScoutWeb.AddressView.address_partial_selector(:group, @address) |> BlockScoutWeb.RenderHelpers.render_partial() %>% (<%= @address.celo_validator.member %>)</span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Affiliated group"><%= @address.celo_validator |> BlockScoutWeb.AddressView.address_partial_selector(:group, @address) |> BlockScoutWeb.RenderHelpers.render_partial() %> (<%= @address.celo_validator.member %>)</span>
        </dd>
       </dl>
       <% end %>
@@ -94,13 +94,15 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">Group members</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All affliated members for this group">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All affiliated members for this group">
+       <ul>
        <%= for member <- @address.celo_members do %>
-         (<%= member.member %>:
+         <li><%= member.member %>:
          <%= if member.validator_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:members, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
-            end %>)
+            end %></li>
        <% end %>
+       </ul>
        </span>
        </dd>
       </dl>

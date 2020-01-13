@@ -178,7 +178,9 @@ defmodule Explorer.Celo.AccountReader do
         idx =
           members
           |> Enum.zip(1..1000)
-          |> Enum.filter(fn {addr, _} -> account_address == "0x" <> Base.encode16(addr, case: :lower) end)
+          |> Enum.filter(fn {addr, _} ->
+            String.downcase(account_address) == "0x" <> Base.encode16(addr, case: :lower)
+          end)
           |> Enum.map(fn {_, idx} -> idx end)
 
         case idx do

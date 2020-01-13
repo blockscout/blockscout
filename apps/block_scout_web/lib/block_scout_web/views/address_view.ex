@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.AddressView do
     Address,
     CeloSigners,
     CeloValidator,
+    CeloValidatorHistory,
     Hash,
     InternalTransaction,
     SmartContract,
@@ -117,11 +118,15 @@ defmodule BlockScoutWeb.AddressView do
     matching_address_check(current_address, address, false, truncate)
   end
 
-  def address_partial_selector(%CeloSigners{signer_address: address}, :signers, current_address, truncate) do
+  def address_partial_selector(address, :signers, current_address, truncate) do
     matching_address_check(current_address, address, false, truncate)
   end
 
   def address_partial_selector(%CeloValidator{validator_address: address}, :members, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloValidatorHistory{validator_address: address}, :signers, current_address, truncate) do
     matching_address_check(current_address, address, false, truncate)
   end
 
@@ -346,6 +351,7 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
   defp tab_name(["logs"]), do: gettext("Logs")
   defp tab_name(["celo"]), do: "Celo Info"
+  defp tab_name(["signed"]), do: "Blocks Signed"
 
   def short_hash(%Address{hash: hash}) do
     <<

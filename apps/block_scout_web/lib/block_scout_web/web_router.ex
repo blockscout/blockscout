@@ -30,6 +30,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources "/blocks", BlockController, only: [:index, :show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
+      resources("/signers", BlockSignersController, only: [:index], as: :signers)
     end
 
     get("/reorgs", BlockController, :reorg, as: :reorg)
@@ -89,6 +90,13 @@ defmodule BlockScoutWeb.WebRouter do
         AddressCeloController,
         only: [:index],
         as: :celo
+      )
+
+      resources(
+        "/signed",
+        AddressSignedController,
+        only: [:index],
+        as: :signed
       )
 
       resources(
