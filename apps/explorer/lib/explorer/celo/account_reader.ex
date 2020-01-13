@@ -7,6 +7,8 @@ defmodule Explorer.Celo.AccountReader do
   alias Explorer.Celo.AbiHandler
   alias Explorer.SmartContract.Reader
 
+  use Bitwise
+
   def account_data(%{address: account_address}) do
     data = fetch_account_data(account_address)
 
@@ -30,6 +32,24 @@ defmodule Explorer.Celo.AccountReader do
     else
       _ ->
         :error
+    end
+  end
+
+  def is_validator_group(address) do
+    data = call_methods([{:validators, "isValidatorGroup", [address]}])
+
+    case data["isValidatorGroup"] do
+      {:ok, [res]} -> {:ok, res}
+      _ -> :error
+    end
+  end
+
+  def validator_group_members(address) do
+    data = call_methods([{:validators, "getValidatorGroup", [address]}])
+
+    case data["getValidatorGroup"] do
+      {:ok, [res | _]} -> {:ok, res}
+      _ -> :error
     end
   end
 
@@ -65,14 +85,15 @@ defmodule Explorer.Celo.AccountReader do
   def validator_group_data(address) do
     data = fetch_validator_group_data(address)
 
-    case data["getValidatorGroup"] do
-      {:ok, [_members, commission, _size_history]} ->
-        {:ok,
-         %{
-           address: address,
-           commission: commission
-         }}
-
+    with {:ok, [_ | [commission | _]]} <- data["getValidatorGroup"],
+         {:ok, [votes]} <- data["getTotalVotesForGroup"] do
+      {:ok,
+       %{
+         address: address,
+         votes: votes,
+         commission: commission
+       }}
+    else
       _ ->
         :error
     end
@@ -96,18 +117,28 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
+  defp get_index(bm, idx) do
+    byte = :binary.at(bm, 31 - floor(idx / 8))
+
+    if (byte >>> (7 - rem(255 - idx, 8)) &&& 1) == 1 do
+      true
+    else
+      false
+    end
+  end
+
   def validator_history(block_number) do
     data = fetch_validators(block_number)
 
-    case data["getCurrentValidatorSigners"] do
-      {:ok, [validators]} ->
-        list =
-          validators
-          |> Enum.with_index()
-          |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx} end)
+    with {:ok, [bm]} <- data["getParentSealBitmap"],
+         {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
+      list =
+        validators
+        |> Enum.with_index()
+        |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx, online: get_index(bm, idx)} end)
 
-        {:ok, %{validators: list}}
-
+      {:ok, %{validators: list}}
+    else
       _ ->
         :error
     end
@@ -143,11 +174,13 @@ defmodule Explorer.Celo.AccountReader do
       ])
 
     case data["getValidatorGroup"] do
-      {:ok, [members, _, _]} ->
+      {:ok, [members | _]} ->
         idx =
           members
           |> Enum.zip(1..1000)
-          |> Enum.filter(fn {addr, _} -> account_address == "0x" <> Base.encode16(addr, case: :lower) end)
+          |> Enum.filter(fn {addr, _} ->
+            String.downcase(account_address) == "0x" <> Base.encode16(addr, case: :lower)
+          end)
           |> Enum.map(fn {_, idx} -> idx end)
 
         case idx do
@@ -181,7 +214,13 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_validators(bn) do
-    call_methods([{:election, "getCurrentValidatorSigners", []}], bn)
+    call_methods(
+      [
+        {:election, "getCurrentValidatorSigners", []},
+        {:election, "getParentSealBitmap", [bn]}
+      ],
+      bn
+    )
   end
 
   defp fetch_withdrawal_data(address) do
@@ -190,6 +229,7 @@ defmodule Explorer.Celo.AccountReader do
 
   defp fetch_validator_group_data(address) do
     call_methods([
+      {:election, "getTotalVotesForGroup", [address]},
       {:validators, "getValidatorGroup", [address]}
     ])
   end

@@ -26,7 +26,7 @@ defmodule Explorer.Chain do
 
   alias ABI.TypeDecoder
   alias Ecto.Adapters.SQL
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.{Changeset, Multi, Query}
 
   alias Explorer.Chain.{
     Address,
@@ -35,6 +35,10 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     CeloAccount,
+    CeloSigners,
+    CeloValidator,
+    CeloValidatorGroup,
+    CeloValidatorHistory,
     Data,
     DecompiledSmartContract,
     ExchangeRate,
@@ -1545,6 +1549,34 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  def get_blocks_handled_by_address(options \\ [], address_hash) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    query =
+      from(b in Block,
+        join: h in CeloValidatorHistory,
+        where: b.number == h.block_number,
+        where: h.address == ^address_hash,
+        select: b
+      )
+
+    online_query =
+      from(
+        h in CeloValidatorHistory,
+        where: h.address == ^address_hash,
+        select: h.online
+      )
+
+    query
+    |> join_associations(necessity_by_association)
+    |> page_blocks(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by(desc: :number)
+    |> preload(online: ^online_query)
+    |> Repo.all()
+  end
+
   @doc """
   Counts all of the block validations and groups by the `miner_hash`.
   """
@@ -2864,6 +2896,18 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp join_association(query, [{arg1, arg2, arg3}], :optional) do
+    preload(query, [{^arg1, [{^arg2, ^arg3}]}])
+  end
+
+  defp join_association(query, [{arg1, arg2, arg3, arg4}], :optional) do
+    preload(query, [{^arg1, [{^arg2, [{^arg3, ^arg4}]}]}])
+  end
+
+  defp join_association(query, [{arg1, arg2, arg3, arg4, arg5}], :optional) do
+    preload(query, [{^arg1, [{^arg2, [{^arg3, [{^arg4, ^arg5}]}]}]}])
+  end
+
   defp join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
@@ -3670,6 +3714,144 @@ defmodule Explorer.Chain do
       )
 
     query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  @spec get_celo_validator(Hash.Address.t()) :: {:ok, CeloValidator.t()} | {:error, :not_found}
+  def get_celo_validator(address_hash) do
+    query =
+      from(account in CeloValidator,
+        where: account.address == ^address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  @spec get_celo_validator_group(Hash.Address.t()) :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
+  def get_celo_validator_group(address_hash) do
+    query =
+      from(account in CeloValidatorGroup,
+        where: account.address == ^address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  #  @spec get_celo_validator_groups() :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
+  def get_celo_validator_groups do
+    CeloValidatorGroup
+    |> Repo.all()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  def get_token_balance(address, symbol) do
+    query =
+      from(token in Token,
+        join: balance in CurrentTokenBalance,
+        where: token.symbol == ^symbol,
+        where: balance.address_hash == ^address,
+        where: balance.token_contract_address_hash == token.contract_address_hash,
+        select: {balance.value}
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      {data} -> {:ok, %{value: data}}
+    end
+  end
+
+  def get_latest_validating_block(address) do
+    signer_query =
+      from(history in CeloValidatorHistory,
+        join: validator in CeloValidator,
+        join: signer in CeloSigners,
+        where: validator.address == ^address,
+        where: history.address == signer.signer,
+        where: signer.address == validator.address,
+        select: history.block_number
+      )
+
+    union_query =
+      from(history in CeloValidatorHistory,
+        join: validator in CeloValidator,
+        where: validator.address == ^address,
+        where: history.address == ^address,
+        select: history.block_number,
+        union: ^signer_query
+      )
+
+    query = from(q in subquery(union_query), select: q.block_number, order_by: [desc: q.block_number])
+
+    query
+    |> Query.first()
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  def get_latest_active_block(address) do
+    signer_query =
+      from(history in CeloValidatorHistory,
+        join: validator in CeloValidator,
+        join: signer in CeloSigners,
+        where: validator.address == ^address,
+        where: history.address == signer.signer,
+        where: history.online == true,
+        where: signer.address == validator.address,
+        select: history.block_number
+      )
+
+    union_query =
+      from(history in CeloValidatorHistory,
+        join: validator in CeloValidator,
+        where: validator.address == ^address,
+        where: history.online == true,
+        where: history.address == ^address,
+        select: history.block_number,
+        union: ^signer_query
+      )
+
+    query = from(q in subquery(union_query), select: q.block_number, order_by: [desc: q.block_number])
+
+    query
+    |> Query.first()
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  def get_latest_history_block do
+    query =
+      from(history in CeloValidatorHistory,
+        order_by: [desc: history.block_number],
+        select: history.block_number
+      )
+
+    query
+    |> Query.first()
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}

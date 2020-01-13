@@ -38,8 +38,8 @@ const config = {
           drawBorder: false
         },
         ticks: {
-          beginAtZero: true,
-          callback: (value, index, values) => `C$${numeral(value).format('0,0.00')}`,
+          beginAtZero: false,
+          callback: (value, index, values) => `$${numeral(value).format('0,0.000')}`,
           maxTicksLimit: 4,
           fontColor: sassVariables.dashboardBannerChartAxisFontColor
         }
@@ -80,6 +80,7 @@ function getPriceData (marketHistoryData) {
   return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice}))
 }
 
+/*
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (availableSupply !== null && typeof availableSupply === 'object') {
     return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply[date]}))
@@ -87,6 +88,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
     return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply}))
   }
 }
+*/
 
 // colors for light and dark theme
 var priceLineColor
@@ -114,7 +116,7 @@ class MarketHistoryChart {
     this.marketCap = {
       label: window.localized['Market Cap'],
       yAxisID: 'marketCap',
-      data: getMarketCapData(marketHistoryData, availableSupply),
+      data: [], // getMarketCapData(marketHistoryData, availableSupply),
       fill: false,
       pointRadius: 0,
       backgroundColor: mcapLineColor,
@@ -130,9 +132,9 @@ class MarketHistoryChart {
     if (this.availableSupply !== null && typeof this.availableSupply === 'object') {
       const today = new Date().toJSON().slice(0, 10)
       this.availableSupply[today] = availableSupply
-      this.marketCap.data = getMarketCapData(marketHistoryData, this.availableSupply)
+      // this.marketCap.data = getMarketCapData(marketHistoryData, this.availableSupply)
     } else {
-      this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
+      // this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
     }
     this.chart.update()
   }

@@ -42,6 +42,16 @@
           address: block_miner(@block),
           contract: false %>
       </div>
+      <%= if @block.online == true do %>
+        <div class="text-nowrap text-truncate mt-3 mt-md-0">
+          <%= gettext "Online" %>
+        </div>
+      <% end %>
+      <%= if @block.online == false do %>
+        <div class="text-nowrap text-truncate mt-3 mt-md-0">
+          <%= gettext "Downtime" %>
+        </div>
+      <% end %>
       <%= if show_reward?(@block.rewards) do %>
         <div class="text-nowrap text-truncate mt-3 mt-md-0">
           <!-- validator reward -->

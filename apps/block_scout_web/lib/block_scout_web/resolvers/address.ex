@@ -1,9 +1,8 @@
 defmodule BlockScoutWeb.Resolvers.Address do
   @moduledoc false
 
-  alias Absinthe.Relay.Connection
-  alias Explorer.{Chain, GraphQL, Repo}
-  alias Explorer.Chain.CeloAccount
+  alias Explorer.Chain
+  alias Explorer.Chain.{CeloAccount, CeloValidator, CeloValidatorGroup}
 
   def get_by(_, %{hashes: hashes}, _) do
     case Chain.hashes_to_addresses(hashes) do
@@ -19,9 +18,24 @@ defmodule BlockScoutWeb.Resolvers.Address do
     end
   end
 
-  def get_by(%CeloAccount{address: hash}, args, _) do
-    hash
-    |> GraphQL.address_query()
-    |> Connection.from_query(&Repo.all/1, args, [])
+  def get_by(%CeloAccount{address: hash}, _, _) do
+    case Chain.hash_to_address(hash) do
+      {:error, :not_found} -> {:error, "Address not found."}
+      {:ok, _} = result -> result
+    end
+  end
+
+  def get_by(%CeloValidator{address: hash}, _, _) do
+    case Chain.hash_to_address(hash) do
+      {:error, :not_found} -> {:error, "Address not found."}
+      {:ok, _} = result -> result
+    end
+  end
+
+  def get_by(%CeloValidatorGroup{address: hash}, _, _) do
+    case Chain.hash_to_address(hash) do
+      {:error, :not_found} -> {:error, "Address not found."}
+      {:ok, _} = result -> result
+    end
   end
 end
