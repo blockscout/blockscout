@@ -14,4 +14,5 @@
   <%= for module <- @documentation do %>
     <%= render "_module_card.html", module: module %>
   <% end %>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/try-api.js") %>"></script>
 </section>
