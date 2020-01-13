@@ -555,6 +555,18 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
+  def where_address_fields_match(query, address_hash, :to_address_hash) do
+    where(query, [it], it.to_address_hash == ^address_hash)
+  end
+
+  def where_address_fields_match(query, address_hash, :from_address_hash) do
+    where(query, [it], it.from_address_hash == ^address_hash)
+  end
+
+  def where_address_fields_match(query, address_hash, :created_contract_address_hash) do
+    where(query, [it], it.created_contract_address_hash == ^address_hash)
+  end
+
   def where_is_different_from_parent_transaction(query) do
     where(
       query,

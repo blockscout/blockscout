@@ -15,6 +15,7 @@ defmodule Explorer.Chain do
       preload: 2,
       select: 2,
       subquery: 1,
+      union: 2,
       union_all: 2,
       where: 2,
       where: 3
@@ -194,9 +195,66 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    InternalTransaction
-    |> InternalTransaction.where_nonpending_block()
-    |> InternalTransaction.where_address_fields_match(hash, direction)
+    if direction == nil do
+      query_to_address_hash_wrapped =
+        InternalTransaction
+        |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
+        |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
+
+      query_from_address_hash_wrapped =
+        InternalTransaction
+        |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
+        |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
+
+      query_created_contract_address_hash_wrapped =
+        InternalTransaction
+        |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
+        |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
+
+      full_query =
+        query_to_address_hash_wrapped
+        |> union(^query_from_address_hash_wrapped)
+        |> union(^query_created_contract_address_hash_wrapped)
+
+      full_wrapped_query =
+        from(
+          q in subquery(full_query),
+          select: q
+        )
+
+      full_wrapped_query
+      |> order_by(
+        [q],
+        desc: q.block_number,
+        desc: q.transaction_index,
+        desc: q.index
+      )
+      |> preload(transaction: :block)
+      |> join_associations(necessity_by_association)
+      |> Repo.all()
+    else
+      InternalTransaction
+      |> InternalTransaction.where_nonpending_block()
+      |> InternalTransaction.where_address_fields_match(hash, direction)
+      |> common_where_limit_order(paging_options)
+      |> preload(transaction: :block)
+      |> join_associations(necessity_by_association)
+      |> Repo.all()
+    end
+  end
+
+  def wrapped_union_subquery(query) do
+    from(
+      q in subquery(query),
+      select: q
+    )
+  end
+
+  defp common_where_limit_order(query, paging_options) do
+    query
     |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_block_number_is_not_null()
     |> page_internal_transaction(paging_options)
@@ -207,9 +265,6 @@ defmodule Explorer.Chain do
       desc: it.transaction_index,
       desc: it.index
     )
-    |> preload(transaction: :block)
-    |> join_associations(necessity_by_association)
-    |> Repo.all()
   end
 
   @doc """
@@ -263,10 +318,10 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
+      blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
+
       rewards_task =
-        Task.async(fn ->
-          Reward.fetch_emission_rewards_tuples(address_hash, paging_options)
-        end)
+        Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
 
       [rewards_task | address_to_transactions_tasks(address_hash, options)]
       |> wait_for_address_transactions()
@@ -305,19 +360,70 @@ defmodule Explorer.Chain do
     |> Enum.take(paging_options.page_size)
   end
 
+  defp address_to_transactions_tasks_query(options) do
+    options
+    |> Keyword.get(:paging_options, @default_paging_options)
+    |> fetch_transactions()
+  end
+
   defp address_to_transactions_tasks(address_hash, options) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    base_query =
-      paging_options
-      |> fetch_transactions()
-      |> join_associations(necessity_by_association)
-
-    base_query
+    options
+    |> address_to_transactions_tasks_query()
+    |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
+  end
+
+  defp address_to_transactions_tasks_range_of_blocks(address_hash, options) do
+    direction = Keyword.get(options, :direction)
+
+    extremums_list =
+      options
+      |> address_to_transactions_tasks_query()
+      |> Transaction.matching_address_queries_list(direction, address_hash)
+      |> Enum.map(fn query ->
+        max_query =
+          from(
+            q in subquery(query),
+            select: %{min_block_number: min(q.block_number), max_block_number: max(q.block_number)}
+          )
+
+        max_query
+        |> Repo.one!()
+      end)
+
+    extremums_list
+    |> Enum.reduce(%{min_block_number: nil, max_block_number: 0}, fn %{
+                                                                       min_block_number: min_number,
+                                                                       max_block_number: max_number
+                                                                     },
+                                                                     extremums_result ->
+      current_min_number = Map.get(extremums_result, :min_block_number)
+      current_max_number = Map.get(extremums_result, :max_block_number)
+
+      extremums_result =
+        if is_number(current_min_number) do
+          if is_number(min_number) and min_number > 0 and min_number < current_min_number do
+            extremums_result
+            |> Map.put(:min_block_number, min_number)
+          else
+            extremums_result
+          end
+        else
+          extremums_result
+          |> Map.put(:min_block_number, min_number)
+        end
+
+      if is_number(max_number) and max_number > 0 and max_number > current_max_number do
+        extremums_result
+        |> Map.put(:max_block_number, max_number)
+      else
+        extremums_result
+      end
+    end)
   end
 
   defp wait_for_address_transactions(tasks) do
@@ -2398,6 +2504,7 @@ defmodule Explorer.Chain do
     |> for_parent_transaction(hash)
     |> join_associations(necessity_by_association)
     |> where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_nonpending_block()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
