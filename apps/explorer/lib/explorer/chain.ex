@@ -789,6 +789,9 @@ defmodule Explorer.Chain do
             :celo_signers => :optional,
             :celo_members => :optional,
             [{:celo_delegator, :celo_account}] => :optional,
+            [{:celo_delegator, :celo_validator}] => :optional,
+            [{:celo_delegator, :celo_validator, :group_address}] => :optional,
+            [{:celo_delegator, :celo_validator, :signer}] => :optional,
             [{:celo_delegator, :account_address}] => :optional,
             [{:celo_signers, :signer_address}] => :optional,
             [{:celo_members, :validator_address}] => :optional,
@@ -818,11 +821,21 @@ defmodule Explorer.Chain do
         {:error, :not_found}
 
       address ->
-        if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
-          {:ok, Map.put(address, :celo_account, address.celo_delegator.celo_account)}
-        else
-          {:ok, address}
-        end
+        address2 =
+          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
+            Map.put(address, :celo_account, address.celo_delegator.celo_account)
+          else
+            address
+          end
+
+        address3 =
+          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
+            Map.put(address2, :celo_validator, address.celo_delegator.celo_validator)
+          else
+            address2
+          end
+
+        {:ok, address3}
     end
   end
 
