@@ -60,6 +60,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
     end
 
     create(index(:celo_validator_history, [:block_number, :index], unique: true))
+    create(index(:celo_validator_history, [:address, :block_number]))
 
     create table(:celo_signers) do
       add(:address, :bytea, null: false)

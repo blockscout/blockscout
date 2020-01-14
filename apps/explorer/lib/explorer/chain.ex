@@ -35,7 +35,6 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     CeloAccount,
-    CeloSigners,
     CeloValidator,
     CeloValidatorGroup,
     CeloValidatorHistory,
@@ -789,6 +788,9 @@ defmodule Explorer.Chain do
             :celo_signers => :optional,
             :celo_members => :optional,
             [{:celo_delegator, :celo_account}] => :optional,
+            [{:celo_delegator, :celo_validator}] => :optional,
+            [{:celo_delegator, :celo_validator, :group_address}] => :optional,
+            [{:celo_delegator, :celo_validator, :signer}] => :optional,
             [{:celo_delegator, :account_address}] => :optional,
             [{:celo_signers, :signer_address}] => :optional,
             [{:celo_members, :validator_address}] => :optional,
@@ -818,11 +820,21 @@ defmodule Explorer.Chain do
         {:error, :not_found}
 
       address ->
-        if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
-          {:ok, Map.put(address, :celo_account, address.celo_delegator.celo_account)}
-        else
-          {:ok, address}
-        end
+        address2 =
+          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
+            Map.put(address, :celo_account, address.celo_delegator.celo_account)
+          else
+            address
+          end
+
+        address3 =
+          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
+            Map.put(address2, :celo_validator, address.celo_delegator.celo_validator)
+          else
+            address2
+          end
+
+        {:ok, address3}
     end
   end
 
@@ -3781,65 +3793,61 @@ defmodule Explorer.Chain do
 
   def get_latest_validating_block(address) do
     signer_query =
-      from(history in CeloValidatorHistory,
-        join: validator in CeloValidator,
-        join: signer in CeloSigners,
-        where: validator.address == ^address,
-        where: history.address == signer.signer,
-        where: signer.address == validator.address,
-        select: history.block_number
+      from(validator in CeloValidator,
+        select: validator.signer_address_hash,
+        where: validator.address == ^address
       )
 
-    union_query =
+    signer_address =
+      case Repo.one(signer_query) do
+        nil -> address
+        data -> data
+      end
+
+    direct_query =
       from(history in CeloValidatorHistory,
-        join: validator in CeloValidator,
-        where: validator.address == ^address,
-        where: history.address == ^address,
-        select: history.block_number,
-        union: ^signer_query
+        where: history.online == true,
+        where: history.address == ^signer_address,
+        select: max(history.block_number)
       )
 
-    query = from(q in subquery(union_query), select: q.block_number, order_by: [desc: q.block_number])
+    direct_result =
+      direct_query
+      |> Repo.one()
 
-    query
-    |> Query.first()
-    |> Repo.one()
-    |> case do
-      nil -> {:error, :not_found}
-      data -> {:ok, data}
+    case direct_result do
+      data when data != nil -> {:ok, data}
+      _ -> {:error, :not_found}
     end
   end
 
   def get_latest_active_block(address) do
     signer_query =
-      from(history in CeloValidatorHistory,
-        join: validator in CeloValidator,
-        join: signer in CeloSigners,
-        where: validator.address == ^address,
-        where: history.address == signer.signer,
-        where: history.online == true,
-        where: signer.address == validator.address,
-        select: history.block_number
+      from(validator in CeloValidator,
+        select: validator.signer_address_hash,
+        where: validator.address == ^address
       )
 
-    union_query =
+    signer_address =
+      case Repo.one(signer_query) do
+        nil -> address
+        data -> data
+      end
+
+    direct_query =
       from(history in CeloValidatorHistory,
-        join: validator in CeloValidator,
-        where: validator.address == ^address,
         where: history.online == true,
-        where: history.address == ^address,
-        select: history.block_number,
-        union: ^signer_query
+        where: history.address == ^signer_address,
+        select: max(history.block_number)
       )
 
-    query = from(q in subquery(union_query), select: q.block_number, order_by: [desc: q.block_number])
+    direct_result =
+      direct_query
+      |> Repo.one()
 
-    query
-    |> Query.first()
-    |> Repo.one()
-    |> case do
-      nil -> {:error, :not_found}
-      data -> {:ok, data}
+    case direct_result do
+      data when data != nil -> {:ok, data}
+      _ -> {:error, :not_found}
     end
   end
 

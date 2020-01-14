@@ -26,15 +26,21 @@ defmodule BlockScoutWeb.AddressView do
   @dialyzer :no_match
 
   @tabs [
+    "celo",
     "coin_balances",
     "contracts",
     "decompiled_contracts",
     "internal_transactions",
     "read_contract",
+    "signed",
     "tokens",
     "transactions",
     "validations"
   ]
+
+  def celo_account?(address) do
+    address.celo_account != nil and Ecto.assoc_loaded?(address.celo_account)
+  end
 
   def address_partial_selector(struct_to_render_from, direction, current_address, truncate \\ false)
 
@@ -115,6 +121,10 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def address_partial_selector(%CeloSigners{account_address: address}, :signer_account, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloSigners{signer_address: address}, :signers, current_address, truncate) do
     matching_address_check(current_address, address, false, truncate)
   end
 
