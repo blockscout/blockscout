@@ -28,6 +28,11 @@ defmodule Explorer.Chain.Events.Publisher do
     if byte_size(payload) < @max_payload do
       @sender.send_notify(payload)
     end
+    #sender().send_data(event_type)
+  end
+
+  defp sender do
+    Application.get_env(:explorer, :realtime_events_sender)
   end
 
   # The :catchup type of event is not being consumed right now.
@@ -41,6 +46,7 @@ defmodule Explorer.Chain.Events.Publisher do
     if byte_size(payload) < @max_payload do
       @sender.send_notify(payload)
     end
+    #    sender().send_data(event_type, broadcast_type, event_data)
   end
 
   defp encode_payload(payload) do

@@ -74,6 +74,7 @@ defmodule Indexer.Transform.TokenTransfers do
     token_transfer = %{
       amount: Decimal.new(amount || 0),
       block_number: log.block_number,
+      block_hash: log.block_hash,
       log_index: log.index,
       block_hash: log.block_hash,
       from_address_hash: truncate_address_hash(log.second_topic),
@@ -123,6 +124,7 @@ defmodule Indexer.Transform.TokenTransfers do
 
     token_transfer = %{
       block_number: log.block_number,
+      block_hash: log.block_hash,
       log_index: log.index,
       block_hash: log.block_hash,
       from_address_hash: encode_address_hash(from_address_hash),

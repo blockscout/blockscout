@@ -31,6 +31,7 @@ defmodule BlockScoutWeb.AddressView do
     "contracts",
     "decompiled_contracts",
     "internal_transactions",
+    "token_transfers",
     "read_contract",
     "signed",
     "tokens",
@@ -157,6 +158,10 @@ defmodule BlockScoutWeb.AddressView do
     format_wei_value(balance, :ether)
   end
 
+  def balance_percentage_enabled? do
+    Application.get_env(:block_scout_web, :show_percentage)
+  end
+
   def balance_percentage(_, nil), do: ""
 
   def balance_percentage(%Address{fetched_coin_balance: balance}, total_supply) do
@@ -269,12 +274,6 @@ defmodule BlockScoutWeb.AddressView do
 
   def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
 
-  def incoming_transaction_count(address_hash) do
-    address_hash
-    |> Chain.address_to_incoming_transaction_count()
-    |> BlockScoutWeb.Cldr.Number.to_string!(format: "#,###")
-  end
-
   def trimmed_hash(%Hash{} = hash) do
     string_hash = to_string(hash)
     "#{String.slice(string_hash, 0..5)}–#{String.slice(string_hash, -6..-1)}"
@@ -321,7 +320,8 @@ defmodule BlockScoutWeb.AddressView do
       partial: "_responsive_hash.html",
       address: current_address,
       contract: contract?,
-      truncate: truncate
+      truncate: truncate,
+      use_custom_tooltip: false
     ]
   end
 
@@ -331,7 +331,8 @@ defmodule BlockScoutWeb.AddressView do
       partial: "_link.html",
       address: address,
       contract: contract?,
-      truncate: truncate
+      truncate: truncate,
+      use_custom_tooltip: false
     ]
   end
 
@@ -354,6 +355,7 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["tokens"]), do: gettext("Tokens")
   defp tab_name(["transactions"]), do: gettext("Transactions")
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
+  defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
   defp tab_name(["contracts"]), do: gettext("Code")
   defp tab_name(["decompiled_contracts"]), do: gettext("Decompiled Code")
   defp tab_name(["read_contract"]), do: gettext("Read Contract")

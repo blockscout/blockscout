@@ -38,13 +38,13 @@ window.AwesompleteUtil = (function () {
     var lv = Array.isArray(data)
       ? { label: data[0], value: data[1] }
       : typeof data === 'object' && 'label' in data && 'value' in data ? data : { label: data, value: data }
-    return {label: lv.label || lv.value, value: lv.value}
+    return { label: lv.label || lv.value, value: lv.value }
   }
 
   // Helper to send events with detail property.
   function _fire (target, name, detail) {
     // $.fire uses deprecated methods but other methods don't work in IE11.
-    return $.fire(target, name, {detail: detail})
+    return $.fire(target, name, { detail: detail })
   }
 
   // Look if there is an exact match or a mismatch, set awe-found, awe-not-found css class and send match events.
@@ -74,7 +74,7 @@ window.AwesompleteUtil = (function () {
           }
         }
         // Don't want to change the real input field, emulate a fake one.
-        fake = {input: {value: ''}}
+        fake = { input: { value: '' } }
         // Determine how this suggestion would look like if it is replaced in the input field,
         // it is an exact match if somebody types exactly that.
         // Use the fake input here. fake.input.value will contain the result of the replace function.
@@ -222,7 +222,7 @@ window.AwesompleteUtil = (function () {
           awe.utilprops.url,
           awe.utilprops.urlEnd,
           awe.utilprops.loadall ? '' : val,
-          _onLoad.bind({awe: awe, xhr: xhr, queryVal: val}),
+          _onLoad.bind({ awe: awe, xhr: xhr, queryVal: val }),
           xhr
         )
       } else {
@@ -401,15 +401,15 @@ window.AwesompleteUtil = (function () {
     // for arrays at top and subtop level
     if (level < 2 && prop) {
       // if a 'value' is specified and found a mathing property, create extra 'value' property.
-      if (value && (prop + '.').lastIndexOf(value + '.', 0) === 0) { result['value'] = result[prop] }
+      if (value && (prop + '.').lastIndexOf(value + '.', 0) === 0) { result.value = result[prop] }
       // if a 'label' is specified and found a mathing property, create extra 'label' property.
-      if (label && (prop + '.').lastIndexOf(label + '.', 0) === 0) { result['label'] = result[prop] }
+      if (label && (prop + '.').lastIndexOf(label + '.', 0) === 0) { result.label = result[prop] }
     }
     if (level === 0) {
       // Make sure that both value and label properties exist, even if they are nil.
       // This is handy with limit 0 or 1 when the result doesn't have to contain an array.
-      if (value && !('value' in result)) { result['value'] = null }
-      if (label && !('label' in result)) { result['label'] = null }
+      if (value && !('value' in result)) { result.value = null }
+      if (label && !('label' in result)) { result.label = null }
     }
     return result
   }
@@ -506,17 +506,18 @@ window.AwesompleteUtil = (function () {
       var boundOnKeydown = _onKeydown.bind(awe)
       var boundOnInput = _onInput.bind(awe)
       var boundSelect = _select.bind(awe)
-      var boundDetach = _detach.bind({awe: awe,
+      var boundDetach = _detach.bind({
+        awe: awe,
         boundMatch: boundMatch,
         boundOnInput: boundOnInput,
         boundOnKeydown: boundOnKeydown,
         boundSelect: boundSelect
       })
       var events = {
-        'keydown': boundOnKeydown,
-        'input': boundOnInput
+        keydown: boundOnKeydown,
+        input: boundOnInput
       }
-      events['blur'] = events[_AWE_CLOSE] = events[_AWE_LOAD] = boundMatch
+      events.blur = events[_AWE_CLOSE] = events[_AWE_LOAD] = boundMatch
       events[_AWE_SELECT] = boundSelect
       $.bind(elem, events)
 
@@ -552,7 +553,7 @@ window.AwesompleteUtil = (function () {
     // Create function to copy a field from the selected autocomplete item to another DOM element.
     // dataField can be null.
     createCopyFun: function (sourceId, dataField, targetId) {
-      return _copyFun.bind({sourceId: sourceId, dataField: dataField, targetId: $(targetId) || targetId})
+      return _copyFun.bind({ sourceId: sourceId, dataField: dataField, targetId: $(targetId) || targetId })
     },
 
     // attach copy function to event listeners. prepop is optional and by default true.
@@ -585,7 +586,7 @@ window.AwesompleteUtil = (function () {
 
     // Create function for combobox button (btnId) to toggle dropdown list.
     createClickFun: function (btnId, awe) {
-      return _clickFun.bind({btnId: btnId, awe: awe})
+      return _clickFun.bind({ btnId: btnId, awe: awe })
     },
 
     // Attach click function for combobox to click event.

@@ -59,13 +59,15 @@ defmodule Explorer.Chain.Import.Runner.Logs do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Log ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_hash, &1.index})
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.index})
+    #ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_hash, &1.index})
 
     {:ok, _} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        conflict_target: [:block_hash, :index],
+        conflict_target: [:transaction_hash, :index, :block_hash],
+        #conflict_target: [:block_hash, :index],
         on_conflict: on_conflict,
         for: Log,
         returning: true,
@@ -85,8 +87,8 @@ defmodule Explorer.Chain.Import.Runner.Logs do
           second_topic: fragment("EXCLUDED.second_topic"),
           third_topic: fragment("EXCLUDED.third_topic"),
           fourth_topic: fragment("EXCLUDED.fourth_topic"),
-          block_number: fragment("EXCLUDED.block_number"),
-          transaction_hash: fragment("EXCLUDED.transaction_hash"),
+          #block_number: fragment("EXCLUDED.block_number"),
+          #transaction_hash: fragment("EXCLUDED.transaction_hash"),
           # Don't update `index` as it is part of the composite primary key and used for the conflict target
           type: fragment("EXCLUDED.type"),
           # Don't update `transaction_hash` as it is part of the composite primary key and used for the conflict target
@@ -96,16 +98,14 @@ defmodule Explorer.Chain.Import.Runner.Logs do
       ],
       where:
         fragment(
-          "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.type, EXCLUDED.transaction_hash, EXCLUDED.block_number) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.type) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
           log.address_hash,
           log.data,
           log.first_topic,
           log.second_topic,
           log.third_topic,
           log.fourth_topic,
-          log.type,
-          log.transaction_hash,
-          log.block_number
+          log.type
         )
     )
   end

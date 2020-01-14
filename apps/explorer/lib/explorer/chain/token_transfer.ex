@@ -35,6 +35,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
   @typedoc """
   * `:amount` - The token transferred amount
+  * `:block_hash` - hash of the block
   * `:block_number` - The block number that the transfer took place.
   * `:from_address` - The `t:Explorer.Chain.Address.t/0` that sent the tokens
   * `:from_address_hash` - Address hash foreign key
@@ -43,8 +44,6 @@ defmodule Explorer.Chain.TokenTransfer do
   * `:token_contract_address` - The `t:Explorer.Chain.Address.t/0` of the token's contract.
   * `:token_contract_address_hash` - Address hash foreign key
   * `:token_id` - ID of the token (applicable to ERC-721 tokens)
-  * `:block` - The `t:Explorer.Chain.Block.t/0` ledger
-  * `:block_hash` - Block foreign key
   * `:transaction` - The `t:Explorer.Chain.Transaction.t/0` ledger
   * `:transaction_hash` - Transaction foreign key
   * `:log_index` - Index of the corresponding `t:Explorer.Chain.Log.t/0` in the transaction.
@@ -52,6 +51,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @type t :: %TokenTransfer{
           amount: Decimal.t(),
           block_number: non_neg_integer() | nil,
+          block_hash: Hash.Full.t(),
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
           from_address_hash: Hash.Address.t(),
           to_address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -61,8 +61,8 @@ defmodule Explorer.Chain.TokenTransfer do
           token_id: non_neg_integer() | nil,
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
-          block: %Ecto.Association.NotLoaded{} | Block.t(),
-          block_hash: Hash.Full.t(),
+          #block: %Ecto.Association.NotLoaded{} | Block.t(),
+          #block_hash: Hash.Full.t(),
           log_index: non_neg_integer()
         }
 
@@ -75,7 +75,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @primary_key false
   schema "token_transfers" do
     field(:amount, :decimal)
-    field(:block_number, :integer, primary_key: true)
+    field(:block_number, :integer)
     field(:log_index, :integer, primary_key: true)
     field(:token_id, :decimal)
 
@@ -92,6 +92,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
     belongs_to(:transaction, Transaction,
       foreign_key: :transaction_hash,
+      primary_key: true,
       references: :hash,
       type: Hash.Full
     )
@@ -115,8 +116,10 @@ defmodule Explorer.Chain.TokenTransfer do
     timestamps()
   end
 
-  @required_attrs ~w(block_number log_index from_address_hash to_address_hash block_hash token_contract_address_hash)a
-  @optional_attrs ~w(amount token_id transaction_hash)a
+  @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash block_hash)a
+  @optional_attrs ~w(amount token_id)a
+  #@required_attrs ~w(block_number log_index from_address_hash to_address_hash block_hash token_contract_address_hash)a
+  #@optional_attrs ~w(amount token_id transaction_hash)a
 
   @doc false
   def changeset(%TokenTransfer{} = struct, params \\ %{}) do
@@ -127,7 +130,7 @@ defmodule Explorer.Chain.TokenTransfer do
     |> foreign_key_constraint(:to_address)
     |> foreign_key_constraint(:token_contract_address)
     |> foreign_key_constraint(:transaction)
-    |> foreign_key_constraint(:block)
+    #|> foreign_key_constraint(:block)
   end
 
   @doc """
@@ -149,7 +152,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number),
-        preload: [{:transaction, :block}, :block, :token, :from_address, :to_address],
+        preload: [{:transaction, :block}, :token, :from_address, :to_address],
         order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
@@ -226,7 +229,8 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.to_address_hash == ^address_hash,
-        select: type(tt.transaction_hash, :binary)
+        select: type(tt.transaction_hash, :binary),
+        distinct: tt.transaction_hash
       )
 
     query
@@ -240,7 +244,8 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.from_address_hash == ^address_hash,
-        select: type(tt.transaction_hash, :binary)
+        select: type(tt.transaction_hash, :binary),
+        distinct: tt.transaction_hash
       )
 
     query
@@ -260,6 +265,7 @@ defmodule Explorer.Chain.TokenTransfer do
       from(token_transfer in TokenTransfer,
         where: token_transfer.to_address_hash == ^address_bytes or token_transfer.from_address_hash == ^address_bytes,
         select: type(token_transfer.transaction_hash, :binary),
+        distinct: token_transfer.transaction_hash,
         limit: ^page_size
       )
 
@@ -291,7 +297,7 @@ defmodule Explorer.Chain.TokenTransfer do
       tt in TokenTransfer,
       left_join: instance in Instance,
       on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
-      where: tt.token_contract_address_hash == ^contract_address_hash and tt.token_id == tt.token_id,
+      where: tt.token_contract_address_hash == ^contract_address_hash,
       order_by: [desc: tt.block_number],
       distinct: tt.token_id,
       preload: [:to_address],

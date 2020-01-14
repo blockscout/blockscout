@@ -9,11 +9,15 @@ defmodule Explorer.Chain.Log do
   alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Transaction}
   alias Explorer.Repo
 
-  @required_attrs ~w(address_hash data index block_number block_hash)a
-  @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type transaction_hash)a
+  @required_attrs ~w(address_hash data block_hash index transaction_hash)a
+  @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type block_number)a
+  #@required_attrs ~w(address_hash data index block_number block_hash)a
+  #@optional_attrs ~w(first_topic second_topic third_topic fourth_topic type transaction_hash)a
 
   @typedoc """
    * `address` - address of contract that generate the event
+   * `block_hash` - hash of the block
+   * `block_number` - The block number that the transfer took place.
    * `address_hash` - foreign key for `address`
    * `data` - non-indexed log parameters.
    * `first_topic` - `topics[0]`
@@ -28,6 +32,8 @@ defmodule Explorer.Chain.Log do
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),
           address_hash: Hash.Address.t(),
+          block_hash: Hash.Full.t(),
+          block_number: non_neg_integer() | nil,
           data: Data.t(),
           first_topic: String.t(),
           second_topic: String.t(),
@@ -35,11 +41,9 @@ defmodule Explorer.Chain.Log do
           fourth_topic: String.t(),
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
-          block: %Ecto.Association.NotLoaded{} | Block.t(),
-          block_hash: Hash.Full.t(),
+          #block: %Ecto.Association.NotLoaded{} | Block.t(),
           index: non_neg_integer(),
-          type: String.t() | nil,
-          block_number: non_neg_integer()
+          type: String.t() | nil
         }
 
   @primary_key false
@@ -49,9 +53,9 @@ defmodule Explorer.Chain.Log do
     field(:second_topic, :string)
     field(:third_topic, :string)
     field(:fourth_topic, :string)
-    field(:block_number, :integer)
     field(:index, :integer, primary_key: true)
     field(:type, :string)
+    field(:block_number, :integer)
 
     timestamps()
 
@@ -59,6 +63,7 @@ defmodule Explorer.Chain.Log do
 
     belongs_to(:transaction, Transaction,
       foreign_key: :transaction_hash,
+      primary_key: true,
       references: :hash,
       type: Hash.Full
     )
@@ -79,15 +84,14 @@ defmodule Explorer.Chain.Log do
       ...>   %Explorer.Chain.Log{},
       ...>   %{
       ...>     address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
       ...>     first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
       ...>     fourth_topic: nil,
       ...>     index: 0,
-      ...>     block_number: 0,
       ...>     second_topic: nil,
       ...>     third_topic: nil,
       ...>     transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-      ...>     block_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
       ...>     type: "mined"
       ...>   }
       ...> )

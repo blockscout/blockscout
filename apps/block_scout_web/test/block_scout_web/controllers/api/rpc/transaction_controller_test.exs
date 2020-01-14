@@ -243,8 +243,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
       transaction_details = [
         status: :error,
-        error: error,
-        internal_transactions_indexed_at: DateTime.utc_now()
+        error: error
       ]
 
       transaction =
@@ -256,7 +255,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         transaction: transaction,
         index: 0,
         type: :reward,
-        error: error
+        error: error,
+        block_hash: transaction.block_hash,
+        block_index: 0
       ]
 
       insert(:internal_transaction, internal_transaction_details)
@@ -285,8 +286,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
     test "with a txhash with failed status but awaiting internal transactions", %{conn: conn} do
       transaction_details = [
         status: :error,
-        error: nil,
-        internal_transactions_indexed_at: nil
+        error: nil
       ]
 
       transaction =
@@ -413,7 +413,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
           block: block,
           block_number: 222,
           first_topic: "first topic",
-          second_topic: "second topic"
+          second_topic: "second topic",
+          #block: block,
+          #block_number: block.number
         )
       end)
 
@@ -490,7 +492,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
           first_topic: "first topic",
           second_topic: "second topic",
           block: block,
-          block_number: 123
+          block_number: block.number
+          #block_number: 123
         )
 
       params = %{
