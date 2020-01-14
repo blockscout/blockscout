@@ -26,10 +26,9 @@ defmodule Explorer.Chain.Events.Publisher do
     payload = encode_payload({:chain_event, event_type})
 
     if byte_size(payload) < @max_payload do
-      sender().send_notify(payload)
+      # @sender.send_notify(payload)
+      sender().send_data(event_type)
     end
-
-    # sender().send_data(event_type)
   end
 
   defp sender do
@@ -45,10 +44,9 @@ defmodule Explorer.Chain.Events.Publisher do
     payload = encode_payload({:chain_event, event_type, broadcast_type, event_data})
 
     if byte_size(payload) < @max_payload do
-      sender().send_notify(payload)
+      #      @sender.send_notify(payload)
+      sender().send_data(event_type, broadcast_type, event_data)
     end
-
-    #    sender().send_data(event_type, broadcast_type, event_data)
   end
 
   defp encode_payload(payload) do

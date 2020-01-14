@@ -23,9 +23,9 @@ defmodule Explorer.Repo.Migrations.AddBlockHashToTokenTransfers do
     DELETE FROM token_transfers WHERE block_hash IS NULL;
     """)
 
-#    alter table(:token_transfers) do
-#      modify(:block_hash, references(:blocks, column: :hash, type: :bytea), null: false)
-#    end
+    #    alter table(:token_transfers) do
+    #      modify(:block_hash, references(:blocks, column: :hash, type: :bytea), null: false)
+    #    end
 
     execute("""
     ALTER table token_transfers

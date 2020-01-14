@@ -26,9 +26,9 @@ defmodule Explorer.Repo.Migrations.AddBlockHashAndBlockIndexToLogs do
     DELETE FROM logs WHERE block_hash IS NULL;
     """)
 
-#    alter table(:logs) do
-#      modify(:block_hash, references(:blocks, column: :hash, type: :bytea), null: false)
-#    end
+    #    alter table(:logs) do
+    #      modify(:block_hash, references(:blocks, column: :hash, type: :bytea), null: false)
+    #    end
 
     execute("""
     ALTER table logs

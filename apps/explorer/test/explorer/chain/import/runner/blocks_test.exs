@@ -7,7 +7,8 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
-  alias Explorer.Chain.{Address, Block, Transaction, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, TokenTransfer}
+  # alias Explorer.Chain.{Address, Block, Transaction, TokenTransfer}
   alias Explorer.{Chain, Repo}
 
   describe "run/1" do
