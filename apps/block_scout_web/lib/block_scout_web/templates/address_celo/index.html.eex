@@ -60,6 +60,22 @@
        </dd>
       </dl>
       <% end %>
+      <%= if @address.celo_validator_group != nil do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Commission</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Group commission"><%= format_according_to_decimals(@address.celo_validator_group.commission.value, Decimal.new(18+4)) %>%</span>
+       </dd>
+      </dl>
+      <% end %>
+      <%= if @address.celo_validator_group != nil do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Votes</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Votes received by group"><%= format_according_to_decimals(@address.celo_validator_group.votes.value, Decimal.new(18)) %> cGLD</span>
+       </dd>
+      </dl>
+      <% end %>
       <%= if @address.celo_validator != nil and @address.celo_validator.group_address_hash != nil do %>
       <dl class="row">
       <dt class="col-sm-3 text-muted">Affiliation</dt>
