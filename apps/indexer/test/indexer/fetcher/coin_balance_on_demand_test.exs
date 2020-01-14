@@ -41,15 +41,18 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
 
       # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
       # back we'd need to go to get 24 hours in the past)
-      insert(:block, number: 0, timestamp: Timex.shift(now, hours: -50))
-      insert(:block, number: 1, timestamp: now)
+      Enum.each(0..100, fn i ->
+        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(101 - i) * 50))
+      end)
+
+      insert(:block, number: 101, timestamp: now)
       AverageBlockTime.refresh()
 
-      stale_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 0)
-      current_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 1)
+      stale_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 100)
+      current_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 101)
 
-      pending_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 1)
-      insert(:unfetched_balance, address_hash: pending_address.hash, block_number: 2)
+      pending_address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 101)
+      insert(:unfetched_balance, address_hash: pending_address.hash, block_number: 102)
 
       %{stale_address: stale_address, current_address: current_address, pending_address: pending_address}
     end
@@ -63,7 +66,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
     test "if the address has not been fetched within the last 24 hours of blocks it is considered stale", %{
       stale_address: address
     } do
-      assert CoinBalanceOnDemand.trigger_fetch(address) == {:stale, 1}
+      assert CoinBalanceOnDemand.trigger_fetch(address) == {:stale, 101}
     end
 
     test "if the address has been fetched within the last 24 hours of blocks it is considered current", %{
@@ -75,7 +78,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
     test "if there is an unfetched balance within the window for an address, it is considered pending", %{
       pending_address: pending_address
     } do
-      assert CoinBalanceOnDemand.trigger_fetch(pending_address) == {:pending, 2}
+      assert CoinBalanceOnDemand.trigger_fetch(pending_address) == {:pending, 102}
     end
   end
 
@@ -88,15 +91,18 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
 
       # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
       # back we'd need to go to get 24 hours in the past)
-      insert(:block, number: 0, timestamp: Timex.shift(now, hours: -50))
-      insert(:block, number: 1, timestamp: now)
+      Enum.each(0..100, fn i ->
+        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(101 - i) * 50))
+      end)
+
+      insert(:block, number: 101, timestamp: now)
       AverageBlockTime.refresh()
 
       :ok
     end
 
     test "a stale address broadcasts the new address" do
-      address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 0)
+      address = insert(:address, fetched_coin_balance: 1, fetched_coin_balance_block_number: 100)
       address_hash = address.hash
       string_address_hash = to_string(address.hash)
 
@@ -104,26 +110,26 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^string_address_hash, "0x1"]
+                                                       params: [^string_address_hash, "0x65"]
                                                      }
                                                    ],
                                                    _options ->
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
       end)
 
-      assert CoinBalanceOnDemand.trigger_fetch(address) == {:stale, 1}
+      assert CoinBalanceOnDemand.trigger_fetch(address) == {:stale, 101}
 
       {:ok, expected_wei} = Wei.cast(2)
 
       assert_receive(
         {:chain_event, :addresses, :on_demand,
-         [%{hash: ^address_hash, fetched_coin_balance: ^expected_wei, fetched_coin_balance_block_number: 1}]}
+         [%{hash: ^address_hash, fetched_coin_balance: ^expected_wei, fetched_coin_balance_block_number: 101}]}
       )
     end
 
     test "a pending address broadcasts the new address and the new coin balance" do
-      address = insert(:address, fetched_coin_balance: 0, fetched_coin_balance_block_number: 1)
-      insert(:unfetched_balance, address_hash: address.hash, block_number: 2)
+      address = insert(:address, fetched_coin_balance: 0, fetched_coin_balance_block_number: 101)
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 102)
       address_hash = address.hash
       string_address_hash = to_string(address.hash)
 
@@ -131,20 +137,20 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemandTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^string_address_hash, "0x2"]
+                                                       params: [^string_address_hash, "0x66"]
                                                      }
                                                    ],
                                                    _options ->
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x02"}]}
       end)
 
-      assert CoinBalanceOnDemand.trigger_fetch(address) == {:pending, 2}
+      assert CoinBalanceOnDemand.trigger_fetch(address) == {:pending, 102}
 
       {:ok, expected_wei} = Wei.cast(2)
 
       assert_receive(
         {:chain_event, :addresses, :on_demand,
-         [%{hash: ^address_hash, fetched_coin_balance: ^expected_wei, fetched_coin_balance_block_number: 2}]}
+         [%{hash: ^address_hash, fetched_coin_balance: ^expected_wei, fetched_coin_balance_block_number: 102}]}
       )
     end
   end

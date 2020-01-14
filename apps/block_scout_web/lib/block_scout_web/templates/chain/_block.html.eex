@@ -16,7 +16,8 @@
         <%= render BlockScoutWeb.AddressView,
           "_link.html",
           address: @block.miner,
-          contract: false %>
+          contract: false,
+          use_custom_tooltip: false %>
       </div>
       <%= if BlockScoutWeb.BlockView.show_reward?(@block.rewards) do %>
         <div class="text-truncate">

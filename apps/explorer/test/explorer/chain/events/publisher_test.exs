@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Events.PublisherTest do
 
       Publisher.broadcast([{event_type, event_data}], broadcast_type)
 
-      assert_received {:chain_event, ^event_type, ^broadcast_type, []}
+      assert_receive {:chain_event, ^event_type, ^broadcast_type, []}
     end
 
     test "won't send chain_event of catchup type" do
@@ -59,7 +59,7 @@ defmodule Explorer.Chain.Events.PublisherTest do
 
       Publisher.broadcast(event_type)
 
-      assert_received {:chain_event, ^event_type}
+      assert_receive {:chain_event, ^event_type}
     end
   end
 end

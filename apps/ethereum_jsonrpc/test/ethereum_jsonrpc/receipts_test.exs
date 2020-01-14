@@ -34,6 +34,7 @@ defmodule EthereumJSONRPC.ReceiptsTest do
               cumulative_gas_used: 884_322,
               address_hash: "0x1e2fbe6be9eb39fc894d38be976111f332172d83",
               block_number: 3_560_000,
+              block_hash: nil,
               data:
                 "0x00000000000000000000000033066f6a8adf2d4f5db193524b6fbae062ec0d110000000000000000000000000000000000000000000000000000000000001030",
               index: 12,
@@ -48,6 +49,7 @@ defmodule EthereumJSONRPC.ReceiptsTest do
           EthereumJSONRPC.Parity ->
             %{
               created_contract_address_hash: nil,
+              block_hash: nil,
               cumulative_gas_used: 50450,
               gas_used: 50450,
               address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
@@ -82,7 +84,9 @@ defmodule EthereumJSONRPC.ReceiptsTest do
                  "logs" => [
                    %{
                      "address" => address_hash,
+                     "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
                      "blockNumber" => integer_to_quantity(block_number),
+                     "blockHash" => nil,
                      "data" => data,
                      "logIndex" => integer_to_quantity(index),
                      "topics" => [first_topic],
