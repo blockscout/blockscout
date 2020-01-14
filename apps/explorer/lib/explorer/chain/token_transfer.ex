@@ -61,8 +61,8 @@ defmodule Explorer.Chain.TokenTransfer do
           token_id: non_neg_integer() | nil,
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
-          #block: %Ecto.Association.NotLoaded{} | Block.t(),
-          #block_hash: Hash.Full.t(),
+          # block: %Ecto.Association.NotLoaded{} | Block.t(),
+          # block_hash: Hash.Full.t(),
           log_index: non_neg_integer()
         }
 
@@ -118,8 +118,8 @@ defmodule Explorer.Chain.TokenTransfer do
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash block_hash)a
   @optional_attrs ~w(amount token_id)a
-  #@required_attrs ~w(block_number log_index from_address_hash to_address_hash block_hash token_contract_address_hash)a
-  #@optional_attrs ~w(amount token_id transaction_hash)a
+  # @required_attrs ~w(block_number log_index from_address_hash to_address_hash block_hash token_contract_address_hash)a
+  # @optional_attrs ~w(amount token_id transaction_hash)a
 
   @doc false
   def changeset(%TokenTransfer{} = struct, params \\ %{}) do
@@ -130,7 +130,8 @@ defmodule Explorer.Chain.TokenTransfer do
     |> foreign_key_constraint(:to_address)
     |> foreign_key_constraint(:token_contract_address)
     |> foreign_key_constraint(:transaction)
-    #|> foreign_key_constraint(:block)
+
+    # |> foreign_key_constraint(:block)
   end
 
   @doc """

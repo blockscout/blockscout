@@ -5,9 +5,10 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [from: 2, where: 3, subquery: 1, order_by: 3, union: 2]
+  # , union: 2]
+  import Ecto.Query, only: [from: 2, where: 3, subquery: 1, order_by: 3]
 
-  alias Explorer.{Chain, Repo}
+  #  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, InternalTransaction, Log, Transaction}
   alias Explorer.Repo
 
@@ -79,21 +80,6 @@ defmodule Explorer.Etherscan.Logs do
 
     logs_query = where_topic_match(Log, prepared_filter)
 
-    query_to_address_hash_wrapped =
-      logs_query
-      |> internal_transaction_query(:to_address_hash, prepared_filter, address_hash)
-      |> Chain.wrapped_union_subquery()
-
-    query_from_address_hash_wrapped =
-      logs_query
-      |> internal_transaction_query(:from_address_hash, prepared_filter, address_hash)
-      |> Chain.wrapped_union_subquery()
-
-    query_created_contract_address_hash_wrapped =
-      logs_query
-      |> internal_transaction_query(:created_contract_address_hash, prepared_filter, address_hash)
-      |> Chain.wrapped_union_subquery()
-
     internal_transaction_log_query =
       from(internal_transaction in InternalTransaction,
         join: transaction in assoc(internal_transaction, :transaction),
@@ -115,9 +101,10 @@ defmodule Explorer.Etherscan.Logs do
             block_number: transaction.block_number
           })
       )
-      #query_to_address_hash_wrapped
-      #|> union(^query_from_address_hash_wrapped)
-      #|> union(^query_created_contract_address_hash_wrapped)
+
+    # query_to_address_hash_wrapped
+    # |> union(^query_from_address_hash_wrapped)
+    # |> union(^query_created_contract_address_hash_wrapped)
 
     all_transaction_logs_query =
       from(transaction in Transaction,
@@ -279,26 +266,5 @@ defmodule Explorer.Etherscan.Logs do
         data.index > ^log_index and data.block_number >= ^block_number and
           data.transaction_index >= ^transaction_index
     )
-  end
-
-  defp internal_transaction_query(logs_query, direction, prepared_filter, address_hash) do
-    query =
-      from(internal_transaction in InternalTransaction.where_nonpending_block(),
-        join: transaction in assoc(internal_transaction, :transaction),
-        join: log in ^logs_query,
-        on: log.transaction_hash == internal_transaction.transaction_hash,
-        where: internal_transaction.block_number >= ^prepared_filter.from_block,
-        where: internal_transaction.block_number <= ^prepared_filter.to_block,
-        select:
-          merge(map(log, ^@log_fields), %{
-            gas_price: transaction.gas_price,
-            gas_used: transaction.gas_used,
-            transaction_index: transaction.index,
-            block_number: transaction.block_number
-          })
-      )
-
-    query
-    |> InternalTransaction.where_address_fields_match(address_hash, direction)
   end
 end

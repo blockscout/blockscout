@@ -1026,9 +1026,9 @@ defmodule Explorer.EtherscanTest do
       insert(:token_transfer, from_address: address, transaction: transaction2)
       insert(:token_transfer, from_address: address, transaction: transaction1)
       insert(:token_transfer, from_address: address, transaction: transaction3)
-#      insert(:token_transfer, from_address: address, transaction: transaction2, block: transaction2.block)
-#      insert(:token_transfer, from_address: address, transaction: transaction1, block: transaction1.block)
-#      insert(:token_transfer, from_address: address, transaction: transaction3, block: transaction3.block)
+      #      insert(:token_transfer, from_address: address, transaction: transaction2, block: transaction2.block)
+      #      insert(:token_transfer, from_address: address, transaction: transaction1, block: transaction1.block)
+      #      insert(:token_transfer, from_address: address, transaction: transaction3, block: transaction3.block)
 
       found_token_transfers = Etherscan.list_token_transfers(address.hash, nil)
 

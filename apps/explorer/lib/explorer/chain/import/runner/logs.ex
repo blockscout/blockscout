@@ -60,14 +60,14 @@ defmodule Explorer.Chain.Import.Runner.Logs do
 
     # Enforce Log ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.index})
-    #ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_hash, &1.index})
+    # ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_hash, &1.index})
 
     {:ok, _} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
         conflict_target: [:transaction_hash, :index, :block_hash],
-        #conflict_target: [:block_hash, :index],
+        # conflict_target: [:block_hash, :index],
         on_conflict: on_conflict,
         for: Log,
         returning: true,
@@ -87,8 +87,8 @@ defmodule Explorer.Chain.Import.Runner.Logs do
           second_topic: fragment("EXCLUDED.second_topic"),
           third_topic: fragment("EXCLUDED.third_topic"),
           fourth_topic: fragment("EXCLUDED.fourth_topic"),
-          #block_number: fragment("EXCLUDED.block_number"),
-          #transaction_hash: fragment("EXCLUDED.transaction_hash"),
+          # block_number: fragment("EXCLUDED.block_number"),
+          # transaction_hash: fragment("EXCLUDED.transaction_hash"),
           # Don't update `index` as it is part of the composite primary key and used for the conflict target
           type: fragment("EXCLUDED.type"),
           # Don't update `transaction_hash` as it is part of the composite primary key and used for the conflict target

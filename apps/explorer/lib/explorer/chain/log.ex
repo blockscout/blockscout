@@ -11,8 +11,8 @@ defmodule Explorer.Chain.Log do
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type block_number)a
-  #@required_attrs ~w(address_hash data index block_number block_hash)a
-  #@optional_attrs ~w(first_topic second_topic third_topic fourth_topic type transaction_hash)a
+  # @required_attrs ~w(address_hash data index block_number block_hash)a
+  # @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type transaction_hash)a
 
   @typedoc """
    * `address` - address of contract that generate the event
@@ -41,7 +41,7 @@ defmodule Explorer.Chain.Log do
           fourth_topic: String.t(),
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
-          #block: %Ecto.Association.NotLoaded{} | Block.t(),
+          # block: %Ecto.Association.NotLoaded{} | Block.t(),
           index: non_neg_integer(),
           type: String.t() | nil
         }

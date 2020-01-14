@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.AddressController do
     end
   end
 
-  defp transaction_and_validation_count(address) do
+  def transaction_and_validation_count(address) do
     transaction_count_task =
       Task.async(fn ->
         transaction_count(address)

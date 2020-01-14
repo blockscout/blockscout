@@ -2,7 +2,7 @@ defmodule Explorer.Chain.Events.Publisher do
   @moduledoc """
   Publishes events related to the Chain context.
   """
-  @sender Application.get_env(:explorer, :realtime_events_sender)
+  #  @sender Application.get_env(:explorer, :realtime_events_sender)
 
   @allowed_events ~w(addresses address_coin_balances blocks block_rewards internal_transactions token_transfers transactions contract_verification_result)a
 
@@ -26,9 +26,10 @@ defmodule Explorer.Chain.Events.Publisher do
     payload = encode_payload({:chain_event, event_type})
 
     if byte_size(payload) < @max_payload do
-      @sender.send_notify(payload)
+      sender().send_notify(payload)
     end
-    #sender().send_data(event_type)
+
+    # sender().send_data(event_type)
   end
 
   defp sender do
@@ -44,8 +45,9 @@ defmodule Explorer.Chain.Events.Publisher do
     payload = encode_payload({:chain_event, event_type, broadcast_type, event_data})
 
     if byte_size(payload) < @max_payload do
-      @sender.send_notify(payload)
+      sender().send_notify(payload)
     end
+
     #    sender().send_data(event_type, broadcast_type, event_data)
   end
 

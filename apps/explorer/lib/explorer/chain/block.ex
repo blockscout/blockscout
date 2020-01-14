@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Block do
           timestamp: DateTime.t(),
           total_difficulty: difficulty(),
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
-          refetch_needed: boolean()
+          refetch_needed: boolean(),
           signers: %Ecto.Association.NotLoaded{} | [Address.t()],
           refetch_needed: boolean(),
           online: %Ecto.Association.NotLoaded{} | boolean()
