@@ -3,8 +3,8 @@ defmodule Explorer.Repo.Migrations.AddBlockHashAndBlockIndexToLogs do
 
   def change do
     alter table(:logs) do
-      add(:block_hash, :bytea)
-      add(:block_number, :integer)
+      add_if_not_exists(:block_hash, :bytea)
+      add_if_not_exists(:block_number, :integer)
     end
 
     execute("""
@@ -26,9 +26,9 @@ defmodule Explorer.Repo.Migrations.AddBlockHashAndBlockIndexToLogs do
     DELETE FROM logs WHERE block_hash IS NULL;
     """)
 
-    alter table(:logs) do
-      modify(:block_hash, references(:blocks, column: :hash, type: :bytea), null: false)
-    end
+#    alter table(:logs) do
+#      modify(:block_hash, references(:blocks, column: :hash, type: :bytea), null: false)
+#    end
 
     execute("""
     ALTER table logs
