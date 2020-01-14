@@ -41,7 +41,7 @@
       to: address_validation_path(@conn, :index, @address.hash)
     ) %>
   <% end %>
-  <%= if @address.celo_account != nil do %>
+  <%= if celo_account?(@address) do %>
     <%= link(
       "Celo Info",
       class: "card-tab #{tab_status("celo", @conn.request_path)}",
