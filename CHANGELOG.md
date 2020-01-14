@@ -1,7 +1,7 @@
 ## Current
 
 ### Features
-- [#2835](https://github.com/poanetwork/blockscout/pull/2835), [#2871](https://github.com/poanetwork/blockscout/pull/2871), [#2872](https://github.com/poanetwork/blockscout/pull/2872), [#2886](https://github.com/poanetwork/blockscout/pull/2886), [#2925](https://github.com/poanetwork/blockscout/pull/2925), [#2936](https://github.com/poanetwork/blockscout/pull/2936) - Add "block_hash" to logs, token_transfers and internal transactions and "pending blocks operations" approach
+- [#2835](https://github.com/poanetwork/blockscout/pull/2835), [#2871](https://github.com/poanetwork/blockscout/pull/2871), [#2872](https://github.com/poanetwork/blockscout/pull/2872), [#2886](https://github.com/poanetwork/blockscout/pull/2886), [#2925](https://github.com/poanetwork/blockscout/pull/2925), [#2936](https://github.com/poanetwork/blockscout/pull/2936), [#2949](https://github.com/poanetwork/blockscout/pull/2949) - Add "block_hash" to logs, token_transfers and internal transactions and "pending blocks operations" approach
 - [#2926](https://github.com/poanetwork/blockscout/pull/2926) - API endpoint: sum balances except burnt address
 - [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action explicitly
 
