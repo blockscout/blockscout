@@ -112,7 +112,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           gas_fee_recipient_hash: fragment("EXCLUDED.gas_fee_recipient_hash"),
           gas_used: fragment("EXCLUDED.gas_used"),
           index: fragment("EXCLUDED.index"),
-          internal_transactions_indexed_at: fragment("EXCLUDED.internal_transactions_indexed_at"),
+#          internal_transactions_indexed_at: fragment("EXCLUDED.internal_transactions_indexed_at"),
           input: fragment("EXCLUDED.input"),
           nonce: fragment("EXCLUDED.nonce"),
           r: fragment("EXCLUDED.r"),
