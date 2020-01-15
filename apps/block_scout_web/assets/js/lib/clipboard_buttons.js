@@ -3,7 +3,7 @@ import $ from 'jquery'
 
 const clipboard = new ClipboardJS('[data-clipboard-text]')
 
-clipboard.on('success', ({trigger}) => {
+clipboard.on('success', ({ trigger }) => {
   const copyButton = $(trigger)
   copyButton.tooltip('dispose')
 

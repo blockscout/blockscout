@@ -20,9 +20,6 @@ import 'bootstrap'
 
 import './locale'
 
-// support of preload in Firefox
-import '../node_modules/fg-loadcss/dist/cssrelpreload.min'
-
 import './pages/address'
 import './pages/address/coin_balances'
 import './pages/address/transactions'
@@ -46,7 +43,6 @@ import './lib/currency'
 import './lib/from_now'
 import './lib/indexing'
 import './lib/loading_element'
-import './lib/market_history_chart'
 import './lib/pending_transactions_toggle'
 import './lib/pretty_json'
 import './lib/reload_button'

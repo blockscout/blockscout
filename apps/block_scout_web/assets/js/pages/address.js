@@ -102,7 +102,7 @@ const elements = {
   },
   '[data-selector="fetched-coin-balance-block-number"]': {
     load ($el) {
-      return {fetchedCoinBalanceBlockNumber: numeral($el.text()).value()}
+      return { fetchedCoinBalanceBlockNumber: numeral($el.text()).value() }
     },
     render ($el, state, oldState) {
       if (oldState.fetchedCoinBalanceBlockNumber === state.fetchedCoinBalanceBlockNumber) return
@@ -131,7 +131,7 @@ function loadCounters (store) {
 
   function fetchCounters () {
     $.getJSON(path)
-      .done(response => store.dispatch(Object.assign({type: 'COUNTERS_FETCHED'}, humps.camelizeKeys(response))))
+      .done(response => store.dispatch(Object.assign({ type: 'COUNTERS_FETCHED' }, humps.camelizeKeys(response))))
   }
 
   fetchCounters()

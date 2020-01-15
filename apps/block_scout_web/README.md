@@ -21,7 +21,7 @@ This is a tool for inspecting and analyzing the POA Network blockchain from a we
 To get BlockScout Web interface up and running locally:
 
   * Setup `../explorer`
-  * Set up some default configuration with: `$ cp config/dev.secret.exs.example config/dev.secret.esx`
+  * Set up some default configuration with: `$ cp config/dev.secret.exs.example config/dev.secret.exs`
   * Install Node.js dependencies with `$ cd assets && npm install && cd ..`
   * Start Phoenix with `$ mix phx.server` (This can be run from this directory or the project root: the project root is recommended.)
 

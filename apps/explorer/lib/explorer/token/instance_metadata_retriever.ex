@@ -80,7 +80,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   def fetch_json(%{"tokenURI" => {:ok, [json]}}) do
     {:ok, json} = decode_json(json)
 
-    {:ok, %{metadata: json}}
+    check_type(json)
   rescue
     e ->
       Logger.debug(["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"],
@@ -101,7 +101,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       {:ok, %Response{body: body, status_code: 200}} ->
         {:ok, json} = decode_json(body)
 
-        {:ok, %{metadata: json}}
+        check_type(json)
 
       {:ok, %Response{body: body}} ->
         {:error, body}
@@ -126,5 +126,13 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       |> :unicode.characters_to_binary(:latin1)
       |> Jason.decode()
     end
+  end
+
+  defp check_type(json) when is_map(json) do
+    {:ok, %{metadata: json}}
+  end
+
+  defp check_type(_) do
+    {:error, :wrong_metadata_type}
   end
 end

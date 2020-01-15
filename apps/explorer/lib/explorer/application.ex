@@ -9,6 +9,8 @@ defmodule Explorer.Application do
 
   alias Explorer.Chain.Cache.{
     Accounts,
+    AddressSum,
+    AddressSumMinusBurnt,
     BlockCount,
     BlockNumber,
     Blocks,
@@ -46,6 +48,8 @@ defmodule Explorer.Application do
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
       TransactionCount,
+      AddressSum,
+      AddressSumMinusBurnt,
       BlockCount,
       Blocks,
       NetVersion,
