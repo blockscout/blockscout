@@ -41,7 +41,7 @@ defmodule Explorer.Chain.Address.TokenTest do
 
     test "returns tokens ordered by type in reverse alphabetical order" do
       address = insert(:address)
-      block = insert(:block)
+#      block = insert(:block)
 
       token =
         :token
@@ -59,7 +59,7 @@ defmodule Explorer.Chain.Address.TokenTest do
         :token_transfer,
         token_contract_address: token.contract_address,
         from_address: address,
-        block_hash: block.hash,
+#        block_hash: block.hash,
         to_address: build(:address)
       )
 
@@ -75,10 +75,11 @@ defmodule Explorer.Chain.Address.TokenTest do
         value: 1000
       )
 
+
       insert(
         :token_transfer,
         token_contract_address: token2.contract_address,
-        block_hash: block.hash,
+#        block_hash: block.hash,
         from_address: address,
         to_address: build(:address)
       )
@@ -94,7 +95,7 @@ defmodule Explorer.Chain.Address.TokenTest do
 
     test "returns tokens of same type by name in lowercase ascending" do
       address = insert(:address)
-      block = insert(:block)
+#      block = insert(:block)
 
       token =
         :token
@@ -112,8 +113,8 @@ defmodule Explorer.Chain.Address.TokenTest do
         :token_transfer,
         token_contract_address: token.contract_address,
         from_address: address,
-        to_address: build(:address),
-        block_hash: block.hash
+#        block_hash: block.hash,
+        to_address: build(:address)
       )
 
       token2 =
@@ -132,8 +133,8 @@ defmodule Explorer.Chain.Address.TokenTest do
         :token_transfer,
         token_contract_address: token2.contract_address,
         from_address: address,
+#        block_hash: block.hash,
         to_address: build(:address),
-        block_hash: block.hash
       )
 
       token3 =
@@ -152,7 +153,7 @@ defmodule Explorer.Chain.Address.TokenTest do
         :token_transfer,
         token_contract_address: token3.contract_address,
         from_address: address,
-        block_hash: block.hash,
+#        block_hash: block.hash,
         to_address: build(:address)
       )
 
@@ -167,7 +168,7 @@ defmodule Explorer.Chain.Address.TokenTest do
 
     test "returns tokens with null name after all the others of same type" do
       address = insert(:address)
-      block = insert(:block)
+#      block = insert(:block)
 
       token =
         :token
@@ -185,8 +186,8 @@ defmodule Explorer.Chain.Address.TokenTest do
         :token_transfer,
         token_contract_address: token.contract_address,
         from_address: address,
+#        block_hash: block.hash,
         to_address: build(:address),
-        block_hash: block.hash
       )
 
       token2 =
@@ -205,8 +206,8 @@ defmodule Explorer.Chain.Address.TokenTest do
         :token_transfer,
         token_contract_address: token2.contract_address,
         from_address: address,
+#        block_hash: block.hash,
         to_address: build(:address),
-        block_hash: block.hash
       )
 
       token3 =
@@ -225,8 +226,8 @@ defmodule Explorer.Chain.Address.TokenTest do
         :token_transfer,
         token_contract_address: token3.contract_address,
         from_address: address,
+#        block_hash: block.hash,
         to_address: build(:address),
-        block_hash: block.hash
       )
 
       last_fetched_token =
@@ -290,8 +291,8 @@ defmodule Explorer.Chain.Address.TokenTest do
         :token_transfer,
         token_contract_address: token.contract_address,
         from_address: address,
+        # block_hash: block.hash,
         to_address: build(:address)
-        # block_hash: block.hash
       )
 
       fetched_token =

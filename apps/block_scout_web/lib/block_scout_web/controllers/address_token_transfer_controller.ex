@@ -170,6 +170,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
       ) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
+
       render(
         conn,
         "index.html",
