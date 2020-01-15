@@ -265,7 +265,7 @@ defmodule Explorer.Chain.Address.TokenTest do
 
     test "ignores token if the last balance is zero" do
       address = insert(:address)
-      block = insert(:block)
+      # block = insert(:block)
 
       token =
         :token
@@ -290,8 +290,8 @@ defmodule Explorer.Chain.Address.TokenTest do
         :token_transfer,
         token_contract_address: token.contract_address,
         from_address: address,
-        to_address: build(:address),
-        block_hash: block.hash
+        to_address: build(:address)
+        # block_hash: block.hash
       )
 
       fetched_token =
