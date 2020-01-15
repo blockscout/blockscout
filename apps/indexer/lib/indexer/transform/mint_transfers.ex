@@ -7,6 +7,8 @@ defmodule Indexer.Transform.MintTransfers do
   transaction for it. Otherwise, those address may not be indexed.
   """
 
+  require Logger
+
   @bridge_hash "0x3c798bbcf33115b42c728b8504cff11dd58736e9fa789f1cda2738db7d696b2a"
 
   @doc """
@@ -40,10 +42,14 @@ defmodule Indexer.Transform.MintTransfers do
 
   """
   def parse(logs) do
+    Logger.debug("#blocks_importer#: Parsing logs for mint transfers")
+
     addresses =
       logs
       |> Enum.filter(&(&1.first_topic == @bridge_hash))
       |> Enum.map(&parse_params/1)
+
+    Logger.debug("#blocks_importer#: Logs for mint transfers parsed")
 
     %{mint_transfers: addresses}
   end

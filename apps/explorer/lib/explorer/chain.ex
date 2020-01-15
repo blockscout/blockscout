@@ -3,6 +3,8 @@ defmodule Explorer.Chain do
   The chain context.
   """
 
+  require Logger
+
   import Ecto.Query,
     only: [
       from: 2,
@@ -1364,6 +1366,7 @@ defmodule Explorer.Chain do
   """
   @spec import(Import.all_options()) :: Import.all_result()
   def import(options) do
+    Logger.debug("#blocks_importer#: Chain import starting...")
     Import.all(options)
   end
 

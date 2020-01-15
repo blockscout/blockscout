@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   """
 
   require Ecto.Query
+  require Logger
 
   import Ecto.Query, only: [from: 2, subquery: 1]
 
@@ -86,9 +87,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         transactions: transactions
       })
     end)
-    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-      acquire_contract_address_tokens(repo, consensus_block_numbers)
-    end)
+    # It was introduced in 810dc48a2c7f236c7a4ab48e317b4ac26946a2bc (Enforce DB transaction's order between tables to prevent deadlocks)
+    # |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
+    #   Logger.debug(fn -> [
+    #     "#blocks_importer#: acquire_contract_address_tokens 1",
+    #     inspect(repo)
+    #   ] end)
+    #   acquire_contract_address_tokens(repo, consensus_block_numbers)
+    # end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
       delete_address_token_balances(repo, consensus_block_numbers, insert_options)
     end)
@@ -115,18 +121,19 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   @impl Runner
   def timeout, do: @timeout
 
-  defp acquire_contract_address_tokens(repo, consensus_block_numbers) do
-    query =
-      from(address_current_token_balance in Address.CurrentTokenBalance,
-        where: address_current_token_balance.block_number in ^consensus_block_numbers,
-        select: address_current_token_balance.token_contract_address_hash,
-        distinct: address_current_token_balance.token_contract_address_hash
-      )
+  # It was introduced in 810dc48a2c7f236c7a4ab48e317b4ac26946a2bc (Enforce DB transaction's order between tables to prevent deadlocks)
+  # defp acquire_contract_address_tokens(repo, consensus_block_numbers) do
+  #   query =
+  #     from(address_current_token_balance in Address.CurrentTokenBalance,
+  #       where: address_current_token_balance.block_number in ^consensus_block_numbers,
+  #       select: address_current_token_balance.token_contract_address_hash,
+  #       distinct: address_current_token_balance.token_contract_address_hash
+  #     )
 
-    contract_address_hashes = repo.all(query)
+  #   contract_address_hashes = repo.all(query)
 
-    Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
-  end
+  #   Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
+  # end
 
   defp fork_transactions(%{
          repo: repo,
@@ -289,6 +296,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         lock: "FOR UPDATE"
       )
 
+    Logger.info(fn ->
+      [
+        "consensus removing from blocks with hashes from blocks runner: ",
+        inspect(consensus_block_numbers),
+        inspect(hashes)
+      ]
+    end)
+
     {_, removed_consensus_block_hashes} =
       repo.update_all(
         from(
@@ -303,6 +318,13 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timeout: timeout
       )
 
+    Logger.info(fn ->
+      [
+        "consensus removed from blocks with hashes from blocks runner: ",
+        inspect(removed_consensus_block_hashes)
+      ]
+    end)
+
     {:ok, removed_consensus_block_hashes}
   rescue
     postgrex_error in Postgrex.Error ->
@@ -310,29 +332,25 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{timeout: timeout, timestamps: timestamps}) do
-    if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
-      {:ok, []}
-    else
-      sorted_pending_ops =
-        nonconsensus_hashes
-        |> MapSet.new()
-        |> MapSet.union(MapSet.new(hashes))
-        |> Enum.sort()
-        |> Enum.map(fn hash ->
-          %{block_hash: hash, fetch_internal_transactions: true}
-        end)
+    sorted_pending_ops =
+      nonconsensus_hashes
+      |> MapSet.new()
+      |> MapSet.union(MapSet.new(hashes))
+      |> Enum.sort()
+      |> Enum.map(fn hash ->
+        %{block_hash: hash, fetch_internal_transactions: true}
+      end)
 
-      Import.insert_changes_list(
-        repo,
-        sorted_pending_ops,
-        conflict_target: :block_hash,
-        on_conflict: PendingBlockOperation.default_on_conflict(),
-        for: PendingBlockOperation,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-    end
+    Import.insert_changes_list(
+      repo,
+      sorted_pending_ops,
+      conflict_target: :block_hash,
+      on_conflict: PendingBlockOperation.default_on_conflict(),
+      for: PendingBlockOperation,
+      returning: true,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp delete_address_token_balances(_, [], _), do: {:ok, []}

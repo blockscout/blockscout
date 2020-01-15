@@ -11,8 +11,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
-  alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-  alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
+  alias Explorer.Chain.Cache.{Accounts, Uncles}
   alias Indexer.Block.Fetcher.Receipts
 
   alias Indexer.Fetcher.{
@@ -21,7 +20,6 @@ defmodule Indexer.Block.Fetcher do
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
-    StakingPools,
     Token,
     TokenBalance,
     TokenInstance,
@@ -173,33 +171,19 @@ defmodule Indexer.Block.Fetcher do
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
-      update_block_cache(inserted[:blocks])
-      update_transactions_cache(inserted[:transactions], inserted[:fork_transactions])
+
+      Logger.debug("#blocks_importer#: Updating cache")
+
       update_addresses_cache(inserted[:addresses])
       update_uncles_cache(inserted[:block_second_degree_relations])
+
+      Logger.debug("#blocks_importer#: Cache updated")
+
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
       {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
     end
-  end
-
-  defp update_block_cache([]), do: :ok
-
-  defp update_block_cache(blocks) when is_list(blocks) do
-    {min_block, max_block} = Enum.min_max_by(blocks, & &1.number)
-
-    BlockNumber.update_all(max_block.number)
-    BlockNumber.update_all(min_block.number)
-    BlocksCache.update(blocks)
-  end
-
-  defp update_block_cache(_), do: :ok
-
-  defp update_transactions_cache(transactions, forked_transactions) do
-    Transactions.update(transactions)
-    PendingTransactions.update_pending(transactions)
-    PendingTransactions.update_pending(forked_transactions)
   end
 
   defp update_addresses_cache(addresses), do: Accounts.drop(addresses)
@@ -213,6 +197,8 @@ defmodule Indexer.Block.Fetcher do
         options
       )
       when is_map(options) do
+    Logger.debug("#blocks_importer#: Importing...")
+
     {address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
 
@@ -225,6 +211,7 @@ defmodule Indexer.Block.Fetcher do
         }
       )
 
+    Logger.debug("#blocks_importer#: Just before import")
     callback_module.import(state, options_with_broadcast)
   end
 
@@ -296,10 +283,6 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_token_balances(_), do: :ok
 
-  def async_import_staking_pools do
-    StakingPools.async_fetch()
-  end
-
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}) do
     UncleBlock.async_fetch_blocks(block_second_degree_relations)
   end
@@ -333,6 +316,8 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp fetch_beneficiaries(blocks, json_rpc_named_arguments) do
+    Logger.debug("#blocks_importer#: Fetching beneficiaries")
+
     hash_string_by_number =
       Enum.into(blocks, %{}, fn %{number: number, hash: hash_string}
                                 when is_integer(number) and is_binary(hash_string) ->
@@ -345,6 +330,8 @@ defmodule Indexer.Block.Fetcher do
     |> case do
       {:ok, %FetchedBeneficiaries{params_set: params_set} = fetched_beneficiaries} ->
         consensus_params_set = consensus_params_set(params_set, hash_string_by_number)
+
+        Logger.debug("#blocks_importer#: Beneficiaries fetched")
 
         %FetchedBeneficiaries{fetched_beneficiaries | params_set: consensus_params_set}
 
@@ -397,6 +384,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp add_gas_payments(beneficiaries, transactions) do
+    Logger.debug("#blocks_importer#: Adding gas payments")
     transactions_by_block_number = Enum.group_by(transactions, & &1.block_number)
 
     Enum.map(beneficiaries, fn beneficiary ->
@@ -407,9 +395,12 @@ defmodule Indexer.Block.Fetcher do
           "0x" <> minted_hex = beneficiary.reward
           {minted, _} = Integer.parse(minted_hex, 16)
 
+          Logger.debug("#blocks_importer#: Gas payments added")
+
           %{beneficiary | reward: minted + gas_payment}
 
         _ ->
+          Logger.debug("#blocks_importer#: Gas payments added")
           beneficiary
       end
     end)

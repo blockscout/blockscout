@@ -3,9 +3,12 @@ defmodule Indexer.Transform.AddressTokenBalances do
   Extracts `Explorer.Address.TokenBalance` params from other schema's params.
   """
 
+  require Logger
+
   @burn_address "0x0000000000000000000000000000000000000000"
 
   def params_set(%{} = import_options) do
+    Logger.debug("#blocks_importer#: Reducing address token balances")
     Enum.reduce(import_options, MapSet.new(), &reducer/2)
   end
 
@@ -21,9 +24,13 @@ defmodule Indexer.Transform.AddressTokenBalances do
                                acc
                                when is_integer(block_number) and is_binary(from_address_hash) and
                                       is_binary(to_address_hash) and is_binary(token_contract_address_hash) ->
-      acc
-      |> add_token_balance_address(from_address_hash, token_contract_address_hash, block_number)
-      |> add_token_balance_address(to_address_hash, token_contract_address_hash, block_number)
+      acc_with_token_balance =
+        acc
+        |> add_token_balance_address(from_address_hash, token_contract_address_hash, block_number)
+        |> add_token_balance_address(to_address_hash, token_contract_address_hash, block_number)
+
+      Logger.debug("#blocks_importer#: Address token balances reduced")
+      acc_with_token_balance
     end)
   end
 

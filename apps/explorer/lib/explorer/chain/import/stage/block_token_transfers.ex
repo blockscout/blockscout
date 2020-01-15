@@ -1,7 +1,8 @@
-defmodule Explorer.Chain.Import.Stage.AddressReferencing do
+defmodule Explorer.Chain.Import.Stage.BlockTokenTransfers do
   @moduledoc """
-  Imports any tables that reference `t:Explorer.Chain.Address.t/0` and that were imported by
-  `Explorer.Chain.Import.Stage.Addresses`.
+  Imports any tables that reference `t:Explorer.Chain.Block.t/0` and that were
+  imported by `Explorer.Chain.Import.Stage.Addresses` and
+  `Explorer.Chain.Import.Stage.AddressReferencing`.
   """
 
   alias Explorer.Chain.Import.{Runner, Stage}
@@ -11,8 +12,7 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
   @impl Stage
   def runners,
     do: [
-      Runner.Address.CoinBalances,
-      Runner.Blocks
+      Runner.TokenTransfers
     ]
 
   @impl Stage

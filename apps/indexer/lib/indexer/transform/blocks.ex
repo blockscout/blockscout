@@ -3,6 +3,8 @@ defmodule Indexer.Transform.Blocks do
   Protocol for transforming blocks.
   """
 
+  require Logger
+
   @type block :: map()
 
   @doc """
@@ -14,9 +16,13 @@ defmodule Indexer.Transform.Blocks do
   Runs a list of blocks through the configured block transformer.
   """
   def transform_blocks(blocks) when is_list(blocks) do
+    Logger.debug("#blocks_importer#: Transforming blocks")
+
     transformer = Application.get_env(:indexer, :block_transformer)
 
-    Enum.map(blocks, &transformer.transform/1)
+    transformed_blocks = Enum.map(blocks, &transformer.transform/1)
+    Logger.debug("#blocks_importer#: Blocks transformed")
+    transformed_blocks
   end
 
   @doc """
