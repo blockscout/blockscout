@@ -28,7 +28,7 @@
       to: address_logs_path(@conn, :index, @address.hash)
       ) %>
     <%= link(
-      gettext("Blocks Signed"),
+      gettext("Downtime"),
       class: "card-tab #{tab_status("signed", @conn.request_path)}",
       "data-test": "signed_tab_link",
       to: address_signed_path(@conn, :index, @address.hash)
