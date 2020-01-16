@@ -25,6 +25,7 @@ defmodule Explorer.Chain.TokenTransferTest do
           to_address: build(:address),
           transaction: transaction,
           token_contract_address: token_contract_address,
+          block: transaction.block,
           token: token
         )
 
@@ -39,6 +40,7 @@ defmodule Explorer.Chain.TokenTransferTest do
           to_address: build(:address),
           transaction: another_transaction,
           token_contract_address: token_contract_address,
+          block: transaction.block,
           token: token
         )
 
@@ -47,6 +49,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         to_address: build(:address),
         transaction: transaction,
         token_contract_address: build(:address),
+        block: transaction.block,
         token: token
       )
 
@@ -90,6 +93,7 @@ defmodule Explorer.Chain.TokenTransferTest do
           block_number: 999,
           to_address: build(:address),
           transaction: transaction,
+          block: transaction.block,
           token_contract_address: token_contract_address,
           token: token
         )
@@ -100,6 +104,7 @@ defmodule Explorer.Chain.TokenTransferTest do
           block_number: 1000,
           to_address: build(:address),
           transaction: transaction,
+          block: transaction.block,
           token_contract_address: token_contract_address,
           token: token
         )
@@ -130,6 +135,7 @@ defmodule Explorer.Chain.TokenTransferTest do
           block_number: 1000,
           log_index: 0,
           to_address: build(:address),
+          block: transaction.block,
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token
@@ -160,6 +166,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         :token_transfer,
         to_address: build(:address),
         transaction: transaction,
+        block: transaction.block,
         token_contract_address: token_contract_address,
         token: token,
         token_id: 42
@@ -175,6 +182,7 @@ defmodule Explorer.Chain.TokenTransferTest do
           :token_transfer,
           to_address: build(:address),
           transaction: another_transaction,
+          block: another_transaction.block,
           token_contract_address: token_contract_address,
           token: token,
           token_id: 42
@@ -211,6 +219,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         from_address: john,
         to_address: paul,
         transaction: transaction,
+        block: transaction.block,
         amount: 1
       )
 
@@ -219,6 +228,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         from_address: john,
         to_address: paul,
         transaction: transaction,
+        block: transaction.block,
         amount: 1
       )
 
@@ -249,6 +259,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         from_address: john,
         to_address: paul,
         transaction: transaction,
+        block: transaction.block,
         amount: 1
       )
 
@@ -257,6 +268,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         from_address: john,
         to_address: paul,
         transaction: transaction,
+        block: transaction.block,
         amount: 1
       )
 
@@ -287,6 +299,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         from_address: john,
         to_address: paul,
         transaction: transaction_one,
+        block: transaction_one.block,
         amount: 1
       )
 
@@ -304,6 +317,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         :token_transfer,
         from_address: paul,
         to_address: john,
+        block: transaction_two.block,
         transaction: transaction_two,
         amount: 1
       )
@@ -337,6 +351,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         from_address: john,
         to_address: paul,
         transaction: transaction_one,
+        block: transaction_one.block,
         amount: 1
       )
 
@@ -354,6 +369,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         :token_transfer,
         from_address: paul,
         to_address: john,
+        block: transaction_two.block,
         transaction: transaction_two,
         amount: 1
       )

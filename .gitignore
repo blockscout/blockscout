@@ -40,5 +40,12 @@ screenshots/
 # osx 
 .DS_Store
 
+*.iml
+.idea/
+
+tmpbriefly*
+
 # mix phx.gen.cert self-signed certs for dev
 /apps/block_scout_web/priv/cert
+
+tmpbriefly*

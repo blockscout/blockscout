@@ -192,6 +192,8 @@ defmodule Explorer.Chain.SmartContract do
     produce `address` `t:Explorer.Chain.Address.t/0` `contract_code`.
   * `abi` - The [JSON ABI specification](https://solidity.readthedocs.io/en/develop/abi-spec.html#json) for this
     contract.
+  * `proxy_address` - if the contract is behind a proxy, the address of that proxy contract
+
   """
 
   @type t :: %Explorer.Chain.SmartContract{

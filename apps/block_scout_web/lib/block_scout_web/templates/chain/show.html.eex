@@ -21,7 +21,7 @@
         <div class="dashboard-banner-chart-legend">
           <div class="dashboard-banner-chart-legend-item">
             <span class="dashboard-banner-chart-legend-label">
-              <%= gettext "Price" %>
+              <%= gettext "cGLD Price" %>
             </span>
             <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
             </span>

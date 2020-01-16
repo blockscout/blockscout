@@ -96,6 +96,10 @@ defmodule Indexer.Transform.Addresses do
       [
         %{from: :block_number, to: :fetched_coin_balance_block_number},
         %{from: :to_address_hash, to: :hash}
+      ],
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :gas_fee_recipient_hash, to: :hash}
       ]
     ],
     logs: [
@@ -132,6 +136,12 @@ defmodule Indexer.Transform.Addresses do
       [
         %{from: :block_number, to: :fetched_coin_balance_block_number},
         %{from: :address_hash, to: :hash}
+      ]
+    ],
+    gold_token: [
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :hash, to: :hash}
       ]
     ]
   }
@@ -420,6 +430,12 @@ defmodule Indexer.Transform.Addresses do
           optional(:block_reward_contract_beneficiaries) => [
             %{
               required(:address_hash) => String.t(),
+              required(:block_number) => non_neg_integer()
+            }
+          ],
+          optional(:gold_token) => [
+            %{
+              required(:hash) => String.t(),
               required(:block_number) => non_neg_integer()
             }
           ]

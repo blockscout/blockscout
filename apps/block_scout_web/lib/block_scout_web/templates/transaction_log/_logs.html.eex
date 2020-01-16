@@ -18,7 +18,7 @@
   <dl class="row">
     <dt class="col-lg-2"> <%= gettext "Address" %> </dt>
     <dd class="col-lg-10">
-      <h3 class="">
+      <h3 class="logs-hash">
         <%= link(
             @log.address,
             to: address_path(@conn, :show, @log.address),

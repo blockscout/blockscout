@@ -23,7 +23,7 @@ ARG COIN
 RUN if [ "$COIN" != "" ]; then sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
 
 # Run forderground build and phoenix digest
-RUN mix compile
+RUN mix compile && mix phx.digest
 
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \

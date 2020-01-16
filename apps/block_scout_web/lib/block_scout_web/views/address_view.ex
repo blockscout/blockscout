@@ -5,22 +5,42 @@ defmodule BlockScoutWeb.AddressView do
 
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    CeloSigners,
+    CeloValidator,
+    CeloValidatorHistory,
+    Hash,
+    InternalTransaction,
+    SmartContract,
+    Token,
+    TokenTransfer,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
 
   @dialyzer :no_match
 
   @tabs [
+    "celo",
     "coin_balances",
     "contracts",
     "decompiled_contracts",
     "internal_transactions",
     "read_contract",
+    "signed",
     "tokens",
     "transactions",
     "validations"
   ]
+
+  def celo_account?(address) do
+    address.celo_account != nil and Ecto.assoc_loaded?(address.celo_account)
+  end
 
   def address_partial_selector(struct_to_render_from, direction, current_address, truncate \\ false)
 
@@ -84,11 +104,39 @@ defmodule BlockScoutWeb.AddressView do
     matching_address_check(current_address, address, contract?(address), truncate)
   end
 
+  def address_partial_selector(%CeloValidator{group_address: address}, :group, current_address, truncate) do
+    matching_address_check(current_address, address, contract?(address), truncate)
+  end
+
+  def address_partial_selector(%CeloValidator{signer: address}, :signer, current_address, truncate) do
+    matching_address_check(current_address, address, contract?(address), truncate)
+  end
+
   def address_partial_selector(%Transaction{from_address: address}, :from, current_address, truncate) do
     matching_address_check(current_address, address, contract?(address), truncate)
   end
 
   def address_partial_selector(%Reward{address: address}, _, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloSigners{account_address: address}, :signer_account, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloSigners{signer_address: address}, :signers, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(address, :signers, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloValidator{validator_address: address}, :members, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
+  def address_partial_selector(%CeloValidatorHistory{validator_address: address}, :signers, current_address, truncate) do
     matching_address_check(current_address, address, false, truncate)
   end
 
@@ -159,7 +207,9 @@ defmodule BlockScoutWeb.AddressView do
     end
   end
 
-  def primary_name(%Address{names: _}), do: nil
+  def primary_name(%Address{names: _} = _address) do
+    nil
+  end
 
   def primary_validator_metadata(%Address{names: [_ | _] = address_names}) do
     case Enum.find(address_names, &(&1.primary == true)) do
@@ -310,6 +360,8 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
   defp tab_name(["logs"]), do: gettext("Logs")
+  defp tab_name(["celo"]), do: "Celo Info"
+  defp tab_name(["signed"]), do: "Blocks Signed"
 
   def short_hash(%Address{hash: hash}) do
     <<

@@ -17,7 +17,7 @@
   <dl class="row">
     <dt class="col-md-2"> <%= gettext "Transaction" %> </dt>
     <dd class="col-md-10">
-      <h3 class="">
+      <h3 class="logs-decoded">
         <%= link(
             @log.transaction,
             to: transaction_path(@conn, :show, @log.transaction),

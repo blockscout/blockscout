@@ -36,7 +36,11 @@ defmodule EthereumJsonrpc.MixProject do
   def application do
     [
       mod: {EthereumJSONRPC.Application, []},
-      extra_applications: [:logger]
+      extra_applications: [
+        :logger,
+        :jason,
+        :logger_json
+      ]
     ]
   end
 
@@ -84,13 +88,17 @@ defmodule EthereumJsonrpc.MixProject do
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.6"},
       # Encode/decode function names and arguments
-      {:ex_abi, "~> 0.1.18"},
+      {:ex_abi, "~> 0.2.2"},
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`
       {:websocket_client, "~> 1.3"},
       {:decimal, "~> 1.0"},
-      {:decorator, "~> 1.2"}
+      {:decorator, "~> 1.2"},
+      {:hackney, "~> 1.15.2"},
+      # Log json format
+      {:logger_json, "~> 3.2"}
+      # {:jason, "~> 1.1"}
     ]
   end
 end

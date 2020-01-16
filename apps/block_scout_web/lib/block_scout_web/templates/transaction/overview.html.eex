@@ -206,7 +206,7 @@
         <div class="card card-background-1 flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
             <%= if @transaction.value && @transaction.value.value != Decimal.new(0) do %>
-              <h2 class="card-title balance-card-title"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
+              <h2 class="card-title balance-card-title"><%= gettext "cGLD" %> <%= gettext "Value" %></h2>
               <div class="text-right">
                 <h3 class="address-balance-text">
                   <%= value(@transaction) %>
@@ -223,7 +223,12 @@
             <div class="text-right">
             <%= for transfer  <- aggregate_token_transfers(transaction_with_transfers.token_transfers) do %>
               <h3 class="address-balance-text">
-                  <%= token_transfer_amount(transfer) %>
+                 <%= case token_transfer_amount(transfer) do %>
+                   <% {:ok, :erc721_instance} -> %>
+                     <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id))) %><%= "]" %>
+                   <% {:ok, value} -> %>
+                     <%= value %>
+                 <% end %>
                   <%= " "%>
                   <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
               </h3>
@@ -236,7 +241,7 @@
         <!-- Value -->
         <div class="card card-background-1 flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
-            <h2 class="card-title balance-card-title"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
+            <h2 class="card-title balance-card-title"><%= gettext "cGLD" %> <%= gettext "Value" %></h2>
             <div class="text-right">
               <h3 class="address-balance-text">
                 <%= value(@transaction) %>
@@ -252,7 +257,7 @@
       </div>
     <% end %>
       <!-- Gas -->
-      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
+      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0 mob-transaction">
         <div class="card-body card-body-flex-column-space-between">
           <h2 class="card-title balance-card-title"> <%= gettext "Gas" %> </h2>
           <div class="text-right">

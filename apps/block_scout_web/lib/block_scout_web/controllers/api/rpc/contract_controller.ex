@@ -71,23 +71,32 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def getsourcecode(conn, params) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param) do
+      ignore_proxy = Map.get(params, "ignoreProxy", "0")
+      Logger.debug("Ignore proxy flag set to #{ignore_proxy} and #{is_integer(ignore_proxy)}}")
 
-      Logger.debug("Address Hash: #{address_hash}")
-      
-      address = with {:ok, proxy_contract} <- Chain.get_proxied_address(address_hash) do
-        Logger.info("Implementation address FOUND in proxy table")
-        Chain.address_hash_to_address_with_source_code(proxy_contract)
-      else 
-        {:error, :not_found} ->
-          Logger.info("Implementation address NOT found in proxy table")
+      address =
+        if ignore_proxy == "1" do
+          Logger.debug("Not checking if contract is proxied")
           Chain.address_hash_to_address_with_source_code(address_hash)
-      end
+        else
+          case Chain.get_proxied_address(address_hash) do
+            {:ok, proxy_contract} ->
+              Logger.debug("Implementation address found in proxy table")
+              Chain.address_hash_to_address_with_source_code(proxy_contract)
 
-      Logger.debug("Address: #{address}")
+            {:error, :not_found} ->
+              Logger.debug("Implementation address not found in proxy table")
+              Chain.address_hash_to_address_with_source_code(address_hash)
+          end
+        end
 
-      render(conn, :getsourcecode, %{
-        contract: address
-      })
+      render(
+        conn,
+        :getsourcecode,
+        %{
+          contract: address
+        }
+      )
     else
       {:address_param, :error} ->
         render(conn, :error, error: "Query parameter address is required")
@@ -208,6 +217,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> optional_param(params, "evmVersion", "evm_version")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
     |> optional_param(params, "optimizationRuns", "optimization_runs")
+    |> optional_param(params, "proxyAddress", "proxy_address")
     |> parse_optimization_runs()
   end
 
@@ -226,19 +236,23 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp parse_optimization_runs(other), do: other
 
   defp fetch_external_libraries(params) do
-    Enum.reduce(1..5, %{}, fn number, acc ->
-      case Map.fetch(params, "library#{number}Name") do
-        {:ok, library_name} ->
-          library_address = Map.get(params, "library#{number}Address")
+    Enum.reduce(
+      1..5,
+      %{},
+      fn number, acc ->
+        case Map.fetch(params, "library#{number}Name") do
+          {:ok, library_name} ->
+            library_address = Map.get(params, "library#{number}Address")
 
-          acc
-          |> Map.put("library#{number}_name", library_name)
-          |> Map.put("library#{number}_address", library_address)
+            acc
+            |> Map.put("library#{number}_name", library_name)
+            |> Map.put("library#{number}_address", library_address)
 
-        :error ->
-          acc
+          :error ->
+            acc
+        end
       end
-    end)
+    )
   end
 
   defp required_param({:error, _} = error, _, _, _), do: error

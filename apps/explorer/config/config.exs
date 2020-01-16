@@ -16,7 +16,9 @@ config :explorer,
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
   healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5),
-  realtime_events_sender: Explorer.Chain.Events.Sender
+  realtime_events_sender: Explorer.Chain.Events.Sender,
+  index_internal_transactions_for_token_transfers:
+    if(System.get_env("INTERNAL_TRANSACTIONOS_FOR_TOKEN_TRANSFERS") == "true", do: true, else: false)
 
 average_block_period =
   case Integer.parse(System.get_env("AVERAGE_BLOCK_CACHE_PERIOD", "")) do
@@ -27,6 +29,8 @@ average_block_period =
 config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
   period: average_block_period
+
+config :explorer, Explorer.Celo.AbiHandler, enabled: true
 
 config :explorer, Explorer.ChainSpec.GenesisData,
   enabled: true,
@@ -57,7 +61,7 @@ config :explorer, Explorer.Counters.AddressesCounter,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
 
-config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
+config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets
 
 config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
 
@@ -113,13 +117,21 @@ config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org",
   checksum_function: System.get_env("CHECKSUM_FUNCTION") && String.to_atom(System.get_env("CHECKSUM_FUNCTION"))
 
-config :logger, :explorer,
-  # keep synced with `config/config.exs`
-  format: "$dateT$time $metadata[$level] $message\n",
+config :logger_json, :explorer,
   metadata:
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :explorer]
+
+config :logger, :explorer, backends: [LoggerJSON]
+
+# config :logger, :explorer,
+#  # keep synced with `config/config.exs`
+#  format: "$dateT$time $metadata[$level] $message\n",
+#  metadata:
+#    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+#       block_number step count error_count shrunk import_id transaction_id)a,
+#  metadata_filter: [application: :explorer]
 
 config :spandex_ecto, SpandexEcto.EctoLogger,
   service: :ecto,
@@ -143,6 +155,14 @@ config :explorer, Explorer.Chain.Cache.Transactions,
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 config :explorer, Explorer.Chain.Cache.Accounts,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
+config :explorer, Explorer.Chain.Cache.PendingTransactions,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
+config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 

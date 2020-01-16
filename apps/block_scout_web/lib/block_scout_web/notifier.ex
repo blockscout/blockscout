@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.Notifier do
 
   alias Absinthe.Subscription
   alias BlockScoutWeb.{AddressContractVerificationView, Endpoint}
-  alias Explorer.{Chain, Market, Repo}
+  alias Explorer.{Chain, ExchangeRates, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Counters.AverageBlockTime
@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :exchange_rate}) do
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = ExchangeRates.lookup(Explorer.coin()) || Token.null()
 
     market_history_data =
       case Market.fetch_recent_history() do
@@ -159,7 +159,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_block(block) do
-    preloaded_block = Repo.preload(block, [[miner: :names], :transactions, :rewards])
+    preloaded_block = Repo.preload(block, [[miner: :names], [celo_delegator: :celo_account], :transactions, :rewards])
     average_block_time = AverageBlockTime.average_block_time()
 
     Endpoint.broadcast("blocks:new_block", "new_block", %{

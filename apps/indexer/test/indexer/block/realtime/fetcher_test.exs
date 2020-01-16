@@ -8,7 +8,19 @@ defmodule Indexer.Block.Realtime.FetcherTest do
   alias Explorer.Chain.{Address, Transaction}
   alias Indexer.Block.Catchup.Sequence
   alias Indexer.Block.Realtime
-  alias Indexer.Fetcher.{ContractCode, InternalTransaction, ReplacedTransaction, Token, TokenBalance, UncleBlock}
+
+  alias Indexer.Fetcher.{
+    ContractCode,
+    InternalTransaction,
+    ReplacedTransaction,
+    Token,
+    TokenBalance,
+    UncleBlock,
+    CeloAccount,
+    CeloValidator,
+    CeloValidatorGroup,
+    CeloValidatorHistory
+  }
 
   @moduletag capture_log: true
 
@@ -40,6 +52,11 @@ defmodule Indexer.Block.Realtime.FetcherTest do
     %{block_fetcher: block_fetcher, json_rpc_named_arguments: core_json_rpc_named_arguments}
   end
 
+  setup do
+    # run the tests with a realistic skipping window
+    Application.put_env(:indexer, :max_skipping_distance, 3)
+  end
+
   describe "Indexer.Block.Fetcher.fetch_and_import_range/1" do
     @tag :no_geth
     test "in range with internal transactions", %{
@@ -50,6 +67,10 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       Sequence.cap(sequence)
 
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
@@ -117,6 +138,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                      "creates" => nil,
                      "from" => "0x40b18103537c0f15d5e137dd8ddd019b84949d16",
                      "gas" => "0x3d9c5",
+                     "feeCurrency" => "0x0000000000000000000000000000000000000000",
+                     "gatewayFeeRecipient" => "0x0000000000000000000000000000000000000000",
+                     "gatewayFee" => "0x0",
                      "gasPrice" => "0x3b9aca00",
                      "hash" => "0xd3937e70fab3fb2bfe8feefac36815408bf07de3b9e09fe81114b9a6b17f55c8",
                      "input" =>
@@ -173,6 +197,11 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                }
              }
            ]}
+        end)
+        |> expect(:json_rpc, fn
+          [%{id: id, jsonrpc: "2.0", method: "eth_getLogs", params: [%{fromBlock: "0x3C3660", toBlock: "0x3C365F"}]}],
+          _ ->
+            {:ok, [%{id: id, jsonrpc: "2.0", result: []}]}
         end)
         |> expect(:json_rpc, fn [
                                   %{
@@ -358,22 +387,28 @@ defmodule Indexer.Block.Realtime.FetcherTest do
               id: 0,
               jsonrpc: "2.0",
               method: "eth_getBalance",
-              params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
+              params: ["0x0000000000000000000000000000000000000000", "0x3C365F"]
             },
             %{
               id: 1,
               jsonrpc: "2.0",
               method: "eth_getBalance",
-              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
+              params: ["0x40b18103537c0f15d5e137dd8ddd019b84949d16", "0x3C365F"]
             },
             %{
               id: 2,
               jsonrpc: "2.0",
               method: "eth_getBalance",
-              params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
+              params: ["0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2", "0x3C365F"]
             },
             %{
               id: 3,
+              jsonrpc: "2.0",
+              method: "eth_getBalance",
+              params: ["0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3", "0x3C3660"]
+            },
+            %{
+              id: 4,
               jsonrpc: "2.0",
               method: "eth_getBalance",
               params: ["0x698bf6943bab687b2756394624aa183f434f65da", "0x3C365F"]
@@ -382,10 +417,11 @@ defmodule Indexer.Block.Realtime.FetcherTest do
           _ ->
             {:ok,
              [
-               %{id: 0, jsonrpc: "2.0", result: "0x148adc763b603291685"},
-               %{id: 1, jsonrpc: "2.0", result: "0x53474fa377a46000"},
-               %{id: 2, jsonrpc: "2.0", result: "0x53507afe51f28000"},
-               %{id: 3, jsonrpc: "2.0", result: "0x3e1a95d7517dc197108"}
+               %{id: 0, jsonrpc: "2.0", result: "0x1"},
+               %{id: 1, jsonrpc: "2.0", result: "0x148adc763b603291685"},
+               %{id: 2, jsonrpc: "2.0", result: "0x53474fa377a46000"},
+               %{id: 3, jsonrpc: "2.0", result: "0x53507afe51f28000"},
+               %{id: 4, jsonrpc: "2.0", result: "0x3e1a95d7517dc197108"}
              ]}
         end)
       end
@@ -394,12 +430,17 @@ defmodule Indexer.Block.Realtime.FetcherTest do
               %{
                 inserted: %{
                   addresses: [
+                    %Address{hash: zero_address_hash, fetched_coin_balance_block_number: 3_946_079},
                     %Address{hash: first_address_hash, fetched_coin_balance_block_number: 3_946_079},
                     %Address{hash: second_address_hash, fetched_coin_balance_block_number: 3_946_079},
                     %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_080},
                     %Address{hash: fourth_address_hash, fetched_coin_balance_block_number: 3_946_079}
                   ],
                   address_coin_balances: [
+                    %{
+                      address_hash: zero_address_hash,
+                      block_number: 3_946_079
+                    },
                     %{
                       address_hash: first_address_hash,
                       block_number: 3_946_079
@@ -422,6 +463,53 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                 },
                 errors: []
               }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
+    end
+  end
+
+  describe "determine_fetching_action/4" do
+    test "when everything (except number) is nil results in fetching only the number" do
+      assert [14] == Realtime.Fetcher.determine_fetching_action(14, nil, nil)
+    end
+
+    test "when number is also max_number_seen results in fetching only the number" do
+      number = 23
+      assert [number] == Realtime.Fetcher.determine_fetching_action(number, nil, number)
+      assert [number] == Realtime.Fetcher.determine_fetching_action(number, 21, number)
+    end
+
+    test "when max_number_seen is nil, fetching will start from previous_number" do
+      # note: this is a way to force this behavior, used by `poll_latest_block_number`
+      number = 156
+      previous_number = 150
+      old_number = 94
+
+      assert (previous_number + 1)..number == Realtime.Fetcher.determine_fetching_action(number, previous_number, nil)
+      assert (old_number + 1)..number == Realtime.Fetcher.determine_fetching_action(number, old_number, nil)
+    end
+
+    test "when number immediately follows the previous_number it is fetched" do
+      max_number_seen = 26
+      number = 27
+
+      assert [number] == Realtime.Fetcher.determine_fetching_action(number, nil, max_number_seen)
+    end
+
+    test "when number is inside the allowed skipping window nothing is fetched" do
+      max_number_seen = 26
+
+      assert :skip == Realtime.Fetcher.determine_fetching_action(28, nil, max_number_seen)
+      assert :skip == Realtime.Fetcher.determine_fetching_action(29, nil, max_number_seen)
+    end
+
+    test "when number is over the allowed skipping window all the values since the previous_number will be fetched" do
+      max_number_seen = 390
+      previous_number = 381
+      max_skipping_distance = Application.get_env(:indexer, :max_skipping_distance)
+
+      number = max_number_seen + max_skipping_distance + 1
+
+      assert (previous_number + 1)..number ==
+               Realtime.Fetcher.determine_fetching_action(number, previous_number, max_number_seen)
     end
   end
 end

@@ -14,6 +14,9 @@ defmodule BlockScoutWeb.SmartContractView do
     addresses
     |> Enum.map(&values(&1, "address"))
     |> Enum.join(", ")
+  rescue
+    _ ->
+      ""
   end
 
   def values(value, type) when type in ["address", "address payable"] do

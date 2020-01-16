@@ -222,6 +222,9 @@ defmodule BlockScoutWeb.Etherscan do
         "timeStamp" => "0x561d688c",
         "gasPrice" => "0xba43b7400",
         "gasUsed" => "0x10682",
+        "gatewayFee" => "0x0",
+        "gatewayFeeRecipient" => "0xe7c7177b6e5418f27e435f96dbf3f7edae41c133",
+        "feeCurrency" => "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
         "logIndex" => "0x",
         "transactionHash" => "0x0b03498648ae2da924f961dda00dc6bb0a8df15519262b7e012b7d67f4bb7e83",
         "transactionIndex" => "0x"
@@ -450,8 +453,9 @@ defmodule BlockScoutWeb.Etherscan do
       "gasLimit" => "91966",
       "gasUsed" => "95123",
       "gasPrice" => "100000",
-      "gasFeeRecipient" => "0xe7c7177b6e5418f27e435f96dbf3f7edae41c133",
-      "gasCurrency" => "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+      "gatewayFeeRecipient" => "0xe7c7177b6e5418f27e435f96dbf3f7edae41c133",
+      "feeCurrency" => "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+      "gatewayFee" => "0x0",
       "hash" => "0x0000000000000000000000000000000000000000000000000000000000000004",
       "input" => "0x04",
       "logs" => [
@@ -793,6 +797,21 @@ defmodule BlockScoutWeb.Etherscan do
         type: "gas",
         definition: "A nonnegative number roughly equivalent to computational steps.",
         example: ~s("0x10682")
+      },
+      feeCurrency: %{
+        type: "address hash",
+        definition: "A 160-bit code used for identifying accounts or contracts.",
+        example: ~s("0x88f24de331525cf6cfd7455eb96a9e4d49b7f292")
+      },
+      gatewayFeeRecipient: %{
+        type: "address hash",
+        definition: "A 160-bit code used for identifying accounts or contracts.",
+        example: ~s("0xbbae99f0e1ee565404465638d40827b54d343638")
+      },
+      gatewayFee: %{
+        type: "wei",
+        definition: &__MODULE__.wei_type_definition/1,
+        example: ~s("0x0")
       },
       logIndex: %{
         type: "hexadecimal",
@@ -1191,7 +1210,7 @@ defmodule BlockScoutWeb.Etherscan do
         key: "sort",
         type: "string",
         description:
-          "A string representing the order by block number direction. Defaults to ascending order. Available values: asc, desc"
+          "A string representing the order by block number direction. Defaults to descending order. Available values: asc, desc"
       },
       %{
         key: "startblock",
@@ -2000,6 +2019,12 @@ defmodule BlockScoutWeb.Etherscan do
         description: "The number of optimization runs used during compilation"
       },
       %{
+        key: "proxyAddress",
+        placeholder: "proxyAddress",
+        type: "string",
+        description: "If the contract is behind a proxy, the address of that proxy contract"
+      },
+      %{
         key: "library1Name",
         type: "string",
         description: "The name of the first library used."
@@ -2114,7 +2139,15 @@ defmodule BlockScoutWeb.Etherscan do
         description: "A 160-bit code used for identifying contracts."
       }
     ],
-    optional_params: [],
+    optional_params: [
+      %{
+        key: "ignoreProxy",
+        placeholder: "ignoreProxy",
+        type: "integer",
+        enum: ~s(["0", "1"]),
+        description: "Indicates if we want to ignore if the contract is a proxy (0 false, 1 true. Default false)."
+      }
+    ],
     responses: [
       %{
         code: "200",

@@ -130,7 +130,7 @@
 
               <%= render BlockScoutWeb.AddressView,
                 "_link.html",
-                address: @block.miner,
+                address: block_miner(@block),
                 contract: false,
                 class: "" %>
             </h3>

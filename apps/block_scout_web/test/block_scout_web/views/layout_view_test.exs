@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
     end
 
     test "use the default logo when there is no env configured for it" do
-      assert LayoutView.logo() == "/images/blockscout_logo.svg"
+      assert LayoutView.logo() == "/images/celo_logo.svg"
     end
   end
 
@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
     end
 
     test "use the default subnetwork title when there is no env configured for it" do
-      assert LayoutView.subnetwork_title() == "Sokol Testnet"
+      assert LayoutView.subnetwork_title() == "Testnet"
     end
   end
 
@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
     end
 
     test "use the default network title when there is no env configured for it" do
-      assert LayoutView.network_title() == "POA"
+      assert LayoutView.network_title() == "Celo"
     end
   end
 
@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
       assert LayoutView.release_link("v1.3.4-beta") ==
                {:safe,
-                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
+                ~s(<a href="https://github.com/celo-org/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
     end
 
     test "use the default value when empty release_link env configured for it" do
@@ -87,7 +87,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
       assert LayoutView.release_link("v1.3.4-beta") ==
                {:safe,
-                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
+                ~s(<a href="https://github.com/celo-org/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">v1.3.4-beta</a>)}
     end
 
     test "use the enviroment release link when it's configured" do

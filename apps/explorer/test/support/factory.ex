@@ -26,7 +26,9 @@ defmodule Explorer.Factory do
     SmartContract,
     Token,
     TokenTransfer,
+    Token.Instance,
     Transaction,
+    CeloAccount,
     StakingPool,
     StakingPoolsDelegator
   }
@@ -242,8 +244,8 @@ defmodule Explorer.Factory do
       cumulative_gas_used: cumulative_gas_used,
       error: error,
       gas_used: gas_used,
-      gas_currency_hash: gas_currency_hash,
-      gas_fee_recipient_hash: gas_fee_recipient_hash,
+      #      gas_currency_hash: gas_currency_hash,
+      #      gas_fee_recipient_hash: gas_fee_recipient_hash,
       index: next_transaction_index,
       internal_transactions_indexed_at: internal_transactions_indexed_at,
       status: status
@@ -301,8 +303,8 @@ defmodule Explorer.Factory do
       call_type: :delegatecall,
       gas: gas,
       gas_used: gas_used,
-      gas_currency_hash: build(:address),
-      gas_fee_recipient_hash: build(:address),
+      gas_currency: build(:address),
+      gas_fee_recipient: build(:address),
       input: %Data{bytes: <<1>>},
       output: %Data{bytes: <<2>>},
       # caller MUST supply `index`
@@ -326,8 +328,8 @@ defmodule Explorer.Factory do
       from_address: build(:address),
       gas: gas,
       gas_used: gas_used,
-      gas_currency_hash: build(:address),
-      gas_fee_recipient_hash: build(:address),
+      gas_currency: build(:address),
+      gas_fee_recipient: build(:address),
       # caller MUST supply `index`
       init: data(:internal_transaction_init),
       trace_address: [],
@@ -358,6 +360,7 @@ defmodule Explorer.Factory do
       index: sequence("log_index", & &1),
       second_topic: nil,
       third_topic: nil,
+      block: build(:block),
       transaction: build(:transaction),
       type: sequence("0x")
     }
@@ -388,6 +391,7 @@ defmodule Explorer.Factory do
       third_topic: zero_padded_address_hash_string(to_address.hash),
       address_hash: token_contract_address.hash,
       address: nil,
+      block: build(:block),
       data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
       transaction: transaction
     }
@@ -548,6 +552,15 @@ defmodule Explorer.Factory do
     }
   end
 
+  def token_instance_factory do
+    %Instance{
+      token_contract_address_hash: build(:address),
+      token_id: 5,
+      metadata: %{key: "value"},
+      error: nil
+    }
+  end
+
   def token_balance_factory do
     %TokenBalance{
       address: build(:address),
@@ -649,6 +662,18 @@ defmodule Explorer.Factory do
       ordered_withdraw: wei_per_ether * 600,
       stake_amount: wei_per_ether * 200,
       ordered_withdraw_epoch: 2
+    }
+  end
+
+  def celo_account_factory do
+    wei_per_ether = 1_000_000_000_000_000_000
+
+    %CeloAccount{
+      address: address_hash(),
+      account_type: "normal",
+      name: "Validator #123",
+      locked_gold: wei_per_ether * 4,
+      nonvoting_locked_gold: wei_per_ether * 4
     }
   end
 end

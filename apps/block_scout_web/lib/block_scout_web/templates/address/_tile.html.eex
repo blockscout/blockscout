@@ -29,11 +29,6 @@
       <span data-test="transaction_count">
         <%= @tx_count %>
       </span> <%= gettext "Transactions sent" %>
-      <% if validator?(@address) do %>
-        <span data-test="validation_count">
-          <%= @validation_count %>
-        </span> <%= gettext "Validations" %>
-      <% end %>
     </span>
   </td>
 </tr>

@@ -2,6 +2,7 @@ defmodule Explorer.SmartContract.Publisher do
   @moduledoc """
   Module responsible to control the contract verification.
   """
+  require Logger
 
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
@@ -36,9 +37,11 @@ defmodule Explorer.SmartContract.Publisher do
   end
 
   defp publish_smart_contract(address_hash, params, abi) do
+    proxy_address = Map.get(params, "proxy_address")
+
     attrs = address_hash |> attributes(params, abi)
 
-    Chain.create_smart_contract(attrs, attrs.external_libraries)
+    Chain.create_smart_contract(attrs, attrs.external_libraries, proxy_address)
   end
 
   defp unverified_smart_contract(address_hash, params, error) do
@@ -74,6 +77,7 @@ defmodule Explorer.SmartContract.Publisher do
       optimization_runs: params["optimization_runs"],
       optimization: params["optimization"],
       contract_source_code: params["contract_source_code"],
+      proxy_address: params["proxy_address"],
       constructor_arguments: clean_constructor_arguments,
       external_libraries: prepared_external_libraries,
       abi: abi

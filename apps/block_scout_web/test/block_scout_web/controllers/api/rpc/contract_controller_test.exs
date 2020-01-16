@@ -13,8 +13,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         |> get("/api", Map.put(params, "filter", "invalid"))
         |> json_response(400)
 
-      assert response["message"] ==
-               "invalid is not a valid value for `filter`. Please use one of: verified, decompiled, unverified, not_decompiled, 1, 2, 3, 4."
+      assert String.contains?(response["message"], "invalid is not a valid value for `filter`")
 
       assert response["status"] == "0"
       assert :ok = ExJsonSchema.Validator.validate(listcontracts_schema(), response)
@@ -642,7 +641,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
     })
   end
 
-  defp resolve_schema(result \\ %{}) do
+  defp resolve_schema(result) do
     %{
       "type" => "object",
       "properties" => %{

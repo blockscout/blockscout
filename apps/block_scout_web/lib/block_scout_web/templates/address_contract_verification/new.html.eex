@@ -90,6 +90,16 @@
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, :name, gettext("Proxy Address") %>
+            <div class="center-column">
+              <%= text_input f, :proxy_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">If the contract is behind a Proxy, the address of the Proxy contract.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :contract_source_code, gettext("Enter the Solidity Contract Code") %>
             <div class="center-column">
               <%= textarea f, :contract_source_code, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-source-code-help-block" %>

@@ -69,8 +69,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "gasLimit" => "#{transaction.gas}",
       "gasUsed" => "#{transaction.gas_used}",
       "gasPrice" => "#{transaction.gas_price.value}",
-      "gasCurrency" => "#{transaction.gas_currency_hash}",
-      "gasFeeRecipient" => "#{transaction.gas_fee_recipient_hash}",
+      "feeCurrency" => "#{transaction.gas_currency_hash}",
+      "gatewayFeeRecipient" => "#{transaction.gas_fee_recipient_hash}",
+      "gatewayFee" => "#{0}",
       "logs" => Enum.map(logs, &prepare_log/1),
       "next_page_params" => next_page_params
     }

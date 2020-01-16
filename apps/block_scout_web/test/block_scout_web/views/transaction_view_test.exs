@@ -136,7 +136,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
           gas_used: nil
         )
 
-      expected_value = "Max of 0.009 Ether"
+      expected_value = "Max of 0.009 cGLD"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
     end
 
@@ -144,7 +144,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
       {:ok, gas_price} = Wei.cast(3_000_000_000)
       transaction = build(:transaction, gas_price: gas_price, gas_used: Decimal.from_float(1_034_234.0))
 
-      expected_value = "0.003102702 Ether"
+      expected_value = "0.003102702 cGLD"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
     end
   end
@@ -258,7 +258,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction, amount: Decimal.new(1))
+      token_transfer =
+        insert(:token_transfer, transaction: transaction, amount: Decimal.new(1), block: transaction.block)
 
       result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
 
@@ -272,7 +273,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction, amount: nil)
+      token_transfer = insert(:token_transfer, transaction: transaction, amount: nil, block: transaction.block)
 
       result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
 

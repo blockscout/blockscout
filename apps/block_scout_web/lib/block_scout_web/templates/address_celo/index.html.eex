@@ -1,0 +1,128 @@
+<section class="container">
+  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+
+  <div class="card">
+    <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+    <div class="card-body">
+      <h2 class="card-title"><%= "Celo Info" %></h2>
+
+      <%= if @address.celo_delegator != nil do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Associated address</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Address of the Celo account associated with the signer."><%= @address.celo_delegator |> BlockScoutWeb.AddressView.address_partial_selector(:signer_account, @address) |> BlockScoutWeb.RenderHelpers.render_partial() %></span>
+       </dd>
+      </dl>
+      <% end %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Name</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Name of the Celo account."><%= @address.celo_account.name %></span>
+       </dd>
+      </dl>
+      <%= if @address.celo_account.url do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Metadata URL</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="URL pointing to the account metadata"><a href="<%= @address.celo_account.url %>"><%= @address.celo_account.url %></a></span>
+       </dd>
+      </dl>
+      <% end %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Type</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Is the account a validator or a validator group"><%= @address.celo_account.account_type %></span>
+       </dd>
+      </dl>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Attestations requested</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been requested from this account"><%= @address.celo_account.attestations_requested %></span>
+       </dd>
+      </dl>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Attestations fulfilled</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been fulfilled by this account"><%= @address.celo_account.attestations_fulfilled %></span>
+       </dd>
+      </dl>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Locked Gold</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How much cGLD has the account deposited"><%= format_according_to_decimals(@address.celo_account.locked_gold.value, Decimal.new(18)) %> cGLD (<%= format_according_to_decimals(@address.celo_account.nonvoting_locked_gold.value, Decimal.new(18)) %> non-voting cGLD)</span>
+       </dd>
+      </dl>
+      <%= if @address.celo_validator != nil do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Score</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Validator score"><%= format_according_to_decimals(@address.celo_validator.score.value, Decimal.new(18+4)) %>%</span>
+       </dd>
+      </dl>
+      <% end %>
+      <%= if @address.celo_validator_group != nil do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Commission</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Group commission"><%= format_according_to_decimals(@address.celo_validator_group.commission.value, Decimal.new(18+4)) %>%</span>
+       </dd>
+      </dl>
+      <% end %>
+      <%= if @address.celo_validator_group != nil do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Votes</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Votes received by group"><%= format_according_to_decimals(@address.celo_validator_group.votes.value, Decimal.new(18)) %> cGLD</span>
+       </dd>
+      </dl>
+      <% end %>
+      <%= if @address.celo_validator != nil and @address.celo_validator.group_address_hash != nil do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Affiliation</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Affiliated group"><%= @address.celo_validator |> BlockScoutWeb.AddressView.address_partial_selector(:group, @address) |> BlockScoutWeb.RenderHelpers.render_partial() %> (<%= @address.celo_validator.member %>)</span>
+       </dd>
+      </dl>
+      <% end %>
+      <%= if @address.celo_validator != nil and @address.celo_validator.signer != nil do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Validator signer</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Authorized validator signer"><%= @address.celo_validator |> BlockScoutWeb.AddressView.address_partial_selector(:signer, @address) |> BlockScoutWeb.RenderHelpers.render_partial() %></span>
+       </dd>
+      </dl>
+      <% end %>
+      <%= if @address.celo_signers != nil and Enum.count(@address.celo_signers) > 0 do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">All signers</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All signers for this account that have existed">
+       <%= for signer <- @address.celo_signers do %>
+         <%= if signer.signer_address != nil do 
+             signer |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address) |> BlockScoutWeb.RenderHelpers.render_partial()
+            end %>
+       <% end %>
+       </span>
+       </dd>
+      </dl>
+      <% end %>
+      <%= if @address.celo_members != nil and Enum.count(@address.celo_members) > 0 do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Group members</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All affiliated members for this group">
+       <ul>
+       <%= for member <- @address.celo_members do %>
+         <li><%= member.member %>:
+         <%= if member.validator_address != nil do
+             member |> BlockScoutWeb.AddressView.address_partial_selector(:members, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
+            end %></li>
+       <% end %>
+       </ul>
+       </span>
+       </dd>
+      </dl>
+      <% end %>
+    </div>
+  </div>
+</section>

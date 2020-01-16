@@ -7,6 +7,11 @@ defmodule BlockScoutWeb.Schema.Types do
   import Absinthe.Resolution.Helpers
 
   alias BlockScoutWeb.Resolvers.{
+    Address,
+    CeloAccount,
+    CeloUtil,
+    CeloValidator,
+    CeloValidatorGroup,
     InternalTransaction,
     Transaction
   }
@@ -14,6 +19,11 @@ defmodule BlockScoutWeb.Schema.Types do
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.Schema.Scalars)
 
+  connection(node_type: :celo_account)
+  connection(node_type: :celo_validator)
+  connection(node_type: :celo_validator_group)
+  connection(node_type: :competitor)
+  connection(node_type: :address)
   connection(node_type: :transaction)
   connection(node_type: :internal_transaction)
   connection(node_type: :token_transfer)
@@ -31,6 +41,18 @@ defmodule BlockScoutWeb.Schema.Types do
       resolve(dataloader(:db, :smart_contract))
     end
 
+    field(:celo_account, :celo_account) do
+      resolve(&CeloAccount.get_by/3)
+    end
+
+    field(:celo_validator, :celo_validator) do
+      resolve(&CeloValidator.get_by/3)
+    end
+
+    field(:celo_validator_group, :celo_validator_group) do
+      resolve(&CeloValidatorGroup.get_by/3)
+    end
+
     connection field(:transactions, node_type: :transaction) do
       arg(:count, :integer)
       resolve(&Transaction.get_by/3)
@@ -42,6 +64,89 @@ defmodule BlockScoutWeb.Schema.Types do
         %{last: last}, child_complexity ->
           last * child_complexity
       end)
+    end
+  end
+
+  @desc """
+  Celo account information
+  """
+  object :celo_account do
+    field(:address, :address_hash)
+    field(:account_type, :string)
+    field(:nonvoting_locked_gold, :wei)
+    field(:locked_gold, :wei)
+
+    field(:usd, :wei) do
+      resolve(&CeloValidator.get_usd/3)
+    end
+
+    field(:attestations_requested, :integer)
+    field(:attestations_fulfilled, :integer)
+    field(:name, :string)
+    field(:url, :string)
+
+    field(:address_info, :address) do
+      resolve(&Address.get_by/3)
+    end
+
+    field(:validator, :celo_validator) do
+      resolve(&CeloValidator.get_by/3)
+    end
+
+    field(:group, :celo_validator_group) do
+      resolve(&CeloValidatorGroup.get_by/3)
+    end
+  end
+
+  @desc """
+  Celo validator information
+  """
+  object :celo_validator do
+    field(:address, :address_hash)
+    field(:group_address_hash, :address_hash)
+    field(:signer_address_hash, :address_hash)
+    field(:member, :integer)
+    field(:score, :wei)
+
+    field(:address_info, :address) do
+      resolve(&Address.get_by/3)
+    end
+
+    field(:account, :celo_account) do
+      resolve(&CeloAccount.get_by/3)
+    end
+
+    field(:elected, :integer) do
+      resolve(&CeloUtil.get_elected/3)
+    end
+
+    field(:online, :integer) do
+      resolve(&CeloUtil.get_online/3)
+    end
+
+    field(:group_info, :celo_validator_group) do
+      resolve(&CeloValidatorGroup.get_by/3)
+    end
+  end
+
+  @desc """
+  Celo validator group information
+  """
+  object :celo_validator_group do
+    field(:address, :address_hash)
+    field(:commission, :wei)
+    field(:votes, :wei)
+
+    field(:address_info, :address) do
+      resolve(&Address.get_by/3)
+    end
+
+    field(:account, :celo_account) do
+      resolve(&CeloAccount.get_by/3)
+    end
+
+    connection field(:affiliates, node_type: :celo_validator) do
+      resolve(&CeloValidator.get_by/3)
     end
   end
 
@@ -63,6 +168,15 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:total_difficulty, :decimal)
     field(:miner_hash, :address_hash)
     field(:parent_hash, :full_hash)
+  end
+
+  @desc """
+  Leaderboard entry 
+  """
+  object :competitor do
+    field(:address, :address_hash)
+    field(:points, :float)
+    field(:identity, :string)
   end
 
   @desc """
@@ -118,6 +232,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:to_address_hash, :address_hash)
     field(:token_contract_address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
+    field(:block_hash, :full_hash)
   end
 
   @desc """

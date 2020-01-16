@@ -6,7 +6,8 @@ defmodule BlockScoutWeb.Schema.Subscription.TokenTransfersTest do
   describe "token_transfers field" do
     test "with valid argument, returns all expected fields", %{socket: socket} do
       transaction = insert(:transaction)
-      token_transfer = insert(:token_transfer, transaction: transaction)
+      block = insert(:block)
+      token_transfer = insert(:token_transfer, transaction: transaction, block: block)
       address_hash = to_string(token_transfer.token_contract_address_hash)
 
       subscription = """
@@ -52,7 +53,8 @@ defmodule BlockScoutWeb.Schema.Subscription.TokenTransfersTest do
 
     test "ignores irrelevant tokens", %{socket: socket} do
       transaction = insert(:transaction)
-      [token_transfer1, token_transfer2] = insert_list(2, :token_transfer, transaction: transaction)
+      block = insert(:block)
+      [token_transfer1, token_transfer2] = insert_list(2, :token_transfer, transaction: transaction, block: block)
       address_hash1 = to_string(token_transfer1.token_contract_address_hash)
 
       subscription = """
@@ -77,7 +79,8 @@ defmodule BlockScoutWeb.Schema.Subscription.TokenTransfersTest do
 
     test "ignores non-realtime updates", %{socket: socket} do
       transaction = insert(:transaction)
-      token_transfer = insert(:token_transfer, transaction: transaction)
+      block = insert(:block)
+      token_transfer = insert(:token_transfer, transaction: transaction, block: block)
       address_hash = to_string(token_transfer.token_contract_address_hash)
 
       subscription = """

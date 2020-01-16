@@ -12,7 +12,15 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
   def runners,
     do: [
       Runner.Address.CoinBalances,
+      Runner.Address.Names,
       Runner.Blocks,
+      Runner.CeloWithdrawals,
+      Runner.CeloValidatorHistory,
+      Runner.CeloAccounts,
+      Runner.CeloValidators,
+      Runner.CeloValidatorGroups,
+      Runner.CeloSigners,
+      Runner.ExchangeRate,
       Runner.StakingPools,
       Runner.StakingPoolsDelegators
     ]

@@ -73,7 +73,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
     session
     |> AddressPage.visit_page(address)
-    |> assert_text(AddressPage.balance(), "0.0000000000000005 Ether")
+    |> assert_text(AddressPage.balance(), "0.0000000000000005 cGLD")
   end
 
   describe "viewing contract creator" do
@@ -284,6 +284,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: lincoln,
         to_address: taft,
         transaction: transaction,
+        block: transaction.block,
         token_contract_address: contract_address
       )
 
@@ -316,6 +317,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         :token_transfer,
         from_address: lincoln,
         to_address: taft,
+        block: transaction.block,
         transaction: transaction,
         token_contract_address: contract_address
       )
@@ -324,6 +326,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         :token_transfer,
         from_address: lincoln,
         to_address: morty,
+        block: transaction.block,
         transaction: transaction,
         token_contract_address: contract_address
       )
@@ -358,6 +361,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         :token_transfer,
         from_address: lincoln,
         to_address: taft,
+        block: transaction.block,
         transaction: transaction,
         token_contract_address: contract_address
       )
@@ -388,6 +392,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         :token_transfer,
         from_address: lincoln,
         to_address: taft,
+        block: transaction.block,
         transaction: transaction,
         token_contract_address: contract_address
       )
@@ -420,6 +425,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         :token_transfer,
         from_address: lincoln,
         to_address: taft,
+        block: transaction.block,
         transaction: transaction,
         token_contract_address: contract_address
       )
@@ -455,6 +461,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         :token_transfer,
         from_address: lincoln,
         to_address: taft,
+        block: transaction.block,
         transaction: transaction,
         token_contract_address: contract_address
       )
@@ -473,6 +480,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         :token_transfer,
         from_address: lincoln,
         to_address: taft,
+        block: block,
         transaction: transaction_2,
         token_contract_address: contract_address_2
       )

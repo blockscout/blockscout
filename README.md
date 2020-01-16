@@ -8,13 +8,13 @@
 <p align="center">Blockchain Explorer for inspecting and analyzing EVM Chains.</p>
 <div align="center">
 
-[![CircleCI](https://circleci.com/gh/poanetwork/blockscout.svg?style=svg&circle-token=f8823a3d0090407c11f87028c73015a331dbf604)](https://circleci.com/gh/poanetwork/blockscout) [![Coverage Status](https://coveralls.io/repos/github/poanetwork/blockscout/badge.svg?branch=master)](https://coveralls.io/github/poanetwork/blockscout?branch=master) [![Join the chat at https://gitter.im/poanetwork/blockscout](https://badges.gitter.im/poanetwork/blockscout.svg)](https://gitter.im/poanetwork/blockscout?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![CircleCI](https://circleci.com/gh/celo-org/blockscout/tree/master.svg?style=svg)](https://circleci.com/gh/celo-org/blockscout/tree/master)
 
 </div>
 
 BlockScout provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on **all EVM** (Ethereum Virtual Machine) blockchains. This includes the Ethereum main and test networks as well as **Ethereum forks and sidechains**.
 
-See our [project documentation](https://poanetwork.github.io/blockscout) for detailed information and setup instructions.
+See our [project documentation](https://docs.blockscout.com/) for detailed information and setup instructions.
 
 Visit the [POA BlockScout forum](https://forum.poa.network/c/blockscout) for FAQs, troubleshooting, and other BlockScout related items. You can also post and answer questions here.
 
@@ -28,33 +28,20 @@ Currently available full-featured block explorers (Etherscan, Etherchain, Blockc
 
 ## Supported Projects
 
-| **Hosted Mainnets** | **Hosted Testnets** | **Additional Chains using BlockScout** | **Additional Chains using BlockScout** |
-|--------------------------------------------------------|-------------------------------------------------------|------------------------------------------------------|----------------------------------------------------------------|
-| [Callisto](https://blockscout.com/callisto/mainnet) | [Goerli Testnet](https://blockscout.com/eth/goerli) | [ARTIS](https://explorer.sigma1.artis.network) | [Celo Testnet](https://alfajores-blockscout.celo-testnet.org/) |
-| [Ethereum Classic](https://blockscout.com/etc/mainnet) | [Kovan Testnet](https://blockscout.com/eth/kovan) | [Ether-1](https://blocks.ether1.wattpool.net/) | [Matic Testnet](https://explorer.testnet2.matic.network/) |
-| [Ethereum Mainnet](https://blockscout.com/eth/mainnet) | [LUKSO L14 Testnet](https://blockscout.com/lukso/l14) | [Kotti Testnet](https://kottiexplorer.ethernode.io/) |  |
-| [POA Core Network](https://blockscout.com/poa/core) | [POA Sokol Testnet](https://blockscout.com/poa/sokol) | [Fuse Network](https://explorer.fuse.io/) |  |
-| [RSK](https://blockscout.com/rsk/mainnet) | [Rinkeby Testnet](https://blockscout.com/eth/rinkeby) | [Oasis Labs](https://blockexplorer.oasiscloud.io/) |  |
-| [xDai Chain](https://blockscout.com/poa/dai) | [Ropsten Testnet](https://blockscout.com/eth/ropsten) | [Petrichor](https://explorer.petrachor.com/) |  |
-|  |  | [PIRL](http://pirl.es/) |  |
-|  |  | [SafeChain](https://explorer.safechain.io) |  |
-|  |  | [SpringChain](https://explorer.springrole.com/) |  |
-|  |  | [Tenda](https://tenda.network) |  |
-|  |  | [Loom](http://plasma-blockexplorer.dappchains.com/) |  |
-|  |  | [GoJoy Chain](https://gojoychain.com/) |  |
-|  |  | [Xerom](https://blocks.xerom.org/) |  |
+BlockScout supports a growing number of projects. Hosted instances include POA Network, xDai Chain, Ethereum Classic, Ethereum Mainnet and most Testnets. 
 
+- [List of hosted mainnets, testnets, and additional chains using BlockScout](https://docs.blockscout.com/for-projects/supported-projects)
+- [Hosted instance versions](https://docs.blockscout.com/for-projects/supported-projects/hosted-instance-versions)
 
-Current BlockScout versions for hosted projects are available [on the forum](https://forum.poa.network/t/deployed-instances-on-blockscout-com/1938).
 
 ## Getting Started
 
-See the [project documentation](https://poanetwork.github.io/blockscout) for instructions:
-- [Requirements](https://poanetwork.github.io/blockscout/#/requirements)
-- [Ansible deployment](https://poanetwork.github.io/blockscout/#/ansible-deployment)
-- [Manual deployment](https://poanetwork.github.io/blockscout/#/manual-deployment)
-- [ENV variables](https://poanetwork.github.io/blockscout/#/env-variables)
-- [Configuration options](https://poanetwork.github.io/blockscout/#/dev-env)
+See the [project documentation](https://docs.blockscout.com/) for instructions:
+- [Requirements](https://docs.blockscout.com/for-developers/information-and-settings/requirements)
+- [Ansible deployment](https://docs.blockscout.com/for-developers/ansible-deployment)
+- [Manual deployment](https://docs.blockscout.com/for-developers/manual-deployment)
+- [ENV variables](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
+- [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
 
 
 ## Acknowledgements

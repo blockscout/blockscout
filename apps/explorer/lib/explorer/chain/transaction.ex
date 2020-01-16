@@ -150,7 +150,9 @@ defmodule Explorer.Chain.Transaction do
           from_address_hash: Hash.Address.t(),
           gas: Gas.t(),
           gas_price: wei_per_gas,
+          gas_currency: %Ecto.Association.NotLoaded{} | Address.t() | nil,
           gas_currency_hash: Hash.Address.t() | nil,
+          gas_fee_recipient: %Ecto.Association.NotLoaded{} | Address.t() | nil,
           gas_fee_recipient_hash: Hash.Address.t() | nil,
           gas_used: Gas.t() | nil,
           hash: Hash.t(),
@@ -177,8 +179,8 @@ defmodule Explorer.Chain.Transaction do
              :error,
              :gas,
              :gas_price,
-             :gas_currency,
-             :gas_fee_recipient,
+             :gas_currency_hash,
+             :gas_fee_recipient_hash,
              :gas_used,
              :index,
              :internal_transactions_indexed_at,
@@ -211,8 +213,11 @@ defmodule Explorer.Chain.Transaction do
     field(:status, Status)
     field(:v, :decimal)
     field(:value, Wei)
-    field(:gas_currency_hash, Hash.Address)
-    field(:gas_fee_recipient_hash, Hash.Address)
+    #    field(:gas_currency_hash, Hash.Address)
+    #    field(:gas_fee_recipient_hash, Hash.Address)
+
+    belongs_to(:gas_currency, Address, foreign_key: :gas_currency_hash, references: :hash, type: Hash.Address)
+    belongs_to(:gas_fee_recipient, Address, foreign_key: :gas_fee_recipient_hash, references: :hash, type: Hash.Address)
 
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated
@@ -253,7 +258,6 @@ defmodule Explorer.Chain.Transaction do
       references: :hash,
       type: Hash.Address
     )
-
   end
 
   @doc """
@@ -265,8 +269,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas: 4700000,
       ...>     gas_price: 100000000000,
-      ...>     gas_currency: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
-      ...>     gas_fee_recipient: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     gas_currency_hash: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+      ...>     gas_fee_recipient_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     input: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     nonce: 0,
@@ -293,8 +297,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas: 4700000,
       ...>     gas_price: 100000000000,
-      ...>     gas_currency: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
-      ...>     gas_fee_recipient: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     gas_currency_hash: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+      ...>     gas_fee_recipient_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas_used: 4600000,
       ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     index: 0,
@@ -323,8 +327,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas: 4700000,
       ...>     gas_price: 100000000000,
-      ...>     gas_currency: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
-      ...>     gas_fee_recipient: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     gas_currency_hash: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+      ...>     gas_fee_recipient_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas_used: 4600000,
       ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     index: 0,
@@ -350,8 +354,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     error: "Out of gas",
       ...>     gas: 4700000,
       ...>     gas_price: 100000000000,
-      ...>     gas_currency: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
-      ...>     gas_fee_recipient: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     gas_currency_hash: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+      ...>     gas_fee_recipient_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas_used: 4600000,
       ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     index: 0,
@@ -378,8 +382,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas: 4700000,
       ...>     gas_price: 100000000000,
-      ...>     gas_currency: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
-      ...>     gas_fee_recipient: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     gas_currency_hash: "0x88f24de331525cf6cfd7455eb96a9e4d49b7f292",
+      ...>     gas_fee_recipient_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas_used: 4600000,
       ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     index: 0,
@@ -646,13 +650,14 @@ defmodule Explorer.Chain.Transaction do
   end
 
   def get_token_name(%__MODULE__{gas_currency_hash: nil}), do: {:error, :not_found}
+
   def get_token_name(%__MODULE__{
-    gas_currency_hash: gas_currency_hash
-  }) do
+        gas_currency_hash: gas_currency_hash
+      }) do
     query =
       from(token in Token,
         where: token.contract_address_hash == ^gas_currency_hash,
-#        select: {token, %{"name" => token.name, "symbol" => token.symbol}},
+        #        select: {token, %{"name" => token.name, "symbol" => token.symbol}},
         limit: 1
       )
 

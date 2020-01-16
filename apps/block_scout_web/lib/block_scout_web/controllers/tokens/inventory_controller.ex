@@ -40,7 +40,9 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
           View.render_to_string(
             InventoryView,
             "_token.html",
-            token_transfer: token_transfer
+            token_transfer: token_transfer,
+            token: token,
+            conn: conn
           )
         end)
 

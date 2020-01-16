@@ -289,7 +289,10 @@ $network-selector-item-icon-dimensions: 30px !default;
   &-celo-integration {
     background-image: url(/images/network-selector-icons/celo.svg)
   }
-  &-celo-betanet {
+  &-celo-baklava {
+    background-image: url(/images/network-selector-icons/celo.svg)
+  }
+  &-celo {
     background-image: url(/images/network-selector-icons/celo.svg)
   }
 }

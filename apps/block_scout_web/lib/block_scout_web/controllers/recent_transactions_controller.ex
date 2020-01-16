@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.RecentTransactionsController do
           %{
             transaction_hash: Hash.to_string(transaction.hash),
             transaction_html:
-              View.render_to_string(BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction)
+              View.render_to_string(BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction, conn: conn)
           }
         end)
 

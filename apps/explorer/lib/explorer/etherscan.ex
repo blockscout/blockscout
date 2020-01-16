@@ -11,7 +11,7 @@ defmodule Explorer.Etherscan do
   alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction}
 
   @default_options %{
-    order_by_direction: :asc,
+    order_by_direction: :desc,
     page_number: 1,
     page_size: 10_000,
     start_block: nil,
@@ -274,7 +274,7 @@ defmodule Explorer.Etherscan do
       from(
         t in Transaction,
         inner_join: b in assoc(t, :block),
-        order_by: [{^options.order_by_direction, t.block_number}],
+        order_by: [{^options.order_by_direction, b.number}],
         limit: ^options.page_size,
         offset: ^offset(options),
         select:

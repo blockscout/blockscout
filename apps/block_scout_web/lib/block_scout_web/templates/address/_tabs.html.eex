@@ -27,12 +27,26 @@
       class: "card-tab #{tab_status("logs", @conn.request_path)}",
       to: address_logs_path(@conn, :index, @address.hash)
       ) %>
+    <%= link(
+      gettext("Blocks Signed"),
+      class: "card-tab #{tab_status("signed", @conn.request_path)}",
+      "data-test": "signed_tab_link",
+      to: address_signed_path(@conn, :index, @address.hash)
+    ) %>
   <%= if BlockScoutWeb.AddressView.validator?(@validation_count) do %>
     <%= link(
       gettext("Blocks Validated"),
       class: "card-tab #{tab_status("validations", @conn.request_path)}",
       "data-test": "validations_tab_link",
       to: address_validation_path(@conn, :index, @address.hash)
+    ) %>
+  <% end %>
+  <%= if celo_account?(@address) do %>
+    <%= link(
+      "Celo Info",
+      class: "card-tab #{tab_status("celo", @conn.request_path)}",
+      "data-test": "celo_tab_link",
+      to: address_celo_path(@conn, :index, @address.hash)
     ) %>
   <% end %>
   <%= if contract?(@address) do %>

@@ -102,7 +102,8 @@ defmodule EthereumJSONRPC.Receipts do
           gas_used: 50450,
           status: :ok,
           transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-          transaction_index: 0
+          transaction_index: 0,
+          block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd"
         }
       ]
 
@@ -142,6 +143,30 @@ defmodule EthereumJSONRPC.Receipts do
       logs = Logs.elixir_to_params(elixir_logs)
 
       {:ok, %{logs: logs, receipts: receipts}}
+    end
+  end
+
+  def fetch_logs(to, from, json_rpc_named_arguments) do
+    requests = [
+      %{
+        id: 123,
+        method: "eth_getLogs",
+        jsonrpc: "2.0",
+        params: [
+          %{
+            fromBlock: "0x" <> Integer.to_string(from, 16),
+            toBlock: "0x" <> Integer.to_string(to, 16)
+          }
+        ]
+      }
+    ]
+
+    with {:ok, responses} <- json_rpc(requests, json_rpc_named_arguments),
+         {:ok, orig_logs} <- reduce_logs_responses(responses) do
+      elixir_logs = Logs.to_elixir(orig_logs)
+      logs = Logs.elixir_to_params(elixir_logs)
+
+      {:ok, %{logs: logs}}
     end
   end
 
@@ -244,10 +269,24 @@ defmodule EthereumJSONRPC.Receipts do
     |> Enum.reduce({:ok, []}, &reduce_receipt(&1, &2))
   end
 
+  defp reduce_logs_responses(responses)
+       when is_list(responses) do
+    responses
+    |> Enum.reduce({:ok, []}, &reduce_logs_receipt(&1, &2))
+  end
+
   defp reduce_receipt({:ok, receipt}, {:ok, receipts}) when is_list(receipts),
     do: {:ok, [receipt | receipts]}
 
   defp reduce_receipt({:ok, _}, {:error, _} = error), do: error
   defp reduce_receipt({:error, reason}, {:ok, _}), do: {:error, [reason]}
   defp reduce_receipt({:error, reason}, {:error, reasons}) when is_list(reasons), do: {:error, [reason | reasons]}
+
+  defp reduce_logs_receipt(%{result: receipt}, {:ok, receipts}) when is_list(receipts) do
+    {:ok, receipt ++ receipts}
+  end
+
+  defp reduce_logs_receipt(%{result: _}, {:error, _} = error), do: error
+  defp reduce_logs_receipt(%{error: reason}, {:ok, _}), do: {:error, [reason]}
+  defp reduce_logs_receipt(%{error: reason}, {:error, reasons}) when is_list(reasons), do: {:error, [reason | reasons]}
 end

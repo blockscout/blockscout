@@ -809,7 +809,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           String.to_integer(transaction["blockNumber"])
         end)
 
-      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 <= &2))
+      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 >= &2))
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
@@ -831,12 +831,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> insert_list(:transaction, from_address: address)
         |> with_block(second_block)
 
-      _third_block_transactions =
+      first_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
         |> with_block(third_block)
 
-      first_block_transactions =
+      _third_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
         |> with_block(first_block)
@@ -1787,6 +1787,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         insert(:token_transfer, %{
           token_contract_address: token_address,
           token_id: 666,
+          block: transaction.block,
           transaction: transaction
         })
 
@@ -1817,7 +1818,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> insert()
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction)
+      token_transfer = insert(:token_transfer, transaction: transaction, block: block)
       {:ok, token} = Chain.token_from_address_hash(token_transfer.token_contract_address_hash)
 
       params = %{
@@ -1894,8 +1895,14 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> insert()
         |> with_block()
 
-      insert(:token_transfer, from_address: address, transaction: transaction)
-      insert(:token_transfer, from_address: address, token_contract_address: contract_address, transaction: transaction)
+      insert(:token_transfer, from_address: address, transaction: transaction, block: transaction.block)
+
+      insert(:token_transfer,
+        from_address: address,
+        token_contract_address: contract_address,
+        transaction: transaction,
+        block: transaction.block
+      )
 
       params = %{
         "module" => "account",
@@ -2561,6 +2568,9 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "value" => %{"type" => "string"},
           "gas" => %{"type" => "string"},
           "gasPrice" => %{"type" => "string"},
+          "feeCurrency" => %{"type" => "string"},
+          "gatewayFee" => %{"type" => "string"},
+          "gatewayFeeRecipient" => %{"type" => "string"},
           "isError" => %{"type" => "string"},
           "txreceipt_status" => %{"type" => "string"},
           "input" => %{"type" => "string"},
@@ -2620,6 +2630,9 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "transactionIndex" => %{"type" => "string"},
           "gas" => %{"type" => "string"},
           "gasPrice" => %{"type" => "string"},
+          "feeCurrency" => %{"type" => "string"},
+          "gatewayFeeRecipient" => %{"type" => "string"},
+          "gatewayFee" => %{"type" => "string"},
           "gasUsed" => %{"type" => "string"},
           "cumulativeGasUsed" => %{"type" => "string"},
           "input" => %{"type" => "string"},
