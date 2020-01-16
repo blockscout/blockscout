@@ -3,7 +3,8 @@ defmodule BlockScoutWeb.Resolvers.CeloValidator do
 
   alias Absinthe.Relay.Connection
   alias Explorer.{Chain, GraphQL, Repo}
-  alias Explorer.Chain.{Address, CeloAccount, CeloValidatorGroup} #, Wei}
+  # , Wei}
+  alias Explorer.Chain.{Address, CeloAccount, CeloValidatorGroup}
 
   def get_by(_, %{hash: hash}, _) do
     case Chain.get_celo_validator(hash) do

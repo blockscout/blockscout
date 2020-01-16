@@ -72,7 +72,6 @@ defmodule Explorer.Chain.CeloAccount do
   @validator_group_epoch_rewards_distributed "0x91ba34d62474c14d6c623cd322f4256666c7a45b7fdaa3378e009d39dfcec2a7"
 
   @validator_epoch_payment_distributed "0x6f5937add2ec38a0fa4959bccd86e3fcc2aafb706cd3e6c0565f87a7b36b9975"
-  
 
   # Events for updating account
   def account_events,
