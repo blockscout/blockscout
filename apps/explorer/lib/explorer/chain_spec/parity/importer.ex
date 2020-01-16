@@ -72,11 +72,12 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   end
 
   def genesis_coin_balances(chain_spec) do
-    if Map.has_key?(chain_spec, :accounts) do
-      accounts  = chain_spec["accounts"]
-    else if Map.has_key?(chain_spec, :alloc) do
-      accounts  = chain_spec["alloc"]
-    end
+    accounts =
+      if Map.has_key?(chain_spec, :alloc) do
+        chain_spec["alloc"]
+      else
+        chain_spec["accounts"]
+      end
 
     if accounts do
       parse_accounts(accounts)
