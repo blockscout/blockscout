@@ -1923,10 +1923,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:31
 #: lib/block_scout_web/templates/address_signed/index.html.eex:13
-msgid "Blocks Signed"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:52
 #: lib/block_scout_web/templates/block_signers/index.html.eex:37
 msgid "Downtime"
@@ -1946,11 +1942,11 @@ msgid "Signers"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_signed/index.html.eex:18
-msgid "There are no blocks signed by this address."
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:27
+msgid "There is no decompiled contracts for this address."
 msgstr ""
 
 #, elixir-format, fuzzy
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:27
-msgid "There is no decompiled contracts for this address."
+#: lib/block_scout_web/templates/address_signed/index.html.eex:18
+msgid "There are no downtime blocks for this address."
 msgstr ""
