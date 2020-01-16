@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Resolvers.CeloValidator do
 
   alias Absinthe.Relay.Connection
   alias Explorer.{Chain, GraphQL, Repo}
-  alias Explorer.Chain.{Address, CeloAccount, CeloValidatorGroup}
+  alias Explorer.Chain.{Address, CeloAccount, CeloValidatorGroup} #, Wei}
 
   def get_by(_, %{hash: hash}, _) do
     case Chain.get_celo_validator(hash) do
@@ -33,6 +33,9 @@ defmodule BlockScoutWeb.Resolvers.CeloValidator do
   end
 
   def get_usd(%CeloAccount{address: hash}, _, _) do
-    Chain.get_token_balance(hash, "cUSD")
+    case Chain.get_token_balance(hash, "cUSD") do
+      {:error, :not_found} -> {:ok, %{value: Decimal.new(0)}}
+      {:ok, _} = result -> result
+    end
   end
 end
