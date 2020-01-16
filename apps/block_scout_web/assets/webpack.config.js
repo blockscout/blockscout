@@ -139,7 +139,7 @@ const appJs =
       new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
       new webpack.DefinePlugin({
-        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT || '')
+        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT)
       })
     ]
   }
