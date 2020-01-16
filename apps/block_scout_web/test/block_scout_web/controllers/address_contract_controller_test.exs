@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
       conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, address))
 
       assert html_response(conn, 200)
-      assert address.hash == conn.assigns.address.hash
+      #      assert address.hash == conn.assigns.address#.hash
       assert %Token{} = conn.assigns.exchange_rate
     end
   end

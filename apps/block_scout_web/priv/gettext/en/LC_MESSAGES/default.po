@@ -266,8 +266,7 @@ msgid "Blocks Indexed"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_tabs.html.eex:44
-#: lib/block_scout_web/templates/address/_tabs.html.eex:59
+#: lib/block_scout_web/templates/address/_tabs.html.eex:43
 #: lib/block_scout_web/templates/address_validation/index.html.eex:13
 #: lib/block_scout_web/views/address_view.ex:363
 msgid "Blocks Validated"
@@ -329,7 +328,7 @@ msgid "Close"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_tabs.html.eex:68
+#: lib/block_scout_web/templates/address/_tabs.html.eex:60
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:165
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:187
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:126
@@ -573,7 +572,7 @@ msgid "Decompiled Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_tabs.html.eex:78
+#: lib/block_scout_web/templates/address/_tabs.html.eex:70
 msgid "Decompiled code"
 msgstr ""
 
@@ -1214,7 +1213,7 @@ msgid "Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_tabs.html.eex:84
+#: lib/block_scout_web/templates/address/_tabs.html.eex:76
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:25
 #: lib/block_scout_web/views/address_view.ex:361
 #: lib/block_scout_web/views/tokens/overview_view.ex:37
