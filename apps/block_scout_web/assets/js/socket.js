@@ -1,8 +1,8 @@
 import { Socket } from 'phoenix'
 import { locale } from './locale'
 
-let websocketRootUrl = process.env.SOCKET_ROOT;
-if (!websocketRootUrl || websocketRootUrl == '/') {
+let websocketRootUrl = process.env.SOCKET_ROOT
+if (!websocketRootUrl || websocketRootUrl === '/') {
   websocketRootUrl = ''
 }
 
