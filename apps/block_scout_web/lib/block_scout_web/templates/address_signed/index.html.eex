@@ -10,12 +10,12 @@
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer blocks" %></a>
           </div>
         </div>
-        <h2 class="card-title"><%=gettext("Blocks Signed")%></h2>
+        <h2 class="card-title"><%=gettext("Downtime")%></h2>
 
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
         <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
-          <span><%= gettext "There are no blocks signed by this address." %></span>
+          <span><%= gettext "There are no downtime blocks for this address." %></span>
         </div>
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span class="alert-link">
