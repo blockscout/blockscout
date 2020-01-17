@@ -56,7 +56,6 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   def fetch_genesis_data do
     path = Application.get_env(:explorer, __MODULE__)[:chain_spec_path]
-
     if path do
       Task.Supervisor.async_nolink(Explorer.GenesisDataTaskSupervisor, fn ->
         case fetch_spec(path) do
