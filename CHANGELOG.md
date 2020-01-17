@@ -23,6 +23,7 @@
 - [2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
 
 ### Chore
+- [#2947](https://github.com/poanetwork/blockscout/pull/2947) - Upgrade Circle CI postgres Docker image
 - [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
 
 
