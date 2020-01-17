@@ -25,6 +25,7 @@
 - [2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
 
 ### Chore
+- [#2959](https://github.com/poanetwork/blockscout/pull/2959) - Remove logs from test folder too in the cleaning script
 - [#2947](https://github.com/poanetwork/blockscout/pull/2947) - Upgrade Circle CI postgres Docker image
 - [#2946](https://github.com/poanetwork/blockscout/pull/2946) - Fix vulnerable NPM deps
 - [#2942](https://github.com/poanetwork/blockscout/pull/2942) - Actualize Docker setup
