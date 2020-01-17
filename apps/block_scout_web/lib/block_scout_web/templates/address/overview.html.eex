@@ -119,6 +119,7 @@
     </div>
 
   </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address.js") %>"></script>
 </section>
 
 <!-- Modal QR -->
