@@ -310,7 +310,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{timeout: timeout, timestamps: timestamps}) do
-    unless Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
+    if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
+      {:ok, []}
+    else
       sorted_pending_ops =
         nonconsensus_hashes
         |> MapSet.new()
@@ -330,8 +332,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         timeout: timeout,
         timestamps: timestamps
       )
-    else
-      {:ok, []}
     end
   end
 
