@@ -34,7 +34,13 @@ config :explorer, Explorer.Celo.AbiHandler, enabled: true
 
 config :explorer, Explorer.ChainSpec.GenesisData,
   enabled: true,
-  chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
+  chain_spec_path:
+    System.get_env(
+      "CHAIN_SPEC_PATH",
+      "https://www.googleapis.com/storage/v1/b/genesis_blocks/o/#{
+        String.downcase(System.get_env("SUBNETWORK", "Baklava"))
+      }?alt=media"
+    ),
   emission_format: System.get_env("EMISSION_FORMAT", "DEFAULT"),
   rewards_contract_address: System.get_env("REWARDS_CONTRACT_ADDRESS", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5")
 

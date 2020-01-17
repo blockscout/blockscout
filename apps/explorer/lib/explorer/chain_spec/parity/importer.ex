@@ -72,7 +72,12 @@ defmodule Explorer.ChainSpec.Parity.Importer do
   end
 
   def genesis_coin_balances(chain_spec) do
-    accounts = chain_spec["accounts"]
+    accounts =
+      if Map.has_key?(chain_spec, "alloc") do
+        chain_spec["alloc"]
+      else
+        chain_spec["accounts"]
+      end
 
     if accounts do
       parse_accounts(accounts)
@@ -102,11 +107,18 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     |> Stream.filter(fn {_address, map} ->
       !is_nil(map["balance"])
     end)
-    |> Stream.map(fn {address, %{"balance" => value}} ->
-      {:ok, address_hash} = AddressHash.cast(address)
-      balance = parse_number(value)
+    |> Stream.map(fn
+      {"0x" <> address, %{"balance" => value}} ->
+        {:ok, address_hash} = AddressHash.cast("0x" <> address)
+        balance = parse_number(value)
 
-      %{address_hash: address_hash, value: balance}
+        %{address_hash: address_hash, value: balance}
+
+      {address, %{"balance" => value}} ->
+        {:ok, address_hash} = AddressHash.cast("0x" <> address)
+        balance = parse_number(value)
+
+        %{address_hash: address_hash, value: balance}
     end)
     |> Enum.to_list()
   end
