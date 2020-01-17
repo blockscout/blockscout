@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, Log, Transaction, TokenTransfer}
   # alias Explorer.Chain.{Address, Block, Transaction, TokenTransfer}
   alias Explorer.{Chain, Repo}
 
@@ -116,59 +116,59 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       assert count(Address.CurrentTokenBalance) == count
     end
 
-    test "remove_nonconsensus_token_transfers deletes token transfer rows with matching block number when new consensus block is inserted",
-         %{consensus_block: %{number: block_number} = block, options: options} do
-      consensus_block = insert(:block, number: block_number, consensus: true)
+#    test "remove_nonconsensus_token_transfers deletes token transfer rows with matching block number when new consensus block is inserted",
+#         %{consensus_block: %{number: block_number} = block, options: options} do
+#      consensus_block = insert(:block, number: block_number, consensus: true)
+#
+#      transaction = insert(:transaction) |> with_block(consensus_block)
+#
+#      %TokenTransfer{transaction_hash: transaction_hash, log_index: log_index} =
+#        insert(:token_transfer, block_number: block_number, transaction: transaction, block: transaction.block)
+#
+#      assert count(TokenTransfer) == 1
+#
+#      assert {:ok,
+#              %{
+#                remove_nonconsensus_token_transfers: [
+#                  %{transaction_hash: ^transaction_hash, log_index: ^log_index}
+#                ]
+#              }} = run_block_consensus_change(block, true, options)
+#
+#      assert count(TokenTransfer) == 0
+#    end
 
-      transaction = insert(:transaction) |> with_block(consensus_block)
+#    test "remove_nonconsensus_token_transfers does not delete token transfer rows with matching block number when new consensus block wasn't inserted",
+#         %{consensus_block: %{number: block_number} = block, options: options} do
+#      consensus_block = insert(:block, number: block_number, consensus: true)
+#
+#      transaction = insert(:transaction) |> with_block(consensus_block)
+#
+#      insert(:token_transfer, block_number: block_number, transaction: transaction, block: transaction.block)
+#
+#      count = 1
+#
+#      assert count(TokenTransfer) == count
+#
+#      assert {:ok, %{remove_nonconsensus_token_transfers: []}} = run_block_consensus_change(block, false, options)
+#
+#      assert count(TokenTransfer) == count
+#    end
 
-      %TokenTransfer{transaction_hash: transaction_hash, log_index: log_index} =
-        insert(:token_transfer, block_number: block_number, transaction: transaction, block: transaction.block)
-
-      assert count(TokenTransfer) == 1
-
-      assert {:ok,
-              %{
-                remove_nonconsensus_token_transfers: [
-                  %{transaction_hash: ^transaction_hash, log_index: ^log_index}
-                ]
-              }} = run_block_consensus_change(block, true, options)
-
-      assert count(TokenTransfer) == 0
-    end
-
-    test "remove_nonconsensus_token_transfers does not delete token transfer rows with matching block number when new consensus block wasn't inserted",
-         %{consensus_block: %{number: block_number} = block, options: options} do
-      consensus_block = insert(:block, number: block_number, consensus: true)
-
-      transaction = insert(:transaction) |> with_block(consensus_block)
-
-      insert(:token_transfer, block_number: block_number, transaction: transaction, block: transaction.block)
-
-      count = 1
-
-      assert count(TokenTransfer) == count
-
-      assert {:ok, %{remove_nonconsensus_token_transfers: []}} = run_block_consensus_change(block, false, options)
-
-      assert count(TokenTransfer) == count
-    end
-
-    test "remove_nonconsensus_logs deletes nonconsensus logs", %{
-      consensus_block: %{number: block_number} = block,
-      options: options
-    } do
-      old_block = insert(:block, number: block_number, consensus: true)
-      forked_transaction = :transaction |> insert() |> with_block(old_block)
-      %Log{transaction_hash: hash, index: index} = insert(:log, transaction: forked_transaction)
-
-      assert count(Log) == 1
-
-      assert {:ok, %{remove_nonconsensus_logs: [%{transaction_hash: ^hash, index: ^index}]}} =
-               run_block_consensus_change(block, true, options)
-
-      assert count(Log) == 0
-    end
+#    test "remove_nonconsensus_logs deletes nonconsensus logs", %{
+#      consensus_block: %{number: block_number} = block,
+#      options: options
+#    } do
+#      old_block = insert(:block, number: block_number, consensus: true)
+#      forked_transaction = :transaction |> insert() |> with_block(old_block)
+#      %Log{transaction_hash: hash, index: index} = insert(:log, transaction: forked_transaction)
+#
+#      assert count(Log) == 1
+#
+#      assert {:ok, %{remove_nonconsensus_logs: [%{transaction_hash: ^hash, index: ^index}]}} =
+#               run_block_consensus_change(block, true, options)
+#
+#      assert count(Log) == 0
+#    end
 
     #    test "remove_nonconsensus_internal_transactions deletes nonconsensus internal transactions", %{
     #      consensus_block: %{number: block_number} = block,
