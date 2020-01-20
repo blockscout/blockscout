@@ -175,7 +175,8 @@ defmodule BlockScoutWeb.AddressView do
         |> Decimal.mult(100)
         |> Decimal.round(4)
         |> Decimal.to_string(:normal)
-      end 
+      end
+
     percentage <> "% #{gettext("Market Cap")}"
   end
 

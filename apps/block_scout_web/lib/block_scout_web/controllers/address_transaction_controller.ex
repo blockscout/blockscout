@@ -56,6 +56,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
           case result do
             {%Chain.Block.Reward{} = emission_reward, %Chain.Block.Reward{} = validator_reward} ->
               IO.inspect("reward")
+
               View.render_to_string(
                 TransactionView,
                 "_emission_reward_tile.html",
@@ -66,13 +67,15 @@ defmodule BlockScoutWeb.AddressTransactionController do
               )
 
             %Chain.Transaction{} = transaction ->
-              res = View.render_to_string(
-                TransactionView,
-                "_tile.html",
-                conn: conn,
-                current_address: address,
-                transaction: transaction
-              )
+              res =
+                View.render_to_string(
+                  TransactionView,
+                  "_tile.html",
+                  conn: conn,
+                  current_address: address,
+                  transaction: transaction
+                )
+
               IO.inspect(res)
           end
         end)
@@ -95,21 +98,26 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     IO.inspect("Getting address")
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       IO.inspect(%{hash: address_hash, params: params})
-      res = View.render_to_string(
-                AddressTransactionView,
-                "index.html",
-                conn: conn,
-                address: address,
-                coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-                exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-                filter: params["filter"],
-                counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-                current_path: current_path(conn)
-              )
+
+      res =
+        View.render_to_string(
+          AddressTransactionView,
+          "index.html",
+          conn: conn,
+          address: address,
+          coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+          exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+          filter: params["filter"],
+          counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
+          current_path: current_path(conn)
+        )
+
       IO.inspect(res, printable_limit: :infinity)
+
       render(
         conn,
         "index.html",

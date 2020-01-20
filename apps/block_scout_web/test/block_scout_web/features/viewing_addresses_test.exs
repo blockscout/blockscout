@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       start_supervised!(AddressesCounter)
       AddressesCounter.consolidate()
-      
+
       session
       |> AddressPage.visit_page()
       |> assert_has(AddressPage.address(first_address))
@@ -158,6 +158,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       transactions: transactions
     } do
       IO.inspect(transactions.from_lincoln)
+
       session
       |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.apply_filter("From")
