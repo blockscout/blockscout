@@ -6,6 +6,7 @@
 - [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action explicitly
 
 ### Fixes
+- [#2960](https://github.com/poanetwork/blockscout/pull/2960) - Add BLOCKSCOUT_HOST to docker setup
 - [#2955](https://github.com/poanetwork/blockscout/pull/2955) - Move socket path to env
 - [#2938](https://github.com/poanetwork/blockscout/pull/2938) - utf8 copy tx input tooltip
 - [#2934](https://github.com/poanetwork/blockscout/pull/2934) - RSK release 1.2.0 breaking changes support
@@ -15,14 +16,13 @@
 - [#2924](https://github.com/poanetwork/blockscout/pull/2924) - Speedup address to logs query
 - [#2915](https://github.com/poanetwork/blockscout/pull/2915) - Speedup of blocks_without_reward_query
 - [#2914](https://github.com/poanetwork/blockscout/pull/2914) - Reduce execution time of stream_unfetched_token_instances query
+- [2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
 - [#2908](https://github.com/poanetwork/blockscout/pull/2908) - Fix performance of address page
 - [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
 - [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
 - [#2900](https://github.com/poanetwork/blockscout/pull/2900) - check fetched instance metadata in multiple places
 - [#2899](https://github.com/poanetwork/blockscout/pull/2899) - fix empty buffered task
 - [#2887](https://github.com/poanetwork/blockscout/pull/2887) - increase chart loading speed
-
-- [2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
 
 ### Chore
 - [#2959](https://github.com/poanetwork/blockscout/pull/2959) - Remove logs from test folder too in the cleaning script
