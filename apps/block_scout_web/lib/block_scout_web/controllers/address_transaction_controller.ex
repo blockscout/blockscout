@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.{AddressTransactionView, TransactionView}
+  alias BlockScoutWeb.TransactionView
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{AddressTokenTransferCsvExporter, AddressTransactionCsvExporter}
   alias Explorer.ExchangeRates.Token
