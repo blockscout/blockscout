@@ -116,8 +116,8 @@ defmodule Explorer.Chain.TokenTransfer do
     timestamps()
   end
 
-  @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash block_hash)a
-  @optional_attrs ~w(amount token_id)a
+  @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash block_hash)a
+  @optional_attrs ~w(amount token_id transaction_hash )a
   # @required_attrs ~w(block_number log_index from_address_hash to_address_hash block_hash token_contract_address_hash)a
   # @optional_attrs ~w(amount token_id transaction_hash)a
 

@@ -64,7 +64,6 @@
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
-    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <script>
       window.localized = {
         'Blocks Indexed': '<%= gettext("Blocks Indexed") %>',

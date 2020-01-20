@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.TransactionView
+  alias BlockScoutWeb.{AddressTransactionView, TransactionView}
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.{AddressTokenTransferCsvExporter, AddressTransactionCsvExporter}
   alias Explorer.ExchangeRates.Token
@@ -25,6 +25,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     address_options = [necessity_by_association: %{:names => :optional}]
+    IO.inspect("Getting transaction")
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash, address_options, false) do
@@ -54,6 +55,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         Enum.map(results, fn result ->
           case result do
             {%Chain.Block.Reward{} = emission_reward, %Chain.Block.Reward{} = validator_reward} ->
+              IO.inspect("reward")
               View.render_to_string(
                 TransactionView,
                 "_emission_reward_tile.html",
@@ -64,13 +66,14 @@ defmodule BlockScoutWeb.AddressTransactionController do
               )
 
             %Chain.Transaction{} = transaction ->
-              View.render_to_string(
+              res = View.render_to_string(
                 TransactionView,
                 "_tile.html",
                 conn: conn,
                 current_address: address,
                 transaction: transaction
               )
+              IO.inspect(res)
           end
         end)
 
@@ -91,8 +94,22 @@ defmodule BlockScoutWeb.AddressTransactionController do
   end
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
+    IO.inspect("Getting address")
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
+      IO.inspect(%{hash: address_hash, params: params})
+      res = View.render_to_string(
+                AddressTransactionView,
+                "index.html",
+                conn: conn,
+                address: address,
+                coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
+                exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+                filter: params["filter"],
+                counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
+                current_path: current_path(conn)
+              )
+      IO.inspect(res, printable_limit: :infinity)
       render(
         conn,
         "index.html",
@@ -105,9 +122,11 @@ defmodule BlockScoutWeb.AddressTransactionController do
       )
     else
       :error ->
+        IO.inspect("Some error")
         unprocessable_entity(conn)
 
       {:error, :not_found} ->
+        IO.inspect("Not found")
         {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
         address = %Chain.Address{hash: address_hash, smart_contract: nil, token: nil}
 

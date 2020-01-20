@@ -33,7 +33,7 @@ defmodule Explorer.Repo.Migrations.AddBlockHashAndBlockIndexToLogs do
     execute("""
     ALTER table logs
     DROP CONSTRAINT logs_pkey,
-    ADD PRIMARY KEY (transaction_hash, block_hash, index);
+    ADD PRIMARY KEY (block_hash, index);
     """)
 
     drop(unique_index(:logs, [:transaction_hash, :index]))
