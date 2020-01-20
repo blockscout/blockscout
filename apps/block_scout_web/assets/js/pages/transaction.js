@@ -5,6 +5,7 @@ import numeral from 'numeral'
 import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import '../lib/transaction_input_dropdown'
+import '../lib/async_listing_load'
 
 export const initialState = {
   blockNumber: null,

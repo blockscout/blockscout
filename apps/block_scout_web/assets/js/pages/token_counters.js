@@ -2,6 +2,7 @@ import $ from 'jquery'
 import omit from 'lodash/omit'
 import humps from 'humps'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import '../lib/async_listing_load'
 
 export const initialState = {
   channelDisconnected: false,
