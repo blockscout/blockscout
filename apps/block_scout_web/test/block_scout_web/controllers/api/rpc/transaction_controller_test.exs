@@ -411,11 +411,10 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
           address: address,
           transaction: transaction,
           block: block,
-          block_number: 222,
+          block_number: block.number,
+          #          block_number: 222,
           first_topic: "first topic",
           second_topic: "second topic"
-          # block: block,
-          # block_number: block.number
         )
       end)
 

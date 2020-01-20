@@ -330,6 +330,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         :token_transfer,
         from_address: lincoln,
         to_address: taft,
+        block: transaction.block,
         transaction: transaction,
         token_contract_address: contract_address
       )
@@ -348,6 +349,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         :token_transfer,
         from_address: lincoln,
         to_address: taft,
+        block: block,
         transaction: transaction_2,
         token_contract_address: contract_address_2
       )
