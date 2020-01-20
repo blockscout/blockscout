@@ -212,6 +212,7 @@ defmodule Explorer.SmartContract.VerifierTest do
       params = %{
         "contract_source_code" => different_code,
         "compiler_version" => contract_code_info.version,
+        "evm_version" => "istanbul",
         "name" => contract_code_info.name,
         "optimization" => contract_code_info.optimized
       }
