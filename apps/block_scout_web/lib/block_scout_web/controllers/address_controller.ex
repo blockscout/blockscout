@@ -31,7 +31,6 @@ defmodule BlockScoutWeb.AddressController do
 
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
     total_supply = Chain.total_supply()
-    IO.inspect({:total_supply, total_supply})
 
     items =
       addresses_page
