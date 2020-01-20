@@ -157,8 +157,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       session: session,
       transactions: transactions
     } do
-      IO.inspect(transactions.from_lincoln)
-
       session
       |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.apply_filter("From")
