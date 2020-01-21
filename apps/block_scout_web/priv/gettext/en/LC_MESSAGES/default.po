@@ -1,16 +1,3 @@
-## `msgid`s in this file come from POT (.pot) files.
-##
-## Do not add, change, or remove `msgid`s manually here as
-## they're tied to the ones in the corresponding POT file
-## (with the same domain).
-##
-## Use `mix gettext.extract --merge` or `mix gettext.merge`
-## to merge POT files into PO files.
-msgid ""
-msgstr ""
-"Language: en\n"
-"Plural-Forms: nplurals=2\n"
-
 #, elixir-format
 #: lib/block_scout_web/views/address_token_balance_view.ex:7
 msgid "%{count} token"
@@ -1921,10 +1908,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:37
 #: lib/block_scout_web/templates/address_signed/index.html.eex:13
-msgid "Blocks Signed"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:53
 #: lib/block_scout_web/templates/block_signers/index.html.eex:37
 msgid "Downtime"
@@ -1949,8 +1932,8 @@ msgid "There is no decompiled contracts for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:27
-msgid "There is no decompiled contracts for this address."
+#: lib/block_scout_web/templates/address_signed/index.html.eex:18
+msgid "There are no downtime blocks for this address."
 msgstr ""
 
 #, elixir-format

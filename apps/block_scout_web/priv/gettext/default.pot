@@ -1920,10 +1920,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:37
 #: lib/block_scout_web/templates/address_signed/index.html.eex:13
-msgid "Blocks Signed"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:53
 #: lib/block_scout_web/templates/block_signers/index.html.eex:37
 msgid "Downtime"
