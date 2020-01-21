@@ -151,6 +151,22 @@ defmodule Explorer.SmartContract.Verifier do
         |> Enum.reverse()
         |> :binary.list_to_bin()
 
+      # Solidity >= 0.6.0 https://github.com/ethereum/solidity/blob/develop/Changelog.md#060-2019-12-17
+      # https://github.com/ethereum/solidity/blob/26b700771e9cc9c956f0503a05de69a1be427963/docs/metadata.rst#encoding-of-the-metadata-hash-in-the-bytecode
+      # IPFS is used instead of Swarm
+      # The current version of the Solidity compiler usually adds the following to the end of the deployed bytecode:
+      # 0xa2
+      # 0x64 'i' 'p' 'f' 's' 0x58 0x22 <34 bytes IPFS hash>
+      # 0x64 's' 'o' 'l' 'c' 0x43 <3 byte version encoding>
+      # 0x00 0x32
+      # Note: there is a bug in the docs. Instead of 0x32, 0x33 should be used.
+      # Fixing PR has been created https://github.com/ethereum/solidity/pull/8174
+      "a264697066735822" <>
+          <<_::binary-size(68)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0033" <> _constructor_arguments ->
+        extracted
+        |> Enum.reverse()
+        |> :binary.list_to_bin()
+
       <<next::binary-size(2)>> <> rest ->
         do_extract_bytecode([next | extracted], rest)
     end
