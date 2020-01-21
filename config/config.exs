@@ -13,7 +13,7 @@ config :logger,
   backends: [
     # all applications and all levels
     #    :console,
-    {LoggerJSON, level: :warn},
+    {LoggerJSON, level: :info},
     # all applications, but only errors
     {LoggerFileBackend, :error},
     # only :ecto, but all levels
@@ -37,7 +37,7 @@ config :logger_json, :console,
        block_number step count error_count shrunk import_id transaction_id)a
 
 config :logger_json, :ecto,
-  level: :warn,
+  level: :info,
   metadata:
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
        block_number step count error_count shrunk import_id transaction_id)a

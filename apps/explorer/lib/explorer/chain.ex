@@ -1740,6 +1740,35 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  def get_downtime_by_address(options \\ [], address_hash) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    query =
+      from(b in Block,
+        join: h in CeloValidatorHistory,
+        where: b.number == h.block_number,
+        where: h.address == ^address_hash,
+        where: h.online == false,
+        select: b
+      )
+
+    online_query =
+      from(
+        h in CeloValidatorHistory,
+        where: h.address == ^address_hash,
+        select: h.online
+      )
+
+    query
+    |> join_associations(necessity_by_association)
+    |> page_blocks(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by(desc: :number)
+    |> preload(online: ^online_query)
+    |> Repo.all()
+  end
+
   @doc """
   Counts all of the block validations and groups by the `miner_hash`.
   """

@@ -1943,13 +1943,13 @@ msgid "Signers"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_signed/index.html.eex:18
-msgid "There are no blocks signed by this address."
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:27
+msgid "There is no decompiled contracts for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:27
-msgid "There is no decompiled contracts for this address."
+#: lib/block_scout_web/templates/address_signed/index.html.eex:18
+msgid "There are no downtime blocks for this address."
 msgstr ""
 
 #, elixir-format

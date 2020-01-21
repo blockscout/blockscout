@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.AddressSignedController do
           paging_options(params)
         )
 
-      blocks_plus_one = Chain.get_blocks_handled_by_address(full_options, address_hash)
+      blocks_plus_one = Chain.get_downtime_by_address(full_options, address_hash)
       {blocks, next_page} = split_list_by_page(blocks_plus_one)
 
       next_page_path =
