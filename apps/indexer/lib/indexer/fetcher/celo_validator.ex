@@ -71,7 +71,7 @@ defmodule Indexer.Fetcher.CeloValidator do
         Enum.map(res, fn a -> entry(%{address: "0x" <> Base.encode16(a, lower: true)}) end)
 
       _ ->
-        [entry]
+        []
     end
   end
 

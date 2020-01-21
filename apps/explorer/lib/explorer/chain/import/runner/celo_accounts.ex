@@ -62,6 +62,14 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
     {:ok, accounts}
   end
 
+  defp handle_dedup(lst) do
+    Enum.reduce(lst, fn %{attestations_requested: req, attestations_fulfilled: full}, acc ->
+      acc
+      |> Map.put(:attestations_requested, req + acc.attestations_requested)
+      |> Map.put(:attestations_fulfilled, full + acc.attestations_fulfilled)
+    end)
+  end
+
   @spec insert(Repo.t(), [map()], Util.insert_options()) :: {:ok, [CeloAccount.t()]} | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
@@ -69,7 +77,9 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
     uniq_changes_list =
       changes_list
       |> Enum.sort_by(& &1.address)
-      |> Enum.dedup_by(& &1.address)
+      |> Enum.group_by(& &1.address)
+      |> Map.values()
+      |> Enum.map(&handle_dedup/1)
 
     {:ok, _} =
       Import.insert_changes_list(
