@@ -9,7 +9,6 @@ import '../css/app.scss'
 //
 // Import dependencies
 //
-import '@babel/polyfill'
 import 'phoenix_html'
 import 'bootstrap'
 
@@ -32,7 +31,6 @@ import './lib/pending_transactions_toggle'
 import './lib/pretty_json'
 import './lib/reload_button'
 import './lib/stop_propagation'
-import './lib/async_listing_load'
 import './lib/tooltip'
 import './lib/modals'
 import './lib/card_tabs'

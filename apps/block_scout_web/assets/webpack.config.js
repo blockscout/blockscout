@@ -20,10 +20,7 @@ function transpileViewScript(file) {
           test: /\.js$/,
           exclude: /node_modules/,
           use: {
-            loader: 'babel-loader',
-            options: {
-              presets: ['@babel/preset-env']
-            }
+            loader: 'babel-loader'
           }
         }
       ]
@@ -95,6 +92,7 @@ const appJs =
       'token-transfers-toggle': './js/lib/token_transfers_toggle.js',
       'try-api': './js/lib/try_api.js',
       'try-eth-api': './js/lib/try_eth_api.js',
+      'async-listing-load': './js/lib/async_listing_load',
       'non-critical': './css/non-critical.scss'
     },
     output: {
@@ -110,10 +108,7 @@ const appJs =
           test: /\.js$/,
           exclude: /node_modules/,
           use: {
-            loader: 'babel-loader',
-            options: {
-              presets: ['@babel/preset-env']
-            }
+            loader: 'babel-loader'
           }
         },
         {

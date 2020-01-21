@@ -64,7 +64,9 @@
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
-    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
+    <%= if @view_module != Elixir.BlockScoutWeb.ChainView do %>
+      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
+    <% end %>
     <%= render_existing(@view_module, "scripts.html", assigns) %>
   </body>
 </html>
