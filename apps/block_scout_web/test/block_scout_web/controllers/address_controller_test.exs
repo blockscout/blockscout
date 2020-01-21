@@ -50,7 +50,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
     test "returns address counters" do
       address = insert(:address)
 
-      conn = get(conn, "/address_counters", %{"id" => to_string(address.hash)})
+      conn = get(conn, "/address_counters", %{"id" => to_string(address)})
 
       assert conn.status == 200
       {:ok, response} = Jason.decode(conn.resp_body)
