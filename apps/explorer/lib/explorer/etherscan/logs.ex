@@ -5,8 +5,10 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
+  # , union: 2]
   import Ecto.Query, only: [from: 2, where: 3, subquery: 1, order_by: 3]
 
+  #  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, InternalTransaction, Log, Transaction}
   alias Explorer.Repo
 
@@ -99,6 +101,10 @@ defmodule Explorer.Etherscan.Logs do
             block_number: transaction.block_number
           })
       )
+
+    # query_to_address_hash_wrapped
+    # |> union(^query_from_address_hash_wrapped)
+    # |> union(^query_created_contract_address_hash_wrapped)
 
     all_transaction_logs_query =
       from(transaction in Transaction,

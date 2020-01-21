@@ -47,7 +47,7 @@ if ($transactionDetailsPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
 
-  const blocksChannel = socket.channel(`blocks:new_block`, {})
+  const blocksChannel = socket.channel('blocks:new_block', {})
   blocksChannel.join()
   blocksChannel.on('new_block', (msg) => store.dispatch({
     type: 'RECEIVED_NEW_BLOCK',

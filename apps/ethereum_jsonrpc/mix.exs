@@ -96,6 +96,7 @@ defmodule EthereumJsonrpc.MixProject do
       {:decimal, "~> 1.0"},
       {:decorator, "~> 1.2"},
       {:hackney, "~> 1.15.2"},
+      {:poolboy, "~> 1.5.2"},
       # Log json format
       {:logger_json, "~> 3.2"}
       # {:jason, "~> 1.1"}
