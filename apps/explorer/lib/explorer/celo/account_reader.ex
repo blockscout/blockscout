@@ -129,7 +129,6 @@ defmodule Explorer.Celo.AccountReader do
 
   def validator_history(block_number) do
     data = fetch_validators(block_number)
-
     with {:ok, [bm]} <- data["getParentSealBitmap"],
          {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
       list =
@@ -216,7 +215,7 @@ defmodule Explorer.Celo.AccountReader do
   defp fetch_validators(bn) do
     call_methods([
       {:election, "getCurrentValidatorSigners", [], bn - 1},
-      {:election, "getParentSealBitmap", [bn]}
+      {:election, "getParentSealBitmap", [bn], bn}
     ])
   end
 
