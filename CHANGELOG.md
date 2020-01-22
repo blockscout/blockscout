@@ -6,6 +6,7 @@
 - [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action explicitly
 
 ### Fixes
+- [#2967](https://github.com/poanetwork/blockscout/pull/2967) - Fix styles loading for firefox
 - [#2961](https://github.com/poanetwork/blockscout/pull/2961) - Add a guard that addresses is enum in `values` function in `read contract` page
 - [#2960](https://github.com/poanetwork/blockscout/pull/2960) - Add BLOCKSCOUT_HOST to docker setup
 - [#2956](https://github.com/poanetwork/blockscout/pull/2956) - Add support of 0.6.x version of compiler
