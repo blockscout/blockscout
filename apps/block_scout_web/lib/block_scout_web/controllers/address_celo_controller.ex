@@ -14,7 +14,6 @@ defmodule BlockScoutWeb.AddressCeloController do
          %CeloAccount{address: _} <- address.celo_account do
       {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
 
-      
       render(
         conn,
         "index.html",
