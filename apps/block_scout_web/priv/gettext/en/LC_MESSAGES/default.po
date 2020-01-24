@@ -13,7 +13,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:193
+#: lib/block_scout_web/templates/transaction/overview.html.eex:194
 msgid " Token Transfer"
 msgstr ""
 
@@ -1109,7 +1109,7 @@ msgid "License ID"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:243
+#: lib/block_scout_web/templates/transaction/overview.html.eex:244
 msgid "Limit"
 msgstr ""
 
@@ -1626,7 +1626,7 @@ msgid "Use the search box to find a hosted network, or select from the list of a
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:237
+#: lib/block_scout_web/templates/transaction/overview.html.eex:238
 msgid "Used"
 msgstr ""
 
@@ -1735,7 +1735,7 @@ msgid "Decimals"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:233
+#: lib/block_scout_web/templates/transaction/overview.html.eex:234
 msgid "Gas"
 msgstr ""
 
@@ -1783,6 +1783,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:134
+#: lib/block_scout_web/templates/transaction/overview.html.eex:147
 msgid "Copy Txn Input"
 msgstr ""
 
