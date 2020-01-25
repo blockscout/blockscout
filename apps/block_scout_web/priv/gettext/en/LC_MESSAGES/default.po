@@ -13,7 +13,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:193
+#: lib/block_scout_web/templates/transaction/overview.html.eex:194
 msgid " Token Transfer"
 msgstr ""
 
@@ -72,7 +72,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:42
+#: lib/block_scout_web/templates/layout/app.html.eex:55
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -150,7 +150,7 @@ msgid "Anything not in this list is not supported. Click on the method to be tak
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:47
+#: lib/block_scout_web/templates/chain/show.html.eex:40
 msgid "Average block time"
 msgstr ""
 
@@ -165,7 +165,7 @@ msgid "Balance"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:14
+#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:16
 msgid "Balances"
 msgstr ""
 
@@ -208,7 +208,7 @@ msgid "Block Height: %{height}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:57
+#: lib/block_scout_web/templates/layout/app.html.eex:27
 msgid "Block Mined, awaiting import..."
 msgstr ""
 
@@ -233,14 +233,14 @@ msgid "BlockScout provides analytics data, API, and Smart Contract tools for the
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:87
+#: lib/block_scout_web/templates/chain/show.html.eex:81
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:31
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:35
 msgid "Blocks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:56
+#: lib/block_scout_web/templates/layout/app.html.eex:26
 msgid "Blocks Indexed"
 msgstr ""
 
@@ -312,7 +312,7 @@ msgid "Connection Lost"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:10
+#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:12
 #: lib/block_scout_web/templates/block/index.html.eex:6
 msgid "Connection Lost, click to load newer blocks"
 msgstr ""
@@ -1076,7 +1076,7 @@ msgid "Last Balance Update: Block #"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:59
+#: lib/block_scout_web/templates/layout/app.html.eex:29
 msgid "Less than"
 msgstr ""
 
@@ -1109,7 +1109,7 @@ msgid "License ID"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:243
+#: lib/block_scout_web/templates/transaction/overview.html.eex:244
 msgid "Limit"
 msgstr ""
 
@@ -1143,8 +1143,8 @@ msgid "Mainnet"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:31
-#: lib/block_scout_web/templates/layout/app.html.eex:60
+#: lib/block_scout_web/templates/chain/show.html.eex:24
+#: lib/block_scout_web/templates/layout/app.html.eex:30
 #: lib/block_scout_web/views/address_view.ex:126
 #: lib/block_scout_web/views/address_view.ex:126
 msgid "Market Cap"
@@ -1177,7 +1177,7 @@ msgid "More internal transactions have come in"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:148
+#: lib/block_scout_web/templates/chain/show.html.eex:142
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:10
 #: lib/block_scout_web/templates/transaction/index.html.eex:10
 msgid "More transactions have come in"
@@ -1279,8 +1279,8 @@ msgid "Potential matches from our contract method database:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:24
-#: lib/block_scout_web/templates/layout/app.html.eex:61
+#: lib/block_scout_web/templates/chain/show.html.eex:17
+#: lib/block_scout_web/templates/layout/app.html.eex:31
 msgid "Price"
 msgstr ""
 
@@ -1415,7 +1415,7 @@ msgid "Block Rewards"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:34
+#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:36
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:61
 #: lib/block_scout_web/templates/address_logs/index.html.eex:21
 #: lib/block_scout_web/templates/address_token/index.html.eex:13
@@ -1423,7 +1423,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:59
 #: lib/block_scout_web/templates/address_validation/index.html.eex:22
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
-#: lib/block_scout_web/templates/chain/show.html.eex:91
+#: lib/block_scout_web/templates/chain/show.html.eex:85
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:19
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:20
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:21
@@ -1437,7 +1437,7 @@ msgid "Something went wrong, click to reload."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:154
+#: lib/block_scout_web/templates/chain/show.html.eex:148
 msgid "Something went wrong, click to retry."
 msgstr ""
 
@@ -1502,7 +1502,7 @@ msgid "There are no transactions."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:39
+#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:41
 msgid "There is no coin history for this address."
 msgstr ""
 
@@ -1512,8 +1512,8 @@ msgid "There is no decompilded contracts for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:25
-#: lib/block_scout_web/templates/chain/show.html.eex:16
+#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:27
+#: lib/block_scout_web/templates/chain/show.html.eex:9
 msgid "There was a problem loading the chart."
 msgstr ""
 
@@ -1566,7 +1566,7 @@ msgid "Total Supply"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:64
+#: lib/block_scout_web/templates/chain/show.html.eex:57
 msgid "Total blocks"
 msgstr ""
 
@@ -1626,7 +1626,7 @@ msgid "Use the search box to find a hosted network, or select from the list of a
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:237
+#: lib/block_scout_web/templates/transaction/overview.html.eex:238
 msgid "Used"
 msgstr ""
 
@@ -1658,12 +1658,12 @@ msgid "Version"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:86
+#: lib/block_scout_web/templates/chain/show.html.eex:80
 msgid "View All Blocks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:144
+#: lib/block_scout_web/templates/chain/show.html.eex:138
 msgid "View All Transactions"
 msgstr ""
 
@@ -1735,7 +1735,7 @@ msgid "Decimals"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:233
+#: lib/block_scout_web/templates/transaction/overview.html.eex:234
 msgid "Gas"
 msgstr ""
 
@@ -1745,13 +1745,12 @@ msgid "If it still does not show up after 1 hour, please check with your sender/
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:58
+#: lib/block_scout_web/templates/layout/app.html.eex:28
 msgid "Indexing Tokens"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:22
-#: lib/block_scout_web/templates/chain/show.html.eex:13
+#: lib/block_scout_web/templates/address_coin_balance/index.html.eex:24
 msgid "Loading chart"
 msgstr ""
 
@@ -1773,7 +1772,7 @@ msgid "Module"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:56
+#: lib/block_scout_web/templates/chain/show.html.eex:49
 msgid "Total transactions"
 msgstr ""
 
@@ -1784,6 +1783,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:134
+#: lib/block_scout_web/templates/transaction/overview.html.eex:147
 msgid "Copy Txn Input"
 msgstr ""
 
@@ -1845,7 +1845,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:15
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:10
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:18
-#: lib/block_scout_web/templates/chain/show.html.eex:145
+#: lib/block_scout_web/templates/chain/show.html.eex:139
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:50
 #: lib/block_scout_web/views/address_view.ex:306
 msgid "Transactions"
