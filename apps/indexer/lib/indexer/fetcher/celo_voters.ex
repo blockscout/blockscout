@@ -1,17 +1,17 @@
-defmodule Indexer.Fetcher.CeloAccount do
+defmodule Indexer.Fetcher.CeloVoters do
   @moduledoc """
-  Fetches Celo accounts.
+  Fetches Celo validator group voters.
   """
   use Indexer.Fetcher
   use Spandex.Decorators
 
   require Logger
 
-  alias Indexer.Fetcher.CeloAccount.Supervisor, as: CeloAccountSupervisor
+  alias Indexer.Fetcher.CeloVoters.Supervisor, as: CeloVotersSupervisor
 
   alias Explorer.Celo.AccountReader
   alias Explorer.Chain
-  alias Explorer.Chain.CeloAccount
+  alias Explorer.Chain.CeloVoters
 
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Util
@@ -21,31 +21,26 @@ defmodule Indexer.Fetcher.CeloAccount do
   @max_retries 3
 
   def async_fetch(accounts) do
-    if CeloAccountSupervisor.disabled?() do
+    if CeloVotersSupervisor.disabled?() do
       :ok
     else
       params =
         accounts.params
-        |> Enum.map(fn a -> entry(a, accounts.requested, accounts.fulfilled) end)
+        |> Enum.map(&entry/1)
 
       BufferedTask.buffer(__MODULE__, params, :infinity)
     end
   end
 
-  def entry(%{address: address}, requested, fulfilled) do
+  @spec entry(%{group_address: String.t(), voter_address: String.t()}) :: %{
+          group_address_hash: String.t(),
+          voter_address_hash: String.t(),
+          retries_count: integer
+        }
+  def entry(%{group_address: group_address, voter_address: voter_address}) do
     %{
-      address: address,
-      attestations_fulfilled: Enum.count(Enum.filter(fulfilled, fn a -> a.address == address end)),
-      attestations_requested: Enum.count(Enum.filter(requested, fn a -> a.address == address end)),
-      retries_count: 0
-    }
-  end
-
-  def entry(%{voter: address}, _, _) do
-    %{
-      voter: address,
-      attestations_fulfilled: 0,
-      attestations_requested: 0,
+      group_address_hash: group_address,
+      voter_address_hash: voter_address,
       retries_count: 0
     }
   end
@@ -65,10 +60,8 @@ defmodule Indexer.Fetcher.CeloAccount do
     failed_list =
       accounts
       |> Enum.map(&Map.put(&1, :retries_count, &1.retries_count + 1))
-      |> Enum.filter(&(&1.retries_count <= @max_retries))
-      |> voters_to_accounts()
       |> fetch_from_blockchain()
-      |> import_accounts()
+      |> import_items()
 
     if failed_list == [] do
       :ok
@@ -77,19 +70,11 @@ defmodule Indexer.Fetcher.CeloAccount do
     end
   end
 
-  defp voters_to_accounts(lst) do
-    IO.inspect(lst)
-
-    Enum.filter(lst, fn
-      %{voter: _} -> false
-      _ -> true
-    end)
-  end
-
   defp fetch_from_blockchain(addresses) do
     addresses
-    |> Enum.map(fn account ->
-      case AccountReader.account_data(account) do
+    |> Enum.filter(&(&1.retries_count <= @max_retries))
+    |> Enum.map(fn %{group_address_hash: group_address, voter_address_hash: voter_address} = account ->
+      case AccountReader.voter_data(group_address, voter_address) do
         {:ok, data} ->
           Map.merge(account, data)
 
@@ -99,14 +84,14 @@ defmodule Indexer.Fetcher.CeloAccount do
     end)
   end
 
-  defp import_accounts(accounts) do
+  defp import_items(accounts) do
     {failed, success} =
       Enum.reduce(accounts, {[], []}, fn
         %{error: _error} = account, {failed, success} ->
           {[account | failed], success}
 
         account, {failed, success} ->
-          changeset = CeloAccount.changeset(%CeloAccount{}, account)
+          changeset = CeloVoters.changeset(%CeloVoters{}, account)
 
           if changeset.valid? do
             {failed, [changeset.changes | success]}
@@ -116,7 +101,7 @@ defmodule Indexer.Fetcher.CeloAccount do
       end)
 
     import_params = %{
-      celo_accounts: %{params: success},
+      celo_voters: %{params: success},
       timeout: :infinity
     }
 
@@ -125,7 +110,7 @@ defmodule Indexer.Fetcher.CeloAccount do
         :ok
 
       {:error, reason} ->
-        Logger.debug(fn -> ["failed to import Celo account data: ", inspect(reason)] end,
+        Logger.debug(fn -> ["failed to import Celo voter data: ", inspect(reason)] end,
           error_count: Enum.count(accounts)
         )
     end
