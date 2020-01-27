@@ -54,17 +54,25 @@ defmodule Explorer.SmartContract.Verifier do
         external_libs: external_libraries
       )
 
-    compare_bytecodes(solc_output, address_hash, constructor_arguments, autodetect_contructor_arguments)
+    compare_bytecodes(
+      solc_output,
+      address_hash,
+      constructor_arguments,
+      autodetect_contructor_arguments,
+      contract_source_code
+    )
   end
 
-  defp compare_bytecodes({:error, :name}, _, _, _), do: {:error, :name}
-  defp compare_bytecodes({:error, _}, _, _, _), do: {:error, :compilation}
+  defp compare_bytecodes({:error, :name}, _, _, _, _), do: {:error, :name}
+  defp compare_bytecodes({:error, _}, _, _, _, _), do: {:error, :compilation}
 
+  # credo:disable-for-next-line /Complexity/
   defp compare_bytecodes(
          {:ok, %{"abi" => abi, "bytecode" => bytecode}},
          address_hash,
          arguments_data,
-         autodetect_contructor_arguments
+         autodetect_contructor_arguments,
+         contract_source_code
        ) do
     generated_bytecode = extract_bytecode(bytecode)
 
@@ -73,6 +81,7 @@ defmodule Explorer.SmartContract.Verifier do
       |> Chain.smart_contract_bytecode()
 
     blockchain_bytecode_without_whisper = extract_bytecode(blockchain_bytecode)
+    empty_constructor_arguments = arguments_data == "" or arguments_data == nil
 
     cond do
       generated_bytecode != blockchain_bytecode_without_whisper &&
@@ -80,7 +89,7 @@ defmodule Explorer.SmartContract.Verifier do
         {:error, :generated_bytecode}
 
       has_constructor_with_params?(abi) && autodetect_contructor_arguments ->
-        result = ConstructorArguments.find_constructor_arguments(address_hash, abi)
+        result = ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code)
 
         if result do
           {:ok, %{abi: abi, contructor_arguments: result}}
@@ -88,8 +97,16 @@ defmodule Explorer.SmartContract.Verifier do
           {:error, :constructor_arguments}
         end
 
+      has_constructor_with_params?(abi) && empty_constructor_arguments ->
+        {:error, :constructor_arguments}
+
       has_constructor_with_params?(abi) &&
-          !ConstructorArguments.verify(address_hash, blockchain_bytecode_without_whisper, arguments_data) ->
+          !ConstructorArguments.verify(
+            address_hash,
+            blockchain_bytecode_without_whisper,
+            arguments_data,
+            contract_source_code
+          ) ->
         {:error, :constructor_arguments}
 
       true ->

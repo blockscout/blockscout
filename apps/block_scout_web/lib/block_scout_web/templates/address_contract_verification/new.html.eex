@@ -37,6 +37,28 @@
 
         <div class="smart-contract-form-group">
           <div class="smart-contract-form-group-inner-wrapper">
+            <%= label f, "Include nightly builds" %>
+            <div class="center-column">
+              <div class="form-radios-group">
+                <div class="radio-big">
+                  <%= radio_button f, :nightly_builds, false, checked: true, class: "form-check-input nightly-builds-false" %>
+                  <div class="radio-icon"></div>
+                  <%= label :nightly_builds, :false, gettext("No"), class: "radio-text" %>
+                </div>
+                <div class="radio-big">
+                  <%= radio_button f, :nightly_builds, true, class: "form-check-input nightly-builds-true", "aria-describedby": "nightly_builds-help-block" %>
+                  <div class="radio-icon"></div>
+                  <%= label :nightly_builds, :true, gettext("Yes"), class: "radio-text" %>
+                </div>
+              </div>
+              <%= error_tag f, :nightly_builds, id: "nightly_builds-help-block", class: "text-danger form-error" %>
+            </div>
+            <div class="smart-contract-form-group-tooltip">Select yes if you want to show nightly builds.</div>
+          </div>
+        </div>
+
+        <div class="smart-contract-form-group">
+          <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :compiler_version, gettext("Compiler") %>
             <div class="center-column">
               <%= select f, :compiler_version, @compiler_versions, class: "form-control border-rounded", selected: "latest", "aria-describedby": "compiler-help-block" %>
@@ -62,12 +84,12 @@
             <div class="center-column">
               <div class="form-radios-group">
                 <div class="radio-big">
-                  <%= radio_button f, :optimization, false, checked: true, class: "form-check-input" %>
+                  <%= radio_button f, :optimization, false, class: "form-check-input optimization-false" %>
                   <div class="radio-icon"></div>
                   <%= label :smart_contract_optimization, :false, gettext("No"), class: "radio-text" %>
                 </div>
                 <div class="radio-big">
-                  <%= radio_button f, :optimization, true, class: "form-check-input", "aria-describedby": "optimization-help-block" %>
+                  <%= radio_button f, :optimization, true, checked: true, class: "form-check-input optimization-true", "aria-describedby": "optimization-help-block" %>
                   <div class="radio-icon"></div>
                   <%= label :smart_contract_optimization, :true, gettext("Yes"), class: "radio-text" %>
                 </div>
@@ -78,7 +100,7 @@
           </div>
         </div>
 
-        <div class="smart-contract-form-group">
+        <div class="smart-contract-form-group optimization-runs">
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :name, gettext("Optimization runs") %>
             <div class="center-column">
@@ -110,12 +132,12 @@
                   <%= label :autodetect_contructor_args, :false, gettext("No"), class: "radio-text" %>
                 </div>
                 <div class="radio-big">
-                  <%= radio_button f, :autodetect_contructor_args, true, class: "form-check-input autodetecttrue", "aria-describedby": "optimization-help-block" %>
+                  <%= radio_button f, :autodetect_contructor_args, true, class: "form-check-input autodetecttrue", "aria-describedby": "autodetect_contructor_args-help-block" %>
                   <div class="radio-icon"></div>
                   <%= label :autodetect_contructor_args, :true, gettext("Yes"), class: "radio-text" %>
                 </div>
               </div>
-              <%= error_tag f, :autodetect_contructor_args, id: "optimization-help-block", class: "text-danger form-error" %>
+              <%= error_tag f, :autodetect_contructor_args, id: "autodetect_contructor_args-help-block", class: "text-danger form-error" %>
             </div>
           </div>
         </div>
