@@ -73,17 +73,16 @@ defmodule Explorer.Chain.Import.Runner.CeloVoters do
       |> Enum.sort_by(&{&1.group_address_hash, &1.voter_address_hash})
       |> Enum.dedup_by(&{&1.group_address_hash, &1.voter_address_hash})
 
-    {:ok, _} =
-      Import.insert_changes_list(
-        repo,
-        uniq_changes_list,
-        conflict_target: [:group_address_hash, :voter_address_hash],
-        on_conflict: on_conflict,
-        for: CeloVoters,
-        returning: [:group_address_hash, :voter_address_hash],
-        timeout: timeout,
-        timestamps: timestamps
-      )
+    Import.insert_changes_list(
+      repo,
+      uniq_changes_list,
+      conflict_target: [:group_address_hash, :voter_address_hash],
+      on_conflict: on_conflict,
+      for: CeloVoters,
+      returning: [:group_address_hash, :voter_address_hash],
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp default_on_conflict do
@@ -91,6 +90,7 @@ defmodule Explorer.Chain.Import.Runner.CeloVoters do
       account in CeloVoters,
       update: [
         set: [
+          total: fragment("EXCLUDED.total"),
           pending: fragment("EXCLUDED.pending"),
           active: fragment("EXCLUDED.active"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),

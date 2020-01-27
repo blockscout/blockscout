@@ -7,6 +7,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoters do
       add(:voter_address_hash, :bytea, null: false)
       add(:pending, :numeric, precision: 100)
       add(:active, :numeric, precision: 100)
+      add(:total, :numeric, precision: 100)
 
       timestamps(null: false, type: :utc_datetime_usec)
     end

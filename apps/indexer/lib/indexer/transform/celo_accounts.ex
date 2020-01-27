@@ -17,7 +17,6 @@ defmodule Indexer.Transform.CeloAccounts do
       accounts:
         get_addresses(logs, CeloAccount.account_events()) ++
           Enum.map(get_addresses(logs, CeloVoters.distributed_events()), fn %{address: a} ->
-            IO.inspect(a)
             %{voter: a}
           end),
       # Adding a group to updated validators means to update all members of the group
