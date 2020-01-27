@@ -549,25 +549,39 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   defp find_claim_reward_pools_by_logs(staking_contract_address, topics, json_rpc_named_arguments) do
-    result = EthereumJSONRPC.request(%{
-      id: 0,
-      method: "eth_getLogs",
-      params: [%{
-        fromBlock: "0x0",
-        toBlock: "latest",
-        address: staking_contract_address,
-        topics: topics
-      }]
-    }) |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
-    case result do
-      {:ok, response} ->
-        pools = Enum.uniq(Enum.map(response, fn event -> 
-          truncate_address(Enum.at(event["topics"], 1))
-        end))
-        {nil, pools}
-      {:error, reason} ->
-        {error_reason_to_string(reason), []}
-    end
+    latest_block = BlockNumber.get_max()
+    split_by = 500 # must be less than 1000
+
+    iterations = 0..trunc(ceil(latest_block / split_by) - 1)
+    Enum.reduce(iterations, {nil, []}, fn i, acc ->
+      {acc_error, acc_pools} = acc
+      if acc_error do
+        {acc_error, []}
+      else
+        from = i * split_by + 1
+        to = (i + 1) * split_by
+        to = if to > latest_block, do: latest_block, else: to
+        result = EthereumJSONRPC.request(%{
+          id: 0,
+          method: "eth_getLogs",
+          params: [%{
+            fromBlock: "0x" <> Integer.to_string(from, 16),
+            toBlock: "0x" <> Integer.to_string(to, 16),
+            address: staking_contract_address,
+            topics: topics
+          }]
+        }) |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+        case result do
+          {:ok, response} ->
+            pools = Enum.uniq(acc_pools ++ Enum.map(response, fn event -> 
+              truncate_address(Enum.at(event["topics"], 1))
+            end))
+            {acc_error, pools}
+          {:error, reason} ->
+            {error_reason_to_string(reason), []}
+        end
+      end
+    end)
   end
 
   defp address_pad_to_64(address) do
