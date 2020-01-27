@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Hash.Address do
 
   alias Explorer.Chain.Hash
 
-  @behaviour Ecto.Type
+  use Ecto.Type
   @behaviour Hash
 
   @byte_count 20
