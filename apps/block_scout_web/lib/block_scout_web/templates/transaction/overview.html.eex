@@ -144,6 +144,7 @@
                     data-clipboard-text="<%= @transaction.input %>"
                     data-placement="top"
                     data-toggle="tooltip"
+                    title='<%= gettext("Copy Txn Input") %>'
                     style="display: none;"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
