@@ -87,7 +87,7 @@ msgid "A string with the name of the module to be invoked."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:125
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:147
 msgid "ABI-encoded Constructor Arguments (if required by the contract)"
 msgstr ""
 
@@ -266,7 +266,7 @@ msgid "Call Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:274
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:296
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:54
 msgid "Cancel"
@@ -289,7 +289,7 @@ msgid "Clear"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:40
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:62
 msgid "Compiler"
 msgstr ""
 
@@ -370,7 +370,7 @@ msgid "Contract Creation Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:139
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:161
 msgid "Contract Libraries"
 msgstr ""
 
@@ -579,7 +579,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:45
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:51
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:73
 msgid "EVM Version"
 msgstr ""
 
@@ -599,7 +599,7 @@ msgid "Emission Reward"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:93
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:115
 msgid "Enter the Solidity Contract Code"
 msgstr ""
 
@@ -971,20 +971,20 @@ msgid "Less than"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:154
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:176
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:198
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:220
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:242
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:264
 msgid "Library Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:144
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:166
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:188
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:210
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:232
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:254
 msgid "Library Name"
 msgstr ""
 
@@ -1010,7 +1010,7 @@ msgid "Loading..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:268
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:290
 msgid "Loading...."
 msgstr ""
 
@@ -1096,8 +1096,9 @@ msgid "New Smart Contract Verification"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:67
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:110
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:46
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:89
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:132
 msgid "No"
 msgstr ""
 
@@ -1114,7 +1115,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:39
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:83
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:105
 msgid "Optimization runs"
 msgstr ""
 
@@ -1218,7 +1219,7 @@ msgid "Request URL"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:271
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:293
 msgid "Reset"
 msgstr ""
 
@@ -1580,7 +1581,7 @@ msgid "Verify & Publish"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:270
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:292
 msgid "Verify & publish"
 msgstr ""
 
@@ -1654,8 +1655,9 @@ msgid "Wei"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:72
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:115
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:51
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:94
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:137
 msgid "Yes"
 msgstr ""
 
