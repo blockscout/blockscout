@@ -6,6 +6,7 @@
 - [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action explicitly
 
 ### Fixes
+- [#2969](https://github.com/poanetwork/blockscout/pull/2969) - Fix contract constructor require msg appearance in constructor arguments encoded view
 - [#2964](https://github.com/poanetwork/blockscout/pull/2964) - Fix bug in skipping of constructor arguments in contract verification
 - [#2961](https://github.com/poanetwork/blockscout/pull/2961) - Add a guard that addresses is enum in `values` function in `read contract` page
 - [#2960](https://github.com/poanetwork/blockscout/pull/2960) - Add BLOCKSCOUT_HOST to docker setup
