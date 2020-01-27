@@ -3,7 +3,7 @@ defmodule Explorer.Admin.Administrator.Role do
   Supported roles for an administrator.
   """
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @typedoc """
   Supported role atoms for an administrator.
