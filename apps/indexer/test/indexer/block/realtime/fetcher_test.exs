@@ -19,7 +19,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
     CeloAccount,
     CeloValidator,
     CeloValidatorGroup,
-    CeloValidatorHistory
+    CeloValidatorHistory,
+    CeloVoters
   }
 
   @moduletag capture_log: true

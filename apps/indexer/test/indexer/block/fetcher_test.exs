@@ -23,7 +23,8 @@ defmodule Indexer.Block.FetcherTest do
     CeloAccount,
     CeloValidator,
     CeloValidatorHistory,
-    CeloValidatorGroup
+    CeloValidatorGroup,
+    CeloVoters
   }
 
   @moduletag capture_log: true
