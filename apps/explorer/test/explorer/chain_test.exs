@@ -18,6 +18,7 @@ defmodule Explorer.ChainTest do
     Hash,
     InternalTransaction,
     Log,
+    PendingBlockOperation,
     Token,
     TokenTransfer,
     Transaction,
@@ -34,6 +35,38 @@ defmodule Explorer.ChainTest do
   setup :set_mox_global
 
   setup :verify_on_exit!
+
+  describe "remove_nonconsensus_blocks_from_pending_ops/0" do
+    test "removes pending ops for nonconsensus blocks" do
+      block = insert(:block)
+      insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
+
+      nonconsensus_block = insert(:block, consensus: false)
+      insert(:pending_block_operation, block: nonconsensus_block, fetch_internal_transactions: true)
+
+      :ok = Chain.remove_nonconsensus_blocks_from_pending_ops()
+
+      assert Repo.get(PendingBlockOperation, block.hash)
+      assert is_nil(Repo.get(PendingBlockOperation, nonconsensus_block.hash))
+    end
+
+    test "removes pending ops for nonconsensus blocks by block hashes" do
+      block = insert(:block)
+      insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
+
+      nonconsensus_block = insert(:block, consensus: false)
+      insert(:pending_block_operation, block: nonconsensus_block, fetch_internal_transactions: true)
+
+      nonconsensus_block1 = insert(:block, consensus: false)
+      insert(:pending_block_operation, block: nonconsensus_block1, fetch_internal_transactions: true)
+
+      :ok = Chain.remove_nonconsensus_blocks_from_pending_ops([nonconsensus_block1.hash])
+
+      assert Repo.get(PendingBlockOperation, block.hash)
+      assert Repo.get(PendingBlockOperation, nonconsensus_block.hash)
+      assert is_nil(Repo.get(PendingBlockOperation, nonconsensus_block1.hash))
+    end
+  end
 
   describe "count_addresses_with_balance_from_cache/0" do
     test "returns the number of addresses with fetched_coin_balance > 0" do
@@ -220,14 +253,26 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction1, index: 1, address: address)
+      insert(:log,
+        block: transaction1.block,
+        block_number: transaction1.block_number,
+        transaction: transaction1,
+        index: 1,
+        address: address
+      )
 
       transaction2 =
         :transaction
         |> insert(from_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction2, index: 2, address: address)
+      insert(:log,
+        block: transaction2.block,
+        block_number: transaction2.block_number,
+        transaction: transaction2,
+        index: 2,
+        address: address
+      )
 
       assert Enum.count(Chain.address_to_logs(address_hash)) == 2
     end
@@ -240,10 +285,18 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      log1 = insert(:log, transaction: transaction, index: 1, address: address)
+      log1 = insert(:log, transaction: transaction, index: 1, address: address, block_number: transaction.block_number)
 
       2..51
-      |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index, address: address) end)
+      |> Enum.map(fn index ->
+        insert(:log,
+          block: transaction.block,
+          transaction: transaction,
+          index: index,
+          address: address,
+          block_number: transaction.block_number
+        )
+      end)
       |> Enum.map(& &1.index)
 
       paging_options1 = %PagingOptions{page_size: 1}
@@ -263,14 +316,27 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction1, index: 1, address: address)
+      insert(:log,
+        block: transaction1.block,
+        transaction: transaction1,
+        index: 1,
+        address: address,
+        block_number: transaction1.block_number
+      )
 
       transaction2 =
         :transaction
         |> insert(from_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction2, index: 2, address: address, first_topic: "test")
+      insert(:log,
+        block: transaction2.block,
+        transaction: transaction2,
+        index: 2,
+        address: address,
+        first_topic: "test",
+        block_number: transaction2.block_number
+      )
 
       [found_log] = Chain.address_to_logs(address_hash, topic: "test")
 
@@ -285,14 +351,27 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction1, index: 1, address: address, fourth_topic: "test")
+      insert(:log,
+        block: transaction1.block,
+        block_number: transaction1.block_number,
+        transaction: transaction1,
+        index: 1,
+        address: address,
+        fourth_topic: "test"
+      )
 
       transaction2 =
         :transaction
         |> insert(from_address: address)
         |> with_block()
 
-      insert(:log, transaction: transaction2, index: 2, address: address)
+      insert(:log,
+        block: transaction2.block,
+        block_number: transaction2.block.number,
+        transaction: transaction2,
+        index: 2,
+        address: address
+      )
 
       [found_log] = Chain.address_to_logs(address_hash, topic: "test")
 
@@ -393,6 +472,8 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -534,10 +615,39 @@ defmodule Explorer.ChainTest do
 
       :transaction
       |> insert(from_address: block.miner)
-      |> with_block()
+      |> with_block(block)
       |> Repo.preload(:token_transfers)
 
       assert [_, {_, _}] = Chain.address_to_transactions_with_rewards(block.miner.hash, direction: :from)
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+    end
+
+    test "with transactions if rewards are not in the range of blocks" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
+
+      block = insert(:block)
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+      :transaction
+      |> insert(from_address: block.miner)
+      |> with_block()
+      |> Repo.preload(:token_transfers)
+
+      assert [_] = Chain.address_to_transactions_with_rewards(block.miner.hash, direction: :from)
 
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
     end
@@ -806,7 +916,7 @@ defmodule Explorer.ChainTest do
 
       :transaction
       |> insert()
-      |> with_block(block, internal_transactions_indexed_at: DateTime.utc_now())
+      |> with_block(block)
 
       assert Chain.finished_indexing?()
     end
@@ -821,6 +931,8 @@ defmodule Explorer.ChainTest do
       :transaction
       |> insert()
       |> with_block(block)
+
+      insert(:pending_block_operation, block: block, fetch_internal_transactions: true)
 
       refute Chain.finished_indexing?()
     end
@@ -919,6 +1031,8 @@ defmodule Explorer.ChainTest do
         transaction: transaction,
         index: 0,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -927,6 +1041,8 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           index: index,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index,
           transaction_index: transaction.index
         )
       end)
@@ -1281,11 +1397,13 @@ defmodule Explorer.ChainTest do
             output: "0x",
             value: 0
           }
-        ]
+        ],
+        with: :blockless_changeset
       },
       logs: %{
         params: [
           %{
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
@@ -1343,6 +1461,7 @@ defmodule Explorer.ChainTest do
       token_transfers: %{
         params: [
           %{
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             amount: Decimal.new(1_000_000_000_000_000_000),
             block_number: 37,
             log_index: 0,
@@ -1492,9 +1611,7 @@ defmodule Explorer.ChainTest do
                       bytes:
                         <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
                           101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                    },
-                    # because there are successful, non-contract-creation token transfer
-                    internal_transactions_indexed_at: %DateTime{}
+                    }
                   }
                 ],
                 tokens: [
@@ -1768,6 +1885,8 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           to_address: address,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 1,
           transaction_index: transaction.index
         )
 
@@ -1777,6 +1896,8 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           to_address: address,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 2,
           transaction_index: transaction.index
         )
 
@@ -1803,6 +1924,8 @@ defmodule Explorer.ChainTest do
         to_address: address,
         index: 0,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -1811,6 +1934,8 @@ defmodule Explorer.ChainTest do
         to_address: address,
         index: 1,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 1,
         transaction_index: transaction.index
       )
 
@@ -1858,6 +1983,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 1,
           block_number: pending_transaction.block_number,
+          block_hash: pending_transaction.block_hash,
+          block_index: 1,
           transaction_index: pending_transaction.index
         )
 
@@ -1868,6 +1995,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 2,
           block_number: pending_transaction.block_number,
+          block_hash: pending_transaction.block_hash,
+          block_index: 2,
           transaction_index: pending_transaction.index
         )
 
@@ -1885,6 +2014,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 1,
           block_number: first_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 1,
           transaction_index: first_a_transaction.index
         )
 
@@ -1895,6 +2026,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 2,
           block_number: first_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 2,
           transaction_index: first_a_transaction.index
         )
 
@@ -1910,6 +2043,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 1,
           block_number: second_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 4,
           transaction_index: second_a_transaction.index
         )
 
@@ -1920,6 +2055,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 2,
           block_number: second_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 5,
           transaction_index: second_a_transaction.index
         )
 
@@ -1937,6 +2074,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 1,
           block_number: first_b_transaction.block_number,
+          block_hash: b_block.hash,
+          block_index: 1,
           transaction_index: first_b_transaction.index
         )
 
@@ -1947,6 +2086,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 2,
           block_number: first_b_transaction.block_number,
+          block_hash: b_block.hash,
+          block_index: 2,
           transaction_index: first_b_transaction.index
         )
 
@@ -1972,10 +2113,14 @@ defmodule Explorer.ChainTest do
 
       pending_transaction = insert(:transaction)
 
+      old_block = insert(:block, consensus: false)
+
       insert(
         :internal_transaction,
         transaction: pending_transaction,
         to_address: address,
+        block_hash: old_block.hash,
+        block_index: 1,
         index: 1
       )
 
@@ -1983,6 +2128,8 @@ defmodule Explorer.ChainTest do
         :internal_transaction,
         transaction: pending_transaction,
         to_address: address,
+        block_hash: old_block.hash,
+        block_index: 2,
         index: 2
       )
 
@@ -2000,6 +2147,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 1,
           block_number: first_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 1,
           transaction_index: first_a_transaction.index
         )
 
@@ -2010,6 +2159,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 2,
           block_number: first_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 2,
           transaction_index: first_a_transaction.index
         )
 
@@ -2025,6 +2176,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 1,
           block_number: second_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 4,
           transaction_index: second_a_transaction.index
         )
 
@@ -2035,6 +2188,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 2,
           block_number: second_a_transaction.block_number,
+          block_hash: a_block.hash,
+          block_index: 5,
           transaction_index: second_a_transaction.index
         )
 
@@ -2052,6 +2207,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 1,
           block_number: first_b_transaction.block_number,
+          block_hash: b_block.hash,
+          block_index: 1,
           transaction_index: first_b_transaction.index
         )
 
@@ -2062,6 +2219,8 @@ defmodule Explorer.ChainTest do
           to_address: address,
           index: 2,
           block_number: first_b_transaction.block_number,
+          block_hash: b_block.hash,
+          block_index: 2,
           transaction_index: first_b_transaction.index
         )
 
@@ -2129,6 +2288,8 @@ defmodule Explorer.ChainTest do
         to_address: address,
         transaction: transaction,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -2149,6 +2310,8 @@ defmodule Explorer.ChainTest do
           index: 0,
           from_address: address,
           transaction: transaction,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           block_number: transaction.block_number,
           transaction_index: transaction.index
         )
@@ -2212,6 +2375,8 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -2219,13 +2384,16 @@ defmodule Explorer.ChainTest do
         insert(:internal_transaction,
           transaction: transaction,
           index: 1,
+          block_hash: transaction.block_hash,
+          block_index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index
         )
 
       results = [internal_transaction | _] = Chain.transaction_to_internal_transactions(transaction.hash)
 
-      assert 2 == length(results)
+      # excluding of internal transactions with type=call and index=0
+      assert 1 == length(results)
 
       assert Enum.all?(
                results,
@@ -2248,6 +2416,8 @@ defmodule Explorer.ChainTest do
         transaction: transaction,
         index: 0,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -2286,6 +2456,8 @@ defmodule Explorer.ChainTest do
         transaction: transaction,
         index: 0,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -2305,6 +2477,8 @@ defmodule Explorer.ChainTest do
           index: 0,
           transaction: transaction,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -2325,6 +2499,8 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           type: :reward,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -2346,6 +2522,8 @@ defmodule Explorer.ChainTest do
           gas: nil,
           type: :selfdestruct,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -2360,11 +2538,13 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
+      %InternalTransaction{transaction_hash: _, index: _} =
         insert(:internal_transaction,
           transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -2373,6 +2553,8 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           index: 1,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 1,
           transaction_index: transaction.index
         )
 
@@ -2381,7 +2563,8 @@ defmodule Explorer.ChainTest do
         |> Chain.transaction_to_internal_transactions()
         |> Enum.map(&{&1.transaction_hash, &1.index})
 
-      assert [{first_transaction_hash, first_index}, {second_transaction_hash, second_index}] == result
+      # excluding of internal transactions with type=call and index=0
+      assert [{second_transaction_hash, second_index}] == result
     end
 
     test "pages by index" do
@@ -2390,11 +2573,13 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
+      %InternalTransaction{transaction_hash: _, index: _} =
         insert(:internal_transaction,
           transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -2403,22 +2588,34 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           index: 1,
           block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 1,
           transaction_index: transaction.index
         )
 
-      assert [{first_transaction_hash, first_index}, {second_transaction_hash, second_index}] ==
+      %InternalTransaction{transaction_hash: third_transaction_hash, index: third_index} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 2,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: 2,
+          transaction_index: transaction.index
+        )
+
+      assert [{second_transaction_hash, second_index}, {third_transaction_hash, third_index}] ==
                transaction.hash
                |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {-1}, page_size: 2})
                |> Enum.map(&{&1.transaction_hash, &1.index})
 
-      assert [{first_transaction_hash, first_index}] ==
+      assert [{second_transaction_hash, second_index}] ==
                transaction.hash
                |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {-1}, page_size: 1})
                |> Enum.map(&{&1.transaction_hash, &1.index})
 
-      assert [{second_transaction_hash, second_index}] ==
+      assert [{third_transaction_hash, third_index}] ==
                transaction.hash
-               |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {0}, page_size: 2})
+               |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {1}, page_size: 2})
                |> Enum.map(&{&1.transaction_hash, &1.index})
     end
   end
@@ -2436,7 +2633,8 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      %Log{transaction_hash: transaction_hash, index: index} = insert(:log, transaction: transaction)
+      %Log{transaction_hash: transaction_hash, index: index} =
+        insert(:log, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
 
       assert [%Log{transaction_hash: ^transaction_hash, index: ^index}] = Chain.transaction_to_logs(transaction.hash)
     end
@@ -2447,11 +2645,24 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      log = insert(:log, transaction: transaction, index: 1)
+      log =
+        insert(:log,
+          transaction: transaction,
+          index: 1,
+          block: transaction.block,
+          block_number: transaction.block_number
+        )
 
       second_page_indexes =
         2..51
-        |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index) end)
+        |> Enum.map(fn index ->
+          insert(:log,
+            transaction: transaction,
+            index: index,
+            block: transaction.block,
+            block_number: transaction.block_number
+          )
+        end)
         |> Enum.map(& &1.index)
 
       assert second_page_indexes ==
@@ -2466,7 +2677,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      insert(:log, transaction: transaction)
+      insert(:log, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
 
       assert [%Log{address: %Address{}, transaction: %Transaction{}}] =
                Chain.transaction_to_logs(
@@ -2500,7 +2711,11 @@ defmodule Explorer.ChainTest do
         |> with_block()
 
       %TokenTransfer{transaction_hash: transaction_hash, log_index: log_index} =
-        insert(:token_transfer, transaction: transaction)
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number
+        )
 
       assert [%TokenTransfer{transaction_hash: ^transaction_hash, log_index: ^log_index}] =
                Chain.transaction_to_token_transfers(transaction.hash)
@@ -2512,7 +2727,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      insert(:token_transfer, transaction: transaction)
+      insert(:token_transfer, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
 
       assert [%TokenTransfer{token: %Token{}, transaction: %Transaction{}}] =
                Chain.transaction_to_token_transfers(
@@ -2873,6 +3088,8 @@ defmodule Explorer.ChainTest do
         created_contract_address: created_contract_address,
         created_contract_code: smart_contract_bytecode,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -2973,6 +3190,8 @@ defmodule Explorer.ChainTest do
         created_contract_address: created_contract_address,
         created_contract_code: smart_contract_bytecode,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -3179,6 +3398,8 @@ defmodule Explorer.ChainTest do
         index: 0,
         transaction: transaction,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -3225,6 +3446,8 @@ defmodule Explorer.ChainTest do
         index: 0,
         transaction: transaction,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -3265,6 +3488,8 @@ defmodule Explorer.ChainTest do
         index: 0,
         transaction: transaction,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -3334,6 +3559,8 @@ defmodule Explorer.ChainTest do
         index: 0,
         transaction: from_internal_transaction_transaction,
         block_number: from_internal_transaction_transaction.block_number,
+        block_hash: from_internal_transaction_transaction.block_hash,
+        block_index: 0,
         transaction_index: from_internal_transaction_transaction.index
       )
 
@@ -3352,6 +3579,8 @@ defmodule Explorer.ChainTest do
         to_address: miner,
         transaction: to_internal_transaction_transaction,
         block_number: to_internal_transaction_transaction.block_number,
+        block_hash: to_internal_transaction_transaction.block_hash,
+        block_index: 0,
         transaction_index: to_internal_transaction_transaction.index
       )
 
@@ -3408,6 +3637,8 @@ defmodule Explorer.ChainTest do
         index: 0,
         transaction: from_internal_transaction_transaction,
         block_number: from_internal_transaction_transaction.block_number,
+        block_hash: from_internal_transaction_transaction.block_hash,
+        block_index: 0,
         transaction_index: from_internal_transaction_transaction.index
       )
 
@@ -3422,6 +3653,8 @@ defmodule Explorer.ChainTest do
         index: 0,
         transaction: to_internal_transaction_transaction,
         block_number: to_internal_transaction_transaction.block_number,
+        block_hash: to_internal_transaction_transaction.block_hash,
+        block_index: 1,
         transaction_index: to_internal_transaction_transaction.index
       )
 
@@ -4161,6 +4394,8 @@ defmodule Explorer.ChainTest do
         index: 0,
         created_contract_address: created_contract_address,
         block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0,
         transaction_index: transaction.index,
         input: input
       )
