@@ -437,7 +437,8 @@ defmodule EthereumJSONRPC.Block do
   end
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice number size totalDifficulty) and not is_nil(quantity) do
+       when key in ~w(difficulty gasLimit gasUsed minimumGasPrice number size totalDifficulty paidFees) and
+              not is_nil(quantity) do
     {key, quantity_to_integer(quantity)}
   end
 
@@ -451,7 +452,7 @@ defmodule EthereumJSONRPC.Block do
   # hash format
   defp entry_to_elixir({key, _} = entry)
        when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash receiptsRoot sealFields sha3Uncles
-                     signature stateRoot step transactionsRoot uncles),
+                     signature stateRoot step transactionsRoot uncles bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningHeader bitcoinMergedMiningMerkleProof hashForMergedMining),
        do: entry
 
   defp entry_to_elixir({"timestamp" = key, timestamp}) do
