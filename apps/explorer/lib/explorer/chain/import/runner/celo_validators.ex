@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidators do
     uniq_changes_list =
       changes_list
       |> Enum.sort_by(& &1.address)
-      |> Enum.dedup_by(& &1.address)
+      |> Enum.uniq_by(& &1.address)
 
     {:ok, _} =
       Import.insert_changes_list(

@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Import.Runner.CeloVoters do
     uniq_changes_list =
       changes_list
       |> Enum.sort_by(&{&1.group_address_hash, &1.voter_address_hash})
-      |> Enum.dedup_by(&{&1.group_address_hash, &1.voter_address_hash})
+      |> Enum.uniq_by(&{&1.group_address_hash, &1.voter_address_hash})
 
     Import.insert_changes_list(
       repo,

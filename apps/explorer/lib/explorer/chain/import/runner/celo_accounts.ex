@@ -63,11 +63,15 @@ defmodule Explorer.Chain.Import.Runner.CeloAccounts do
   end
 
   defp handle_dedup(lst) do
-    Enum.reduce(lst, fn %{attestations_requested: req, attestations_fulfilled: full}, acc ->
+    res = Enum.reduce(lst, fn %{attestations_requested: req, attestations_fulfilled: full}, acc ->
       acc
       |> Map.put(:attestations_requested, req + acc.attestations_requested)
       |> Map.put(:attestations_fulfilled, full + acc.attestations_fulfilled)
     end)
+    if res.attestations_fulfilled != 0 do
+      IO.inspect(%{result: res, orig: lst})
+    end
+    res
   end
 
   @spec insert(Repo.t(), [map()], Util.insert_options()) :: {:ok, [CeloAccount.t()]} | {:error, [Changeset.t()]}

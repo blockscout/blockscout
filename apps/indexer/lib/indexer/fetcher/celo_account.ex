@@ -140,14 +140,14 @@ defmodule Indexer.Fetcher.CeloAccount do
 
     case Chain.import(import_params) do
       {:ok, _} ->
-        :ok
+        failed
 
       {:error, reason} ->
         Logger.debug(fn -> ["failed to import Celo account data: ", inspect(reason)] end,
           error_count: Enum.count(accounts)
         )
-    end
 
-    failed
+        accounts
+    end
   end
 end
