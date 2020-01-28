@@ -33,12 +33,18 @@ defmodule Indexer.Fetcher.CeloAccount do
   end
 
   def entry(%{address: address}, requested, fulfilled) do
-    %{
+    res = %{
       address: address,
       attestations_fulfilled: Enum.count(Enum.filter(fulfilled, fn a -> a.address == address end)),
       attestations_requested: Enum.count(Enum.filter(requested, fn a -> a.address == address end)),
       retries_count: 0
     }
+
+    if res.attestations_requested != 0 do
+      IO.inspect(%{address: address, full: res.attestations_fulfilled, req: res.attestations_requested})
+    end
+
+    res
   end
 
   def entry(%{voter: address}, _, _) do
@@ -78,20 +84,24 @@ defmodule Indexer.Fetcher.CeloAccount do
   end
 
   defp voters_to_accounts(lst) do
-    Enum.reduce(lst, [], fn
-      %{voter: address}, acc ->
-        voters =
-          address
-          |> Chain.get_celo_voters()
-          |> Enum.map(fn a ->
-            entry(%{address: "0x" <> Base.encode16(a.voter_address_hash.bytes, lower: true)}, [], [])
-          end)
+    try do
+      Enum.reduce(lst, [], fn
+        %{voter: address}, acc ->
+          voters =
+            address
+            |> Chain.get_celo_voters()
+            |> Enum.map(fn a ->
+              entry(%{address: "0x" <> Base.encode16(a.voter_address_hash.bytes, lower: true)}, [], [])
+            end)
 
-        voters ++ acc
+          voters ++ acc
 
-      elem, acc ->
-        [elem | acc]
-    end)
+        elem, acc ->
+          [elem | acc]
+      end)
+    rescue
+      _ -> lst
+    end
   end
 
   defp fetch_from_blockchain(addresses) do
