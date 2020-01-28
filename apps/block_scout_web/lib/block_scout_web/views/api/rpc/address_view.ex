@@ -121,7 +121,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     }
   end
 
-  defp prepare_token_transfer(token_transfer) do
+  defp prepare_common_token_transfer(token_transfer) do
     %{
       "blockNumber" => to_string(token_transfer.block_number),
       "timeStamp" => to_string(DateTime.to_unix(token_transfer.block_timestamp)),
@@ -132,7 +132,6 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "contractAddress" => to_string(token_transfer.token_contract_address_hash),
       "to" => to_string(token_transfer.to_address_hash),
       "logIndex" => to_string(token_transfer.token_log_index),
-      "value" => get_token_value(token_transfer),
       "tokenName" => token_transfer.token_name,
       "tokenSymbol" => token_transfer.token_symbol,
       "tokenDecimal" => to_string(token_transfer.token_decimals),
@@ -146,12 +145,20 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     }
   end
 
-  defp get_token_value(%{token_type: "ERC-721"} = token_transfer) do
-    to_string(token_transfer.token_id)
+  defp prepare_token_transfer(%{token_type: "ERC-721"} = token_transfer) do
+    token_transfer
+    |> prepare_common_token_transfer()
+    |> Map.put_new(:tokenID, token_transfer.token_id)
   end
 
-  defp get_token_value(token_transfer) do
-    to_string(token_transfer.amount)
+  defp prepare_token_transfer(%{token_type: "ERC-20"} = token_transfer) do
+    token_transfer
+    |> prepare_common_token_transfer()
+    |> Map.put_new(:value, to_string(token_transfer.amount))
+  end
+
+  defp prepare_token_transfer(token_transfer) do
+    prepare_common_token_transfer(token_transfer)
   end
 
   defp prepare_block(block) do
