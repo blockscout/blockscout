@@ -1,0 +1,84 @@
+// general
+$primary: #3a6ea7;
+$secondary: #558ac3;
+$tertiary: #3a6ea7;
+$additional-font: #bdbdff;
+
+// footer
+$footer-background-color: $primary;
+$footer-title-color: #fff;
+$footer-text-color: $additional-font;
+$footer-item-disc-color: $tertiary;
+$footer-social-icon-color: #3a6ea7;
+
+// dashboard
+$dashboard-line-color-price: $secondary;
+$dashboard-line-color-market: $tertiary;
+$dashboard-banner-gradient-start: #7ba4d1;
+$dashboard-banner-gradient-end: #3a6ea7;
+
+$dashboard-banner-chart-legend-label-color: $additional-font;
+$dashboard-stats-item-label-color: $additional-font;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
+
+$dashboard-stats-item-border-color: $secondary; // stat border
+$dashboard-banner-network-plain-container-background-color: #2e5884; // stats bg
+
+// navigation
+$header-icon-border-color-hover: $tertiary; // top border on hover
+$header-icon-color-hover: $tertiary; // nav icon on hover
+
+// buttons
+$btn-line-bg: #fff; // button bg
+$btn-line-color: $tertiary; // button border and font color && hover bg color
+$btn-copy-color: $tertiary; // btn copy
+$btn-qr-color: $tertiary; // btn qr-code
+$btn-address-card-icon-color: $tertiary; // btn address color
+$btn-contract-color: $tertiary;
+
+//links & tile
+$tile-body-a-color: $tertiary;
+$tile-type-block-color: $tertiary;
+$tile-type-progress-bar-color: $tertiary;
+a.tile-title { color: $tertiary !important; }
+
+// card
+$card-background-1: $tertiary;
+$card-tab-active: $tertiary;
+
+// ETC theme's idiosyncrasies
+.layout-container {
+  .navbar {
+    box-shadow: 0 0 30px 0 rgba(21, 53, 80, 0.12);
+  }
+
+  .dropdown-item:hover,
+  .dropdown-item.active,
+  .dropdown-item:focus {
+    background-color: rgba($tertiary, .1) !important;
+    color: $tertiary !important;
+  }
+
+  .dashboard-banner-container {
+    background-image: linear-gradient(
+      to bottom,
+      $dashboard-banner-gradient-start,
+      $dashboard-banner-gradient-end
+    );
+  }
+
+  .footer-logo {
+    filter: brightness(0) invert(1);
+  }
+}
+
+// Badges
+$badge-neutral-color: $tertiary;
+$badge-neutral-background-color: rgba($tertiary, .1);
+$api-text-monospace-color: $tertiary;
+
+// Dark theme
+$dark-primary: #8588ff;
+$dark-secondary: #4ad7a7;
+$dark-primary-alternate: #5b5ed8;
