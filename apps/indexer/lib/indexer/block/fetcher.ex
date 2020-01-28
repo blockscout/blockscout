@@ -287,10 +287,6 @@ defmodule Indexer.Block.Fetcher do
 
       accounts = Enum.uniq(celo_accounts ++ attestations_fulfilled ++ attestations_requested)
 
-      if attestations_requested != [] do
-        IO.inspect(%{requested: attestations_requested, fulfilled: attestations_fulfilled, accounts: accounts})
-      end
-
       async_import_celo_accounts(%{
         celo_accounts: %{params: accounts, requested: attestations_requested, fulfilled: attestations_fulfilled}
       })

@@ -33,18 +33,12 @@ defmodule Indexer.Fetcher.CeloAccount do
   end
 
   def entry(%{address: address}, requested, fulfilled) do
-    res = %{
+    %{
       address: address,
       attestations_fulfilled: Enum.count(Enum.filter(fulfilled, fn a -> a.address == address end)),
       attestations_requested: Enum.count(Enum.filter(requested, fn a -> a.address == address end)),
       retries_count: 0
     }
-
-    if res.attestations_requested != 0 do
-      IO.inspect(%{address: address, full: res.attestations_fulfilled, req: res.attestations_requested})
-    end
-
-    res
   end
 
   def entry(%{voter: address}, _, _) do
