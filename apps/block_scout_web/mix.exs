@@ -60,13 +60,13 @@ defmodule BlockScoutWeb.Mixfile do
   defp deps do
     [
       # GraphQL toolkit
-      {:absinthe, "~> 1.4"},
+      {:absinthe, "~> 1.5.0-rc.2"},
       # Integrates Absinthe subscriptions with Phoenix
-      {:absinthe_phoenix, git: "https://github.com/ayrat555/absinthe_phoenix.git", branch: "ab-update-plug"},
+      {:absinthe_phoenix, "~> 1.5.0-rc.0"},
       # Plug support for Absinthe
-      {:absinthe_plug, git: "https://github.com/ayrat555/absinthe_plug.git", branch: "ab-enable-default-query"},
+      {:absinthe_plug, "~> 1.5.0-rc.1"},
       # Absinthe support for the Relay framework
-      {:absinthe_relay, "~> 1.4"},
+      {:absinthe_relay, "~> 1.5.0-rc.0"},
       {:bypass, "~> 1.0", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 2.0"},
@@ -76,7 +76,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Need until https://github.com/absinthe-graphql/absinthe_relay/pull/125 is released, then can be removed
       # The current `absinthe_relay` is compatible though as shown from that PR
-      {:ecto, "~> 3.0", override: true},
+      {:ecto, "~> 3.3", override: true},
       {:ex_cldr, "~> 2.7"},
       {:ex_cldr_numbers, "~> 2.6"},
       {:ex_cldr_units, "~> 2.5"},
