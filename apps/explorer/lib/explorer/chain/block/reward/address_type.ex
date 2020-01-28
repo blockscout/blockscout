@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Block.Reward.AddressType do
   Block reward address types
   """
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @typedoc """
    * `:emission_funds`
