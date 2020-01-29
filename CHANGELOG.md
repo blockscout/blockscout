@@ -3,8 +3,8 @@
 ### Features
 
 ### Fixes
-
-- [#2897]( https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
+- [#2988](https://github.com/poanetwork/blockscout/pull/2988) - Fix web manifest accessibility
+- [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
 
 ### Chore
 
