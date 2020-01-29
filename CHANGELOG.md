@@ -3,8 +3,8 @@
 ### Features
 
 ### Fixes
-
-- [#2897]( https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
+- [#2990](https://github.com/poanetwork/blockscout/pull/2990) - Fix import of Parity spec file
+- [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
 
 ### Chore
 
