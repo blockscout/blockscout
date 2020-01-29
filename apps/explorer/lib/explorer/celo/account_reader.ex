@@ -214,13 +214,10 @@ defmodule Explorer.Celo.AccountReader do
   end
 
   defp fetch_validators(bn) do
-    call_methods(
-      [
-        {:election, "getCurrentValidatorSigners", []},
-        {:election, "getParentSealBitmap", [bn]}
-      ],
-      bn
-    )
+    call_methods([
+      {:election, "getCurrentValidatorSigners", [], bn - 1},
+      {:election, "getParentSealBitmap", [bn], bn}
+    ])
   end
 
   defp fetch_withdrawal_data(address) do
@@ -243,22 +240,9 @@ defmodule Explorer.Celo.AccountReader do
     |> Enum.map(fn %{contract_address: {:ok, address}} = req -> Map.put(req, :contract_address, address) end)
     |> Reader.query_contracts(contract_abi)
     |> Enum.zip(methods)
-    |> Enum.into(%{}, fn {response, {_, function_name, _}} ->
-      {function_name, response}
-    end)
-  end
-
-  defp call_methods(methods, bn) do
-    contract_abi = AbiHandler.get_abi()
-
-    methods
-    |> Enum.map(fn a -> format_request(a, bn) end)
-    |> Enum.filter(fn req -> req.contract_address != :error end)
-    |> Enum.map(fn %{contract_address: {:ok, address}} = req -> Map.put(req, :contract_address, address) end)
-    |> Reader.query_contracts(contract_abi)
-    |> Enum.zip(methods)
-    |> Enum.into(%{}, fn {response, {_, function_name, _}} ->
-      {function_name, response}
+    |> Enum.into(%{}, fn
+      {response, {_, function_name, _}} -> {function_name, response}
+      {response, {_, function_name, _, _}} -> {function_name, response}
     end)
   end
 
@@ -270,7 +254,7 @@ defmodule Explorer.Celo.AccountReader do
     }
   end
 
-  defp format_request({contract_name, function_name, params}, bn) do
+  defp format_request({contract_name, function_name, params, bn}) do
     %{
       contract_address: contract(contract_name),
       function_name: function_name,
