@@ -16,6 +16,7 @@ defmodule Explorer.Chain.Address do
     CeloSigners,
     CeloValidator,
     CeloValidatorGroup,
+    CeloVoters,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -96,6 +97,7 @@ defmodule Explorer.Chain.Address do
     has_one(:celo_delegator, CeloSigners, foreign_key: :signer)
     has_many(:celo_signers, CeloSigners, foreign_key: :address)
     has_many(:celo_members, CeloValidator, foreign_key: :group_address_hash)
+    has_many(:celo_voters, CeloVoters, foreign_key: :group_address_hash)
 
     has_one(
       :contracts_creation_internal_transaction,

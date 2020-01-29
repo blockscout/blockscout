@@ -123,6 +123,23 @@
        </dd>
       </dl>
       <% end %>
+      <%= if @address.celo_voters != nil and Enum.count(@address.celo_voters) > 0 do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Group voters</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All voters of this group">
+       <ul>
+       <%= for member <- @address.celo_voters do %>
+         <li><%= format_according_to_decimals(member.total.value, Decimal.new(18)) %> cGLD:
+         <%= if member.group_address != nil do
+             member |> BlockScoutWeb.AddressView.address_partial_selector(:voters, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
+            end %></li>
+       <% end %>
+       </ul>
+       </span>
+       </dd>
+      </dl>
+      <% end %>
     </div>
   </div>
 </section>
