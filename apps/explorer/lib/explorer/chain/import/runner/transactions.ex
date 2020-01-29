@@ -115,6 +115,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           gas_currency_hash: fragment("EXCLUDED.gas_currency_hash"),
           gas_fee_recipient_hash: fragment("EXCLUDED.gas_fee_recipient_hash"),
           gas_used: fragment("EXCLUDED.gas_used"),
+          gateway_fee: fragment("EXCLUDED.gateway_fee"),
           index: fragment("EXCLUDED.index"),
           internal_transactions_indexed_at: fragment("EXCLUDED.internal_transactions_indexed_at"),
           input: fragment("EXCLUDED.input"),
@@ -132,7 +133,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       ],
       where:
         fragment(
-          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_currency_hash, EXCLUDED.gas_fee_recipient_hash, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.internal_transactions_indexed_at, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code_indexed_at, EXCLUDED.cumulative_gas_used, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_currency_hash, EXCLUDED.gas_fee_recipient_hash, EXCLUDED.gas_used, EXCLUDED.gateway_fee, EXCLUDED.index, EXCLUDED.internal_transactions_indexed_at, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           transaction.block_hash,
           transaction.block_number,
           transaction.created_contract_address_hash,
@@ -145,6 +146,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           transaction.gas_currency_hash,
           transaction.gas_fee_recipient_hash,
           transaction.gas_used,
+          transaction.gateway_fee,
           transaction.index,
           transaction.internal_transactions_indexed_at,
           transaction.input,

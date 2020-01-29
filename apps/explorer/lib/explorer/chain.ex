@@ -1798,6 +1798,7 @@ defmodule Explorer.Chain do
             | :gas_price
             | :gas_currency_hash
             | :gas_fee_recipient_hash
+            | :gateway_fee
             | :hash
             | :index
             | :input
@@ -1834,6 +1835,7 @@ defmodule Explorer.Chain do
             | :gas_price
             | :gas_currency_hash
             | :gas_fee_recipient_hash
+            | :gateway_fee
             | :hash
             | :index
             | :input
@@ -1871,6 +1873,7 @@ defmodule Explorer.Chain do
             | :gas_price
             | :gas_currency_hash
             | :gas_fee_recipient_hash
+            | :gateway_fee
             | :hash
             | :index
             | :input
@@ -1905,6 +1908,7 @@ defmodule Explorer.Chain do
             | :gas_price
             | :gas_currency_hash
             | :gas_fee_recipient_hash
+            | :gateway_fee
             | :hash
             | :index
             | :input

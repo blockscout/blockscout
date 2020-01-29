@@ -121,6 +121,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           gas_currency_hash: fragment("EXCLUDED.gas_currency_hash"),
           gas_fee_recipient_hash: fragment("EXCLUDED.gas_fee_recipient_hash"),
           gas_used: fragment("EXCLUDED.gas_used"),
+          gateway_fee: fragment("EXCLUDED.gateway_fee"),
           # Don't update `index` as it is part of the composite primary key and used for the conflict target
           init: fragment("EXCLUDED.init"),
           input: fragment("EXCLUDED.input"),
@@ -138,7 +139,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
       where:
         fragment(
-          "(EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_currency_hash, EXCLUDED.gas_fee_recipient_hash, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_currency_hash, EXCLUDED.gas_fee_recipient_hash, EXCLUDED.gas_used, EXCLUDED.gateway_fee, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           internal_transaction.call_type,
           internal_transaction.created_contract_address_hash,
           internal_transaction.created_contract_code,
@@ -148,6 +149,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           internal_transaction.gas_currency_hash,
           internal_transaction.gas_fee_recipient_hash,
           internal_transaction.gas_used,
+          internal_transaction.gateway_fee,
           internal_transaction.init,
           internal_transaction.input,
           internal_transaction.output,

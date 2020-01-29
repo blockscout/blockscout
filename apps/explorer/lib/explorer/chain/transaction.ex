@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Transaction do
 
   @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_used index internal_transactions_indexed_at created_contract_code_indexed_at status
-                     gas_currency_hash gas_fee_recipient_hash to_address_hash)a
+                     gas_currency_hash gas_fee_recipient_hash gateway_fee to_address_hash)a
 
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
@@ -99,7 +99,8 @@ defmodule Explorer.Chain.Transaction do
    * `gas` - Gas provided by the sender
    * `gas_price` - How much the sender is willing to pay for `gas`
    * `gas_currency_hash` - Address of the token used for the transaction
-   * `gas_fee_recipient_hash` - Address of the recipient of the transaction fee
+   * `gas_fee_recipient_hash` - Address of the recipient of the gateway fee
+   * `gateway_fee` - Gateway fee
    * `gas_used` - the gas used for just `transaction`.  `nil` when transaction is pending or has only been collated into
      one of the `uncles` in one of the `forks`.
    * `hash` - hash of contents of this transaction
@@ -155,6 +156,7 @@ defmodule Explorer.Chain.Transaction do
           gas_fee_recipient: %Ecto.Association.NotLoaded{} | Address.t() | nil,
           gas_fee_recipient_hash: Hash.Address.t() | nil,
           gas_used: Gas.t() | nil,
+          gateway_fee: Wei.t() | nil,
           hash: Hash.t(),
           index: transaction_index | nil,
           input: Data.t(),
@@ -182,6 +184,7 @@ defmodule Explorer.Chain.Transaction do
              :gas_currency_hash,
              :gas_fee_recipient_hash,
              :gas_used,
+             :gateway_fee,
              :index,
              :internal_transactions_indexed_at,
              :created_contract_code_indexed_at,
@@ -203,6 +206,7 @@ defmodule Explorer.Chain.Transaction do
     field(:gas, :decimal)
     field(:gas_price, Wei)
     field(:gas_used, :decimal)
+    field(:gateway_fee, Wei)
     field(:index, :integer)
     field(:internal_transactions_indexed_at, :utc_datetime_usec)
     field(:created_contract_code_indexed_at, :utc_datetime_usec)
@@ -213,8 +217,6 @@ defmodule Explorer.Chain.Transaction do
     field(:status, Status)
     field(:v, :decimal)
     field(:value, Wei)
-    #    field(:gas_currency_hash, Hash.Address)
-    #    field(:gas_fee_recipient_hash, Hash.Address)
 
     belongs_to(:gas_currency, Address, foreign_key: :gas_currency_hash, references: :hash, type: Hash.Address)
     belongs_to(:gas_fee_recipient, Address, foreign_key: :gas_fee_recipient_hash, references: :hash, type: Hash.Address)
