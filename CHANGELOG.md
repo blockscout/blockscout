@@ -3,8 +3,8 @@
 ### Features
 
 ### Fixes
-
-- [#2897]( https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
+- [#2989](https://github.com/poanetwork/blockscout/pull/2989) - Introduce API_PATH env var
+- [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
 
 ### Chore
 
