@@ -78,24 +78,22 @@ defmodule Indexer.Fetcher.CeloAccount do
   end
 
   defp voters_to_accounts(lst) do
-    try do
-      Enum.reduce(lst, [], fn
-        %{voter: address}, acc ->
-          voters =
-            address
-            |> Chain.get_celo_voters()
-            |> Enum.map(fn a ->
-              entry(%{address: "0x" <> Base.encode16(a.voter_address_hash.bytes, lower: true)}, [], [])
-            end)
+    Enum.reduce(lst, [], fn
+      %{voter: address}, acc ->
+        voters =
+          address
+          |> Chain.get_celo_voters()
+          |> Enum.map(fn a ->
+            entry(%{address: "0x" <> Base.encode16(a.voter_address_hash.bytes, lower: true)}, [], [])
+          end)
 
-          voters ++ acc
+        voters ++ acc
 
-        elem, acc ->
-          [elem | acc]
-      end)
-    rescue
-      _ -> lst
-    end
+      elem, acc ->
+        [elem | acc]
+    end)
+  rescue
+    _ -> lst
   end
 
   defp fetch_from_blockchain(addresses) do
