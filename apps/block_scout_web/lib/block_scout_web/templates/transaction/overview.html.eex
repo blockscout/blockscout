@@ -116,7 +116,7 @@
                       to: address_path(@conn, :show, @transaction.gas_fee_recipient_hash)
                     ) %>
               <% else %>
-                <%= formatted_status(status) %>
+                None
               <% end %>
             </dd>
           </dl>
@@ -125,7 +125,7 @@
             <dt class="col-sm-3 text-muted"><%= gettext "Gateway Fee" %> </dt>
             <dd class="col-sm-9" data-selector="gateway-fee">
               <%= if @transaction.gateway_fee do %>
-                <%= format_according_to_decimals(@transaction.gateway_fee, Decimal.new(18)) %>
+                <%= format_according_to_decimals(@transaction.gateway_fee.value, Decimal.new(18)) %>
               <% else %>
               0
               <% end %>
