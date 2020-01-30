@@ -4507,7 +4507,7 @@ defmodule Explorer.ChainTest do
     test "uses last block value if there a couple of change in the same day" do
       address = insert(:address)
       today = NaiveDateTime.utc_now()
-      past = Timex.shift(today, hours: -1)
+      past = Timex.shift(today, minutes: -1)
 
       block_now = insert(:block, timestamp: today, number: 1)
       insert(:fetched_balance, address_hash: address.hash, value: 1, block_number: block_now.number)
