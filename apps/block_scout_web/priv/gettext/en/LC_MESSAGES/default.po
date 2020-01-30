@@ -245,7 +245,7 @@ msgid "Block Rewards"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_signers_view.ex:36
+#: lib/block_scout_web/views/block_signers_view.ex:38
 #: lib/block_scout_web/views/block_transaction_view.ex:15
 msgid "Block not found, please try again later."
 msgstr ""
@@ -651,7 +651,7 @@ msgid "EVM Version"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_signers_view.ex:28
+#: lib/block_scout_web/views/block_signers_view.ex:30
 #: lib/block_scout_web/views/block_transaction_view.ex:7
 msgid "Easy Cowboy! This block does not exist yet!"
 msgstr ""
@@ -662,7 +662,7 @@ msgid "Emission Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:79
+#: lib/block_scout_web/views/block_view.ex:81
 msgid "Emission Reward"
 msgstr ""
 
@@ -1036,7 +1036,7 @@ msgid "Miner"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:75
+#: lib/block_scout_web/views/block_view.ex:77
 msgid "Miner Reward"
 msgstr ""
 
@@ -1495,7 +1495,7 @@ msgid "This API is provided to support some rpc methods in the exact format spec
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_signers_view.ex:32
+#: lib/block_scout_web/views/block_signers_view.ex:34
 #: lib/block_scout_web/views/block_transaction_view.ex:11
 msgid "This block has not been processed yet."
 msgstr ""
@@ -1703,7 +1703,7 @@ msgid "UTF-8"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:83
+#: lib/block_scout_web/views/block_view.ex:85
 msgid "Uncle Reward"
 msgstr ""
 

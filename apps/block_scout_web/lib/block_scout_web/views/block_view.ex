@@ -30,7 +30,9 @@ defmodule BlockScoutWeb.BlockView do
     if block.miner.names == [] and
          Ecto.assoc_loaded?(block.celo_delegator) and
          block.celo_delegator != nil and
-         block.celo_delegator.celo_account != nil do
+         block.celo_delegator.celo_account != nil and
+         Ecto.assoc_loaded?(block.celo_delegator.celo_account) and
+         block.celo_delegator.celo_account.name != nil do
       named = %Address.Name{
         address: block.celo_delegator.celo_account.account_address,
         address_hash: block.celo_delegator.celo_account.address,
