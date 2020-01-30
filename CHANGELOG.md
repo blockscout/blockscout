@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2990](https://github.com/poanetwork/blockscout/pull/2990) - Fix import of Parity spec file
 - [#2988](https://github.com/poanetwork/blockscout/pull/2988) - Fix web manifest accessibility
 - [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
 
