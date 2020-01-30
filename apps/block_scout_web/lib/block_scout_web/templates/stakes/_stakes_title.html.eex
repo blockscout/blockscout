@@ -11,7 +11,7 @@
     <div class="check card-title-control">
       <input type="checkbox" pool-filter-my />
       <div class="check-icon"></div>
-      <div class="check-text"><%= gettext("Show only those I staked into") %></div>
+      <div class="check-text"><%= gettext("Show only those I have stake in") %></div>
     </div>
   </div>
 </div>

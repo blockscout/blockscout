@@ -361,110 +361,102 @@ defmodule BlockScoutWeb.StakesChannel do
   def find_claim_reward_pools(socket, staker, staking_contract_address) do
     :ets.insert(ContractState, {claim_reward_long_op_key(staker), true})
     try do
-      staker_padded = address_pad_to_64(staker)
       json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+      staking_contract = ContractState.get(:staking_contract)
 
-      # Search for `PlacedStake` events
-      {error, pools_staked_into} = find_claim_reward_pools_by_logs(staking_contract_address, [
-        # keccak-256 of `PlacedStake(address,address,uint256,uint256)`
-        "0x2273de02cb1f69ba6259d22c4bc22c60e4c94c193265ef6afee324a04a9b6d22",
-        nil, # don't filter by `toPoolStakingAddress`
-        "0x" <> staker_padded # filter by `staker`
-      ], json_rpc_named_arguments)
+      responses =
+        ContractReader.get_staker_pools_length_request(staker)
+        |> ContractReader.perform_requests(%{staking: staking_contract.address}, staking_contract.abi)
+      staker_pools_length = responses[:length]
 
-      # Search for `MovedStake` events
-      {error, pools_moved_into} = if error == nil do
-        find_claim_reward_pools_by_logs(staking_contract_address, [
-          # keccak-256 of `MovedStake(address,address,address,uint256,uint256)`
-          "0x4480d8e4b1e9095b94bf513961d26fe1d32386ebdd103d18fe8738cf4b2223ff",
-          nil, # don't filter by `toPoolStakingAddress`
-          "0x" <> staker_padded # filter by `staker`
-        ], json_rpc_named_arguments)
+      chunk_size = 100
+      pools = if staker_pools_length > 0 do
+        chunks = 0..trunc(ceil(staker_pools_length / chunk_size) - 1)
+        Enum.reduce(chunks, [], fn i, acc ->
+          responses =
+            ContractReader.get_staker_pools_request(staker, i * chunk_size, chunk_size)
+            |> ContractReader.perform_requests(%{staking: staking_contract.address}, staking_contract.abi)
+          acc ++ Enum.map(responses[:pools], fn pool_staking_address ->
+            address_bytes_to_string(pool_staking_address)
+          end)
+        end)
       else
-        {error, []}
+        []
       end
 
-      {error, pools} = if error == nil do
-        pools = Enum.uniq(pools_staked_into ++ pools_moved_into)
+      pools_amounts = Enum.map(pools, fn pool_staking_address ->
+        ContractReader.call_get_reward_amount(
+          staking_contract_address,
+          [],
+          pool_staking_address,
+          staker,
+          json_rpc_named_arguments
+        )
+      end)
 
-        pools_amounts = Enum.map(pools, fn pool_staking_address ->
-          ContractReader.call_get_reward_amount(
+      error = Enum.find_value(pools_amounts, fn result ->
+        case result do
+          {:error, reason} -> error_reason_to_string(reason)
+          _ -> nil
+        end
+      end)
+
+      {error, pools} = if error != nil do
+        {error, %{}}
+      else
+        block_reward_contract = ContractState.get(:block_reward_contract)
+
+        pools = 
+          pools_amounts
+          |> Enum.map(fn {_, amounts} -> amounts end)
+          |> Enum.zip(pools)
+          |> Enum.filter(fn {amounts, _} -> amounts.token_reward_sum > 0 || amounts.native_reward_sum > 0 end)
+          |> Enum.map(fn {amounts, pool_staking_address} ->
+            responses =
+              ContractReader.epochs_to_claim_reward_from_request(pool_staking_address, staker)
+              |> ContractReader.perform_requests(%{block_reward: block_reward_contract.address}, block_reward_contract.abi)
+
+            epochs =
+              array_to_ranges(responses[:epochs])
+              |> Enum.map(fn {first, last} ->
+                Integer.to_string(first) <> (if first != last, do: "-" <> Integer.to_string(last), else: "")
+              end)
+            data = Map.put(amounts, :epochs, Enum.join(epochs, ","))
+
+            {data, pool_staking_address}
+          end)
+          |> Enum.filter(fn {data, _} -> data.epochs != "" end)
+
+        pools_gas_estimates = Enum.map(pools, fn {_data, pool_staking_address} ->
+          result = ContractReader.claim_reward_estimate_gas(
             staking_contract_address,
             [],
             pool_staking_address,
             staker,
             json_rpc_named_arguments
           )
+          {pool_staking_address, result}
         end)
 
-        error = Enum.find_value(pools_amounts, fn result ->
+        error = Enum.find_value(pools_gas_estimates, fn {_, result} ->
           case result do
             {:error, reason} -> error_reason_to_string(reason)
             _ -> nil
           end
         end)
 
-        {error, pools} = if error != nil do
-          {error, %{}}
+        pools = if error == nil do
+          pools_gas_estimates = Map.new(pools_gas_estimates)
+          Map.new(pools, fn {data, pool_staking_address} ->
+            {:ok, estimate} = pools_gas_estimates[pool_staking_address]
+            data = Map.put(data, :gas_estimate, estimate)
+            {pool_staking_address, data}
+          end)
         else
-          block_reward_contract = ContractState.get(:block_reward_contract)
-
-          pools = 
-            pools_amounts
-            |> Enum.map(fn {_, amounts} -> amounts end)
-            |> Enum.zip(pools)
-            |> Enum.filter(fn {amounts, _} -> amounts.token_reward_sum > 0 || amounts.native_reward_sum > 0 end)
-            |> Enum.map(fn {amounts, pool_staking_address} ->
-              responses =
-                ContractReader.epochs_to_claim_reward_from_request(pool_staking_address, staker)
-                |> ContractReader.perform_requests(%{block_reward: block_reward_contract.address}, block_reward_contract.abi)
-
-              epochs =
-                array_to_ranges(responses[:epochs])
-                |> Enum.map(fn {first, last} ->
-                  Integer.to_string(first) <> (if first != last, do: "-" <> Integer.to_string(last), else: "")
-                end)
-              data = Map.put(amounts, :epochs, Enum.join(epochs, ","))
-
-              {data, pool_staking_address}
-            end)
-            |> Enum.filter(fn {data, _} -> data.epochs != "" end)
-
-          pools_gas_estimates = Enum.map(pools, fn {_data, pool_staking_address} ->
-            result = ContractReader.claim_reward_estimate_gas(
-              staking_contract_address,
-              [],
-              pool_staking_address,
-              staker,
-              json_rpc_named_arguments
-            )
-            {pool_staking_address, result}
-          end)
-
-          error = Enum.find_value(pools_gas_estimates, fn {_, result} ->
-            case result do
-              {:error, reason} -> error_reason_to_string(reason)
-              _ -> nil
-            end
-          end)
-
-          pools = if error == nil do
-            pools_gas_estimates = Map.new(pools_gas_estimates)
-            Map.new(pools, fn {data, pool_staking_address} ->
-              {:ok, estimate} = pools_gas_estimates[pool_staking_address]
-              data = Map.put(data, :gas_estimate, estimate)
-              {pool_staking_address, data}
-            end)
-          else
-            %{}
-          end
-
-          {error, pools}
+          %{}
         end
 
         {error, pools}
-      else
-        {error, %{}}
       end
 
       html = View.render_to_string(
@@ -548,47 +540,7 @@ defmodule BlockScoutWeb.StakesChannel do
     end
   end
 
-  defp find_claim_reward_pools_by_logs(staking_contract_address, topics, json_rpc_named_arguments) do
-    latest_block = BlockNumber.get_max()
-    split_by = 500 # must be less than 1000
-
-    iterations = 0..trunc(ceil(latest_block / split_by) - 1)
-    Enum.reduce(iterations, {nil, []}, fn i, acc ->
-      {acc_error, acc_pools} = acc
-      if acc_error do
-        {acc_error, []}
-      else
-        from = i * split_by + 1
-        to = (i + 1) * split_by
-        to = if to > latest_block, do: latest_block, else: to
-        result = EthereumJSONRPC.request(%{
-          id: 0,
-          method: "eth_getLogs",
-          params: [%{
-            fromBlock: "0x" <> Integer.to_string(from, 16),
-            toBlock: "0x" <> Integer.to_string(to, 16),
-            address: staking_contract_address,
-            topics: topics
-          }]
-        }) |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
-        case result do
-          {:ok, response} ->
-            pools = Enum.uniq(acc_pools ++ Enum.map(response, fn event -> 
-              truncate_address(Enum.at(event["topics"], 1))
-            end))
-            {acc_error, pools}
-          {:error, reason} ->
-            {error_reason_to_string(reason), []}
-        end
-      end
-    end)
-  end
-
-  defp address_pad_to_64(address) do
-    address
-    |> String.replace_leading("0x", "")
-    |> String.pad_leading(64, ["0"])
-  end
+  defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
   defp array_to_ranges(numbers, prev_ranges \\ []) do
     length = Enum.count(numbers)
@@ -646,9 +598,5 @@ defmodule BlockScoutWeb.StakesChannel do
   defp claim_reward_long_op_key(staker) do
     staker = if staker == nil, do: "", else: staker
     Atom.to_string(@claim_reward_long_op) <> "_" <> staker
-  end
-
-  defp truncate_address("0x000000000000000000000000" <> truncated_address) do
-    "0x#{truncated_address}"
   end
 end
