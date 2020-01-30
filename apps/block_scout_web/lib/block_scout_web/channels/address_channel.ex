@@ -128,7 +128,8 @@ defmodule BlockScoutWeb.AddressChannel do
         TransactionView,
         "_tile.html",
         current_address: address,
-        transaction: transaction
+        transaction: transaction,
+        conn: socket
       )
 
     push(socket, event, %{

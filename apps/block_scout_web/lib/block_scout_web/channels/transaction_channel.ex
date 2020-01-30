@@ -29,7 +29,8 @@ defmodule BlockScoutWeb.TransactionChannel do
       View.render_to_string(
         TransactionView,
         "_tile.html",
-        transaction: transaction
+        transaction: transaction,
+        conn: socket
       )
 
     push(socket, "pending_transaction", %{
@@ -47,7 +48,8 @@ defmodule BlockScoutWeb.TransactionChannel do
       View.render_to_string(
         TransactionView,
         "_tile.html",
-        transaction: transaction
+        transaction: transaction,
+        conn: socket
       )
 
     push(socket, "transaction", %{
