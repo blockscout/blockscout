@@ -2120,11 +2120,6 @@ msgid "Show banned only"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:14
-msgid "Show only those I staked into"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:7
 msgid "Stake"
 msgstr ""
@@ -2364,7 +2359,7 @@ msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:599
+#: lib/block_scout_web/channels/stakes_channel.ex:565
 msgid "JSON RPC error"
 msgstr ""
 
@@ -2452,4 +2447,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/channels/stakes_channel.ex:289
 msgid "Reward calculating is already in progress for this address"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:14
+msgid "Show only those I have stake in"
 msgstr ""
