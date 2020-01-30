@@ -92,6 +92,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
       update: [
         set: [
           commission: fragment("EXCLUDED.commission"),
+          votes: fragment("EXCLUDED.votes"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", account.updated_at)
         ]
