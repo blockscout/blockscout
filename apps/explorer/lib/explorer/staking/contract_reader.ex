@@ -162,6 +162,18 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  def get_staker_pools_request(staker, offset, length) do
+    [
+      pools: {:staking, "getStakerPools", [staker, offset, length]}
+    ]
+  end
+
+  def get_staker_pools_length_request(staker) do
+    [
+      length: {:staking, "getStakerPoolsLength", [staker]}
+    ]
+  end
+
   def pool_staking_requests(staking_address, block_number) do
     [
       active_delegators: active_delegators_request(staking_address, block_number)[:active_delegators],
