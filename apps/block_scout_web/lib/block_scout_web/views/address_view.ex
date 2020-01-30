@@ -141,6 +141,10 @@ defmodule BlockScoutWeb.AddressView do
     matching_address_check(current_address, address, false, truncate)
   end
 
+  def address_partial_selector(%CeloVoters{group_address: address}, :voted, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
   def address_partial_selector(%CeloValidatorHistory{validator_address: address}, :signers, current_address, truncate) do
     matching_address_check(current_address, address, false, truncate)
   end
