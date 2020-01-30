@@ -40,6 +40,52 @@
     "constant": true,
     "inputs": [
       {
+        "name": "_staker",
+        "type": "address"
+      },
+      {
+        "name": "_offset",
+        "type": "uint256"
+      },
+      {
+        "name": "_length",
+        "type": "uint256"
+      }
+    ],
+    "name": "getStakerPools",
+    "outputs": [
+      {
+        "name": "result",
+        "type": "address[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_staker",
+        "type": "address"
+      }
+    ],
+    "name": "getStakerPoolsLength",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
         "name": "",
         "type": "address"
       }
