@@ -63,6 +63,10 @@ jobs:
           command: npm install
           working_directory: "apps/block_scout_web/assets"
 
+      - run:
+          command: npm rebuild node-sass
+          working_directory: "apps/block_scout_web/assets"
+
       - save_cache:
           key: v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
           paths: "apps/block_scout_web/assets/node_modules"
