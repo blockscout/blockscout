@@ -403,6 +403,7 @@ defmodule Indexer.Transform.Addresses do
               required(:from_address_hash) => String.t(),
               required(:nonce) => non_neg_integer(),
               optional(:to_address_hash) => String.t(),
+              optional(:gas_fee_recipient_hash) => String.t(),
               optional(:created_contract_address_hash) => String.t()
             }
           ],
