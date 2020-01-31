@@ -5,6 +5,7 @@
 ### Fixes
 - [#2989](https://github.com/poanetwork/blockscout/pull/2989) - Introduce API_PATH env var
 - [#2988](https://github.com/poanetwork/blockscout/pull/2988) - Fix web manifest accessibility
+- [#2950](https://github.com/poanetwork/blockscout/pull/2950) - Add `creationMethod` to `EthereumJSONRPC.Parity.Trace.Action.entry_to_elixir`
 - [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
 
 ### Chore
@@ -25,7 +26,6 @@
 - [#2960](https://github.com/poanetwork/blockscout/pull/2960) - Add BLOCKSCOUT_HOST to docker setup
 - [#2956](https://github.com/poanetwork/blockscout/pull/2956) - Add support of 0.6.x version of compiler
 - [#2955](https://github.com/poanetwork/blockscout/pull/2955) - Move socket path to env
-- [#2950](https://github.com/poanetwork/blockscout/pull/2950) - Add `creationMethod` to `EthereumJSONRPC.Parity.Trace.Action.entry_to_elixir`
 - [#2938](https://github.com/poanetwork/blockscout/pull/2938) - utf8 copy tx input tooltip
 - [#2934](https://github.com/poanetwork/blockscout/pull/2934) - RSK release 1.2.0 breaking changes support
 - [#2933](https://github.com/poanetwork/blockscout/pull/2933) - Get rid of deadlock in the query to address_current_token_balance table
