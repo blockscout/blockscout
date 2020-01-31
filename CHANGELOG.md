@@ -3,8 +3,8 @@
 ### Features
 
 ### Fixes
-
-- [#2897]( https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
+- [#2993](https://github.com/poanetwork/blockscout/pull/2993) - Fix path definition for contract verification endpoint
+- [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
 
 ### Chore
 
