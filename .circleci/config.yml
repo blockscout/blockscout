@@ -345,7 +345,7 @@ jobs:
   #         PGUSER: postgres
   #         ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Geth.HTTPWebSocket"
   #         ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Geth"
-  #     - image: circleci/postgres:10.3-alpine
+  #     - image: circleci/postgres:10.10-alpine
   #       environment:
   #         # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
   #         POSTGRES_DB: explorer_test
@@ -399,7 +399,7 @@ jobs:
   #         PGUSER: postgres
   #         ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Geth.Mox"
   #         ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
-  #     - image: circleci/postgres:10.3-alpine
+  #     - image: circleci/postgres:10.10-alpine
   #       environment:
   #         # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
   #         POSTGRES_DB: explorer_test
@@ -453,7 +453,7 @@ jobs:
   #         PGUSER: postgres
   #         ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.HTTPWebSocket"
   #         ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Parity"
-  #     - image: circleci/postgres:10.3-alpine
+  #     - image: circleci/postgres:10.10-alpine
   #       environment:
   #         # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
   #         POSTGRES_DB: explorer_test
@@ -507,7 +507,7 @@ jobs:
           PGUSER: postgres
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
-      - image: circleci/postgres:10.3-alpine
+      - image: circleci/postgres:10.10-alpine
         environment:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test

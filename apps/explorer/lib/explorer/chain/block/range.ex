@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Block.Range do
           to: integer() | :infinity
         }
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @doc """
   The underlying Postgres type, `int8range`.
