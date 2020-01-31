@@ -5,6 +5,7 @@
 ### Fixes
 - [#2989](https://github.com/poanetwork/blockscout/pull/2989) - Introduce API_PATH env var
 - [#2988](https://github.com/poanetwork/blockscout/pull/2988) - Fix web manifest accessibility
+- [#2950](https://github.com/poanetwork/blockscout/pull/2950) - Add `creationMethod` to `EthereumJSONRPC.Parity.Trace.Action.entry_to_elixir`
 - [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
 
 ### Chore
