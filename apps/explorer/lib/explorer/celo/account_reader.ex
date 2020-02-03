@@ -15,6 +15,7 @@ defmodule Explorer.Celo.AccountReader do
     with {:ok, [name]} <- data["getName"],
          {:ok, [url]} <- data["getMetadataURL"],
          {:ok, [is_validator]} <- data["isValidator"],
+         {:ok, [usd]} <- data["balanceOf"],
          {:ok, [is_validator_group]} <- data["isValidatorGroup"],
          account_type = determine_account_type(is_validator, is_validator_group),
          {:ok, [gold]} <- data["getAccountTotalLockedGold"],
@@ -24,7 +25,7 @@ defmodule Explorer.Celo.AccountReader do
          address: account_address,
          name: name,
          url: url,
-         rewards: 0,
+         usd: usd,
          locked_gold: gold,
          nonvoting_locked_gold: nonvoting_gold,
          account_type: account_type
@@ -163,6 +164,7 @@ defmodule Explorer.Celo.AccountReader do
       {:validators, "isValidator", [account_address]},
       {:validators, "isValidatorGroup", [account_address]},
       {:accounts, "getName", [account_address]},
+      {:usd, "balanceOf", [account_address]},
       {:accounts, "getMetadataURL", [account_address]}
     ])
   end
