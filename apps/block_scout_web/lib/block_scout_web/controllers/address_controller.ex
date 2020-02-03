@@ -68,9 +68,8 @@ defmodule BlockScoutWeb.AddressController do
   end
 
   def address_counters(conn, %{"id" => address_hash_string}) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
-      {transaction_count, validation_count} = transaction_and_validation_count(address)
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
+      {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
 
       json(conn, %{transaction_count: transaction_count, validation_count: validation_count})
     else
