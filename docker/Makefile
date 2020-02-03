@@ -202,6 +202,9 @@ endif
 ifdef SOCKET_ROOT
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'SOCKET_ROOT=$(SOCKET_ROOT)'
 endif
+ifdef API_PATH
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'API_PATH=$(API_PATH)'
+endif
 
 HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep ${DOCKER_IMAGE})
 build: 
