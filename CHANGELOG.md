@@ -4,6 +4,9 @@
 
 ### Fixes
 - [#2990](https://github.com/poanetwork/blockscout/pull/2990) - Fix import of Parity spec file
+- [#2989](https://github.com/poanetwork/blockscout/pull/2989) - Introduce API_PATH env var
+- [#2988](https://github.com/poanetwork/blockscout/pull/2988) - Fix web manifest accessibility
+- [#2950](https://github.com/poanetwork/blockscout/pull/2950) - Add `creationMethod` to `EthereumJSONRPC.Parity.Trace.Action.entry_to_elixir`
 - [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
 
 ### Chore
@@ -47,6 +50,7 @@
 - [#2946](https://github.com/poanetwork/blockscout/pull/2946) - Fix vulnerable NPM deps
 - [#2942](https://github.com/poanetwork/blockscout/pull/2942) - Actualize Docker setup
 - [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
+- [#2873](https://github.com/poanetwork/blockscout/pull/2873) - bump elixir to 1.9.4
 
 
 ## 2.1.1-beta
