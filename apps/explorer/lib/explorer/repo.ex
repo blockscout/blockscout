@@ -38,7 +38,6 @@ defmodule Explorer.Repo do
     returning = opts[:returning]
 
     elements
-    |> Enum.filter(fn(x) -> to_string(x[:from_address_hash]) != "0x0000000000000000000000000000000000000000" end)
     |> Enum.chunk_every(500)
     |> Enum.reduce({0, []}, fn chunk, {total_count, acc} ->
       {count, inserted} =

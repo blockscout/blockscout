@@ -65,8 +65,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        conflict_target: [:transaction_hash, :index],
-        on_conflict: on_conflict,
+        on_conflict: :nothing,
         for: Log,
         returning: true,
         timeout: timeout,
