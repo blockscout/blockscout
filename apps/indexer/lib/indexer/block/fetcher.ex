@@ -283,7 +283,7 @@ defmodule Indexer.Block.Fetcher do
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
 
-      accounts = Enum.dedup(celo_accounts ++ attestations_fulfilled ++ attestations_requested)
+      accounts = Enum.uniq(celo_accounts ++ attestations_fulfilled ++ attestations_requested)
 
       async_import_celo_accounts(%{
         celo_accounts: %{params: accounts, requested: attestations_requested, fulfilled: attestations_fulfilled}
