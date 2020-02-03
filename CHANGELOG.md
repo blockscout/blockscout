@@ -10,6 +10,7 @@
 - [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
 
 ### Chore
+- [#2995](https://github.com/poanetwork/blockscout/pull/2995) - Support API_PATH env var in Docker file
 
 
 ## 3.0.0-beta
