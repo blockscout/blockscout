@@ -11,6 +11,5 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
     end
 
     create(index(:celo_validator_status, [:signer_address_hash], unique: true))
-
   end
 end

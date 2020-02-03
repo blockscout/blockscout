@@ -84,14 +84,17 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
       item, {failed, success} ->
         status = %{
           last_elected: block.block_number,
-          signer_address_hash: item.address,
+          signer_address_hash: item.address
         }
+
         online_status =
-         if item.online do
-          Map.put(status, :last_online, block.block_number)
-         else item end
-        changeset =
-          CeloValidatorStatus.changeset(%CeloValidatorStatus{}, online_status)
+          if item.online do
+            Map.put(status, :last_online, block.block_number)
+          else
+            item
+          end
+
+        changeset = CeloValidatorStatus.changeset(%CeloValidatorStatus{}, online_status)
 
         if changeset.valid? do
           {failed, [changeset.changes | success]}
@@ -128,7 +131,7 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
           {_, success2} = get_items(block)
           {failed, success ++ success2}
       end)
-    
+
     {_, success_status} =
       Enum.reduce(blocks, {[], []}, fn
         %{error: _error} = block, {failed, success} ->
