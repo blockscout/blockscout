@@ -50,8 +50,14 @@ defmodule Explorer.GraphQL do
   end
 
   def address_to_affiliates_query(address_hash) do
-    CeloValidator
-    |> where([account], account.group_address_hash == ^address_hash)
+    from(
+      v in CeloValidator,
+      where: v.group_address_hash == ^address_hash,
+      inner_join: t in assoc(v, :status),
+      inner_join: a in assoc(v, :celo_account),
+      select_merge: %{last_online: t.last_online, last_elected: t.last_elected, name: a.name, url: a.url, locked_gold: a.locked_gold,
+      nonvoting_locked_gold: a.nonvoting_locked_gold, usd: a.usd}
+    )
   end
 
   def address_to_validator_group_query(address_hash) do

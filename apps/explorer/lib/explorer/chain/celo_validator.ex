@@ -7,7 +7,7 @@ defmodule Explorer.Chain.CeloValidator do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Hash, Wei}
+  alias Explorer.Chain.{Address, CeloAccount, CeloValidatorStatus, Hash, Wei}
 
   @typedoc """
   * `address` - address of the validator.
@@ -36,6 +36,15 @@ defmodule Explorer.Chain.CeloValidator do
     field(:score, Wei)
     field(:member, :integer)
 
+    field(:last_elected, :integer, virtual: true)
+    field(:last_online, :integer, virtual: true)
+
+    field(:name, :string, virtual: true)
+    field(:url, :string, virtual: true)
+    field(:nonvoting_locked_gold, Wei, virtual: true)
+    field(:locked_gold, Wei, virtual: true)
+    field(:usd, Wei, virtual: true)
+
     belongs_to(
       :validator_address,
       Address,
@@ -58,6 +67,20 @@ defmodule Explorer.Chain.CeloValidator do
       foreign_key: :signer_address_hash,
       references: :hash,
       type: Hash.Address
+    )
+
+    has_one(
+      :status,
+      CeloValidatorStatus,
+      foreign_key: :signer_address_hash,
+      references: :signer_address_hash
+    )
+
+    has_one(
+      :celo_account,
+      CeloAccount,
+      foreign_key: :address,
+      references: :address
     )
 
     timestamps(null: false, type: :utc_datetime_usec)
