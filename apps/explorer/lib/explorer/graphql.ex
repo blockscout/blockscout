@@ -55,8 +55,15 @@ defmodule Explorer.GraphQL do
       where: v.group_address_hash == ^address_hash,
       inner_join: t in assoc(v, :status),
       inner_join: a in assoc(v, :celo_account),
-      select_merge: %{last_online: t.last_online, last_elected: t.last_elected, name: a.name, url: a.url, locked_gold: a.locked_gold,
-      nonvoting_locked_gold: a.nonvoting_locked_gold, usd: a.usd}
+      select_merge: %{
+        last_online: t.last_online,
+        last_elected: t.last_elected,
+        name: a.name,
+        url: a.url,
+        locked_gold: a.locked_gold,
+        nonvoting_locked_gold: a.nonvoting_locked_gold,
+        usd: a.usd
+      }
     )
   end
 

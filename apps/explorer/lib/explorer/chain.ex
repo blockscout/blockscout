@@ -3794,11 +3794,18 @@ defmodule Explorer.Chain do
 
   #  @spec get_celo_validator_groups() :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
   def get_celo_validator_groups do
-    query = from(
-      g in CeloValidatorGroup,
-      inner_join: a in assoc(g, :celo_account),
-      select_merge: %{name: a.name, url: a.url, locked_gold: a.locked_gold, nonvoting_locked_gold: a.nonvoting_locked_gold, usd: a.usd}
-    )
+    query =
+      from(
+        g in CeloValidatorGroup,
+        inner_join: a in assoc(g, :celo_account),
+        select_merge: %{
+          name: a.name,
+          url: a.url,
+          locked_gold: a.locked_gold,
+          nonvoting_locked_gold: a.nonvoting_locked_gold,
+          usd: a.usd
+        }
+      )
 
     query
     |> Repo.all()
