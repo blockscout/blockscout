@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreateCeloAccount do
+defmodule Explorer.Repo.Migrations.CreateCeloValidatorStatus do
   use Ecto.Migration
 
   def change do

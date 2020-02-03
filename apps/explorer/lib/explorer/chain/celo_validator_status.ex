@@ -21,11 +21,11 @@ defmodule Explorer.Chain.CeloValidatorStatus do
         }
 
   @attrs ~w(
-        signer_address last_elected last_online
+        signer_address_hash last_elected last_online
     )a
 
   @required_attrs ~w(
-        address
+        signer_address_hash
     )a
 
   schema "celo_validator_status" do
