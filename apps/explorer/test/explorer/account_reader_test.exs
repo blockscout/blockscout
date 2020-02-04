@@ -22,7 +22,7 @@ defmodule Explorer.Token.AccountReaderTest do
            locked_gold: 10_001_000_000_000_000_000_000,
            nonvoting_locked_gold: 1_000_000_000_000_000_000,
            name: "CLabs Validator #0 on testing",
-           rewards: 0,
+           usd: 498_952_455_425_019_320_984_225_013_322_692_204_958_526_202_242,
            url: ""
          }}
 
@@ -34,7 +34,7 @@ defmodule Explorer.Token.AccountReaderTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      7,
+      8,
       fn requests, _opts ->
         {:ok,
          Enum.map(requests, fn
