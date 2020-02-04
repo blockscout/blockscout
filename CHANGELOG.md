@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#2996](https://github.com/poanetwork/blockscout/pull/2996) - Fix awesomplete lib loading in Firefox
 - [#2990](https://github.com/poanetwork/blockscout/pull/2990) - Fix import of Parity spec file
 - [#2989](https://github.com/poanetwork/blockscout/pull/2989) - Introduce API_PATH env var
 - [#2988](https://github.com/poanetwork/blockscout/pull/2988) - Fix web manifest accessibility
@@ -37,7 +38,7 @@
 - [#2924](https://github.com/poanetwork/blockscout/pull/2924) - Speedup address to logs query
 - [#2915](https://github.com/poanetwork/blockscout/pull/2915) - Speedup of blocks_without_reward_query
 - [#2914](https://github.com/poanetwork/blockscout/pull/2914) - Reduce execution time of stream_unfetched_token_instances query
-- [2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
+- [#2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
 - [#2908](https://github.com/poanetwork/blockscout/pull/2908) - Fix performance of address page
 - [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
 - [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
