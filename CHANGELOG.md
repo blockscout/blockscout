@@ -1,12 +1,29 @@
 ## Current
 
 ### Features
+
+### Fixes
+- [#2990](https://github.com/poanetwork/blockscout/pull/2990) - Fix import of Parity spec file
+- [#2989](https://github.com/poanetwork/blockscout/pull/2989) - Introduce API_PATH env var
+- [#2988](https://github.com/poanetwork/blockscout/pull/2988) - Fix web manifest accessibility
+- [#2967](https://github.com/poanetwork/blockscout/pull/2967) - Fix styles loading for firefox
+- [#2950](https://github.com/poanetwork/blockscout/pull/2950) - Add `creationMethod` to `EthereumJSONRPC.Parity.Trace.Action.entry_to_elixir`
+- [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
+
+### Chore
+- [#2995](https://github.com/poanetwork/blockscout/pull/2995) - Support API_PATH env var in Docker file
+
+
+## 3.0.0-beta
+
+### Features
 - [#2835](https://github.com/poanetwork/blockscout/pull/2835), [#2871](https://github.com/poanetwork/blockscout/pull/2871), [#2872](https://github.com/poanetwork/blockscout/pull/2872), [#2886](https://github.com/poanetwork/blockscout/pull/2886), [#2925](https://github.com/poanetwork/blockscout/pull/2925), [#2936](https://github.com/poanetwork/blockscout/pull/2936), [#2949](https://github.com/poanetwork/blockscout/pull/2949), [#2940](https://github.com/poanetwork/blockscout/pull/2940), [#2958](https://github.com/poanetwork/blockscout/pull/2958) - Add "block_hash" to logs, token_transfers and internal transactions and "pending blocks operations" approach
+- [#2975](https://github.com/poanetwork/blockscout/pull/2975) - Refine UX of contracts verification
 - [#2926](https://github.com/poanetwork/blockscout/pull/2926) - API endpoint: sum balances except burnt address
 - [#2918](https://github.com/poanetwork/blockscout/pull/2918) - Add tokenID for tokentx API action explicitly
 
 ### Fixes
-- [#2967](https://github.com/poanetwork/blockscout/pull/2967) - Fix styles loading for firefox
+- [#2969](https://github.com/poanetwork/blockscout/pull/2969) - Fix contract constructor require msg appearance in constructor arguments encoded view
 - [#2964](https://github.com/poanetwork/blockscout/pull/2964) - Fix bug in skipping of constructor arguments in contract verification
 - [#2961](https://github.com/poanetwork/blockscout/pull/2961) - Add a guard that addresses is enum in `values` function in `read contract` page
 - [#2960](https://github.com/poanetwork/blockscout/pull/2960) - Add BLOCKSCOUT_HOST to docker setup
@@ -35,6 +52,7 @@
 - [#2946](https://github.com/poanetwork/blockscout/pull/2946) - Fix vulnerable NPM deps
 - [#2942](https://github.com/poanetwork/blockscout/pull/2942) - Actualize Docker setup
 - [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
+- [#2873](https://github.com/poanetwork/blockscout/pull/2873) - bump elixir to 1.9.4
 
 
 ## 2.1.1-beta
