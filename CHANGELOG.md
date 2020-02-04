@@ -9,6 +9,7 @@
 - [#2967](https://github.com/poanetwork/blockscout/pull/2967) - Fix styles loading for firefox
 - [#2950](https://github.com/poanetwork/blockscout/pull/2950) - Add `creationMethod` to `EthereumJSONRPC.Parity.Trace.Action.entry_to_elixir`
 - [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
+- [#2883](https://github.com/poanetwork/blockscout/pull/2883) - Fix long contracts names
 
 ### Chore
 - [#2995](https://github.com/poanetwork/blockscout/pull/2995) - Support API_PATH env var in Docker file
