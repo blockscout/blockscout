@@ -8,6 +8,7 @@ defmodule Indexer.BufferedTask do
 
     * `:flush_interval` - The interval in milliseconds to flush the buffer.
     * `:max_concurrency` - The maximum number of tasks to run concurrently at any give time.
+    * `:poll` - poll for new records when all records are processed
     * `:max_batch_size` - The maximum batch passed to `c:run/2`.
     * `:memory_monitor` - The `Indexer.Memory.Monitor` `t:GenServer.server/0` to register as
       `Indexer.Memory.Monitor.shrinkable/0` with.
@@ -70,6 +71,7 @@ defmodule Indexer.BufferedTask do
             flush_interval: nil,
             max_batch_size: nil,
             max_concurrency: nil,
+            poll: false,
             metadata: [],
             current_buffer: [],
             bound_queue: %BoundQueue{},
@@ -229,6 +231,7 @@ defmodule Indexer.BufferedTask do
     state = %BufferedTask{
       callback_module: callback_module,
       callback_module_state: Keyword.fetch!(opts, :state),
+      poll: Keyword.get(opts, :poll, false),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       flush_interval: Keyword.fetch!(opts, :flush_interval),
       max_batch_size: Keyword.fetch!(opts, :max_batch_size),
@@ -434,7 +437,12 @@ defmodule Indexer.BufferedTask do
     end
   end
 
-  # was shrunk and out of work, get more work from `init/2`
+  # get more work from `init/2`
+  defp schedule_next(%BufferedTask{poll: true, bound_queue: %BoundQueue{size: 0}} = state) do
+    do_initial_stream(state)
+  end
+
+  # was shrunk and was out of work, get more work from `init/2`
   defp schedule_next(%BufferedTask{bound_queue: %BoundQueue{size: 0, maximum_size: maximum_size}} = state)
        when maximum_size != nil do
     Logger.info(fn ->

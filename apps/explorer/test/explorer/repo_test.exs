@@ -10,7 +10,7 @@ defmodule Explorer.RepoTest do
 
   describe "safe_insert_all/3" do
     test "inserting duplicate rows in one chunk is logged before re-raising exception" do
-      transaction = insert(:transaction)
+      transaction = insert(:transaction) |> with_block()
 
       params =
         params_for(
@@ -20,6 +20,8 @@ defmodule Explorer.RepoTest do
           transaction_hash: transaction.hash,
           index: 0,
           block_number: 35,
+          block_hash: transaction.block_hash,
+          block_index: 0,
           transaction_index: 0
         )
 
@@ -33,7 +35,7 @@ defmodule Explorer.RepoTest do
             Repo.safe_insert_all(
               InternalTransaction,
               [timestamped_changes, timestamped_changes],
-              conflict_target: [:transaction_hash, :index],
+              conflict_target: [:block_hash, :block_index],
               on_conflict: :replace_all
             )
           end
@@ -42,7 +44,7 @@ defmodule Explorer.RepoTest do
       assert log =~ "Chunk:\n"
       assert log =~ "index: 0"
 
-      assert log =~ "Options:\n\n[conflict_target: [:transaction_hash, :index], on_conflict: :replace_all]\n\n"
+      assert log =~ "Options:\n\n[conflict_target: [:block_hash, :block_index], on_conflict: :replace_all]\n\n"
 
       assert log =~
                "Exception:\n\n** (Postgrex.Error) ERROR 21000 (cardinality_violation) ON CONFLICT DO UPDATE command cannot affect row a second time\n"

@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   import Ecto.Query, only: [from: 2, subquery: 1]
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{Address, Block, Import, InternalTransaction, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, Import, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
@@ -56,6 +56,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       # Note, needs to be executed after `lose_consensus` for lock acquisition
       insert(repo, changes_list, insert_options)
     end)
+    |> Multi.run(:new_pending_operations, fn repo, %{lose_consensus: nonconsensus_hashes} ->
+      new_pending_operations(repo, nonconsensus_hashes, hashes, insert_options)
+    end)
     |> Multi.run(:uncle_fetched_block_second_degree_relations, fn repo, _ ->
       update_block_second_degree_relations(repo, hashes, %{
         timeout:
@@ -83,17 +86,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         transactions: transactions
       })
     end)
-    |> Multi.run(:remove_nonconsensus_logs, fn repo, %{derive_transaction_forks: transactions} ->
-      remove_nonconsensus_logs(repo, transactions, insert_options)
-    end)
-    |> Multi.run(:remove_nonconsensus_internal_transactions, fn repo, %{derive_transaction_forks: transactions} ->
-      remove_nonconsensus_internal_transactions(repo, transactions, insert_options)
-    end)
     |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
       acquire_contract_address_tokens(repo, consensus_block_numbers)
-    end)
-    |> Multi.run(:remove_nonconsensus_token_transfers, fn repo, %{derive_transaction_forks: transactions} ->
-      remove_nonconsensus_token_transfers(repo, transactions, insert_options)
     end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
       delete_address_token_balances(repo, consensus_block_numbers, insert_options)
@@ -125,7 +119,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     query =
       from(address_current_token_balance in Address.CurrentTokenBalance,
         where: address_current_token_balance.block_number in ^consensus_block_numbers,
-        select: address_current_token_balance.token_contract_address_hash
+        select: address_current_token_balance.token_contract_address_hash,
+        distinct: address_current_token_balance.token_contract_address_hash
       )
 
     contract_address_hashes = repo.all(query)
@@ -160,7 +155,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
             gas_used: nil,
             cumulative_gas_used: nil,
             index: nil,
-            internal_transactions_indexed_at: nil,
             status: nil,
             error: nil,
             updated_at: ^updated_at
@@ -251,7 +245,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           difficulty: fragment("EXCLUDED.difficulty"),
           gas_limit: fragment("EXCLUDED.gas_limit"),
           gas_used: fragment("EXCLUDED.gas_used"),
-          internal_transactions_indexed_at: fragment("EXCLUDED.internal_transactions_indexed_at"),
           miner_hash: fragment("EXCLUDED.miner_hash"),
           nonce: fragment("EXCLUDED.nonce"),
           number: fragment("EXCLUDED.number"),
@@ -270,8 +263,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           fragment("EXCLUDED.miner_hash <> ?", block.miner_hash) or fragment("EXCLUDED.nonce <> ?", block.nonce) or
           fragment("EXCLUDED.number <> ?", block.number) or fragment("EXCLUDED.parent_hash <> ?", block.parent_hash) or
           fragment("EXCLUDED.size <> ?", block.size) or fragment("EXCLUDED.timestamp <> ?", block.timestamp) or
-          fragment("EXCLUDED.total_difficulty <> ?", block.total_difficulty) or
-          fragment("EXCLUDED.internal_transactions_indexed_at <> ?", block.internal_transactions_indexed_at)
+          fragment("EXCLUDED.total_difficulty <> ?", block.total_difficulty)
     )
   end
 
@@ -317,92 +309,30 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       {:error, %{exception: postgrex_error, consensus_block_numbers: consensus_block_numbers}}
   end
 
-  defp remove_nonconsensus_token_transfers(repo, forked_transaction_hashes, %{timeout: timeout}) do
-    ordered_token_transfers =
-      from(
-        token_transfer in TokenTransfer,
-        where: token_transfer.transaction_hash in ^forked_transaction_hashes,
-        select: token_transfer.transaction_hash,
-        # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
-        order_by: [
-          token_transfer.transaction_hash,
-          token_transfer.log_index
-        ],
-        lock: "FOR UPDATE"
+  defp new_pending_operations(repo, nonconsensus_hashes, hashes, %{timeout: timeout, timestamps: timestamps}) do
+    if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.RSK do
+      {:ok, []}
+    else
+      sorted_pending_ops =
+        nonconsensus_hashes
+        |> MapSet.new()
+        |> MapSet.union(MapSet.new(hashes))
+        |> Enum.sort()
+        |> Enum.map(fn hash ->
+          %{block_hash: hash, fetch_internal_transactions: true}
+        end)
+
+      Import.insert_changes_list(
+        repo,
+        sorted_pending_ops,
+        conflict_target: :block_hash,
+        on_conflict: PendingBlockOperation.default_on_conflict(),
+        for: PendingBlockOperation,
+        returning: true,
+        timeout: timeout,
+        timestamps: timestamps
       )
-
-    query =
-      from(token_transfer in TokenTransfer,
-        select: map(token_transfer, [:transaction_hash, :log_index]),
-        inner_join: ordered_token_transfer in subquery(ordered_token_transfers),
-        on: ordered_token_transfer.transaction_hash == token_transfer.transaction_hash
-      )
-
-    {_count, deleted_token_transfers} = repo.delete_all(query, timeout: timeout)
-
-    {:ok, deleted_token_transfers}
-  rescue
-    postgrex_error in Postgrex.Error ->
-      {:error, %{exception: postgrex_error, transactions: forked_transaction_hashes}}
-  end
-
-  defp remove_nonconsensus_internal_transactions(repo, forked_transaction_hashes, %{timeout: timeout}) do
-    query =
-      from(
-        internal_transaction in InternalTransaction,
-        where: internal_transaction.transaction_hash in ^forked_transaction_hashes,
-        select: %{transaction_hash: internal_transaction.transaction_hash},
-        # Enforce InternalTransaction ShareLocks order (see docs: sharelocks.md)
-        order_by: [
-          internal_transaction.transaction_hash,
-          internal_transaction.index
-        ],
-        lock: "FOR UPDATE"
-      )
-
-    delete_query =
-      from(
-        i in InternalTransaction,
-        join: s in subquery(query),
-        on: i.transaction_hash == s.transaction_hash,
-        select: map(i, [:transaction_hash, :index])
-      )
-
-    {_count, deleted_internal_transactions} = repo.delete_all(delete_query, timeout: timeout)
-
-    {:ok, deleted_internal_transactions}
-  rescue
-    postgrex_error in Postgrex.Error ->
-      {:error, %{exception: postgrex_error, transactions: forked_transaction_hashes}}
-  end
-
-  defp remove_nonconsensus_logs(repo, forked_transaction_hashes, %{timeout: timeout}) do
-    ordered_logs =
-      from(
-        log in Log,
-        where: log.transaction_hash in ^forked_transaction_hashes,
-        select: log.transaction_hash,
-        # Enforce Log ShareLocks order (see docs: sharelocks.md)
-        order_by: [
-          log.transaction_hash,
-          log.index
-        ],
-        lock: "FOR UPDATE"
-      )
-
-    query =
-      from(log in Log,
-        select: map(log, [:transaction_hash, :index]),
-        inner_join: ordered_log in subquery(ordered_logs),
-        on: ordered_log.transaction_hash == log.transaction_hash
-      )
-
-    {_count, deleted_logs} = repo.delete_all(query, timeout: timeout)
-
-    {:ok, deleted_logs}
-  rescue
-    postgrex_error in Postgrex.Error ->
-      {:error, %{exception: postgrex_error, transactions: forked_transaction_hashes}}
+    end
   end
 
   defp delete_address_token_balances(_, [], _), do: {:ok, []}

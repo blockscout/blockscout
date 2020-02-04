@@ -44,14 +44,18 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
         transaction: transaction,
         index: 0,
         block_number: transaction.block_number,
-        transaction_index: transaction.index
+        transaction_index: transaction.index,
+        block_hash: transaction.block_hash,
+        block_index: 0
       )
 
       insert(:internal_transaction,
         transaction: transaction,
         index: 1,
         transaction_index: transaction.index,
-        block_number: transaction.block_number
+        block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 1
       )
 
       path = transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction.hash)
@@ -64,7 +68,8 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
 
       assert json_response(conn, 200)
 
-      assert Enum.count(items) == 2
+      # excluding of internal transactions with type=call and index=0
+      assert Enum.count(items) == 1
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
@@ -90,7 +95,9 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
           transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
-          transaction_index: transaction.index
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
+          block_index: 0
         )
         |> with_contract_creation(contract_address)
 
@@ -118,7 +125,9 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
           transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
-          transaction_index: transaction.index
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
+          block_index: 0
         )
 
       second_page_indexes =
@@ -128,7 +137,9 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
             transaction: transaction,
             index: index,
             block_number: transaction.block_number,
-            transaction_index: transaction.index
+            transaction_index: transaction.index,
+            block_hash: transaction.block_hash,
+            block_index: index
           )
         end)
         |> Enum.map(& &1.index)
@@ -161,7 +172,9 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
           transaction: transaction,
           index: index,
           block_number: transaction.block_number,
-          transaction_index: transaction.index
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
+          block_index: index
         )
       end)
 
@@ -190,7 +203,9 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
           transaction: transaction,
           index: index,
           block_number: transaction.block_number,
-          transaction_index: transaction.index
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
+          block_index: index
         )
       end)
 
