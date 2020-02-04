@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1-node-browsers
+      - image: circleci/elixir:1.9.4-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -61,6 +61,10 @@ jobs:
 
       - run:
           command: npm install
+          working_directory: "apps/block_scout_web/assets"
+
+      - run:
+          command: npm rebuild node-sass
           working_directory: "apps/block_scout_web/assets"
 
       - save_cache:
@@ -129,7 +133,7 @@ jobs:
   check_formatted:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -143,7 +147,7 @@ jobs:
   credo:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -177,7 +181,7 @@ jobs:
   dialyzer:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -229,7 +233,7 @@ jobs:
   eslint:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/node:12.13.0-browsers-legacy
+      - image: circleci/node:12.14.1-browsers-legacy
 
     working_directory: ~/app
 
@@ -247,7 +251,7 @@ jobs:
   gettext:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -271,7 +275,7 @@ jobs:
   jest:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/node:12.13.0-browsers-legacy
+      - image: circleci/node:12.14.1-browsers-legacy
 
     working_directory: ~/app
 
@@ -286,7 +290,7 @@ jobs:
   release:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: prod
 
@@ -312,7 +316,7 @@ jobs:
   sobelow:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -336,7 +340,7 @@ jobs:
   # test_geth_http_websocket:
   #   docker:
   #     # Ensure .tool-versions matches
-  #     - image: circleci/elixir:1.9.1-node-browsers
+  #     - image: circleci/elixir:1.9.4-node-browsers
   #       environment:
   #         MIX_ENV: test
   #         # match POSTGRES_PASSWORD for postgres image below
@@ -390,7 +394,7 @@ jobs:
   # test_geth_mox:
   #   docker:
   #     # Ensure .tool-versions matches
-  #     - image: circleci/elixir:1.9.1-node-browsers
+  #     - image: circleci/elixir:1.9.4-node-browsers
   #       environment:
   #         MIX_ENV: test
   #         # match POSTGRES_PASSWORD for postgres image below
@@ -444,7 +448,7 @@ jobs:
   # test_parity_http_websocket:
   #   docker:
   #     # Ensure .tool-versions matches
-  #     - image: circleci/elixir:1.9.1-node-browsers
+  #     - image: circleci/elixir:1.9.4-node-browsers
   #       environment:
   #         MIX_ENV: test
   #         # match POSTGRES_PASSWORD for postgres image below
@@ -498,7 +502,7 @@ jobs:
   test_parity_mox:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1-node-browsers
+      - image: circleci/elixir:1.9.4-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -552,7 +556,7 @@ jobs:
   coveralls_merge:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
