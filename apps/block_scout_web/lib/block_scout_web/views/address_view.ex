@@ -323,6 +323,14 @@ defmodule BlockScoutWeb.AddressView do
     "0x" <> short_address
   end
 
+  def short_contract_name(name, max_length) do
+    part_length = Kernel.trunc(max_length / 4)
+
+    if String.length(name) <= max_length,
+      do: name,
+      else: "#{String.slice(name, 0, max_length - part_length)}..#{String.slice(name, -part_length, part_length)}"
+  end
+
   def address_page_title(address) do
     cond do
       smart_contract_verified?(address) -> "#{address.smart_contract.name} (#{to_string(address)})"
