@@ -214,6 +214,7 @@ defmodule Explorer.Celo.AccountReader do
 
     with {:ok, [bm]} <- data["getParentSealBitmap"],
          {:ok, [num_validators]} <- data["getNumRegisteredValidators"],
+         {:ok, [min_validators, max_validators]} <- data["getElectableValidators"],
          {:ok, [total_gold]} <- data["getTotalLockedGold"],
          {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
       list =
@@ -223,7 +224,9 @@ defmodule Explorer.Celo.AccountReader do
 
       params = [
         %{name: "numRegisteredValidators", number_value: num_validators},
-        %{name: "totalLockedGold", number_value: total_gold}
+        %{name: "totalLockedGold", number_value: total_gold},
+        %{name: "maxElectableValidators", number_value: max_validators},
+        %{name: "minElectableValidators", number_value: min_validators}
       ]
 
       {:ok, %{validators: list, params: params}}
@@ -237,6 +240,7 @@ defmodule Explorer.Celo.AccountReader do
     call_methods([
       {:election, "getCurrentValidatorSigners", [], bn - 1},
       {:election, "getParentSealBitmap", [bn], bn},
+      {:election, "getElectableValidators", []},
       {:lockedgold, "getTotalLockedGold", []},
       {:validators, "getNumRegisteredValidators", []}
     ])
