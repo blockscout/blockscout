@@ -53,6 +53,15 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
+  def validator_group_reward_data(address) do
+    data = call_methods([{:election, "getActiveVotesForGroup", [address]}])
+
+    case data["getActiveVotesForGroup"] do
+      {:ok, [res]} -> {:ok, %{active_votes: res}}
+      _ -> :error
+    end
+  end
+
   @spec validator_data(String.t()) ::
           {:ok,
            %{
