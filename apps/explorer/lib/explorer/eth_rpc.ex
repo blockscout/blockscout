@@ -6,9 +6,21 @@ defmodule Explorer.EthRPC do
   alias Ecto.Type, as: EctoType
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Data, Hash, Hash.Address, Wei}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Etherscan.Logs
 
   @methods %{
+    "eth_blockNumber" => %{
+      action: :eth_block_number,
+      notes: nil,
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_blockNumber", "params": []}
+      """,
+      params: [],
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "0xb3415c"}
+      """
+    },
     "eth_getBalance" => %{
       action: :eth_get_balance,
       notes: """
@@ -92,6 +104,16 @@ defmodule Explorer.EthRPC do
         {:request, {:error, message}} -> format_error(message, Map.get(request, "id"))
       end
     end)
+  end
+
+  def eth_block_number do
+    max_block_number = BlockNumber.get_max()
+
+    max_block_number_hex =
+      max_block_number
+      |> encode_quantity()
+
+    {:ok, max_block_number_hex}
   end
 
   def eth_get_balance(address_param, block_param \\ nil) do
@@ -404,6 +426,26 @@ defmodule Explorer.EthRPC do
 
   defp block_param(nil), do: {:ok, :latest}
   defp block_param(_), do: :error
+
+  def encode_quantity(binary) when is_binary(binary) do
+    hex_binary = Base.encode16(binary, case: :lower)
+
+    result = String.replace_leading(hex_binary, "0", "")
+
+    final_result = if result == "", do: "0", else: result
+
+    "0x#{final_result}"
+  end
+
+  def encode_quantity(value) when is_integer(value) do
+    value
+    |> :binary.encode_unsigned()
+    |> encode_quantity()
+  end
+
+  def encode_quantity(value) when is_nil(value) do
+    nil
+  end
 
   def methods, do: @methods
 end

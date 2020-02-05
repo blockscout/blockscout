@@ -8,8 +8,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
   describe "GET index/3" do
     test "load token transfers", %{conn: conn} do
       transaction = insert(:transaction)
-      block = insert(:block)
-      token_transfer = insert(:token_transfer, transaction: transaction, block: block)
+      token_transfer = insert(:token_transfer, transaction: transaction)
 
       conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
 
@@ -47,12 +46,11 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     end
 
     test "includes token transfers for the transaction", %{conn: conn} do
-      transaction = insert(:transaction)
-      block = insert(:block)
+      transaction = insert(:transaction) |> with_block()
 
-      insert(:token_transfer, transaction: transaction, block: block)
+      insert(:token_transfer, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
 
-      insert(:token_transfer, transaction: transaction, block: block)
+      insert(:token_transfer, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
 
       path = transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash)
 
@@ -79,15 +77,10 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
         |> insert()
         |> with_block()
 
-      insert(:token_transfer, transaction: transaction, block_number: 1000, log_index: 1, block: transaction.block)
+      insert(:token_transfer, transaction: transaction, block_number: 1000, log_index: 1)
 
       Enum.each(2..5, fn item ->
-        insert(:token_transfer,
-          transaction: transaction,
-          block_number: item + 1001,
-          log_index: item + 1,
-          block: transaction.block
-        )
+        insert(:token_transfer, transaction: transaction, block_number: item + 1001, log_index: item + 1)
       end)
 
       conn =
@@ -112,9 +105,10 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
       |> Enum.map(fn log_index ->
         insert(
           :token_transfer,
-          block: transaction.block,
           transaction: transaction,
-          log_index: log_index
+          log_index: log_index,
+          block: transaction.block,
+          block_number: transaction.block_number
         )
       end)
 
@@ -137,8 +131,9 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
         insert(
           :token_transfer,
           transaction: transaction,
-          block: transaction.block,
-          log_index: log_index
+          log_index: log_index,
+          block_number: transaction.block_number,
+          block: transaction.block
         )
       end)
 
