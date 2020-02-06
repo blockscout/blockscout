@@ -2,6 +2,8 @@
 
 ### Features
 
+- [#2875](https://github.com/poanetwork/blockscout/pull/2875) - Save contract code from Parity genesis file
+
 ### Fixes
 - [#2996](https://github.com/poanetwork/blockscout/pull/2996) - Fix awesomplete lib loading in Firefox
 - [#2993](https://github.com/poanetwork/blockscout/pull/2993) - Fix path definition for contract verification endpoint
