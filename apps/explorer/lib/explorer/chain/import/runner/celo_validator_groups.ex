@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
     uniq_changes_list =
       changes_list
       |> Enum.sort_by(& &1.address)
-      |> Enum.dedup_by(& &1.address)
+      |> Enum.uniq_by(& &1.address)
 
     {:ok, _} =
       Import.insert_changes_list(
@@ -92,6 +92,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
       update: [
         set: [
           commission: fragment("EXCLUDED.commission"),
+          votes: fragment("EXCLUDED.votes"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", account.updated_at)
         ]

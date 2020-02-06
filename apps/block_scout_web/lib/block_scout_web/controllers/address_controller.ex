@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.AddressController do
 
   alias BlockScoutWeb.AddressView
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
@@ -60,7 +59,7 @@ defmodule BlockScoutWeb.AddressController do
   def index(conn, _params) do
     render(conn, "index.html",
       current_path: current_path(conn),
-      address_count: Chain.count_addresses_from_cache()
+      address_count: Chain.address_estimated_count()
     )
   end
 
@@ -68,19 +67,30 @@ defmodule BlockScoutWeb.AddressController do
     redirect(conn, to: address_transaction_path(conn, :index, id))
   end
 
-  def transaction_and_validation_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
+  def address_counters(conn, %{"id" => address_hash_string}) do
+    case Chain.string_to_address_hash(address_hash_string) do
+      {:ok, address_hash} ->
+        {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
+        json(conn, %{transaction_count: transaction_count, validation_count: validation_count})
+
+      _ ->
+        not_found(conn)
+    end
+  end
+
+  def transaction_and_validation_count(address) do
     transaction_count_task =
       Task.async(fn ->
-        transaction_count(address_hash)
+        transaction_count(address)
       end)
 
     validation_count_task =
       Task.async(fn ->
-        validation_count(address_hash)
+        validation_count(address)
       end)
 
     [transaction_count_task, validation_count_task]
-    |> Task.yield_many(:timer.seconds(30))
+    |> Task.yield_many(:timer.seconds(60))
     |> Enum.map(fn {_task, res} ->
       case res do
         {:ok, result} ->
@@ -96,11 +106,32 @@ defmodule BlockScoutWeb.AddressController do
     |> List.to_tuple()
   end
 
-  def transaction_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
-    Chain.total_transactions_sent_by_address(address_hash)
+  defp transaction_count(address) do
+    address_hash_string = to_string(address)
+    # if contract?(address) do
+    case Chain.Hash.Address.validate(address_hash_string) do
+      {:ok, _} ->
+        incoming_transaction_count = Chain.address_to_incoming_transaction_count(address)
+
+        if incoming_transaction_count == 0 do
+          Chain.total_transactions_sent_by_address(address)
+        else
+          incoming_transaction_count
+        end
+
+      _ ->
+        Chain.total_transactions_sent_by_address(address)
+    end
   end
 
-  def validation_count(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
-    Chain.address_to_validation_count(address_hash)
+  defp validation_count(address) do
+    Chain.address_to_validation_count(address)
   end
+
+  #  @spec contract?(Hash.Address.t()) :: boolean()
+  #  defp contract?(_), do: true
+  #
+  #  defp contract?(%{x: nil}), do: false
+  #
+  #  defp contract?(%{contract_code: _}), do: false
 end

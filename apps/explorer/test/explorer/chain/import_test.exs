@@ -12,6 +12,7 @@ defmodule Explorer.Chain.ImportTest do
     Log,
     Hash,
     Import,
+    PendingBlockOperation,
     Token,
     TokenTransfer,
     Transaction
@@ -81,11 +82,13 @@ defmodule Explorer.Chain.ImportTest do
             value: 0
           }
         ],
-        timeout: 5
+        timeout: 5,
+        with: :blockless_changeset
       },
       logs: %{
         params: [
           %{
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
@@ -93,8 +96,8 @@ defmodule Explorer.Chain.ImportTest do
             third_topic: "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
             fourth_topic: nil,
             index: 0,
-            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-            block_number: 37,
+            # block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            # block_number: 37,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             type: "mined"
           }
@@ -151,8 +154,8 @@ defmodule Explorer.Chain.ImportTest do
           %{
             amount: Decimal.new(1_000_000_000_000_000_000),
             block_number: 37,
-            log_index: 0,
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            log_index: 0,
             from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
             to_address_hash: "0x515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
             token_contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
@@ -308,9 +311,7 @@ defmodule Explorer.Chain.ImportTest do
                       bytes:
                         <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
                           101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                    },
-                    # because there are successful, non-contract-creation token transfer
-                    internal_transactions_indexed_at: %DateTime{}
+                    }
                   }
                 ],
                 tokens: [
@@ -557,7 +558,8 @@ defmodule Explorer.Chain.ImportTest do
               block_number: 37,
               transaction_index: 0
             }
-          ]
+          ],
+          with: :blockless_changeset
         }
       }
 
@@ -568,63 +570,7 @@ defmodule Explorer.Chain.ImportTest do
       assert address.contract_code != smart_contract_bytecode
     end
 
-    test "updates `error`, `status` and `internal_transaction_indexed_at` even if internal transactions were alreader inserted" do
-      address_hash = "0x1c494fa496f1cfd918b5ff190835af3aaf609899"
-      from_address = insert(:address, hash: address_hash)
-
-      block = insert(:block, consensus: true, number: 37)
-
-      transaction =
-        :transaction
-        |> insert(error: nil, internal_transactions_indexed_at: nil, status: nil, from_address: from_address)
-        |> with_block(block, status: :error)
-
-      internal_transacton =
-        insert(:internal_transaction,
-          block_number: 37,
-          transaction_hash: transaction.hash,
-          error: "Bad Instruction",
-          index: 0,
-          gas_used: nil,
-          output: nil,
-          gas: 19,
-          type: "call"
-        )
-
-      options = %{
-        internal_transactions: %{
-          params: [
-            %{
-              block_number: internal_transacton.block_number,
-              call_type: internal_transacton.type,
-              gas: internal_transacton.gas,
-              gas_used: internal_transacton.gas_used,
-              index: internal_transacton.index,
-              output: internal_transacton.output,
-              transaction_hash: internal_transacton.transaction_hash,
-              type: internal_transacton.type,
-              from_address_hash: address_hash,
-              to_address_hash: address_hash,
-              trace_address: [],
-              value: 0,
-              transaction_index: 0,
-              error: internal_transacton.error,
-              input: internal_transacton.input
-            }
-          ]
-        }
-      }
-
-      {:ok, _} = Import.all(options)
-
-      assert result =
-               %Transaction{error: "Bad Instruction", status: :error} =
-               Repo.one!(from(t in Transaction, where: t.hash == ^transaction.hash))
-
-      assert result.internal_transactions_indexed_at
-    end
-
-    test "with internal_transactions updates Transaction internal_transactions_indexed_at" do
+    test "with internal_transactions updates PendingBlockOperation status" do
       block_hash = "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47"
       block_number = 34
       miner_hash = from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
@@ -677,7 +623,10 @@ defmodule Explorer.Chain.ImportTest do
               value: 0
             }
           ]
-        },
+        }
+      }
+
+      internal_txs_options = %{
         internal_transactions: %{
           params: [
             %{
@@ -696,17 +645,18 @@ defmodule Explorer.Chain.ImportTest do
               output: "0x",
               value: 0
             }
-          ]
+          ],
+          with: :blockless_changeset
         }
       }
 
-      refute Enum.any?(options[:transactions][:params], &Map.has_key?(&1, :internal_transactions_indexed_at))
-
       assert {:ok, _} = Import.all(options)
 
-      transaction = Explorer.Repo.get(Transaction, transaction_hash)
+      assert [block_hash] = Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
 
-      refute transaction.internal_transactions_indexed_at == nil
+      assert {:ok, _} = Import.all(internal_txs_options)
+
+      assert [] == Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
     end
 
     test "when the transaction has no to_address and an internal transaction with type create it populates the denormalized created_contract_address_hash" do
@@ -789,7 +739,8 @@ defmodule Explorer.Chain.ImportTest do
               value: 0,
               transaction_index: 0
             }
-          ]
+          ],
+          with: :blockless_changeset
         }
       }
 
@@ -899,7 +850,8 @@ defmodule Explorer.Chain.ImportTest do
                        transaction_index: 1
                      }
                    ],
-                   timeout: 5
+                   timeout: 5,
+                   with: :blockless_changeset
                  },
                  addresses: %{
                    params: [
@@ -1083,7 +1035,8 @@ defmodule Explorer.Chain.ImportTest do
                        transaction_index: 0,
                        transaction_block_number: 35
                      }
-                   ]
+                   ],
+                   with: :blockless_changeset
                  }
                })
 
@@ -1564,14 +1517,15 @@ defmodule Explorer.Chain.ImportTest do
                        transaction_index: 0
                      )
                    ],
-                   timeout: 1
+                   timeout: 1,
+                   with: :blockless_changeset
                  },
                  logs: %{
                    params: [
                      params_for(:log,
                        transaction_hash: transaction_hash,
                        address_hash: miner_hash,
-                       block_number: 35,
+                       # block_number: 35,
                        block_hash: block_hash
                      )
                    ],
@@ -1581,10 +1535,10 @@ defmodule Explorer.Chain.ImportTest do
                    params: [
                      params_for(
                        :token_transfer,
+                       block_hash: block_hash,
                        block_number: 35,
                        from_address_hash: from_address_hash,
                        to_address_hash: to_address_hash,
-                       block_hash: block_hash,
                        token_contract_address_hash: token_contract_address_hash,
                        transaction_hash: transaction_hash
                      )
@@ -1803,7 +1757,6 @@ defmodule Explorer.Chain.ImportTest do
                        block_hash: block_hash_before,
                        block_number: block_number,
                        error: error,
-                       internal_transactions_indexed_at: Timex.parse!("2019-01-01T01:00:00Z", "{ISO:Extended:Z}"),
                        from_address_hash: from_address_hash_before,
                        to_address_hash: to_address_hash_before,
                        gas: 21_000,
@@ -1839,7 +1792,8 @@ defmodule Explorer.Chain.ImportTest do
                        block_number: block_number,
                        transaction_index: 0
                      }
-                   ]
+                   ],
+                   with: :blockless_changeset
                  }
                })
 

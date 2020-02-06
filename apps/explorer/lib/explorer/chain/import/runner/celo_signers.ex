@@ -54,7 +54,7 @@ defmodule Explorer.Chain.Import.Runner.CeloSigners do
     uniq_changes_list =
       changes_list
       |> Enum.sort_by(&{&1.address, &1.signer})
-      |> Enum.dedup_by(&{&1.address, &1.signer})
+      |> Enum.uniq_by(&{&1.address, &1.signer})
 
     {:ok, _} =
       Import.insert_changes_list(

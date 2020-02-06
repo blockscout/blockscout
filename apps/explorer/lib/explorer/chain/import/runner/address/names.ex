@@ -67,7 +67,7 @@ defmodule Explorer.Chain.Import.Runner.Address.Names do
     uniq_changes_list =
       changes_list
       |> Enum.sort_by(&{&1.address_hash, &1.name})
-      |> Enum.dedup_by(&{&1.address_hash, &1.name})
+      |> Enum.uniq_by(&{&1.address_hash, &1.name})
 
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 

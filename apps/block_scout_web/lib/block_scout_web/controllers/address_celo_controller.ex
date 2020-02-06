@@ -22,7 +22,8 @@ defmodule BlockScoutWeb.AddressCeloController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         transaction_count: transaction_count,
-        validation_count: validation_count
+        validation_count: validation_count,
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
       )
     else
       _ ->
