@@ -50,7 +50,7 @@ defmodule Indexer.Fetcher.CeloAccountsTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      7,
+      8,
       fn requests, _opts ->
         {:ok,
          Enum.map(requests, fn
