@@ -99,6 +99,31 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
+  def voter_data(group_address, voter_address) do
+    data =
+      call_methods([
+        {:election, "getPendingVotesForGroupByAccount", [group_address, voter_address]},
+        {:election, "getTotalVotesForGroupByAccount", [group_address, voter_address]},
+        {:election, "getActiveVotesForGroupByAccount", [group_address, voter_address]}
+      ])
+
+    with {:ok, [pending]} <- data["getPendingVotesForGroupByAccount"],
+         {:ok, [total]} <- data["getTotalVotesForGroupByAccount"],
+         {:ok, [active]} <- data["getActiveVotesForGroupByAccount"] do
+      {:ok,
+       %{
+         group_address_hash: group_address,
+         voter_address_hash: voter_address,
+         total: total,
+         pending: pending,
+         active: active
+       }}
+    else
+      _ ->
+        :error
+    end
+  end
+
   # how to delete them from the table?
   def withdrawal_data(%{address: address}) do
     data = fetch_withdrawal_data(address)

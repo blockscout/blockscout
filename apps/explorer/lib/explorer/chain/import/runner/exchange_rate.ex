@@ -54,7 +54,7 @@ defmodule Explorer.Chain.Import.Runner.ExchangeRate do
     uniq_changes_list =
       changes_list
       |> Enum.sort_by(& &1.token)
-      |> Enum.dedup_by(& &1.token)
+      |> Enum.uniq_by(& &1.token)
 
     {:ok, _} =
       Import.insert_changes_list(

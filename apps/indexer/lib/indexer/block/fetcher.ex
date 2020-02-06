@@ -24,6 +24,7 @@ defmodule Indexer.Block.Fetcher do
     CeloValidator,
     CeloValidatorGroup,
     CeloValidatorHistory,
+    CeloVoters,
     CoinBalance,
     ContractCode,
     InternalTransaction,
@@ -193,6 +194,7 @@ defmodule Indexer.Block.Fetcher do
            accounts: celo_accounts,
            validators: celo_validators,
            validator_groups: celo_validator_groups,
+           voters: celo_voters,
            signers: signers,
            attestations_fulfilled: attestations_fulfilled,
            attestations_requested: attestations_requested,
@@ -293,6 +295,7 @@ defmodule Indexer.Block.Fetcher do
 
       async_import_celo_validators(%{celo_validators: %{params: celo_validators}})
       async_import_celo_validator_groups(%{celo_validator_groups: %{params: celo_validator_groups}})
+      async_import_celo_voters(%{celo_voters: %{params: celo_voters}})
       async_import_celo_validator_history(range)
 
       update_block_cache(inserted[:blocks])
@@ -440,6 +443,12 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_celo_validator_groups(_), do: :ok
+
+  def async_import_celo_voters(%{celo_voters: accounts}) do
+    CeloVoters.async_fetch(accounts)
+  end
+
+  def async_import_celo_voters(_), do: :ok
 
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}) do
     UncleBlock.async_fetch_blocks(block_second_degree_relations)

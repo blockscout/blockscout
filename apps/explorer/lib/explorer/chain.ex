@@ -39,6 +39,7 @@ defmodule Explorer.Chain do
     CeloValidator,
     CeloValidatorGroup,
     CeloValidatorHistory,
+    CeloVoters,
     Data,
     DecompiledSmartContract,
     ExchangeRate,
@@ -923,6 +924,8 @@ defmodule Explorer.Chain do
             [{:celo_delegator, :account_address}] => :optional,
             [{:celo_signers, :signer_address}] => :optional,
             [{:celo_members, :validator_address}] => :optional,
+            [{:celo_voters, :voter_address}] => :optional,
+            [{:celo_voted, :group_address}] => :optional,
             :celo_validator => :optional,
             [{:celo_validator, :group_address}] => :optional,
             [{:celo_validator, :signer}] => :optional,
@@ -3919,6 +3922,21 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       data -> {:ok, data}
+    end
+  end
+
+  def get_celo_voters(group_address) do
+    query =
+      from(account in CeloVoters,
+        where: account.group_address_hash == ^group_address,
+        where: account.total > ^0
+      )
+
+    query
+    |> Repo.all()
+    |> case do
+      nil -> []
+      data -> data
     end
   end
 
