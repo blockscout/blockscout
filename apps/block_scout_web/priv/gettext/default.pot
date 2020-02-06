@@ -467,7 +467,7 @@ msgid "Create2"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:94
+#: lib/block_scout_web/templates/address/overview.html.eex:96
 msgid "Created by"
 msgstr ""
 
@@ -631,7 +631,7 @@ msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:107
+#: lib/block_scout_web/templates/address/overview.html.eex:109
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
@@ -961,7 +961,7 @@ msgid "It could still be in the TX Pool of a different node, waiting to be broad
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:79
+#: lib/block_scout_web/templates/address/overview.html.eex:81
 msgid "Last Balance Update: Block #"
 msgstr ""
 
@@ -1177,7 +1177,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:33
-#: lib/block_scout_web/templates/address/overview.html.eex:131
+#: lib/block_scout_web/templates/address/overview.html.eex:133
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:51
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:93
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
@@ -1662,7 +1662,7 @@ msgid "Yes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:99
+#: lib/block_scout_web/templates/address/overview.html.eex:101
 msgid "at"
 msgstr ""
 
@@ -1720,8 +1720,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
-#: lib/block_scout_web/templates/address/overview.html.eex:132
-#: lib/block_scout_web/templates/address/overview.html.eex:140
+#: lib/block_scout_web/templates/address/overview.html.eex:134
+#: lib/block_scout_web/templates/address/overview.html.eex:142
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:94
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:102
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:106
