@@ -451,8 +451,6 @@ defmodule Indexer.Block.Fetcher do
     CeloVoterRewards.async_fetch(accounts)
   end
 
-  defp async_import_celo_voter_rewards(_), do: :ok
-
   def async_import_celo_voters(%{celo_voters: accounts}) do
     CeloVoters.async_fetch(accounts)
   end
