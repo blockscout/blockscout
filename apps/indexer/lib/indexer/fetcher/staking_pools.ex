@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.StakingPools do
   @defaults [
     flush_interval: 300,
     max_batch_size: 100,
-    max_concurrency: 10,
+    max_concurrency: 4,
     task_supervisor: Indexer.Fetcher.StakingPools.TaskSupervisor
   ]
 
