@@ -74,9 +74,9 @@ defmodule Explorer.Mixfile do
       {:decimal, "~> 1.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # `override: true` for `ex_machina` compatibility
-      {:ecto, "~> 3.1", override: true},
+      {:ecto, "~> 3.3", override: true},
       # Storing blockchain data and derived data in PostgreSQL.
-      {:ecto_sql, "~> 3.1"},
+      {:ecto_sql, "~> 3.3"},
       # JSONRPC access to query smart contracts
       {:ethereum_jsonrpc, in_umbrella: true},
       # Data factory for testing
@@ -110,7 +110,7 @@ defmodule Explorer.Mixfile do
       # `:spandex` tracing of `:ecto`
       {:spandex_ecto, "~> 0.4.0"},
       # Attach `:prometheus_ecto` to `:ecto`
-      {:telemetry, "~> 0.4.0"},
+      {:telemetry, "~> 0.4.1"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.6"},
       {:con_cache, "~> 0.13"}

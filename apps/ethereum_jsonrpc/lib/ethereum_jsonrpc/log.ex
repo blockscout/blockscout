@@ -39,6 +39,7 @@ defmodule EthereumJSONRPC.Log do
       ...> )
       %{
         address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+        block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
         block_number: 37,
         data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
         first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
@@ -47,6 +48,7 @@ defmodule EthereumJSONRPC.Log do
         second_topic: nil,
         third_topic: nil,
         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+        block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
         type: "mined"
       }
 
@@ -69,7 +71,9 @@ defmodule EthereumJSONRPC.Log do
       ...> )
       %{
         address_hash: "0xda8b3276cde6d768a44b9dac659faa339a41ac55",
+        block_hash: "0x0b89f7f894f5d8ba941e16b61490e999a0fcaaf92dfcc70aee2ac5ddb5f243e1",
         block_number: 4448,
+        block_hash: "0x0b89f7f894f5d8ba941e16b61490e999a0fcaaf92dfcc70aee2ac5ddb5f243e1",
         data: "0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563",
         first_topic: "0xadc1e8a294f8415511303acc4a8c0c5906c7eb0bf2a71043d7f4b03b46a39130",
         fourth_topic: nil,
@@ -84,6 +88,7 @@ defmodule EthereumJSONRPC.Log do
         %{
           "address" => address_hash,
           "blockNumber" => block_number,
+          "blockHash" => block_hash,
           "data" => data,
           "logIndex" => index,
           "topics" => topics,
@@ -93,6 +98,7 @@ defmodule EthereumJSONRPC.Log do
     %{
       address_hash: address_hash,
       block_number: block_number,
+      block_hash: block_hash,
       data: data,
       index: index,
       transaction_hash: transaction_hash

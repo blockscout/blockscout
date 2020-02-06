@@ -103,7 +103,8 @@ defmodule Explorer.ChainSpec.Parity.Importer do
       !is_nil(map["balance"])
     end)
     |> Stream.map(fn {address, %{"balance" => value} = params} ->
-      {:ok, address_hash} = AddressHash.cast(address)
+      formatted_address = if String.starts_with?(address, "0x"), do: address, else: "0x" <> address
+      {:ok, address_hash} = AddressHash.cast(formatted_address)
       balance = parse_number(value)
 
       nonce = parse_number(params["nonce"] || "0")
@@ -138,13 +139,19 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     }
   end
 
-  defp parse_hex_numbers(rewards) do
+  defp parse_hex_numbers(rewards) when is_map(rewards) do
     Enum.map(rewards, fn {hex_block_number, hex_reward} ->
       block_number = parse_number(hex_block_number)
       {:ok, reward} = hex_reward |> parse_number() |> Wei.cast()
 
       {block_number, reward}
     end)
+  end
+
+  defp parse_hex_numbers(reward) do
+    {:ok, reward} = reward |> parse_number() |> Wei.cast()
+
+    [{0, reward}]
   end
 
   defp parse_number("0x" <> hex_number) do

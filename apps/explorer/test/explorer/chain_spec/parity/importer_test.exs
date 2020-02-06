@@ -11,6 +11,10 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
               |> File.read!()
               |> Jason.decode!()
 
+  @chain_classic_spec "#{File.cwd!()}/test/support/fixture/chain_spec/classic.json"
+                      |> File.read!()
+                      |> Jason.decode!()
+
   describe "emission_rewards/1" do
     test "fetches and formats reward ranges" do
       assert Importer.emission_rewards(@chain_spec) == [
@@ -25,6 +29,15 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
                %{
                  block_range: %Range{from: 7_280_001, to: :infinity},
                  reward: %Wei{value: Decimal.new(2_000_000_000_000_000_000)}
+               }
+             ]
+    end
+
+    test "fetches and formats a single reward" do
+      assert Importer.emission_rewards(@chain_classic_spec) == [
+               %{
+                 block_range: %Range{from: 1, to: :infinity},
+                 reward: %Wei{value: Decimal.new(5_000_000_000_000_000_000)}
                }
              ]
     end
@@ -153,6 +166,15 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
       address = Address |> Repo.one()
 
       assert to_string(address.contract_code) == code
+    end
+
+    test "imports coin balances without 0x" do
+      {:ok, %{address_coin_balances: address_coin_balances}} =
+        Importer.import_genesis_coin_balances(@chain_classic_spec)
+
+      assert Enum.count(address_coin_balances) == 8894
+      assert CoinBalance |> Repo.all() |> Enum.count() == 8894
+      assert Address |> Repo.all() |> Enum.count() == 8894
     end
   end
 end
