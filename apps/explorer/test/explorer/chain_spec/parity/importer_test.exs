@@ -170,7 +170,7 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
 
     test "imports coin balances without 0x" do
       {:ok, %{address_coin_balances: address_coin_balances}} =
-        Importer.import_genesis_coin_balances(@chain_classic_spec)
+        Importer.import_genesis_accounts(@chain_classic_spec)
 
       assert Enum.count(address_coin_balances) == 8894
       assert CoinBalance |> Repo.all() |> Enum.count() == 8894
