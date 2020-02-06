@@ -80,7 +80,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
       latest_block_number ->
         # realtime indexer gets the current latest block
-        first = latest_block_number - 10
+        first = latest_block_number - 1
         last = last_block()
 
         Logger.metadata(first_block_number: first, last_block_number: last)
