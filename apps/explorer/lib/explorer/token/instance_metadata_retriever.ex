@@ -48,33 +48,50 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     Reader.query_contract(contract_address_hash, @abi, contract_functions)
   end
 
-  defp fetch_json(%{"tokenURI" => {:ok, [""]}}) do
+  def fetch_json(%{"tokenURI" => {:ok, [""]}}) do
     {:ok, %{error: @no_uri_error}}
   end
 
-  defp fetch_json(%{"tokenURI" => {:error, "(-32015) VM execution error."}}) do
+  def fetch_json(%{"tokenURI" => {:error, "(-32015) VM execution error."}}) do
     {:ok, %{error: @no_uri_error}}
   end
 
-  defp fetch_json(%{"tokenURI" => {:ok, ["http://" <> _ = token_uri]}}) do
+  def fetch_json(%{"tokenURI" => {:ok, ["http://" <> _ = token_uri]}}) do
     fetch_metadata(token_uri)
   end
 
-  defp fetch_json(%{"tokenURI" => {:ok, ["https://" <> _ = token_uri]}}) do
+  def fetch_json(%{"tokenURI" => {:ok, ["https://" <> _ = token_uri]}}) do
     fetch_metadata(token_uri)
   end
 
-  defp fetch_json(%{"tokenURI" => {:ok, [json]}}) do
-    Jason.decode(json)
+  def fetch_json(%{"tokenURI" => {:ok, ["data:application/json," <> json]}}) do
+    decoded_json = URI.decode(json)
+
+    fetch_json(%{"tokenURI" => {:ok, [decoded_json]}})
   rescue
     e ->
-      Logger.error(fn -> ["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"] end)
+      Logger.debug(["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"],
+        fetcher: :token_instances
+      )
 
       {:error, json}
   end
 
-  defp fetch_json(result) do
-    Logger.error(fn -> ["Unknown metadata format #{inspect(result)}."] end)
+  def fetch_json(%{"tokenURI" => {:ok, [json]}}) do
+    {:ok, json} = decode_json(json)
+
+    check_type(json)
+  rescue
+    e ->
+      Logger.debug(["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"],
+        fetcher: :token_instances
+      )
+
+      {:error, json}
+  end
+
+  def fetch_json(result) do
+    Logger.debug(["Unknown metadata format #{inspect(result)}."], fetcher: :token_instances)
 
     {:error, result}
   end
@@ -82,9 +99,9 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   defp fetch_metadata(token_uri) do
     case HTTPoison.get(token_uri) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        {:ok, json} = Jason.decode(body)
+        {:ok, json} = decode_json(body)
 
-        {:ok, %{metadata: json}}
+        check_type(json)
 
       {:ok, %Response{body: body}} ->
         {:error, body}
@@ -94,8 +111,28 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     end
   rescue
     e ->
-      Logger.error(fn -> ["Could not send request to token uri #{inspect(token_uri)}. error #{inspect(e)}"] end)
+      Logger.debug(["Could not send request to token uri #{inspect(token_uri)}. error #{inspect(e)}"],
+        fetcher: :token_instances
+      )
 
       {:error, :request_error}
+  end
+
+  defp decode_json(body) do
+    if String.valid?(body) do
+      Jason.decode(body)
+    else
+      body
+      |> :unicode.characters_to_binary(:latin1)
+      |> Jason.decode()
+    end
+  end
+
+  defp check_type(json) when is_map(json) do
+    {:ok, %{metadata: json}}
+  end
+
+  defp check_type(_) do
+    {:error, :wrong_metadata_type}
   end
 end

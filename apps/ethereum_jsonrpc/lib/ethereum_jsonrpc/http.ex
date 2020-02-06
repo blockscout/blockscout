@@ -132,7 +132,7 @@ defmodule EthereumJSONRPC.HTTP do
 
   # restrict response to only those fields supported by the JSON-RPC 2.0 standard, which means that level of keys is
   # validated, so we can indicate that with switch to atom keys.
-  defp standardize_response(%{"jsonrpc" => "2.0" = jsonrpc, "id" => id} = unstandardized) do
+  def standardize_response(%{"jsonrpc" => "2.0" = jsonrpc, "id" => id} = unstandardized) do
     # Nethermind return string ids
     id = quantity_to_integer(id)
 
@@ -155,8 +155,8 @@ defmodule EthereumJSONRPC.HTTP do
 
   # restrict error to only those fields supported by the JSON-RPC 2.0 standard, which means that level of keys is
   # validated, so we can indicate that with switch to atom keys.
-  defp standardize_error(%{"code" => code, "message" => message} = unstandardized)
-       when is_integer(code) and is_binary(message) do
+  def standardize_error(%{"code" => code, "message" => message} = unstandardized)
+      when is_integer(code) and is_binary(message) do
     standardized = %{code: code, message: message}
 
     case Map.fetch(unstandardized, "data") do
