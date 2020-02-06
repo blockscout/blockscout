@@ -53,8 +53,8 @@ defmodule Explorer.Chain.Import.Runner.CeloVoterRewards do
     # Enforce ShareLocks order (see docs: sharelocks.md)
     uniq_changes_list =
       changes_list
-      |> Enum.sort_by(& {&1.block_hash, &1.log_index})
-      |> Enum.dedup_by(& {&1.block_hash, &1.log_index})
+      |> Enum.sort_by(&{&1.block_hash, &1.log_index})
+      |> Enum.dedup_by(&{&1.block_hash, &1.log_index})
 
     {:ok, _} =
       Import.insert_changes_list(

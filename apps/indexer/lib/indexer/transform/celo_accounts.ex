@@ -112,7 +112,7 @@ defmodule Indexer.Transform.CeloAccounts do
     _ in [FunctionClauseError, MatchError] ->
       Logger.error(fn -> "Unknown group voter reward event format: #{inspect(log)}" end)
   end
-  
+
   defp do_parse_voters(log, accounts) do
     pair = parse_voter_params(log)
     [pair | accounts]
@@ -170,9 +170,16 @@ defmodule Indexer.Transform.CeloAccounts do
   defp parse_reward_params(log) do
     address = truncate_address_hash(log.second_topic)
     [value] = decode_data(log.data, [{:uint, 256}])
-    %{address_hash: address, reward: value, log_index: log.index, block_hash: log.block_hash, block_number: log.block_number}
+
+    %{
+      address_hash: address,
+      reward: value,
+      log_index: log.index,
+      block_hash: log.block_hash,
+      block_number: log.block_number
+    }
   end
-  
+
   defp parse_voter_params(log) do
     voter_address = truncate_address_hash(log.second_topic)
     group_address = truncate_address_hash(log.third_topic)

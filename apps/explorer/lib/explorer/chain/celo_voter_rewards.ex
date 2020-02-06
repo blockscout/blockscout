@@ -15,13 +15,13 @@ defmodule Explorer.Chain.CeloVoterRewards do
   """
 
   @type t :: %__MODULE__{
-    block_hash: Hash.Full.t(),
-    log_index: non_neg_integer(),
-    block_number: non_neg_integer(),
-    address_hash: Hash.Address.t(),
-    active_votes: Wei.t(),
-    reward: Wei.t()
-  }
+          block_hash: Hash.Full.t(),
+          log_index: non_neg_integer(),
+          block_number: non_neg_integer(),
+          address_hash: Hash.Address.t(),
+          active_votes: Wei.t(),
+          reward: Wei.t()
+        }
 
   @attrs ~w( block_hash log_index address_hash active_votes reward block_number )a
 
@@ -40,7 +40,7 @@ defmodule Explorer.Chain.CeloVoterRewards do
       references: :hash,
       type: Hash.Address
     )
-    
+
     belongs_to(:block, Block,
       foreign_key: :block_hash,
       primary_key: true,

@@ -15,36 +15,30 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewards do
 
     create(index(:celo_voter_rewards, [:block_hash, :log_index], unique: true))
 
-    execute(
-      """
-      create materialized view voter_rewards as
-      select address_hash, sum(active_votes) as active, sum(reward) as reward
-      from celo_voter_rewards, (select max(block_number) as max_block_number from celo_voter_rewards) as t
-      where block_number > max_block_number - 100
-      group by address_hash
-      """
-    )
+    execute("""
+    create materialized view voter_rewards as
+    select address_hash, sum(active_votes) as active, sum(reward) as reward
+    from celo_voter_rewards, (select max(block_number) as max_block_number from celo_voter_rewards) as t
+    where block_number > max_block_number - 100
+    group by address_hash
+    """)
 
-    execute(
-      """
-        CREATE OR REPLACE FUNCTION refresh_rewards()
-        RETURNS trigger AS $$
-        BEGIN
-          REFRESH MATERIALIZED VIEW voter_rewards;
-          RETURN NULL;
-        END;
-      $$ LANGUAGE plpgsql
-      """)
-    
-    execute(
-      """
-      CREATE TRIGGER refresh_rewards_trg
-      AFTER INSERT OR UPDATE OR DELETE
-      ON celo_voter_rewards
-      FOR EACH STATEMENT
-      EXECUTE PROCEDURE refresh_rewards()
-      """
-    )
+    execute("""
+      CREATE OR REPLACE FUNCTION refresh_rewards()
+      RETURNS trigger AS $$
+      BEGIN
+        REFRESH MATERIALIZED VIEW voter_rewards;
+        RETURN NULL;
+      END;
+    $$ LANGUAGE plpgsql
+    """)
 
+    execute("""
+    CREATE TRIGGER refresh_rewards_trg
+    AFTER INSERT OR UPDATE OR DELETE
+    ON celo_voter_rewards
+    FOR EACH STATEMENT
+    EXECUTE PROCEDURE refresh_rewards()
+    """)
   end
 end
