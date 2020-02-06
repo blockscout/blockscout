@@ -140,7 +140,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           gas_fee_recipient_hash: fragment("EXCLUDED.gas_fee_recipient_hash"),
           gas_used: fragment("EXCLUDED.gas_used"),
           gateway_fee: fragment("EXCLUDED.gateway_fee"),
-          # Don't update `index` as it is part of the composite primary key and used for the conflict target
           index: fragment("EXCLUDED.index"),
           init: fragment("EXCLUDED.init"),
           input: fragment("EXCLUDED.input"),
