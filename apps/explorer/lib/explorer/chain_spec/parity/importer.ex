@@ -108,7 +108,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
       balance = parse_number(value)
 
       nonce = parse_number(params["nonce"] || "0")
-      code = params["code"]
+      code = params["constructor"]
 
       %{address_hash: address_hash, value: balance, nonce: nonce, contract_code: code}
     end)

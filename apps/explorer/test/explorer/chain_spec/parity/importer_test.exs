@@ -118,7 +118,7 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
         "accounts" => %{
           "0xcd59f3dde77e09940befb6ee58031965cae7a336" => %{
             "balance" => "0x21e19e0c9bab2400000",
-            "code" => code
+            "constructor" => code
           }
         }
       }
@@ -156,7 +156,7 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
         "accounts" => %{
           "0xcd59f3dde77e09940befb6ee58031965cae7a336" => %{
             "balance" => "0x21e19e0c9bab2400000",
-            "code" => code
+            "constructor" => code
           }
         }
       }
@@ -169,8 +169,7 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
     end
 
     test "imports coin balances without 0x" do
-      {:ok, %{address_coin_balances: address_coin_balances}} =
-        Importer.import_genesis_accounts(@chain_classic_spec)
+      {:ok, %{address_coin_balances: address_coin_balances}} = Importer.import_genesis_accounts(@chain_classic_spec)
 
       assert Enum.count(address_coin_balances) == 8894
       assert CoinBalance |> Repo.all() |> Enum.count() == 8894
