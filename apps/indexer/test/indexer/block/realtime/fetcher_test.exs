@@ -19,7 +19,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
     CeloAccount,
     CeloValidator,
     CeloValidatorGroup,
-    CeloValidatorHistory
+    CeloValidatorHistory,
+    CeloVoters
   }
 
   @moduletag capture_log: true
@@ -71,6 +72,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       CeloAccount.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloVoters.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
@@ -484,7 +486,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       old_number = 94
 
       assert (previous_number + 1)..number == Realtime.Fetcher.determine_fetching_action(number, previous_number, nil)
-      assert (old_number + 1)..number == Realtime.Fetcher.determine_fetching_action(number, old_number, nil)
+      assert (number - 10)..number == Realtime.Fetcher.determine_fetching_action(number, old_number, nil)
     end
 
     test "when number immediately follows the previous_number it is fetched" do
@@ -508,7 +510,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
       number = max_number_seen + max_skipping_distance + 1
 
-      assert (previous_number + 1)..number ==
+      assert (number - 10)..number ==
                Realtime.Fetcher.determine_fetching_action(number, previous_number, max_number_seen)
     end
   end

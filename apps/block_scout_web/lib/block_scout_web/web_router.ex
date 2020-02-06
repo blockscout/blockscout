@@ -134,6 +134,13 @@ defmodule BlockScoutWeb.WebRouter do
         as: :read_contract
       )
 
+      resources(
+        "/token_transfers",
+        AddressTokenTransferController,
+        only: [:index],
+        as: :token_transfers
+      )
+
       resources("/tokens", AddressTokenController, only: [:index], as: :token) do
         resources(
           "/token_transfers",
@@ -223,6 +230,8 @@ defmodule BlockScoutWeb.WebRouter do
       as: :smart_contract
     )
 
+    get("/address_counters", AddressController, :address_counters)
+
     get("/search", ChainController, :search)
 
     get("/search_logs", AddressLogsController, :search_logs)
@@ -234,6 +243,8 @@ defmodule BlockScoutWeb.WebRouter do
     get("/token_transfers_csv", AddressTransactionController, :token_transfers_csv)
 
     get("/chain_blocks", ChainController, :chain_blocks, as: :chain_blocks)
+
+    get("/token_counters", Tokens.TokenController, :token_counters)
 
     get("/*path", PageNotFoundController, :index)
   end

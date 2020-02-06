@@ -55,6 +55,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
+    # ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.log_index})
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.block_hash, &1.log_index})
 
     {:ok, _} =
@@ -75,7 +76,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
       token_transfer in TokenTransfer,
       update: [
         set: [
-          # Don't update `block_hash` as it is part of the composite primary key and used for the conflict target
+          # Don't update `transaction_hash` as it is part of the composite primary key and used for the conflict target
           # Don't update `log_index` as it is part of the composite primary key and used for the conflict target
           amount: fragment("EXCLUDED.amount"),
           from_address_hash: fragment("EXCLUDED.from_address_hash"),
@@ -89,11 +90,13 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
       ],
       where:
         fragment(
+          # "(EXCLUDED.amount, EXCLUDED.from_address_hash, EXCLUDED.to_address_hash, EXCLUDED.token_contract_address_hash, EXCLUDED.token_id) IS DISTINCT FROM (?, ? ,? , ?, ?)",
           "(EXCLUDED.amount, EXCLUDED.from_address_hash, EXCLUDED.to_address_hash, EXCLUDED.token_contract_address_hash, EXCLUDED.token_id, EXCLUDED.transaction_hash) IS DISTINCT FROM (?, ? ,? , ?, ?, ?)",
           token_transfer.amount,
           token_transfer.from_address_hash,
           token_transfer.to_address_hash,
           token_transfer.token_contract_address_hash,
+          # ,
           token_transfer.token_id,
           token_transfer.transaction_hash
         )

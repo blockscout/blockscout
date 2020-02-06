@@ -53,14 +53,16 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
 
 .dashboard-banner-chart {
   flex-grow: 1;
-  margin: 0 0 35px 0;
+  margin: 15px 0 20px 0;
   max-width: 350px;
   position: relative;
+  min-height: 100px;
+  height: calc(100% - 86px);
 
   @include media-breakpoint-down(md) {
     flex-grow: 0;
-    margin-bottom: 20px;
-    margin-top: auto;
+    margin-top: 20px;
+    margin-bottom: auto;
     max-width: 100%;
   }
 

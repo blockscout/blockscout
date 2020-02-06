@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   alias BlockScoutWeb.API.RPC.RPCView
   alias Explorer.Chain.{Address, DecompiledSmartContract, SmartContract}
 
+  defguardp is_empty_string(input) when input == "" or input == nil
+
   def render("listcontracts.json", %{contracts: contracts}) do
     contracts = Enum.map(contracts, &prepare_contract/1)
 
@@ -35,7 +37,11 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       "CompilerVersion" => "",
       "DecompiledSourceCode" => "",
       "DecompilerVersion" => decompiler_version(nil),
-      "OptimizationUsed" => ""
+      "OptimizationUsed" => "",
+      "OptimizationRuns" => "",
+      "EVMVersion" => "",
+      "ConstructorArguments" => "",
+      "ExternalLibraries" => ""
     }
   end
 
@@ -43,6 +49,68 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     decompiled_smart_contract = latest_decompiled_smart_contract(address.decompiled_smart_contracts)
     contract = address.smart_contract || %{}
 
+    optimization = Map.get(contract, :optimization, "")
+
+    contract_output = %{
+      "Address" => to_string(address.hash)
+    }
+
+    contract_output
+    |> set_decompiled_contract_data(decompiled_smart_contract)
+    |> set_optimization_runs(contract, optimization)
+    |> set_constructor_arguments(contract)
+    |> set_external_libraries(contract)
+    |> set_verified_contract_data(contract, address, optimization)
+  end
+
+  defp set_decompiled_contract_data(contract_output, decompiled_smart_contract) do
+    if decompiled_smart_contract do
+      contract_output
+      |> Map.put_new(:DecompiledSourceCode, decompiled_source_code(decompiled_smart_contract))
+      |> Map.put_new(:DecompilerVersion, decompiler_version(decompiled_smart_contract))
+    else
+      contract_output
+    end
+  end
+
+  defp set_optimization_runs(contract_output, contract, optimization) do
+    optimization_runs = Map.get(contract, :optimization_runs, "")
+
+    if optimization && optimization != "" do
+      contract_output
+      |> Map.put_new(:OptimizationRuns, optimization_runs)
+    else
+      contract_output
+    end
+  end
+
+  defp set_constructor_arguments(contract_output, %{constructor_arguments: arguments}) when is_empty_string(arguments),
+    do: contract_output
+
+  defp set_constructor_arguments(contract_output, %{constructor_arguments: arguments}) do
+    contract_output
+    |> Map.put_new(:ConstructorArguments, arguments)
+  end
+
+  defp set_constructor_arguments(contract_output, _), do: contract_output
+
+  defp set_external_libraries(contract_output, contract) do
+    external_libraries = Map.get(contract, :external_libraries, [])
+
+    if Enum.count(external_libraries) > 0 do
+      external_libraries_without_id =
+        Enum.map(external_libraries, fn %{name: name, address_hash: address_hash} ->
+          %{"name" => name, "address_hash" => address_hash}
+        end)
+
+      contract_output
+      |> Map.put_new(:ExternalLibraries, external_libraries_without_id)
+    else
+      contract_output
+    end
+  end
+
+  defp set_verified_contract_data(contract_output, contract, address, optimization) do
     contract_abi =
       if is_nil(address.smart_contract) do
         "Contract source code not verified"
@@ -51,27 +119,28 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       end
 
     contract_optimization =
-      case Map.get(contract, :optimization, "") do
+      case optimization do
         true ->
-          "1"
+          "true"
 
         false ->
-          "0"
+          "false"
 
         "" ->
           ""
       end
 
-    %{
-      "Address" => to_string(address.hash),
-      "SourceCode" => Map.get(contract, :contract_source_code, ""),
-      "ABI" => contract_abi,
-      "ContractName" => Map.get(contract, :name, ""),
-      "DecompiledSourceCode" => decompiled_source_code(decompiled_smart_contract),
-      "DecompilerVersion" => decompiler_version(decompiled_smart_contract),
-      "CompilerVersion" => Map.get(contract, :compiler_version, ""),
-      "OptimizationUsed" => contract_optimization
-    }
+    if Map.equal?(contract, %{}) do
+      contract_output
+    else
+      contract_output
+      |> Map.put_new(:SourceCode, Map.get(contract, :contract_source_code, ""))
+      |> Map.put_new(:ABI, contract_abi)
+      |> Map.put_new(:ContractName, Map.get(contract, :name, ""))
+      |> Map.put_new(:CompilerVersion, Map.get(contract, :compiler_version, ""))
+      |> Map.put_new(:OptimizationUsed, contract_optimization)
+      |> Map.put_new(:EVMVersion, Map.get(contract, :evm_version, ""))
+    end
   end
 
   defp prepare_contract(%Address{
@@ -80,10 +149,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
        }) do
     %{
       "Address" => to_string(hash),
-      "ABI" => "Contract source code not verified",
-      "ContractName" => "",
-      "CompilerVersion" => "",
-      "OptimizationUsed" => ""
+      "ABI" => "Contract source code not verified"
     }
   end
 

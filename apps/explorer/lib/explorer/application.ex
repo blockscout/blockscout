@@ -9,6 +9,8 @@ defmodule Explorer.Application do
 
   alias Explorer.Chain.Cache.{
     Accounts,
+    AddressSum,
+    AddressSumMinusBurnt,
     BlockCount,
     BlockNumber,
     Blocks,
@@ -18,8 +20,6 @@ defmodule Explorer.Application do
     Transactions,
     Uncles
   }
-
-  alias Explorer.Chain.Events.Listener
 
   alias Explorer.Chain.Supply.RSK
 
@@ -48,8 +48,9 @@ defmodule Explorer.Application do
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
       TransactionCount,
+      AddressSum,
+      AddressSumMinusBurnt,
       BlockCount,
-      Listener,
       Blocks,
       NetVersion,
       BlockNumber,
@@ -74,6 +75,7 @@ defmodule Explorer.Application do
       configure(Explorer.ChainSpec.GenesisData),
       configure(Explorer.KnownTokens),
       configure(Explorer.Market.History.Cataloger),
+      configure(Explorer.Chain.Events.Listener),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
       configure(Explorer.Counters.AddressesCounter),
       configure(Explorer.Counters.AverageBlockTime),
