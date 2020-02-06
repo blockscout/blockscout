@@ -23,7 +23,8 @@ defmodule Indexer.Block.FetcherTest do
     CeloAccount,
     CeloValidator,
     CeloValidatorHistory,
-    CeloValidatorGroup
+    CeloValidatorGroup,
+    CeloVoters
   }
 
   @moduletag capture_log: true
@@ -63,6 +64,7 @@ defmodule Indexer.Block.FetcherTest do
       CeloValidator.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorHistory.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       CeloValidatorGroup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CeloVoters.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       UncleBlock.Supervisor.Case.start_supervised!(
@@ -521,8 +523,7 @@ defmodule Indexer.Block.FetcherTest do
                           bytes:
                             <<76, 188, 236, 37, 153, 153, 224, 115, 252, 79, 176, 224, 228, 166, 18, 66, 94, 61, 115,
                               57, 47, 162, 37, 255, 36, 96, 161, 238, 171, 66, 99, 10>>
-                        },
-                        internal_transactions_indexed_at: nil
+                        }
                       },
                       %Transaction{
                         block_number: block_number,
@@ -532,8 +533,7 @@ defmodule Indexer.Block.FetcherTest do
                           bytes:
                             <<240, 237, 34, 44, 16, 174, 248, 135, 4, 196, 15, 198, 34, 220, 218, 174, 13, 208, 242,
                               122, 154, 143, 4, 28, 171, 95, 190, 255, 254, 174, 75, 182>>
-                        },
-                        internal_transactions_indexed_at: nil
+                        }
                       }
                     ]
                   }} = Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
@@ -632,8 +632,7 @@ defmodule Indexer.Block.FetcherTest do
                             bytes:
                               <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35,
                                 77, 57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                          },
-                          internal_transactions_indexed_at: nil
+                          }
                         }
                       ]
                     },

@@ -4,7 +4,6 @@ import humps from 'humps'
 import socket from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
-import { createCoinBalanceHistoryChart } from '../../lib/coin_balance_history_chart'
 
 export const initialState = {
   channelDisconnected: false
@@ -47,7 +46,7 @@ if ($('[data-page="coin-balance-history"]').length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.blockNumber')
   const addressHash = $('[data-page="address-details"]')[0].dataset.pageAddressHash
 
-  store.dispatch({type: 'PAGE_LOAD', addressHash})
+  store.dispatch({ type: 'PAGE_LOAD', addressHash })
   connectElements({ store, elements })
 
   const addressChannel = socket.channel(`addresses:${addressHash}`, {})
@@ -61,9 +60,4 @@ if ($('[data-page="coin-balance-history"]').length) {
       msg: humps.camelizeKeys(msg)
     })
   })
-
-  const chartContainer = $('[data-chart="coinBalanceHistoryChart"]')[0]
-  if (chartContainer) {
-    createCoinBalanceHistoryChart(chartContainer)
-  }
 }

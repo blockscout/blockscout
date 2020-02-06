@@ -6,14 +6,19 @@ defmodule Indexer.Transform.CeloAccounts do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Explorer.Chain.{CeloAccount, CeloSigners}
+  alias Explorer.Chain.{CeloAccount, CeloSigners, CeloVoters}
 
   @doc """
   Returns a list of account addresses given a list of logs.
   """
   def parse(logs) do
     %{
-      accounts: get_addresses(logs, CeloAccount.account_events()),
+      # Add special items for voter epoch rewards
+      accounts:
+        get_addresses(logs, CeloAccount.account_events()) ++
+          Enum.map(get_addresses(logs, CeloVoters.distributed_events()), fn %{address: a} ->
+            %{voter: a}
+          end),
       # Adding a group to updated validators means to update all members of the group
       validators:
         get_addresses(logs, CeloAccount.validator_events()) ++
@@ -25,6 +30,7 @@ defmodule Indexer.Transform.CeloAccounts do
       withdrawals: get_addresses(logs, CeloAccount.withdrawal_events()),
       signers: get_signers(logs, CeloSigners.signer_events()),
       voter_rewards: get_rewards(logs, CeloAccount.validator_group_voter_reward_events()),
+      voters: get_voters(logs, CeloVoters.voter_events()),
       attestations_fulfilled:
         get_addresses(logs, [CeloAccount.attestation_completed_event()], fn a -> a.fourth_topic end),
       attestations_requested:
@@ -70,6 +76,12 @@ defmodule Indexer.Transform.CeloAccounts do
     |> Enum.reduce([], fn log, accounts -> do_parse_rewards(log, accounts) end)
   end
 
+  defp get_voters(logs, topics) do
+    logs
+    |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
+    |> Enum.reduce([], fn log, accounts -> do_parse_voters(log, accounts) end)
+  end
+
   defp do_parse(log, accounts, get_topic) do
     account_address = parse_params(log, get_topic)
 
@@ -99,6 +111,14 @@ defmodule Indexer.Transform.CeloAccounts do
   rescue
     _ in [FunctionClauseError, MatchError] ->
       Logger.error(fn -> "Unknown group voter reward event format: #{inspect(log)}" end)
+  end
+  
+  defp do_parse_voters(log, accounts) do
+    pair = parse_voter_params(log)
+    [pair | accounts]
+  rescue
+    _ in [FunctionClauseError, MatchError] ->
+      Logger.error(fn -> "Unknown voting event format: #{inspect(log)}" end)
       accounts
   end
 
@@ -151,6 +171,12 @@ defmodule Indexer.Transform.CeloAccounts do
     address = truncate_address_hash(log.second_topic)
     [value] = decode_data(log.data, [{:uint, 256}])
     %{address_hash: address, reward: value, log_index: log.index, block_hash: log.block_hash, block_number: log.block_number}
+  end
+  
+  defp parse_voter_params(log) do
+    voter_address = truncate_address_hash(log.second_topic)
+    group_address = truncate_address_hash(log.third_topic)
+    %{group_address: group_address, voter_address: voter_address}
   end
 
   defp truncate_address_hash(nil), do: "0x0000000000000000000000000000000000000000"

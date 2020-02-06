@@ -10,7 +10,7 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
-  alias Explorer.{Chain, Market}
+  alias Explorer.Market
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
@@ -25,10 +25,12 @@ defmodule Indexer.Block.Fetcher do
     CeloValidatorGroup,
     CeloValidatorHistory,
     CeloVoterRewards,
+    CeloVoters,
     CoinBalance,
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
+    #    StakingPools,
     Token,
     TokenBalance,
     TokenInstance,
@@ -79,7 +81,6 @@ defmodule Indexer.Block.Fetcher do
 
   @receipts_batch_size 250
   @receipts_concurrency 10
-  @geth_block_limit 128
 
   @doc false
   def default_receipts_batch_size, do: @receipts_batch_size
@@ -194,6 +195,7 @@ defmodule Indexer.Block.Fetcher do
            accounts: celo_accounts,
            validators: celo_validators,
            validator_groups: celo_validator_groups,
+           voters: celo_voters,
            signers: signers,
            attestations_fulfilled: attestations_fulfilled,
            attestations_requested: attestations_requested,
@@ -296,6 +298,7 @@ defmodule Indexer.Block.Fetcher do
       async_import_celo_validators(%{celo_validators: %{params: celo_validators}})
       async_import_celo_voter_rewards(%{celo_voter_rewards: %{params: celo_voter_rewards}})
       async_import_celo_validator_groups(%{celo_validator_groups: %{params: celo_validator_groups}})
+      async_import_celo_voters(%{celo_voters: %{params: celo_voters}})
       async_import_celo_validator_history(range)
 
       update_block_cache(inserted[:blocks])
@@ -388,13 +391,9 @@ defmodule Indexer.Block.Fetcher do
         block_number: block_number,
         hash: hash,
         created_contract_address_hash: %Hash{} = created_contract_address_hash,
-        created_contract_code_indexed_at: nil,
-        internal_transactions_indexed_at: nil
+        created_contract_code_indexed_at: nil
       } ->
         [%{block_number: block_number, hash: hash, created_contract_address_hash: created_contract_address_hash}]
-
-      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
-        []
 
       %Transaction{created_contract_address_hash: nil} ->
         []
@@ -404,30 +403,13 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_created_contract_codes(_), do: :ok
 
-  def async_import_internal_transactions(%{blocks: blocks}, EthereumJSONRPC.Parity) do
+  def async_import_internal_transactions(%{blocks: blocks}) do
     blocks
-    |> Enum.map(fn %Block{number: block_number} -> %{number: block_number} end)
-    |> InternalTransaction.async_block_fetch(10_000)
-  end
-
-  def async_import_internal_transactions(%{transactions: transactions}, EthereumJSONRPC.Geth) do
-    max_block_number = Chain.fetch_max_block_number()
-
-    transactions
-    |> Enum.flat_map(fn
-      %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
-        [%{block_number: block_number, index: index, hash: hash}]
-
-      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
-        []
-    end)
-    |> Enum.filter(fn %{block_number: block_number} ->
-      max_block_number - block_number < @geth_block_limit
-    end)
+    |> Enum.map(fn %Block{number: block_number} -> block_number end)
     |> InternalTransaction.async_fetch(10_000)
   end
 
-  def async_import_internal_transactions(_, _), do: :ok
+  def async_import_internal_transactions(_), do: :ok
 
   def async_import_tokens(%{tokens: tokens}) do
     tokens
@@ -470,6 +452,11 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp async_import_celo_voter_rewards(_), do: :ok
+  def async_import_celo_voters(%{celo_voters: accounts}) do
+    CeloVoters.async_fetch(accounts)
+  end
+
+  def async_import_celo_voters(_), do: :ok
 
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}) do
     UncleBlock.async_fetch_blocks(block_second_degree_relations)

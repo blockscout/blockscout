@@ -1,9 +1,10 @@
+# credo:disable-for-this-file
 defmodule BlockScoutWeb.AddressContractController do
   use BlockScoutWeb, :controller
 
   require Logger
 
-  import BlockScoutWeb.AddressController, only: [transaction_and_validation_count: 1]
+  #  import BlockScoutWeb.AddressController, only: [transaction_and_validation_count: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -22,8 +23,6 @@ defmodule BlockScoutWeb.AddressContractController do
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
-      {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
-
       Logger.debug("Address Found #{address_hash}")
       Logger.debug("Smart Contract #{address}")
 
@@ -39,8 +38,7 @@ defmodule BlockScoutWeb.AddressContractController do
           is_proxy: true,
           coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
           exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-          transaction_count: transaction_count,
-          validation_count: validation_count
+          counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
         )
       else
         {:error, :not_found} ->
@@ -54,8 +52,7 @@ defmodule BlockScoutWeb.AddressContractController do
             is_proxy: false,
             coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
             exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-            transaction_count: transaction_count,
-            validation_count: validation_count
+            counters_path: nil
           )
       end
     else

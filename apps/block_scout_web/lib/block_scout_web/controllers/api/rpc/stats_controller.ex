@@ -1,7 +1,10 @@
 defmodule BlockScoutWeb.API.RPC.StatsController do
   use BlockScoutWeb, :controller
 
+  use Explorer.Schema
+
   alias Explorer.{Chain, ExchangeRates}
+  alias Explorer.Chain.Cache.{AddressSum, AddressSumMinusBurnt}
   alias Explorer.Chain.Wei
 
   def tokensupply(conn, params) do
@@ -21,7 +24,7 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     end
   end
 
-  def ethsupply(conn, _params) do
+  def ethsupplyexchange(conn, _params) do
     wei_total_supply =
       Chain.total_supply()
       |> Decimal.new()
@@ -29,7 +32,23 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
       |> Wei.to(:wei)
       |> Decimal.to_string()
 
-    render(conn, "ethsupply.json", total_supply: wei_total_supply)
+    render(conn, "ethsupplyexchange.json", total_supply: wei_total_supply)
+  end
+
+  def ethsupply(conn, _params) do
+    cached_wei_total_supply = AddressSum.get_sum()
+
+    render(conn, "ethsupply.json", total_supply: cached_wei_total_supply)
+  end
+
+  def coinsupply(conn, _params) do
+    cached_coin_total_supply_wei = AddressSumMinusBurnt.get_sum_minus_burnt()
+
+    cached_coin_total_supply =
+      %Wei{value: Decimal.new(cached_coin_total_supply_wei)}
+      |> Wei.to(:ether)
+
+    render(conn, "coinsupply.json", cached_coin_total_supply)
   end
 
   def ethprice(conn, _params) do

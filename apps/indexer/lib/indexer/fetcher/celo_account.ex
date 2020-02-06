@@ -32,11 +32,20 @@ defmodule Indexer.Fetcher.CeloAccount do
     end
   end
 
-  def entry(account, requested, fulfilled) do
+  def entry(%{address: address}, requested, fulfilled) do
     %{
-      address: account.address,
-      attestations_fulfilled: Enum.count(Enum.filter(fulfilled, fn a -> a.address == account.address end)),
-      attestations_requested: Enum.count(Enum.filter(requested, fn a -> a.address == account.address end)),
+      address: address,
+      attestations_fulfilled: Enum.count(Enum.filter(fulfilled, fn a -> a.address == address end)),
+      attestations_requested: Enum.count(Enum.filter(requested, fn a -> a.address == address end)),
+      retries_count: 0
+    }
+  end
+
+  def entry(%{voter: address}, _, _) do
+    %{
+      voter: address,
+      attestations_fulfilled: 0,
+      attestations_requested: 0,
       retries_count: 0
     }
   end
@@ -57,6 +66,7 @@ defmodule Indexer.Fetcher.CeloAccount do
       accounts
       |> Enum.map(&Map.put(&1, :retries_count, &1.retries_count + 1))
       |> Enum.filter(&(&1.retries_count <= @max_retries))
+      |> voters_to_accounts()
       |> fetch_from_blockchain()
       |> import_accounts()
 
@@ -65,6 +75,25 @@ defmodule Indexer.Fetcher.CeloAccount do
     else
       {:retry, failed_list}
     end
+  end
+
+  defp voters_to_accounts(lst) do
+    Enum.reduce(lst, [], fn
+      %{voter: address}, acc ->
+        voters =
+          address
+          |> Chain.get_celo_voters()
+          |> Enum.map(fn a ->
+            entry(%{address: "0x" <> Base.encode16(a.voter_address_hash.bytes, lower: true)}, [], [])
+          end)
+
+        voters ++ acc
+
+      elem, acc ->
+        [elem | acc]
+    end)
+  rescue
+    _ -> lst
   end
 
   defp fetch_from_blockchain(addresses) do
@@ -103,14 +132,14 @@ defmodule Indexer.Fetcher.CeloAccount do
 
     case Chain.import(import_params) do
       {:ok, _} ->
-        :ok
+        failed
 
       {:error, reason} ->
         Logger.debug(fn -> ["failed to import Celo account data: ", inspect(reason)] end,
           error_count: Enum.count(accounts)
         )
-    end
 
-    failed
+        accounts
+    end
   end
 end

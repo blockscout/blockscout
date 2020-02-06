@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Notifier do
   alias Phoenix.View
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
-    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.count_addresses_from_cache()})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
 
     addresses
     |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)
@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :internal_transactions, :realtime, internal_transactions}) do
     internal_transactions
     |> Stream.map(
-      &(InternalTransaction
+      &(InternalTransaction.where_nonpending_block()
         |> Repo.get_by(transaction_hash: &1.transaction_hash, index: &1.index)
         |> Repo.preload([:from_address, :to_address, transaction: :block]))
     )
