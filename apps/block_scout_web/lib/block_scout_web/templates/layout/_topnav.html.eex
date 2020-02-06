@@ -1,5 +1,5 @@
 <link rel="preload" href="<%= static_path(@conn, "/css/awesomplete.css") %>" as="style" onload="this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="<%= static_path(@conn, "/css/awesomplete.css") %>"></noscript>
+<link rel="stylesheet" href="<%= static_path(@conn, "/css/awesomplete.css") %>">
 <script src="<%= static_path(@conn, "/js/awesomplete.min.js") %>"></script>
 <script src="<%= static_path(@conn, "/js/awesomplete-util.min.js") %>"></script>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
