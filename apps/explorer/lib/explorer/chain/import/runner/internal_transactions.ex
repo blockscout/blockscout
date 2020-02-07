@@ -76,8 +76,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                                                              %{valid_internal_transactions: valid_internal_transactions} ->
       remove_left_over_internal_transactions(repo, valid_internal_transactions)
     end)
-    |> Multi.run(:internal_transactions, fn repo, %{acquire_transactions: transactions} ->
-      insert(repo, changes_list_without_first_traces, transactions, insert_options)
+    |> Multi.run(:internal_transactions, fn repo, _ ->
+      insert(repo, changes_list_without_first_traces, insert_options)
     end)
     |> Multi.run(:set_first_trace_fields, fn repo, %{acquire_transactions: transactions} ->
       set_first_trace_fields(repo, transactions, first_traces, timestamps, transactions_timeout)
