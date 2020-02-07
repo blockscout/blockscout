@@ -62,6 +62,8 @@ defmodule Explorer.GraphQL do
         url: a.url,
         locked_gold: a.locked_gold,
         nonvoting_locked_gold: a.nonvoting_locked_gold,
+        attestations_requested: a.attestations_requested,
+        attestations_fulfilled: a.attestations_fulfilled,
         usd: a.usd
       }
     )

@@ -113,6 +113,9 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:name, :string)
     field(:url, :string)
 
+    field(:attestations_requested, :integer)
+    field(:attestations_fulfilled, :integer)
+
     field(:address_info, :address) do
       resolve(&Address.get_by/3)
     end
