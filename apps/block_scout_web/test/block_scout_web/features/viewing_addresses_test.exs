@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
+    Application.put_env(:block_scout_web, :checksum_address_hashes, false)
+
     block = insert(:block, number: 42)
 
     lincoln = insert(:address, fetched_coin_balance: 5)
@@ -37,6 +39,10 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         block_hash: block.hash,
         address_type: :validator
       )
+
+    on_exit(fn ->
+      Application.put_env(:block_scout_web, :checksum_address_hashes, true)
+    end)
 
     {:ok,
      %{
