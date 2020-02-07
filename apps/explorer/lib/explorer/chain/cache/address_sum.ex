@@ -20,7 +20,7 @@ defmodule Explorer.Chain.Cache.AddressSum do
     # See next `handle_fallback` definition
     get_async_task()
 
-    {:return, nil}
+    {:return, Decimal.new(0)}
   end
 
   defp handle_fallback(:async_task) do

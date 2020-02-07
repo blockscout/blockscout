@@ -1,4 +1,6 @@
 <section class="container" data-page="coin-balance-history">
+  <script defer src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
+
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
 
   <section>

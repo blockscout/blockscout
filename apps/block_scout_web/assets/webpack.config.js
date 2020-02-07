@@ -5,6 +5,7 @@ const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const { ContextReplacementPlugin } = require('webpack')
 const glob = require('glob')
+const webpack = require('webpack')
 
 function transpileViewScript(file) {
   return {
@@ -75,6 +76,7 @@ const appJs =
     entry: {
       app: './js/app.js',
       stakes: './js/pages/stakes.js',
+      'chart-loader': './js/chart-loader.js',
       'non-critical': './css/non-critical.scss'
     },
     output: {
@@ -135,7 +137,10 @@ const appJs =
         filename: '../css/[name].css'
       }),
       new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
-      new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/)
+      new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
+      new webpack.DefinePlugin({
+        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT)
+      })
     ]
   }
 
