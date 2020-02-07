@@ -1,8 +1,8 @@
 ## Current
 
 ### Features
-
 - [#2875](https://github.com/poanetwork/blockscout/pull/2875) - Save contract code from Parity genesis file
+- [#2834](https://github.com/poanetwork/blockscout/pull/2834) - always redirect to checksummed hash
 
 ### Fixes
 - [#2996](https://github.com/poanetwork/blockscout/pull/2996) - Fix awesomplete lib loading in Firefox
