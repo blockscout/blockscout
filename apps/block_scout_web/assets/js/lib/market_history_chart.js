@@ -86,16 +86,16 @@ function setDataToLocalStorage (key, data) {
 
 function getPriceData (marketHistoryData) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('priceData')
+    return getDataFromLocalStorage('priceDataPOACore')
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
-  setDataToLocalStorage('priceData', data)
+  setDataToLocalStorage('priceDataPOACore', data)
   return data
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('marketCapData')
+    return getDataFromLocalStorage('marketCapDataPOACore')
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => {
     const supply = (availableSupply !== null && typeof availableSupply === 'object')
@@ -103,7 +103,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
       : availableSupply
     return { x: date, y: closingPrice * supply }
   })
-  setDataToLocalStorage('marketCapData', data)
+  setDataToLocalStorage('marketCapDataPOACore', data)
   return data
 }
 
@@ -143,7 +143,7 @@ class MarketHistoryChart {
     this.availableSupply = availableSupply
     config.data.datasets = [this.price, this.marketCap]
 
-    const isChartLoadedKey = 'isChartLoaded'
+    const isChartLoadedKey = 'isChartLoadedPOACore'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
     if (isChartLoaded) {
       config.options.animation = false
