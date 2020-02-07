@@ -17,7 +17,7 @@ export function showLoader (isTimeout, loader) {
     const timeout = setTimeout(function () {
       loader.removeAttr('hidden')
       loader.show()
-    }, 1000)
+    }, 100)
     return timeout
   } else {
     loader.hide()

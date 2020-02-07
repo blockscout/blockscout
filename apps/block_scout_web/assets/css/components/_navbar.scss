@@ -25,6 +25,7 @@ $navbar-logo-width: auto !default;
   .navbar-nav {
     
     .nav-link {
+      outline: none;
       align-items: center;
       color: $header-links-color;
       display: flex;

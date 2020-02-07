@@ -120,6 +120,13 @@ defmodule BlockScoutWeb.WebRouter do
         as: :read_contract
       )
 
+      resources(
+        "/token_transfers",
+        AddressTokenTransferController,
+        only: [:index],
+        as: :token_transfers
+      )
+
       resources("/tokens", AddressTokenController, only: [:index], as: :token) do
         resources(
           "/token_transfers",

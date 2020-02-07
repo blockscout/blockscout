@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.AddressView do
     "contracts",
     "decompiled_contracts",
     "internal_transactions",
+    "token_transfers",
     "read_contract",
     "tokens",
     "transactions",
@@ -304,6 +305,7 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["tokens"]), do: gettext("Tokens")
   defp tab_name(["transactions"]), do: gettext("Transactions")
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
+  defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
   defp tab_name(["contracts"]), do: gettext("Code")
   defp tab_name(["decompiled_contracts"]), do: gettext("Decompiled Code")
   defp tab_name(["read_contract"]), do: gettext("Read Contract")
@@ -319,6 +321,14 @@ defmodule BlockScoutWeb.AddressView do
     >> = to_string(hash)
 
     "0x" <> short_address
+  end
+
+  def short_contract_name(name, max_length) do
+    part_length = Kernel.trunc(max_length / 4)
+
+    if String.length(name) <= max_length,
+      do: name,
+      else: "#{String.slice(name, 0, max_length - part_length)}..#{String.slice(name, -part_length, part_length)}"
   end
 
   def address_page_title(address) do

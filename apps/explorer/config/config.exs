@@ -12,7 +12,7 @@ config :explorer,
   token_functions_reader_max_retries: 3,
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
-      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,default",
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,default",
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
   healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5),
@@ -51,6 +51,25 @@ config :explorer, Explorer.Chain.Cache.BlockNumber,
   enabled: true,
   ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
+address_sum_global_ttl =
+  "ADDRESS_SUM_CACHE_PERIOD"
+  |> System.get_env("")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> :timer.seconds(integer)
+    _ -> :timer.minutes(60)
+  end
+
+config :explorer, Explorer.Chain.Cache.AddressSum,
+  enabled: true,
+  ttl_check_interval: :timer.seconds(1),
+  global_ttl: address_sum_global_ttl
+
+config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt,
+  enabled: true,
+  ttl_check_interval: :timer.seconds(1),
+  global_ttl: address_sum_global_ttl
 
 balances_update_interval =
   if System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do

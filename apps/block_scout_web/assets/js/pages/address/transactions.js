@@ -32,12 +32,12 @@ export function reducer (state, action) {
         return state
       }
 
-      return Object.assign({}, state, { items: [ action.msg.transactionHtml, ...state.items ] })
+      return Object.assign({}, state, { items: [action.msg.transactionHtml, ...state.items] })
     }
     case 'RECEIVED_NEW_REWARD': {
       if (state.channelDisconnected) return state
 
-      return Object.assign({}, state, { items: [ action.msg.rewardHtml, ...state.items ] })
+      return Object.assign({}, state, { items: [action.msg.rewardHtml, ...state.items] })
     }
     default:
       return state

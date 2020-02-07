@@ -15,7 +15,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     only: [
       async_import_block_rewards: 1,
       async_import_created_contract_codes: 1,
-      async_import_internal_transactions: 2,
+      async_import_internal_transactions: 1,
       async_import_replaced_transactions: 1,
       async_import_tokens: 1,
       async_import_token_balances: 1,
@@ -183,7 +183,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @impl Block.Fetcher
   def import(
-        %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher,
+        block_fetcher,
         %{
           address_coin_balances: %{params: address_coin_balances_params},
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
@@ -209,8 +209,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(
         imported,
-        %{block_rewards: %{errors: block_reward_errors}},
-        json_rpc_named_arguments
+        %{block_rewards: %{errors: block_reward_errors}}
       )
 
       Accounts.drop(imported[:addresses])
@@ -250,7 +249,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
         [number]
 
       true ->
-        (previous_number + 1)..number
+        if number - previous_number - 1 > 10 do
+          (number - 10)..number
+        else
+          (previous_number + 1)..number
+        end
     end
   end
 
@@ -377,12 +380,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp async_import_remaining_block_data(
          imported,
-         %{block_rewards: %{errors: block_reward_errors}},
-         json_rpc_named_arguments
+         %{block_rewards: %{errors: block_reward_errors}}
        ) do
     async_import_block_rewards(block_reward_errors)
     async_import_created_contract_codes(imported)
-    async_import_internal_transactions(imported, Keyword.get(json_rpc_named_arguments, :variant))
+    async_import_internal_transactions(imported)
     async_import_tokens(imported)
     async_import_token_balances(imported)
     async_import_token_instances(imported)

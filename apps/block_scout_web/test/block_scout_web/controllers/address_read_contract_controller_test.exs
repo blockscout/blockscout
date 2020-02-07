@@ -22,13 +22,15 @@ defmodule BlockScoutWeb.AddressReadContractControllerTest do
     test "successfully renders the page when the address is a contract", %{conn: conn} do
       contract_address = insert(:contract_address)
 
-      transaction = insert(:transaction, from_address: contract_address)
+      transaction = insert(:transaction, from_address: contract_address) |> with_block()
 
       insert(
         :internal_transaction_create,
         index: 0,
         transaction: transaction,
-        created_contract_address: contract_address
+        created_contract_address: contract_address,
+        block_hash: transaction.block_hash,
+        block_index: 0
       )
 
       insert(:smart_contract, address_hash: contract_address.hash)
@@ -44,13 +46,15 @@ defmodule BlockScoutWeb.AddressReadContractControllerTest do
     test "returns not found for an unverified contract", %{conn: conn} do
       contract_address = insert(:contract_address)
 
-      transaction = insert(:transaction, from_address: contract_address)
+      transaction = insert(:transaction, from_address: contract_address) |> with_block()
 
       insert(
         :internal_transaction_create,
         index: 0,
         transaction: transaction,
-        created_contract_address: contract_address
+        created_contract_address: contract_address,
+        block_hash: transaction.block_hash,
+        block_index: 0
       )
 
       conn =
