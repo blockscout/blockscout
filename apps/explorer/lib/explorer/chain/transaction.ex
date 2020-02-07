@@ -29,7 +29,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Repo
 
   @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
-                     error gas_used index internal_transactions_indexed_at created_contract_code_indexed_at status
+                     error gas_used index created_contract_code_indexed_at status
                      to_address_hash)a
 
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
@@ -105,8 +105,6 @@ defmodule Explorer.Chain.Transaction do
    * `input`- data sent along with the transaction
    * `internal_transactions` - transactions (value transfers) created while executing contract used for this
      transaction
-   * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer` or when they do not
-     need to be fetched at `inserted_at`.
    * `created_contract_code_indexed_at` - when created `address` code was fetched by `Indexer`
 
      | `status` | `contract_creation_address_hash` | `input`    | Token Transfer? | `internal_transactions_indexed_at`        | `internal_transactions` | Description                                                                                         |
@@ -154,7 +152,6 @@ defmodule Explorer.Chain.Transaction do
           first_trace_output: Data.t() | nil,
           first_trace_gas_used: Gas.t() | nil,
           internal_transactions: %Ecto.Association.NotLoaded{} | [InternalTransaction.t()],
-          internal_transactions_indexed_at: DateTime.t(),
           logs: %Ecto.Association.NotLoaded{} | [Log.t()],
           nonce: non_neg_integer(),
           r: r(),
@@ -176,7 +173,6 @@ defmodule Explorer.Chain.Transaction do
              :gas_price,
              :gas_used,
              :index,
-             :internal_transactions_indexed_at,
              :created_contract_code_indexed_at,
              :input,
              :nonce,
@@ -199,7 +195,6 @@ defmodule Explorer.Chain.Transaction do
     field(:first_trace_gas_used, :decimal)
     field(:first_trace_output, Data)
     field(:index, :integer)
-    field(:internal_transactions_indexed_at, :utc_datetime_usec)
     field(:created_contract_code_indexed_at, :utc_datetime_usec)
     field(:input, Data)
     field(:nonce, :integer)

@@ -68,8 +68,10 @@ defmodule Explorer.Chain.Block.Reward do
   Returns a list of tuples representing rewards by the EmissionFunds on POA chains.
   The tuples have the format {EmissionFunds, Validator}
   """
-  @spec fetch_emission_rewards_tuples(Hash.Address.t(), PagingOptions.t()) :: [{t(), t()}]
-  def fetch_emission_rewards_tuples(address_hash, paging_options) do
+  def fetch_emission_rewards_tuples(address_hash, paging_options, %{
+        min_block_number: min_block_number,
+        max_block_number: max_block_number
+      }) do
     address_rewards =
       __MODULE__
       |> join_associations()
@@ -77,6 +79,7 @@ defmodule Explorer.Chain.Block.Reward do
       |> limit(^paging_options.page_size)
       |> order_by([_, block], desc: block.number)
       |> where([reward], reward.address_hash == ^address_hash)
+      |> address_rewards_blocks_ranges_clause(min_block_number, max_block_number, paging_options)
       |> Repo.all()
 
     case List.first(address_rewards) do
@@ -116,5 +119,26 @@ defmodule Explorer.Chain.Block.Reward do
     |> preload(:address)
     |> join(:inner, [reward], block in assoc(reward, :block))
     |> preload(:block)
+  end
+
+  defp address_rewards_blocks_ranges_clause(query, min_block_number, max_block_number, paging_options) do
+    if is_number(min_block_number) and max_block_number > 0 and min_block_number > 0 do
+      cond do
+        paging_options.page_number == 1 ->
+          query
+          |> where([_, block], block.number >= ^min_block_number)
+
+        min_block_number == max_block_number ->
+          query
+          |> where([_, block], block.number == ^min_block_number)
+
+        true ->
+          query
+          |> where([_, block], block.number >= ^min_block_number)
+          |> where([_, block], block.number <= ^max_block_number)
+      end
+    else
+      query
+    end
   end
 end
