@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3000](https://github.com/poanetwork/blockscout/pull/3000) - Get rid of storing of internal transactions for simple coin transfers
 - [#2875](https://github.com/poanetwork/blockscout/pull/2875) - Save contract code from Parity genesis file
 - [#2834](https://github.com/poanetwork/blockscout/pull/2834) - always redirect to checksummed hash
 
