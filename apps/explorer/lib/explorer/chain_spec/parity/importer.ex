@@ -24,10 +24,10 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     end
   end
 
-  def import_genesis_coin_balances(chain_spec) do
+  def import_genesis_accounts(chain_spec) do
     balance_params =
       chain_spec
-      |> genesis_coin_balances()
+      |> genesis_accounts()
       |> Stream.map(fn balance_map ->
         Map.put(balance_map, :block_number, 0)
       end)
@@ -35,8 +35,8 @@ defmodule Explorer.ChainSpec.Parity.Importer do
 
     address_params =
       balance_params
-      |> Stream.map(fn %{address_hash: hash} ->
-        %{hash: hash}
+      |> Stream.map(fn %{address_hash: hash} = map ->
+        Map.put(map, :hash, hash)
       end)
       |> Enum.to_list()
 
@@ -71,7 +71,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     {_, nil} = Repo.insert_all(EmissionReward, ordered_rewards)
   end
 
-  def genesis_coin_balances(chain_spec) do
+  def genesis_accounts(chain_spec) do
     accounts = chain_spec["accounts"]
 
     if accounts do
@@ -102,12 +102,15 @@ defmodule Explorer.ChainSpec.Parity.Importer do
     |> Stream.filter(fn {_address, map} ->
       !is_nil(map["balance"])
     end)
-    |> Stream.map(fn {address, %{"balance" => value}} ->
+    |> Stream.map(fn {address, %{"balance" => value} = params} ->
       formatted_address = if String.starts_with?(address, "0x"), do: address, else: "0x" <> address
       {:ok, address_hash} = AddressHash.cast(formatted_address)
       balance = parse_number(value)
 
-      %{address_hash: address_hash, value: balance}
+      nonce = parse_number(params["nonce"] || "0")
+      code = params["constructor"]
+
+      %{address_hash: address_hash, value: balance, nonce: nonce, contract_code: code}
     end)
     |> Enum.to_list()
   end
