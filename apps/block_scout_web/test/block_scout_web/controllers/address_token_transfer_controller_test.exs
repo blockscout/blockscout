@@ -25,7 +25,12 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
     test "with an address that doesn't exist in our database", %{conn: conn} do
       address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
       %Token{contract_address_hash: token_hash} = insert(:token)
-      conn = get(conn, address_token_transfers_path(conn, :index, Address.checksum(address_hash), token_hash))
+
+      conn =
+        get(
+          conn,
+          address_token_transfers_path(conn, :index, Address.checksum(address_hash), Address.checksum(token_hash))
+        )
 
       assert html_response(conn, 404)
     end
