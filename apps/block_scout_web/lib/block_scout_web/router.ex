@@ -64,12 +64,12 @@ defmodule BlockScoutWeb.Router do
 
       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
     end
-  else
-    scope "/verify_smart_contract" do
-      pipe_through(:api)
+  end
 
-      post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
-    end
+  scope "/verify_smart_contract" do
+    pipe_through(:api)
+
+    post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
   end
 
   if Application.get_env(:block_scout_web, WebRouter)[:enabled] do
