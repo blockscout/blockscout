@@ -3925,12 +3925,15 @@ defmodule Explorer.Chain do
       from(
         g in CeloValidatorGroup,
         inner_join: a in assoc(g, :celo_account),
+        inner_join: b in assoc(g, :celo_accumulated_rewards),
         select_merge: %{
           name: a.name,
           url: a.url,
           locked_gold: a.locked_gold,
           nonvoting_locked_gold: a.nonvoting_locked_gold,
-          usd: a.usd
+          usd: a.usd,
+          accumulated_active: b.active,
+          accumulated_rewards: b.reward,
         }
       )
 
