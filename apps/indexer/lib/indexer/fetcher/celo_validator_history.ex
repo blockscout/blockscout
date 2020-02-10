@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
 
   alias Explorer.Celo.AccountReader
   alias Explorer.Chain
-  alias Explorer.Chain.{CeloValidatorHistory, CeloValidatorStatus}
+  alias Explorer.Chain.{CeloParams, CeloValidatorHistory, CeloValidatorStatus}
 
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Util
@@ -121,6 +121,22 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
     end)
   end
 
+  defp get_params(block) do
+    Enum.reduce(block.params, {[], []}, fn
+      %{error: _error} = item, {failed, success} ->
+        {[item | failed], success}
+
+      item, {failed, success} ->
+        changeset = CeloParams.changeset(%CeloParams{}, Map.put(item, :block_number, block.block_number))
+
+        if changeset.valid? do
+          {failed, [changeset.changes | success]}
+        else
+          {[item | failed], success}
+        end
+    end)
+  end
+
   defp import_items(blocks) do
     {failed, success_history} =
       Enum.reduce(blocks, {[], []}, fn
@@ -132,7 +148,17 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
           {failed, success ++ success2}
       end)
 
-    {_, success_status} =
+    {_failed2, success_params} =
+      Enum.reduce(blocks, {[], []}, fn
+        %{error: _error} = block, {failed, success} ->
+          {[block | failed], success}
+
+        block, {failed, success} ->
+          {_, success2} = get_params(block)
+          {failed, success ++ success2}
+      end)
+
+    {_failed2, success_status} =
       Enum.reduce(blocks, {[], []}, fn
         %{error: _error} = block, {failed, success} ->
           {[block | failed], success}
@@ -145,6 +171,7 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
     import_params = %{
       celo_validator_history: %{params: success_history},
       celo_validator_status: %{params: success_status},
+      celo_params: %{params: success_params},
       timeout: :infinity
     }
 

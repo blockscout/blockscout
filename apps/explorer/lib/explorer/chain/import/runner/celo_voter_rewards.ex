@@ -1,12 +1,12 @@
-defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
+defmodule Explorer.Chain.Import.Runner.CeloVoterRewards do
   @moduledoc """
-  Bulk imports Celo validator groups to the DB table.
+  Bulk imports Celo voter rewards to the DB table.
   """
 
   require Ecto.Query
 
   alias Ecto.{Changeset, Multi, Repo}
-  alias Explorer.Chain.{CeloValidatorGroup, Import}
+  alias Explorer.Chain.{CeloVoterRewards, Import}
   alias Explorer.Chain.Import.Runner.Util
 
   import Ecto.Query, only: [from: 2]
@@ -16,13 +16,13 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
   # milliseconds
   @timeout 60_000
 
-  @type imported :: [CeloValidatorGroup.t()]
+  @type imported :: [CeloVoterRewards.t()]
 
   @impl Import.Runner
-  def ecto_schema_module, do: CeloValidatorGroup
+  def ecto_schema_module, do: CeloVoterRewards
 
   @impl Import.Runner
-  def option_key, do: :celo_validator_groups
+  def option_key, do: :celo_voter_rewards
 
   @impl Import.Runner
   def imported_table_row do
@@ -37,11 +37,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
     insert_options = Util.make_insert_options(option_key(), @timeout, options)
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
-    multi
-    |> Multi.run(:acquire_all_validator_groups, fn repo, _ ->
-      acquire_all_items(repo)
-    end)
-    |> Multi.run(:insert_validator_group_items, fn repo, _ ->
+    Multi.run(multi, :insert_voter_reward_items, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
   end
@@ -49,38 +45,25 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
   @impl Import.Runner
   def timeout, do: @timeout
 
-  defp acquire_all_items(repo) do
-    query =
-      from(
-        account in CeloValidatorGroup,
-        # Enforce ShareLocks order (see docs: sharelocks.md)
-        order_by: account.address,
-        lock: "FOR UPDATE"
-      )
-
-    accounts = repo.all(query)
-
-    {:ok, accounts}
-  end
-
-  @spec insert(Repo.t(), [map()], Util.insert_options()) :: {:ok, [CeloValidatorGroup.t()]} | {:error, [Changeset.t()]}
+  @spec insert(Repo.t(), [map()], Util.insert_options()) ::
+          {:ok, [CeloVoterRewards.t()]} | {:error, [Changeset.t()]}
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce ShareLocks order (see docs: sharelocks.md)
     uniq_changes_list =
       changes_list
-      |> Enum.sort_by(& &1.address)
-      |> Enum.uniq_by(& &1.address)
+      |> Enum.sort_by(&{&1.block_hash, &1.log_index})
+      |> Enum.dedup_by(&{&1.block_hash, &1.log_index})
 
     {:ok, _} =
       Import.insert_changes_list(
         repo,
         uniq_changes_list,
-        conflict_target: :address,
+        conflict_target: [:block_hash, :log_index],
         on_conflict: on_conflict,
-        for: CeloValidatorGroup,
-        returning: [:address],
+        for: CeloVoterRewards,
+        returning: true,
         timeout: timeout,
         timestamps: timestamps
       )
@@ -88,13 +71,12 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
 
   defp default_on_conflict do
     from(
-      account in CeloValidatorGroup,
+      account in CeloVoterRewards,
       update: [
         set: [
-          commission: fragment("EXCLUDED.commission"),
-          votes: fragment("EXCLUDED.votes"),
+          address_hash: fragment("EXCLUDED.address_hash"),
+          reward: fragment("EXCLUDED.reward"),
           active_votes: fragment("EXCLUDED.active_votes"),
-          num_members: fragment("EXCLUDED.num_members"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", account.updated_at)
         ]
