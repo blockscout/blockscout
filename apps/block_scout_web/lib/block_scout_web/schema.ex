@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.Schema do
     Address,
     Block,
     CeloAccount,
+    CeloParameters,
     CeloUtil,
     CeloValidator,
     CeloValidatorGroup,
@@ -97,6 +98,11 @@ defmodule BlockScoutWeb.Schema do
     @desc "Gets all validator groups."
     field :celo_validator_groups, list_of(:celo_validator_group) do
       resolve(&CeloValidatorGroup.get_by/3)
+    end
+
+    @desc "Gets Celo network parameters"
+    field :celo_parameters, :celo_parameters do
+      resolve(&CeloParameters.get_by/3)
     end
 
     @desc "Gets addresses by address hash."

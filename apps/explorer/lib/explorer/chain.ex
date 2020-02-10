@@ -36,6 +36,7 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     CeloAccount,
+    CeloParams,
     CeloValidator,
     CeloValidatorGroup,
     CeloValidatorHistory,
@@ -3934,6 +3935,15 @@ defmodule Explorer.Chain do
       )
 
     query
+    |> Repo.all()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
+  def get_celo_parameters do
+    CeloParams
     |> Repo.all()
     |> case do
       nil -> {:error, :not_found}
