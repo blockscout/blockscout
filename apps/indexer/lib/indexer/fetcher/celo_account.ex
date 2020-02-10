@@ -98,7 +98,9 @@ defmodule Indexer.Fetcher.CeloAccount do
 
   defp fetch_from_blockchain(addresses) do
     addresses
-    |> Enum.map(fn account ->
+    |> Enum.map(fn
+      %{voter: _} = account -> Map.put(account, :error, :unresolved_voter)
+      account ->
       case AccountReader.account_data(account) do
         {:ok, data} ->
           Map.merge(account, data)
