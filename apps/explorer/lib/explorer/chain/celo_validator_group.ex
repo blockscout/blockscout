@@ -44,6 +44,7 @@ defmodule Explorer.Chain.CeloValidatorGroup do
 
     field(:accumulated_rewards, Wei, virtual: true)
     field(:accumulated_active, Wei, virtual: true)
+    field(:receivable_votes, Wei, virtual: true)
 
     belongs_to(
       :validator_address,

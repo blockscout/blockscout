@@ -3921,11 +3921,23 @@ defmodule Explorer.Chain do
 
   #  @spec get_celo_validator_groups() :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
   def get_celo_validator_groups do
+
+    denominator =
+      from(p in CeloParams,
+        where: p.name == "numRegisteredValidators" or p.name == "maxElectableValidators",
+        select: %{value: min(p.number_value)}
+      )
+    
+    IO.inspect(Repo.all(denominator))
+
     query =
       from(
         g in CeloValidatorGroup,
         inner_join: a in assoc(g, :celo_account),
         inner_join: b in assoc(g, :celo_accumulated_rewards),
+        inner_join: total_locked_gold in CeloParams,
+        where: total_locked_gold.name == "totalLockedGold",
+        inner_join: denom in subquery(denominator),
         select_merge: %{
           name: a.name,
           url: a.url,
@@ -3934,6 +3946,7 @@ defmodule Explorer.Chain do
           usd: a.usd,
           accumulated_active: b.active,
           accumulated_rewards: b.reward,
+          receivable_votes: ((g.num_members+1) * total_locked_gold.number_value) / denom.value
         }
       )
 
