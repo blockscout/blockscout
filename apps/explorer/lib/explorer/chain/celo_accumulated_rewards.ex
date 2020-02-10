@@ -29,7 +29,5 @@ defmodule Explorer.Chain.CeloAccumulatedRewards do
       references: :hash,
       type: Hash.Address
     )
-
   end
-
 end

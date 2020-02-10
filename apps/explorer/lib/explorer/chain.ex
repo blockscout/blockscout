@@ -3921,13 +3921,12 @@ defmodule Explorer.Chain do
 
   #  @spec get_celo_validator_groups() :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
   def get_celo_validator_groups do
-
     denominator =
       from(p in CeloParams,
         where: p.name == "numRegisteredValidators" or p.name == "maxElectableValidators",
         select: %{value: min(p.number_value)}
       )
-    
+
     IO.inspect(Repo.all(denominator))
 
     query =
@@ -3946,7 +3945,7 @@ defmodule Explorer.Chain do
           usd: a.usd,
           accumulated_active: b.active,
           accumulated_rewards: b.reward,
-          receivable_votes: ((g.num_members+1) * total_locked_gold.number_value) / denom.value
+          receivable_votes: (g.num_members + 1) * total_locked_gold.number_value / denom.value
         }
       )
 
