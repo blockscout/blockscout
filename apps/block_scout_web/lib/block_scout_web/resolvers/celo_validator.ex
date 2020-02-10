@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.Resolvers.CeloValidator do
   end
 
   def get_by(%CeloAccount{address: hash}, _, _) do
-    case Chain.get_celo_validator_group(hash) do
+    case Chain.get_celo_validator(hash) do
       {:error, :not_found} -> {:ok, nil}
       {:ok, _} = result -> result
     end
