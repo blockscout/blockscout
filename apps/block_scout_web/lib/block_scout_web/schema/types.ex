@@ -144,6 +144,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:name, :string)
     field(:url, :string)
 
+    field(:rewards_ratio, :wei)
     field(:accumulated_rewards, :wei)
     field(:accumulated_active, :wei)
     field(:receivable_votes, :integer)

@@ -15,12 +15,14 @@ defmodule Explorer.Chain.CeloAccumulatedRewards do
   @type t :: %__MODULE__{
           address_hash: Hash.Address.t(),
           active: Wei.t(),
-          reward: Wei.t()
+          reward: Wei.t(),
+          ratio: Wei.t()
         }
 
   schema "celo_accumulated_rewards" do
     field(:reward, Wei)
     field(:active, Wei)
+    field(:ratio, Wei)
 
     belongs_to(
       :address,
