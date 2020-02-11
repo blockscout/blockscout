@@ -2,7 +2,6 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
   use Ecto.Migration
 
   def up do
-
     execute("""
     drop trigger if exists refresh_rewards_trg on celo_voter_rewards
     """)
@@ -51,5 +50,4 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
 
   def down do
   end
-
 end

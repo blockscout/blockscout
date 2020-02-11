@@ -3927,8 +3927,6 @@ defmodule Explorer.Chain do
         select: %{value: min(p.number_value)}
       )
 
-    IO.inspect(Repo.all(denominator))
-
     query =
       from(
         g in CeloValidatorGroup,

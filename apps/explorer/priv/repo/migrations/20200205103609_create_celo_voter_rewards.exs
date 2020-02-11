@@ -14,6 +14,5 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewards do
     end
 
     create(index(:celo_voter_rewards, [:block_hash, :log_index], unique: true))
-
   end
 end
