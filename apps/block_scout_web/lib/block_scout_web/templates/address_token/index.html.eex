@@ -36,6 +36,6 @@
 
       </div>
     </div>
-    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/async-listing-load.js") %>"></script>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address.js") %>"></script>
   </section>
 </section>

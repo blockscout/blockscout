@@ -6,6 +6,7 @@ import socket from '../../socket'
 import { batchChannel } from '../../lib/utils'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
+import '../address'
 
 const BATCH_THRESHOLD = 10
 

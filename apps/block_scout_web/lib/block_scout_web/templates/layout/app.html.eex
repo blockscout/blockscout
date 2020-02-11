@@ -64,7 +64,25 @@
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
-    <%= if @view_module != Elixir.BlockScoutWeb.ChainView do %>
+    <%= if (
+      @view_module != Elixir.BlockScoutWeb.ChainView &&
+      @view_module != Elixir.BlockScoutWeb.BlockView &&
+      @view_module != Elixir.BlockScoutWeb.TransactionView &&
+      @view_module != Elixir.BlockScoutWeb.PendingTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.TransactionInternalTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.TransactionLogView &&
+      @view_module != Elixir.BlockScoutWeb.TransactionRawTraceView &&
+      @view_module != Elixir.BlockScoutWeb.TransactionTokenTransferView &&
+      @view_module != Elixir.BlockScoutWeb.AddressTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.AddressTokenTransferView &&
+      @view_module != Elixir.BlockScoutWeb.AddressTokenView &&
+      @view_module != Elixir.BlockScoutWeb.AddressInternalTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.AddressCoinBalanceView &&
+      @view_module != Elixir.BlockScoutWeb.AddressLogsView &&
+      @view_module != Elixir.BlockScoutWeb.AddressValidationView &&
+      @view_module != Elixir.BlockScoutWeb.AddressContractView &&
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView
+    ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>
     <%= render_existing(@view_module, "scripts.html", assigns) %>
