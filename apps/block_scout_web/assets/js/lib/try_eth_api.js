@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import './try_api'
 
 function composeCurlCommand (data) {
   const url = $('[data-endpoint-url]').attr('data-endpoint-url')

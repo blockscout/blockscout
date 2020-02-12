@@ -67,6 +67,8 @@
     <%= if (
       @view_module != Elixir.BlockScoutWeb.ChainView &&
       @view_module != Elixir.BlockScoutWeb.BlockView &&
+      @view_module != Elixir.BlockScoutWeb.BlockTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.AddressView &&
       @view_module != Elixir.BlockScoutWeb.TransactionView &&
       @view_module != Elixir.BlockScoutWeb.PendingTransactionView &&
       @view_module != Elixir.BlockScoutWeb.TransactionInternalTransactionView &&
@@ -81,7 +83,19 @@
       @view_module != Elixir.BlockScoutWeb.AddressLogsView &&
       @view_module != Elixir.BlockScoutWeb.AddressValidationView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractView &&
-      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView &&
+      @view_module != Elixir.BlockScoutWeb.AddressReadContractView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.TransferView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.ReadContractView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.HolderView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.InventoryView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.InstanceView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.MetadataView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.OverviewView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.TransferView &&
+      @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
+      @view_module != Elixir.BlockScoutWeb.APIDocsView &&
+      @view_module != Elixir.BlockScoutWeb.Admin.DashboardView
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>

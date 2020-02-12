@@ -6,6 +6,7 @@ import humps from 'humps'
 import listMorph from '../lib/list_morph'
 import reduceReducers from 'reduce-reducers'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import '../app'
 
 /**
  * This is a generic lib to add pagination with asynchronous page loading. There are two ways of
