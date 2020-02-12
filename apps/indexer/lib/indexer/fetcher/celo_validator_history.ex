@@ -148,16 +148,6 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
           {failed, success ++ success2}
       end)
 
-    {_failed2, success_params} =
-      Enum.reduce(blocks, {[], []}, fn
-        %{error: _error} = block, {failed, success} ->
-          {[block | failed], success}
-
-        block, {failed, success} ->
-          {_, success2} = get_params(block)
-          {failed, success ++ success2}
-      end)
-
     {_failed2, success_status} =
       Enum.reduce(blocks, {[], []}, fn
         %{error: _error} = block, {failed, success} ->
@@ -168,10 +158,20 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
           {failed, success ++ success2}
       end)
 
+    {_failed2, success_params} =
+      Enum.reduce(blocks, {[], []}, fn
+        %{error: _error} = block, {failed, success} ->
+          {[block | failed], success}
+
+        block, {failed, success} ->
+          {_, success2} = get_params(block)
+          {failed, success ++ success2}
+      end)
+
     import_params = %{
+      celo_params: %{params: success_params},
       celo_validator_history: %{params: success_history},
       celo_validator_status: %{params: success_status},
-      celo_params: %{params: success_params},
       timeout: :infinity
     }
 
