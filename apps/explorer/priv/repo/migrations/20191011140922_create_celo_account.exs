@@ -7,6 +7,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloAccount do
       add(:account_type, :string)
       add(:nonvoting_locked_gold, :numeric, precision: 100)
       add(:locked_gold, :numeric, precision: 100)
+      add(:usd, :numeric, precision: 100)
       add(:name, :string, size: 2048)
       add(:url, :string, size: 2048)
       add(:attestations_requested, :integer)

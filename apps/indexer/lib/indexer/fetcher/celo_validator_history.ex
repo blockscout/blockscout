@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
 
   alias Explorer.Celo.AccountReader
   alias Explorer.Chain
-  alias Explorer.Chain.{CeloParams, CeloValidatorHistory}
+  alias Explorer.Chain.{CeloParams, CeloValidatorHistory, CeloValidatorStatus}
 
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Util
@@ -76,6 +76,34 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
     end)
   end
 
+  defp get_status_items(block) do
+    Enum.reduce(block.validators, {[], []}, fn
+      %{error: _error} = item, {failed, success} ->
+        {[item | failed], success}
+
+      item, {failed, success} ->
+        status = %{
+          last_elected: block.block_number,
+          signer_address_hash: item.address
+        }
+
+        online_status =
+          if item.online do
+            Map.put(status, :last_online, block.block_number)
+          else
+            item
+          end
+
+        changeset = CeloValidatorStatus.changeset(%CeloValidatorStatus{}, online_status)
+
+        if changeset.valid? do
+          {failed, [changeset.changes | success]}
+        else
+          {[item | failed], success}
+        end
+    end)
+  end
+
   defp get_items(block) do
     Enum.reduce(block.validators, {[], []}, fn
       %{error: _error} = item, {failed, success} ->
@@ -110,13 +138,23 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
   end
 
   defp import_items(blocks) do
-    {failed, success} =
+    {failed, success_history} =
       Enum.reduce(blocks, {[], []}, fn
         %{error: _error} = block, {failed, success} ->
           {[block | failed], success}
 
         block, {failed, success} ->
           {_, success2} = get_items(block)
+          {failed, success ++ success2}
+      end)
+
+    {_failed2, success_status} =
+      Enum.reduce(blocks, {[], []}, fn
+        %{error: _error} = block, {failed, success} ->
+          {[block | failed], success}
+
+        block, {failed, success} ->
+          {_, success2} = get_status_items(block)
           {failed, success ++ success2}
       end)
 
@@ -131,8 +169,9 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
       end)
 
     import_params = %{
-      celo_validator_history: %{params: success},
       celo_params: %{params: success_params},
+      celo_validator_history: %{params: success_history},
+      celo_validator_status: %{params: success_status},
       timeout: :infinity
     }
 

@@ -24,12 +24,13 @@ defmodule Explorer.Chain.CeloAccount do
           account_type: String.t(),
           locked_gold: Wei.t(),
           nonvoting_locked_gold: Wei.t(),
+          usd: Wei.t(),
           attestations_requested: non_neg_integer(),
           attestations_fulfilled: non_neg_integer()
         }
 
   @attrs ~w(
-        address name url account_type nonvoting_locked_gold locked_gold attestations_requested attestations_fulfilled
+        address name url account_type nonvoting_locked_gold locked_gold attestations_requested attestations_fulfilled usd
     )a
 
   @required_attrs ~w(
@@ -87,6 +88,8 @@ defmodule Explorer.Chain.CeloAccount do
       @validator_group_vote_revoked,
       @validator_group_vote_activated,
       @validator_group_vote_cast,
+      @validator_group_epoch_rewards_distributed,
+      @validator_epoch_payment_distributed,
       @validator_registered,
       @validator_group_registered
     ]
@@ -162,6 +165,7 @@ defmodule Explorer.Chain.CeloAccount do
     field(:url, :string)
     field(:nonvoting_locked_gold, Wei)
     field(:locked_gold, Wei)
+    field(:usd, Wei)
 
     field(:attestations_requested, :integer)
     field(:attestations_fulfilled, :integer)
