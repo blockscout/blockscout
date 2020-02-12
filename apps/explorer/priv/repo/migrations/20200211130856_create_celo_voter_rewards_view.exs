@@ -22,11 +22,8 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
 
     execute("""
     create materialized view celo_accumulated_rewards as
-    select address as address_hash,
-      coalesce((select active from celo_rewards_view as v where v.address_hash = address), 0) as active,
-      coalesce((select reward from celo_rewards_view as v where v.address_hash = address), 0) as reward,
-      coalesce((select ratio from celo_rewards_view as v where v.address_hash = address), 0) as ratio
-    from celo_validator_group
+    select address as address_hash, active, reward, ratio
+    from ( celo_validator_group left outer join celo_rewards_view ON address_hash = address) 
     """)
 
     execute("""
