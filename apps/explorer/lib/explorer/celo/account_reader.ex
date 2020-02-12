@@ -54,6 +54,15 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
+  def validator_group_reward_data(address) do
+    data = call_methods([{:election, "getActiveVotesForGroup", [address]}])
+
+    case data["getActiveVotesForGroup"] do
+      {:ok, [res]} -> {:ok, %{active_votes: res}}
+      _ -> :error
+    end
+  end
+
   @spec validator_data(String.t()) ::
           {:ok,
            %{
@@ -87,17 +96,30 @@ defmodule Explorer.Celo.AccountReader do
     data = fetch_validator_group_data(address)
 
     with {:ok, [_ | [commission | _]]} <- data["getValidatorGroup"],
+         {:ok, [active_votes]} <- data["getActiveVotesForGroup"],
+         {:ok, [num_members]} <- data["getGroupNumMembers"],
          {:ok, [votes]} <- data["getTotalVotesForGroup"] do
       {:ok,
        %{
          address: address,
          votes: votes,
+         active_votes: active_votes,
+         num_members: num_members,
          commission: commission
        }}
     else
       _ ->
         :error
     end
+  end
+
+  defp fetch_validator_group_data(address) do
+    call_methods([
+      {:election, "getTotalVotesForGroup", [address]},
+      {:election, "getActiveVotesForGroup", [address]},
+      {:validators, "getGroupNumMembers", [address]},
+      {:validators, "getValidatorGroup", [address]}
+    ])
   end
 
   def voter_data(group_address, voter_address) do
@@ -150,23 +172,6 @@ defmodule Explorer.Celo.AccountReader do
       true
     else
       false
-    end
-  end
-
-  def validator_history(block_number) do
-    data = fetch_validators(block_number)
-
-    with {:ok, [bm]} <- data["getParentSealBitmap"],
-         {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
-      list =
-        validators
-        |> Enum.with_index()
-        |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx, online: get_index(bm, idx)} end)
-
-      {:ok, %{validators: list}}
-    else
-      _ ->
-        :error
     end
   end
 
@@ -240,22 +245,45 @@ defmodule Explorer.Celo.AccountReader do
     data
   end
 
+  def validator_history(block_number) do
+    data = fetch_validators(block_number)
+
+    with {:ok, [bm]} <- data["getParentSealBitmap"],
+         {:ok, [num_validators]} <- data["getNumRegisteredValidators"],
+         {:ok, [min_validators, max_validators]} <- data["getElectableValidators"],
+         {:ok, [total_gold]} <- data["getTotalLockedGold"],
+         {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
+      list =
+        validators
+        |> Enum.with_index()
+        |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx, online: get_index(bm, idx)} end)
+
+      params = [
+        %{name: "numRegisteredValidators", number_value: num_validators},
+        %{name: "totalLockedGold", number_value: total_gold},
+        %{name: "maxElectableValidators", number_value: max_validators},
+        %{name: "minElectableValidators", number_value: min_validators}
+      ]
+
+      {:ok, %{validators: list, params: params}}
+    else
+      _ ->
+        :error
+    end
+  end
+
   defp fetch_validators(bn) do
     call_methods([
       {:election, "getCurrentValidatorSigners", [], bn - 1},
-      {:election, "getParentSealBitmap", [bn], bn}
+      {:election, "getParentSealBitmap", [bn], bn},
+      {:election, "getElectableValidators", []},
+      {:lockedgold, "getTotalLockedGold", []},
+      {:validators, "getNumRegisteredValidators", []}
     ])
   end
 
   defp fetch_withdrawal_data(address) do
-    call_methods([{:locked_gold, "getPendingWithdrawals", [address]}])
-  end
-
-  defp fetch_validator_group_data(address) do
-    call_methods([
-      {:election, "getTotalVotesForGroup", [address]},
-      {:validators, "getValidatorGroup", [address]}
-    ])
+    call_methods([{:lockedgold, "getPendingWithdrawals", [address]}])
   end
 
   defp call_methods(methods) do
