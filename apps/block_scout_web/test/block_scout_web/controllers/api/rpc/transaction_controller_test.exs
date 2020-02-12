@@ -515,7 +515,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "gasUsed" => "#{transaction.gas_used}",
         "gasPrice" => "#{transaction.gas_price.value}",
         "feeCurrency" => "#{transaction.gas_currency_hash}",
-        "gatewayFee" => "#{0}",
+        "gatewayFee" => "#{transaction.gateway_fee}",
         "gatewayFeeRecipient" => "#{transaction.gas_fee_recipient_hash}",
         "logs" => [
           %{

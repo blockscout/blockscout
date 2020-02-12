@@ -25,7 +25,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:223
+#: lib/block_scout_web/templates/transaction/overview.html.eex:234
 msgid " Token Transfer"
 msgstr ""
 
@@ -766,7 +766,7 @@ msgid "GET"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:263
+#: lib/block_scout_web/templates/transaction/overview.html.eex:274
 msgid "Gas"
 msgstr ""
 
@@ -816,8 +816,8 @@ msgid "Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:145
-#: lib/block_scout_web/templates/transaction/overview.html.eex:149
+#: lib/block_scout_web/templates/transaction/overview.html.eex:156
+#: lib/block_scout_web/templates/transaction/overview.html.eex:160
 msgid "Hex (Default)"
 msgstr ""
 
@@ -943,7 +943,7 @@ msgid "License ID"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:273
+#: lib/block_scout_web/templates/transaction/overview.html.eex:284
 msgid "Limit"
 msgstr ""
 
@@ -1200,7 +1200,7 @@ msgid "RPC"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:139
+#: lib/block_scout_web/templates/transaction/overview.html.eex:150
 msgid "Raw Input"
 msgstr ""
 
@@ -1646,7 +1646,7 @@ msgid "Transaction Inputs"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:131
+#: lib/block_scout_web/templates/transaction/overview.html.eex:142
 msgid "Transaction Speed"
 msgstr ""
 
@@ -1694,7 +1694,7 @@ msgid "Type"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:152
+#: lib/block_scout_web/templates/transaction/overview.html.eex:163
 msgid "UTF-8"
 msgstr ""
 
@@ -1720,7 +1720,7 @@ msgid "Use the search box to find a hosted network, or select from the list of a
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:267
+#: lib/block_scout_web/templates/transaction/overview.html.eex:278
 msgid "Used"
 msgstr ""
 
@@ -1750,8 +1750,8 @@ msgid "Validator Info"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:210
-#: lib/block_scout_web/templates/transaction/overview.html.eex:245
+#: lib/block_scout_web/templates/transaction/overview.html.eex:221
+#: lib/block_scout_web/templates/transaction/overview.html.eex:256
 msgid "Value"
 msgstr ""
 
@@ -1852,8 +1852,8 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/app.html.eex:75
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:29
-#: lib/block_scout_web/templates/transaction/overview.html.eex:210
-#: lib/block_scout_web/templates/transaction/overview.html.eex:245
+#: lib/block_scout_web/templates/transaction/overview.html.eex:221
+#: lib/block_scout_web/templates/transaction/overview.html.eex:256
 #: lib/block_scout_web/views/transaction_view.ex:303
 #: lib/block_scout_web/views/transaction_view.ex:303
 #: lib/block_scout_web/views/wei_helpers.ex:78
@@ -1949,11 +1949,16 @@ msgid "There are no downtime blocks for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:164
+#: lib/block_scout_web/templates/transaction/overview.html.eex:175
 msgid "Copy Txn Input"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:32
 msgid "Ether"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:125
+msgid "Gateway Fee"
 msgstr ""

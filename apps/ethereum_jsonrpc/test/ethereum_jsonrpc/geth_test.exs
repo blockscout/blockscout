@@ -167,6 +167,7 @@ defmodule EthereumJSONRPC.GethTest do
                   gas_price: 1_000_000_000,
                   gas_currency_hash: "0x0",
                   gas_fee_recipient_hash: "0x0",
+                  gateway_fee: 0,
                   hash: "0x2b8cfd76a31b942e51b6265c791c860e2840b11f8c2fcfa1c9dfe53dea4c3102",
                   index: nil,
                   input:
@@ -189,6 +190,7 @@ defmodule EthereumJSONRPC.GethTest do
                   gas_price: 1_000_000_000,
                   gas_currency_hash: "0x0",
                   gas_fee_recipient_hash: "0x0",
+                  gateway_fee: 0,
                   hash: "0x7c3ea924740e996bf552a8dded903ba4258b69d30bf5e6dca6ec86ebc60b8151",
                   index: nil,
                   input:
@@ -211,6 +213,7 @@ defmodule EthereumJSONRPC.GethTest do
                   gas_price: 1_000_000_000,
                   gas_currency_hash: "0x0",
                   gas_fee_recipient_hash: "0x0",
+                  gateway_fee: 0,
                   hash: "0xe699a58ef4986f2dbdc102acf73b35392aff9ce43fd226000526955e19c0b06e",
                   index: nil,
                   input:
