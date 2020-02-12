@@ -93,7 +93,6 @@
       @view_module != Elixir.BlockScoutWeb.Tokens.Instance.MetadataView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.Instance.OverviewView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.Instance.TransferView &&
-      @view_module != Elixir.BlockScoutWeb.Admin.DashboardView &&
       @view_module != Elixir.BlockScoutWeb.APIDocsView &&
       @view_module != Elixir.BlockScoutWeb.Admin.DashboardView
     ) do %>
