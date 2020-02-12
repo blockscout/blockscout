@@ -1176,11 +1176,11 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:33
-#: lib/block_scout_web/templates/address/overview.html.eex:132
+#: lib/block_scout_web/templates/address/overview.html.eex:131
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:51
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:93
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:94
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:106
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:105
 msgid "QR Code"
 msgstr ""
 
@@ -1718,12 +1718,12 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
-#: lib/block_scout_web/templates/address/overview.html.eex:133
-#: lib/block_scout_web/templates/address/overview.html.eex:141
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:94
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:102
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:107
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:115
+#: lib/block_scout_web/templates/address/overview.html.eex:132
+#: lib/block_scout_web/templates/address/overview.html.eex:140
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:95
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:103
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:106
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:114
 msgid "Close"
 msgstr ""
 
