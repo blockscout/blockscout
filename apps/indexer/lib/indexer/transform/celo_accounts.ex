@@ -42,6 +42,7 @@ defmodule Indexer.Transform.CeloAccounts do
     logs
     |> Enum.filter(fn log -> log.first_topic == CeloAccount.account_name_event() end)
     |> Enum.reduce([], fn log, names -> do_parse_name(log, names) end)
+    |> Enum.filter(fn %{name: name} -> String.length(name) > 0 end)
   end
 
   #    defp get_rates(logs) do
