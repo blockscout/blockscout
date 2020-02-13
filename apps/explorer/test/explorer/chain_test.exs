@@ -1393,7 +1393,7 @@ defmodule Explorer.ChainTest do
             to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             gas: 4_677_320,
             gas_used: 27770,
-            input: "0x",
+            input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
             output: "0x",
             value: 0
           }
