@@ -43,26 +43,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    changes_list_without_first_traces_of_trivial_transactions =
-      Enum.reject(changes_list, fn changes ->
-        changes[:index] == 0 && changes[:input] == %Explorer.Chain.Data{bytes: ""}
-      end)
-
-    all_first_traces =
-      Enum.filter(changes_list, fn changes ->
-        changes[:index] == 0
-      end)
-
     transactions_timeout = options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout()
 
     update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
 
     # filter out params with just `block_number` (indicating blocks without internal transactions)
     internal_transactions_params = Enum.filter(changes_list, &Map.has_key?(&1, :type))
-
-    # internal transactions for update
-    internal_transactions_for_update_transactions_params =
-      Enum.filter(changes_list_without_first_traces_of_trivial_transactions, &Map.has_key?(&1, :type))
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
@@ -85,9 +71,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                                                                                                  invalid_block_numbers:
                                                                                                    invalid_block_numbers
                                                                                                } ->
-      valid_internal_transactions(
+      valid_internal_transactions_without_first_trace(
         transactions,
-        internal_transactions_for_update_transactions_params,
+        internal_transactions_params,
         invalid_block_numbers
       )
     end)
@@ -114,7 +100,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       insert(repo, valid_internal_transactions_without_first_traces_of_trivial_transactions, insert_options)
     end)
     |> Multi.run(:update_transactions, fn repo, %{valid_internal_transactions: valid_internal_transactions} ->
-      update_transactions(repo, valid_internal_transactions, all_first_traces, update_transactions_options)
+      update_transactions(repo, valid_internal_transactions, update_transactions_options)
     end)
     |> Multi.run(:remove_consensus_of_invalid_blocks, fn repo, %{invalid_block_numbers: invalid_block_numbers} ->
       remove_consensus_of_invalid_blocks(repo, invalid_block_numbers)
@@ -306,6 +292,23 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     {:ok, valid_internal_txs}
   end
 
+  defp valid_internal_transactions_without_first_trace(
+         transactions,
+         internal_transactions_params,
+         invalid_block_numbers
+       ) do
+    with {:ok, valid_internal_txs} <-
+           valid_internal_transactions(transactions, internal_transactions_params, invalid_block_numbers) do
+      valid_internal_txs_without_first_trace =
+        valid_internal_txs
+        |> Enum.reject(fn trace ->
+          trace[:index] == 0 && trace[:input] == %Explorer.Chain.Data{bytes: ""}
+        end)
+
+      {:ok, valid_internal_txs_without_first_trace}
+    end
+  end
+
   def defer_internal_transactions_primary_key(repo) do
     # Allows internal_transactions primary key to not be checked during the
     # DB transactions and instead be checked only at the end of it.
@@ -350,7 +353,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
-  defp update_transactions(repo, valid_internal_transactions, first_traces, %{
+  defp update_transactions(repo, valid_internal_transactions, %{
          timeout: timeout,
          timestamps: timestamps
        }) do
@@ -360,43 +363,37 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       {:ok, nil}
     else
       params =
-        Enum.map(first_traces, fn first_trace ->
+        valid_internal_transactions
+        |> Enum.filter(fn internal_tx ->
+          internal_tx[:index] == 0
+        end)
+        |> Enum.map(fn trace ->
           %{
-            transaction_hash: Map.get(first_trace, :transaction_hash),
-            created_contract_address_hash: Map.get(first_trace, :created_contract_address_hash),
-            error: Map.get(first_trace, :error),
-            status: if(is_nil(Map.get(first_trace, :error)), do: :ok, else: :error)
+            transaction_hash: Map.get(trace, :transaction_hash),
+            created_contract_address_hash: Map.get(trace, :created_contract_address_hash),
+            error: Map.get(trace, :error),
+            status: if(is_nil(Map.get(trace, :error)), do: :ok, else: :error)
           }
         end)
+        |> Enum.filter(fn transaction_hash -> transaction_hash != nil end)
 
       transaction_hashes =
         valid_internal_transactions
-        |> Enum.map(fn valid_internal_transaction ->
-          Map.get(valid_internal_transaction, :transaction_hash)
-        end)
-        |> Enum.filter(fn hash -> hash != nil end)
-
-      transaction_hashes_count = Enum.count(transaction_hashes)
+        |> MapSet.new(& &1.transaction_hash)
+        |> MapSet.to_list()
 
       result =
-        Enum.reduce_while(transaction_hashes, 0, fn transaction_hash, transaction_hashes_iterator ->
-          first_trace_params =
-            params
-            |> Enum.filter(fn first_trace ->
-              first_trace.transaction_hash == transaction_hash
-            end)
-            |> Enum.at(0)
-
+        Enum.reduce_while(params, 0, fn first_trace, transaction_hashes_iterator ->
           update_query =
             from(
               t in Transaction,
-              where: t.hash == ^transaction_hash,
+              where: t.hash == ^first_trace.transaction_hash,
               # ShareLocks order already enforced by `acquire_transactions` (see docs: sharelocks.md)
               update: [
                 set: [
-                  created_contract_address_hash: ^first_trace_params.created_contract_address_hash,
-                  error: ^first_trace_params.error,
-                  status: ^first_trace_params.status,
+                  created_contract_address_hash: ^first_trace.created_contract_address_hash,
+                  error: ^first_trace.error,
+                  status: ^first_trace.status,
                   updated_at: ^timestamps.updated_at
                 ]
               ]
@@ -407,7 +404,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           try do
             {_transaction_count, result} = repo.update_all(update_query, [], timeout: timeout)
 
-            if transaction_hashes_count == transaction_hashes_iterator do
+            if valid_internal_transactions_count == transaction_hashes_iterator do
               {:halt, result}
             else
               {:cont, transaction_hashes_iterator}

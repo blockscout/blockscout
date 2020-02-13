@@ -88,6 +88,38 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert :ok == Repo.get(Transaction, transaction2.hash).status
     end
 
+    test "for block with simple coin transfer and method calls, method calls internal txs have correct block_index" do
+      a_block = insert(:block, number: 1000)
+      transaction0 = insert(:transaction) |> with_block(a_block, status: :ok)
+      transaction1 = insert(:transaction) |> with_block(a_block, status: :ok)
+      transaction2 = insert(:transaction) |> with_block(a_block, status: :ok)
+      insert(:pending_block_operation, block_hash: a_block.hash, fetch_internal_transactions: true)
+
+      assert :ok == transaction0.status
+      assert :ok == transaction1.status
+      assert :ok == transaction2.status
+
+      index = 0
+
+      internal_transaction_changes_0 = make_internal_transaction_changes(transaction0, index, nil)
+
+      internal_transaction_changes_1 =
+        make_internal_transaction_changes_for_simple_coin_transfers(transaction1, index, nil)
+
+      internal_transaction_changes_2 = make_internal_transaction_changes(transaction2, index, nil)
+
+      assert {:ok, _} =
+               run_internal_transactions([
+                 internal_transaction_changes_0,
+                 internal_transaction_changes_1,
+                 internal_transaction_changes_2
+               ])
+
+      assert 0 == Repo.get_by!(InternalTransaction, transaction_hash: transaction0.hash).block_index
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction1.hash) |> Repo.one() |> is_nil()
+      assert 2 == Repo.get_by!(InternalTransaction, transaction_hash: transaction2.hash).block_index
+    end
+
     test "simple coin transfer has no internal transaction inserted" do
       transaction = insert(:transaction) |> with_block(status: :ok)
       insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
