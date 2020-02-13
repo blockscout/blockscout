@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
   import Mox
 
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Address, Hash}
   alias Explorer.Factory
 
   setup :verify_on_exit!
@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
   describe "GET show/3" do
     test "returns not found for nonexistent address" do
-      nonexistent_address_hash = Hash.to_string(Factory.address_hash())
+      nonexistent_address_hash = Address.checksum(Hash.to_string(Factory.address_hash()))
 
       path =
         smart_contract_path(
@@ -107,7 +107,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         smart_contract_path(
           BlockScoutWeb.Endpoint,
           :show,
-          smart_contract.address_hash,
+          Address.checksum(smart_contract.address_hash),
           function_name: "get",
           args: []
         )
@@ -127,7 +127,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         smart_contract_path(
           BlockScoutWeb.Endpoint,
           :show,
-          smart_contract.address_hash,
+          Address.checksum(smart_contract.address_hash),
           function_name: "get",
           args: []
         )
