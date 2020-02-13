@@ -2,6 +2,7 @@ const path = require('path');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const glob = require("glob");
+const webpack = require('webpack')
 
 function transpileViewScript(file) {
   return {
@@ -74,7 +75,11 @@ const appJs =
     },
     plugins: [
       new ExtractTextPlugin('../css/app.css'),
-      new CopyWebpackPlugin([{ from: 'static/', to: '../' }])
+      new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
+      new webpack.DefinePlugin({
+        'process.env.PROVIDER_URL': JSON.stringify(process.env.PROVIDER_URL),
+        'process.env.CONSENSUS_ADDRESS': JSON.stringify(process.env.CONSENSUS_ADDRESS)
+      })
     ]
   }
 

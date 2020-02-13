@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.CSPHeader do
   def call(conn, _opts) do
     Controller.put_secure_browser_headers(conn, %{
       "content-security-policy" => "\
-        connect-src 'self' #{websocket_endpoints(conn)}; \
+        connect-src 'self' #{websocket_endpoints(conn)} #{Application.get_env(:block_scout_web, :provider_url)}; \
         default-src 'self';\
         script-src 'self' 'unsafe-inline' 'unsafe-eval' https://nico-amsterdam.github.io;\
         style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://nico-amsterdam.github.io;\

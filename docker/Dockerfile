@@ -22,6 +22,8 @@ ADD . .
 ARG COIN
 RUN if [ "$COIN" != "" ]; then sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
 
+ARG PROVIDER_URL
+ARG CONSENSUS_ADDRESS
 # Add blockscout npm deps
 RUN cd apps/block_scout_web/assets/ && \
     npm install && \
@@ -31,6 +33,8 @@ RUN cd apps/block_scout_web/assets/ && \
 RUN cd apps/explorer/ && \
     npm install && \
     apk update && apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python
+
+RUN mix phx.digest
 
 # RUN mix do ecto.drop --force, ecto.create, ecto.migrate
 

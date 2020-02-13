@@ -233,3 +233,71 @@ $card-tab-icon-color-active: #20b760 !default;
     }
   }
 }
+
+.dashboard-banner-container {
+
+  .card {
+    box-shadow: none;
+    min-height: 210px;
+    max-height: 210px;
+
+    @include media-breakpoint-down(sm) {
+      max-height: none;
+    }
+
+    .cycle-icon {
+      position: absolute;
+      right: 20px;
+      top: 30px;
+    }
+
+    .dashboard-banner-card-title {
+      font-size: 14px;
+      color: #9a9a9a;
+    }
+    
+    .dashboard-banner-card-value {
+      font-size: 1.75rem;
+      color: #8291A0; 
+    
+      .symbol {
+        font-size: 14px;
+      }
+
+      .validator-info-url {
+        font-size: 14px;
+        color: #9a9a9a;
+        text-decoration: underline;
+      }
+    }
+    
+    .dashboard-banner-card-value.dashboard-banner-card-value-small {
+      font-size: 1rem;
+      line-height: 1;
+      margin-top: 1rem;
+    }
+  }
+
+  .progress-circle {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .progress-value-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .progress-value {
+    color: #49687c;
+    font-size: 26px;
+  }
+}
+
