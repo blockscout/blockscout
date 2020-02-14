@@ -141,7 +141,7 @@
                   <span
                     aria-label="Copy Value"
                     class="btn-copy-icon tx-utf8-input transaction-input"
-                    data-clipboard-text="<%= @transaction.input %>"
+                    data-clipboard-text="<%= @transaction.input.bytes %>"
                     data-placement="top"
                     data-toggle="tooltip"
                     title='<%= gettext("Copy Txn Input") %>'
