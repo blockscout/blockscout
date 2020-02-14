@@ -73,16 +73,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       ) do
     Logger.metadata(fetcher: :block_catchup)
 
-    {:ok, latest_block_number} =
-      case latest_block() do
-        nil ->
-          EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
-
-        number ->
-          {:ok, number}
-      end
-
-    case latest_block_number do
+    case latest_block(json_rpc_named_arguments) do
       # let realtime indexer get the genesis block
       0 ->
         %{first_block_number: 0, missing_block_count: 0, last_block_number: 0, shrunk: false}
