@@ -340,19 +340,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
     string_value = Application.get_env(:indexer, :last_block)
 
     case Integer.parse(string_value) do
-      {integer, ""} ->
-        integer
-
-      _ ->
-        {:ok, number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
-        # leave to realtime indexer the blocks in the skipping window
-        skipping_distance = Application.get_env(:indexer, :max_skipping_distance)
-
-        if number > skipping_distance do
-          number - skipping_distance
-        else
-          0
-        end
+      {integer, ""} -> integer
+      _ -> nil
     end
   end
 end
