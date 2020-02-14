@@ -5,6 +5,7 @@
 - [#2834](https://github.com/poanetwork/blockscout/pull/2834) - always redirect to checksummed hash
 
 ### Fixes
+- [#3007](https://github.com/poanetwork/blockscout/pull/3007) - Fix copy UTF8 tx input action
 - [#2996](https://github.com/poanetwork/blockscout/pull/2996) - Fix awesomplete lib loading in Firefox
 - [#2993](https://github.com/poanetwork/blockscout/pull/2993), [#2999](https://github.com/poanetwork/blockscout/pull/2999) - Fix path definition for contract verification endpoint
 - [#2990](https://github.com/poanetwork/blockscout/pull/2990) - Fix import of Parity spec file
