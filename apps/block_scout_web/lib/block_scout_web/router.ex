@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.Router do
   else
     scope "/verify_smart_contract" do
       pipe_through(:api)
-  
+
       post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
     end
   end
