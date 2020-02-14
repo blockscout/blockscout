@@ -67,6 +67,8 @@ defmodule Explorer.Chain.TokenTransfer do
   @typep paging_options :: {:paging_options, PagingOptions.t()}
 
   @constant "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+  @erc1155_single_transfer_signature "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62"
+  @erc1155_batch_transfer_signature "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb"
 
   @transfer_function_signature "0xa9059cbb"
 
@@ -133,6 +135,10 @@ defmodule Explorer.Chain.TokenTransfer do
   `first_topic` field.
   """
   def constant, do: @constant
+
+  def erc1155_single_transfer_signature, do: @erc1155_single_transfer_signature
+
+  def erc1155_batch_transfer_signature, do: @erc1155_batch_transfer_signature
 
   @doc """
   ERC 20's transfer(address,uint256) function signature
