@@ -336,7 +336,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   end
 
-  defp latest_block do
+  defp latest_block_number do
     string_value = Application.get_env(:indexer, :last_block)
 
     case Integer.parse(string_value) do
