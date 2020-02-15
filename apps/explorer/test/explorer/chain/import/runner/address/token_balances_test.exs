@@ -29,7 +29,9 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
         block_number: block_number,
         token_contract_address_hash: token_contract_address_hash,
         value: value,
-        value_fetched_at: value_fetched_at
+        value_fetched_at: value_fetched_at,
+        token_id: 11,
+        token_type: "ERC-20"
       }
 
       assert {:ok,
@@ -69,7 +71,9 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
         block_number: block_number,
         token_contract_address_hash: token_contract_address_hash,
         value: nil,
-        value_fetched_at: value_fetched_at
+        value_fetched_at: value_fetched_at,
+        token_id: 11,
+        token_type: "ERC-20"
       }
 
       assert {:ok,
