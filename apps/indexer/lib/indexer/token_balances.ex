@@ -26,6 +26,8 @@ defmodule Indexer.TokenBalances do
   * `token_contract_address_hash` - The contract address that represents the Token in the blockchain.
   * `address_hash` - The address_hash that we want to know the balance.
   * `block_number` - The block number that the address_hash has the balance.
+  * `token_type` - type of the token that balance belongs to
+  * `token_id` - token id for ERC-1155 tokens
   """
   def fetch_token_balances_from_blockchain([]), do: {:ok, []}
 
