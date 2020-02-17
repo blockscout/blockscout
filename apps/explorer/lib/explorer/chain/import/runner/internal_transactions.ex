@@ -43,21 +43,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    changes_list_without_first_traces_of_trivial_transactions =
-      Enum.reject(changes_list, fn changes ->
-        changes[:index] == 0 && changes[:input] == %Explorer.Chain.Data{bytes: ""}
-      end)
-
     transactions_timeout = options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout()
 
     update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
 
     # filter out params with just `block_number` (indicating blocks without internal transactions)
     internal_transactions_params = Enum.filter(changes_list, &Map.has_key?(&1, :type))
-
-    # internal transactions for update
-    internal_transactions_for_update_transactions_params =
-      Enum.filter(changes_list_without_first_traces_of_trivial_transactions, &Map.has_key?(&1, :type))
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
@@ -80,9 +71,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                                                                                                  invalid_block_numbers:
                                                                                                    invalid_block_numbers
                                                                                                } ->
-      valid_internal_transactions(
+      valid_internal_transactions_without_first_trace(
         transactions,
-        internal_transactions_for_update_transactions_params,
+        internal_transactions_params,
         invalid_block_numbers
       )
     end)
@@ -299,6 +290,23 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       end)
 
     {:ok, valid_internal_txs}
+  end
+
+  defp valid_internal_transactions_without_first_trace(
+         transactions,
+         internal_transactions_params,
+         invalid_block_numbers
+       ) do
+    with {:ok, valid_internal_txs} <-
+           valid_internal_transactions(transactions, internal_transactions_params, invalid_block_numbers) do
+      valid_internal_txs_without_first_trace =
+        valid_internal_txs
+        |> Enum.reject(fn trace ->
+          trace[:index] == 0 && trace[:input] == %Explorer.Chain.Data{bytes: ""}
+        end)
+
+      {:ok, valid_internal_txs_without_first_trace}
+    end
   end
 
   def defer_internal_transactions_primary_key(repo) do
