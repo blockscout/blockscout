@@ -22,6 +22,88 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert :error == Repo.get(Transaction, transaction.hash).status
     end
 
+    test "simple coin transfer's status becomes :error when its internal_transaction has an error" do
+      transaction = insert(:transaction) |> with_block(status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
+
+      assert :ok == transaction.status
+
+      index = 0
+      error = "Out of gas"
+
+      internal_transaction_changes =
+        make_internal_transaction_changes_for_simple_coin_transfers(transaction, index, error)
+
+      assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
+
+      assert :error == Repo.get(Transaction, transaction.hash).status
+    end
+
+    test "for block with 2 simple coin transfer's statuses become :error when its both internal_transactions has an error" do
+      a_block = insert(:block, number: 1000)
+      transaction1 = insert(:transaction) |> with_block(a_block, status: :ok)
+      transaction2 = insert(:transaction) |> with_block(a_block, status: :ok)
+
+      insert(:pending_block_operation, block_hash: a_block.hash, fetch_internal_transactions: true)
+
+      assert :ok == transaction1.status
+      assert :ok == transaction2.status
+
+      index = 0
+      error = "Out of gas"
+
+      internal_transaction_changes_1 =
+        make_internal_transaction_changes_for_simple_coin_transfers(transaction1, index, error)
+
+      internal_transaction_changes_2 =
+        make_internal_transaction_changes_for_simple_coin_transfers(transaction2, index, error)
+
+      assert {:ok, _} = run_internal_transactions([internal_transaction_changes_1, internal_transaction_changes_2])
+
+      assert :error == Repo.get(Transaction, transaction1.hash).status
+      assert :error == Repo.get(Transaction, transaction2.hash).status
+    end
+
+    test "for block with 2 simple coin transfer's only status become :error for tx where internal_transactions has an error" do
+      a_block = insert(:block, number: 1000)
+      transaction1 = insert(:transaction) |> with_block(a_block, status: :ok)
+      transaction2 = insert(:transaction) |> with_block(a_block, status: :ok)
+      insert(:pending_block_operation, block_hash: a_block.hash, fetch_internal_transactions: true)
+
+      assert :ok == transaction1.status
+      assert :ok == transaction2.status
+
+      index = 0
+      error = "Out of gas"
+
+      internal_transaction_changes_1 =
+        make_internal_transaction_changes_for_simple_coin_transfers(transaction1, index, error)
+
+      internal_transaction_changes_2 =
+        make_internal_transaction_changes_for_simple_coin_transfers(transaction2, index, nil)
+
+      assert {:ok, _} = run_internal_transactions([internal_transaction_changes_1, internal_transaction_changes_2])
+
+      assert :error == Repo.get(Transaction, transaction1.hash).status
+      assert :ok == Repo.get(Transaction, transaction2.hash).status
+    end
+
+    test "simple coin transfer has no internal transaction inserted" do
+      transaction = insert(:transaction) |> with_block(status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, fetch_internal_transactions: true)
+
+      assert :ok == transaction.status
+
+      index = 0
+
+      internal_transaction_changes =
+        make_internal_transaction_changes_for_simple_coin_transfers(transaction, index, nil)
+
+      assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
+
+      assert !Repo.exists?(from(i in InternalTransaction, where: i.transaction_hash == ^transaction.hash))
+    end
+
     test "pending transactions don't get updated not its internal_transactions inserted" do
       transaction = insert(:transaction) |> with_block(status: :ok)
       pending = insert(:transaction)
@@ -187,6 +269,30 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       output:
         if is_nil(error) do
           %Data{bytes: <<2>>}
+        else
+          nil
+        end,
+      index: index,
+      trace_address: [],
+      transaction_hash: transaction.hash,
+      type: :call,
+      value: Wei.from(Decimal.new(1), :wei),
+      error: error,
+      block_number: transaction.block_number
+    }
+  end
+
+  defp make_internal_transaction_changes_for_simple_coin_transfers(transaction, index, error) do
+    %{
+      from_address_hash: insert(:address).hash,
+      to_address_hash: insert(:address).hash,
+      call_type: :call,
+      gas: 0,
+      gas_used: nil,
+      input: %Data{bytes: <<>>},
+      output:
+        if is_nil(error) do
+          %Data{bytes: <<0>>}
         else
           nil
         end,
