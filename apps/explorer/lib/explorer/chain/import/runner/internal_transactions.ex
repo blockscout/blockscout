@@ -10,6 +10,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Repo
 
   import Ecto.Query, only: [from: 2, or_where: 3]
 
@@ -42,6 +43,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> Map.take(~w(on_conflict timeout)a)
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
+
+    # IO.inspect("Gimme options DEFAULT:")
+    # IO.inspect(options)
 
     changes_list_without_first_traces_of_trivial_transactions =
       Enum.reject(changes_list, fn changes ->
@@ -106,6 +110,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                                               valid_internal_transactions_without_first_traces_of_trivial_transactions:
                                                 valid_internal_transactions_without_first_traces_of_trivial_transactions
                                             } ->
+      # IO.inspect("Gimme internal_transactions_params DEFAULT:")
+      # IO.inspect(valid_internal_transactions_without_first_traces_of_trivial_transactions)
       insert(repo, valid_internal_transactions_without_first_traces_of_trivial_transactions, insert_options)
     end)
     |> Multi.run(:update_transactions, fn repo, %{valid_internal_transactions: valid_internal_transactions} ->
@@ -121,6 +127,32 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                                                    } ->
       update_pending_blocks_status(repo, pending_block_hashes, invalid_block_hashes)
     end)
+  end
+
+  @impl Runner
+  def run_insert_only(changes_list, %{timestamps: timestamps} = options) when is_map(options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put(:timestamps, timestamps)
+
+    IO.inspect("Gimme options:")
+    IO.inspect(options)
+
+    # filter out params with just `block_number` (indicating blocks without internal transactions)
+    internal_transactions_params = Enum.filter(changes_list, &Map.has_key?(&1, :type))
+
+    IO.inspect("Gimme internal_transactions_params:")
+    IO.inspect(internal_transactions_params)
+
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    Multi.new()
+    |> Multi.run(:internal_transactions, fn repo, _ ->
+      insert(repo, internal_transactions_params, insert_options)
+    end)
+    |> Repo.transaction()
   end
 
   @impl Runner

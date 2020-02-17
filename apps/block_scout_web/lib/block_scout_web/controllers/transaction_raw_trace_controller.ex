@@ -5,8 +5,9 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Parity
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Import
+  alias Explorer.Chain.Import.Runner.InternalTransactions
   alias Explorer.ExchangeRates.Token
-  alias Indexer.Fetcher.InternalTransaction
 
   def index(conn, %{"transaction_id" => hash_string}) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
@@ -50,7 +51,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
               Application.get_env(:explorer, :json_rpc_named_arguments)
             )
 
-          InternalTransaction.import_first_trace(first_trace_params)
+          InternalTransactions.run_insert_only(first_trace_params, %{timeout: :infinity, timestamps: Import.timestamps(), internal_transactions: %{params: first_trace_params}})
           Chain.all_transaction_to_internal_transactions(hash)
         else
           internal_transactions
