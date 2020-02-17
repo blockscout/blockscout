@@ -72,6 +72,17 @@ defmodule EthereumJSONRPC.Geth do
     end
   end
 
+  @impl EthereumJSONRPC.Variant
+  def fetch_raw_trace(hash_data, json_rpc_named_arguments) do
+    id_to_params = %{id: 1, hash_data: hash_data}
+
+    with {:ok, _response} <-
+           id_to_params
+           |> debug_trace_transaction_request()
+           |> json_rpc(json_rpc_named_arguments) do
+    end
+  end
+
   defp debug_trace_transaction_requests(id_to_params) when is_map(id_to_params) do
     Enum.map(id_to_params, fn {id, %{hash_data: hash_data}} ->
       debug_trace_transaction_request(%{id: id, hash_data: hash_data})
