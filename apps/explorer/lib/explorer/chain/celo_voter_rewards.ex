@@ -20,16 +20,20 @@ defmodule Explorer.Chain.CeloVoterRewards do
           block_number: non_neg_integer(),
           address_hash: Hash.Address.t(),
           active_votes: Wei.t(),
+          total_active_votes: Wei.t(),
+          total_reward: Wei.t(),
           reward: Wei.t()
         }
 
-  @attrs ~w( block_hash log_index address_hash active_votes reward block_number )a
+  @attrs ~w( block_hash log_index address_hash active_votes reward total_active_votes total_reward block_number )a
 
   @required_attrs ~w( block_hash log_index )a
 
   schema "celo_voter_rewards" do
     field(:reward, Wei)
     field(:active_votes, Wei)
+    field(:total_reward, Wei)
+    field(:total_active_votes, Wei)
     field(:log_index, :integer)
     field(:block_number, :integer)
 

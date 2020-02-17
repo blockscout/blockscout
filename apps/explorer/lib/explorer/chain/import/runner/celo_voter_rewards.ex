@@ -76,7 +76,9 @@ defmodule Explorer.Chain.Import.Runner.CeloVoterRewards do
         set: [
           address_hash: fragment("EXCLUDED.address_hash"),
           reward: fragment("EXCLUDED.reward"),
-          active_votes: fragment("EXCLUDED.active_votes"),
+          active_votes: fragment("EXCLUDED.total_active_votes"),
+          total_reward: fragment("EXCLUDED.total_reward"),
+          total_active_votes: fragment("EXCLUDED.active_votes"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", account.updated_at)
         ]

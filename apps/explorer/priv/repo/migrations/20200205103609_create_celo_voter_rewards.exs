@@ -8,6 +8,8 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewards do
       add(:block_number, :integer, null: false)
       add(:reward, :numeric, precision: 100)
       add(:active_votes, :numeric, precision: 100)
+      add(:total_reward, :numeric, precision: 100)
+      add(:total_active_votes, :numeric, precision: 100)
       add(:address_hash, :bytea, null: false)
 
       timestamps(null: false, type: :utc_datetime_usec)
