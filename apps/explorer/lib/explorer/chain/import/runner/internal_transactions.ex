@@ -45,7 +45,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
     changes_list_without_first_traces_of_trivial_transactions =
       Enum.reject(changes_list, fn changes ->
-        changes[:index] == 0 && changes[:input] == %Explorer.Chain.Data{bytes: ""}
+        changes[:index] == 0
       end)
 
     transactions_timeout = options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout()
