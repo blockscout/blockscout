@@ -102,22 +102,35 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       index = 0
 
       internal_transaction_changes_0 = make_internal_transaction_changes(transaction0, index, nil)
+      internal_transaction_changes_0_1 = make_internal_transaction_changes(transaction0, 1, nil)
 
       internal_transaction_changes_1 =
         make_internal_transaction_changes_for_simple_coin_transfers(transaction1, index, nil)
 
       internal_transaction_changes_2 = make_internal_transaction_changes(transaction2, index, nil)
+      internal_transaction_changes_2_1 = make_internal_transaction_changes(transaction2, 1, nil)
 
       assert {:ok, _} =
                run_internal_transactions([
                  internal_transaction_changes_0,
+                 internal_transaction_changes_0_1,
                  internal_transaction_changes_1,
-                 internal_transaction_changes_2
+                 internal_transaction_changes_2,
+                 internal_transaction_changes_2_1
                ])
 
-      assert 0 == Repo.get_by!(InternalTransaction, transaction_hash: transaction0.hash).block_index
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction0.hash, where: i.index == 0)
+             |> Repo.one()
+             |> is_nil()
+
+      assert 1 == Repo.get_by!(InternalTransaction, transaction_hash: transaction0.hash, index: 1).block_index
       assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction1.hash) |> Repo.one() |> is_nil()
-      assert 2 == Repo.get_by!(InternalTransaction, transaction_hash: transaction2.hash).block_index
+
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction2.hash, where: i.index == 0)
+             |> Repo.one()
+             |> is_nil()
+
+      assert 4 == Repo.get_by!(InternalTransaction, transaction_hash: transaction2.hash, index: 1).block_index
     end
 
     test "simple coin transfer has no internal transaction inserted" do
@@ -145,7 +158,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert :ok == transaction.status
       assert is_nil(pending.block_hash)
 
-      index = 0
+      index = 1
 
       transaction_changes = make_internal_transaction_changes(transaction, index, nil)
       pending_changes = make_internal_transaction_changes(pending, index, nil)
@@ -176,7 +189,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert full_block.hash == inserted.block_hash
 
-      index = 0
+      index = 1
 
       pending_transaction_changes =
         pending
@@ -256,17 +269,23 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert full_block.hash == inserted.block_hash
 
-      index = 0
-
-      transaction_changes = make_internal_transaction_changes(inserted, index, nil)
+      transaction_changes = make_internal_transaction_changes(inserted, 0, nil)
+      transaction_changes_2 = make_internal_transaction_changes(inserted, 1, nil)
       empty_changes = make_empty_block_changes(empty_block.number)
 
-      assert {:ok, _} = run_internal_transactions([empty_changes, transaction_changes])
+      assert {:ok, _} = run_internal_transactions([empty_changes, transaction_changes, transaction_changes_2])
 
       assert %{consensus: true} = Repo.get(Block, empty_block.hash)
       assert PendingBlockOperation |> Repo.get(empty_block.hash) |> is_nil()
 
-      assert from(i in InternalTransaction, where: i.transaction_hash == ^inserted.hash) |> Repo.one() |> is_nil() ==
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^inserted.hash, where: i.index == 0)
+             |> Repo.one()
+             |> is_nil() ==
+               true
+
+      assert from(i in InternalTransaction, where: i.transaction_hash == ^inserted.hash, where: i.index == 1)
+             |> Repo.one()
+             |> is_nil() ==
                false
 
       assert %{consensus: true} = Repo.get(Block, full_block.hash)
