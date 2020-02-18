@@ -44,9 +44,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    # IO.inspect("Gimme options DEFAULT:")
-    # IO.inspect(options)
-
     transactions_timeout = options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout()
 
     update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
@@ -101,8 +98,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                                               valid_internal_transactions_without_first_traces_of_trivial_transactions:
                                                 valid_internal_transactions_without_first_traces_of_trivial_transactions
                                             } ->
-      # IO.inspect("Gimme internal_transactions_params DEFAULT:")
-      # IO.inspect(valid_internal_transactions_without_first_traces_of_trivial_transactions)
       insert(repo, valid_internal_transactions_without_first_traces_of_trivial_transactions, insert_options)
     end)
     |> Multi.run(:update_transactions, fn repo, %{valid_internal_transactions: valid_internal_transactions} ->
@@ -129,14 +124,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    IO.inspect("Gimme options:")
-    IO.inspect(options)
-
     # filter out params with just `block_number` (indicating blocks without internal transactions)
     internal_transactions_params = Enum.filter(changes_list, &Map.has_key?(&1, :type))
-
-    IO.inspect("Gimme internal_transactions_params:")
-    IO.inspect(internal_transactions_params)
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     Multi.new()
@@ -334,7 +323,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       valid_internal_txs_without_first_trace =
         valid_internal_txs
         |> Enum.reject(fn trace ->
-          trace[:index] == 0 && trace[:input] == %Explorer.Chain.Data{bytes: ""}
+          trace[:index] == 0
         end)
 
       {:ok, valid_internal_txs_without_first_trace}

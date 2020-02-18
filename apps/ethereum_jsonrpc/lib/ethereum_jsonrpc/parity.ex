@@ -8,6 +8,10 @@ defmodule EthereumJSONRPC.Parity do
   alias EthereumJSONRPC.Parity.{FetchedBeneficiaries, Traces}
   alias EthereumJSONRPC.{Transaction, Transactions}
 
+  alias Explorer.Chain
+  alias Explorer.Chain.{Data, Hash, Wei}
+  alias Explorer.Chain.InternalTransaction.{CallType, Type}
+
   @behaviour EthereumJSONRPC.Variant
 
   @impl EthereumJSONRPC.Variant
@@ -192,14 +196,131 @@ defmodule EthereumJSONRPC.Parity do
            id_to_params
            |> trace_replay_transaction_requests()
            |> json_rpc(json_rpc_named_arguments) do
-      {:ok, [first_trace]} = trace_replay_block_transactions_responses_to_first_trace_params(responses, id_to_params)
-      IO.inspect("Gimme first trace:")
-      IO.inspect(first_trace)
-      {:ok, [first_trace]}
+      {:ok, [first_trace]} = trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params)
+
+      %{block_hash: block_hash} =
+        transactions_params
+        |> Enum.at(0)
+
+      {:ok, to_address_hash} =
+        if Map.has_key?(first_trace, :to_address_hash) do
+          Chain.string_to_address_hash(first_trace.to_address_hash)
+        else
+          {:ok, nil}
+        end
+
+      {:ok, from_address_hash} = Chain.string_to_address_hash(first_trace.from_address_hash)
+
+      {:ok, created_contract_address_hash} =
+        if Map.has_key?(first_trace, :created_contract_address_hash) do
+          Chain.string_to_address_hash(first_trace.created_contract_address_hash)
+        else
+          {:ok, nil}
+        end
+
+      {:ok, transaction_hash} = Chain.string_to_transaction_hash(first_trace.transaction_hash)
+
+      {:ok, call_type} =
+        if Map.has_key?(first_trace, :call_type) do
+          CallType.load(first_trace.call_type)
+        else
+          {:ok, nil}
+        end
+
+      {:ok, type} = Type.load(first_trace.type)
+
+      {:ok, input} =
+        if Map.has_key?(first_trace, :input) do
+          Data.cast(first_trace.input)
+        else
+          {:ok, nil}
+        end
+
+      {:ok, output} =
+        if Map.has_key?(first_trace, :output) do
+          Data.cast(first_trace.output)
+        else
+          {:ok, nil}
+        end
+
+      {:ok, created_contract_code} =
+        if Map.has_key?(first_trace, :created_contract_code) do
+          Data.cast(first_trace.created_contract_code)
+        else
+          {:ok, nil}
+        end
+
+      {:ok, init} =
+        if Map.has_key?(first_trace, :init) do
+          Data.cast(first_trace.init)
+        else
+          {:ok, nil}
+        end
+
+      block_index =
+        get_block_index(%{
+          transaction_index: first_trace.transaction_index,
+          transaction_hash: first_trace.transaction_hash,
+          block_number: first_trace.block_number
+        })
+
+      value = %Wei{value: Decimal.new(first_trace.value)}
+
+      first_trace_formatted =
+        first_trace
+        |> Map.merge(%{
+          block_index: block_index,
+          block_hash: block_hash,
+          call_type: call_type,
+          to_address_hash: to_address_hash,
+          created_contract_address_hash: created_contract_address_hash,
+          from_address_hash: from_address_hash,
+          input: input,
+          output: output,
+          created_contract_code: created_contract_code,
+          init: init,
+          transaction_hash: transaction_hash,
+          type: type,
+          value: value
+        })
+
+      {:ok, [first_trace_formatted]}
     end
   end
 
-  defp trace_replay_block_transactions_responses_to_first_trace_params(responses, id_to_params)
+  defp get_block_index(%{
+         transaction_index: transaction_index,
+         transaction_hash: transaction_hash,
+         block_number: block_number
+       }) do
+    if transaction_index == 0 do
+      0
+    else
+      previous_tx_index = transaction_index - 1
+
+      block_hash_to_string =
+        block_hash
+        |> Hash.to_string()
+
+      {:ok, traces} = fetch_block_internal_transactions([block_number], json_rpc_named_arguments)
+
+      sorted_traces =
+        traces
+        |> Enum.sort_by(&{&1.transaction_index, &1.index})
+        |> Enum.with_index()
+
+      {_, block_index} =
+        sorted_traces
+        |> Enum.find(fn {trace, index} ->
+          trace.transaction_index == transaction_index &&
+            trace.transaction_hash == transaction_hash
+        end)
+
+      block_index
+    end
+  end
+
+  defp trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params)
        when is_list(responses) and is_map(id_to_params) do
     with {:ok, traces} <- trace_replay_transaction_responses_to_first_trace(responses, id_to_params) do
       params =
@@ -248,14 +369,19 @@ defmodule EthereumJSONRPC.Parity do
 
   defp trace_replay_transaction_response_to_first_trace(%{id: id, result: %{"trace" => traces}}, id_to_params)
        when is_list(traces) and is_map(id_to_params) do
-    %{block_number: block_number, hash_data: transaction_hash, transaction_index: transaction_index} =
-      Map.fetch!(id_to_params, id)
+    %{
+      block_hash: block_hash,
+      block_number: block_number,
+      hash_data: transaction_hash,
+      transaction_index: transaction_index
+    } = Map.fetch!(id_to_params, id)
 
     first_trace =
       traces
       |> Stream.with_index()
       |> Enum.map(fn {trace, index} ->
         Map.merge(trace, %{
+          "blockHash" => block_hash,
           "blockNumber" => block_number,
           "index" => index,
           "transactionIndex" => transaction_index,
@@ -263,8 +389,6 @@ defmodule EthereumJSONRPC.Parity do
         })
       end)
       |> Enum.filter(fn trace ->
-        IO.inspect("Gimme trace index:")
-        IO.inspect(Map.get(trace, "index"))
         Map.get(trace, "index") == 0
       end)
 
@@ -273,11 +397,16 @@ defmodule EthereumJSONRPC.Parity do
 
   defp trace_replay_transaction_response_to_first_trace(%{id: id, error: error}, id_to_params)
        when is_map(id_to_params) do
-    %{block_number: block_number, hash_data: transaction_hash, transaction_index: transaction_index} =
-      Map.fetch!(id_to_params, id)
+    %{
+      block_hash: block_hash,
+      block_number: block_number,
+      hash_data: transaction_hash,
+      transaction_index: transaction_index
+    } = Map.fetch!(id_to_params, id)
 
     annotated_error =
       Map.put(error, :data, %{
+        "blockHash" => block_hash,
         "blockNumber" => block_number,
         "transactionIndex" => transaction_index,
         "transactionHash" => transaction_hash

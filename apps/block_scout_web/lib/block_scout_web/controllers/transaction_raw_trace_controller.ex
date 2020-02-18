@@ -24,41 +24,37 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
              }
            ) do
       internal_transactions = Chain.all_transaction_to_internal_transactions(hash)
-      IO.inspect("Gimme internal transactions:")
-      IO.inspect(internal_transactions)
 
       first_trace_exists =
         Enum.find_index(internal_transactions, fn trace ->
-          IO.inspect("Gimme trace.index:")
-          IO.inspect(trace.index)
           trace.index == 0
         end)
 
-      IO.inspect("Gimme first_trace_exists")
-      IO.inspect(first_trace_exists)
-
-      if first_trace_exists do
-        IO.inspect("Gimme: index exists!!!")
-      end
-
       internal_transactions =
-        unless first_trace_exists do
-          IO.inspect("Gimme: No first trace found")
-
+        if first_trace_exists do
+          internal_transactions
+        else
           {:ok, first_trace_params} =
             Parity.fetch_first_trace(
-              [%{block_number: transaction.block_number, hash_data: hash_string, transaction_index: transaction.index}],
+              [
+                %{
+                  block_hash: transaction.block_hash,
+                  block_number: transaction.block_number,
+                  hash_data: hash_string,
+                  transaction_index: transaction.index
+                }
+              ],
               Application.get_env(:explorer, :json_rpc_named_arguments)
             )
 
-          InternalTransactions.run_insert_only(first_trace_params, %{timeout: :infinity, timestamps: Import.timestamps(), internal_transactions: %{params: first_trace_params}})
-          Chain.all_transaction_to_internal_transactions(hash)
-        else
-          internal_transactions
-        end
+          InternalTransactions.run_insert_only(first_trace_params, %{
+            timeout: :infinity,
+            timestamps: Import.timestamps(),
+            internal_transactions: %{params: first_trace_params}
+          })
 
-      IO.inspect("Gimme internal transactions to raw trace 1:")
-      IO.inspect(internal_transactions)
+          Chain.all_transaction_to_internal_transactions(hash)
+        end
 
       render(
         conn,

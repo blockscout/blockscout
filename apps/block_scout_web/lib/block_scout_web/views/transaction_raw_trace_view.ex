@@ -9,9 +9,6 @@ defmodule BlockScoutWeb.TransactionRawTraceView do
   end
 
   def raw_traces_with_lines(internal_transactions) do
-    IO.inspect("Gimme internal transactions to raw trace:")
-    IO.inspect(internal_transactions)
-
     internal_transactions
     |> InternalTransaction.internal_transactions_to_raw()
     |> Jason.encode!(pretty: true)

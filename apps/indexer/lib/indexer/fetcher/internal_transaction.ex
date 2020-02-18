@@ -133,10 +133,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
       })
 
     case imports do
-      {:ok, imported} ->
-        IO.inspect("Gimme imported")
-        IO.inspect(imported)
-
       {:error, step, reason, _changes_so_far} ->
         Logger.error(
           fn ->
