@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
     test "with invalid token hash", %{conn: conn} do
       address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
 
-      conn = get(conn, address_token_transfers_path(conn, :index, address_hash, "invalid_address"))
+      conn = get(conn, address_token_transfers_path(conn, :index, Address.checksum(address_hash), "invalid_address"))
 
       assert html_response(conn, 422)
     end
@@ -25,15 +25,20 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
     test "with an address that doesn't exist in our database", %{conn: conn} do
       address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
       %Token{contract_address_hash: token_hash} = insert(:token)
-      conn = get(conn, address_token_transfers_path(conn, :index, to_string(address_hash), to_string(token_hash)))
+
+      conn =
+        get(
+          conn,
+          address_token_transfers_path(conn, :index, Address.checksum(address_hash), Address.checksum(token_hash))
+        )
 
       assert html_response(conn, 404)
     end
 
     test "with an token that doesn't exist in our database", %{conn: conn} do
       %Address{hash: address_hash} = insert(:address)
-      token_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
-      conn = get(conn, address_token_transfers_path(conn, :index, address_hash, token_hash))
+      token_hash = Address.checksum("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
+      conn = get(conn, address_token_transfers_path(conn, :index, Address.checksum(address_hash), token_hash))
 
       assert html_response(conn, 404)
     end
@@ -45,9 +50,13 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
       %Token{contract_address_hash: token_hash} = insert(:token)
 
       conn =
-        get(conn, address_token_transfers_path(conn, :index, to_string(address_hash), to_string(token_hash)), %{
-          type: "JSON"
-        })
+        get(
+          conn,
+          address_token_transfers_path(conn, :index, Address.checksum(address_hash), Address.checksum(token_hash)),
+          %{
+            type: "JSON"
+          }
+        )
 
       assert json_response(conn, 200) == %{"items" => [], "next_page_path" => nil}
     end
@@ -78,7 +87,12 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
       conn =
         get(
           conn,
-          address_token_transfers_path(conn, :index, to_string(address.hash), to_string(token.contract_address_hash)),
+          address_token_transfers_path(
+            conn,
+            :index,
+            Address.checksum(address.hash),
+            Address.checksum(token.contract_address_hash)
+          ),
           %{type: "JSON"}
         )
 
@@ -122,7 +136,12 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
       conn =
         get(
           conn,
-          address_token_transfers_path(conn, :index, to_string(address.hash), to_string(token.contract_address_hash)),
+          address_token_transfers_path(
+            conn,
+            :index,
+            Address.checksum(address.hash),
+            Address.checksum(token.contract_address_hash)
+          ),
           %{type: "JSON"}
         )
 
@@ -173,15 +192,26 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
       conn =
         get(
           conn,
-          address_token_transfers_path(conn, :index, to_string(address.hash), to_string(token.contract_address_hash)),
+          address_token_transfers_path(
+            conn,
+            :index,
+            Address.checksum(address.hash),
+            Address.checksum(token.contract_address_hash)
+          ),
           %{type: "JSON"}
         )
 
       expected_path =
-        address_token_transfers_path(conn, :index, address.hash, token.contract_address_hash, %{
-          block_number: page_last_transfer.block_number,
-          index: page_last_transfer.index
-        })
+        address_token_transfers_path(
+          conn,
+          :index,
+          Address.checksum(address.hash),
+          Address.checksum(token.contract_address_hash),
+          %{
+            block_number: page_last_transfer.block_number,
+            index: page_last_transfer.index
+          }
+        )
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path
     end
@@ -201,7 +231,7 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
       address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
 
       conn =
-        get(conn, address_token_transfers_path(conn, :index, address_hash, "invalid_address"), %{
+        get(conn, address_token_transfers_path(conn, :index, Address.checksum(address_hash), "invalid_address"), %{
           type: "JSON"
         })
 
@@ -213,9 +243,13 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
       %Token{contract_address_hash: token_hash} = insert(:token)
 
       conn =
-        get(conn, address_token_transfers_path(conn, :index, to_string(address_hash), to_string(token_hash)), %{
-          type: "JSON"
-        })
+        get(
+          conn,
+          address_token_transfers_path(conn, :index, Address.checksum(address_hash), Address.checksum(token_hash)),
+          %{
+            type: "JSON"
+          }
+        )
 
       assert html_response(conn, 404)
     end
@@ -225,9 +259,13 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
       token_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
 
       conn =
-        get(conn, address_token_transfers_path(conn, :index, address_hash, token_hash), %{
-          type: "JSON"
-        })
+        get(
+          conn,
+          address_token_transfers_path(conn, :index, Address.checksum(address_hash), Address.checksum(token_hash)),
+          %{
+            type: "JSON"
+          }
+        )
 
       assert html_response(conn, 404)
     end

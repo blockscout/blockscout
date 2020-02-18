@@ -89,6 +89,26 @@ const elements = {
 
 const $contractVerificationPage = $('[data-page="contract-verification"]')
 
+function filterNightlyBuilds (filter) {
+  var select, options
+  select = document.getElementById('smart_contract_compiler_version')
+  options = select.getElementsByTagName('option')
+  for (const option of options) {
+    var txtValue = option.textContent || option.innerText
+    if (filter) {
+      if (txtValue.toLowerCase().indexOf('nightly') > -1) {
+        option.style.display = 'none'
+      } else {
+        option.style.display = ''
+      }
+    } else {
+      if (txtValue.toLowerCase().indexOf('nightly') > -1) {
+        option.style.display = ''
+      }
+    }
+  }
+}
+
 if ($contractVerificationPage.length) {
   const store = createStore(reducer)
   const addressHash = $('#smart_contract_address_hash').val()
@@ -117,6 +137,10 @@ if ($contractVerificationPage.length) {
   })
 
   $(function () {
+    setTimeout(function () {
+      $('.nightly-builds-false').trigger('click')
+    }, 10)
+
     $('.js-btn-add-contract-libraries').on('click', function () {
       $('.js-smart-contract-libraries-wrapper').show()
       $(this).hide()
@@ -128,6 +152,22 @@ if ($contractVerificationPage.length) {
 
     $('.autodetecttrue').on('click', function () {
       if ($(this).prop('checked')) { $('.constructor-arguments').hide() }
+    })
+
+    $('.nightly-builds-true').on('click', function () {
+      if ($(this).prop('checked')) { filterNightlyBuilds(false) }
+    })
+
+    $('.nightly-builds-false').on('click', function () {
+      if ($(this).prop('checked')) { filterNightlyBuilds(true) }
+    })
+
+    $('.optimization-false').on('click', function () {
+      if ($(this).prop('checked')) { $('.optimization-runs').hide() }
+    })
+
+    $('.optimization-true').on('click', function () {
+      if ($(this).prop('checked')) { $('.optimization-runs').show() }
     })
 
     $('.js-smart-contract-form-reset').on('click', function () {
