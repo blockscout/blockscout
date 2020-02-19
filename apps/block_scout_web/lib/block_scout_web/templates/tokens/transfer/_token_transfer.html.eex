@@ -28,7 +28,7 @@
                 ) %>
         <% end %>
       </span>
-      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+      <span class="d-flex flex-md-row flex-column text-md-right mt-3 mt-md-0">
         <span class="tile-title">
           <%= case token_transfer_amount(@token_transfer) do %>
             <% {:ok, :erc721_instance} -> %>
@@ -49,7 +49,12 @@
           to: block_path(BlockScoutWeb.Endpoint, :show, @token_transfer.block_number)
         ) %>
       </span>
-      <span class="mr-2 mr-md-0 order-2" data-from-now="<%= @token_transfer.block.timestamp %>"></span>
+      <span class="mr-2 mr-md-0 order-2" data-from-now="<%= 
+      if @token_transfer.transaction != nil do
+        @token_transfer.transaction.block.timestamp
+      else
+        Unknown
+      end %>"></span>
     </div>
   </div>
 </div>

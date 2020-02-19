@@ -54,11 +54,19 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
-  def validator_group_reward_data(address) do
-    data = call_methods([{:election, "getActiveVotesForGroup", [address]}])
+  def validator_group_reward_data(address, bn) do
+    data =
+      call_methods([
+        {:election, "getActiveVotesForGroup", [address], bn},
+        {:epochrewards, "calculateTargetEpochRewards", [], bn},
+        {:election, "getActiveVotes", [], bn}
+      ])
 
-    case data["getActiveVotesForGroup"] do
-      {:ok, [res]} -> {:ok, %{active_votes: res}}
+    with {:ok, [active_votes]} <- data["getActiveVotesForGroup"],
+         {:ok, [total_active_votes]} <- data["getActiveVotes"],
+         {:ok, [_, total_reward, _]} <- data["calculateTargetEpochRewards"] do
+      {:ok, %{active_votes: active_votes, total_active_votes: total_active_votes, total_reward: total_reward}}
+    else
       _ -> :error
     end
   end
@@ -324,6 +332,7 @@ defmodule Explorer.Celo.AccountReader do
   defp contract(:lockedgold), do: get_address("LockedGold")
   defp contract(:validators), do: get_address("Validators")
   defp contract(:election), do: get_address("Election")
+  defp contract(:epochrewards), do: get_address("EpochRewards")
   defp contract(:accounts), do: get_address("Accounts")
   defp contract(:gold), do: get_address("GoldToken")
   defp contract(:usd), do: get_address("StableToken")

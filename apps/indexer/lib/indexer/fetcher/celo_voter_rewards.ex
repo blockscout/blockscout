@@ -71,8 +71,8 @@ defmodule Indexer.Fetcher.CeloVoterRewards do
   defp fetch_from_blockchain(addresses) do
     addresses
     |> Enum.filter(&(&1.retries_count <= @max_retries))
-    |> Enum.map(fn %{address_hash: address} = account ->
-      case AccountReader.validator_group_reward_data(address) do
+    |> Enum.map(fn %{address_hash: address, block_number: bn} = account ->
+      case AccountReader.validator_group_reward_data(address, bn) do
         {:ok, data} ->
           Map.merge(account, data)
 
