@@ -18,7 +18,7 @@
                   data-placement="top"
                   data-toggle="tooltip"
                   title='<%= gettext("View Contract") %>'
-                  onclick='<%= "location='#{address_path(@conn, :show, @token.contract_address_hash)}'" %>'
+                  onclick='<%= "location='#{address_path(@conn, :show, Address.checksum(@token.contract_address_hash))}'" %>'
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32"  transform="translate(8,8)">
                     <path fill-rule="evenodd" d="M15 16H1a1 1 0 0 1-1-1V1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1zM14 2H2v12h12V2z"/>
