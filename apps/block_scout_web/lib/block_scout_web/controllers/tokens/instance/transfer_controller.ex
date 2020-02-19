@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
 
   alias BlockScoutWeb.Tokens.TransferView
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
@@ -24,7 +25,7 @@ defmodule BlockScoutWeb.Tokens.Instance.TransferController do
               conn,
               :index,
               token_id,
-              token.contract_address_hash,
+              Address.checksum(token.contract_address_hash),
               Map.delete(next_page_params, "type")
             )
         end

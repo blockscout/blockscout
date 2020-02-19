@@ -49,7 +49,7 @@
           <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
             <span class="mr-4 mb-3 mb-md-0">
               <%= link to:
-                  address_path(@conn, :show, @token.contract_address_hash),
+                  address_path(@conn, :show, Address.checksum(@token.contract_address_hash)),
                   "data-test": "token_contract_address"
               do %>
                 <%=  gettext "View Contract" %>

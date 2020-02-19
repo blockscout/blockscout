@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
 
   alias BlockScoutWeb.Tokens.HolderView
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Phoenix.View
 
   import BlockScoutWeb.Chain,
@@ -52,7 +53,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
         "index.html",
         current_path: current_path(conn),
         token: Market.add_price(token),
-        counters_path: token_path(conn, :token_counters, %{"id" => to_string(address_hash)})
+        counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)})
       )
     else
       :error ->

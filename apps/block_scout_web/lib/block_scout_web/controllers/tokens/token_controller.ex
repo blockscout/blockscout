@@ -4,9 +4,10 @@ defmodule BlockScoutWeb.Tokens.TokenController do
   require Logger
 
   alias Explorer.Chain
+  alias Explorer.Chain.Address
 
   def show(conn, %{"id" => address_hash_string}) do
-    redirect(conn, to: token_transfer_path(conn, :index, address_hash_string))
+    redirect(conn, to: token_transfer_path(conn, :index, Address.checksum(address_hash_string)))
   end
 
   def token_counters(conn, %{"id" => address_hash_string}) do
