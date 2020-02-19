@@ -3,10 +3,26 @@ defmodule BlockScoutWeb.AddressControllerTest do
     # ETS tables are shared in `Explorer.Counters.*`
     async: false
 
+  import Mox
+
   alias Explorer.Chain.Address
   alias Explorer.Counters.AddressesCounter
 
   describe "GET index/2" do
+    setup :set_mox_global
+
+    setup do
+      # Use TestSource mock for this test set
+      configuration = Application.get_env(:block_scout_web, :show_percentage)
+      Application.put_env(:block_scout_web, :show_percentage, false)
+
+      :ok
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :show_percentage, configuration)
+      end)
+    end
+
     test "returns top addresses", %{conn: conn} do
       address_hashes =
         4..1
@@ -38,8 +54,21 @@ defmodule BlockScoutWeb.AddressControllerTest do
   end
 
   describe "GET show/3" do
+    setup :set_mox_global
+
+    setup do
+      configuration = Application.get_env(:explorer, :checksum_function)
+      Application.put_env(:explorer, :checksum_function, :eth)
+
+      :ok
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :checksum_function, configuration)
+      end)
+    end
+
     test "redirects to address/:address_id/transactions", %{conn: conn} do
-      insert(:address, hash: "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
+      insert(:address, hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
 
       conn = get(conn, "/address/0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
 
@@ -48,7 +77,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
   end
 
   describe "GET address_counters/2" do
-    test "returns address counters" do
+    test "returns address counters", %{conn: conn} do
       address = insert(:address)
 
       conn = get(conn, "/address_counters", %{"id" => Address.checksum(address.hash)})
