@@ -6,6 +6,7 @@
 
 ### Fixes
 - [#3012](https://github.com/poanetwork/blockscout/pull/3012) - Speedup token transfers list query
+- [#3011](https://github.com/poanetwork/blockscout/pull/3011) - Revert realtime fetcher small skips feature
 - [#3009](https://github.com/poanetwork/blockscout/pull/3009) - Fix broken export to CSV
 - [#3007](https://github.com/poanetwork/blockscout/pull/3007) - Fix copy UTF8 tx input action
 - [#2996](https://github.com/poanetwork/blockscout/pull/2996) - Fix awesomplete lib loading in Firefox
