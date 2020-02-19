@@ -12,7 +12,7 @@
             <%= render(
                   BlockScoutWeb.AddressView,
                   "_responsive_hash.html",
-                  address: Address.checksum(@token_transfer.from_address),
+                  address: @token_transfer.from_address,
                   contract: BlockScoutWeb.AddressView.contract?(@token_transfer.from_address),
                   use_custom_tooltip: false
                 ) %>
@@ -22,7 +22,7 @@
             <%= render(
                   BlockScoutWeb.AddressView,
                   "_responsive_hash.html",
-                  address: Address.checksum(@token_transfer.to_address),
+                  address: @token_transfer.to_address,
                   contract: BlockScoutWeb.AddressView.contract?(@token_transfer.to_address),
                   use_custom_tooltip: false
                 ) %>
