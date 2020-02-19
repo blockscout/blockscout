@@ -2,7 +2,7 @@
   <%= link(
         gettext("Token Transfers"),
         class: "card-tab #{tab_status("token_transfers", @conn.request_path)}",
-        to: token_path(@conn, :show, Address.checksum(@token.contract_address_hash))
+        to: token_path(@conn, :show, @token.contract_address_hash)
       )
     %>
   <%= link(
