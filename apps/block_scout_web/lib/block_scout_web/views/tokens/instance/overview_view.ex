@@ -56,7 +56,10 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     token_instance_path = token_instance_path(conn, :show, to_string(hash), to_string(token_id))
 
     is_api = false
-    set_path = false
+    url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
+
+    set_path = if url_params[:api_path] != url_params[:path], do: true, else: false
+
     url = Path.join(blockscout_url(is_api, set_path), token_instance_path)
 
     url
