@@ -46,5 +46,17 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
   end
 
   def down do
+    execute("""
+    drop trigger if exists refresh_rewards_trg on celo_voter_rewards
+    """)
+
+    execute("""
+    drop materialized view if exists celo_accumulated_rewards
+    """)
+
+    execute("""
+    drop view if exists celo_rewards_view
+    """)
+
   end
 end

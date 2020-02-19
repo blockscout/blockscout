@@ -58,13 +58,13 @@ defmodule Explorer.Celo.AccountReader do
     data =
       call_methods([
         {:election, "getActiveVotesForGroup", [address], bn},
-        {:epochrewards, "calculateTargetEpochRewards", [], bn},
+        {:epochrewards, "calculateTargetEpochPaymentAndRewards", [], bn},
         {:election, "getActiveVotes", [], bn}
       ])
 
     with {:ok, [active_votes]} <- data["getActiveVotesForGroup"],
          {:ok, [total_active_votes]} <- data["getActiveVotes"],
-         {:ok, [_, total_reward, _]} <- data["calculateTargetEpochRewards"] do
+         {:ok, [_ | [ total_reward | _]]} <- data["calculateTargetEpochPaymentAndRewards"] do
       {:ok, %{active_votes: active_votes, total_active_votes: total_active_votes, total_reward: total_reward}}
     else
       _ -> :error
