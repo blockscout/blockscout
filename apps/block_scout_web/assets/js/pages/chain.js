@@ -11,13 +11,7 @@ import { updateAllCalculatedUsdValues, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
-
-// duplicated from app.js so that the script can work separately
-import 'phoenix_html'
-import 'bootstrap'
-import '../locale'
-import './dark-mode-switcher'
-import '../lib/indexing'
+import '../app'
 
 const BATCH_THRESHOLD = 6
 
