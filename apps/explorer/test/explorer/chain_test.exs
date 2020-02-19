@@ -1562,17 +1562,7 @@ defmodule Explorer.ChainTest do
                     updated_at: %{}
                   }
                 ],
-                internal_transactions: [
-                  %{
-                    index: 0,
-                    transaction_hash: %Hash{
-                      byte_count: 32,
-                      bytes:
-                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
-                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                    }
-                  }
-                ],
+                internal_transactions: [],
                 logs: [
                   %Log{
                     address_hash: %Hash{

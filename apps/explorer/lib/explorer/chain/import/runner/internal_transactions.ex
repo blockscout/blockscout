@@ -299,13 +299,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
        ) do
     with {:ok, valid_internal_txs} <-
            valid_internal_transactions(transactions, internal_transactions_params, invalid_block_numbers) do
-      valid_internal_txs_without_first_trace =
-        valid_internal_txs
-        |> Enum.reject(fn trace ->
-          trace[:index] == 0 && trace[:input] == %Explorer.Chain.Data{bytes: ""}
-        end)
+      json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+      variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-      {:ok, valid_internal_txs_without_first_trace}
+      # we exclude first traces from storing in the DB only in case of Parity variant (Parity/Nethermind). todo: to the same for Geth
+      if variant == EthereumJSONRPC.Parity do
+        valid_internal_txs_without_first_trace =
+          valid_internal_txs
+          |> Enum.reject(fn trace ->
+            trace[:index] == 0
+          end)
+
+        {:ok, valid_internal_txs_without_first_trace}
+      else
+        {:ok, valid_internal_txs}
+      end
     end
   end
 

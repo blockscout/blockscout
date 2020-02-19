@@ -253,15 +253,6 @@ defmodule Explorer.Chain.ImportTest do
                 ],
                 internal_transactions: [
                   %{
-                    index: 0,
-                    transaction_hash: %Hash{
-                      byte_count: 32,
-                      bytes:
-                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
-                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                    }
-                  },
-                  %{
                     index: 1,
                     transaction_hash: %Hash{
                       byte_count: 32,
@@ -485,8 +476,7 @@ defmodule Explorer.Chain.ImportTest do
       Subscriber.to(:internal_transactions, :realtime)
       Import.all(@import_data)
 
-      assert_receive {:chain_event, :internal_transactions, :realtime,
-                      [%{transaction_hash: _, index: _}, %{transaction_hash: _, index: _}]}
+      assert_receive {:chain_event, :internal_transactions, :realtime, [%{transaction_hash: _, index: _}]}
     end
 
     test "publishes transactions data to subscribers on insert" do
