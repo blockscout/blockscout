@@ -3,7 +3,7 @@ defmodule Explorer.Etherscan do
   The etherscan context.
   """
 
-  import Ecto.Query, only: [from: 2, where: 3, or_where: 3, union: 2]
+  import Ecto.Query, only: [from: 2, where: 3, or_where: 3, union: 2, subquery: 1]
 
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
@@ -374,6 +374,8 @@ defmodule Explorer.Etherscan do
   end
 
   @token_transfer_fields ~w(
+    block_number
+    block_hash
     token_contract_address_hash
     transaction_hash
     from_address_hash
@@ -382,31 +384,17 @@ defmodule Explorer.Etherscan do
   )a
 
   defp list_token_transfers(address_hash, contract_address_hash, block_height, options) do
-    query =
+    tt_query =
       from(
-        t in Transaction,
-        inner_join: tt in TokenTransfer,
-        on: tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash,
+        tt in TokenTransfer,
         inner_join: tkn in assoc(tt, :token),
-        inner_join: b in assoc(t, :block),
         where: tt.from_address_hash == ^address_hash,
         or_where: tt.to_address_hash == ^address_hash,
-        order_by: [{^options.order_by_direction, t.block_number}],
+        order_by: [{^options.order_by_direction, tt.block_number}, {^options.order_by_direction, tt.log_index}],
         limit: ^options.page_size,
         offset: ^offset(options),
         select:
           merge(map(tt, ^@token_transfer_fields), %{
-            transaction_nonce: t.nonce,
-            transaction_index: t.index,
-            transaction_gas: t.gas,
-            transaction_gas_price: t.gas_price,
-            transaction_gas_used: t.gas_used,
-            transaction_cumulative_gas_used: t.cumulative_gas_used,
-            transaction_input: t.input,
-            block_hash: b.hash,
-            block_number: b.number,
-            block_timestamp: b.timestamp,
-            confirmations: fragment("? - ?", ^block_height, t.block_number),
             token_id: tt.token_id,
             token_name: tkn.name,
             token_symbol: tkn.symbol,
@@ -416,10 +404,45 @@ defmodule Explorer.Etherscan do
           })
       )
 
-    query
+    tt_specific_token_query =
+      tt_query
+      |> where_contract_address_match(contract_address_hash)
+
+    wrapped_query =
+      from(
+        tt in subquery(tt_specific_token_query),
+        inner_join: t in Transaction,
+        on: tt.transaction_hash == t.hash and tt.block_number == t.block_number and tt.block_hash == t.block_hash,
+        inner_join: b in assoc(t, :block),
+        select: %{
+          token_contract_address_hash: tt.token_contract_address_hash,
+          transaction_hash: tt.transaction_hash,
+          from_address_hash: tt.from_address_hash,
+          to_address_hash: tt.to_address_hash,
+          amount: tt.amount,
+          transaction_nonce: t.nonce,
+          transaction_index: t.index,
+          transaction_gas: t.gas,
+          transaction_gas_price: t.gas_price,
+          transaction_gas_used: t.gas_used,
+          transaction_cumulative_gas_used: t.cumulative_gas_used,
+          transaction_input: t.input,
+          block_hash: b.hash,
+          block_number: b.number,
+          block_timestamp: b.timestamp,
+          confirmations: fragment("? - ?", ^block_height, t.block_number),
+          token_id: tt.token_id,
+          token_name: tt.token_name,
+          token_symbol: tt.token_symbol,
+          token_decimals: tt.token_decimals,
+          token_type: tt.token_type,
+          token_log_index: tt.token_log_index
+        }
+      )
+
+    wrapped_query
     |> where_start_block_match(options)
     |> where_end_block_match(options)
-    |> where_contract_address_match(contract_address_hash)
     |> Repo.all()
   end
 
@@ -450,7 +473,7 @@ defmodule Explorer.Etherscan do
   defp where_contract_address_match(query, nil), do: query
 
   defp where_contract_address_match(query, contract_address_hash) do
-    where(query, [_, tt], tt.token_contract_address_hash == ^contract_address_hash)
+    where(query, [tt, _], tt.token_contract_address_hash == ^contract_address_hash)
   end
 
   defp offset(options), do: (options.page_number - 1) * options.page_size
