@@ -5,6 +5,7 @@
 - [#2834](https://github.com/poanetwork/blockscout/pull/2834) - always redirect to checksummed hash
 
 ### Fixes
+- [#3016](https://github.com/poanetwork/blockscout/pull/3016), [#3017](https://github.com/poanetwork/blockscout/pull/3017) - Fix token instance QR code data
 - [#3014](https://github.com/poanetwork/blockscout/pull/3014) - Fix checksum address feature for tokens pages
 - [#3012](https://github.com/poanetwork/blockscout/pull/3012) - Speedup token transfers list query
 - [#3011](https://github.com/poanetwork/blockscout/pull/3011) - Revert realtime fetcher small skips feature

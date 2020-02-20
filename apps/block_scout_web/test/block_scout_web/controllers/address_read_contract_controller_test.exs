@@ -4,7 +4,22 @@ defmodule BlockScoutWeb.AddressReadContractControllerTest do
   alias Explorer.ExchangeRates.Token
   alias Explorer.Chain.Address
 
+  import Mox
+
   describe "GET index/3" do
+    setup :set_mox_global
+
+    setup do
+      configuration = Application.get_env(:explorer, :checksum_function)
+      Application.put_env(:explorer, :checksum_function, :eth)
+
+      :ok
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :checksum_function, configuration)
+      end)
+    end
+
     test "with invalid address hash", %{conn: conn} do
       conn = get(conn, address_read_contract_path(BlockScoutWeb.Endpoint, :index, "invalid_address"))
 
