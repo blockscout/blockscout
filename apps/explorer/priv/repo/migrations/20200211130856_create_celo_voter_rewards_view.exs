@@ -2,7 +2,6 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
   use Ecto.Migration
 
   def up do
-
     execute("""
     create or replace view celo_rewards_view as
     select address_hash, sum(active_votes) as active, sum(reward) as reward,
@@ -35,7 +34,6 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
     from ((celo_account as a left outer join celo_attestations_requested as b on a.address=b.address)
           left outer join celo_attestations_fulfilled as c on a.address = c.address)
     """)
-
   end
 
   def down do

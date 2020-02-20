@@ -99,7 +99,13 @@
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All signers for this account that have existed">
        <%= for signer <- @address.celo_signers do %>
          <%= if signer.signer_address != nil do 
-             signer |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address) |> BlockScoutWeb.RenderHelpers.render_partial()
+              signer |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address) |> BlockScoutWeb.RenderHelpers.render_partial()
+            else
+              case Explorer.Chain.find_or_insert_address_from_hash(signer.signer) do
+              {:ok, address} ->
+                address |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address) |> BlockScoutWeb.RenderHelpers.render_partial()
+              _ -> "Error"
+              end
             end %>
        <% end %>
        </span>
