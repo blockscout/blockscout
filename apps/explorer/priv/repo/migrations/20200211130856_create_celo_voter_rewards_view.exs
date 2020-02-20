@@ -2,9 +2,6 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
   use Ecto.Migration
 
   def up do
-    execute("""
-    drop trigger if exists refresh_rewards_trg on celo_voter_rewards
-    """)
 
     execute("""
     create or replace view celo_rewards_view as
@@ -14,10 +11,6 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
     where r.block_number > max_block_number - 28*p.number_value
       and p.name = \'epochSize\'
     group by address_hash
-    """)
-
-    execute("""
-    drop materialized view if exists celo_accumulated_rewards
     """)
 
     execute("""
@@ -43,23 +36,6 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
           left outer join celo_attestations_fulfilled as c on a.address = c.address)
     """)
 
-    execute("""
-      CREATE OR REPLACE FUNCTION refresh_rewards()
-      RETURNS trigger AS $$
-      BEGIN
-        REFRESH MATERIALIZED VIEW celo_accumulated_rewards;
-        RETURN NULL;
-      END;
-    $$ LANGUAGE plpgsql
-    """)
-
-    execute("""
-    CREATE TRIGGER refresh_rewards_trg
-    AFTER INSERT OR UPDATE OR DELETE
-    ON celo_voter_rewards
-    FOR EACH STATEMENT
-    EXECUTE PROCEDURE refresh_rewards()
-    """)
   end
 
   def down do

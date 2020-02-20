@@ -8,6 +8,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
   require Logger
 
+  alias Explorer.Repo
   alias Indexer.{Block, BoundInterval}
   alias Indexer.Block.Catchup
 
@@ -228,6 +229,9 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
     Logger.info(fn ->
       ["Checking if index needs to catch up in ", to_string(interval), "ms."]
     end)
+
+    Repo.query!("refresh materialized view celo_accumulated_rewards;")
+    Repo.query!("refresh materialized view celo_attestation_stats;")
 
     Process.send_after(self(), :catchup_index, interval)
 
