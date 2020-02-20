@@ -57,6 +57,5 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
     execute("""
     drop view if exists celo_rewards_view
     """)
-
   end
 end

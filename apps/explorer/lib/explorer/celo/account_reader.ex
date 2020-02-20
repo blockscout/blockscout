@@ -64,7 +64,7 @@ defmodule Explorer.Celo.AccountReader do
 
     with {:ok, [active_votes]} <- data["getActiveVotesForGroup"],
          {:ok, [total_active_votes]} <- data["getActiveVotes"],
-         {:ok, [_ | [ total_reward | _]]} <- data["calculateTargetEpochPaymentAndRewards"] do
+         {:ok, [_ | [total_reward | _]]} <- data["calculateTargetEpochPaymentAndRewards"] do
       {:ok, %{active_votes: active_votes, total_active_votes: total_active_votes, total_reward: total_reward}}
     else
       _ -> :error
