@@ -31,7 +31,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
 
     execute("""
     create materialized view celo_attestation_stats as
-    select a.address as address_hash, requested, fulfilled
+    select 0 as id, a.address as address_hash, requested, fulfilled
     from ((celo_account as a left outer join celo_attestations_requested as b on a.address=b.address)
           left outer join celo_attestations_fulfilled as c on a.address = c.address)
     """)
