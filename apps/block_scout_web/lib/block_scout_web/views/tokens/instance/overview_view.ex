@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   alias BlockScoutWeb.CurrencyHelpers
   alias Explorer.Chain.{Address, SmartContract, Token}
 
-  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
+  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 2]
 
   @tabs ["token_transfers", "metadata"]
 
@@ -56,7 +56,8 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     token_instance_path = token_instance_path(conn, :show, to_string(hash), to_string(token_id))
 
     is_api = false
-    url = Path.join(blockscout_url(is_api), token_instance_path)
+    set_path = false
+    url = Path.join(blockscout_url(is_api, set_path), token_instance_path)
 
     url
     |> QRCode.to_png()
