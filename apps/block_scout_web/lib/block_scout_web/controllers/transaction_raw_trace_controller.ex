@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
           internal_transactions
         else
           {:ok, first_trace_params} =
-            Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_first_trace(
+            Chain.fetch_first_trace(
               [
                 %{
                   block_hash: transaction.block_hash,

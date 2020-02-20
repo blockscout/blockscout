@@ -6,9 +6,6 @@ defmodule EthereumJSONRPC.ParityTest do
   import Mox
 
   alias EthereumJSONRPC.FetchedBeneficiaries
-  alias Explorer.Chain
-  alias Explorer.Chain.Data
-  alias Explorer.Chain.InternalTransaction.Type
 
   setup :verify_on_exit!
 
@@ -107,8 +104,8 @@ defmodule EthereumJSONRPC.ParityTest do
     end
   end
 
-  describe "fetch_first_trace/1" do
-    test "with all valid block_numbers returns {:ok, first_trace_params}", %{
+  describe "fetch_first_trace/2" do
+    test "returns {:ok, first_trace_params}", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
@@ -131,7 +128,6 @@ defmodule EthereumJSONRPC.ParityTest do
       transaction_hash = "0x0fa6f723216dba694337f9bb37d8870725655bdf2573526a39454685659e39b1"
       transaction_index = 0
       type = "create"
-      call_type = "create"
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
@@ -168,13 +164,6 @@ defmodule EthereumJSONRPC.ParityTest do
         end)
       end
 
-      {:ok, to_address_hash_bytes} = Chain.string_to_address_hash(created_contract_address_hash)
-      {:ok, from_address_hash_bytes} = Chain.string_to_address_hash(from_address_hash)
-      {:ok, created_contract_code_bytes} = Data.cast(created_contract_code)
-      {:ok, init_bytes} = Data.cast(init)
-      {:ok, transaction_hash_bytes} = Chain.string_to_transaction_hash(transaction_hash)
-      {:ok, type_bytes} = Type.load(type)
-
       assert EthereumJSONRPC.Parity.fetch_first_trace(
                [
                  %{
@@ -187,22 +176,31 @@ defmodule EthereumJSONRPC.ParityTest do
                json_rpc_named_arguments
              ) == {
                :ok,
-               %{
-                 block_index: 0,
-                 block_hash: block_hash,
-                 created_contract_address_hash: to_address_hash_bytes,
-                 created_contract_code: created_contract_code_bytes,
-                 from_address_hash: from_address_hash_bytes,
-                 gas: gas,
-                 gas_used: gas_used,
-                 index: index,
-                 init: init_bytes,
-                 trace_address: trace_address,
-                 transaction_hash: transaction_hash_bytes,
-                 type: type_bytes,
-                 value: value,
-                 transaction_index: transaction_index
-               }
+               [
+                 %{
+                   first_trace: %{
+                     block_number: block_number,
+                     created_contract_address_hash: created_contract_address_hash,
+                     created_contract_code: created_contract_code,
+                     from_address_hash: from_address_hash,
+                     gas: gas,
+                     gas_used: gas_used,
+                     index: index,
+                     init: init,
+                     trace_address: trace_address,
+                     transaction_hash: transaction_hash,
+                     type: type,
+                     value: value,
+                     transaction_index: transaction_index
+                   },
+                   block_hash: block_hash,
+                   json_rpc_named_arguments: [
+                     transport: EthereumJSONRPC.Mox,
+                     transport_options: [],
+                     variant: EthereumJSONRPC.Parity
+                   ]
+                 }
+               ]
              }
     end
   end
