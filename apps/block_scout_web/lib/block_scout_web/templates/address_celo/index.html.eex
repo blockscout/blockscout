@@ -37,13 +37,13 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">Attestations requested</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been requested from this account"><%= @address.celo_account.attestations_requested %></span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been requested from this account"><%= @address.celo_attestation_stats.attestations_requested %></span>
        </dd>
       </dl>
       <dl class="row">
       <dt class="col-sm-3 text-muted">Attestations fulfilled</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been fulfilled by this account"><%= @address.celo_account.attestations_fulfilled %></span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been fulfilled by this account"><%= @address.celo_attestation_stats.attestations_fulfilled %></span>
        </dd>
       </dl>
       <dl class="row">

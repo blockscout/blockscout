@@ -915,10 +915,12 @@ defmodule Explorer.Chain do
             :smart_contract => :optional,
             :token => :optional,
             :celo_account => :optional,
+            :celo_attestation_stats => :optional,
             :celo_delegator => :optional,
             :celo_signers => :optional,
             :celo_members => :optional,
             [{:celo_delegator, :celo_account}] => :optional,
+            [{:celo_delegator, :celo_attestation_stats}] => :optional,
             [{:celo_delegator, :celo_validator}] => :optional,
             [{:celo_delegator, :celo_validator, :group_address}] => :optional,
             [{:celo_delegator, :celo_validator, :signer}] => :optional,
@@ -967,7 +969,14 @@ defmodule Explorer.Chain do
             address2
           end
 
-        {:ok, address3}
+        address4 =
+          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
+            Map.put(address3, :celo_attestation_stats, address.celo_delegator.celo_attestation_stats)
+          else
+            address3
+          end
+
+        {:ok, address4}
     end
   end
 
