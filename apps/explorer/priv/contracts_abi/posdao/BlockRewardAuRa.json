@@ -25,7 +25,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "bridgeTokenFee",
+    "name": "bridgeTokenReward",
     "outputs": [
       {
         "name": "",
@@ -240,7 +240,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "bridgeNativeFee",
+    "name": "bridgeNativeReward",
     "outputs": [
       {
         "name": "",
@@ -321,7 +321,7 @@
         "type": "uint256"
       }
     ],
-    "name": "addBridgeNativeFeeReceivers",
+    "name": "addBridgeNativeRewardReceivers",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -335,7 +335,7 @@
         "type": "uint256"
       }
     ],
-    "name": "addBridgeTokenFeeReceivers",
+    "name": "addBridgeTokenRewardReceivers",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
