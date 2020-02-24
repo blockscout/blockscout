@@ -5,7 +5,8 @@ config :bcrypt_elixir, log_rounds: 4
 
 # Configure your database
 config :explorer, Explorer.Repo,
-  url: System.get_env("DATABASE_URL"),
+  database: "explorer_test",
+  hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
   ownership_timeout: :timer.minutes(1)
