@@ -104,7 +104,6 @@
               case Explorer.Chain.find_or_insert_address_from_hash(signer.signer) do
               {:ok, address} ->
                 address |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address) |> BlockScoutWeb.RenderHelpers.render_partial()
-              _ -> "Error"
               end
             end %>
        <% end %>
