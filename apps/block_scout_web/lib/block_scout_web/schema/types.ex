@@ -136,12 +136,18 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:address, :address_hash)
     field(:commission, :wei)
     field(:votes, :wei)
+    field(:num_members, :integer)
 
     field(:nonvoting_locked_gold, :wei)
     field(:locked_gold, :wei)
     field(:usd, :wei)
     field(:name, :string)
     field(:url, :string)
+
+    field(:rewards_ratio, :wei)
+    field(:accumulated_rewards, :wei)
+    field(:accumulated_active, :wei)
+    field(:receivable_votes, :integer)
 
     field(:address_info, :address) do
       resolve(&Address.get_by/3)
@@ -154,6 +160,16 @@ defmodule BlockScoutWeb.Schema.Types do
     connection field(:affiliates, node_type: :celo_validator) do
       resolve(&CeloValidator.get_by/3)
     end
+  end
+
+  @desc """
+  Celo network parameters
+  """
+  object :celo_parameters do
+    field(:total_locked_gold, :wei)
+    field(:num_registered_validators, :integer)
+    field(:min_electable_validators, :integer)
+    field(:max_electable_validators, :integer)
   end
 
   @desc """

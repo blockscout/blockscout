@@ -53,7 +53,7 @@ defmodule Explorer.GraphQL do
     from(
       v in CeloValidator,
       where: v.group_address_hash == ^address_hash,
-      inner_join: t in assoc(v, :status),
+      left_join: t in assoc(v, :status),
       inner_join: a in assoc(v, :celo_account),
       select_merge: %{
         last_online: t.last_online,

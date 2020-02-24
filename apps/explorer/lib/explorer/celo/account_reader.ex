@@ -54,11 +54,19 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
-  def validator_group_reward_data(address) do
-    data = call_methods([{:election, "getActiveVotesForGroup", [address]}])
+  def validator_group_reward_data(address, bn) do
+    data =
+      call_methods([
+        {:election, "getActiveVotesForGroup", [address], bn},
+        {:epochrewards, "calculateTargetEpochPaymentAndRewards", [], bn},
+        {:election, "getActiveVotes", [], bn}
+      ])
 
-    case data["getActiveVotesForGroup"] do
-      {:ok, [res]} -> {:ok, %{active_votes: res}}
+    with {:ok, [active_votes]} <- data["getActiveVotesForGroup"],
+         {:ok, [total_active_votes]} <- data["getActiveVotes"],
+         {:ok, [_ | [total_reward | _]]} <- data["calculateTargetEpochPaymentAndRewards"] do
+      {:ok, %{active_votes: active_votes, total_active_votes: total_active_votes, total_reward: total_reward}}
+    else
       _ -> :error
     end
   end
@@ -252,6 +260,7 @@ defmodule Explorer.Celo.AccountReader do
          {:ok, [num_validators]} <- data["getNumRegisteredValidators"],
          {:ok, [min_validators, max_validators]} <- data["getElectableValidators"],
          {:ok, [total_gold]} <- data["getTotalLockedGold"],
+         {:ok, [epoch_size]} <- data["getEpochSize"],
          {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
       list =
         validators
@@ -262,7 +271,8 @@ defmodule Explorer.Celo.AccountReader do
         %{name: "numRegisteredValidators", number_value: num_validators},
         %{name: "totalLockedGold", number_value: total_gold},
         %{name: "maxElectableValidators", number_value: max_validators},
-        %{name: "minElectableValidators", number_value: min_validators}
+        %{name: "minElectableValidators", number_value: min_validators},
+        %{name: "epochSize", number_value: epoch_size}
       ]
 
       {:ok, %{validators: list, params: params}}
@@ -276,6 +286,7 @@ defmodule Explorer.Celo.AccountReader do
     call_methods([
       {:election, "getCurrentValidatorSigners", [], bn - 1},
       {:election, "getParentSealBitmap", [bn], bn},
+      {:election, "getEpochSize", []},
       {:election, "getElectableValidators", []},
       {:lockedgold, "getTotalLockedGold", []},
       {:validators, "getNumRegisteredValidators", []}
@@ -321,6 +332,7 @@ defmodule Explorer.Celo.AccountReader do
   defp contract(:lockedgold), do: get_address("LockedGold")
   defp contract(:validators), do: get_address("Validators")
   defp contract(:election), do: get_address("Election")
+  defp contract(:epochrewards), do: get_address("EpochRewards")
   defp contract(:accounts), do: get_address("Accounts")
   defp contract(:gold), do: get_address("GoldToken")
   defp contract(:usd), do: get_address("StableToken")
