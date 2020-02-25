@@ -38,10 +38,6 @@ defmodule BlockScoutWeb.LayoutView do
 
   alias BlockScoutWeb.SocialMedia
 
-  def network_icon_partial do
-    Keyword.get(application_config(), :network_icon) || "_network_icon.html"
-  end
-
   def logo do
     Keyword.get(application_config(), :logo) || "/images/blockscout_logo.svg"
   end
@@ -52,7 +48,7 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   def subnetwork_title do
-    Keyword.get(application_config(), :subnetwork) || "Sokol Testnet"
+    Keyword.get(application_config(), :subnetwork) || "POA Sokol"
   end
 
   def network_title do

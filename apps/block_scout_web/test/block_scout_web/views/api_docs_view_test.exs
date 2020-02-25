@@ -38,6 +38,40 @@ defmodule BlockScoutWeb.ApiDocsViewTest do
     end
   end
 
+  describe "blockscout_url/2" do
+    test "set_path = true returns url with path" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "https", host: "blockscout.com", api_path: "/eth/mainnet", path: "/eth/mainnet"]
+      )
+
+      assert APIDocsView.blockscout_url(true, true) == "https://blockscout.com/eth/mainnet"
+    end
+
+    test "set_path = false returns url w/out path" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "https", host: "blockscout.com", api_path: "/eth/mainnet", path: "/eth/mainnet"]
+      )
+
+      assert APIDocsView.blockscout_url(false) == "https://blockscout.com"
+    end
+
+    test "set_path = true is_api returns url with api_path" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "https", host: "blockscout.com", api_path: "/eth/mainnet", path: "/"]
+      )
+
+      assert APIDocsView.blockscout_url(true, true) == "https://blockscout.com/eth/mainnet"
+    end
+
+    test "set_path = true is_api returns url with path" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint,
+        url: [scheme: "https", host: "blockscout.com", api_path: "/eth/mainnet", path: "/eth/mainnet2"]
+      )
+
+      assert APIDocsView.blockscout_url(true, false) == "https://blockscout.com/eth/mainnet2"
+    end
+  end
+
   describe "eth_rpc_api_url/1" do
     setup do
       original = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)

@@ -31,7 +31,14 @@ defmodule BlockScoutWeb.ChecksumAddress do
           if checksummed_hash != id do
             conn = %{conn | params: Map.merge(conn.params, %{param_name => checksummed_hash})}
 
-            new_path = String.replace(conn.request_path, id, checksummed_hash)
+            path_with_checksummed_address = String.replace(conn.request_path, id, checksummed_hash)
+
+            new_path =
+              if conn.query_string != "" do
+                path_with_checksummed_address <> "?" <> conn.query_string
+              else
+                path_with_checksummed_address
+              end
 
             conn
             |> Controller.redirect(to: new_path)
