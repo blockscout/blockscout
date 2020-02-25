@@ -3,7 +3,7 @@ use Mix.Config
 # Configure your database
 config :explorer, Explorer.Repo,
   url: System.get_env("DATABASE_URL"),
-  pool_size: String.to_integer(System.get_env("POOL_SIZE") || "50"),
+  pool_size: String.to_integer(System.get_env("POOL_SIZE", "50")),
   timeout: :timer.seconds(80)
 
 config :explorer, Explorer.Tracer, env: "dev", disabled?: true
