@@ -9,21 +9,21 @@
         gettext("Token Holders"),
         class: "card-tab #{tab_status("token_holders", @conn.request_path)}",
         "data-test": "token_holders_tab",
-        to: token_holder_path(@conn, :index, @token.contract_address_hash)
+        to: token_holder_path(@conn, :index, Address.checksum(@token.contract_address_hash))
       )
     %>
   <%= if display_inventory?(@token) do %>
     <%= link(
           gettext("Inventory"),
           class: "card-tab #{tab_status("inventory", @conn.request_path)}",
-          to: token_inventory_path(@conn, :index, @token.contract_address_hash)
+          to: token_inventory_path(@conn, :index, Address.checksum(@token.contract_address_hash))
         )
     %>
   <% end %>
   <%= if smart_contract_with_read_only_functions?(@token) do %>
     <%= link(
         gettext("Read Contract"),
-        to: token_read_contract_path(@conn, :index, @token.contract_address_hash),
+        to: token_read_contract_path(@conn, :index, Address.checksum(@token.contract_address_hash)),
         class: "card-tab #{tab_status("read_contract", @conn.request_path)}")
       %>
   <% end %>

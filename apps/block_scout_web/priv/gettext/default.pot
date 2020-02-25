@@ -140,7 +140,7 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:21
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:8
 #: lib/block_scout_web/views/address_token_transfer_view.ex:8
-#: lib/block_scout_web/views/address_transaction_view.ex:8
+#: lib/block_scout_web/views/address_transaction_view.ex:10
 msgid "All"
 msgstr ""
 
@@ -692,7 +692,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:40
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:7
 #: lib/block_scout_web/views/address_token_transfer_view.ex:7
-#: lib/block_scout_web/views/address_transaction_view.ex:7
+#: lib/block_scout_web/views/address_transaction_view.ex:9
 msgid "From"
 msgstr ""
 
@@ -835,7 +835,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:29
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:6
 #: lib/block_scout_web/views/address_token_transfer_view.ex:6
-#: lib/block_scout_web/views/address_transaction_view.ex:6
+#: lib/block_scout_web/views/address_transaction_view.ex:8
 msgid "To"
 msgstr ""
 
@@ -878,7 +878,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
 #: lib/block_scout_web/views/address_view.ex:308
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:72
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:90
 #: lib/block_scout_web/views/tokens/overview_view.ex:35
 #: lib/block_scout_web/views/transaction_view.ex:314
 msgid "Token Transfers"
@@ -1763,7 +1763,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/metadata/index.html.eex:18
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:73
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:91
 msgid "Metadata"
 msgstr ""
 
