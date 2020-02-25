@@ -4608,4 +4608,21 @@ defmodule Explorer.ChainTest do
       assert third.delta == Decimal.new(1)
     end
   end
+
+  describe "extract_db_name/1" do
+    test "extracts correct db name" do
+      db_url = "postgresql://viktor:@localhost:5432/blockscout-dev-1"
+      assert Chain.extract_db_name(db_url) == "blockscout-dev-1"
+    end
+
+    test "returns empty db name" do
+      db_url = ""
+      assert Chain.extract_db_name(db_url) == ""
+    end
+
+    test "returns nil db name" do
+      db_url = nil
+      assert Chain.extract_db_name(db_url) == ""
+    end
+  end
 end
