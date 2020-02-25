@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
-  alias Explorer.Chain.{Address, Block, Transaction, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.{Chain, Repo}
 
   describe "run/1" do
@@ -312,7 +312,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     end
 
     test "removes duplicate blocks (by hash) before inserting",
-         %{consensus_block: %{number: _, hash: block_hash, miner_hash: miner_hash}, options: options} do
+         %{consensus_block: %{number: _, hash: _block_hash, miner_hash: miner_hash}, options: options} do
       new_block = params_for(:block, miner_hash: miner_hash, consensus: true)
 
       %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block)
@@ -322,7 +322,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
         |> Blocks.run([block_changes, block_changes], options)
         |> Repo.transaction()
 
-      assert {:ok, %{blocks: [%{hash: block_hash, consensus: true}]}} = result
+      assert {:ok, %{blocks: [%{hash: _block_hash, consensus: true}]}} = result
     end
   end
 

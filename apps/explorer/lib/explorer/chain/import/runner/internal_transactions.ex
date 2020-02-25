@@ -10,6 +10,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Block, Hash, Import, InternalTransaction, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Repo, as: ExplorerRepo
 
   import Ecto.Query, only: [from: 2, or_where: 3]
 
@@ -91,6 +92,25 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
                                                    } ->
       update_pending_blocks_status(repo, pending_block_hashes, invalid_block_hashes)
     end)
+  end
+
+  def run_insert_only(changes_list, %{timestamps: timestamps} = options) when is_map(options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put(:timestamps, timestamps)
+
+    # filter out params with just `block_number` (indicating blocks without internal transactions)
+    internal_transactions_params = Enum.filter(changes_list, &Map.has_key?(&1, :type))
+
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    Multi.new()
+    |> Multi.run(:internal_transactions, fn repo, _ ->
+      insert(repo, internal_transactions_params, insert_options)
+    end)
+    |> ExplorerRepo.transaction()
   end
 
   @impl Runner
