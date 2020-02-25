@@ -334,7 +334,7 @@ defmodule Explorer.Chain.Import do
   end
 
   @spec timestamps() :: timestamps
-  defp timestamps do
+  def timestamps do
     now = DateTime.utc_now()
     %{inserted_at: now, updated_at: now}
   end
