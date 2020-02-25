@@ -4055,6 +4055,17 @@ defmodule Explorer.Chain do
 
   defp boolean_to_check_result(false), do: :not_found
 
+  def extract_db_name(db_url) do
+    if db_url == nil do
+      ""
+    else
+      db_url
+      |> String.split("/")
+      |> Enum.take(-1)
+      |> Enum.at(0)
+    end
+  end
+
   @doc """
   Fetches the first trace from the Parity trace URL.
   """
