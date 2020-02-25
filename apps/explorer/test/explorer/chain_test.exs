@@ -1397,7 +1397,7 @@ defmodule Explorer.ChainTest do
             to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             gas: 4_677_320,
             gas_used: 27770,
-            input: "0x",
+            input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
             output: "0x",
             value: 0
           }
@@ -1566,17 +1566,7 @@ defmodule Explorer.ChainTest do
                     updated_at: %{}
                   }
                 ],
-                internal_transactions: [
-                  %{
-                    index: 0,
-                    transaction_hash: %Hash{
-                      byte_count: 32,
-                      bytes:
-                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
-                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                    }
-                  }
-                ],
+                internal_transactions: [],
                 logs: [
                   %Log{
                     address_hash: %Hash{
