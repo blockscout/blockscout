@@ -1,10 +1,17 @@
 ## Current
 
 ### Features
+- [#3013](https://github.com/poanetwork/blockscout/pull/3013) - Raw trace of transaction on-demand
 - [#2875](https://github.com/poanetwork/blockscout/pull/2875) - Save contract code from Parity genesis file
 - [#2834](https://github.com/poanetwork/blockscout/pull/2834) - always redirect to checksummed hash
 
 ### Fixes
+- [#3024](https://github.com/poanetwork/blockscout/pull/3024) - Fix pool size default value in config
+- [#3021](https://github.com/poanetwork/blockscout/pull/3021), [#3022](https://github.com/poanetwork/blockscout/pull/3022) - Refine dev/test config
+- [#3016](https://github.com/poanetwork/blockscout/pull/3016), [#3017](https://github.com/poanetwork/blockscout/pull/3017) - Fix token instance QR code data
+- [#3014](https://github.com/poanetwork/blockscout/pull/3014) - Fix checksum address feature for tokens pages
+- [#3012](https://github.com/poanetwork/blockscout/pull/3012) - Speedup token transfers list query
+- [#3011](https://github.com/poanetwork/blockscout/pull/3011) - Revert realtime fetcher small skips feature
 - [#3009](https://github.com/poanetwork/blockscout/pull/3009) - Fix broken export to CSV
 - [#3007](https://github.com/poanetwork/blockscout/pull/3007) - Fix copy UTF8 tx input action
 - [#2996](https://github.com/poanetwork/blockscout/pull/2996) - Fix awesomplete lib loading in Firefox

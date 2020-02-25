@@ -4,7 +4,7 @@ config :indexer,
   block_interval: :timer.seconds(5),
   json_rpc_named_arguments: [
     transport:
-      if(System.get_env("ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT", "http") == "http",
+      if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http",
         do: EthereumJSONRPC.HTTP,
         else: EthereumJSONRPC.IPC
       ),
