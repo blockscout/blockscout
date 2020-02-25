@@ -6,6 +6,7 @@
 
 ### Fixes
 - [#3025](https://github.com/poanetwork/blockscout/pull/3025) - Fix splitting of indexer/web components setup
+- [#3024](https://github.com/poanetwork/blockscout/pull/3024) - Fix pool size default value in config
 - [#3021](https://github.com/poanetwork/blockscout/pull/3021), [#3022](https://github.com/poanetwork/blockscout/pull/3022) - Refine dev/test config
 - [#3016](https://github.com/poanetwork/blockscout/pull/3016), [#3017](https://github.com/poanetwork/blockscout/pull/3017) - Fix token instance QR code data
 - [#3014](https://github.com/poanetwork/blockscout/pull/3014) - Fix checksum address feature for tokens pages
