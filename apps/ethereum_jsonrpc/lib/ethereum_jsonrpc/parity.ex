@@ -70,7 +70,7 @@ defmodule EthereumJSONRPC.Parity do
              [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]}
 
           {:error, error} ->
-            Logger.error(error)
+            Logger.error(inspect(error))
             {:error, error}
         end
 
@@ -78,7 +78,7 @@ defmodule EthereumJSONRPC.Parity do
         {:error, :econnrefused}
 
       {:error, [error]} ->
-        Logger.error(error)
+        Logger.error(inspect(error))
         {:error, error}
     end
   end
