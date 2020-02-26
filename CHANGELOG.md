@@ -7,6 +7,7 @@
 - [#2834](https://github.com/poanetwork/blockscout/pull/2834) - always redirect to checksummed hash
 
 ### Fixes
+- [#3028](https://github.com/poanetwork/blockscout/pull/3028) - Decrease polling period value for realtime fetcher
 - [#3027](https://github.com/poanetwork/blockscout/pull/3027) - Rescue for SUPPORTED_CHAINS env var parsing
 - [#3025](https://github.com/poanetwork/blockscout/pull/3025) - Fix splitting of indexer/web components setup
 - [#3024](https://github.com/poanetwork/blockscout/pull/3024) - Fix pool size default value in config
