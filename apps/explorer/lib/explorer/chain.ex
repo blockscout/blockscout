@@ -4070,10 +4070,13 @@ defmodule Explorer.Chain do
   Fetches the first trace from the Parity trace URL.
   """
   def fetch_first_trace(transactions_params, json_rpc_named_arguments) do
-    {:ok, [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]} =
-      EthereumJSONRPC.fetch_first_trace(transactions_params, json_rpc_named_arguments)
+    case EthereumJSONRPC.fetch_first_trace(transactions_params, json_rpc_named_arguments) do
+      {:ok, [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]} ->
+        format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments)
 
-    format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments)
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments) do

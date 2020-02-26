@@ -2,7 +2,7 @@ defmodule EthereumJSONRPC.Parity do
   @moduledoc """
   Ethereum JSONRPC methods that are only supported by [Parity](https://wiki.parity.io/).
   """
-
+  require Logger
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
   alias EthereumJSONRPC.Parity.{FetchedBeneficiaries, Traces}
@@ -53,17 +53,33 @@ defmodule EthereumJSONRPC.Parity do
   def fetch_first_trace(transactions_params, json_rpc_named_arguments) when is_list(transactions_params) do
     id_to_params = id_to_params(transactions_params)
 
-    with {:ok, responses} <-
-           id_to_params
-           |> trace_replay_transaction_requests()
-           |> json_rpc(json_rpc_named_arguments) do
-      {:ok, [first_trace]} = trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params)
+    trace_replay_transaction_response =
+      id_to_params
+      |> trace_replay_transaction_requests()
+      |> json_rpc(json_rpc_named_arguments)
 
-      %{block_hash: block_hash} =
-        transactions_params
-        |> Enum.at(0)
+    case trace_replay_transaction_response do
+      {:ok, responses} ->
+        case trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params) do
+          {:ok, [first_trace]} ->
+            %{block_hash: block_hash} =
+              transactions_params
+              |> Enum.at(0)
 
-      {:ok, [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]}
+            {:ok,
+             [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]}
+
+          {:error, error} ->
+            Logger.error(inspect(error))
+            {:error, error}
+        end
+
+      {:error, :econnrefused} ->
+        {:error, :econnrefused}
+
+      {:error, [error]} ->
+        Logger.error(inspect(error))
+        {:error, error}
     end
   end
 
