@@ -7,6 +7,7 @@
 - [#2834](https://github.com/poanetwork/blockscout/pull/2834) - always redirect to checksummed hash
 
 ### Fixes
+- [#3027](https://github.com/poanetwork/blockscout/pull/3027) - Rescue for SUPPORTED_CHAINS env var parsing
 - [#3025](https://github.com/poanetwork/blockscout/pull/3025) - Fix splitting of indexer/web components setup
 - [#3024](https://github.com/poanetwork/blockscout/pull/3024) - Fix pool size default value in config
 - [#3021](https://github.com/poanetwork/blockscout/pull/3021), [#3022](https://github.com/poanetwork/blockscout/pull/3022) - Refine dev/test config
