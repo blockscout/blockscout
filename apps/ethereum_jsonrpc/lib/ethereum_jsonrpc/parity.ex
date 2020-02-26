@@ -72,17 +72,7 @@ defmodule EthereumJSONRPC.Parity do
         {:error, :econnrefused}
 
       {:error, [error]} ->
-        Logger.error(fn ->
-          [
-            "Could not import raw trace \n for tx hash ",
-            error.transactionHash,
-            " (blockNumber: ",
-            error.blockNumber,
-            ") \n",
-            " due to error ",
-            error.message
-          ]
-        end)
+        Logger.error(error)
 
         {:error, error.message}
     end
