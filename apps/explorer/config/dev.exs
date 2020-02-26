@@ -2,9 +2,8 @@ use Mix.Config
 
 # Configure your database
 config :explorer, Explorer.Repo,
-  database: "explorer_dev",
-  hostname: "localhost",
-  pool_size: 20,
+  url: System.get_env("DATABASE_URL"),
+  pool_size: String.to_integer(System.get_env("POOL_SIZE", "50")),
   timeout: :timer.seconds(80)
 
 config :explorer, Explorer.Tracer, env: "dev", disabled?: true
@@ -22,8 +21,6 @@ config :logger, :token_instances,
   level: :debug,
   path: Path.absname("logs/dev/explorer/tokens/token_instances.log"),
   metadata_filter: [fetcher: :token_instances]
-
-import_config "dev.secret.exs"
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do

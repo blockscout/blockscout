@@ -31,15 +31,6 @@ config :logger, :explorer,
   level: :warn,
   path: Path.absname("logs/test/explorer.log")
 
-secret_file =
-  __ENV__.file
-  |> Path.dirname()
-  |> Path.join("test.secret.exs")
-
-if File.exists?(secret_file) do
-  import_config secret_file
-end
-
 config :explorer, Explorer.ExchangeRates.Source.TransactionAndLog,
   secondary_source: Explorer.ExchangeRates.Source.OneCoinSource
 
