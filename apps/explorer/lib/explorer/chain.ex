@@ -4076,6 +4076,9 @@ defmodule Explorer.Chain do
 
       {:error, error} ->
         {:error, error}
+
+      :ignore ->
+        :ignore
     end
   end
 
