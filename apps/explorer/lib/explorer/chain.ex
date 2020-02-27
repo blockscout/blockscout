@@ -4055,14 +4055,28 @@ defmodule Explorer.Chain do
 
   defp boolean_to_check_result(false), do: :not_found
 
+  def extract_db_name(db_url) do
+    if db_url == nil do
+      ""
+    else
+      db_url
+      |> String.split("/")
+      |> Enum.take(-1)
+      |> Enum.at(0)
+    end
+  end
+
   @doc """
   Fetches the first trace from the Parity trace URL.
   """
   def fetch_first_trace(transactions_params, json_rpc_named_arguments) do
-    {:ok, [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]} =
-      EthereumJSONRPC.fetch_first_trace(transactions_params, json_rpc_named_arguments)
+    case EthereumJSONRPC.fetch_first_trace(transactions_params, json_rpc_named_arguments) do
+      {:ok, [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]} ->
+        format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments)
 
-    format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments)
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments) do
