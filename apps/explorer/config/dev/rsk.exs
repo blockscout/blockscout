@@ -19,7 +19,7 @@ config :explorer,
     transport: EthereumJSONRPC.WebSocket,
     transport_options: [
       web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
-      url: System.get_env("ETHEREUM_JSONRPC_WS_URL") || "ws://localhost:8546"
+      url: System.get_env("ETHEREUM_JSONRPC_WS_URL")
     ],
     variant: EthereumJSONRPC.RSK
   ]
