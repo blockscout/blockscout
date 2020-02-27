@@ -28,6 +28,7 @@
 - [#2883](https://github.com/poanetwork/blockscout/pull/2883) - Fix long contracts names
 
 ### Chore
+- [#3032](https://github.com/poanetwork/blockscout/pull/3032) - Remove indexing status alert for Ganache variant
 - [#3030](https://github.com/poanetwork/blockscout/pull/3030) - Remove default websockets URL from config
 - [#2995](https://github.com/poanetwork/blockscout/pull/2995) - Support API_PATH env var in Docker file
 
