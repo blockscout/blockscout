@@ -7,6 +7,7 @@
 - [#2834](https://github.com/poanetwork/blockscout/pull/2834) - always redirect to checksummed hash
 
 ### Fixes
+- [#3034](https://github.com/poanetwork/blockscout/pull/3034) - Support stateMutability=view to define reading functions in smart-contracts
 - [#3029](https://github.com/poanetwork/blockscout/pull/3029) - Fix transactions and blocks appearance on the main page
 - [#3028](https://github.com/poanetwork/blockscout/pull/3028) - Decrease polling period value for realtime fetcher
 - [#3027](https://github.com/poanetwork/blockscout/pull/3027) - Rescue for SUPPORTED_CHAINS env var parsing

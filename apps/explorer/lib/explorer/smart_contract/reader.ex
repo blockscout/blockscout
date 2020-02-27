@@ -175,7 +175,7 @@ defmodule Explorer.SmartContract.Reader do
 
       _ ->
         abi
-        |> Enum.filter(& &1["constant"])
+        |> Enum.filter(&(&1["constant"] || &1["stateMutability"] == "view"))
         |> Enum.map(&fetch_current_value_from_blockchain(&1, abi, contract_address_hash))
     end
   end
