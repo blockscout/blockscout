@@ -60,6 +60,9 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
 
             {:error, _} ->
               internal_transactions
+
+            :ignore ->
+              internal_transactions
           end
         end
 
