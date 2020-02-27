@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
         if first_trace_exists do
           internal_transactions
         else
-          {:ok, first_trace_params} =
+          response =
             Chain.fetch_first_trace(
               [
                 %{
@@ -48,13 +48,22 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
               json_rpc_named_arguments
             )
 
-          InternalTransactions.run_insert_only(first_trace_params, %{
-            timeout: :infinity,
-            timestamps: Import.timestamps(),
-            internal_transactions: %{params: first_trace_params}
-          })
+          case response do
+            {:ok, first_trace_params} ->
+              InternalTransactions.run_insert_only(first_trace_params, %{
+                timeout: :infinity,
+                timestamps: Import.timestamps(),
+                internal_transactions: %{params: first_trace_params}
+              })
 
-          Chain.all_transaction_to_internal_transactions(hash)
+              Chain.all_transaction_to_internal_transactions(hash)
+
+            {:error, _} ->
+              internal_transactions
+
+            :ignore ->
+              internal_transactions
+          end
         end
 
       render(
