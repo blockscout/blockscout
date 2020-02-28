@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 3.1.0-beta
+
+### Features
 - [#3013](https://github.com/poanetwork/blockscout/pull/3013), [#3026](https://github.com/poanetwork/blockscout/pull/3026), [#3031](https://github.com/poanetwork/blockscout/pull/3031) - Raw trace of transaction on-demand
 - [#3000](https://github.com/poanetwork/blockscout/pull/3000) - Get rid of storing of internal transactions for simple coin transfers
 - [#2875](https://github.com/poanetwork/blockscout/pull/2875) - Save contract code from Parity genesis file
