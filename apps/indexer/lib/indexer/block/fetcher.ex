@@ -127,7 +127,7 @@ defmodule Indexer.Block.Fetcher do
     e_logs
   end
 
-  defp add_gold_token_balances(gold_token, addresses, acc) do
+  def add_gold_token_balances(gold_token, addresses, acc) do
     Enum.reduce(addresses, acc, fn
       %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
         MapSet.put(acc, %{address_hash: hash, token_contract_address_hash: gold_token, block_number: bn})
@@ -186,9 +186,7 @@ defmodule Indexer.Block.Fetcher do
             else
               {:ok, nil}
             end},
-         # TODO: handle non-gold transaction fees
-         # %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
-         # TokenTransfers.parse_fees(transactions_with_receipts),
+         # Non gold fees should be handled by events
          fee_tokens = [],
          fee_token_transfers = [],
          %{
@@ -280,7 +278,7 @@ defmodule Indexer.Block.Fetcher do
                account_names: %{params: account_names},
                celo_signers: %{params: signers},
                token_transfers: %{params: token_transfers},
-               tokens: %{on_conflict: :nothing, params: tokens},
+               tokens: %{params: tokens},
                transactions: %{params: transactions_with_receipts},
                exchange_rate: %{params: exchange_rates}
              }

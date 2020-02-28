@@ -105,7 +105,7 @@ defmodule Explorer.Chain.Token do
 
   These are tokens with cataloged field set to true and updated_at is earlier or equal than an hour ago.
   """
-  def cataloged_tokens(hours \\ 48) do
+  def cataloged_tokens(hours \\ 48*3600) do
     date_now = DateTime.utc_now()
     hours_ago_date = DateTime.add(date_now, -:timer.hours(hours), :millisecond)
 

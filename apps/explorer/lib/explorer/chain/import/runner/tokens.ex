@@ -123,6 +123,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       |> Stream.map(&Map.put_new(&1, :holder_count, 0))
       # Enforce Token ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(& &1.contract_address_hash)
+      |> Enum.dedup_by(& &1.contract_address_hash)
 
     {:ok, _} =
       Import.insert_changes_list(
