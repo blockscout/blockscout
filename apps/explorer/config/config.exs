@@ -20,9 +20,7 @@ config :explorer,
     if(System.get_env("DISABLE_WEBAPP") != "true",
       do: Explorer.Chain.Events.SimpleSender,
       else: Explorer.Chain.Events.DBSender
-    ),
-  index_internal_transactions_for_token_transfers:
-    if(System.get_env("INTERNAL_TRANSACTIONOS_FOR_TOKEN_TRANSFERS") == "true", do: true, else: false)
+    )
 
 average_block_period =
   case Integer.parse(System.get_env("AVERAGE_BLOCK_CACHE_PERIOD", "")) do

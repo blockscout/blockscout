@@ -115,6 +115,12 @@ defmodule BlockScoutWeb.LayoutViewTest do
                }
              ]
     end
+
+    test "get empty networks list if SUPPORTED_CHAINS is not parsed" do
+      Application.put_env(:block_scout_web, :other_networks, "not a valid json")
+
+      assert LayoutView.other_networks() == []
+    end
   end
 
   describe "main_nets/1" do

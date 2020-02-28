@@ -152,11 +152,19 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp new_max_number(number, max_number_seen), do: max(number, max_number_seen)
 
   defp schedule_polling do
+<<<<<<< HEAD
     polling_period = 1_000
     # case AverageBlockTime.average_block_time() do
     #   {:error, :disabled} -> 2_000
     #   block_time -> round(Duration.to_milliseconds(block_time) * 2)
     # end
+=======
+    polling_period =
+      case AverageBlockTime.average_block_time() do
+        {:error, :disabled} -> 2_000
+        block_time -> round(Duration.to_milliseconds(block_time) / 2)
+      end
+>>>>>>> origin/master
 
     safe_polling_period = max(polling_period, @minimum_safe_polling_period)
 
