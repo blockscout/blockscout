@@ -37,13 +37,13 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">Attestations requested</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been requested from this account"><%= @address.celo_account.attestations_requested %></span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been requested from this account"><%= @address.celo_attestation_stats.requested %></span>
        </dd>
       </dl>
       <dl class="row">
       <dt class="col-sm-3 text-muted">Attestations fulfilled</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been fulfilled by this account"><%= @address.celo_account.attestations_fulfilled %></span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been fulfilled by this account"><%= @address.celo_attestation_stats.fulfilled %></span>
        </dd>
       </dl>
       <dl class="row">
@@ -99,7 +99,12 @@
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All signers for this account that have existed">
        <%= for signer <- @address.celo_signers do %>
          <%= if signer.signer_address != nil do 
-             signer |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address) |> BlockScoutWeb.RenderHelpers.render_partial()
+              signer |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address) |> BlockScoutWeb.RenderHelpers.render_partial()
+            else
+              case Explorer.Chain.find_or_insert_address_from_hash(signer.signer) do
+              {:ok, address} ->
+                address |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address) |> BlockScoutWeb.RenderHelpers.render_partial()
+              end
             end %>
        <% end %>
        </span>
