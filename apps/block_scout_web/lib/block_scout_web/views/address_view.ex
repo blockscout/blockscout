@@ -206,7 +206,7 @@ defmodule BlockScoutWeb.AddressView do
   def smart_contract_verified?(%Address{smart_contract: nil}), do: false
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
-    Enum.any?(address.smart_contract.abi, & &1["constant"])
+    Enum.any?(address.smart_contract.abi, &(&1["constant"] || &1["stateMutability"] == "view"))
   end
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
