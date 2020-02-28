@@ -11,7 +11,7 @@
 
 ### Features
 - [#3013](https://github.com/poanetwork/blockscout/pull/3013), [#3026](https://github.com/poanetwork/blockscout/pull/3026), [#3031](https://github.com/poanetwork/blockscout/pull/3031) - Raw trace of transaction on-demand
-- [#3000](https://github.com/poanetwork/blockscout/pull/3000) - Get rid of storing of internal transactions for simple coin transfers
+- [#3000](https://github.com/poanetwork/blockscout/pull/3000) - Get rid of storing of first trace for all types of transactions for Parity variant
 - [#2875](https://github.com/poanetwork/blockscout/pull/2875) - Save contract code from Parity genesis file
 - [#2834](https://github.com/poanetwork/blockscout/pull/2834), [#3009](https://github.com/poanetwork/blockscout/pull/3009), [#3014](https://github.com/poanetwork/blockscout/pull/3014), [#3033](https://github.com/poanetwork/blockscout/pull/3033) - always redirect to checksummed hash
 
