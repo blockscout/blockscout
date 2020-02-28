@@ -137,9 +137,14 @@ defmodule BlockScoutWeb.LayoutView do
   def other_networks do
     get_other_networks =
       if Application.get_env(:block_scout_web, :other_networks) do
-        :block_scout_web
-        |> Application.get_env(:other_networks)
-        |> Parser.parse!(%{keys: :atoms!})
+        try do
+          :block_scout_web
+          |> Application.get_env(:other_networks)
+          |> Parser.parse!(%{keys: :atoms!})
+        rescue
+          _ ->
+            []
+        end
       else
         @default_other_networks
       end
