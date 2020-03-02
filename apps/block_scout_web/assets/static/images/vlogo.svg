@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256px" height="256px" viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 58 (84663) - https://sketch.com -->
+    <title>Logo_VHuman_t1_bo</title>
+    <desc>Created with Sketch.</desc>
+    <g id="Logo_VHuman_t1_bo" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M2,128.001106 C2,197.587308 58.413179,254 128,254 C197.586821,254 254,197.587308 254,128.001106 C254,58.4130283 197.587158,2 128,2 C58.4128424,2 2,58.4130283 2,128.001106 Z" id="Fill-10" stroke="#253248" stroke-width="4" fill="#FF9802"></path>
+        <rect id="Rectangle" fill="#253248" x="111" y="149" width="37" height="29"></rect>
+        <polyline id="Path-3" stroke="#253248" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" points="71 98 127.554455 194 184.108911 98"></polyline>
+        <circle id="Oval" fill="#FF9802" cx="127.5" cy="143.5" r="12.5"></circle>
+        <path d="M127.291796,108 L128,109.416408 L128.708204,108 L127.291796,108 Z M128,82.5835921 L146.708204,120 L109.291796,120 L128,82.5835921 Z" id="Triangle" stroke="#253248" stroke-width="12" fill="#253248" stroke-linejoin="round" transform="translate(128.000000, 105.000000) scale(1, -1) translate(-128.000000, -105.000000) "></path>
+    </g>
+</svg>

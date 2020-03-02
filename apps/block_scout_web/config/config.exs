@@ -57,10 +57,10 @@ config :block_scout_web, BlockScoutWeb.Tracer,
 config :block_scout_web, BlockScoutWeb.Gettext, locales: ~w(en), default_locale: "en"
 
 config :block_scout_web, BlockScoutWeb.SocialMedia,
-  twitter: "PoaNetwork",
-  telegram: "poa_network",
-  facebook: "PoaNetwork",
-  instagram: "PoaNetwork"
+  twitter: "Vao_network",
+  telegram: "vao_network",
+  facebook: "VaoNetwork",
+  instagram: "VaoNetwork"
 
 config :ex_cldr,
   default_locale: "en",

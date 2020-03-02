@@ -7,32 +7,13 @@ defmodule BlockScoutWeb.LayoutView do
   @issue_url "https://github.com/poanetwork/blockscout/issues/new"
   @default_other_networks [
     %{
-      title: "POA Core",
-      url: "https://blockscout.com/poa/core"
+      title: "VAO",
+      url: "http://unblock/vao/vaonet"
     },
     %{
-      title: "POA Sokol",
-      url: "https://blockscout.com/poa/sokol",
+      title: "VAO Granville",
+      url: "https://unblock/vao/granville",
       test_net?: true
-    },
-    %{
-      title: "xDai Chain",
-      url: "https://blockscout.com/poa/dai"
-    },
-    %{
-      title: "Kovan Testnet",
-      url: "https://blockscout.com/eth/kovan",
-      test_net?: true
-    },
-    %{
-      title: "Ethereum Classic",
-      url: "https://blockscout.com/etc/mainnet",
-      other?: true
-    },
-    %{
-      title: "RSK Mainnet",
-      url: "https://blockscout.com/rsk/mainnet",
-      other?: true
     }
   ]
 
