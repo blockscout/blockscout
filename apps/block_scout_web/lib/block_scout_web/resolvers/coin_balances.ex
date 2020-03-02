@@ -1,4 +1,5 @@
 defmodule BlockScoutWeb.Resolvers.CoinBalances do
+  @moduledoc false
 
   alias Absinthe.Relay.Connection
   alias Explorer.{GraphQL, Repo}
