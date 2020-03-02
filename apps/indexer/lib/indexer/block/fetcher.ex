@@ -127,7 +127,7 @@ defmodule Indexer.Block.Fetcher do
     e_logs
   end
 
-  def add_gold_token_balances(gold_token, addresses, acc) do
+  defp add_gold_token_balances(gold_token, addresses, acc) do
     Enum.reduce(addresses, acc, fn
       %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
         MapSet.put(acc, %{address_hash: hash, token_contract_address_hash: gold_token, block_number: bn})

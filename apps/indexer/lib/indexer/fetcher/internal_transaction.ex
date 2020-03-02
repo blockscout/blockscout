@@ -147,7 +147,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end)
   end
 
-  defp decode("0x"<>str) do
+  defp decode("0x" <> str) do
     %{bytes: Base.decode16!(str, case: :mixed)}
   end
 
@@ -168,7 +168,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
       Addresses.extract_addresses(%{
         internal_transactions: internal_transactions_params_without_failed_creations
       })
-    
+
     # Gold token special updates
     with true <- Application.get_env(:indexer, Indexer.Block.Fetcher, [])[:enable_gold_token],
          {:ok, gold_token} <- AccountReader.get_address("GoldToken") do
