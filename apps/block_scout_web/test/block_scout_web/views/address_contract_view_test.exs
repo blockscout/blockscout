@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.AddressContractViewTest do
 
       assert result == [
                {"/**", " 1"},
-               {"* Submitted for verification at vaoverif.domain on ", " 2"},
+               {"* Submitted for verification at ledger.valorbit.com on ", " 2"},
                {"*/", " 3"},
                {"pragma solidity >=0.4.22 <0.6.0;", " 4"},
                {"", " 5"},
@@ -72,7 +72,7 @@ defmodule BlockScoutWeb.AddressContractViewTest do
 
       assert Enum.map(result, fn {line, _number} -> line end) == [
                "/**",
-               "* Submitted for verification at vaoverif.domain on ",
+               "* Submitted for verification at ledger.valorbit.com on ",
                "*/",
                "a",
                "b",
