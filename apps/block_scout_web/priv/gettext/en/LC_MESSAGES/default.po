@@ -55,7 +55,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_default_title.html.eex:2
-msgid "%{subnetwork} Explorer - BlockScout"
+msgid "%{subnetwork} Explorer"
 msgstr ""
 
 #, elixir-format
@@ -103,7 +103,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_metatags.html.eex:2
-msgid "API for the %{subnetwork} - BlockScout"
+msgid "API for the %{subnetwork}"
 msgstr ""
 
 #, elixir-format
