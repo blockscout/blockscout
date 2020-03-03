@@ -8,11 +8,11 @@ defmodule BlockScoutWeb.LayoutView do
   @default_other_networks [
     %{
       title: "VAO",
-      url: "http://unblock/vao/vaonet"
+      url: "http://ledger.valorbit.com"
     },
     %{
       title: "VAO Granville",
-      url: "https://unblock/vao/granville",
+      url: "https://ledger.valorbit.com/granville",
       test_net?: true
     }
   ]
