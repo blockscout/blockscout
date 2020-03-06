@@ -3898,14 +3898,58 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec get_celo_validator(Hash.Address.t()) :: {:ok, CeloValidator.t()} | {:error, :not_found}
-  def get_celo_validator(address_hash) do
-    query =
-      from(account in CeloValidator,
-        where: account.address == ^address_hash
+  def celo_validator_query do
+    from(
+      v in CeloValidator,
+      left_join: t in assoc(v, :status),
+      inner_join: a in assoc(v, :celo_account),
+      inner_join: stat in assoc(v, :celo_attestation_stats),
+      select_merge: %{
+        last_online: t.last_online,
+        last_elected: t.last_elected,
+        name: a.name,
+        url: a.url,
+        locked_gold: a.locked_gold,
+        nonvoting_locked_gold: a.nonvoting_locked_gold,
+        attestations_requested: stat.requested,
+        attestations_fulfilled: stat.fulfilled,
+        usd: a.usd
+      }
+    )
+  end
+
+  def celo_validator_group_query do
+    denominator =
+      from(p in CeloParams,
+        where: p.name == "numRegisteredValidators" or p.name == "maxElectableValidators",
+        select: %{value: min(p.number_value)}
       )
 
-    query
+    from(
+      g in CeloValidatorGroup,
+      inner_join: a in assoc(g, :celo_account),
+      inner_join: b in assoc(g, :celo_accumulated_rewards),
+      inner_join: total_locked_gold in CeloParams,
+      where: total_locked_gold.name == "totalLockedGold",
+      inner_join: denom in subquery(denominator),
+      select_merge: %{
+        name: a.name,
+        url: a.url,
+        locked_gold: a.locked_gold,
+        nonvoting_locked_gold: a.nonvoting_locked_gold,
+        usd: a.usd,
+        accumulated_active: b.active,
+        accumulated_rewards: b.reward,
+        rewards_ratio: b.ratio,
+        receivable_votes: (g.num_members + 1) * total_locked_gold.number_value / denom.value
+      }
+    )
+  end
+
+  @spec get_celo_validator(Hash.Address.t()) :: {:ok, CeloValidator.t()} | {:error, :not_found}
+  def get_celo_validator(address_hash) do
+    celo_validator_query()
+    |> where([account], account.address == ^address_hash)
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -3915,12 +3959,8 @@ defmodule Explorer.Chain do
 
   @spec get_celo_validator_group(Hash.Address.t()) :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
   def get_celo_validator_group(address_hash) do
-    query =
-      from(account in CeloValidatorGroup,
-        where: account.address == ^address_hash
-      )
-
-    query
+    celo_validator_group_query()
+    |> where([account], account.address == ^address_hash)
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -3928,36 +3968,8 @@ defmodule Explorer.Chain do
     end
   end
 
-  #  @spec get_celo_validator_groups() :: {:ok, CeloValidatorGroup.t()} | {:error, :not_found}
   def get_celo_validator_groups do
-    denominator =
-      from(p in CeloParams,
-        where: p.name == "numRegisteredValidators" or p.name == "maxElectableValidators",
-        select: %{value: min(p.number_value)}
-      )
-
-    query =
-      from(
-        g in CeloValidatorGroup,
-        inner_join: a in assoc(g, :celo_account),
-        inner_join: b in assoc(g, :celo_accumulated_rewards),
-        inner_join: total_locked_gold in CeloParams,
-        where: total_locked_gold.name == "totalLockedGold",
-        inner_join: denom in subquery(denominator),
-        select_merge: %{
-          name: a.name,
-          url: a.url,
-          locked_gold: a.locked_gold,
-          nonvoting_locked_gold: a.nonvoting_locked_gold,
-          usd: a.usd,
-          accumulated_active: b.active,
-          accumulated_rewards: b.reward,
-          rewards_ratio: b.ratio,
-          receivable_votes: (g.num_members + 1) * total_locked_gold.number_value / denom.value
-        }
-      )
-
-    query
+    celo_validator_group_query()
     |> Repo.all()
     |> case do
       nil -> {:error, :not_found}
