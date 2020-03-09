@@ -11,6 +11,7 @@ import { updateAllCalculatedUsdValues, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
+import '../app'
 
 const BATCH_THRESHOLD = 6
 const BLOCKS_PER_PAGE = 4
