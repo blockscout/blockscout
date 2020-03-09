@@ -1,7 +1,12 @@
 use Mix.Config
 
+database = if System.get_env("DATABASE_URL"), do: nil, else: "explorer_dev"
+hostname = if System.get_env("DATABASE_URL"), do: nil, else: "localhost"
+
 # Configure your database
 config :explorer, Explorer.Repo,
+  database: database,
+  hostname: hostname,
   url: System.get_env("DATABASE_URL"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE", "50")),
   timeout: :timer.seconds(80)

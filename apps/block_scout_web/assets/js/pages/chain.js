@@ -14,6 +14,7 @@ import listMorph from '../lib/list_morph'
 import '../app'
 
 const BATCH_THRESHOLD = 6
+const BLOCKS_PER_PAGE = 4
 
 export const initialState = {
   addressCount: null,
@@ -46,11 +47,17 @@ function baseReducer (state = initialState, action) {
     }
     case 'RECEIVED_NEW_BLOCK': {
       if (!state.blocks.length || state.blocks[0].blockNumber < action.msg.blockNumber) {
+        let pastBlocks
+        if (state.blocks.length < BLOCKS_PER_PAGE) {
+          pastBlocks = state.blocks
+        } else {
+          pastBlocks = state.blocks.slice(0, -1)
+        }
         return Object.assign({}, state, {
           averageBlockTime: action.msg.averageBlockTime,
           blocks: [
             action.msg,
-            ...state.blocks.slice(0, -1)
+            ...pastBlocks
           ],
           blockCount: action.msg.blockNumber + 1
         })
@@ -89,7 +96,16 @@ function baseReducer (state = initialState, action) {
         return Object.assign({}, state, { transactionCount })
       }
 
-      if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
+      const transactionsLength = state.transactions.length + action.msgs.length
+      if (transactionsLength < BATCH_THRESHOLD) {
+        return Object.assign({}, state, {
+          transactions: [
+            ...action.msgs.reverse(),
+            ...state.transactions
+          ],
+          transactionCount
+        })
+      } else if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
           transactions: [
             ...action.msgs.reverse(),

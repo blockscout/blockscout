@@ -19,6 +19,6 @@ config :indexer,
     transport: EthereumJSONRPC.WebSocket,
     transport_options: [
       web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
-      url: System.get_env("ETHEREUM_JSONRPC_WS_URL") || "wss://mainnet.infura.io/ws/8lTvJTKmHPCHazkneJsY"
+      url: System.get_env("ETHEREUM_JSONRPC_WS_URL")
     ]
   ]
