@@ -15,6 +15,7 @@ defmodule BlockScoutWeb.Schema do
     CeloUtil,
     CeloValidator,
     CeloValidatorGroup,
+    CoinBalances,
     Competitor,
     InternalTransaction,
     TokenTransfer,
@@ -137,6 +138,13 @@ defmodule BlockScoutWeb.Schema do
         %{last: last}, child_complexity ->
           last * child_complexity
       end)
+    end
+
+    @desc "Gets coin balances by address hash"
+    connection field(:coin_balances, node_type: :coin_balance) do
+      arg(:address, non_null(:address_hash))
+      arg(:count, :integer)
+      resolve(&CoinBalances.get_by/3)
     end
 
     @desc "Gets a transaction by hash."

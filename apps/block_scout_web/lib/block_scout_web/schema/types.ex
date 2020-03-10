@@ -26,6 +26,7 @@ defmodule BlockScoutWeb.Schema.Types do
   connection(node_type: :transaction)
   connection(node_type: :internal_transaction)
   connection(node_type: :token_transfer)
+  connection(node_type: :coin_balance)
 
   @desc """
   A stored representation of a Web3 address.
@@ -294,8 +295,22 @@ defmodule BlockScoutWeb.Schema.Types do
     end
   end
 
+  @desc """
+  Coin balance record
+  """
+  node object(:coin_balance, id_fetcher: &coin_balance_id_fetcher/2) do
+    field(:block_number, :integer)
+    field(:value, :wei)
+    field(:delta, :wei)
+    field(:block_timestamp, :datetime)
+  end
+
   def token_transfer_id_fetcher(%{transaction_hash: transaction_hash, log_index: log_index}, _) do
     Jason.encode!(%{transaction_hash: to_string(transaction_hash), log_index: log_index})
+  end
+
+  def coin_balance_id_fetcher(%{address_hash: address_hash, block_number: block_number}, _) do
+    Jason.encode!(%{address_hash: to_string(address_hash), block_number: block_number})
   end
 
   def transaction_id_fetcher(%{hash: hash}, _), do: to_string(hash)

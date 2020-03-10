@@ -13,6 +13,7 @@ defmodule Explorer.GraphQL do
 
   alias Explorer.Chain.{
     Address,
+    Block,
     CeloAccount,
     CeloValidator,
     CeloValidatorGroup,
@@ -23,6 +24,8 @@ defmodule Explorer.GraphQL do
   }
 
   alias Explorer.{Chain, Repo}
+
+  alias Explorer.Chain.Address.CoinBalance
 
   @doc """
   Returns a query to fetch transactions with a matching `to_address_hash`,
@@ -140,6 +143,19 @@ defmodule Explorer.GraphQL do
       where: tt.token_contract_address_hash == ^token_contract_address_hash,
       order_by: [desc: tt.block_number, desc: t.index, asc: tt.log_index],
       select: tt
+    )
+  end
+
+  def list_coin_balances_query(address_hash) do
+    from(
+      cb in CoinBalance,
+      where: cb.address_hash == ^address_hash,
+      where: not is_nil(cb.value),
+      inner_join: b in Block,
+      on: cb.block_number == b.number,
+      order_by: [desc: :block_number],
+      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
+      select_merge: %{block_timestamp: b.timestamp}
     )
   end
 end
