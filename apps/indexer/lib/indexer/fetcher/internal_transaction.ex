@@ -12,10 +12,12 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
+  alias Explorer.Celo.AccountReader
   alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Indexer.{BufferedTask, Tracer}
+  alias Indexer.Fetcher.TokenBalance
   alias Indexer.Transform.Addresses
 
   @behaviour BufferedTask
@@ -145,6 +147,20 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end)
   end
 
+  defp decode("0x" <> str) do
+    %{bytes: Base.decode16!(str, case: :mixed)}
+  end
+
+  defp add_gold_token_balances(gold_token, addresses, acc) do
+    Enum.reduce(addresses, acc, fn
+      %{fetched_coin_balance_block_number: bn, hash: hash}, acc ->
+        MapSet.put(acc, %{address_hash: decode(hash), token_contract_address_hash: decode(gold_token), block_number: bn})
+
+      _, acc ->
+        acc
+    end)
+  end
+
   defp import_internal_transaction(internal_transactions_params, unique_numbers) do
     internal_transactions_params_without_failed_creations = remove_failed_creations(internal_transactions_params)
 
@@ -152,6 +168,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
       Addresses.extract_addresses(%{
         internal_transactions: internal_transactions_params_without_failed_creations
       })
+
+    # Gold token special updates
+    with true <- Application.get_env(:indexer, Indexer.Block.Fetcher, [])[:enable_gold_token],
+         {:ok, gold_token} <- AccountReader.get_address("GoldToken") do
+      set = add_gold_token_balances(gold_token, addresses_params, MapSet.new())
+      TokenBalance.async_fetch(MapSet.to_list(set))
+    end
 
     address_hash_to_block_number =
       Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
