@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3042](https://github.com/poanetwork/blockscout/pull/3042) - Speedup pending txs list query
 - [#2944](https://github.com/poanetwork/blockscout/pull/2944) - Split js logic into multiple files
 
 ### Chore
