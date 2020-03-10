@@ -28,6 +28,14 @@
        </dd>
       </dl>
       <% end %>
+      <%= if @address.celo_account.domain do %>
+      <dl class="row">
+      <dt class="col-sm-3 text-muted">Domain</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Domain from metadata"><a href="<%= @address.celo_account.domain %>"><%= @address.celo_account.domain %></a></span>
+       </dd>
+      </dl>
+      <% end %>
       <dl class="row">
       <dt class="col-sm-3 text-muted">Type</dt>
        <dd class="col-sm-9">
