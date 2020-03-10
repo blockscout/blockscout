@@ -186,9 +186,7 @@ defmodule Indexer.Block.Fetcher do
             else
               {:ok, nil}
             end},
-         # TODO: handle non-gold transaction fees
-         # %{token_transfers: fee_token_transfers, tokens: fee_tokens} =
-         # TokenTransfers.parse_fees(transactions_with_receipts),
+         # Non gold fees should be handled by events
          fee_tokens = [],
          fee_token_transfers = [],
          %{
@@ -280,7 +278,7 @@ defmodule Indexer.Block.Fetcher do
                account_names: %{params: account_names},
                celo_signers: %{params: signers},
                token_transfers: %{params: token_transfers},
-               tokens: %{on_conflict: :nothing, params: tokens},
+               tokens: %{params: tokens},
                transactions: %{params: transactions_with_receipts},
                exchange_rate: %{params: exchange_rates}
              }
