@@ -2367,7 +2367,7 @@ defmodule Explorer.Chain do
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> pending_transactions_query()
-    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
+    |> order_by([transaction], desc: transaction.hash, desc: transaction.inserted_at)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
@@ -4069,6 +4069,19 @@ defmodule Explorer.Chain do
       db_url
       |> String.split("/")
       |> Enum.take(-1)
+      |> Enum.at(0)
+    end
+  end
+
+  def extract_db_host(db_url) do
+    if db_url == nil do
+      ""
+    else
+      db_url
+      |> String.split("@")
+      |> Enum.take(-1)
+      |> Enum.at(0)
+      |> String.split(":")
       |> Enum.at(0)
     end
   end
