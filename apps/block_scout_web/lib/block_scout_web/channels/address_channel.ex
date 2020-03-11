@@ -127,6 +127,7 @@ defmodule BlockScoutWeb.AddressChannel do
       View.render_to_string(
         TransactionView,
         "_tile.html",
+        conn: socket,
         current_address: address,
         transaction: transaction
       )
