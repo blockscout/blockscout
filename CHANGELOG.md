@@ -6,7 +6,7 @@
 - [#3044](https://github.com/poanetwork/blockscout/pull/3044) - Prevent division by zero on /accounts page
 - [#3043](https://github.com/poanetwork/blockscout/pull/3043) - Extract host name for split couple of indexer and web app
 - [#3042](https://github.com/poanetwork/blockscout/pull/3042) - Speedup pending txs list query
-- [#2944](https://github.com/poanetwork/blockscout/pull/2944) - Split js logic into multiple files
+- [#2944](https://github.com/poanetwork/blockscout/pull/2944), [#3046](https://github.com/poanetwork/blockscout/pull/3046) - Split js logic into multiple files
 
 ### Chore
 
