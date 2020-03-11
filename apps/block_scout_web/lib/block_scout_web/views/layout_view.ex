@@ -4,15 +4,15 @@ defmodule BlockScoutWeb.LayoutView do
   alias Plug.Conn
   alias Poison.Parser
 
-  @issue_url "https://github.com/poanetwork/blockscout/issues/new"
+  @issue_url "https://github.com/valorbit/blockscout/issues/new"
   @default_other_networks [
     %{
-      title: "VAO",
-      url: "http://ledger.valorbit.com"
+      title: "VTR",
+      url: "https://ledger.valorether.com"
     },
     %{
-      title: "VAO Granville",
-      url: "https://ledger.valorbit.com/granville",
+      title: "VTR Granville",
+      url: "https://granville.valorether.com",
       test_net?: true
     }
   ]
