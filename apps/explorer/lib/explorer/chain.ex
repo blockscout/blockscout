@@ -974,7 +974,8 @@ defmodule Explorer.Chain do
     query =
       from(token in Token,
         where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
-        limit: 5
+        limit: 5,
+        select: %{contract_address_hash: token.contract_address_hash, symbol: token.symbol, name: token.name}
       )
 
     Repo.all(query)
@@ -985,9 +986,10 @@ defmodule Explorer.Chain do
     term = String.replace(word, ~r/\W/u, "") <> ":*"
 
     query =
-      from(token in SmartContract,
+      from(smart_contract in SmartContract,
         where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
-        limit: 5
+        limit: 5,
+        select: %{contract_address_hash: smart_contract.address_hash, symbol: smart_contract.name}
       )
 
     Repo.all(query)
