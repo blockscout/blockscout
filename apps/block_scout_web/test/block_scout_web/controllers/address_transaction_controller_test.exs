@@ -2,11 +2,25 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
   import BlockScoutWeb.WebRouter.Helpers, only: [address_transaction_path: 3, address_transaction_path: 4]
+  import Mox
 
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Address, Transaction}
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/2" do
+    setup :set_mox_global
+
+    setup do
+      configuration = Application.get_env(:explorer, :checksum_function)
+      Application.put_env(:explorer, :checksum_function, :eth)
+
+      :ok
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :checksum_function, configuration)
+      end)
+    end
+
     test "with invalid address hash", %{conn: conn} do
       conn = get(conn, address_transaction_path(conn, :index, "invalid_address"))
 
@@ -17,7 +31,9 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       conn =
         get(
           conn,
-          address_transaction_path(conn, :index, "0x8bf38d4764929064f2d4d3a56520a76ab3df415b", %{"type" => "JSON"})
+          address_transaction_path(conn, :index, Address.checksum("0x8bf38d4764929064f2d4d3a56520a76ab3df415b"), %{
+            "type" => "JSON"
+          })
         )
 
       assert json_response(conn, 200)
@@ -40,7 +56,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         |> insert(to_address: address)
         |> with_block(block)
 
-      conn = get(conn, address_transaction_path(conn, :index, address, %{"type" => "JSON"}))
+      conn = get(conn, address_transaction_path(conn, :index, Address.checksum(address), %{"type" => "JSON"}))
 
       transaction_tiles = json_response(conn, 200)["items"]
       transaction_hashes = Enum.map([to_transaction.hash, from_transaction.hash], &to_string(&1))
@@ -53,7 +69,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
       address = insert(:address)
 
-      conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
+      conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)))
 
       assert %Token{} = conn.assigns.exchange_rate
     end
@@ -73,7 +89,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         |> with_block()
 
       conn =
-        get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash), %{
+        get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, Address.checksum(address.hash)), %{
           "block_number" => Integer.to_string(block_number),
           "index" => Integer.to_string(index),
           "type" => "JSON"
@@ -94,7 +110,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       |> insert_list(:transaction, from_address: address)
       |> with_block(block)
 
-      conn = get(conn, address_transaction_path(conn, :index, address.hash, %{"type" => "JSON"}))
+      conn = get(conn, address_transaction_path(conn, :index, Address.checksum(address.hash), %{"type" => "JSON"}))
 
       assert json_response(conn, 200)["next_page_path"]
     end
@@ -106,7 +122,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       |> insert(from_address: address)
       |> with_block()
 
-      conn = get(conn, address_transaction_path(conn, :index, address.hash, %{"type" => "JSON"}))
+      conn = get(conn, address_transaction_path(conn, :index, Address.checksum(address.hash), %{"type" => "JSON"}))
 
       refute json_response(conn, 200)["next_page_path"]
     end
@@ -126,10 +142,12 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         index: 0,
         created_contract_address: address,
         to_address: nil,
-        transaction: transaction
+        transaction: transaction,
+        block_hash: block.hash,
+        block_index: 0
       )
 
-      conn = get(conn, address_transaction_path(conn, :index, address), %{"type" => "JSON"})
+      conn = get(conn, address_transaction_path(conn, :index, Address.checksum(address)), %{"type" => "JSON"})
 
       transaction_tiles = json_response(conn, 200)["items"]
 
@@ -151,7 +169,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       insert(:token_transfer, transaction: transaction, from_address: address)
       insert(:token_transfer, transaction: transaction, to_address: address)
 
-      conn = get(conn, "/token_transfers_csv", %{"address_id" => to_string(address.hash)})
+      conn = get(conn, "/token_transfers_csv", %{"address_id" => Address.checksum(address.hash)})
 
       assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
     end
@@ -169,7 +187,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       |> insert(from_address: address)
       |> with_block()
 
-      conn = get(conn, "/transactions_csv", %{"address_id" => to_string(address.hash)})
+      conn = get(conn, "/transactions_csv", %{"address_id" => Address.checksum(address.hash)})
 
       assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
     end

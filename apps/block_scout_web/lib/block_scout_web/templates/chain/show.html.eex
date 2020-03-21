@@ -5,13 +5,6 @@
       <div class="dashboard-banner-network-graph">
         <!-- Graph -->
         <div class="dashboard-banner-chart">
-          <div hidden data-chart-loading-message class="tile tile-muted text-center mt-5">
-            <span class="loading-spinner-small mr-2">
-              <span class="loading-spinner-block-1"></span>
-              <span class="loading-spinner-block-2"></span>
-            </span>
-            <%= gettext("Loading chart") %>...
-          </div>
           <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
             <span><%= gettext("There was a problem loading the chart.") %></span>
           </button>
@@ -79,6 +72,8 @@
       </div>
     </div>
   </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
 </div>
 <section class="container">
   <div class="card card-chain-blocks">

@@ -156,7 +156,9 @@
                 <%= @block.gas_used |> BlockScoutWeb.Cldr.Number.to_string! %>
                 <span class="text-muted">(<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> BlockScoutWeb.Cldr.Number.to_string!(format: "#.#%") %>)</span>
               </h3>
-              <p class="address-current-balance"><%= @block.gas_limit |> BlockScoutWeb.Cldr.Number.to_string! %><%= gettext "Gas Limit" %></p>
+              <p class="address-current-balance"><%= @block.gas_limit |> BlockScoutWeb.Cldr.Number.to_string! %>
+              <%= " "%>
+              <%= gettext "Gas Limit" %></p>
             </div>
           <% end %>
         </div>

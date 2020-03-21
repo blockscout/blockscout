@@ -6,6 +6,7 @@ import socket from '../socket'
 import { connectElements } from '../lib/redux_helpers'
 import { createAsyncLoadStore } from '../lib/async_listing_load'
 import { batchChannel } from '../lib/utils'
+import '../app'
 
 const BATCH_THRESHOLD = 10
 
@@ -85,7 +86,7 @@ if ($transactionListPage.length) {
 
   connectElements({ store, elements })
 
-  const transactionsChannel = socket.channel(`transactions:new_transaction`)
+  const transactionsChannel = socket.channel('transactions:new_transaction')
   transactionsChannel.join()
   transactionsChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'

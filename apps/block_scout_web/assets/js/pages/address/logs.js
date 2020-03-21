@@ -3,6 +3,7 @@ import omit from 'lodash/omit'
 import humps from 'humps'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
+import '../address'
 
 export const initialState = {
   addressHash: null,
@@ -16,7 +17,7 @@ export function reducer (state, action) {
       return Object.assign({}, state, omit(action, 'type'))
     }
     case 'START_SEARCH': {
-      return Object.assign({}, state, {pagesStack: [], isSearch: true})
+      return Object.assign({}, state, { pagesStack: [], isSearch: true })
     }
     default:
       return state
@@ -63,19 +64,21 @@ if ($('[data-page="address-logs"]').length) {
 
   store.dispatch({
     type: 'PAGE_LOAD',
-    addressHash: addressHash})
+    addressHash: addressHash
+  })
 
   $element.on('click', '[data-search-button]', (event) => {
     store.dispatch({
       type: 'START_SEARCH',
-      addressHash: addressHash})
+      addressHash: addressHash
+    })
     var topic = $('[data-search-field]').val()
     var path = '/search_logs?topic=' + topic + '&address_id=' + store.getState().addressHash
-    store.dispatch({type: 'START_REQUEST'})
-    $.getJSON(path, {type: 'JSON'})
-      .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-      .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+    store.dispatch({ type: 'START_REQUEST' })
+    $.getJSON(path, { type: 'JSON' })
+      .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
+      .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
+      .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
   })
 
   $element.on('click', '[data-cancel-search-button]', (event) => {

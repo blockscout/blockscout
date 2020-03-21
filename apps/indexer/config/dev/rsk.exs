@@ -6,7 +6,7 @@ config :indexer,
   receipts_concurrency: 1,
   json_rpc_named_arguments: [
     transport:
-      if(System.get_env("ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT", "http") == "http",
+      if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http",
         do: EthereumJSONRPC.HTTP,
         else: EthereumJSONRPC.IPC
       ),
@@ -26,6 +26,6 @@ config :indexer,
     transport: System.get_env("ETHEREUM_JSONRPC_WS_URL") && EthereumJSONRPC.WebSocket,
     transport_options: [
       web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
-      url: System.get_env("ETHEREUM_JSONRPC_WS_URL") || "ws://localhost:8546"
+      url: System.get_env("ETHEREUM_JSONRPC_WS_URL")
     ]
   ]

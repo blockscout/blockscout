@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.WebRouter do
     plug(:fetch_flash)
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
+    plug(BlockScoutWeb.ChecksumAddress)
   end
 
   # Disallows Iframes (write routes)
@@ -117,6 +118,13 @@ defmodule BlockScoutWeb.WebRouter do
         AddressReadContractController,
         only: [:index, :show],
         as: :read_contract
+      )
+
+      resources(
+        "/token_transfers",
+        AddressTokenTransferController,
+        only: [:index],
+        as: :token_transfers
       )
 
       resources("/tokens", AddressTokenController, only: [:index], as: :token) do

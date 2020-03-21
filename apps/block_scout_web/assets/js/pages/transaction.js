@@ -4,6 +4,9 @@ import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import '../lib/transaction_input_dropdown'
+import '../lib/async_listing_load'
+import '../app'
 
 export const initialState = {
   blockNumber: null,
@@ -47,7 +50,7 @@ if ($transactionDetailsPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
 
-  const blocksChannel = socket.channel(`blocks:new_block`, {})
+  const blocksChannel = socket.channel('blocks:new_block', {})
   blocksChannel.join()
   blocksChannel.on('new_block', (msg) => store.dispatch({
     type: 'RECEIVED_NEW_BLOCK',

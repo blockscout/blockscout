@@ -12,7 +12,8 @@ config :block_scout_web,
   version: System.get_env("BLOCKSCOUT_VERSION"),
   release_link: System.get_env("RELEASE_LINK"),
   decompiled_smart_contract_token: System.get_env("DECOMPILED_SMART_CONTRACT_TOKEN"),
-  show_percentage: if(System.get_env("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true") == "false", do: false, else: true)
+  show_percentage: if(System.get_env("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true") == "false", do: false, else: true),
+  checksum_address_hashes: if(System.get_env("CHECKSUM_ADDRESS_HASHES", "true") == "false", do: false, else: true)
 
 config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
@@ -41,7 +42,8 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   url: [
     scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "http",
     host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
-    path: System.get_env("NETWORK_PATH") || "/"
+    path: System.get_env("NETWORK_PATH") || "/",
+    api_path: System.get_env("API_PATH") || "/"
   ],
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: BlockScoutWeb.PubSub]

@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.AddressContractView do
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.reduce({0, "#{contract.constructor_arguments}\n\n"}, fn {val, %{"type" => type}}, {count, acc} ->
         formatted_val =
-          if is_binary(val) do
+          if type =~ "address" || type =~ "bytes" do
             Base.encode16(val, case: :lower)
           else
             val

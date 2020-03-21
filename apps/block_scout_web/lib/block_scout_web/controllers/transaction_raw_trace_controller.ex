@@ -2,7 +2,10 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.TransactionView
+  alias EthereumJSONRPC
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Import
+  alias Explorer.Chain.Import.Runner.InternalTransactions
   alias Explorer.ExchangeRates.Token
 
   def index(conn, %{"transaction_id" => hash_string}) do
@@ -19,7 +22,49 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
                :token_transfers => :optional
              }
            ) do
-      internal_transactions = Chain.transaction_to_internal_transactions(hash)
+      internal_transactions = Chain.all_transaction_to_internal_transactions(hash)
+
+      first_trace_exists =
+        Enum.find_index(internal_transactions, fn trace ->
+          trace.index == 0
+        end)
+
+      json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+      internal_transactions =
+        if first_trace_exists do
+          internal_transactions
+        else
+          response =
+            Chain.fetch_first_trace(
+              [
+                %{
+                  block_hash: transaction.block_hash,
+                  block_number: transaction.block_number,
+                  hash_data: hash_string,
+                  transaction_index: transaction.index
+                }
+              ],
+              json_rpc_named_arguments
+            )
+
+          case response do
+            {:ok, first_trace_params} ->
+              InternalTransactions.run_insert_only(first_trace_params, %{
+                timeout: :infinity,
+                timestamps: Import.timestamps(),
+                internal_transactions: %{params: first_trace_params}
+              })
+
+              Chain.all_transaction_to_internal_transactions(hash)
+
+            {:error, _} ->
+              internal_transactions
+
+            :ignore ->
+              internal_transactions
+          end
+        end
 
       render(
         conn,

@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
 
   alias BlockScoutWeb.Tokens.TransferView
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
@@ -19,7 +20,12 @@ defmodule BlockScoutWeb.Tokens.TransferController do
             nil
 
           next_page_params ->
-            token_transfer_path(conn, :index, token.contract_address_hash, Map.delete(next_page_params, "type"))
+            token_transfer_path(
+              conn,
+              :index,
+              Address.checksum(token.contract_address_hash),
+              Map.delete(next_page_params, "type")
+            )
         end
 
       transfers_json =
@@ -51,7 +57,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
       render(
         conn,
         "index.html",
-        counters_path: token_path(conn, :token_counters, %{"id" => to_string(address_hash)}),
+        counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
         current_path: current_path(conn),
         token: Market.add_price(token)
       )

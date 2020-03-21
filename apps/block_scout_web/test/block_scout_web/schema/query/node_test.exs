@@ -58,9 +58,15 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
     end
 
     test "with valid argument 'id' for an internal transaction", %{conn: conn} do
-      transaction = insert(:transaction)
+      transaction = insert(:transaction) |> with_block()
 
-      internal_transaction = insert(:internal_transaction, transaction: transaction, index: 0)
+      internal_transaction =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 0,
+          block_hash: transaction.block_hash,
+          block_index: 0
+        )
 
       query = """
       query($id: ID!) {
@@ -96,9 +102,15 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
     end
 
     test "with 'id' for non-existent internal transaction", %{conn: conn} do
-      transaction = build(:transaction)
+      transaction = insert(:transaction) |> with_block()
 
-      internal_transaction = build(:internal_transaction, transaction: transaction, index: 0)
+      internal_transaction =
+        build(:internal_transaction,
+          transaction: transaction,
+          index: 0,
+          block_hash: transaction.block_hash,
+          block_index: 0
+        )
 
       query = """
       query($id: ID!) {

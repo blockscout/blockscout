@@ -57,9 +57,12 @@ defmodule BlockScoutWeb.AddressController do
   end
 
   def index(conn, _params) do
+    total_supply = Chain.total_supply()
+
     render(conn, "index.html",
       current_path: current_path(conn),
-      address_count: Chain.count_addresses_from_cache()
+      address_count: Chain.address_estimated_count(),
+      total_supply: total_supply
     )
   end
 

@@ -25,7 +25,7 @@
 		  Balance
 		</div>
 	      </th>
-              <%= if balance_percentage_enabled?() do %>
+              <%= if balance_percentage_enabled?(@total_supply) do %>
               <th class="stakes-table-th">
                 <div class="stakes-table-th-content">
                   Percentage
@@ -40,7 +40,7 @@
 	    </tr>
 	  </thead>
 	  <tbody data-items data-selector="top-addresses-list">
-	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html" %>
+	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", total_supply: @total_supply %>
 	  </tbody>
 	</table>
       </div>
@@ -49,4 +49,5 @@
     <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
     </div>
   </div>
+	<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/async-listing-load.js") %>"></script>
 </section>
