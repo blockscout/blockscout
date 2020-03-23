@@ -210,8 +210,25 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
                              "value" => "0x174876e800"
                            },
                            "result" => %{"gasUsed" => "0x7d37", "output" => "0x"},
-                           "subtraces" => 0,
+                           "subtraces" => 1,
                            "traceAddress" => [],
+                           "type" => "call"
+                         },
+                         %{
+                           "action" => %{
+                             "callType" => "call",
+                             "from" => "0xb37b428a7ddee91f39b26d79d23dc1c89e3e12a7",
+                             "gas" => "0x32dcf",
+                             "input" => "0x42dad49e",
+                             "to" => "0xee4019030fb5c2b68c42105552c6268d56c6cbfe",
+                             "value" => "0x0"
+                           },
+                           "result" => %{
+                             "gasUsed" => "0xb08",
+                             "output" => "0x"
+                           },
+                           "subtraces" => 0,
+                           "traceAddress" => [0],
                            "type" => "call"
                          }
                        ],

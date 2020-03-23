@@ -32,11 +32,6 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     }
   end
 
-  setup do
-    # run the tests without the skipping window
-    Application.put_env(:indexer, :max_skipping_distance, 0)
-  end
-
   describe "import/1" do
     test "fetches uncles asynchronously", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)

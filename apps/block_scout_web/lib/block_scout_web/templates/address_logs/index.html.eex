@@ -36,5 +36,6 @@
     </div>
 
   </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address-logs.js") %>"></script>
   </section>
 </section>
