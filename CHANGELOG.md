@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 3.1.1-beta
+
+### Features
 - [#3058](https://github.com/poanetwork/blockscout/pull/3058) - Searching by verified contract name
 
 ### Fixes
@@ -9,8 +18,6 @@
 - [#3043](https://github.com/poanetwork/blockscout/pull/3043) - Extract host name for split couple of indexer and web app
 - [#3042](https://github.com/poanetwork/blockscout/pull/3042) - Speedup pending txs list query
 - [#2944](https://github.com/poanetwork/blockscout/pull/2944), [#3046](https://github.com/poanetwork/blockscout/pull/3046) - Split js logic into multiple files
-
-### Chore
 
 
 ## 3.1.0-beta
