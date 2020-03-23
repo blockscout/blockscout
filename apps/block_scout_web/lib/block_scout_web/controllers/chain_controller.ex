@@ -59,10 +59,17 @@ defmodule BlockScoutWeb.ChainController do
     if term == "" do
       json(conn, "{}")
     else
-      result =
+      result_tokens =
         term
         |> String.trim()
         |> Chain.search_token()
+
+      result_contracts =
+        term
+        |> String.trim()
+        |> Chain.search_contract()
+
+      result = result_tokens ++ result_contracts
 
       json(conn, result)
     end
