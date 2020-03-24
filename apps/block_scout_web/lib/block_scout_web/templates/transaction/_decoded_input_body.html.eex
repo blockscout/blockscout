@@ -13,11 +13,11 @@
 
 <%= unless Enum.empty?(@mapping) do %>
   <div class="table-responsive text-center">
-    <table style="color: black;" summary="<%= gettext "Transaction Inputs" %>" class="table thead-light table-bordered">
+    <table style="color: black; table-layout: fixed;" summary="<%= gettext "Transaction Inputs" %>" class="table thead-light table-bordered">
       <tr>
-      <th scope="col"></th>
-      <th scope="col"><%= gettext "Name" %></th>
-      <th scope="col"><%= gettext "Type" %></th>
+      <th scope="col" style="width: 60px;"></th>
+      <th scope="col" style="width: 10%;"><%= gettext "Name" %></th>
+      <th scope="col" style="width: 10%;"><%= gettext "Type" %></th>
       <th scope="col"><%= gettext "Data" %></th>
       <tr>
       <%= for {name, type, value} <- @mapping do %>
@@ -49,7 +49,7 @@
                   <%= gettext "Error rendering value" %>
                 </div>
               <% value -> %>
-                <pre class="transaction-input-text tile"><code><%= value %></code></pre>
+                <pre class="transaction-input-text tile pre-wrap"><code><%= value %></code></pre>
               <% end %>
           </td>
         </tr>
