@@ -28,14 +28,23 @@
        </dd>
       </dl>
       <% end %>
-      <%= if @address.celo_account.domain do %>
+
+       <%= if list_with_items?(@address.celo_claims) do %>
       <dl class="row">
       <dt class="col-sm-3 text-muted">Domain</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Domain from metadata"><a href="<%= @address.celo_account.domain %>"><%= @address.celo_account.domain %></a></span>
+       <span data-toggle="tooltip" data-placement="top" title=""
+              data-original-title="Account Claims">
+              <%= for claim <- @address.celo_claims do %>
+                <%= if claim.type == "domain" do %>
+                   <li>Domain: <%= claim.element %> - <%= claim.verified %></li>
+                <% end %>
+              <% end %>
+              </span>
        </dd>
       </dl>
       <% end %>
+
       <dl class="row">
       <dt class="col-sm-3 text-muted">Type</dt>
        <dd class="col-sm-9">
@@ -104,7 +113,8 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">All signers</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All signers for this account that have existed">
+       <span data-toggle="tooltip" data-placement="top" title=""
+       data-original-title="All signers for this account that have existed">
        <%= for signer <- @address.celo_signers do %>
          <%= if signer.signer_address != nil do 
               signer |> BlockScoutWeb.AddressView.address_partial_selector(:signers, @address) |> BlockScoutWeb.RenderHelpers.render_partial()

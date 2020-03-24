@@ -82,8 +82,6 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:attestations_fulfilled, :integer)
     field(:name, :string)
     field(:url, :string)
-    field(:domain, :string)
-    field(:domain_verified, :boolean)
 
     field(:address_info, :address) do
       resolve(&Address.get_by/3)
@@ -115,8 +113,8 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:usd, :wei)
     field(:name, :string)
     field(:url, :string)
-    field(:domain, :string)
-    field(:domain_verified, :boolean)
+#    field(:domain, :string)
+#    field(:domain_verified, :boolean)
 
     field(:attestations_requested, :integer)
     field(:attestations_fulfilled, :integer)
@@ -148,8 +146,8 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:usd, :wei)
     field(:name, :string)
     field(:url, :string)
-    field(:domain, :string)
-    field(:domain_verified, :boolean)
+#    field(:domain, :string)
+#    field(:domain_verified, :boolean)
 
     field(:rewards_ratio, :wei)
     field(:accumulated_rewards, :wei)
@@ -173,6 +171,18 @@ defmodule BlockScoutWeb.Schema.Types do
   Celo network parameters
   """
   object :celo_parameters do
+    field(:address, :address) do
+      resolve(&Address.get_by/3)
+    end
+    field(:type, :string)
+    field(:domain, :string)
+    field(:verified, :boolean)
+  end
+
+  @desc """
+  Celo Claims
+  """
+  object :celo_claims do
     field(:total_locked_gold, :wei)
     field(:num_registered_validators, :integer)
     field(:min_electable_validators, :integer)

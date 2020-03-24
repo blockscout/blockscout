@@ -167,10 +167,6 @@ defmodule Explorer.Chain.CeloAccount do
     field(:locked_gold, Wei)
     field(:usd, Wei)
 
-    field(:domain, :string)
-    field(:domain_verified, :boolean)
-    field(:domain_timestamp, :utc_datetime_usec)
-
     field(:attestations_requested, :integer)
     field(:attestations_fulfilled, :integer)
 
@@ -181,7 +177,7 @@ defmodule Explorer.Chain.CeloAccount do
       references: :hash,
       type: Hash.Address
     )
-
+#    has_many(:claims, CeloClaims)
     timestamps(null: false, type: :utc_datetime_usec)
   end
 

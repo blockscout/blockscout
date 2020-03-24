@@ -15,7 +15,7 @@ config :logger,
     #    :console,
     {LoggerJSON, level: :info},
     # all applications, but only errors
-    {LoggerFileBackend, :error},
+    {LoggerFileBackend, :info},
     # only :ecto, but all levels
     {LoggerFileBackend, :ecto},
     # only :block_scout_web, but all levels
