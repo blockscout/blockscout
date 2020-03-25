@@ -18,11 +18,11 @@ defmodule Explorer.Chain.CeloClaims do
           address: Hash.Address.t(),
           type: String.t(),
           element: String.t(),
-          verified: Boolean.t()
+          verified: boolean()
         }
 
   @attrs ~w(
-    address type element
+    address type element verified
       )a
 
   @required_attrs ~w(
@@ -31,7 +31,7 @@ defmodule Explorer.Chain.CeloClaims do
 
   schema "celo_claims" do
     belongs_to(
-      :account_address,
+      :celo_account,
       Address,
       foreign_key: :address,
       references: :hash,
@@ -52,5 +52,4 @@ defmodule Explorer.Chain.CeloClaims do
     |> validate_required(@required_attrs)
     |> unique_constraint(:address)
   end
-
 end

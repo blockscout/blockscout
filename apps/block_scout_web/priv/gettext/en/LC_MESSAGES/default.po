@@ -1035,6 +1035,7 @@ msgstr ""
 #: lib/block_scout_web/views/block_view.ex:20
 #: lib/block_scout_web/views/block_view.ex:20
 #: lib/block_scout_web/views/wei_helpers.ex:77
+#: lib/block_scout_web/views/wei_helpers.ex:77
 msgid "Gwei"
 msgstr ""
 
@@ -2383,6 +2384,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/views/wei_helpers.ex:76
+#: lib/block_scout_web/views/wei_helpers.ex:76
 msgid "Wei"
 msgstr ""
 
@@ -2419,6 +2421,7 @@ msgstr ""
 #: lib/block_scout_web/views/transaction_view.ex:303
 #: lib/block_scout_web/views/transaction_view.ex:303
 #: lib/block_scout_web/views/transaction_view.ex:303
+#: lib/block_scout_web/views/wei_helpers.ex:78
 #: lib/block_scout_web/views/wei_helpers.ex:78
 msgid "cGLD"
 msgstr ""
