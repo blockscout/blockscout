@@ -171,23 +171,20 @@ defmodule BlockScoutWeb.Schema.Types do
   Celo network parameters
   """
   object :celo_parameters do
-    field(:address, :address) do
-      resolve(&Address.get_by/3)
-    end
-
-    field(:type, :string)
-    field(:element, :string)
-    field(:verified, :boolean)
+    field(:total_locked_gold, :wei)
+    field(:num_registered_validators, :integer)
+    field(:min_electable_validators, :integer)
+    field(:max_electable_validators, :integer)
   end
 
   @desc """
   Celo Claims
   """
   object :celo_claims do
-    field(:total_locked_gold, :wei)
-    field(:num_registered_validators, :integer)
-    field(:min_electable_validators, :integer)
-    field(:max_electable_validators, :integer)
+    field(:address, :address_hash)
+    field(:type, :string)
+    field(:element, :string)
+    field(:verified, :boolean)
   end
 
   @desc """
