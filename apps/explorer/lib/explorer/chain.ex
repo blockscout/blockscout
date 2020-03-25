@@ -36,6 +36,7 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     CeloAccount,
+    CeloClaims,
     CeloParams,
     CeloValidator,
     CeloValidatorGroup,
@@ -918,6 +919,7 @@ defmodule Explorer.Chain do
             :celo_attestation_stats => :optional,
             :celo_delegator => :optional,
             :celo_signers => :optional,
+            :celo_claims => :optional,
             :celo_members => :optional,
             [{:celo_delegator, :celo_account}] => :optional,
             [{:celo_delegator, :celo_attestation_stats}] => :optional,
@@ -926,6 +928,7 @@ defmodule Explorer.Chain do
             [{:celo_delegator, :celo_validator, :signer}] => :optional,
             [{:celo_delegator, :account_address}] => :optional,
             [{:celo_signers, :signer_address}] => :optional,
+            [{:celo_claims, :account_address}] => :optional,
             [{:celo_members, :validator_address}] => :optional,
             [{:celo_voters, :voter_address}] => :optional,
             [{:celo_voted, :group_address}] => :optional,
@@ -4003,6 +4006,20 @@ defmodule Explorer.Chain do
       nil -> []
       data -> data
     end
+  end
+
+  def get_celo_claims(address) do
+    query =
+      from(account in CeloClaims,
+        where: account.hash == ^address
+      )
+
+    query
+    |> Repo.all()
+    |> case do
+         nil -> []
+         data -> data
+       end
   end
 
   def get_token_balance(address, symbol) do

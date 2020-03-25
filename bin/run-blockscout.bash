@@ -33,7 +33,7 @@ if [[ $COMMAND == "help" ]]; then
 
     echo -e "Options:"
     echo -e "$0 <COMMAND>"
-    echo -e "\t - Command; comma separated list of actions to execute. Options are: help, compile, compile-full, migrate, start, start-fetcher, start-web"
+    echo -e "\t - Command; comma separated list of actions to execute. Options are: help, compile, compile-full, migrate, start, start-fetcher, start-web, status"
     echo -e "\n"
     exit 0
 fi
@@ -103,4 +103,16 @@ if [[ $COMMAND == "start-web" ]]; then
   #screen -S blockscout-indexer -d -m mix cmd --app block_scout_web mix phx.server
   #screen -ls
   mix cmd --app block_scout_web mix phx.server
+fi
+
+if [[ $COMMAND == "status" ]]; then
+
+  echo -e ">> Status Check"
+
+  echo -e "- Checking connection with fullnode"
+  curl -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' -H "Content-Type: application/json" $ETHEREUM_JSONRPC_HTTP_URL
+  echo -e ""
+
+  echo -e "- Checking if Web Interface port is open"
+  netstat -natp|grep 4000|grep LISTEN
 fi
