@@ -29,16 +29,24 @@
       </dl>
       <% end %>
 
-       <%= if list_with_items?(@address.celo_claims) do %>
+      <%= if list_with_items?(@address.celo_claims) do %>
       <dl class="row">
       <dt class="col-sm-3 text-muted">Domain</dt>
        <dd class="col-sm-9">
        <span data-toggle="tooltip" data-placement="top" title=""
               data-original-title="Account Claims">
               <%= for claim <- @address.celo_claims do %>
+                <li>
                 <%= if claim.type == "domain" do %>
-                   <li>Domain: <%= claim.element %> - <%= claim.verified %></li>
+                    <%= gettext("Domain") %> :
+                    <a href="https://<%= claim.element %>"><%= claim.element %></a> -
+                    <%= if claim.verified == true do %>
+                        ✓ verified
+                    <% else %>
+                        x not verified
+                    <% end %>
                 <% end %>
+                </li>
               <% end %>
               </span>
        </dd>
@@ -54,13 +62,16 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">Attestations requested</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been requested from this account"><%= @address.celo_attestation_stats.requested %></span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been requested from this account">
+       <%=  @address.celo_attestation_stats.requested %>
+       </span>
        </dd>
       </dl>
       <dl class="row">
       <dt class="col-sm-3 text-muted">Attestations fulfilled</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been fulfilled by this account"><%= @address.celo_attestation_stats.fulfilled %></span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How many attestations have been fulfilled by this account">
+       <%= @address.celo_attestation_stats.fulfilled %></span>
        </dd>
       </dl>
       <dl class="row">

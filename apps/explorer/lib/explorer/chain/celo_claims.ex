@@ -22,11 +22,11 @@ defmodule Explorer.Chain.CeloClaims do
              }
 
   @attrs ~w(
-    address type domain
+    address type element
       )a
 
   @required_attrs ~w(
-    address type verified
+    address type element verified
       )a
 
 

@@ -175,7 +175,7 @@ defmodule BlockScoutWeb.Schema.Types do
       resolve(&Address.get_by/3)
     end
     field(:type, :string)
-    field(:domain, :string)
+    field(:element, :string)
     field(:verified, :boolean)
   end
 
