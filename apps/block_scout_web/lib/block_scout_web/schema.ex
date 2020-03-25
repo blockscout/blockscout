@@ -84,6 +84,12 @@ defmodule BlockScoutWeb.Schema do
       resolve(&CeloAccount.get_by/3)
     end
 
+    @desc "Gets all the claims given a address hash."
+    field :celo_claims, list_of(:celo_claims) do
+      arg(:hash, non_null(:address_hash))
+      resolve(&CeloAccount.get_by/3)
+    end
+
     @desc "Gets a validator by address hash."
     field :celo_validator, :celo_validator do
       arg(:hash, non_null(:address_hash))

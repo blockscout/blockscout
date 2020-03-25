@@ -4011,7 +4011,7 @@ defmodule Explorer.Chain do
   def get_celo_claims(address) do
     query =
       from(account in CeloClaims,
-        where: account.hash == ^address
+        where: account.address == ^address
       )
 
     query

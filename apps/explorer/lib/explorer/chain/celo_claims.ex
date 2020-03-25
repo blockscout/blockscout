@@ -52,4 +52,5 @@ defmodule Explorer.Chain.CeloClaims do
     |> validate_required(@required_attrs)
     |> unique_constraint(:address)
   end
+
 end

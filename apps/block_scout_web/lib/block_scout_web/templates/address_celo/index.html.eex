@@ -36,7 +36,7 @@
        <span data-toggle="tooltip" data-placement="top" title=""
               data-original-title="Account Claims">
               <%= for claim <- @address.celo_claims do %>
-                <li>
+
                 <%= if claim.type == "domain" do %>
                     <%= gettext("Domain") %> :
                     <a href="https://<%= claim.element %>"><%= claim.element %></a> -
@@ -46,7 +46,7 @@
                         x not verified
                     <% end %>
                 <% end %>
-                </li>
+
               <% end %>
               </span>
        </dd>
