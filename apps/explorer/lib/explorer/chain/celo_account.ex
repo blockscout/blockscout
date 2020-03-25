@@ -177,7 +177,8 @@ defmodule Explorer.Chain.CeloAccount do
       references: :hash,
       type: Hash.Address
     )
-#    has_many(:claims, CeloClaims)
+
+    #    has_many(:claims, CeloClaims)
     timestamps(null: false, type: :utc_datetime_usec)
   end
 

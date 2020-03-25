@@ -3914,8 +3914,8 @@ defmodule Explorer.Chain do
         url: a.url,
         locked_gold: a.locked_gold,
         nonvoting_locked_gold: a.nonvoting_locked_gold,
-#        domain: a.domain,
-#        domain_verified: a.domain_verified,
+        #        domain: a.domain,
+        #        domain_verified: a.domain_verified,
         attestations_requested: stat.requested,
         attestations_fulfilled: stat.fulfilled,
         usd: a.usd
@@ -3943,8 +3943,8 @@ defmodule Explorer.Chain do
         locked_gold: a.locked_gold,
         nonvoting_locked_gold: a.nonvoting_locked_gold,
         usd: a.usd,
-#        domain: a.domain,
-#        domain_verified: a.domain_verified,
+        #        domain: a.domain,
+        #        domain_verified: a.domain_verified,
         accumulated_active: b.active,
         accumulated_rewards: b.reward,
         rewards_ratio: b.ratio,
@@ -4017,9 +4017,9 @@ defmodule Explorer.Chain do
     query
     |> Repo.all()
     |> case do
-         nil -> []
-         data -> data
-       end
+      nil -> []
+      data -> data
+    end
   end
 
   def get_token_balance(address, symbol) do

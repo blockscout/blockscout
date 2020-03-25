@@ -15,11 +15,11 @@ defmodule Explorer.Chain.CeloClaims do
   """
 
   @type t :: %__MODULE__{
-               address: Hash.Address.t(),
-               type: String.t(),
-               element: String.t(),
-               verified: Boolean.t()
-             }
+          address: Hash.Address.t(),
+          type: String.t(),
+          element: String.t(),
+          verified: Boolean.t()
+        }
 
   @attrs ~w(
     address type element
@@ -28,7 +28,6 @@ defmodule Explorer.Chain.CeloClaims do
   @required_attrs ~w(
     address type element verified
       )a
-
 
   schema "celo_claims" do
     belongs_to(

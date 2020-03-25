@@ -113,8 +113,8 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:usd, :wei)
     field(:name, :string)
     field(:url, :string)
-#    field(:domain, :string)
-#    field(:domain_verified, :boolean)
+    #    field(:domain, :string)
+    #    field(:domain_verified, :boolean)
 
     field(:attestations_requested, :integer)
     field(:attestations_fulfilled, :integer)
@@ -146,8 +146,8 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:usd, :wei)
     field(:name, :string)
     field(:url, :string)
-#    field(:domain, :string)
-#    field(:domain_verified, :boolean)
+    #    field(:domain, :string)
+    #    field(:domain_verified, :boolean)
 
     field(:rewards_ratio, :wei)
     field(:accumulated_rewards, :wei)
@@ -174,6 +174,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:address, :address) do
       resolve(&Address.get_by/3)
     end
+
     field(:type, :string)
     field(:element, :string)
     field(:verified, :boolean)
