@@ -4,6 +4,8 @@
 
 ### Fixes
 
+- [#3061](https://github.com/poanetwork/blockscout/pull/3061) - Fix verification of contracts with error messages in require in parent contract
+
 ### Chore
 
 
