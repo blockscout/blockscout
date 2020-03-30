@@ -4011,7 +4011,6 @@ defmodule Explorer.Chain do
   def get_celo_claims(address) do
     query =
       from(claim in CeloClaims,
-        select: {claim.element, claim.type, claim.verified},
         where: claim.address == ^address
       )
 
