@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "load-testing": "artillery run artillery.yml"
+  },
+  "devDependencies": {
+    "easygraphql-load-tester": "^2.0.3"
+  },
+  "dependencies": {
+    "artillery": "^1.6.0",
+    "graphql": "^14.6.0"
+  }
+}
