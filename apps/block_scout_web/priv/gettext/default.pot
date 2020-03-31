@@ -72,7 +72,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:55
+#: lib/block_scout_web/templates/layout/app.html.eex:64
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -1806,7 +1806,7 @@ msgid "Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_view.ex:310
+#: lib/block_scout_web/views/address_view.ex:316
 msgid "Decompiled Code"
 msgstr ""
 
@@ -1871,6 +1871,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:26
-#: lib/block_scout_web/views/address_view.ex:312
+#: lib/block_scout_web/views/address_view.ex:318
 msgid "Coin Balance History"
 msgstr ""
