@@ -8,8 +8,8 @@ defmodule Explorer.Repo.Migrations.CreateCeloClaims do
       add(:element, :string, size: 2048, null: true)
       add(:verified, :boolean, null: false)
       add(:timestamp, :utc_datetime_usec, null: true)
-      add(:inserted_at, :utc_datetime_usec, null: false)
-      add(:updated_at, :utc_datetime_usec, null: false)
+
+      timestamps(null: false, type: :utc_datetime_usec)
     end
 
     create(index(:celo_claims, [:address, :type, :element], unique: true))
