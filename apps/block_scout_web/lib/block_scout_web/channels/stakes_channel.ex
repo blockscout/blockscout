@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.StakesChannel do
   # apps/block_scout_web/lib/block_scout_web/endpoint.ex
   def terminate(_reason, socket) do
     s = socket.assigns[@claim_reward_long_op]
+
     if s != nil do
       :ets.delete(ContractState, claim_reward_long_op_key(s.staker))
     end
@@ -251,55 +252,60 @@ defmodule BlockScoutWeb.StakesChannel do
 
   def handle_in("render_claim_reward", data, socket) do
     staker = socket.assigns[:account]
-    staking_contract_address = try do ContractState.get(:staking_contract).address after end
-    
-    cond do
-      claim_reward_long_op_active(socket) == true ->
-        {:reply, {:error, %{reason: gettext("Pools searching is already in progress for this address")}}, socket}
-      staker == nil || staker == "" || staker == "0x0000000000000000000000000000000000000000" ->
-        {:reply, {:error, %{reason: gettext("Unknown staker address. Please, choose your account in MetaMask")}}, socket}
-      staking_contract_address == nil || staking_contract_address == "" || staking_contract_address == "0x0000000000000000000000000000000000000000" ->
-        {:reply, {:error, %{reason: gettext("Unknown address of Staking contract. Please, contact support")}}, socket}
-      true ->
-        result = if data["preload"] do
-          %{
-            html: View.render_to_string(StakesView, "_stakes_modal_claim_reward.html", %{}),
-            socket: socket
-          }
-        else
-          task = Task.async(__MODULE__, :find_claim_reward_pools, [socket, staker, staking_contract_address])
-          %{
-            html: "OK",
-            socket: assign(socket, @claim_reward_long_op, %{task: task, staker: staker})
-          }
-        end
 
-        {:reply, {:ok, %{html: result.html}}, result.socket}
-    end
+    staking_contract_address =
+      try do
+        ContractState.get(:staking_contract).address
+      after
+      end
+
+    empty_staker = staker == nil || staker == "" || staker == "0x0000000000000000000000000000000000000000"
+
+    empty_staking_contract_address =
+      staking_contract_address == nil || staking_contract_address == "" ||
+        staking_contract_address == "0x0000000000000000000000000000000000000000"
+
+    handle_in_render_claim_reward_result(
+      socket,
+      data,
+      staker,
+      staking_contract_address,
+      empty_staker,
+      empty_staking_contract_address
+    )
   end
 
   def handle_in("recalc_claim_reward", data, socket) do
     epochs = data["epochs"]
     pool_staking_address = data["pool_staking_address"]
     staker = socket.assigns[:account]
-    staking_contract_address = try do ContractState.get(:staking_contract).address after end
-    
-    cond do
-      claim_reward_long_op_active(socket) == true ->
-        {:reply, {:error, %{reason: gettext("Reward calculating is already in progress for this address")}}, socket}
-      Enum.count(epochs) == 0 ->
-        {:reply, {:error, %{reason: gettext("Staking epochs are not specified or not in the allowed range")}}, socket}
-      pool_staking_address == nil || pool_staking_address == "" || pool_staking_address == "0x0000000000000000000000000000000000000000" ->
-        {:reply, {:error, %{reason: gettext("Unknown pool staking address. Please, contact support")}}, socket}
-      staker == nil || staker == "" || staker == "0x0000000000000000000000000000000000000000" ->
-        {:reply, {:error, %{reason: gettext("Unknown staker address. Please, choose your account in MetaMask")}}, socket}
-      staking_contract_address == nil || staking_contract_address == "" || staking_contract_address == "0x0000000000000000000000000000000000000000" ->
-        {:reply, {:error, %{reason: gettext("Unknown address of Staking contract. Please, contact support")}}, socket}
-      true ->
-        task = Task.async(__MODULE__, :recalc_claim_reward, [socket, staking_contract_address, epochs, pool_staking_address, staker])
-        socket = assign(socket, @claim_reward_long_op, %{task: task, staker: staker})
-        {:reply, {:ok, %{html: "OK"}}, socket}
-    end
+
+    staking_contract_address =
+      try do
+        ContractState.get(:staking_contract).address
+      after
+      end
+
+    empty_pool_staking_address =
+      pool_staking_address == nil || pool_staking_address == "" ||
+        pool_staking_address == "0x0000000000000000000000000000000000000000"
+
+    empty_staker = staker == nil || staker == "" || staker == "0x0000000000000000000000000000000000000000"
+
+    empty_staking_contract_address =
+      staking_contract_address == nil || staking_contract_address == "" ||
+        staking_contract_address == "0x0000000000000000000000000000000000000000"
+
+    handle_in_recalc_claim_reward_result(
+      socket,
+      epochs,
+      staking_contract_address,
+      pool_staking_address,
+      staker,
+      empty_pool_staking_address,
+      empty_staking_contract_address,
+      empty_staker
+    )
   end
 
   def handle_in("render_claim_withdrawal", %{"address" => staking_address}, socket) do
@@ -325,12 +331,15 @@ defmodule BlockScoutWeb.StakesChannel do
 
   def handle_info({:DOWN, ref, :process, pid, _reason}, socket) do
     s = socket.assigns[@claim_reward_long_op]
-    socket = if s && s.task.ref == ref && s.task.pid == pid do
-      :ets.delete(ContractState, claim_reward_long_op_key(s.staker))
-      assign(socket, @claim_reward_long_op, nil)
-    else
-      socket
-    end
+
+    socket =
+      if s && s.task.ref == ref && s.task.pid == pid do
+        :ets.delete(ContractState, claim_reward_long_op_key(s.staker))
+        assign(socket, @claim_reward_long_op, nil)
+      else
+        socket
+      end
+
     {:noreply, socket}
   end
 
@@ -339,10 +348,11 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_out("staking_update", data, socket) do
-    dont_refresh_page = case Map.fetch(data, :dont_refresh_page) do
-      {:ok, value} -> value
-      _ -> false
-    end
+    dont_refresh_page =
+      case Map.fetch(data, :dont_refresh_page) do
+        {:ok, value} -> value
+        _ -> false
+      end
 
     push(socket, "staking_update", %{
       account: socket.assigns[:account],
@@ -360,113 +370,70 @@ defmodule BlockScoutWeb.StakesChannel do
 
   def find_claim_reward_pools(socket, staker, staking_contract_address) do
     :ets.insert(ContractState, {claim_reward_long_op_key(staker), true})
+
     try do
       json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
       staking_contract = ContractState.get(:staking_contract)
 
       responses =
-        ContractReader.get_staker_pools_length_request(staker)
+        staker
+        |> ContractReader.get_staker_pools_length_request()
         |> ContractReader.perform_requests(%{staking: staking_contract.address}, staking_contract.abi)
+
       staker_pools_length = responses[:length]
 
       chunk_size = 100
-      pools = if staker_pools_length > 0 do
-        chunks = 0..trunc(ceil(staker_pools_length / chunk_size) - 1)
-        Enum.reduce(chunks, [], fn i, acc ->
-          responses =
-            ContractReader.get_staker_pools_request(staker, i * chunk_size, chunk_size)
-            |> ContractReader.perform_requests(%{staking: staking_contract.address}, staking_contract.abi)
-          acc ++ Enum.map(responses[:pools], fn pool_staking_address ->
-            address_bytes_to_string(pool_staking_address)
-          end)
-        end)
-      else
-        []
-      end
 
-      pools_amounts = Enum.map(pools, fn pool_staking_address ->
-        ContractReader.call_get_reward_amount(
-          staking_contract_address,
-          [],
-          pool_staking_address,
-          staker,
-          json_rpc_named_arguments
-        )
-      end)
+      pools =
+        if staker_pools_length > 0 do
+          chunks = 0..trunc(ceil(staker_pools_length / chunk_size) - 1)
 
-      error = Enum.find_value(pools_amounts, fn result ->
-        case result do
-          {:error, reason} -> error_reason_to_string(reason)
-          _ -> nil
-        end
-      end)
-
-      {error, pools} = if error != nil do
-        {error, %{}}
-      else
-        block_reward_contract = ContractState.get(:block_reward_contract)
-
-        pools = 
-          pools_amounts
-          |> Enum.map(fn {_, amounts} -> amounts end)
-          |> Enum.zip(pools)
-          |> Enum.filter(fn {amounts, _} -> amounts.token_reward_sum > 0 || amounts.native_reward_sum > 0 end)
-          |> Enum.map(fn {amounts, pool_staking_address} ->
+          Enum.reduce(chunks, [], fn i, acc ->
             responses =
-              ContractReader.epochs_to_claim_reward_from_request(pool_staking_address, staker)
-              |> ContractReader.perform_requests(%{block_reward: block_reward_contract.address}, block_reward_contract.abi)
+              staker
+              |> ContractReader.get_staker_pools_request(i * chunk_size, chunk_size)
+              |> ContractReader.perform_requests(%{staking: staking_contract.address}, staking_contract.abi)
 
-            epochs =
-              array_to_ranges(responses[:epochs])
-              |> Enum.map(fn {first, last} ->
-                Integer.to_string(first) <> (if first != last, do: "-" <> Integer.to_string(last), else: "")
+            acc ++
+              Enum.map(responses[:pools], fn pool_staking_address ->
+                address_bytes_to_string(pool_staking_address)
               end)
-            data = Map.put(amounts, :epochs, Enum.join(epochs, ","))
-
-            {data, pool_staking_address}
           end)
-          |> Enum.filter(fn {data, _} -> data.epochs != "" end)
+        else
+          []
+        end
 
-        pools_gas_estimates = Enum.map(pools, fn {_data, pool_staking_address} ->
-          result = ContractReader.claim_reward_estimate_gas(
+      pools_amounts =
+        Enum.map(pools, fn pool_staking_address ->
+          ContractReader.call_get_reward_amount(
             staking_contract_address,
             [],
             pool_staking_address,
             staker,
             json_rpc_named_arguments
           )
-          {pool_staking_address, result}
         end)
 
-        error = Enum.find_value(pools_gas_estimates, fn {_, result} ->
+      error =
+        Enum.find_value(pools_amounts, fn result ->
           case result do
             {:error, reason} -> error_reason_to_string(reason)
             _ -> nil
           end
         end)
 
-        pools = if error == nil do
-          pools_gas_estimates = Map.new(pools_gas_estimates)
-          Map.new(pools, fn {data, pool_staking_address} ->
-            {:ok, estimate} = pools_gas_estimates[pool_staking_address]
-            data = Map.put(data, :gas_estimate, estimate)
-            {pool_staking_address, data}
-          end)
-        else
-          %{}
-        end
+      {error, pools} =
+        get_pools(pools_amounts, pools, staking_contract_address, staker, json_rpc_named_arguments, error)
 
-        {error, pools}
-      end
-
-      html = View.render_to_string(
-        StakesView,
-        "_stakes_modal_claim_reward_content.html",
-        coin: %Token{symbol: Explorer.coin(), decimals: Decimal.new(18)},
-        error: error,
-        pools: pools,
-        token: ContractState.get(:token)
-      )
+      html =
+        View.render_to_string(
+          StakesView,
+          "_stakes_modal_claim_reward_content.html",
+          coin: %Token{symbol: Explorer.coin(), decimals: Decimal.new(18)},
+          error: error,
+          pools: pools,
+          token: ContractState.get(:token)
+        )
 
       push(socket, "claim_reward_pools", %{
         html: html
@@ -476,28 +443,86 @@ defmodule BlockScoutWeb.StakesChannel do
     end
   end
 
+  def get_pools(pools_amounts, pools, staking_contract_address, staker, json_rpc_named_arguments, error) do
+    if error != nil do
+      {error, %{}}
+    else
+      block_reward_contract = ContractState.get(:block_reward_contract)
+
+      pools =
+        pools_amounts
+        |> Enum.map(fn {_, amounts} -> amounts end)
+        |> Enum.zip(pools)
+        |> Enum.filter(fn {amounts, _} -> amounts.token_reward_sum > 0 || amounts.native_reward_sum > 0 end)
+        |> Enum.map(fn {amounts, pool_staking_address} ->
+          responses =
+            pool_staking_address
+            |> ContractReader.epochs_to_claim_reward_from_request(staker)
+            |> ContractReader.perform_requests(
+              %{block_reward: block_reward_contract.address},
+              block_reward_contract.abi
+            )
+
+          epochs =
+            responses[:epochs]
+            |> array_to_ranges()
+            |> Enum.map(fn {first, last} ->
+              Integer.to_string(first) <> if first != last, do: "-" <> Integer.to_string(last), else: ""
+            end)
+
+          data = Map.put(amounts, :epochs, Enum.join(epochs, ","))
+
+          {data, pool_staking_address}
+        end)
+        |> Enum.filter(fn {data, _} -> data.epochs != "" end)
+
+      pools_gas_estimates =
+        Enum.map(pools, fn {_data, pool_staking_address} ->
+          result =
+            ContractReader.claim_reward_estimate_gas(
+              staking_contract_address,
+              [],
+              pool_staking_address,
+              staker,
+              json_rpc_named_arguments
+            )
+
+          {pool_staking_address, result}
+        end)
+
+      error =
+        Enum.find_value(pools_gas_estimates, fn {_, result} ->
+          case result do
+            {:error, reason} -> error_reason_to_string(reason)
+            _ -> nil
+          end
+        end)
+
+      pools =
+        if error == nil do
+          pools_gas_estimates = Map.new(pools_gas_estimates)
+
+          Map.new(pools, fn {data, pool_staking_address} ->
+            {:ok, estimate} = pools_gas_estimates[pool_staking_address]
+            data = Map.put(data, :gas_estimate, estimate)
+            {pool_staking_address, data}
+          end)
+        else
+          %{}
+        end
+
+      {error, pools}
+    end
+  end
+
   def recalc_claim_reward(socket, staking_contract_address, epochs, pool_staking_address, staker) do
     :ets.insert(ContractState, {claim_reward_long_op_key(staker), true})
+
     try do
       json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
-      amounts_result = ContractReader.call_get_reward_amount(
-        staking_contract_address,
-        epochs,
-        pool_staking_address,
-        staker,
-        json_rpc_named_arguments
-      )
-
-      {error, amounts} = case amounts_result do
-        {:ok, amounts} ->
-          {nil, amounts}
-        {:error, reason} ->
-          {error_reason_to_string(reason), %{token_reward_sum: 0, native_reward_sum: 0}}
-      end
-
-      {error, gas_limit} = if error == nil do
-        estimate_gas_result = ContractReader.claim_reward_estimate_gas(
+      amounts_result =
+        ContractReader.call_get_reward_amount(
           staking_contract_address,
           epochs,
           pool_staking_address,
@@ -505,22 +530,53 @@ defmodule BlockScoutWeb.StakesChannel do
           json_rpc_named_arguments
         )
 
-        case estimate_gas_result do
-          {:ok, gas_limit} ->
-            {nil, gas_limit}
+      {error, amounts} =
+        case amounts_result do
+          {:ok, amounts} ->
+            {nil, amounts}
+
           {:error, reason} ->
-            {error_reason_to_string(reason), 0}
+            {error_reason_to_string(reason), %{token_reward_sum: 0, native_reward_sum: 0}}
         end
-      else
-        {error, 0}
-      end
+
+      {error, gas_limit} =
+        if error == nil do
+          estimate_gas_result =
+            ContractReader.claim_reward_estimate_gas(
+              staking_contract_address,
+              epochs,
+              pool_staking_address,
+              staker,
+              json_rpc_named_arguments
+            )
+
+          case estimate_gas_result do
+            {:ok, gas_limit} ->
+              {nil, gas_limit}
+
+            {:error, reason} ->
+              {error_reason_to_string(reason), 0}
+          end
+        else
+          {error, 0}
+        end
 
       token = ContractState.get(:token)
       coin = %Token{symbol: Explorer.coin(), decimals: Decimal.new(18)}
 
       push(socket, "claim_reward_recalculations", %{
-        token_reward_sum: StakesHelpers.format_token_amount(amounts.token_reward_sum, token, digits: token.decimals, ellipsize: false, symbol: false),
-        native_reward_sum: StakesHelpers.format_token_amount(amounts.native_reward_sum, coin, digits: coin.decimals, ellipsize: false, symbol: false),
+        token_reward_sum:
+          StakesHelpers.format_token_amount(amounts.token_reward_sum, token,
+            digits: token.decimals,
+            ellipsize: false,
+            symbol: false
+          ),
+        native_reward_sum:
+          StakesHelpers.format_token_amount(amounts.native_reward_sum, coin,
+            digits: coin.decimals,
+            ellipsize: false,
+            symbol: false
+          ),
         gas_limit: gas_limit,
         error: error
       })
@@ -534,6 +590,7 @@ defmodule BlockScoutWeb.StakesChannel do
       true
     else
       staker = socket.assigns[:account]
+
       with [{_, true}] <- :ets.lookup(ContractState, claim_reward_long_op_key(staker)) do
         true
       end
@@ -544,13 +601,20 @@ defmodule BlockScoutWeb.StakesChannel do
 
   defp array_to_ranges(numbers, prev_ranges \\ []) do
     length = Enum.count(numbers)
+
     if length > 0 do
       {first, last, next_index} = get_range(numbers)
-      ranges = prev_ranges ++ [{first, last}]
+      prev_ranges_reversed = Enum.reverse(prev_ranges)
+
+      ranges =
+        [{first, last} | prev_ranges_reversed]
+        |> Enum.reverse()
+
       if next_index == 0 || next_index >= length do
         ranges
       else
-        Enum.slice(numbers, next_index, length - next_index)
+        numbers
+        |> Enum.slice(next_index, length - next_index)
         |> array_to_ranges(ranges)
       end
     else
@@ -567,11 +631,13 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   defp get_range(numbers) do
-    last_index = 
-      Enum.with_index(numbers)
+    last_index =
+      numbers
+      |> Enum.with_index()
       |> Enum.find_index(fn {n, i} ->
         if i > 0, do: n != Enum.at(numbers, i - 1) + 1, else: false
       end)
+
     next_index = if last_index == nil, do: Enum.count(numbers), else: last_index
     first = Enum.at(numbers, 0)
     last = Enum.at(numbers, next_index - 1)
@@ -598,5 +664,86 @@ defmodule BlockScoutWeb.StakesChannel do
   defp claim_reward_long_op_key(staker) do
     staker = if staker == nil, do: "", else: staker
     Atom.to_string(@claim_reward_long_op) <> "_" <> staker
+  end
+
+  defp handle_in_render_claim_reward_result(
+         socket,
+         data,
+         staker,
+         staking_contract_address,
+         empty_staker,
+         empty_staking_contract_address
+       ) do
+    cond do
+      claim_reward_long_op_active(socket) == true ->
+        {:reply, {:error, %{reason: gettext("Pools searching is already in progress for this address")}}, socket}
+
+      empty_staker ->
+        {:reply, {:error, %{reason: gettext("Unknown staker address. Please, choose your account in MetaMask")}},
+         socket}
+
+      empty_staking_contract_address ->
+        {:reply, {:error, %{reason: gettext("Unknown address of Staking contract. Please, contact support")}}, socket}
+
+      true ->
+        result =
+          if data["preload"] do
+            %{
+              html: View.render_to_string(StakesView, "_stakes_modal_claim_reward.html", %{}),
+              socket: socket
+            }
+          else
+            task = Task.async(__MODULE__, :find_claim_reward_pools, [socket, staker, staking_contract_address])
+
+            %{
+              html: "OK",
+              socket: assign(socket, @claim_reward_long_op, %{task: task, staker: staker})
+            }
+          end
+
+        {:reply, {:ok, %{html: result.html}}, result.socket}
+    end
+  end
+
+  defp handle_in_recalc_claim_reward_result(
+         socket,
+         epochs,
+         staking_contract_address,
+         pool_staking_address,
+         staker,
+         empty_pool_staking_address,
+         empty_staking_contract_address,
+         empty_staker
+       ) do
+    cond do
+      claim_reward_long_op_active(socket) == true ->
+        {:reply, {:error, %{reason: gettext("Reward calculating is already in progress for this address")}}, socket}
+
+      Enum.empty?(epochs) ->
+        {:reply, {:error, %{reason: gettext("Staking epochs are not specified or not in the allowed range")}}, socket}
+
+      empty_pool_staking_address ->
+        {:reply, {:error, %{reason: gettext("Unknown pool staking address. Please, contact support")}}, socket}
+
+      empty_staker ->
+        {:reply, {:error, %{reason: gettext("Unknown staker address. Please, choose your account in MetaMask")}},
+         socket}
+
+      empty_staking_contract_address ->
+        {:reply, {:error, %{reason: gettext("Unknown address of Staking contract. Please, contact support")}}, socket}
+
+      true ->
+        task =
+          Task.async(__MODULE__, :recalc_claim_reward, [
+            socket,
+            staking_contract_address,
+            epochs,
+            pool_staking_address,
+            staker
+          ])
+
+        socket = assign(socket, @claim_reward_long_op, %{task: task, staker: staker})
+        {:reply, {:ok, %{html: "OK"}}, socket}
+    end
   end
 end

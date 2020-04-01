@@ -43,19 +43,21 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    clear_snapshotted_values = case Map.fetch(insert_options, :clear_snapshotted_values) do
-      {:ok, v} -> v
-      :error -> false
-    end
+    clear_snapshotted_values =
+      case Map.fetch(insert_options, :clear_snapshotted_values) do
+        {:ok, v} -> v
+        :error -> false
+      end
 
-    multi = if not clear_snapshotted_values do
-      # Enforce ShareLocks tables order (see docs: sharelocks.md)
-      Multi.run(multi, :acquire_all_staking_pools, fn repo, _ ->
-        acquire_all_staking_pools(repo)
-      end)
-    else
-      multi
-    end
+    multi =
+      if clear_snapshotted_values do
+        multi
+      else
+        # Enforce ShareLocks tables order (see docs: sharelocks.md)
+        Multi.run(multi, :acquire_all_staking_pools, fn repo, _ ->
+          acquire_all_staking_pools(repo)
+        end)
+      end
 
     multi
     |> Multi.run(:mark_as_deleted, fn repo, _ ->
@@ -84,26 +86,28 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
   end
 
   defp mark_as_deleted(repo, changes_list, %{timeout: timeout}, clear_snapshotted_values) when is_list(changes_list) do
-    query = if clear_snapshotted_values do
-      from(
-        pool in StakingPool,
-        update: [
-          set: [
-            snapshotted_self_staked_amount: nil,
-            snapshotted_total_staked_amount: nil,
-            snapshotted_validator_reward_ratio: nil
+    query =
+      if clear_snapshotted_values do
+        from(
+          pool in StakingPool,
+          update: [
+            set: [
+              snapshotted_self_staked_amount: nil,
+              snapshotted_total_staked_amount: nil,
+              snapshotted_validator_reward_ratio: nil
+            ]
           ]
-        ]
-      )
-    else
-      addresses = Enum.map(changes_list, & &1.staking_address_hash)
-      from(
-        pool in StakingPool,
-        where: pool.staking_address_hash not in ^addresses,
-        # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
-        update: [set: [is_deleted: true, is_active: false]]
-      )
-    end
+        )
+      else
+        addresses = Enum.map(changes_list, & &1.staking_address_hash)
+
+        from(
+          pool in StakingPool,
+          where: pool.staking_address_hash not in ^addresses,
+          # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
+          update: [set: [is_deleted: true, is_active: false]]
+        )
+      end
 
     try do
       {_, result} = repo.update_all(query, [], timeout: timeout)

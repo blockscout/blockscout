@@ -37,12 +37,12 @@ defmodule Explorer.Staking.ContractReader do
   #   address _staker
   # ) public view returns(uint256 tokenRewardSum, uint256 nativeRewardSum);
   def call_get_reward_amount(
-    staking_contract_address,
-    staking_epochs,
-    pool_staking_address,
-    staker,
-    json_rpc_named_arguments
-  ) do
+        staking_contract_address,
+        staking_epochs,
+        pool_staking_address,
+        staker,
+        json_rpc_named_arguments
+      ) do
     staking_epochs_joint =
       staking_epochs
       |> Enum.map(fn epoch ->
@@ -56,29 +56,44 @@ defmodule Explorer.Staking.ContractReader do
     staker = address_pad_to_64(staker)
 
     staking_epochs_length =
-      Enum.count(staking_epochs)
+      staking_epochs
+      |> Enum.count()
       |> Integer.to_string(16)
       |> String.pad_leading(64, ["0"])
 
-    data = "0xfb367a9b" # `getRewardAmount` function signature
-    data = data <> String.pad_leading("60", 64, ["0"]) # offset to the `_stakingEpochs` array
-    data = data <> pool_staking_address # `_poolStakingAddress` parameter
-    data = data <> staker # `_staker` parameter
-    data = data <> staking_epochs_length # the length of `_stakingEpochs` array
-    data = data <> staking_epochs_joint # encoded `_stakingEpochs` array
+    # `getRewardAmount` function signature
+    function_signature = "0xfb367a9b"
+    # offset to the `_stakingEpochs` array
+    function_signature_with_offset = function_signature <> String.pad_leading("60", 64, ["0"])
+    # `_poolStakingAddress` parameter
+    function_with_param_1 = function_signature_with_offset <> pool_staking_address
+    # `_staker` parameter
+    function_with_param1_param2 = function_with_param_1 <> staker
+    # the length of `_stakingEpochs` array
+    function_with_param_1_length_param2 = function_with_param1_param2 <> staking_epochs_length
+    # encoded `_stakingEpochs` array
+    data = function_with_param_1_length_param2 <> staking_epochs_joint
 
-    result = EthereumJSONRPC.request(%{
+    request = %{
       id: 0,
       method: "eth_call",
-      params: [%{
-        to: staking_contract_address,
-        data: data
-      }]
-    }) |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+      params: [
+        %{
+          to: staking_contract_address,
+          data: data
+        }
+      ]
+    }
+
+    result =
+      request
+      |> EthereumJSONRPC.request()
+      |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
 
     case result do
       {:ok, response} ->
         response = String.replace_leading(response, "0x", "")
+
         if String.length(response) != 64 * 2 do
           {:error, "Invalid getRewardAmount response."}
         else
@@ -87,6 +102,7 @@ defmodule Explorer.Staking.ContractReader do
           native_reward_sum = String.to_integer(native_reward_sum, 16)
           {:ok, %{token_reward_sum: token_reward_sum, native_reward_sum: native_reward_sum}}
         end
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -98,12 +114,12 @@ defmodule Explorer.Staking.ContractReader do
   #   address _poolStakingAddress
   # ) public;
   def claim_reward_estimate_gas(
-    staking_contract_address,
-    staking_epochs,
-    pool_staking_address,
-    staker,
-    json_rpc_named_arguments
-  ) do
+        staking_contract_address,
+        staking_epochs,
+        pool_staking_address,
+        staker,
+        json_rpc_named_arguments
+      ) do
     staking_epochs_joint =
       staking_epochs
       |> Enum.map(fn epoch ->
@@ -116,34 +132,50 @@ defmodule Explorer.Staking.ContractReader do
     pool_staking_address = address_pad_to_64(pool_staking_address)
 
     staking_epochs_length =
-      Enum.count(staking_epochs)
+      staking_epochs
+      |> Enum.count()
       |> Integer.to_string(16)
       |> String.pad_leading(64, ["0"])
 
-    data = "0x3ea15d62" # `claimReward` function signature
-    data = data <> String.pad_leading("40", 64, ["0"]) # offset to the `_stakingEpochs` array
-    data = data <> pool_staking_address # `_poolStakingAddress` parameter
-    data = data <> staking_epochs_length # the length of `_stakingEpochs` array
-    data = data <> staking_epochs_joint # encoded `_stakingEpochs` array
+    # `claimReward` function signature
+    function_signature = "0x3ea15d62"
+    # offset to the `_stakingEpochs` array
+    function_signature_with_offset = function_signature <> String.pad_leading("40", 64, ["0"])
+    # `_poolStakingAddress` parameter
+    function_with_param_1 = function_signature_with_offset <> pool_staking_address
+    # the length of `_stakingEpochs` array
+    function_with_param_1_length_param2 = function_with_param_1 <> staking_epochs_length
+    # encoded `_stakingEpochs` array
+    data = function_with_param_1_length_param2 <> staking_epochs_joint
 
-    result = EthereumJSONRPC.request(%{
+    request = %{
       id: 0,
       method: "eth_estimateGas",
-      params: [%{
-        from: staker,
-        to: staking_contract_address,
-        gasPrice: "0x3B9ACA00", # 1 gwei
-        data: data
-      }]
-    }) |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+      params: [
+        %{
+          from: staker,
+          to: staking_contract_address,
+          # 1 gwei
+          gasPrice: "0x3B9ACA00",
+          data: data
+        }
+      ]
+    }
+
+    result =
+      request
+      |> EthereumJSONRPC.request()
+      |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
 
     case result do
       {:ok, response} ->
-        estimate = 
+        estimate =
           response
           |> String.replace_leading("0x", "")
           |> String.to_integer(16)
+
         {:ok, estimate}
+
       {:error, reason} ->
         {:error, reason}
     end
