@@ -138,8 +138,8 @@ if ($stakesPage.length) {
 
   channel.on('staking_update', msg => {
     const state = store.getState()
-    const firstMsg = (state.currentBlockNumber == 0)
-    const accountChanged = (msg.account != state.account)
+    const firstMsg = (state.currentBlockNumber === 0)
+    const accountChanged = (msg.account !== state.account)
 
     store.dispatch({ type: 'BLOCK_CREATED', currentBlockNumber: msg.block_number })
 
@@ -158,7 +158,7 @@ if ($stakesPage.length) {
     if (
       msg.staking_allowed !== state.stakingAllowed ||
       msg.epoch_number > state.lastEpochNumber ||
-      msg.validator_set_apply_block != state.validatorSetApplyBlock ||
+      msg.validator_set_apply_block !== state.validatorSetApplyBlock ||
       (state.refreshInterval && msg.block_number >= state.refreshBlockNumber + state.refreshInterval)
     ) {
       if (firstMsg || accountChanged) {
@@ -259,42 +259,17 @@ if ($stakesPage.length) {
   initialize(store)
 }
 
-function hideCurrentModal() {
+function hideCurrentModal () {
   const $modal = currentModal()
   if ($modal) $modal.modal('hide')
 }
 
-function initialize(store) {
+function initialize (store) {
   if (window.ethereum) {
     const web3 = new Web3(window.ethereum)
     store.dispatch({ type: 'WEB3_DETECTED', web3 })
 
-    let timeoutId
-
-    checkNetworkAndAccount()
-
-    async function checkNetworkAndAccount() {
-      const networkId = await web3.eth.net.getId()
-      const state = store.getState()
-      let refresh = false
-
-      if (!state.network || (networkId !== state.network.id)) {
-        setNetwork(networkId, store)
-        refresh = true
-      }
-
-      const accounts = await web3.eth.getAccounts()
-      const account = accounts[0] ? accounts[0].toLowerCase() : null
-
-      if (account !== state.account) {
-        setAccount(account, store)
-      } else if (refresh) {
-        refreshPageWrapper(store)
-      }
-
-      clearTimeout(timeoutId)
-      timeoutId = setTimeout(checkNetworkAndAccount, 100)
-    }
+    checkNetworkAndAccount(store, web3)
 
     $stakesTop.on('click', '[data-selector="login-button"]', loginByMetamask)
   } else {
@@ -302,7 +277,31 @@ function initialize(store) {
   }
 }
 
-async function loginByMetamask() {
+async function checkNetworkAndAccount (store, web3) {
+  let timeoutId
+  const networkId = await web3.eth.net.getId()
+  const state = store.getState()
+  let refresh = false
+
+  if (!state.network || (networkId !== state.network.id)) {
+    setNetwork(networkId, store)
+    refresh = true
+  }
+
+  const accounts = await web3.eth.getAccounts()
+  const account = accounts[0] ? accounts[0].toLowerCase() : null
+
+  if (account !== state.account) {
+    setAccount(account, store)
+  } else if (refresh) {
+    refreshPageWrapper(store)
+  }
+
+  clearTimeout(timeoutId)
+  timeoutId = setTimeout(checkNetworkAndAccount, 100)
+}
+
+async function loginByMetamask () {
   event.stopPropagation()
   event.preventDefault()
   try {
@@ -313,7 +312,7 @@ async function loginByMetamask() {
   }
 }
 
-function refreshPageWrapper(store) {
+function refreshPageWrapper (store) {
   let currentBlockNumber = store.getState().currentBlockNumber
   if (!currentBlockNumber) {
     currentBlockNumber = $('[data-block-number]', $stakesTop).data('blockNumber')
@@ -327,7 +326,7 @@ function refreshPageWrapper(store) {
   $refreshInformer.hide()
 }
 
-function reloadPoolList(msg, store) {
+function reloadPoolList (msg, store) {
   store.dispatch({
     type: 'RECEIVED_UPDATE',
     lastEpochNumber: msg.epoch_number,
@@ -340,12 +339,12 @@ function reloadPoolList(msg, store) {
   }
 }
 
-function resetFilterMy(store) {
-  $stakesPage.find('[pool-filter-my]').prop('checked', false);
+function resetFilterMy (store) {
+  $stakesPage.find('[pool-filter-my]').prop('checked', false)
   store.dispatch({ type: 'FILTERS_UPDATED', filterMy: false })
 }
 
-function setAccount(account, store) {
+function setAccount (account, store) {
   store.dispatch({ type: 'ACCOUNT_UPDATED', account })
   if (!account) {
     resetFilterMy(store)
@@ -367,7 +366,7 @@ function setAccount(account, store) {
   })
 }
 
-function setNetwork(networkId, store) {
+function setNetwork (networkId, store) {
   hideCurrentModal()
 
   let network = {
@@ -384,12 +383,12 @@ function setNetwork(networkId, store) {
   store.dispatch({ type: 'NETWORK_UPDATED', network })
 }
 
-function updateFilters(store, filterType) {
-  const filterBanned = $stakesPage.find('[pool-filter-banned]');
-  const filterMy = $stakesPage.find('[pool-filter-my]');
+function updateFilters (store, filterType) {
+  const filterBanned = $stakesPage.find('[pool-filter-banned]')
+  const filterMy = $stakesPage.find('[pool-filter-my]')
   const state = store.getState()
-  if (filterType == 'my' && !state.account) {
-    filterMy.prop('checked', false);
+  if (filterType === 'my' && !state.account) {
+    filterMy.prop('checked', false)
     openWarningModal('Unauthorized', 'Please login with MetaMask')
     return
   }
