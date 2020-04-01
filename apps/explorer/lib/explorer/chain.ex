@@ -4629,25 +4629,32 @@ defmodule Explorer.Chain do
   end
 
   def staking_pool_delegators(staking_address_hash, show_snapshotted_data) do
-    from(
-      d in StakingPoolsDelegator,
-      where:
-        d.staking_address_hash == ^staking_address_hash and
-        (d.is_active == true or ^show_snapshotted_data and d.snapshotted_stake_amount > 0 and d.is_active != true),
-      order_by:
-        [desc: d.stake_amount]
-    ) |> Repo.all()
+    query =
+      from(
+        d in StakingPoolsDelegator,
+        where:
+          d.staking_address_hash == ^staking_address_hash and
+            (d.is_active == true or (^show_snapshotted_data and d.snapshotted_stake_amount > 0 and d.is_active != true)),
+        order_by: [desc: d.stake_amount]
+      )
+
+    query
+    |> Repo.all()
   end
 
   def staking_pool_snapshotted_inactive_delegators_count(staking_address_hash) do
-    from(
-      d in StakingPoolsDelegator,
-      where:
-        d.staking_address_hash == ^staking_address_hash and
-        d.snapshotted_stake_amount > 0 and
-        d.is_active != true,
-      select: fragment("count(*)")
-    ) |> Repo.one()
+    query =
+      from(
+        d in StakingPoolsDelegator,
+        where:
+          d.staking_address_hash == ^staking_address_hash and
+            d.snapshotted_stake_amount > 0 and
+            d.is_active != true,
+        select: fragment("count(*)")
+      )
+
+    query
+    |> Repo.one()
   end
 
   def staking_pool_delegator(staking_address_hash, address_hash) do

@@ -226,7 +226,7 @@ defmodule Explorer.Chain.Import do
   defp validate_runner_options(runner, options) when is_map(options) do
     option_key = runner.option_key()
 
-    runner_specific_options = 
+    runner_specific_options =
       if Map.has_key?(Enum.into(runner.__info__(:functions), %{}), :runner_specific_options) do
         apply(runner, :runner_specific_options, [])
       else
@@ -257,8 +257,8 @@ defmodule Explorer.Chain.Import do
   @local_options ~w(on_conflict params with timeout)a
 
   defp validate_runner_options_known(runner_option_key, options, runner_specific_options) do
-    unknown_option_keys = Map.keys(options) -- @local_options
-    unknown_option_keys = unknown_option_keys -- runner_specific_options
+    base_unknown_option_keys = Map.keys(options) -- @local_options
+    unknown_option_keys = base_unknown_option_keys -- runner_specific_options
 
     if Enum.empty?(unknown_option_keys) do
       :ok
