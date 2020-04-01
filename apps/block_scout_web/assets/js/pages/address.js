@@ -70,8 +70,8 @@ export function reducer (state = initialState, action) {
   }
 }
 
-let fetchedTokenBalanceBlockNumber = 0;
-function loadTokenBalance(blockNumber) {
+let fetchedTokenBalanceBlockNumber = 0
+function loadTokenBalance (blockNumber) {
   if (blockNumber > fetchedTokenBalanceBlockNumber) {
     fetchedTokenBalanceBlockNumber = blockNumber
     setTimeout(loadTokenBalanceDropdown, 1000)
@@ -171,7 +171,7 @@ if ($addressDetailsPage.length) {
     msg: humps.camelizeKeys(msg)
   }))
   addressChannel.on('token_balance', (msg) => loadTokenBalance(
-   msg.block_number
+    msg.block_number
   ))
   addressChannel.on('transaction', (msg) => {
     store.dispatch({
