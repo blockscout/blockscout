@@ -974,7 +974,22 @@ defmodule Explorer.Chain do
     query =
       from(token in Token,
         where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
-        limit: 5
+        limit: 5,
+        select: %{contract_address_hash: token.contract_address_hash, symbol: token.symbol, name: token.name}
+      )
+
+    Repo.all(query)
+  end
+
+  @spec search_contract(String.t()) :: [SmartContract.t()]
+  def search_contract(word) do
+    term = String.replace(word, ~r/\W/u, "") <> ":*"
+
+    query =
+      from(smart_contract in SmartContract,
+        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
+        limit: 5,
+        select: %{contract_address_hash: smart_contract.address_hash, symbol: smart_contract.name}
       )
 
     Repo.all(query)
@@ -2367,7 +2382,7 @@ defmodule Explorer.Chain do
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> pending_transactions_query()
-    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
+    |> order_by([transaction], desc: transaction.hash, desc: transaction.inserted_at)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
@@ -4069,6 +4084,19 @@ defmodule Explorer.Chain do
       db_url
       |> String.split("/")
       |> Enum.take(-1)
+      |> Enum.at(0)
+    end
+  end
+
+  def extract_db_host(db_url) do
+    if db_url == nil do
+      ""
+    else
+      db_url
+      |> String.split("@")
+      |> Enum.take(-1)
+      |> Enum.at(0)
+      |> String.split(":")
       |> Enum.at(0)
     end
   end
