@@ -12,13 +12,13 @@ defmodule Explorer.Staking.StakeSnapshotting do
   alias Explorer.Staking.ContractReader
 
   def do_snapshotting(
-    %{contracts: contracts, abi: abi, ets_table_name: ets_table_name},
-    epoch_number,
-    cached_pool_staking_responses,
-    pools_mining_addresses,
-    mining_to_staking_address,
-    block_number
-  ) do
+        %{contracts: contracts, abi: abi, ets_table_name: ets_table_name},
+        epoch_number,
+        cached_pool_staking_responses,
+        pools_mining_addresses,
+        mining_to_staking_address,
+        block_number
+      ) do
     :ets.insert(ets_table_name, is_snapshotting: true)
 
     # get staking addresses for the pending validators
@@ -36,10 +36,18 @@ defmodule Explorer.Staking.StakeSnapshotting do
     # use `cached_pool_staking_responses` when possible
     pool_staking_responses =
       pool_staking_addresses
-      |> Enum.map(fn staking_address_hash -> 
+      |> Enum.map(fn staking_address_hash ->
         case Map.fetch(cached_pool_staking_responses, staking_address_hash) do
           {:ok, resp} ->
-            Map.merge(resp, ContractReader.perform_requests(snapshotted_pool_amounts_requests(staking_address_hash, block_number), contracts, abi))
+            Map.merge(
+              resp,
+              ContractReader.perform_requests(
+                snapshotted_pool_amounts_requests(staking_address_hash, block_number),
+                contracts,
+                abi
+              )
+            )
+
           :error ->
             ContractReader.perform_requests(
               ContractReader.active_delegators_request(staking_address_hash, block_number) ++
@@ -156,10 +164,14 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
     # perform SQL queries
     case Chain.import(%{
-      staking_pools: %{params: pool_entries, on_conflict: staking_pools_update(), clear_snapshotted_values: true},
-      staking_pools_delegators: %{params: delegator_entries, on_conflict: staking_pools_delegators_update(), clear_snapshotted_values: true},
-      timeout: :infinity
-    }) do
+           staking_pools: %{params: pool_entries, on_conflict: staking_pools_update(), clear_snapshotted_values: true},
+           staking_pools_delegators: %{
+             params: delegator_entries,
+             on_conflict: staking_pools_delegators_update(),
+             clear_snapshotted_values: true
+           },
+           timeout: :infinity
+         }) do
       {:ok, _} -> :ets.insert(ets_table_name, snapshotted_epoch_number: epoch_number)
       _ -> Logger.error("Cannot successfully finish snapshotting for the epoch #{epoch_number - 1}")
     end
@@ -172,7 +184,10 @@ defmodule Explorer.Staking.StakeSnapshotting do
   defp snapshotted_pool_amounts_requests(pool_staking_address, block_number) do
     [
       snapshotted_total_staked_amount: {:staking, "stakeAmountTotal", [pool_staking_address], block_number},
-      snapshotted_self_staked_amount: snapshotted_staker_amount_request(pool_staking_address, pool_staking_address, block_number)[:snapshotted_stake_amount]
+      snapshotted_self_staked_amount:
+        snapshotted_staker_amount_request(pool_staking_address, pool_staking_address, block_number)[
+          :snapshotted_stake_amount
+        ]
     ]
   end
 
