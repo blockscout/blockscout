@@ -57,22 +57,24 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
   def timeout, do: @timeout
 
   defp mark_as_deleted(repo, %{timeout: timeout} = options) do
-    clear_snapshotted_values = case Map.fetch(options, :clear_snapshotted_values) do
-      {:ok, v} -> v
-      :error -> false
-    end
+    clear_snapshotted_values =
+      case Map.fetch(options, :clear_snapshotted_values) do
+        {:ok, v} -> v
+        :error -> false
+      end
 
-    query = if clear_snapshotted_values do
-      from(
-        d in StakingPoolsDelegator,
-        update: [set: [snapshotted_reward_ratio: nil, snapshotted_stake_amount: nil]]
-      )
-    else
-      from(
-        d in StakingPoolsDelegator,
-        update: [set: [is_active: false, is_deleted: true]]
-      )
-    end
+    query =
+      if clear_snapshotted_values do
+        from(
+          d in StakingPoolsDelegator,
+          update: [set: [snapshotted_reward_ratio: nil, snapshotted_stake_amount: nil]]
+        )
+      else
+        from(
+          d in StakingPoolsDelegator,
+          update: [set: [is_active: false, is_deleted: true]]
+        )
+      end
 
     try do
       {_, result} = repo.update_all(query, [], timeout: timeout)

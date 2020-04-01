@@ -49,72 +49,74 @@ defmodule BlockScoutWeb.StakesController do
   # this is called when account in MetaMask is changed on client side
   # or when UI periodically reloads the pool list (e.g. once per 10 blocks)
   defp render_template(filter, conn, %{"type" => "JSON"} = params) do
-    {items, next_page_path} = if Map.has_key?(params, "filterMy") do
-      [paging_options: options] = paging_options(params)
+    {items, next_page_path} =
+      if Map.has_key?(params, "filterMy") do
+        [paging_options: options] = paging_options(params)
 
-      last_index =
-        params
-        |> Map.get("position", "0")
-        |> String.to_integer()
+        last_index =
+          params
+          |> Map.get("position", "0")
+          |> String.to_integer()
 
-      pools_plus_one =
-        Chain.staking_pools(
-          filter,
-          options,
-          unless params["account"] == "" do
-            params["account"]
-          end,
-          params["filterBanned"] == "true",
-          params["filterMy"] == "true"
-        )
-
-      {pools, next_page} = split_list_by_page(pools_plus_one)
-
-      next_page_path =
-        case next_page_params(next_page, pools, params) do
-          nil ->
-            nil
-
-          next_page_params ->
-            updated_page_params =
-              next_page_params
-              |> Map.delete("type")
-              |> Map.put("position", last_index + 1)
-
-            next_page_path(filter, conn, updated_page_params)
-        end
-
-      average_block_time = AverageBlockTime.average_block_time()
-      token = ContractState.get(:token, %Token{})
-      epoch_number = ContractState.get(:epoch_number, 0)
-      staking_allowed = ContractState.get(:staking_allowed, false)
-
-      items =
-        pools
-        |> Enum.with_index(last_index + 1)
-        |> Enum.map(fn {%{pool: pool, delegator: delegator}, index} ->
-          View.render_to_string(
-            StakesView,
-            "_rows.html",
-            token: token,
-            pool: pool,
-            delegator: delegator,
-            index: index,
-            average_block_time: average_block_time,
-            pools_type: filter,
-            buttons: %{
-              stake: staking_allowed and stake_allowed?(pool, delegator),
-              move: staking_allowed and move_allowed?(delegator),
-              withdraw: staking_allowed and withdraw_allowed?(delegator),
-              claim: staking_allowed and claim_allowed?(delegator, epoch_number)
-            }
+        pools_plus_one =
+          Chain.staking_pools(
+            filter,
+            options,
+            unless params["account"] == "" do
+              params["account"]
+            end,
+            params["filterBanned"] == "true",
+            params["filterMy"] == "true"
           )
-        end)
-      {items, next_page_path}
-    else
-      loading_item = View.render_to_string(StakesView, "_rows_loading.html", %{})
-      {[loading_item], nil}
-    end
+
+        {pools, next_page} = split_list_by_page(pools_plus_one)
+
+        next_page_path =
+          case next_page_params(next_page, pools, params) do
+            nil ->
+              nil
+
+            next_page_params ->
+              updated_page_params =
+                next_page_params
+                |> Map.delete("type")
+                |> Map.put("position", last_index + 1)
+
+              next_page_path(filter, conn, updated_page_params)
+          end
+
+        average_block_time = AverageBlockTime.average_block_time()
+        token = ContractState.get(:token, %Token{})
+        epoch_number = ContractState.get(:epoch_number, 0)
+        staking_allowed = ContractState.get(:staking_allowed, false)
+
+        items =
+          pools
+          |> Enum.with_index(last_index + 1)
+          |> Enum.map(fn {%{pool: pool, delegator: delegator}, index} ->
+            View.render_to_string(
+              StakesView,
+              "_rows.html",
+              token: token,
+              pool: pool,
+              delegator: delegator,
+              index: index,
+              average_block_time: average_block_time,
+              pools_type: filter,
+              buttons: %{
+                stake: staking_allowed and stake_allowed?(pool, delegator),
+                move: staking_allowed and move_allowed?(delegator),
+                withdraw: staking_allowed and withdraw_allowed?(delegator),
+                claim: staking_allowed and claim_allowed?(delegator, epoch_number)
+              }
+            )
+          end)
+
+        {items, next_page_path}
+      else
+        loading_item = View.render_to_string(StakesView, "_rows_loading.html", %{})
+        {[loading_item], nil}
+      end
 
     json(
       conn,
