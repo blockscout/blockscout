@@ -1,1 +1,1 @@
-query CELO_ACCOUNT($hash: String!) {celoAccount(hash: $hash) {accountType, lockedGold, url, address, group{address}}}
+query CELO_ACCOUNT($param0: String!) {celoAccount(hash: $param0) {accountType, lockedGold, url, address, group{address}}}

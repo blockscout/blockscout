@@ -1,3 +1,5 @@
+const fs = require('fs')
+const parse = require('csv-parse/lib/sync')
 
 export function loadInputData(filePath: string): Array<string> {
 
@@ -5,8 +7,8 @@ export function loadInputData(filePath: string): Array<string> {
 
     const contents = parse(fileContents, {delimiter: ',', columns: false, skip_empty_lines: true})
     let output = []
-    csvAddresses.map( (record) => {
-        output.push({hash: record[0]})
+    contents.map( (record) => {
+        output.push({param0: record[0]})
     })
     return output
 }

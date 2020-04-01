@@ -1,1 +1,1 @@
-query ADDRESS($hash: String!) {address(hash: $hash) { hash, celoAccount {accountType}, celoValidator{groupInfo{address}}, smartContract{name}}}
+query ADDRESS($param0: String!) {address(hash: $param0) { hash, celoAccount {accountType}, celoValidator{groupInfo{address}}, smartContract{name}}}

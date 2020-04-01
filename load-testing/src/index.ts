@@ -3,21 +3,18 @@ const path = require('path')
 const LoadTesting = require('easygraphql-load-tester')
 const { fileLoader } = require('merge-graphql-schemas')
 const parse = require('csv-parse/lib/sync')
-const loadInputData = require('./utils')
+const utils = require('./utils')
 
 const __rootpath = path.join(__dirname, '/../')
 const schema = fs.readFileSync(path.join(__rootpath, 'schema.gql'), 'utf8')
 console.log(path.join(__rootpath, '**/*.graphql'))
 const queries = fileLoader(path.join(__rootpath, 'queries/*.graphql'))
 
-// Configuration of ADDRESS test case
 
-const addressesSample = fs.readFileSync(path.join(__rootpath, '/input/addresses.csv'),'utf8')
-const csvAddresses = parse(addressesSample, {delimiter: ',', columns: false, skip_empty_lines: true})
-let inputAddresses = []
-csvAddresses.map( (record) => {
-    inputAddresses.push({hash: record[0]})
-})
+// Configuration of ADDRESS test case
+const inputAddresses = utils.loadInputData(path.join(__rootpath, '/input/addresses.csv'))
+const celoAccounts = utils.loadInputData(path.join(__rootpath, '/input/celo_accounts.csv'))
+
 
 
 
@@ -36,7 +33,8 @@ for (let i=0; i<NUM_BLOCK_ARGS; i++)    {
 
 const args = {
     SEARCH_BLOCK: searchBlocks,
-    ADDRESS: inputAddresses
+    ADDRESS: inputAddresses,
+    CELO_ACCOUNT: celoAccounts
 }
 
 
