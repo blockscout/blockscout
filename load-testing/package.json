@@ -1,5 +1,15 @@
 {
+  "name": "@celo/blockscout-load-testing",
+  "version": "0.0.1",
+  "description": "Blockscout GraphQL load testing",
+  "main": "index.js",
+  "author": "Celo",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/celo-org/blockscout/tree/master/packages/load-testing",
+  "repository": "https://github.com/celo-org/blockscout/tree/master/packages/load-testing",
   "scripts": {
+    "build": "tsc -b .",
+    "clean": "tsc -b . --clean",
     "load-testing": "artillery run artillery.yml"
   },
   "devDependencies": {
@@ -7,6 +17,7 @@
   },
   "dependencies": {
     "artillery": "^1.6.0",
+    "csv-parse": "^4.8.8",
     "graphql": "^14.6.0"
   }
 }

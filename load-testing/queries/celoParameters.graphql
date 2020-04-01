@@ -1,0 +1,1 @@
+query CELO_PARAMETERS {celoParameters{maxElectableValidators, minElectableValidators, numRegisteredValidators, totalLockedGold}}

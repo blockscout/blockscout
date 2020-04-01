@@ -3,7 +3,7 @@ config:
   phases:
     - duration: 5
       arrivalRate: 1
-  processor: './index.js'
+  processor: './lib/index.js'
 scenarios:
   - name: 'GraphQL Query load test'
     flow:

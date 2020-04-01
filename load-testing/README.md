@@ -7,13 +7,15 @@ npm install -g get-graphql-schema
 get-graphql-schema https://blockscout.net/graphiql > schema.graphql
 ``` 
 
-## Queries
+## Queries & Input data
 
-You can add new query files in the graphql folder. 
+You can add new query files in the `graphql` folder. 
+Also you can add new input parameters for those queries in the `input` folder.
 
 ## Running the tests
 
 ```bash
-npm run load-testing
+yarn build
+yarn load-testing
 ```
 
