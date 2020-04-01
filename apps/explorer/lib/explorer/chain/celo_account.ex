@@ -7,7 +7,7 @@ defmodule Explorer.Chain.CeloAccount do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Hash, Wei}
+  alias Explorer.Chain.{Address, CeloClaims, Hash, Wei}
 
   #    @type account_type :: %__MODULE__{ :regular | :validator | :group }
 
@@ -177,6 +177,8 @@ defmodule Explorer.Chain.CeloAccount do
       references: :hash,
       type: Hash.Address
     )
+
+    has_many(:celo_claims, CeloClaims, foreign_key: :address)
 
     timestamps(null: false, type: :utc_datetime_usec)
   end

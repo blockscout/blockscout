@@ -36,6 +36,7 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     CeloAccount,
+    CeloClaims,
     CeloParams,
     CeloValidator,
     CeloValidatorGroup,
@@ -918,6 +919,7 @@ defmodule Explorer.Chain do
             :celo_attestation_stats => :optional,
             :celo_delegator => :optional,
             :celo_signers => :optional,
+            :celo_claims => :optional,
             :celo_members => :optional,
             [{:celo_delegator, :celo_account}] => :optional,
             [{:celo_delegator, :celo_attestation_stats}] => :optional,
@@ -926,6 +928,7 @@ defmodule Explorer.Chain do
             [{:celo_delegator, :celo_validator, :signer}] => :optional,
             [{:celo_delegator, :account_address}] => :optional,
             [{:celo_signers, :signer_address}] => :optional,
+            [{:celo_claims, :account_address}] => :optional,
             [{:celo_members, :validator_address}] => :optional,
             [{:celo_voters, :voter_address}] => :optional,
             [{:celo_voted, :group_address}] => :optional,
@@ -3911,6 +3914,8 @@ defmodule Explorer.Chain do
         url: a.url,
         locked_gold: a.locked_gold,
         nonvoting_locked_gold: a.nonvoting_locked_gold,
+        #        domain: a.domain,
+        #        domain_verified: a.domain_verified,
         attestations_requested: stat.requested,
         attestations_fulfilled: stat.fulfilled,
         usd: a.usd
@@ -3938,6 +3943,8 @@ defmodule Explorer.Chain do
         locked_gold: a.locked_gold,
         nonvoting_locked_gold: a.nonvoting_locked_gold,
         usd: a.usd,
+        #        domain: a.domain,
+        #        domain_verified: a.domain_verified,
         accumulated_active: b.active,
         accumulated_rewards: b.reward,
         rewards_ratio: b.ratio,
@@ -3991,6 +3998,20 @@ defmodule Explorer.Chain do
       from(account in CeloVoters,
         where: account.group_address_hash == ^group_address,
         where: account.total > ^0
+      )
+
+    query
+    |> Repo.all()
+    |> case do
+      nil -> []
+      data -> data
+    end
+  end
+
+  def get_celo_claims(address) do
+    query =
+      from(claim in CeloClaims,
+        where: claim.address == ^address
       )
 
     query

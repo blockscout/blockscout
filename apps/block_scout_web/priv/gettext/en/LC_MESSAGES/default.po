@@ -1963,3 +1963,8 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:125
 msgid "Gateway Fee"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_celo/index.html.eex:41
+msgid "Domain"
+msgstr ""

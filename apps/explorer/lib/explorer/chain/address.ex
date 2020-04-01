@@ -14,6 +14,7 @@ defmodule Explorer.Chain.Address do
     Block,
     CeloAccount,
     CeloAttestationStats,
+    CeloClaims,
     CeloSigners,
     CeloValidator,
     CeloValidatorGroup,
@@ -101,6 +102,7 @@ defmodule Explorer.Chain.Address do
     has_many(:celo_members, CeloValidator, foreign_key: :group_address_hash)
     has_many(:celo_voters, CeloVoters, foreign_key: :group_address_hash)
     has_many(:celo_voted, CeloVoters, foreign_key: :voter_address_hash)
+    has_many(:celo_claims, CeloClaims, foreign_key: :address)
 
     has_one(
       :contracts_creation_internal_transaction,

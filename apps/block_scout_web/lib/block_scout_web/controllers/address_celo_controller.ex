@@ -1,5 +1,8 @@
 defmodule BlockScoutWeb.AddressCeloController do
   use BlockScoutWeb, :controller
+
+  require Logger
+
   import BlockScoutWeb.AddressController, only: [transaction_and_validation_count: 1]
 
   alias Explorer.{Chain, Market}
@@ -12,6 +15,8 @@ defmodule BlockScoutWeb.AddressCeloController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
          %CeloAccount{address: _} <- address.celo_account do
+      Logger.debug("Parsing Celo Address #{address_hash_string}")
+
       {transaction_count, validation_count} = transaction_and_validation_count(address_hash)
 
       render(

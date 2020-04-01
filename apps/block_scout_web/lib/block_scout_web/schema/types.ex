@@ -113,6 +113,8 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:usd, :wei)
     field(:name, :string)
     field(:url, :string)
+    #    field(:domain, :string)
+    #    field(:domain_verified, :boolean)
 
     field(:attestations_requested, :integer)
     field(:attestations_fulfilled, :integer)
@@ -144,6 +146,8 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:usd, :wei)
     field(:name, :string)
     field(:url, :string)
+    #    field(:domain, :string)
+    #    field(:domain_verified, :boolean)
 
     field(:rewards_ratio, :wei)
     field(:accumulated_rewards, :wei)
@@ -171,6 +175,16 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:num_registered_validators, :integer)
     field(:min_electable_validators, :integer)
     field(:max_electable_validators, :integer)
+  end
+
+  @desc """
+  Celo Claims
+  """
+  object :celo_claims do
+    field(:address, :address_hash)
+    field(:type, :string)
+    field(:element, :string)
+    field(:verified, :boolean)
   end
 
   @desc """
