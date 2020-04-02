@@ -1,0 +1,14 @@
+
+export LC_ALL=en_US.UTF-8
+export NETWORK="Celo"
+export NETWORK_ID="44786"
+export SUBNETWORK="Alfajores"
+export ETHEREUM_JSONRPC_VARIANT="geth"
+export ETHEREUM_JSONRPC_HTTP_URL="http://localhost:8545"
+export ETHEREUM_JSONRPC_TRACE_URL="http://localhost:8545"
+export ETHEREUM_JSONRPC_WS_URL="ws://localhost:8546"
+export COIN=GOLD
+export WS_SECRET="secret"
+export POSTGRES_PASSWORD=""
+export DATABASE_URL=postgresql://postgres:1234@localhost:5432/blockscout
+export SECRET_KEY_BASE=xxxx
