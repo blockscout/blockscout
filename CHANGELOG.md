@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- [#3064](https://github.com/poanetwork/blockscout/pull/3064) - Automatically define Block reward contract address in TokenBridge supply module
 - [#3061](https://github.com/poanetwork/blockscout/pull/3061) - Fix verification of contracts with error messages in require in parent contract
 
 ### Chore
