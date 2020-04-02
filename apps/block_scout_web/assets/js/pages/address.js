@@ -64,6 +64,8 @@ function loadTokenBalance (blockNumber) {
   if (blockNumber > fetchedTokenBalanceBlockNumber) {
     fetchedTokenBalanceBlockNumber = blockNumber
     setTimeout(loadTokenBalanceDropdown, 1000)
+  } else {
+    loadTokenBalanceDropdown()
   }
 }
 
