@@ -14,8 +14,7 @@ const queries = fileLoader(path.join(__rootpath, 'queries/*.graphql'))
 // Configuration of ADDRESS test case
 const inputAddresses = utils.loadInputData(path.join(__rootpath, '/input/addresses.csv'))
 const celoAccounts = utils.loadInputData(path.join(__rootpath, '/input/celo_accounts.csv'))
-
-
+const celoValidators = utils.loadInputData(path.join(__rootpath, '/input/celo_validators.csv'))
 
 
 // Configuration of SEARCH_BLOCK test case
@@ -34,7 +33,8 @@ for (let i=0; i<NUM_BLOCK_ARGS; i++)    {
 const args = {
     SEARCH_BLOCK: searchBlocks,
     ADDRESS: inputAddresses,
-    CELO_ACCOUNT: celoAccounts
+    CELO_ACCOUNT: celoAccounts,
+    CELO_VALIDATOR: celoValidators
 }
 
 
