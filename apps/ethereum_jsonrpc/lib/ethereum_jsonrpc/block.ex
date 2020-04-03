@@ -205,13 +205,13 @@ defmodule EthereumJSONRPC.Block do
           "stateRoot" => state_root,
           "timestamp" => timestamp,
           "totalDifficulty" => total_difficulty,
-          "transactionsRoot" => transactions_root,
+          "transactionsRoot" => transactions_root
         } = elixir
       ) do
     %{
       difficulty: Map.get(elixir, "difficulty", 0),
       extra_data: extra_data,
-      gas_limit: Map.get(elixir, "gasLimit", 20000000),
+      gas_limit: Map.get(elixir, "gasLimit", 20_000_000),
       gas_used: gas_used,
       hash: hash,
       logs_bloom: logs_bloom,
