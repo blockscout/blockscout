@@ -29,6 +29,8 @@ defmodule BlockScoutWeb.Schema do
 
   import_types(BlockScoutWeb.Schema.Types)
 
+  @complexity_multiplier 10
+
   node interface do
     resolve_type(fn
       %ExplorerChainInternalTransaction{}, _ ->
@@ -71,6 +73,7 @@ defmodule BlockScoutWeb.Schema do
     field :address, :address do
       arg(:hash, non_null(:address_hash))
       resolve(&Address.get_by/3)
+      complexity(fn %{hash: _hash}, child_complexity -> @complexity_multiplier * child_complexity end)
     end
 
     @desc "Gets the leaderboard"
@@ -82,24 +85,29 @@ defmodule BlockScoutWeb.Schema do
     field :celo_account, :celo_account do
       arg(:hash, non_null(:address_hash))
       resolve(&CeloAccount.get_by/3)
+      complexity(fn %{hash: _hash}, child_complexity -> @complexity_multiplier * child_complexity end)
     end
 
     @desc "Gets all the claims given a address hash."
     field :celo_claims, list_of(:celo_claims) do
       arg(:hash, non_null(:address_hash))
+      arg(:limit, :integer, default_value: 20)
       resolve(&CeloAccount.get_claims/3)
-    end
+      complexity(fn %{limit: limit}, child_complexity -> limit * child_complexity end)
+      end
 
     @desc "Gets a validator by address hash."
     field :celo_validator, :celo_validator do
       arg(:hash, non_null(:address_hash))
       resolve(&CeloValidator.get_by/3)
+      complexity(fn %{hash: _hash}, child_complexity -> @complexity_multiplier * child_complexity end)
     end
 
     @desc "Gets a validator group by address hash."
     field :celo_validator_group, :celo_validator_group do
       arg(:hash, non_null(:address_hash))
       resolve(&CeloValidatorGroup.get_by/3)
+      complexity(fn %{hash: _hash}, child_complexity -> @complexity_multiplier * child_complexity end)
     end
 
     @desc "Gets all validator groups."
@@ -123,6 +131,7 @@ defmodule BlockScoutWeb.Schema do
     field :block, :block do
       arg(:number, non_null(:integer))
       resolve(&Block.get_by/3)
+      complexity(fn %{number: _number}, child_complexity -> @complexity_multiplier * child_complexity end)
     end
 
     @desc "Gets latest block number."
@@ -157,6 +166,7 @@ defmodule BlockScoutWeb.Schema do
     field :transaction, :transaction do
       arg(:hash, non_null(:full_hash))
       resolve(&Transaction.get_by/3)
+      complexity(fn %{hash: _hash}, child_complexity -> @complexity_multiplier * child_complexity end)
     end
   end
 
