@@ -5,16 +5,20 @@ const { fileLoader } = require('merge-graphql-schemas')
 const parse = require('csv-parse/lib/sync')
 const utils = require('./utils')
 
+const ENV = 'alfajores'
+// const ENV = 'local'
 const __rootpath = path.join(__dirname, '/../')
+const __inputpath = path.join(__rootpath, '/input/', ENV)
+
 const schema = fs.readFileSync(path.join(__rootpath, 'schema.gql'), 'utf8')
 console.log(path.join(__rootpath, '**/*.graphql'))
 const queries = fileLoader(path.join(__rootpath, 'queries/*.graphql'))
 
 
 // Configuration of ADDRESS test case
-const inputAddresses = utils.loadInputData(path.join(__rootpath, '/input/addresses.csv'))
-const celoAccounts = utils.loadInputData(path.join(__rootpath, '/input/celo_accounts.csv'))
-const celoValidators = utils.loadInputData(path.join(__rootpath, '/input/celo_validators.csv'))
+const inputAddresses = utils.loadInputData(path.join(__inputpath, 'addresses.csv'))
+const celoAccounts = utils.loadInputData(path.join(__inputpath, 'celo_accounts.csv'))
+const celoValidators = utils.loadInputData(path.join(__inputpath, 'celo_validators.csv'))
 
 
 // Configuration of SEARCH_BLOCK test case

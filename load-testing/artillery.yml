@@ -1,8 +1,9 @@
 config:
-  target: 'https://baklava-blockscout.celo-testnet.org'
+#  target: 'https://baklava-blockscout.celo-testnet.org'
+  target: 'http://localhost:4000'
   phases:
-    - duration: 5
-      arrivalRate: 1
+    - duration: 30
+      arrivalRate: 50
   processor: './lib/index.js'
 scenarios:
   - name: 'GraphQL Query load test'
