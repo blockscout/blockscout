@@ -193,9 +193,7 @@ defmodule EthereumJSONRPC.Block do
   @spec elixir_to_params(elixir) :: params
   def elixir_to_params(
         %{
-          "difficulty" => difficulty,
           "extraData" => extra_data,
-          "gasLimit" => gas_limit,
           "gasUsed" => gas_used,
           "hash" => hash,
           "logsBloom" => logs_bloom,
@@ -203,19 +201,17 @@ defmodule EthereumJSONRPC.Block do
           "number" => number,
           "parentHash" => parent_hash,
           "receiptsRoot" => receipts_root,
-          "sha3Uncles" => sha3_uncles,
           "size" => size,
           "stateRoot" => state_root,
           "timestamp" => timestamp,
           "totalDifficulty" => total_difficulty,
           "transactionsRoot" => transactions_root,
-          "uncles" => uncles
         } = elixir
       ) do
     %{
-      difficulty: difficulty,
+      difficulty: Map.get(elixir, "difficulty", 0),
       extra_data: extra_data,
-      gas_limit: gas_limit,
+      gas_limit: Map.get(elixir, "gasLimit", 20000000),
       gas_used: gas_used,
       hash: hash,
       logs_bloom: logs_bloom,
@@ -225,13 +221,13 @@ defmodule EthereumJSONRPC.Block do
       number: number,
       parent_hash: parent_hash,
       receipts_root: receipts_root,
-      sha3_uncles: sha3_uncles,
+      sha3_uncles: Map.get(elixir, "sha3Uncles", "0x0"),
       size: size,
       state_root: state_root,
       timestamp: timestamp,
       total_difficulty: total_difficulty,
       transactions_root: transactions_root,
-      uncles: uncles
+      uncles: Map.get(elixir, "uncles", [])
     }
   end
 
@@ -371,6 +367,10 @@ defmodule EthereumJSONRPC.Block do
     |> Enum.map(fn {uncle_hash, index} -> %{"hash" => uncle_hash, "nephewHash" => nephew_hash, "index" => index} end)
   end
 
+  def elixir_to_uncles(%{"hash" => _nephew_hash}) do
+    []
+  end
+
   @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0` and the timestamps to `t:DateTime.t/0`
 
@@ -443,7 +443,7 @@ defmodule EthereumJSONRPC.Block do
   end
 
   # Size and totalDifficulty may be `nil` for uncle blocks
-  defp entry_to_elixir({key, nil}) when key in ~w(size totalDifficulty) do
+  defp entry_to_elixir({key, nil}) when key in ~w(size totalDifficulty difficulty gasLimit) do
     {key, nil}
   end
 
