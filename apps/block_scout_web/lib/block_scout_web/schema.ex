@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.Schema do
       arg(:limit, :integer, default_value: 20)
       resolve(&CeloAccount.get_claims/3)
       complexity(fn %{limit: limit}, child_complexity -> limit * child_complexity end)
-      end
+    end
 
     @desc "Gets a validator by address hash."
     field :celo_validator, :celo_validator do
