@@ -3934,7 +3934,7 @@ defmodule Explorer.Chain do
       g in CeloValidatorGroup,
       inner_join: a in assoc(g, :celo_account),
       inner_join: b in assoc(g, :celo_accumulated_rewards),
-#      left_join: c in assoc(g, :celo_claims),
+      #      left_join: c in assoc(g, :celo_claims),
       left_join: c in CeloClaims,
       inner_join: total_locked_gold in CeloParams,
       where: total_locked_gold.name == "totalLockedGold",
