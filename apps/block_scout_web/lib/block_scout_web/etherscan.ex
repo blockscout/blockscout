@@ -261,11 +261,19 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => "21265524714464"
   }
 
+  @stats_ethsupplyexchange_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => "101959776311500000000000000"
+  }
+
   @stats_ethsupply_example_value %{
     "status" => "1",
     "message" => "OK",
     "result" => "101959776311500000000000000"
   }
+
+  @stats_coinsupply_example_value 101_959_776.3115
 
   @stats_ethprice_example_value %{
     "status" => "1",
@@ -299,7 +307,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @block_eth_block_number_example_value %{
     "jsonrpc" => "2.0",
-    "result" => "767969",
+    "result" => "0xb33bf1",
     "id" => 1
   }
 
@@ -583,6 +591,12 @@ defmodule BlockScoutWeb.Etherscan do
     example: ~s("Some Token Name")
   }
 
+  @token_id_type %{
+    type: "integer",
+    definition: "id of token",
+    example: ~s("0")
+  }
+
   @token_symbol_type %{
     type: "string",
     definition: "Trading symbol of the token.",
@@ -713,11 +727,6 @@ defmodule BlockScoutWeb.Etherscan do
         type: "timestamp",
         definition: "When the block was collated.",
         example: ~s("1480072029")
-      },
-      blockReward: %{
-        type: "block reward",
-        definition: "The reward given to the miner of a block.",
-        example: ~s("5003251945421042780")
       }
     }
   }
@@ -751,6 +760,7 @@ defmodule BlockScoutWeb.Etherscan do
         example: ~s("663046792267785498951364")
       },
       tokenName: @token_name_type,
+      tokenID: @token_id_type,
       tokenSymbol: @token_symbol_type,
       tokenDecimal: @token_decimal_type,
       transactionIndex: @transaction_index_type,
@@ -1194,7 +1204,7 @@ defmodule BlockScoutWeb.Etherscan do
         key: "sort",
         type: "string",
         description:
-          "A string representing the order by block number direction. Defaults to ascending order. Available values: asc, desc"
+          "A string representing the order by block number direction. Defaults to descending order. Available values: asc, desc"
       },
       %{
         key: "startblock",
@@ -1777,9 +1787,35 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @stats_ethsupplyexchange_action %{
+    name: "ethsupplyexchange",
+    description: "Get total supply in Wei from exchange.",
+    required_params: [],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@stats_ethsupplyexchange_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "integer",
+              description: "The total supply.",
+              example: ~s("101959776311500000000000000")
+            }
+          }
+        }
+      }
+    ]
+  }
+
   @stats_ethsupply_action %{
     name: "ethsupply",
-    description: "Get total supply in Wei.",
+    description: "Get total supply in Wei from DB.",
     required_params: [],
     optional_params: [],
     responses: [
@@ -1794,8 +1830,32 @@ defmodule BlockScoutWeb.Etherscan do
             message: @message_type,
             result: %{
               type: "integer",
-              description: "The total supply.",
+              description: "The total supply in Wei from DB.",
               example: ~s("101959776311500000000000000")
+            }
+          }
+        }
+      }
+    ]
+  }
+
+  @stats_coinsupply_action %{
+    name: "coinsupply",
+    description: "Get total coin supply from DB minus burnt number.",
+    required_params: [],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@stats_coinsupply_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            result: %{
+              type: "integer",
+              description: "The total supply from DB minus burnt number in coin dimension.",
+              example: 101_959_776.3115
             }
           }
         }
@@ -1951,7 +2011,24 @@ defmodule BlockScoutWeb.Etherscan do
 
   @contract_verify_action %{
     name: "verify",
-    description: "Verify a contract with its source code and contract creation information.",
+    description: """
+    Verify a contract with its source code and contract creation information.
+    <br/>
+    <br/>
+    <p class="api-doc-list-item-text">curl POST example:</p>
+    <br/>
+    <div class='tab-content'>
+    <div class='tab-pane fade show active'>
+    <div class="tile tile-muted p-1">
+    <div class="m-2">
+    curl -d '{"addressHash":"0xd6984e092b51337032cf0300c7291e4839be37e1","compilerVersion":"v0.5.4+commit.9549d8ff",
+    "contractSourceCode":"pragma solidity ^0.5.4;\n","name":"Test","optimization":false}'
+    -H "Content-Type: application/json" -X POST  "https://blockscout.com/eth/kovan/api?module=contract&action=verify"
+    </pre>
+    </div>
+    </div>
+    </div>
+    """,
     required_params: [
       %{
         key: "addressHash",
@@ -2290,7 +2367,9 @@ defmodule BlockScoutWeb.Etherscan do
     name: "stats",
     actions: [
       @stats_tokensupply_action,
+      @stats_ethsupplyexchange_action,
       @stats_ethsupply_action,
+      @stats_coinsupply_action,
       @stats_ethprice_action
     ]
   }

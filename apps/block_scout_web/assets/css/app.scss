@@ -16,6 +16,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 
 // Bootstrap Core CSS
 @import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
 @import "node_modules/bootstrap/scss/mixins";
 
 @import "theme/variables";
@@ -60,7 +61,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 // Custom SCSS
 @import "layout";
 @import "typography";
-@import "images-preload";
 @import "code";
 @import "helpers";
 @import "elements";
@@ -100,6 +100,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/form";
 @import "components/btn_copy";
 @import "components/btn_qr";
+@import "components/btn_contract";
 @import "components/btn_address_card";
 @import "components/btn_dropdown_line";
 @import "components/transaction";
@@ -109,10 +110,12 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/log-search";
 @import "components/radio";
 @import "components/modal_variables";
-@import "components/network-selector";
 @import "components/new_smart_contract";
 @import "components/radio_big";
 @import "components/btn_no_border";
+@import "components/custom_tooltips_block_details";
+@import "components/_erc721_token_image_container";
+@import "components/_inventory_token_instance_image_container";
 
 @import "theme/dark-theme";
 

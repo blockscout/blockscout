@@ -188,31 +188,6 @@ defmodule Explorer.Chain.TokenTransferTest do
       assert Enum.map(results, & &1.token_id) == [last_owner.token_id]
       assert Enum.map(results, & &1.to_address_hash) == [last_owner.to_address_hash]
     end
-
-    test "won't return tokens that aren't uniques" do
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address, type: "ERC-20")
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(insert(:block, number: 1))
-
-      insert(
-        :token_transfer,
-        to_address: build(:address),
-        transaction: transaction,
-        token_contract_address: token_contract_address,
-        token: token
-      )
-
-      results =
-        token_contract_address.hash
-        |> TokenTransfer.address_to_unique_tokens()
-        |> Repo.all()
-
-      assert results == []
-    end
   end
 
   describe "where_any_address_fields_match/3" do

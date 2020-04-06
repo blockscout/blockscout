@@ -5,7 +5,7 @@ defmodule Indexer.Supervisor do
 
   use Supervisor
 
-  alias Indexer.Block
+  alias Indexer.{Block, PendingOpsCleaner}
   alias Indexer.Block.{Catchup, Realtime}
 
   alias Indexer.Fetcher.{
@@ -19,6 +19,7 @@ defmodule Indexer.Supervisor do
     StakingPools,
     Token,
     TokenBalance,
+    TokenInstance,
     TokenUpdater,
     UncleBlock
   }
@@ -72,8 +73,6 @@ defmodule Indexer.Supervisor do
       subscribe_named_arguments: subscribe_named_arguments
     } = named_arguments
 
-    metadata_updater_inverval = Application.get_env(:indexer, :metadata_updater_seconds_interval)
-
     block_fetcher =
       named_arguments
       |> Map.drop(~w(block_interval blocks_concurrency memory_monitor subscribe_named_arguments realtime_overrides)a)
@@ -111,23 +110,27 @@ defmodule Indexer.Supervisor do
         {CoinBalance.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {TokenInstance.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ContractCode.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {TokenBalance.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {ReplacedTransaction.Supervisor, [[memory_monitor: memory_monitor]]},
         {StakingPools.Supervisor, [[memory_monitor: memory_monitor]]},
 
         # Out-of-band fetchers
         {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
-        {TokenUpdater.Supervisor, [%{update_interval: metadata_updater_inverval}]},
 
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},
         {UnclesWithoutIndex.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {BlocksTransactionsMismatch.Supervisor,
-         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]}
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {PendingOpsCleaner, [[], []]}
       ],
       strategy: :one_for_one
     )

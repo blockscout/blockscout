@@ -3,42 +3,25 @@ defmodule Explorer.Chain.Cache.NetVersion do
   Caches chain version.
   """
 
-  @cache_name :net_version
-  @key :version
+  require Logger
 
-  @spec version() :: non_neg_integer() | {:error, any()}
-  def version do
-    cached_value = fetch_from_cache()
+  use Explorer.Chain.MapCache,
+    name: :net_version,
+    key: :version
 
-    if is_nil(cached_value) do
-      fetch_from_node()
-    else
-      cached_value
-    end
-  end
-
-  def cache_name do
-    @cache_name
-  end
-
-  defp fetch_from_cache do
-    ConCache.get(@cache_name, @key)
-  end
-
-  defp cache_value(value) do
-    ConCache.put(@cache_name, @key, value)
-  end
-
-  defp fetch_from_node do
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-    case EthereumJSONRPC.fetch_net_version(json_rpc_named_arguments) do
+  defp handle_fallback(:version) do
+    case EthereumJSONRPC.fetch_net_version(Application.get_env(:explorer, :json_rpc_named_arguments)) do
       {:ok, value} ->
-        cache_value(value)
-        value
+        {:update, value}
 
-      other ->
-        other
+      {:error, reason} ->
+        Logger.debug([
+          "Coudn't fetch net_version, reason: #{inspect(reason)}"
+        ])
+
+        {:return, nil}
     end
   end
+
+  defp handle_fallback(_key), do: {:return, nil}
 end

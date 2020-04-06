@@ -10,10 +10,9 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
-  alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-  alias Explorer.Chain.Cache.{BlockNumber, Transactions}
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
 
   alias Indexer.Fetcher.{
@@ -25,6 +24,7 @@ defmodule Indexer.Block.Fetcher do
     StakingPools,
     Token,
     TokenBalance,
+    TokenInstance,
     UncleBlock
   }
 
@@ -70,7 +70,6 @@ defmodule Indexer.Block.Fetcher do
 
   @receipts_batch_size 250
   @receipts_concurrency 10
-  @geth_block_limit 128
 
   @doc false
   def default_receipts_batch_size, do: @receipts_batch_size
@@ -175,7 +174,9 @@ defmodule Indexer.Block.Fetcher do
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
-      update_transactions_cache(inserted[:transactions])
+      update_transactions_cache(inserted[:transactions], inserted[:fork_transactions])
+      update_addresses_cache(inserted[:addresses])
+      update_uncles_cache(inserted[:block_second_degree_relations])
       result
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
@@ -183,17 +184,28 @@ defmodule Indexer.Block.Fetcher do
     end
   end
 
-  defp update_block_cache(blocks) do
-    max_block = Enum.max_by(blocks, fn block -> block.number end)
-    min_block = Enum.min_by(blocks, fn block -> block.number end)
+  defp update_block_cache([]), do: :ok
 
-    BlockNumber.update(max_block.number)
-    BlockNumber.update(min_block.number)
+  defp update_block_cache(blocks) when is_list(blocks) do
+    {min_block, max_block} = Enum.min_max_by(blocks, & &1.number)
+
+    BlockNumber.update_all(max_block.number)
+    BlockNumber.update_all(min_block.number)
     BlocksCache.update(blocks)
   end
 
-  defp update_transactions_cache(transactions) do
+  defp update_block_cache(_), do: :ok
+
+  defp update_transactions_cache(transactions, forked_transactions) do
     Transactions.update(transactions)
+    PendingTransactions.update_pending(transactions)
+    PendingTransactions.update_pending(forked_transactions)
+  end
+
+  defp update_addresses_cache(addresses), do: Accounts.drop(addresses)
+
+  defp update_uncles_cache(updated_relations) do
+    Uncles.update_from_second_degree_relations(updated_relations)
   end
 
   def import(
@@ -215,6 +227,12 @@ defmodule Indexer.Block.Fetcher do
 
     callback_module.import(state, options_with_broadcast)
   end
+
+  def async_import_token_instances(%{token_transfers: token_transfers}) do
+    TokenInstance.async_fetch(token_transfers)
+  end
+
+  def async_import_token_instances(_), do: :ok
 
   def async_import_block_rewards([]), do: :ok
 
@@ -244,13 +262,9 @@ defmodule Indexer.Block.Fetcher do
         block_number: block_number,
         hash: hash,
         created_contract_address_hash: %Hash{} = created_contract_address_hash,
-        created_contract_code_indexed_at: nil,
-        internal_transactions_indexed_at: nil
+        created_contract_code_indexed_at: nil
       } ->
         [%{block_number: block_number, hash: hash, created_contract_address_hash: created_contract_address_hash}]
-
-      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
-        []
 
       %Transaction{created_contract_address_hash: nil} ->
         []
@@ -260,30 +274,13 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_created_contract_codes(_), do: :ok
 
-  def async_import_internal_transactions(%{blocks: blocks}, EthereumJSONRPC.Parity) do
+  def async_import_internal_transactions(%{blocks: blocks}) do
     blocks
-    |> Enum.map(fn %Block{number: block_number} -> %{number: block_number} end)
-    |> InternalTransaction.async_block_fetch(10_000)
-  end
-
-  def async_import_internal_transactions(%{transactions: transactions}, EthereumJSONRPC.Geth) do
-    {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
-
-    transactions
-    |> Enum.flat_map(fn
-      %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
-        [%{block_number: block_number, index: index, hash: hash}]
-
-      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
-        []
-    end)
-    |> Enum.filter(fn %{block_number: block_number} ->
-      max_block_number - block_number < @geth_block_limit
-    end)
+    |> Enum.map(fn %Block{number: block_number} -> block_number end)
     |> InternalTransaction.async_fetch(10_000)
   end
 
-  def async_import_internal_transactions(_, _), do: :ok
+  def async_import_internal_transactions(_), do: :ok
 
   def async_import_tokens(%{tokens: tokens}) do
     tokens

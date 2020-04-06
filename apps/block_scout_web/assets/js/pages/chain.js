@@ -7,13 +7,15 @@ import map from 'lodash/map'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
+import { updateAllCalculatedUsdValues, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { batchChannel } from '../lib/utils'
 import listMorph from '../lib/list_morph'
 import { createMarketHistoryChart } from '../lib/history_chart'
+import '../app'
 
 const BATCH_THRESHOLD = 6
+const BLOCKS_PER_PAGE = 4
 
 export const initialState = {
   addressCount: null,
@@ -46,11 +48,17 @@ function baseReducer (state = initialState, action) {
     }
     case 'RECEIVED_NEW_BLOCK': {
       if (!state.blocks.length || state.blocks[0].blockNumber < action.msg.blockNumber) {
+        let pastBlocks
+        if (state.blocks.length < BLOCKS_PER_PAGE) {
+          pastBlocks = state.blocks
+        } else {
+          pastBlocks = state.blocks.slice(0, -1)
+        }
         return Object.assign({}, state, {
           averageBlockTime: action.msg.averageBlockTime,
           blocks: [
             action.msg,
-            ...state.blocks.slice(0, -1)
+            ...pastBlocks
           ],
           blockCount: action.msg.blockNumber + 1
         })
@@ -68,10 +76,10 @@ function baseReducer (state = initialState, action) {
       return Object.assign({}, state, { blocksLoading: false })
     }
     case 'BLOCKS_FETCHED': {
-      return Object.assign({}, state, { blocks: [...action.msg.blocks] })
+      return Object.assign({}, state, { blocks: [...action.msg.blocks], blocksLoading: false })
     }
     case 'BLOCKS_REQUEST_ERROR': {
-      return Object.assign({}, state, { blocksError: true })
+      return Object.assign({}, state, { blocksError: true, blocksLoading: false })
     }
     case 'RECEIVED_NEW_EXCHANGE_RATE': {
       return Object.assign({}, state, {
@@ -89,7 +97,16 @@ function baseReducer (state = initialState, action) {
         return Object.assign({}, state, { transactionCount })
       }
 
-      if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
+      const transactionsLength = state.transactions.length + action.msgs.length
+      if (transactionsLength < BATCH_THRESHOLD) {
+        return Object.assign({}, state, {
+          transactions: [
+            ...action.msgs.reverse(),
+            ...state.transactions
+          ],
+          transactionCount
+        })
+      } else if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
           transactions: [
             ...action.msgs.reverse(),
@@ -146,9 +163,15 @@ function withMissingBlocks (reducer) {
 
 let chart
 const elements = {
+<<<<<<< HEAD
   '[data-chart="historyChart"]': {
     load ($el) {
       chart = createMarketHistoryChart($el[0])
+=======
+  '[data-chart="marketHistoryChart"]': {
+    load () {
+      chart = window.dashboardChart
+>>>>>>> origin/master
     },
     render ($el, state, oldState) {
       if (chart && !(oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) && state.availableSupply) {
@@ -280,26 +303,31 @@ if ($chainDetailsPage.length) {
   loadBlocks(store)
   bindBlockErrorMessage(store)
 
-  exchangeRateChannel.on('new_rate', (msg) => store.dispatch({
-    type: 'RECEIVED_NEW_EXCHANGE_RATE',
-    msg: humps.camelizeKeys(msg)
-  }))
+  const exchangeRateChannel = socket.channel('exchange_rate:new_rate')
+  exchangeRateChannel.join()
+  exchangeRateChannel.on('new_rate', (msg) => {
+    updateAllCalculatedUsdValues(humps.camelizeKeys(msg).exchangeRate.usdValue)
+    store.dispatch({
+      type: 'RECEIVED_NEW_EXCHANGE_RATE',
+      msg: humps.camelizeKeys(msg)
+    })
+  })
 
-  const addressesChannel = socket.channel(`addresses:new_address`)
+  const addressesChannel = socket.channel('addresses:new_address')
   addressesChannel.join()
   addressesChannel.on('count', msg => store.dispatch({
     type: 'RECEIVED_NEW_ADDRESS_COUNT',
     msg: humps.camelizeKeys(msg)
   }))
 
-  const blocksChannel = socket.channel(`blocks:new_block`)
+  const blocksChannel = socket.channel('blocks:new_block')
   blocksChannel.join()
   blocksChannel.on('new_block', msg => store.dispatch({
     type: 'RECEIVED_NEW_BLOCK',
     msg: humps.camelizeKeys(msg)
   }))
 
-  const transactionsChannel = socket.channel(`transactions:new_transaction`)
+  const transactionsChannel = socket.channel('transactions:new_transaction')
   transactionsChannel.join()
   transactionsChannel.on('transaction', batchChannel((msgs) => store.dispatch({
     type: 'RECEIVED_NEW_TRANSACTION_BATCH',
@@ -316,11 +344,11 @@ if ($chainDetailsPage.length) {
 
 function loadTransactions (store) {
   const path = store.getState().transactionsPath
-  store.dispatch({type: 'START_TRANSACTIONS_FETCH'})
+  store.dispatch({ type: 'START_TRANSACTIONS_FETCH' })
   $.getJSON(path)
-    .done(response => store.dispatch({type: 'TRANSACTIONS_FETCHED', msg: humps.camelizeKeys(response)}))
-    .fail(() => store.dispatch({type: 'TRANSACTIONS_FETCH_ERROR'}))
-    .always(() => store.dispatch({type: 'FINISH_TRANSACTIONS_FETCH'}))
+    .done(response => store.dispatch({ type: 'TRANSACTIONS_FETCHED', msg: humps.camelizeKeys(response) }))
+    .fail(() => store.dispatch({ type: 'TRANSACTIONS_FETCH_ERROR' }))
+    .always(() => store.dispatch({ type: 'FINISH_TRANSACTIONS_FETCH' }))
 }
 
 function bindTransactionErrorMessage (store) {
@@ -353,14 +381,14 @@ export function placeHolderBlock (blockNumber) {
 function loadBlocks (store) {
   const url = store.getState().blocksPath
 
-  store.dispatch({type: 'START_BLOCKS_FETCH'})
+  store.dispatch({ type: 'START_BLOCKS_FETCH' })
 
   $.getJSON(url)
     .done(response => {
-      store.dispatch({type: 'BLOCKS_FETCHED', msg: humps.camelizeKeys(response)})
+      store.dispatch({ type: 'BLOCKS_FETCHED', msg: humps.camelizeKeys(response) })
     })
-    .fail(() => store.dispatch({type: 'BLOCKS_REQUEST_ERROR'}))
-    .always(() => store.dispatch({type: 'BLOCKS_FINISH_REQUEST'}))
+    .fail(() => store.dispatch({ type: 'BLOCKS_REQUEST_ERROR' }))
+    .always(() => store.dispatch({ type: 'BLOCKS_FINISH_REQUEST' }))
 }
 
 function bindBlockErrorMessage (store) {

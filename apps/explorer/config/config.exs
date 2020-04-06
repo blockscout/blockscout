@@ -12,10 +12,15 @@ config :explorer,
   token_functions_reader_max_retries: 3,
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
-      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,default",
+      "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,default",
   include_uncles_in_average_block_time:
-    if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "false", do: false, else: true),
-  healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5)
+    if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
+  healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5),
+  realtime_events_sender:
+    if(System.get_env("DISABLE_WEBAPP") != "true",
+      do: Explorer.Chain.Events.SimpleSender,
+      else: Explorer.Chain.Events.DBSender
+    )
 
 average_block_period =
   case Integer.parse(System.get_env("AVERAGE_BLOCK_CACHE_PERIOD", "")) do
@@ -27,12 +32,42 @@ config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
   period: average_block_period
 
-config :explorer, Explorer.ChainSpec.GenesisData, enabled: true, chain_spec_path: System.get_env("CHAIN_SPEC_PATH")
+config :explorer, Explorer.Chain.Events.Listener,
+  enabled:
+    if(System.get_env("DISABLE_WEBAPP") == nil && System.get_env("DISABLE_INDEXER") == nil,
+      do: false,
+      else: true
+    )
 
-config :explorer, Explorer.Chain.Cache.BlockNumber, enabled: true
+config :explorer, Explorer.ChainSpec.GenesisData,
+  enabled: true,
+  chain_spec_path: System.get_env("CHAIN_SPEC_PATH"),
+  emission_format: System.get_env("EMISSION_FORMAT", "DEFAULT"),
+  rewards_contract_address: System.get_env("REWARDS_CONTRACT", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5")
 
-config :explorer, Explorer.ExchangeRates.Source.CoinMarketCap,
-  pages: String.to_integer(System.get_env("COINMARKETCAP_PAGES") || "10")
+config :explorer, Explorer.Chain.Cache.BlockNumber,
+  enabled: true,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
+address_sum_global_ttl =
+  "ADDRESS_SUM_CACHE_PERIOD"
+  |> System.get_env("")
+  |> Integer.parse()
+  |> case do
+    {integer, ""} -> :timer.seconds(integer)
+    _ -> :timer.minutes(60)
+  end
+
+config :explorer, Explorer.Chain.Cache.AddressSum,
+  enabled: true,
+  ttl_check_interval: :timer.seconds(1),
+  global_ttl: address_sum_global_ttl
+
+config :explorer, Explorer.Chain.Cache.AddressSumMinusBurnt,
+  enabled: true,
+  ttl_check_interval: :timer.seconds(1),
+  global_ttl: address_sum_global_ttl
 
 balances_update_interval =
   if System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
@@ -43,6 +78,11 @@ balances_update_interval =
   end
 
 config :explorer, Explorer.Counters.AddressesWithBalanceCounter,
+  enabled: false,
+  enable_consolidation: true,
+  update_interval_in_seconds: balances_update_interval || 30 * 60
+
+config :explorer, Explorer.Counters.AddressesCounter,
   enabled: true,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
@@ -148,6 +188,26 @@ market_history_cache_period =
   end
 
 config :explorer, Explorer.Market.MarketHistoryCache, period: market_history_cache_period
+
+config :explorer, Explorer.Chain.Cache.Blocks,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
+config :explorer, Explorer.Chain.Cache.Transactions,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
+config :explorer, Explorer.Chain.Cache.Accounts,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
+config :explorer, Explorer.Chain.Cache.PendingTransactions,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
+
+config :explorer, Explorer.Chain.Cache.Uncles,
+  ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
+  global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

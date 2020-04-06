@@ -61,9 +61,7 @@ defmodule EthereumJSONRPC.Receipts do
   """
   @spec elixir_to_logs(elixir) :: Logs.elixir()
   def elixir_to_logs(elixir) when is_list(elixir) do
-    elixir
-    |> Enum.flat_map(&Receipt.elixir_to_logs/1)
-    |> Enum.filter(&(Map.get(&1, "type") != "pending"))
+    Enum.flat_map(elixir, &Receipt.elixir_to_logs/1)
   end
 
   @doc """

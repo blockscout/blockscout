@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.ChainController do
   def show(conn, _params) do
     transaction_estimated_count = Chain.transaction_estimated_count()
     block_count = Chain.block_estimated_count()
+    address_count = Chain.address_estimated_count()
 
     market_cap_calculation =
       case Application.get_env(:explorer, :supply) do
@@ -38,7 +39,7 @@ defmodule BlockScoutWeb.ChainController do
     render(
       conn,
       "show.html",
-      address_count: Chain.count_addresses_with_balance_from_cache(),
+      address_count: address_count,
       average_block_time: AverageBlockTime.average_block_time(),
       exchange_rate: exchange_rate,
       chart_config: chart_config,
@@ -87,10 +88,17 @@ defmodule BlockScoutWeb.ChainController do
     if term == "" do
       json(conn, "{}")
     else
-      result =
+      result_tokens =
         term
         |> String.trim()
         |> Chain.search_token()
+
+      result_contracts =
+        term
+        |> String.trim()
+        |> Chain.search_contract()
+
+      result = result_tokens ++ result_contracts
 
       json(conn, result)
     end

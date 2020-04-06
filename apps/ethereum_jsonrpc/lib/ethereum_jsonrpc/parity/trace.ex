@@ -407,6 +407,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>       "value" => "0x2386f26fc10000"
       ...>     },
       ...>     "blockNumber" => 1,
+      ...>     "blockHash" => "0x940ec4bab528861b5c5904c8d143d466a2b237e4b8c9bc96201dfde037d185f2",
       ...>     "error" => "Reverted",
       ...>     "index" => 0,
       ...>     "subtraces" => 7,
@@ -426,6 +427,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
           "value" => 10000000000000000
         },
         "blockNumber" => 1,
+        "blockHash" => "0x940ec4bab528861b5c5904c8d143d466a2b237e4b8c9bc96201dfde037d185f2",
         "error" => "Reverted",
         "index" => 0,
         "subtraces" => 7,
@@ -450,7 +452,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
   # subtraces is an actual integer in JSON and not hex-encoded
   # traceAddress is a list of actual integers, not a list of hex-encoded
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(subtraces traceAddress transactionHash type output),
+       when key in ~w(subtraces traceAddress transactionHash blockHash type output),
        do: entry
 
   defp entry_to_elixir({"action" = key, action}) do

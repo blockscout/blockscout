@@ -35,11 +35,23 @@ defmodule EthereumJSONRPC.DecodeError do
     %EthereumJSONRPC.DecodeError{request: request, response: response}
   end
 
+  @request_body_limit 700
+
   @impl Exception
   def message(%EthereumJSONRPC.DecodeError{
         request: %EthereumJSONRPC.DecodeError.Request{url: request_url, body: request_body},
         response: %EthereumJSONRPC.DecodeError.Response{status_code: response_status_code, body: response_body}
       }) do
+    request_body_binary = IO.iodata_to_binary(request_body)
+
+    truncated_request_body =
+      if byte_size(request_body_binary) < @request_body_limit do
+        request_body_binary
+      else
+        <<result::binary-size(@request_body_limit), _::binary>> = request_body_binary
+        result
+      end
+
     """
     Failed to decode Ethereum JSONRPC response:
 
@@ -47,7 +59,7 @@ defmodule EthereumJSONRPC.DecodeError do
 
         url: #{request_url}
 
-        body: #{IO.iodata_to_binary(request_body)}
+        body: #{truncated_request_body}
 
       response:
 

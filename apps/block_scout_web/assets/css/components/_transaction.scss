@@ -44,3 +44,10 @@
 		}
 	}
 }
+
+.block-detail-number {
+	width: 25%;
+	@include media-breakpoint-down(sm) {
+		width: 60%;
+	}
+}

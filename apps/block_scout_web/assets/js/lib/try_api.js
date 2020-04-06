@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import '../app'
 
 // This file adds event handlers responsible for the 'Try it out' UI in the
 // Etherscan-compatible API documentation page.
@@ -124,7 +125,7 @@ $('button[data-try-api-ui-button-type="execute"]').click(event => {
   }
 
   $.ajax({
-    url: `/api${query}`,
+    url: composeRequestUrl(query),
     success: (_data, _status, xhr) => {
       handleSuccess(query, xhr, clickedButton)
     },

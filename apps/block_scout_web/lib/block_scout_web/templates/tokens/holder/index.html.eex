@@ -3,8 +3,7 @@
     OverviewView,
     "_details.html",
     token: @token,
-    total_token_transfers: @total_token_transfers,
-    total_token_holders: @total_token_holders,
+    counters_path: @counters_path,
     conn: @conn
   ) %>
 
@@ -37,4 +36,5 @@
       </div>
     </div>
   </section>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-counters.js") %>"></script>
 </section>

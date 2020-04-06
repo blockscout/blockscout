@@ -562,3 +562,15 @@ $cube-quantity: 5;
     transform: scale(0);
   }
 }
+
+.dark-block-loader {
+  width: auto;
+  height: 15px;
+  background-color: #e2e5ec;
+  margin-bottom: 5px;
+  border-radius: 4px;
+}
+
+.dark-theme-applied .dark-block-loader {
+  background-color: #313355;
+}

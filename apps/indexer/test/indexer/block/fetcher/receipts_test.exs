@@ -84,18 +84,6 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
                      "transactionIndex" => "0x0",
                      "transactionLogIndex" => "0x0",
                      "type" => "mined"
-                   },
-                   %{
-                     "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415c",
-                     "blockHash" => nil,
-                     "blockNumber" => nil,
-                     "data" => "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
-                     "logIndex" => "0x1",
-                     "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
-                     "transactionHash" => "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-                     "transactionIndex" => "0x0",
-                     "transactionLogIndex" => "0x0",
-                     "type" => "pending"
                    }
                  ],
                  "logsBloom" =>
@@ -158,8 +146,6 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
                log[:transaction_hash] == "0x43bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5" &&
                  log[:block_number] == 46147
              end)
-
-      refute Enum.find(logs, fn log -> log[:type] == "pending" end)
     end
   end
 end

@@ -1,0 +1,107 @@
+<section class="address-overview">
+  <div class="row">
+    <div class="card-section col-md-12 col-lg-7 pr-0-md">
+      <div class="card">
+        <div class="card-body">
+          <h1 class="card-title">
+            <%= if token_name?(@token) do %>
+              <%= @token.name %>
+            <% else %>
+              <%= gettext("Token Details") %>
+            <% end %>
+            <!-- buttons -->
+            <span class="overview-title-buttons float-right">
+              <span class="overview-title-item">
+                <span
+                  aria-label='<%= gettext("View Contract") %>'
+                  class="btn-contract-icon"
+                  data-placement="top"
+                  data-toggle="tooltip"
+                  title='<%= gettext("View Contract") %>'
+                  onclick='<%= "location='#{address_path(@conn, :show, Address.checksum(@token.contract_address_hash))}'" %>'
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32"  transform="translate(8,8)">
+                    <path fill-rule="evenodd" d="M15 16H1a1 1 0 0 1-1-1V1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1zM14 2H2v12h12V2z"/>
+                    <path fill-rule="evenodd" d="M11 9h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm0-3H5a1 1 0 0 1 0-2h6a1 1 0 0 1 0 2zM5 7h1a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2zm0 3h6a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2z"/>
+                  </svg>
+                </span>
+              </span>
+              <span class="overview-title-item" data-clipboard-text="<%= @token_id %>">
+                <span
+                  aria-label='<%= gettext("Copy Token ID") %>'
+                  class="btn-copy-icon"
+                  data-placement="top"
+                  data-toggle="tooltip"
+                  title='<%= gettext("Copy Token ID") %>'
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+                    <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+                  </svg>
+                </span>
+              </span>
+              <span
+                class="overview-title-item"
+                data-target="#qrModal"
+                data-toggle="modal"
+              >
+                <span
+                  class="btn-qr-icon"
+                  data-toggle="tooltip"
+                  data-placement="top"
+                  title='<%= gettext("QR Code") %>'
+                  aria-label='<%= gettext("Show QR Code") %>'
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+                    <path fill-rule="evenodd" d="M22.5 24.5v-2h2v2h-2zm-1-4v-1h1v1h-1zm1-3h2v2h-2v-2zm1-2h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm-8 14h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm1-4h-5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1zm-1-5h-3v3h3v-3zm6 9h-2v-2h2v2zm1 1h-1v-1h1v1zm0 1v1h-1v-1h1zm-1 3h-2v-2h2v2z"/>
+                  </svg>
+                </span>
+              </span>
+            </span>
+          </h1>
+
+          <h3><%= to_string(@token_id) %></h3>
+
+          <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
+            <div class="d-flex flex-row justify-content-start text-muted">
+              <span class="mr-4"> <%= @token.type %> </span>
+              <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
+              <%= if decimals?(@token) do %>
+                <span class="mr-4"><%= @token.decimals %> <%= gettext "Decimals" %></span>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-section col-md-12 col-lg-5 pl-0-md">
+      <div class="card">
+        <div class="card-body">
+          <div class="erc721-image" >
+            <img src=<%=image_src(@token_instance.instance)%> />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-counters.js") %>"></script>
+</section>
+<!-- Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="qrModalLabel"><%= gettext "QR Code" %></h2>
+        <button type="button" class="close" data-dismiss="modal" aria-label="<%= gettext("Close") %>">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <img src="data:image/png;base64, <%= qr_code(@conn, @token_id, @token.contract_address_hash) %> " class="qr-code" alt="qr_code" title="<%= @token.contract_address %>" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal"><%= gettext "Close" %></button>
+      </div>
+    </div>
+  </div>
+</div>

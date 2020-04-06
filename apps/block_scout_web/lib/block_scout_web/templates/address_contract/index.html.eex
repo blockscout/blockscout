@@ -61,19 +61,19 @@
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= gettext "Contract source code" %></h3>
-            <button type="button" class="button button-secondary button-sm" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= @address.smart_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
+            <button type="button" class="btn-line" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= @address.smart_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
               <%= gettext "Copy Source Code" %>
             </button>
           </div>
           <div class="tile tile-muted mb-4">
-            <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(@address.smart_contract.contract_source_code) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
+            <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(@address.smart_contract.contract_source_code, @address.smart_contract.inserted_at) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
           </div>
         </section>
 
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= gettext "Contract ABI" %></h3>
-            <button type="button" class="button button-secondary button-sm" id="button" data-clipboard-text="<%= format_smart_contract_abi(@address.smart_contract.abi) %>" aria-label="Copy Contract ABI">
+            <button type="button" class="btn-line" id="button" data-clipboard-text="<%= format_smart_contract_abi(@address.smart_contract.abi) %>" aria-label="Copy Contract ABI">
               <%= gettext "Copy ABI" %>
             </button>
           </div>
@@ -89,7 +89,7 @@
           <% {:selfdestructed, transaction_init} -> %>
             <div class="d-flex justify-content-between align-items-baseline">
               <h3><%= gettext "Contract Creation Code" %></h3>
-              <button type="button" class="button button-secondary button-sm" id="button" data-clipboard-text="<%= transaction_init %>" aria-label="copy contract creation code">
+              <button type="button" class="btn-line" id="button" data-clipboard-text="<%= transaction_init %>" aria-label="copy contract creation code">
                 <%= gettext "Copy Contract Creation Code" %>
               </button>
             </div>
@@ -128,4 +128,5 @@
       <% end %>
     </div>
   </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address.js") %>"></script>
 </section>

@@ -40,7 +40,11 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     multi
+    |> Multi.run(:acquire_all_staking_pools, fn repo, _ ->
+      acquire_all_staking_pools(repo)
+    end)
     |> Multi.run(:mark_as_deleted, fn repo, _ ->
       mark_as_deleted(repo, changes_list, insert_options)
     end)
@@ -55,6 +59,20 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
   @impl Import.Runner
   def timeout, do: @timeout
 
+  defp acquire_all_staking_pools(repo) do
+    query =
+      from(
+        pool in StakingPool,
+        # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
+        order_by: pool.staking_address_hash,
+        lock: "FOR UPDATE"
+      )
+
+    pools = repo.all(query)
+
+    {:ok, pools}
+  end
+
   defp mark_as_deleted(repo, changes_list, %{timeout: timeout}) when is_list(changes_list) do
     addresses = Enum.map(changes_list, & &1.staking_address_hash)
 
@@ -62,12 +80,8 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
       from(
         pool in StakingPool,
         where: pool.staking_address_hash not in ^addresses,
-        update: [
-          set: [
-            is_deleted: true,
-            is_active: false
-          ]
-        ]
+        # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
+        update: [set: [is_deleted: true, is_active: false]]
       )
 
     try do
@@ -90,10 +104,13 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
+    # Enforce StackingPool ShareLocks order (see docs: sharelocks.md)
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.staking_address_hash)
+
     {:ok, _} =
       Import.insert_changes_list(
         repo,
-        changes_list,
+        ordered_changes_list,
         conflict_target: :staking_address_hash,
         on_conflict: on_conflict,
         for: StakingPool,
@@ -137,20 +154,22 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
 
     total = repo.one!(total_query)
 
-    if total > Decimal.new(0) do
-      query =
+    if total.value > Decimal.new(0) do
+      update_query =
         from(
           p in StakingPool,
           where: p.is_active == true,
+          # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
           update: [
             set: [
-              staked_ratio: p.staked_amount / ^total * 100,
-              likelihood: p.staked_amount / ^total * 100
+              staked_ratio: p.staked_amount / ^total.value * 100,
+              likelihood: p.staked_amount / ^total.value * 100
             ]
           ]
         )
 
-      {count, _} = repo.update_all(query, [], timeout: timeout)
+      {count, _} = repo.update_all(update_query, [], timeout: timeout)
+
       {:ok, count}
     else
       {:ok, 1}

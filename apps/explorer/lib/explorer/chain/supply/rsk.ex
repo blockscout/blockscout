@@ -102,7 +102,7 @@ defmodule Explorer.Chain.Supply.RSK do
   def cache_name, do: @cache_name
 
   defp fetch_circulating_value do
-    max_number = BlockNumber.max_number()
+    max_number = BlockNumber.get_max()
 
     params = [
       %{block_quantity: integer_to_quantity(max_number), hash_data: "0x0000000000000000000000000000000001000006"}

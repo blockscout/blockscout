@@ -1,4 +1,6 @@
 <section class="container" data-page="coin-balance-history">
+  <script defer src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
+
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
 
   <section>
@@ -6,8 +8,8 @@
       <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div class="card-body" data-async-listing="<%= @current_path %>">
         <div data-selector="channel-disconnected-message" style="display:none;">
-          <div data-selector="reload-button" class="alert alert-danger">
-            <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer blocks" %></a>
+          <div data-selector="reload-button" class="alert alert-danger" style="padding: 0.75rem 0rem; cursor: pointer;">
+            <span href="#" class="alert alert-danger"><%= gettext "Connection Lost, click to load newer blocks" %></span>
           </div>
         </div>
 
@@ -30,9 +32,9 @@
 
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
-        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
-          <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
-        </button>
+        <div data-error-message class="alert alert-danger col-12 text-left" style="display: none; padding: 0.75rem 0rem; cursor: pointer;">
+          <span href="#" class="alert alert-danger"><%= gettext("Something went wrong, click to reload.") %></span>
+        </div>
 
         <div data-empty-response-message style="display: none;">
           <div class="tile tile-muted text-center" data-selector="empty-coin-balances-list">
@@ -47,5 +49,6 @@
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
     </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address-coin-balances.js") %>"></script>
   </section>
 </section>

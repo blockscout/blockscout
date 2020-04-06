@@ -1,0 +1,15 @@
+<div class="card-tabs js-card-tabs">
+  <%= link(
+        gettext("Token Transfers"),
+        class: "card-tab #{tab_status("token_transfers", @conn.request_path)}",
+        to: token_instance_path(@conn, :show, @token.contract_address_hash, to_string(@token_instance.token_id))
+      )
+    %>
+   <%= if @token_instance.instance do %>
+    <%= link(
+        gettext("Metadata"),
+        to: token_instance_metadata_path(@conn, :index, Address.checksum(@token.contract_address_hash), to_string(@token_instance.token_id)),
+        class: "card-tab #{tab_status("metadata", @conn.request_path)}")
+      %>
+  <% end %>
+</div>

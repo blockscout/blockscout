@@ -1,18 +1,20 @@
 defmodule BlockScoutWeb.ChainControllerTest do
   use BlockScoutWeb.ConnCase,
-    # ETS table is shared in `Explorer.Counters.AddressesWithBalanceCounter`
+    # ETS table is shared in `Explorer.Counters.AddressesCounter`
     async: false
 
   import BlockScoutWeb.WebRouter.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
 
   alias Explorer.Chain.Block
-  alias Explorer.Counters.AddressesWithBalanceCounter
+  alias Explorer.Counters.AddressesCounter
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, :blocks})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, :blocks})
-    start_supervised!(AddressesWithBalanceCounter)
-    AddressesWithBalanceCounter.consolidate()
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Uncles.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Uncles.child_id())
+    start_supervised!(AddressesCounter)
+    AddressesCounter.consolidate()
 
     :ok
   end
@@ -85,6 +87,36 @@ defmodule BlockScoutWeb.ChainControllerTest do
       conn = get(conn(), "/token_autocomplete?q=magic")
 
       assert Enum.count(json_response(conn, 200)) == 2
+    end
+
+    test "finds verified contract" do
+      insert(:smart_contract, name: "SuperToken")
+
+      conn = get(conn(), "/token_autocomplete?q=sup")
+
+      assert Enum.count(json_response(conn, 200)) == 1
+    end
+
+    test "finds verified contract and token" do
+      insert(:smart_contract, name: "MagicContract")
+      insert(:token, name: "magicToken")
+
+      conn = get(conn(), "/token_autocomplete?q=mag")
+
+      assert Enum.count(json_response(conn, 200)) == 2
+    end
+
+    test "finds verified contracts and tokens" do
+      insert(:smart_contract, name: "something")
+      insert(:smart_contract, name: "MagicContract")
+      insert(:token, name: "Magic3")
+      insert(:smart_contract, name: "magicContract2")
+      insert(:token, name: "magicToken")
+      insert(:token, name: "OneMoreToken")
+
+      conn = get(conn(), "/token_autocomplete?q=mag")
+
+      assert Enum.count(json_response(conn, 200)) == 4
     end
   end
 

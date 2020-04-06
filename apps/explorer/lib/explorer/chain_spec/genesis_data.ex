@@ -18,7 +18,6 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   @impl GenServer
   def init(_) do
-    :timer.send_interval(@interval, :import)
     Process.send_after(self(), :import, @interval)
 
     {:ok, %{}}
@@ -63,7 +62,7 @@ defmodule Explorer.ChainSpec.GenesisData do
         case fetch_spec(path) do
           {:ok, chain_spec} ->
             Importer.import_emission_rewards(chain_spec)
-            {:ok, _} = Importer.import_genesis_coin_balances(chain_spec)
+            {:ok, _} = Importer.import_genesis_accounts(chain_spec)
 
           {:error, reason} ->
             Logger.warn(fn -> "Failed to fetch genesis data. #{inspect(reason)}" end)

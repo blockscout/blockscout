@@ -15,6 +15,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
+      schema = resolve_schema()
+      assert ExJsonSchema.Validator.valid?(schema, response)
       assert response["message"] =~ "txhash is required"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
@@ -33,6 +35,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
+      schema = resolve_schema()
+      assert ExJsonSchema.Validator.valid?(schema, response)
       assert response["message"] =~ "Invalid txhash format"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
@@ -46,11 +50,20 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "txhash" => "0x40eb908387324f2b575b4879cd9d7188f69c8fc9d87c901b9e2daaea4b442170"
       }
 
+      schema =
+        resolve_schema(%{
+          "type" => "object",
+          "properties" => %{
+            "status" => %{"type" => "string"}
+          }
+        })
+
       assert response =
                conn
                |> get("/api", params)
                |> json_response(200)
 
+      assert ExJsonSchema.Validator.valid?(schema, response)
       assert response["result"] == %{"status" => ""}
       assert response["status"] == "1"
       assert response["message"] == "OK"
@@ -136,6 +149,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
+      schema = resolve_schema()
+      assert ExJsonSchema.Validator.valid?(schema, response)
       assert response["message"] =~ "txhash is required"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
@@ -154,6 +169,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
+      schema = resolve_schema()
+      assert ExJsonSchema.Validator.valid?(schema, response)
       assert response["message"] =~ "Invalid txhash format"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
@@ -172,11 +189,21 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "errDescription" => ""
       }
 
+      schema =
+        resolve_schema(%{
+          "type" => "object",
+          "properties" => %{
+            "isError" => %{"type" => "string"},
+            "errDescription" => %{"type" => "string"}
+          }
+        })
+
       assert response =
                conn
                |> get("/api", params)
                |> json_response(200)
 
+      assert ExJsonSchema.Validator.valid?(schema, response)
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
@@ -216,8 +243,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
       transaction_details = [
         status: :error,
-        error: error,
-        internal_transactions_indexed_at: DateTime.utc_now()
+        error: error
       ]
 
       transaction =
@@ -229,7 +255,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         transaction: transaction,
         index: 0,
         type: :reward,
-        error: error
+        error: error,
+        block_hash: transaction.block_hash,
+        block_index: 0
       ]
 
       insert(:internal_transaction, internal_transaction_details)
@@ -258,8 +286,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
     test "with a txhash with failed status but awaiting internal transactions", %{conn: conn} do
       transaction_details = [
         status: :error,
-        error: nil,
-        internal_transactions_indexed_at: nil
+        error: nil
       ]
 
       transaction =
@@ -325,6 +352,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
+      schema = resolve_schema()
+      assert ExJsonSchema.Validator.valid?(schema, response)
       assert response["message"] =~ "txhash is required"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
@@ -382,7 +411,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
           address: address,
           transaction: transaction,
           first_topic: "first topic",
-          second_topic: "second topic"
+          second_topic: "second topic",
+          block: block,
+          block_number: block.number
         )
       end)
 
@@ -392,11 +423,32 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "txhash" => "#{transaction.hash}"
       }
 
+      schema =
+        resolve_schema(%{
+          "type" => "object",
+          "properties" => %{
+            "next_page_params" => %{
+              "type" => ["object", "null"],
+              "properties" => %{
+                "action" => %{"type" => "string"},
+                "index" => %{"type" => "number"},
+                "module" => %{"type" => "string"},
+                "txhash" => %{"type" => "string"}
+              }
+            },
+            "logs" => %{
+              "type" => "array",
+              "items" => %{"type" => "object"}
+            }
+          }
+        })
+
       assert response1 =
                conn
                |> get("/api", params1)
                |> json_response(200)
 
+      assert ExJsonSchema.Validator.valid?(schema, response1)
       assert response1["status"] == "1"
       assert response1["message"] == "OK"
 
@@ -414,6 +466,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
                |> get("/api", params2)
                |> json_response(200)
 
+      assert ExJsonSchema.Validator.valid?(schema, response2)
       assert response2["status"] == "1"
       assert response2["message"] == "OK"
       assert is_nil(response2["result"]["next_page_params"])
@@ -435,7 +488,9 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
           address: address,
           transaction: transaction,
           first_topic: "first topic",
-          second_topic: "second topic"
+          second_topic: "second topic",
+          block: block,
+          block_number: block.number
         )
 
       params = %{
@@ -468,14 +523,70 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "next_page_params" => nil
       }
 
+      schema =
+        resolve_schema(%{
+          "type" => "object",
+          "properties" => %{
+            "hash" => %{"type" => "string"},
+            "timeStamp" => %{"type" => "string"},
+            "blockNumber" => %{"type" => "string"},
+            "confirmations" => %{"type" => "string"},
+            "success" => %{"type" => "boolean"},
+            "from" => %{"type" => "string"},
+            "to" => %{"type" => "string"},
+            "value" => %{"type" => "string"},
+            "input" => %{"type" => "string"},
+            "gasLimit" => %{"type" => "string"},
+            "gasUsed" => %{"type" => "string"},
+            "gasPrice" => %{"type" => "string"},
+            "logs" => %{
+              "type" => "array",
+              "items" => %{
+                "type" => "object",
+                "properties" => %{
+                  "address" => %{"type" => "string"},
+                  "data" => %{"type" => "string"},
+                  "topics" => %{
+                    "type" => "array",
+                    "items" => %{"type" => ["string", "null"]}
+                  },
+                  "index" => %{"type" => "string"}
+                }
+              }
+            },
+            "next_page_params" => %{
+              "type" => ["object", "null"],
+              "properties" => %{
+                "action" => %{"type" => "string"},
+                "index" => %{"type" => "number"},
+                "module" => %{"type" => "string"},
+                "txhash" => %{"type" => "string"}
+              }
+            }
+          }
+        })
+
       assert response =
                conn
                |> get("/api", params)
                |> json_response(200)
 
+      assert ExJsonSchema.Validator.valid?(schema, response)
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
+  end
+
+  defp resolve_schema(result \\ %{}) do
+    %{
+      "type" => "object",
+      "properties" => %{
+        "message" => %{"type" => "string"},
+        "status" => %{"type" => "string"}
+      }
+    }
+    |> put_in(["properties", "result"], result)
+    |> ExJsonSchema.Schema.resolve()
   end
 end

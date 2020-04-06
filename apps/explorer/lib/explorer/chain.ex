@@ -8,22 +8,26 @@ defmodule Explorer.Chain do
       from: 2,
       join: 4,
       limit: 2,
+      lock: 2,
       order_by: 2,
       order_by: 3,
       offset: 2,
       preload: 2,
       select: 2,
       subquery: 1,
+      union: 2,
       union_all: 2,
       where: 2,
       where: 3
     ]
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
 
   alias ABI.TypeDecoder
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
+
+  alias Explorer.Chain
 
   alias Explorer.Chain.{
     Address,
@@ -37,9 +41,11 @@ defmodule Explorer.Chain do
     Import,
     InternalTransaction,
     Log,
+    PendingBlockOperation,
     SmartContract,
     StakingPool,
     Token,
+    Token.Instance,
     TokenTransfer,
     Transaction,
     Wei
@@ -48,15 +54,19 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Block.{EmissionReward, Reward}
 
   alias Explorer.Chain.Cache.{
+    Accounts,
     BlockCount,
     BlockNumber,
     Blocks,
+    PendingTransactions,
     TransactionCount,
-    Transactions
+    Transactions,
+    Uncles
   }
 
   alias Explorer.Chain.Import.Runner
-  alias Explorer.Counters.AddressesWithBalanceCounter
+  alias Explorer.Chain.InternalTransaction.{CallType, Type}
+  alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
 
@@ -117,6 +127,24 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Estimated count of `t:Explorer.Chain.Address.t/0`.
+
+  Estimated count of addresses.
+  """
+  @spec address_estimated_count() :: non_neg_integer()
+  def address_estimated_count do
+    cached_value = AddressesCounter.fetch()
+
+    if is_nil(cached_value) do
+      %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'addresses';")
+
+      count
+    else
+      cached_value
+    end
+  end
+
+  @doc """
   Counts the number of addresses with fetched coin balance > 0.
 
   This function should be used with caution. In larger databases, it may take a
@@ -125,6 +153,19 @@ defmodule Explorer.Chain do
   def count_addresses_with_balance do
     Repo.one(
       Address.count_with_fetched_coin_balance(),
+      timeout: :infinity
+    )
+  end
+
+  @doc """
+  Counts the number of all addresses.
+
+  This function should be used with caution. In larger databases, it may take a
+  while to have the return back.
+  """
+  def count_addresses do
+    Repo.one(
+      Address.count(),
       timeout: :infinity
     )
   end
@@ -157,8 +198,66 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    InternalTransaction
-    |> InternalTransaction.where_address_fields_match(hash, direction)
+    if direction == nil do
+      query_to_address_hash_wrapped =
+        InternalTransaction
+        |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
+        |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
+
+      query_from_address_hash_wrapped =
+        InternalTransaction
+        |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
+        |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
+
+      query_created_contract_address_hash_wrapped =
+        InternalTransaction
+        |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
+        |> common_where_limit_order(paging_options)
+        |> wrapped_union_subquery()
+
+      full_query =
+        query_to_address_hash_wrapped
+        |> union(^query_from_address_hash_wrapped)
+        |> union(^query_created_contract_address_hash_wrapped)
+
+      full_wrapped_query =
+        from(
+          q in subquery(full_query),
+          select: q
+        )
+
+      full_wrapped_query
+      |> order_by(
+        [q],
+        desc: q.block_number,
+        desc: q.transaction_index,
+        desc: q.index
+      )
+      |> preload(transaction: :block)
+      |> join_associations(necessity_by_association)
+      |> Repo.all()
+    else
+      InternalTransaction
+      |> InternalTransaction.where_nonpending_block()
+      |> InternalTransaction.where_address_fields_match(hash, direction)
+      |> common_where_limit_order(paging_options)
+      |> preload(transaction: :block)
+      |> join_associations(necessity_by_association)
+      |> Repo.all()
+    end
+  end
+
+  def wrapped_union_subquery(query) do
+    from(
+      q in subquery(query),
+      select: q
+    )
+  end
+
+  defp common_where_limit_order(query, paging_options) do
+    query
     |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_block_number_is_not_null()
     |> page_internal_transaction(paging_options)
@@ -169,9 +268,6 @@ defmodule Explorer.Chain do
       desc: it.transaction_index,
       desc: it.index
     )
-    |> preload(transaction: :block)
-    |> join_associations(necessity_by_association)
-    |> Repo.all()
   end
 
   @doc """
@@ -185,7 +281,7 @@ defmodule Explorer.Chain do
     last_nonce =
       address_hash
       |> Transaction.last_nonce_by_address_query()
-      |> Repo.one()
+      |> Repo.one(timeout: :infinity)
 
     case last_nonce do
       nil -> 0
@@ -225,14 +321,13 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
-      rewards_task =
-        Task.async(fn ->
-          Reward.fetch_emission_rewards_tuples(address_hash, paging_options)
-        end)
+      blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
 
-      address_hash
-      |> address_to_transactions_without_rewards(paging_options, options)
-      |> Enum.concat(Task.await(rewards_task, :timer.seconds(20)))
+      rewards_task =
+        Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
+
+      [rewards_task | address_to_transactions_tasks(address_hash, options)]
+      |> wait_for_address_transactions()
       |> Enum.sort_by(fn item ->
         case item do
           {%Reward{} = emission_reward, _} ->
@@ -242,24 +337,124 @@ defmodule Explorer.Chain do
             {-item.block_number, -item.index}
         end
       end)
+      |> Enum.dedup_by(fn item ->
+        case item do
+          {%Reward{} = emission_reward, _} ->
+            {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
+
+          transaction ->
+            transaction.hash
+        end
+      end)
       |> Enum.take(paging_options.page_size)
     else
-      address_to_transactions_without_rewards(address_hash, paging_options, options)
+      address_to_transactions_without_rewards(address_hash, options)
     end
   end
 
-  def address_to_transactions_without_rewards(address_hash, paging_options, options) do
+  def address_to_transactions_without_rewards(address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    address_hash
+    |> address_to_transactions_tasks(options)
+    |> wait_for_address_transactions()
+    |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
+    |> Enum.dedup_by(& &1.hash)
+    |> Enum.take(paging_options.page_size)
+  end
+
+  defp address_to_transactions_tasks_query(options) do
+    options
+    |> Keyword.get(:paging_options, @default_paging_options)
+    |> fetch_transactions()
+  end
+
+  defp address_to_transactions_tasks(address_hash, options) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    transaction_hashes_from_token_transfers =
-      TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
-
-    paging_options
-    |> fetch_transactions()
-    |> Transaction.where_transaction_matches(transaction_hashes_from_token_transfers, direction, address_hash)
+    options
+    |> address_to_transactions_tasks_query()
     |> join_associations(necessity_by_association)
+    |> Transaction.matching_address_queries_list(direction, address_hash)
+    |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
+  end
+
+  defp address_to_transactions_tasks_range_of_blocks(address_hash, options) do
+    direction = Keyword.get(options, :direction)
+
+    extremums_list =
+      options
+      |> address_to_transactions_tasks_query()
+      |> Transaction.matching_address_queries_list(direction, address_hash)
+      |> Enum.map(fn query ->
+        max_query =
+          from(
+            q in subquery(query),
+            select: %{min_block_number: min(q.block_number), max_block_number: max(q.block_number)}
+          )
+
+        max_query
+        |> Repo.one!()
+      end)
+
+    extremums_list
+    |> Enum.reduce(%{min_block_number: nil, max_block_number: 0}, fn %{
+                                                                       min_block_number: min_number,
+                                                                       max_block_number: max_number
+                                                                     },
+                                                                     extremums_result ->
+      current_min_number = Map.get(extremums_result, :min_block_number)
+      current_max_number = Map.get(extremums_result, :max_block_number)
+
+      extremums_result =
+        if is_number(current_min_number) do
+          if is_number(min_number) and min_number > 0 and min_number < current_min_number do
+            extremums_result
+            |> Map.put(:min_block_number, min_number)
+          else
+            extremums_result
+          end
+        else
+          extremums_result
+          |> Map.put(:min_block_number, min_number)
+        end
+
+      if is_number(max_number) and max_number > 0 and max_number > current_max_number do
+        extremums_result
+        |> Map.put(:max_block_number, max_number)
+      else
+        extremums_result
+      end
+    end)
+  end
+
+  defp wait_for_address_transactions(tasks) do
+    tasks
+    |> Task.yield_many(:timer.seconds(20))
+    |> Enum.flat_map(fn {_task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          raise "Query fetching address transactions terminated: #{inspect(reason)}"
+
+        nil ->
+          raise "Query fetching address transactions timed out."
+      end
+    end)
+  end
+
+  @spec address_hash_to_token_transfers(Hash.Address.t(), Keyword.t()) :: [Transaction.t()]
+  def address_hash_to_token_transfers(address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    direction = Keyword.get(options, :direction)
+
+    direction
+    |> Transaction.transactions_with_token_transfers_direction(address_hash)
     |> Transaction.preload_token_transfers(address_hash)
+    |> handle_paging_options(paging_options)
     |> Repo.all()
   end
 
@@ -267,13 +462,13 @@ defmodule Explorer.Chain do
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
-    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.max_number(), 0, 0}
+    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
     base_query =
       from(log in Log,
-        inner_join: transaction in assoc(log, :transaction),
-        order_by: [desc: transaction.block_number, desc: transaction.index],
-        preload: [:transaction, transaction: [to_address: :smart_contract]],
+        inner_join: transaction in Transaction,
+        on: transaction.hash == log.transaction_hash,
+        order_by: [desc: log.block_number, desc: log.index],
         where: transaction.block_number < ^block_number,
         or_where: transaction.block_number == ^block_number and transaction.index > ^transaction_index,
         or_where:
@@ -284,7 +479,19 @@ defmodule Explorer.Chain do
         select: log
       )
 
-    base_query
+    wrapped_query =
+      from(
+        log in subquery(base_query),
+        inner_join: transaction in Transaction,
+        preload: [:transaction, transaction: [to_address: :smart_contract]],
+        where:
+          log.block_hash == transaction.block_hash and
+            log.block_number == transaction.block_number and
+            log.transaction_hash == transaction.hash,
+        select: log
+      )
+
+    wrapped_query
     |> filter_topic(options)
     |> Repo.all()
     |> Enum.take(paging_options.page_size)
@@ -544,12 +751,15 @@ defmodule Explorer.Chain do
   def create_decompiled_smart_contract(attrs) do
     changeset = DecompiledSmartContract.changeset(%DecompiledSmartContract{}, attrs)
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     Multi.new()
+    |> Multi.run(:set_address_decompiled, fn repo, _ ->
+      set_address_decompiled(repo, Changeset.get_field(changeset, :address_hash))
+    end)
     |> Multi.insert(:decompiled_smart_contract, changeset,
       on_conflict: :replace_all,
       conflict_target: [:decompiler_version, :address_hash]
     )
-    |> Multi.run(:set_address_decompiled, &set_address_decompiled/2)
     |> Repo.transaction()
     |> case do
       {:ok, %{decompiled_smart_contract: decompiled_smart_contract}} -> {:ok, decompiled_smart_contract}
@@ -631,24 +841,32 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Checks to see if the chain is down indexing based on the transaction from the oldest block having
-  an `internal_transactions_indexed_at` date.
+  Checks to see if the chain is down indexing based on the transaction from the
+  oldest block and the `fetch_internal_transactions` pending operation
   """
   @spec finished_indexing?() :: boolean()
   def finished_indexing? do
-    min_block_number_transaction = Repo.aggregate(Transaction, :min, :block_number)
+    json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-    if min_block_number_transaction do
-      Transaction
-      |> where([t], t.block_number == ^min_block_number_transaction and is_nil(t.internal_transactions_indexed_at))
-      |> limit(1)
-      |> Repo.one()
-      |> case do
-        nil -> true
-        _ -> false
-      end
+    if variant == EthereumJSONRPC.Ganache do
+      true
     else
-      false
+      with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
+           min_block_number when not is_nil(min_block_number) <- Repo.aggregate(Transaction, :min, :block_number) do
+        query =
+          from(
+            b in Block,
+            join: pending_ops in assoc(b, :pending_operations),
+            where: pending_ops.fetch_internal_transactions,
+            where: b.consensus and b.number == ^min_block_number
+          )
+
+        !Repo.exists?(query)
+      else
+        {:transactions_exist, false} -> true
+        nil -> false
+      end
     end
   end
 
@@ -756,7 +974,22 @@ defmodule Explorer.Chain do
     query =
       from(token in Token,
         where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
-        limit: 5
+        limit: 5,
+        select: %{contract_address_hash: token.contract_address_hash, symbol: token.symbol, name: token.name}
+      )
+
+    Repo.all(query)
+  end
+
+  @spec search_contract(String.t()) :: [SmartContract.t()]
+  def search_contract(word) do
+    term = String.replace(word, ~r/\W/u, "") <> ":*"
+
+    query =
+      from(smart_contract in SmartContract,
+        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
+        limit: 5,
+        select: %{contract_address_hash: smart_contract.address_hash, symbol: smart_contract.name}
       )
 
     Repo.all(query)
@@ -1176,7 +1409,7 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio() :: Decimal.t()
   def indexed_ratio do
-    {min, max} = BlockNumber.min_and_max_numbers()
+    %{min: min, max: max} = BlockNumber.get_all()
 
     case {min, max} do
       {0, 0} ->
@@ -1189,20 +1422,30 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer, non_neg_integer}
-  def fetch_min_and_max_block_numbers do
+  @spec fetch_min_block_number() :: non_neg_integer
+  def fetch_min_block_number do
     query =
       from(block in Block,
-        select: {min(block.number), max(block.number)},
-        where: block.consensus == true
+        select: block.number,
+        where: block.consensus == true,
+        order_by: [asc: block.number],
+        limit: 1
       )
 
-    result = Repo.one!(query)
+    Repo.one(query) || 0
+  end
 
-    case result do
-      {nil, nil} -> {0, 0}
-      _ -> result
-    end
+  @spec fetch_max_block_number() :: non_neg_integer
+  def fetch_max_block_number do
+    query =
+      from(block in Block,
+        select: block.number,
+        where: block.consensus == true,
+        order_by: [desc: block.number],
+        limit: 1
+      )
+
+    Repo.one(query) || 0
   end
 
   @spec fetch_count_consensus_block() :: non_neg_integer
@@ -1216,14 +1459,36 @@ defmodule Explorer.Chain do
     Repo.one!(query)
   end
 
+  @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
+  def fetch_sum_coin_total_supply_minus_burnt do
+    {:ok, burn_address_hash} = string_to_address_hash("0x0000000000000000000000000000000000000000")
+
+    query =
+      from(
+        a0 in Address,
+        select: fragment("SUM(a0.fetched_coin_balance)"),
+        where: a0.hash != ^burn_address_hash
+      )
+
+    Repo.one!(query) || 0
+  end
+
+  @spec fetch_sum_coin_total_supply() :: non_neg_integer
+  def fetch_sum_coin_total_supply do
+    query =
+      from(
+        a0 in Address,
+        select: fragment("SUM(a0.fetched_coin_balance)")
+      )
+
+    Repo.one!(query) || 0
+  end
+
   @doc """
   The number of `t:Explorer.Chain.InternalTransaction.t/0`.
 
-      iex> transaction =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block()
-      iex> insert(:internal_transaction, index: 0, transaction: transaction)
+      iex> transaction = :transaction |> insert() |> with_block()
+      iex> insert(:internal_transaction, index: 0, transaction: transaction, block_hash: transaction.block_hash, block_index: 0)
       iex> Explorer.Chain.internal_transaction_count()
       1
 
@@ -1234,7 +1499,7 @@ defmodule Explorer.Chain do
 
   """
   def internal_transaction_count do
-    Repo.one!(from(it in "internal_transactions", select: fragment("COUNT(*)")))
+    Repo.aggregate(InternalTransaction.where_nonpending_block(), :count, :transaction_hash)
   end
 
   @doc """
@@ -1257,20 +1522,43 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options) || @default_paging_options
     block_type = Keyword.get(options, :block_type, "Block")
 
-    if block_type == "Block" && !paging_options.key do
-      case Blocks.take_enough(paging_options.page_size) do
-        nil ->
-          elements = fetch_blocks(block_type, paging_options, necessity_by_association)
+    cond do
+      block_type == "Block" && !paging_options.key ->
+        block_from_cache(block_type, paging_options, necessity_by_association)
 
-          Blocks.update(elements)
+      block_type == "Uncle" && !paging_options.key ->
+        uncles_from_cache(block_type, paging_options, necessity_by_association)
 
-          elements
+      true ->
+        fetch_blocks(block_type, paging_options, necessity_by_association)
+    end
+  end
 
-        blocks ->
-          blocks
-      end
-    else
-      fetch_blocks(block_type, paging_options, necessity_by_association)
+  defp block_from_cache(block_type, paging_options, necessity_by_association) do
+    case Blocks.take_enough(paging_options.page_size) do
+      nil ->
+        elements = fetch_blocks(block_type, paging_options, necessity_by_association)
+
+        Blocks.update(elements)
+
+        elements
+
+      blocks ->
+        blocks
+    end
+  end
+
+  def uncles_from_cache(block_type, paging_options, necessity_by_association) do
+    case Uncles.take_enough(paging_options.page_size) do
+      nil ->
+        elements = fetch_blocks(block_type, paging_options, necessity_by_association)
+
+        Uncles.update(elements)
+
+        elements
+
+      blocks ->
+        blocks
     end
   end
 
@@ -1315,6 +1603,36 @@ defmodule Explorer.Chain do
   def list_top_addresses(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
+    if is_nil(paging_options.key) do
+      paging_options.page_size
+      |> Accounts.take_enough()
+      |> case do
+        nil ->
+          accounts_with_n = fetch_top_addresses(paging_options)
+
+          accounts_with_n
+          |> Enum.map(fn {address, _n} -> address end)
+          |> Accounts.update()
+
+          accounts_with_n
+
+        accounts ->
+          Enum.map(
+            accounts,
+            &{&1,
+             if is_nil(&1.nonce) do
+               0
+             else
+               &1.nonce + 1
+             end}
+          )
+      end
+    else
+      fetch_top_addresses(paging_options)
+    end
+  end
+
+  defp fetch_top_addresses(paging_options) do
     base_query =
       from(a in Address,
         where: a.fetched_coin_balance > ^0,
@@ -1457,18 +1775,20 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of all blocks with unfetched internal transactions.
+  Returns a stream of all blocks with unfetched internal transactions, using
+  the `pending_block_operation` table.
 
   Only blocks with consensus are returned.
 
       iex> non_consensus = insert(:block, consensus: false)
+      iex> insert(:pending_block_operation, block: non_consensus, fetch_internal_transactions: true)
       iex> unfetched = insert(:block)
-      iex> fetched = insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
-      iex> to_be_refetched = insert(:block, refetch_needed: true)
+      iex> insert(:pending_block_operation, block: unfetched, fetch_internal_transactions: true)
+      iex> fetched = insert(:block)
+      iex> insert(:pending_block_operation, block: fetched, fetch_internal_transactions: false)
       iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
-      ...>   [:number],
       ...>   MapSet.new(),
-      ...>   fn %Explorer.Chain.Block{number: number}, acc ->
+      ...>   fn number, acc ->
       ...>     MapSet.put(acc, number)
       ...>   end
       ...> )
@@ -1478,112 +1798,55 @@ defmodule Explorer.Chain do
       true
       iex> fetched.hash in number_set
       false
-      iex> to_be_refetched.number in number_set
-      false
 
   """
   @spec stream_blocks_with_unfetched_internal_transactions(
-          fields :: [
-            :consensus
-            | :difficulty
-            | :gas_limit
-            | :gas_used
-            | :hash
-            | :miner
-            | :miner_hash
-            | :nonce
-            | :number
-            | :parent_hash
-            | :size
-            | :timestamp
-            | :total_difficulty
-            | :transactions
-            | :internal_transactions_indexed_at
-          ],
           initial :: accumulator,
           reducer :: (entry :: term(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_blocks_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+  def stream_blocks_with_unfetched_internal_transactions(initial, reducer) when is_function(reducer, 2) do
     query =
       from(
         b in Block,
+        join: pending_ops in assoc(b, :pending_operations),
+        where: pending_ops.fetch_internal_transactions,
         where: b.consensus,
-        where: is_nil(b.internal_transactions_indexed_at),
-        where: not b.refetch_needed,
-        select: ^fields
+        select: b.number
       )
 
     Repo.stream_reduce(query, initial, reducer)
   end
 
-  @doc """
-  Returns a stream of all collated transactions with unfetched internal transactions.
-
-  Only transactions that have been collated into a block are returned; pending transactions not in a block are filtered
-  out.
-
-      iex> pending = insert(:transaction)
-      iex> unfetched_collated =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block()
-      iex> fetched_collated =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block(internal_transactions_indexed_at: DateTime.utc_now())
-      iex> {:ok, hash_set} = Explorer.Chain.stream_transactions_with_unfetched_internal_transactions(
-      ...>   [:hash],
-      ...>   MapSet.new(),
-      ...>   fn %Explorer.Chain.Transaction{hash: hash}, acc ->
-      ...>     MapSet.put(acc, hash)
-      ...>   end
-      ...> )
-      iex> pending.hash in hash_set
-      false
-      iex> unfetched_collated.hash in hash_set
-      true
-      iex> fetched_collated.hash in hash_set
-      false
-
-  """
-  @spec stream_transactions_with_unfetched_internal_transactions(
-          fields :: [
-            :block_hash
-            | :internal_transactions_indexed_at
-            | :from_address_hash
-            | :gas
-            | :gas_price
-            | :hash
-            | :index
-            | :input
-            | :nonce
-            | :r
-            | :s
-            | :to_address_hash
-            | :v
-            | :value
-          ],
-          initial :: accumulator,
-          reducer :: (entry :: term(), accumulator -> accumulator)
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+  def remove_nonconsensus_blocks_from_pending_ops(block_hashes) do
     query =
       from(
-        t in Transaction,
-        # exclude pending transactions and replaced transactions
-        where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
-        select: ^fields
+        po in PendingBlockOperation,
+        where: po.block_hash in ^block_hashes
       )
 
-    Repo.stream_reduce(query, initial, reducer)
+    {_, _} = Repo.delete_all(query)
+
+    :ok
+  end
+
+  def remove_nonconsensus_blocks_from_pending_ops do
+    query =
+      from(
+        po in PendingBlockOperation,
+        inner_join: block in Block,
+        on: block.hash == po.block_hash,
+        where: block.consensus == false
+      )
+
+    {_, _} = Repo.delete_all(query)
+
+    :ok
   end
 
   @spec stream_transactions_with_unfetched_created_contract_codes(
           fields :: [
             :block_hash
-            | :internal_transactions_indexed_at
             | :created_contract_code_indexed_at
             | :from_address_hash
             | :gas
@@ -1618,7 +1881,6 @@ defmodule Explorer.Chain do
   @spec stream_mined_transactions(
           fields :: [
             :block_hash
-            | :internal_transactions_indexed_at
             | :created_contract_code_indexed_at
             | :from_address_hash
             | :gas
@@ -1650,7 +1912,6 @@ defmodule Explorer.Chain do
   @spec stream_pending_transactions(
           fields :: [
             :block_hash
-            | :internal_transactions_indexed_at
             | :created_contract_code_indexed_at
             | :from_address_hash
             | :gas
@@ -2032,8 +2293,8 @@ defmodule Explorer.Chain do
   ## Options
 
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
-      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.Transaction.t/0` will not be included in the list.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
       `:key` (a tuple of the lowest/oldest `{block_number, index}`) and. Results will be the transactions older than
       the `block_number` and `index` that are passed.
@@ -2087,8 +2348,8 @@ defmodule Explorer.Chain do
   ## Options
 
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
-      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.Transaction.t/0` will not be included in the list.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` (defaults to
       `#{@default_paging_options.page_size}`) and `:key` (a tuple of the lowest/oldest `{inserted_at, hash}`) and.
       Results will be the transactions older than the `inserted_at` and `hash` that are passed.
@@ -2099,11 +2360,29 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
+    if is_nil(paging_options.key) do
+      paging_options.page_size
+      |> PendingTransactions.take_enough()
+      |> case do
+        nil ->
+          pending_transactions = fetch_recent_pending_transactions(paging_options, necessity_by_association)
+          PendingTransactions.update(pending_transactions)
+          pending_transactions
+
+        pending_transactions ->
+          pending_transactions
+      end
+    else
+      fetch_recent_pending_transactions(paging_options, necessity_by_association)
+    end
+  end
+
+  defp fetch_recent_pending_transactions(paging_options, necessity_by_association) do
     Transaction
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> pending_transactions_query()
-    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
+    |> order_by([transaction], desc: transaction.hash, desc: transaction.inserted_at)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
@@ -2195,7 +2474,7 @@ defmodule Explorer.Chain do
   """
   @spec transaction_estimated_count() :: non_neg_integer()
   def transaction_estimated_count do
-    cached_value = TransactionCount.value()
+    cached_value = TransactionCount.get_count()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[rows]]} =
@@ -2214,7 +2493,7 @@ defmodule Explorer.Chain do
   """
   @spec block_estimated_count() :: non_neg_integer()
   def block_estimated_count do
-    cached_value = BlockCount.count()
+    cached_value = BlockCount.get_count()
 
     if is_nil(cached_value) do
       %Postgrex.Result{rows: [[count]]} = Repo.query!("SELECT reltuples FROM pg_class WHERE relname = 'blocks';")
@@ -2239,6 +2518,24 @@ defmodule Explorer.Chain do
 
   """
 
+  @spec all_transaction_to_internal_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [
+          InternalTransaction.t()
+        ]
+  def all_transaction_to_internal_transactions(hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    InternalTransaction
+    |> for_parent_transaction(hash)
+    |> join_associations(necessity_by_association)
+    |> InternalTransaction.where_nonpending_block()
+    |> page_internal_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([internal_transaction], asc: internal_transaction.index)
+    |> preload(:transaction)
+    |> Repo.all()
+  end
+
   @spec transaction_to_internal_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [
           InternalTransaction.t()
         ]
@@ -2250,6 +2547,8 @@ defmodule Explorer.Chain do
     |> for_parent_transaction(hash)
     |> join_associations(necessity_by_association)
     |> where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> InternalTransaction.where_nonpending_block()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
@@ -2275,8 +2574,15 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    Log
-    |> join(:inner, [log], transaction in assoc(log, :transaction))
+    log_with_transactions =
+      from(log in Log,
+        inner_join: transaction in Transaction,
+        on:
+          transaction.block_hash == log.block_hash and transaction.block_number == log.block_number and
+            transaction.hash == log.transaction_hash
+      )
+
+    log_with_transactions
     |> where([_, transaction], transaction.hash == ^transaction_hash)
     |> page_logs(paging_options)
     |> limit(^paging_options.page_size)
@@ -2307,7 +2613,11 @@ defmodule Explorer.Chain do
 
     TokenTransfer
     |> join(:inner, [token_transfer], transaction in assoc(token_transfer, :transaction))
-    |> where([_, transaction], transaction.hash == ^transaction_hash)
+    |> where(
+      [token_transfer, transaction],
+      transaction.hash == ^transaction_hash and token_transfer.block_hash == transaction.block_hash and
+        token_transfer.block_number == transaction.block_number
+    )
     |> TokenTransfer.page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([token_transfer], asc: token_transfer.inserted_at)
@@ -2342,7 +2652,7 @@ defmodule Explorer.Chain do
   def transaction_to_status(%Transaction{status: nil}), do: :awaiting_internal_transactions
   def transaction_to_status(%Transaction{status: :ok}), do: :success
 
-  def transaction_to_status(%Transaction{status: :error, internal_transactions_indexed_at: nil, error: nil}),
+  def transaction_to_status(%Transaction{status: :error, error: nil}),
     do: {:error, :awaiting_internal_transactions}
 
   def transaction_to_status(%Transaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
@@ -2458,12 +2768,18 @@ defmodule Explorer.Chain do
       |> SmartContract.changeset(attrs)
       |> Changeset.put_change(:external_libraries, external_libraries)
 
+    address_hash = Changeset.get_field(smart_contract_changeset, :address_hash)
+
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     insert_result =
       Multi.new()
+      |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
+      |> Multi.run(:clear_primary_address_names, fn repo, _ -> clear_primary_address_names(repo, address_hash) end)
+      |> Multi.run(:insert_address_name, fn repo, _ ->
+        name = Changeset.get_field(smart_contract_changeset, :name)
+        create_address_name(repo, name, address_hash)
+      end)
       |> Multi.insert(:smart_contract, smart_contract_changeset)
-      |> Multi.run(:clear_primary_address_names, &clear_primary_address_names/2)
-      |> Multi.run(:insert_address_name, &create_address_name/2)
-      |> Multi.run(:set_address_verified, &set_address_verified/2)
       |> Repo.transaction()
 
     case insert_result do
@@ -2478,7 +2794,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp set_address_verified(repo, %{smart_contract: %SmartContract{address_hash: address_hash}}) do
+  defp set_address_verified(repo, address_hash) do
     query =
       from(
         address in Address,
@@ -2491,7 +2807,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp set_address_decompiled(repo, %{decompiled_smart_contract: %DecompiledSmartContract{address_hash: address_hash}}) do
+  defp set_address_decompiled(repo, address_hash) do
     query =
       from(
         address in Address,
@@ -2500,24 +2816,29 @@ defmodule Explorer.Chain do
 
     case repo.update_all(query, set: [decompiled: true]) do
       {1, _} -> {:ok, []}
-      _ -> {:error, "There was an error annotating that the address has been verified."}
+      _ -> {:error, "There was an error annotating that the address has been decompiled."}
     end
   end
 
-  defp clear_primary_address_names(repo, %{smart_contract: %SmartContract{address_hash: address_hash}}) do
-    clear_primary_query =
+  defp clear_primary_address_names(repo, address_hash) do
+    query =
       from(
         address_name in Address.Name,
         where: address_name.address_hash == ^address_hash,
-        update: [set: [primary: false]]
+        # Enforce Name ShareLocks order (see docs: sharelocks.md)
+        order_by: [asc: :address_hash, asc: :name],
+        lock: "FOR UPDATE"
       )
 
-    repo.update_all(clear_primary_query, [])
+    repo.update_all(
+      from(n in Address.Name, join: s in subquery(query), on: n.address_hash == s.address_hash),
+      set: [primary: false]
+    )
 
     {:ok, []}
   end
 
-  defp create_address_name(repo, %{smart_contract: %SmartContract{name: name, address_hash: address_hash}}) do
+  defp create_address_name(repo, name, address_hash) do
     params = %{
       address_hash: address_hash,
       name: name,
@@ -2532,8 +2853,26 @@ defmodule Explorer.Chain do
   @spec address_hash_to_address_with_source_code(Hash.Address.t()) :: Address.t() | nil
   def address_hash_to_address_with_source_code(address_hash) do
     case Repo.get(Address, address_hash) do
-      nil -> nil
-      address -> Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
+      nil ->
+        nil
+
+      address ->
+        address_with_smart_contract = Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
+
+        if address_with_smart_contract.smart_contract do
+          formatted_code =
+            SmartContract.add_submitted_comment(
+              address_with_smart_contract.smart_contract.contract_source_code,
+              address_with_smart_contract.smart_contract.inserted_at
+            )
+
+          %{
+            address_with_smart_contract
+            | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
+          }
+        else
+          address_with_smart_contract
+        end
     end
   end
 
@@ -2705,7 +3044,7 @@ defmodule Explorer.Chain do
   """
   @spec total_supply :: non_neg_integer() | nil
   def total_supply do
-    supply_module().total()
+    supply_module().total() || 0
   end
 
   @doc """
@@ -2717,7 +3056,7 @@ defmodule Explorer.Chain do
   end
 
   defp supply_module do
-    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.CoinMarketCap)
+    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.ExchangeRate)
   end
 
   @doc """
@@ -2744,6 +3083,41 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
+  @spec stream_unfetched_token_instances(
+          initial :: accumulator,
+          reducer :: (entry :: map(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_unfetched_token_instances(initial, reducer) when is_function(reducer, 2) do
+    nft_tokens =
+      from(
+        token in Token,
+        where: token.type == ^"ERC-721",
+        select: token.contract_address_hash
+      )
+
+    query =
+      from(
+        token_transfer in TokenTransfer,
+        inner_join: token in subquery(nft_tokens),
+        on: token.contract_address_hash == token_transfer.token_contract_address_hash,
+        left_join: instance in Instance,
+        on:
+          token_transfer.token_id == instance.token_id and
+            token_transfer.token_contract_address_hash == instance.token_contract_address_hash,
+        where: is_nil(instance.token_id) and not is_nil(token_transfer.token_id),
+        select: %{contract_address_hash: token_transfer.token_contract_address_hash, token_id: token_transfer.token_id}
+      )
+
+    distinct_query =
+      from(
+        q in subquery(query),
+        distinct: [q.contract_address_hash, q.token_id]
+      )
+
+    Repo.stream_reduce(distinct_query, initial, reducer)
+  end
+
   @doc """
   Streams a list of token contract addresses that have been cataloged.
   """
@@ -2752,8 +3126,10 @@ defmodule Explorer.Chain do
           reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_cataloged_token_contract_address_hashes(initial, reducer) when is_function(reducer, 2) do
-    Token.cataloged_tokens()
+  def stream_cataloged_token_contract_address_hashes(initial, reducer, hours_ago_updated \\ 48)
+      when is_function(reducer, 2) do
+    hours_ago_updated
+    |> Token.cataloged_tokens()
     |> order_by(asc: :updated_at)
     |> Repo.stream_reduce(initial, reducer)
   end
@@ -2818,9 +3194,19 @@ defmodule Explorer.Chain do
     TokenTransfer.fetch_token_transfers_from_token_hash(token_address_hash, options)
   end
 
+  @spec fetch_token_transfers_from_token_hash_and_token_id(Hash.t(), binary(), [paging_options]) :: []
+  def fetch_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id, options \\ []) do
+    TokenTransfer.fetch_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id, options)
+  end
+
   @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
   def count_token_transfers_from_token_hash(token_address_hash) do
     TokenTransfer.count_token_transfers_from_token_hash(token_address_hash)
+  end
+
+  @spec count_token_transfers_from_token_hash_and_token_id(Hash.t(), binary()) :: non_neg_integer()
+  def count_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id) do
+    TokenTransfer.count_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id)
   end
 
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
@@ -2846,14 +3232,20 @@ defmodule Explorer.Chain do
         ]) :: {integer(), nil | [term()]}
   def find_and_update_replaced_transactions(transactions, timeout \\ :infinity) do
     query =
-      Enum.reduce(transactions, Transaction, fn %{hash: hash, nonce: nonce, from_address_hash: from_address_hash},
-                                                query ->
-        from(t in query,
-          or_where:
-            t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and t.hash != ^hash and
-              not is_nil(t.block_number)
-        )
-      end)
+      transactions
+      |> Enum.reduce(
+        Transaction,
+        fn %{hash: hash, nonce: nonce, from_address_hash: from_address_hash}, query ->
+          from(t in query,
+            or_where:
+              t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and t.hash != ^hash and
+                not is_nil(t.block_number)
+          )
+        end
+      )
+      # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+      |> order_by(asc: :hash)
+      |> lock("FOR UPDATE")
 
     hashes = Enum.map(transactions, & &1.hash)
 
@@ -2896,11 +3288,26 @@ defmodule Explorer.Chain do
             or_where: t.nonce == ^nonce and t.from_address_hash == ^from_address and is_nil(t.block_hash)
           )
         end)
+        # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+        |> order_by(asc: :hash)
+        |> lock("FOR UPDATE")
 
-      update_query = from(t in query, update: [set: [status: ^:error, error: "dropped/replaced"]])
-
-      Repo.update_all(update_query, [], timeout: timeout)
+      Repo.update_all(
+        from(t in Transaction, join: s in subquery(query), on: t.hash == s.hash),
+        [set: [error: "dropped/replaced", status: :error]],
+        timeout: timeout
+      )
     end
+  end
+
+  @spec upsert_token_instance(map()) :: {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
+  def upsert_token_instance(params) do
+    changeset = Instance.changeset(%Instance{}, params)
+
+    Repo.insert(changeset,
+      on_conflict: :replace_all,
+      conflict_target: [:token_id, :token_contract_address_hash]
+    )
   end
 
   @doc """
@@ -2926,8 +3333,15 @@ defmodule Explorer.Chain do
 
     address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
 
+    # Enforce ShareLocks tables order (see docs: sharelocks.md)
     insert_result =
       Multi.new()
+      |> Multi.run(
+        :address_name,
+        fn repo, _ ->
+          {:ok, repo.insert(address_name_changeset, address_name_opts)}
+        end
+      )
       |> Multi.run(:token, fn repo, _ ->
         with {:error, %Changeset{errors: [{^stale_error_field, {^stale_error_message, []}}]}} <-
                repo.insert(token_changeset, token_opts) do
@@ -2935,12 +3349,6 @@ defmodule Explorer.Chain do
           {:ok, token}
         end
       end)
-      |> Multi.run(
-        :address_name,
-        fn repo, _ ->
-          {:ok, repo.insert(address_name_changeset, address_name_opts)}
-        end
-      )
       |> Repo.transaction()
 
     case insert_result do
@@ -2959,6 +3367,24 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  @spec erc721_token_instance_from_token_id_and_token_address(binary(), Hash.Address.t()) ::
+          {:ok, TokenTransfer.t()} | {:error, :not_found}
+  def erc721_token_instance_from_token_id_and_token_address(token_id, token_contract_address) do
+    query =
+      from(tt in TokenTransfer,
+        left_join: instance in Instance,
+        on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
+        where: tt.token_contract_address_hash == ^token_contract_address and tt.token_id == ^token_id,
+        limit: 1,
+        select: %{tt | instance: instance}
+      )
+
+    case Repo.one(query) do
+      nil -> {:error, :not_found}
+      token_instance -> {:ok, token_instance}
+    end
+  end
+
   @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []
   def address_to_coin_balances(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -2967,6 +3393,13 @@ defmodule Explorer.Chain do
     |> CoinBalance.fetch_coin_balances(paging_options)
     |> page_coin_balances(paging_options)
     |> Repo.all()
+    |> Enum.dedup_by(fn record ->
+      if record.delta == Decimal.new(0) do
+        :dup
+      else
+        System.unique_integer()
+      end
+    end)
   end
 
   def get_coin_balance(address_hash, block_number) do
@@ -2985,8 +3418,16 @@ defmodule Explorer.Chain do
     address_hash
     |> CoinBalance.balances_by_day(latest_block_timestamp)
     |> Repo.all()
+    |> replace_last_value(latest_block_timestamp)
     |> normalize_balances_by_day()
   end
+
+  # https://github.com/poanetwork/blockscout/issues/2658
+  defp replace_last_value(items, %{value: value, timestamp: timestamp}) do
+    List.replace_at(items, -1, %{date: Date.convert!(timestamp, Calendar.ISO), value: value})
+  end
+
+  defp replace_last_value(items, _), do: items
 
   defp normalize_balances_by_day(balances_by_day) do
     result =
@@ -3523,7 +3964,270 @@ defmodule Explorer.Chain do
     Repo.exists?(query)
   end
 
+  @doc """
+  Checks if a `t:Explorer.Chain.Token.t/0` with the given `hash` exists.
+
+  Returns `:ok` if found
+
+      iex> address = insert(:address)
+      iex> insert(:token, contract_address: address)
+      iex> Explorer.Chain.check_token_exists(address.hash)
+      :ok
+
+  Returns `:not_found` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      iex> Explorer.Chain.check_token_exists(hash)
+      :not_found
+  """
+  @spec check_token_exists(Hash.Address.t()) :: :ok | :not_found
+  def check_token_exists(hash) do
+    hash
+    |> token_exists?()
+    |> boolean_to_check_result()
+  end
+
+  @doc """
+  Checks if a `t:Explorer.Chain.Token.t/0` with the given `hash` exists.
+
+  Returns `true` if found
+
+      iex> address = insert(:address)
+      iex> insert(:token, contract_address: address)
+      iex> Explorer.Chain.token_exists?(address.hash)
+      true
+
+  Returns `false` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      iex> Explorer.Chain.token_exists?(hash)
+      false
+  """
+  @spec token_exists?(Hash.Address.t()) :: boolean()
+  def token_exists?(hash) do
+    query =
+      from(
+        token in Token,
+        where: token.contract_address_hash == ^hash
+      )
+
+    Repo.exists?(query)
+  end
+
+  @doc """
+  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` with the given `hash` and `token_id` exists.
+
+  Returns `:ok` if found
+
+      iex> contract_address = insert(:address)
+      iex> token_id = 10
+      iex> insert(:token_transfer,
+      ...>  from_address: contract_address,
+      ...>  token_contract_address: contract_address,
+      ...>  token_id: token_id
+      ...> )
+      iex> Explorer.Chain.check_erc721_token_instance_exists(token_id, contract_address.hash)
+      :ok
+
+  Returns `:not_found` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      iex> Explorer.Chain.check_erc721_token_instance_exists(10, hash)
+      :not_found
+  """
+  @spec check_erc721_token_instance_exists(binary() | non_neg_integer(), Hash.Address.t()) :: :ok | :not_found
+  def check_erc721_token_instance_exists(token_id, hash) do
+    token_id
+    |> erc721_token_instance_exist?(hash)
+    |> boolean_to_check_result()
+  end
+
+  @doc """
+  Checks if a `t:Explorer.Chain.TokenTransfer.t/0` with the given `hash` and `token_id` exists.
+
+  Returns `true` if found
+
+      iex> contract_address = insert(:address)
+      iex> token_id = 10
+      iex> insert(:token_transfer,
+      ...>  from_address: contract_address,
+      ...>  token_contract_address: contract_address,
+      ...>  token_id: token_id
+      ...> )
+      iex> Explorer.Chain.erc721_token_instance_exist?(token_id, contract_address.hash)
+      true
+
+  Returns `false` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      iex> Explorer.Chain.erc721_token_instance_exist?(10, hash)
+      false
+  """
+  @spec erc721_token_instance_exist?(binary() | non_neg_integer(), Hash.Address.t()) :: boolean()
+  def erc721_token_instance_exist?(token_id, hash) do
+    query =
+      from(tt in TokenTransfer,
+        where: tt.token_contract_address_hash == ^hash and tt.token_id == ^token_id
+      )
+
+    Repo.exists?(query)
+  end
+
   defp boolean_to_check_result(true), do: :ok
 
   defp boolean_to_check_result(false), do: :not_found
+
+  def extract_db_name(db_url) do
+    if db_url == nil do
+      ""
+    else
+      db_url
+      |> String.split("/")
+      |> Enum.take(-1)
+      |> Enum.at(0)
+    end
+  end
+
+  def extract_db_host(db_url) do
+    if db_url == nil do
+      ""
+    else
+      db_url
+      |> String.split("@")
+      |> Enum.take(-1)
+      |> Enum.at(0)
+      |> String.split(":")
+      |> Enum.at(0)
+    end
+  end
+
+  @doc """
+  Fetches the first trace from the Parity trace URL.
+  """
+  def fetch_first_trace(transactions_params, json_rpc_named_arguments) do
+    case EthereumJSONRPC.fetch_first_trace(transactions_params, json_rpc_named_arguments) do
+      {:ok, [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]} ->
+        format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments)
+
+      {:error, error} ->
+        {:error, error}
+
+      :ignore ->
+        :ignore
+    end
+  end
+
+  defp format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments) do
+    {:ok, to_address_hash} =
+      if Map.has_key?(first_trace, :to_address_hash) do
+        Chain.string_to_address_hash(first_trace.to_address_hash)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, from_address_hash} = Chain.string_to_address_hash(first_trace.from_address_hash)
+
+    {:ok, created_contract_address_hash} =
+      if Map.has_key?(first_trace, :created_contract_address_hash) do
+        Chain.string_to_address_hash(first_trace.created_contract_address_hash)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, transaction_hash} = Chain.string_to_transaction_hash(first_trace.transaction_hash)
+
+    {:ok, call_type} =
+      if Map.has_key?(first_trace, :call_type) do
+        CallType.load(first_trace.call_type)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, type} = Type.load(first_trace.type)
+
+    {:ok, input} =
+      if Map.has_key?(first_trace, :input) do
+        Data.cast(first_trace.input)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, output} =
+      if Map.has_key?(first_trace, :output) do
+        Data.cast(first_trace.output)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, created_contract_code} =
+      if Map.has_key?(first_trace, :created_contract_code) do
+        Data.cast(first_trace.created_contract_code)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, init} =
+      if Map.has_key?(first_trace, :init) do
+        Data.cast(first_trace.init)
+      else
+        {:ok, nil}
+      end
+
+    block_index =
+      get_block_index(%{
+        transaction_index: first_trace.transaction_index,
+        transaction_hash: first_trace.transaction_hash,
+        block_number: first_trace.block_number,
+        json_rpc_named_arguments: json_rpc_named_arguments
+      })
+
+    value = %Wei{value: Decimal.new(first_trace.value)}
+
+    first_trace_formatted =
+      first_trace
+      |> Map.merge(%{
+        block_index: block_index,
+        block_hash: block_hash,
+        call_type: call_type,
+        to_address_hash: to_address_hash,
+        created_contract_address_hash: created_contract_address_hash,
+        from_address_hash: from_address_hash,
+        input: input,
+        output: output,
+        created_contract_code: created_contract_code,
+        init: init,
+        transaction_hash: transaction_hash,
+        type: type,
+        value: value
+      })
+
+    {:ok, [first_trace_formatted]}
+  end
+
+  defp get_block_index(%{
+         transaction_index: transaction_index,
+         transaction_hash: transaction_hash,
+         block_number: block_number,
+         json_rpc_named_arguments: json_rpc_named_arguments
+       }) do
+    if transaction_index == 0 do
+      0
+    else
+      {:ok, traces} = fetch_block_internal_transactions([block_number], json_rpc_named_arguments)
+
+      sorted_traces =
+        traces
+        |> Enum.sort_by(&{&1.transaction_index, &1.index})
+        |> Enum.with_index()
+
+      {_, block_index} =
+        sorted_traces
+        |> Enum.find(fn {trace, _} ->
+          trace.transaction_index == transaction_index &&
+            trace.transaction_hash == transaction_hash
+        end)
+
+      block_index
+    end
+  end
 end

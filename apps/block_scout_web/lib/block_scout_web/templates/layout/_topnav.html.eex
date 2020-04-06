@@ -1,7 +1,7 @@
-<link rel="preload" href="/css/awesomplete.css" as="style" onload="this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="/css/awesomplete.css"></noscript>
-<script src="/js/awesomplete.min.js"></script>
-<script src="/js/awesomplete-util.min.js"></script>
+<link rel="preload" href="<%= static_path(@conn, "/css/awesomplete.css") %>" as="style" onload="this.rel='stylesheet'">
+<link rel="stylesheet" href="<%= static_path(@conn, "/css/awesomplete.css") %>">
+<script src="<%= static_path(@conn, "/js/awesomplete.min.js") %>"></script>
+<script src="<%= static_path(@conn, "/js/awesomplete-util.min.js") %>"></script>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <script>
     if (localStorage.getItem("current-color-mode") === "dark") {
@@ -11,7 +11,7 @@
   <div class="container-fluid navbar-container">
     <%= link to: webapp_url(@conn), class: "navbar-brand", "data-test": "header_logo" do %>
       <img class="navbar-logo" id="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
-    <% end %>
+    <% end %>   
     <script>
       if (localStorage.getItem("current-color-mode") === "dark") {
         document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
@@ -42,7 +42,7 @@
               <% end %>
             </div>
           </li>
-          <li class="nav-item dropdown">
+          <li class="nav-item dropdown">            <li class="nav-item dropdown" id="activeTransactions">
             <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
@@ -80,7 +80,7 @@
               </span>
               <%= gettext("APIs") %>
             </a>
-            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
               <%= link(
                     gettext("GraphQL"),
                     class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
@@ -99,13 +99,27 @@
             </div>
           </li>
         <% end %>
-        <li class="nav-item dropdown nav-item-networks">
+        <li class="nav-item dropdown">
           <a class="nav-link topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
             </span>
             <%= subnetwork_title() %>
           </a>
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">  
+            <a class="dropdown-item header division">Mainnets</a> 
+            <%= for %{url: url, title: title} <- dropdown_head_main_nets() do %>  
+              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+            <% end %> 
+            <a class="dropdown-item header division">Testnets</a> 
+            <%= for %{url: url, title: title} <- test_nets(dropdown_nets()) do %> 
+              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+            <% end %> 
+            <a class="dropdown-item header division">Other Networks</a> 
+            <%= for %{url: url, title: title} <- dropdown_other_nets() do %>  
+              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+            <% end %> 
+          </div>
         </li>
       </ul>
       <!-- Dark mode changer -->
@@ -116,7 +130,7 @@
       </button>
       <!-- Search navbar -->
       <%= if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter)[:enabled] do %>
-        <div class="search-form d-lg-flex d-inline-block" style="background-color: #22223a">
+        <div class="search-form d-lg-flex d-inline-block">
           <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
           <div class="input-group" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
                 <%= awesomplete(f, :q,
@@ -154,7 +168,6 @@
     </div>
   </div>
 </nav>
-<%= render BlockScoutWeb.LayoutView, "_network_selector.html" %>
 <script>
   if (localStorage.getItem("current-color-mode") === "dark") {
     var modeChanger = document.getElementById("dark-mode-changer");

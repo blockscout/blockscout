@@ -131,6 +131,7 @@
                     data-clipboard-text="<%= @transaction.input %>"
                     data-placement="top"
                     data-toggle="tooltip"
+                    title='<%= gettext("Copy Txn Input") %>'
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
                       <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
@@ -140,9 +141,10 @@
                   <span
                     aria-label="Copy Value"
                     class="btn-copy-icon tx-utf8-input transaction-input"
-                    data-clipboard-text="<%= @transaction.input %>"
+                    data-clipboard-text="<%= @transaction.input.bytes %>"
                     data-placement="top"
                     data-toggle="tooltip"
+                    title='<%= gettext("Copy Txn Input") %>'
                     style="display: none;"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
@@ -193,7 +195,12 @@
             <div class="text-right">
             <%= for transfer  <- aggregate_token_transfers(transaction_with_transfers.token_transfers) do %>
               <h3 class="address-balance-text">
-                  <%= token_transfer_amount(transfer) %>
+                 <%= case token_transfer_amount(transfer) do %>
+                   <% {:ok, :erc721_instance} -> %>
+                     <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id))) %><%= "]" %>
+                   <% {:ok, value} -> %>
+                     <%= value %>
+                 <% end %>
                   <%= " "%>
                   <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
               </h3>
@@ -222,7 +229,7 @@
       </div>
     <% end %>
       <!-- Gas -->
-      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
+      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0 mob-transaction">
         <div class="card-body card-body-flex-column-space-between">
           <h2 class="card-title balance-card-title"> <%= gettext "Gas" %> </h2>
           <div class="text-right">
@@ -249,5 +256,5 @@
       </div>
     </div>
   <% end %>
-
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/transaction.js") %>"></script>
 </section>

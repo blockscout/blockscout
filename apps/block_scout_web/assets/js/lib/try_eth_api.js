@@ -1,7 +1,9 @@
 import $ from 'jquery'
+import './try_api'
 
 function composeCurlCommand (data) {
-  return `curl -H "content-type: application/json" -X POST --data '${JSON.stringify(data)}'`
+  const url = $('[data-endpoint-url]').attr('data-endpoint-url')
+  return `curl -H "content-type: application/json" -X POST --data '${JSON.stringify(data)}' ${url}`
 }
 
 function handleResponse (data, xhr, clickedButton) {
@@ -43,6 +45,11 @@ function parseInput (input) {
   }
 }
 
+function composeRequestUrl () {
+  const url = $('[data-endpoint-url]').attr('data-endpoint-url')
+  return url
+}
+
 $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
   const clickedButton = $(event.target)
   const module = clickedButton.attr('data-module')
@@ -50,7 +57,6 @@ $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
   const inputs = $(`input[data-selector="${module}-${action}-try-api-ui"]`)
   const params = $.map(inputs, parseInput)
   const formData = wrapJsonRpc(action, params)
-  console.log(formData)
   const loadingText = '<span class="loading-spinner-small mr-2"><span class="loading-spinner-block-1"></span><span class="loading-spinner-block-2"></span></span> Loading...'
 
   clickedButton.prop('disabled', true)
@@ -61,7 +67,7 @@ $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
   }
 
   $.ajax({
-    url: '/api/eth_rpc',
+    url: composeRequestUrl(),
     type: 'POST',
     data: JSON.stringify(formData),
     dataType: 'json',

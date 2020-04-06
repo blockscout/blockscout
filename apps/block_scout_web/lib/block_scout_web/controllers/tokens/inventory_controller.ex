@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
 
   alias BlockScoutWeb.Tokens.InventoryView
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.TokenTransfer
+  alias Explorer.Chain.{Address, TokenTransfer}
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, default_paging_options: 0]
@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
             token_inventory_path(
               conn,
               :index,
-              address_hash_string,
+              Address.checksum(address_hash_string),
               Map.delete(next_page_params, "type")
             )
         end
@@ -39,7 +39,9 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
           View.render_to_string(
             InventoryView,
             "_token.html",
-            token_transfer: token_transfer
+            token_transfer: token_transfer,
+            token: token,
+            conn: conn
           )
         end)
 
@@ -69,8 +71,7 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
         "index.html",
         current_path: current_path(conn),
         token: Market.add_price(token),
-        total_token_transfers: Chain.count_token_transfers_from_token_hash(address_hash),
-        total_token_holders: token.holder_count || Chain.count_token_holders_from_token_hash(address_hash)
+        counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)})
       )
     else
       :error ->

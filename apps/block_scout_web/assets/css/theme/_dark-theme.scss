@@ -234,7 +234,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		}
 	}
 
-	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon {
+	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon .btn-contract-icon {
 		border-color: $dark-primary;
 		path {
 			fill: $dark-primary;
@@ -504,7 +504,7 @@ $labels-dark: #8a8dba; // header nav, labels
 		border-top-color: darken($labels-dark, 30);
 		border-bottom-color: darken($labels-dark, 30);
 	}
-	
+
 	// Form Controlls
 	.form-control {
 		background-color: $dark-light;
@@ -749,7 +749,7 @@ $labels-dark: #8a8dba; // header nav, labels
 			color: #fff;
 		}
 	}
-    
+
 	// alerts
 	.alert-link {
 		color: $labels-dark;
@@ -778,4 +778,24 @@ $labels-dark: #8a8dba; // header nav, labels
 			color: #fff;
 		}
 	}
+}
+
+.navbar-dark .navbar-toggler {
+	color: rgba(255, 255, 255, 0.5);
+	border: none;
+}
+
+.dark-theme-applied .dropdown-item {
+	background-color: $dark-light!important;
+    color: #fff!important;
+}
+
+.dark-theme-applied .dropdown-item.active:not(.header), .dark-theme-applied .dropdown-item:not(.header):hover, .dark-theme-applied .dropdown-item:not(.header):focus {
+    background-image: none;
+    width: 100%;
+    background-color: #3f426c !important;
+}
+
+.dark-theme-applied .dropdown-item.active.header, .dark-theme-applied .dropdown-item.header:hover, .dark-theme-applied .dropdown-item.header:focus {
+    background-color: $dark-light !important;
 }
