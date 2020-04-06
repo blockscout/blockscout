@@ -20,13 +20,9 @@ defmodule Indexer.Transform.CeloAccounts do
             %{voter: a}
           end),
       # Adding a group to updated validators means to update all members of the group
-      validators:
-        get_addresses(logs, CeloAccount.validator_events()) ++
-          get_addresses(logs, CeloAccount.membership_events()),
+      validators: get_addresses(logs, CeloAccount.validator_events()) ++         get_addresses(logs, CeloAccount.membership_events()),
       account_names: get_names(logs),
-      validator_groups:
-        get_addresses(logs, CeloAccount.validator_group_events()) ++
-          get_addresses(logs, CeloAccount.vote_events(), fn a -> a.third_topic end),
+      validator_groups: get_addresses(logs, CeloAccount.validator_group_events()) ++       get_addresses(logs, CeloAccount.vote_events(), fn a -> a.third_topic end),
       withdrawals: get_addresses(logs, CeloAccount.withdrawal_events()),
       signers: get_signers(logs, CeloSigners.signer_events()),
       voter_rewards: get_rewards(logs, CeloAccount.validator_group_voter_reward_events()),
@@ -45,7 +41,7 @@ defmodule Indexer.Transform.CeloAccounts do
     |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
   end
 
-  defp get_names(logs) do
+  def get_names(logs) do
     logs
     |> Enum.filter(fn log -> log.first_topic == CeloAccount.account_name_event() end)
     |> Enum.reduce([], fn log, names -> do_parse_name(log, names) end)
@@ -71,13 +67,13 @@ defmodule Indexer.Transform.CeloAccounts do
     |> Enum.reduce([], fn log, accounts -> do_parse_signers(log, accounts) end)
   end
 
-  defp get_rewards(logs, topics) do
+  def get_rewards(logs, topics) do
     logs
     |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
     |> Enum.reduce([], fn log, accounts -> do_parse_rewards(log, accounts) end)
   end
 
-  defp get_voters(logs, topics) do
+  def get_voters(logs, topics) do
     logs
     |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
     |> Enum.reduce([], fn log, accounts -> do_parse_voters(log, accounts) end)

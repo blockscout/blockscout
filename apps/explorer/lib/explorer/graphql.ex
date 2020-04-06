@@ -15,6 +15,7 @@ defmodule Explorer.GraphQL do
     Address,
     Block,
     CeloAccount,
+    CeloClaims,
     Hash,
     InternalTransaction,
     TokenTransfer,
@@ -53,6 +54,11 @@ defmodule Explorer.GraphQL do
   def address_to_affiliates_query(address_hash) do
     Chain.celo_validator_query()
     |> where([account], account.group_address_hash == ^address_hash)
+  end
+
+  def address_to_claims_query(address_hash) do
+    CeloClaims
+    |> where([account], account.address == ^address_hash)
   end
 
   def address_to_validator_group_query(address_hash) do

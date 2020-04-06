@@ -102,7 +102,6 @@ defmodule Explorer.Celo.AccountReader do
 
   def validator_group_data(address) do
     data = fetch_validator_group_data(address)
-    IO.inspect(data)
 
     with {:ok, [_ | [commission | _]]} <- data["getValidatorGroup"],
          {:ok, [active_votes]} <- data["getActiveVotesForGroup"],
@@ -139,9 +138,11 @@ defmodule Explorer.Celo.AccountReader do
       call_methods([
         {:election, "getPendingVotesForGroupByAccount", [group_address, voter_address]},
         {:election, "getTotalVotesForGroupByAccount", [group_address, voter_address]},
-        {:election, "getTotalVoteUnitsForGroupByAccount", [group_address, voter_address]},
+        {:election, "getActiveVoteUnitsForGroupByAccount", [group_address, voter_address]},
         {:election, "getActiveVotesForGroupByAccount", [group_address, voter_address]}
       ])
+    
+    IO.inspect(data)
 
     with {:ok, [pending]} <- data["getPendingVotesForGroupByAccount"],
          {:ok, [total]} <- data["getTotalVotesForGroupByAccount"],
