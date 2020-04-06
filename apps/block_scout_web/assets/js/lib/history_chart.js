@@ -44,7 +44,7 @@ const config = {
         },
         ticks: {
           beginAtZero: true,
-          callback: (value, index, values) => `$${numeral(value).format('0,0.00')}`,
+          callback: (value, _index, _values) => `$${numeral(value).format('0,0.00')}`,
           maxTicksLimit: 4,
           fontColor: sassVariables.dashboardBannerChartAxisFontColor
         }
@@ -55,7 +55,7 @@ const config = {
           drawBorder: false
         },
         ticks: {
-          callback: (value, index, values) => '',
+          callback: (_value, _index, _values) => '',
           maxTicksLimit: 6,
           drawOnChartArea: false
         }
@@ -68,7 +68,7 @@ const config = {
         },
         ticks: {
           beginAtZero: true,
-          callback: (value, index, values) => `${numeral(value).format('0,0')}`,
+          callback: (value, _index, _values) => `${numeral(value).format('0,0')}`,
           maxTicksLimit: 4,
           fontColor: sassVariables.dashboardBannerChartAxisFontColor
         }
@@ -78,7 +78,7 @@ const config = {
       mode: 'index',
       intersect: false,
       callbacks: {
-        label: ({datasetIndex, yLabel}, {datasets}) => {
+        label: ({ datasetIndex, yLabel }, { datasets }) => {
           const label = datasets[datasetIndex].label
           if (datasets[datasetIndex].yAxisID === 'price') {
             return `${label}: ${formatUsdValue(yLabel)}`
@@ -96,19 +96,19 @@ const config = {
 }
 
 function getPriceData (marketHistoryData) {
-  return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice}))
+  return marketHistoryData && marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (availableSupply !== null && typeof availableSupply === 'object') {
-    return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply[date]}))
+    return marketHistoryData && marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice * availableSupply[date] }))
   } else {
-    return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply}))
+    return marketHistoryData && marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice * availableSupply }))
   }
 }
 
 class MarketHistoryChart {
-  constructor (el, availableSupply, marketHistoryData, dataConfig) {
+  constructor (el, availableSupply, _marketHistoryData, dataConfig) {
     var axes = config.options.scales.yAxes.reduce(function (solution, elem) {
       solution[elem.id] = elem
       return solution
@@ -119,7 +119,7 @@ class MarketHistoryChart {
     var marketCapActivated = true
 
     this.price = {
-      label: window.localized['Price'],
+      label: window.localized.Price,
       yAxisID: 'price',
       data: [],
       fill: false,
@@ -130,7 +130,7 @@ class MarketHistoryChart {
     }
     if (dataConfig.market === undefined || dataConfig.market.indexOf('price') === -1) {
       this.price.hidden = true
-      axes['price'].display = false
+      axes.price.display = false
       priceActivated = false
     }
 
@@ -146,7 +146,7 @@ class MarketHistoryChart {
     }
     if (dataConfig.market === undefined || dataConfig.market.indexOf('market_cap') === -1) {
       this.marketCap.hidden = true
-      axes['marketCap'].display = false
+      axes.marketCap.display = false
       marketCapActivated = false
     }
 
@@ -163,9 +163,9 @@ class MarketHistoryChart {
 
     if (dataConfig.transactions === undefined || dataConfig.transactions.indexOf('transactions_per_day') === -1) {
       this.numTransactions.hidden = true
-      axes['numTransactions'].display = false
+      axes.numTransactions.display = false
     } else if (!priceActivated && !marketCapActivated) {
-      axes['numTransactions'].position = 'left'
+      axes.numTransactions.position = 'left'
       this.numTransactions.backgroundColor = sassVariables.dashboardLineColorPrice
       this.numTransactions.borderColor = sassVariables.dashboardLineColorPrice
     }
@@ -174,6 +174,7 @@ class MarketHistoryChart {
     config.data.datasets = [this.price, this.marketCap, this.numTransactions]
     this.chart = new Chart(el, config)
   }
+
   updateMarketHistory (availableSupply, marketHistoryData) {
     this.price.data = getPriceData(marketHistoryData)
     if (this.availableSupply !== null && typeof this.availableSupply === 'object') {
@@ -185,9 +186,10 @@ class MarketHistoryChart {
     }
     this.chart.update()
   }
+
   updateTransactionHistory (transactionHistory) {
-    this.numTransactions.data = transactionHistory.map(dataPoint => {
-      return {x: dataPoint.date, y: dataPoint.number_of_transactions}
+    this.numTransactions.data = transactionHistory && transactionHistory.map(dataPoint => {
+      return { x: dataPoint.date, y: dataPoint.number_of_transactions }
     })
     this.chart.update()
   }
@@ -201,21 +203,23 @@ export function createMarketHistoryChart (el) {
   const $chartError = $('[data-chart-error-message]')
   const chart = new MarketHistoryChart(el, 0, [], dataConfig)
   Object.keys(dataPaths).forEach(function (historySource) {
-    $.getJSON(dataPaths[historySource], {type: 'JSON'})
+    $.getJSON(dataPaths[historySource], { type: 'JSON' })
       .done(data => {
         switch (historySource) {
-          case 'market':
+          case 'market': {
             const availableSupply = JSON.parse(data.supply_data)
             const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
             $(el).show()
             chart.updateMarketHistory(availableSupply, marketHistoryData)
             break
-          case 'transaction':
+          }
+          case 'transaction': {
             const transactionHistory = JSON.parse(data.history_data)
 
             $(el).show()
             chart.updateTransactionHistory(transactionHistory)
             break
+          }
         }
       })
       .fail(() => {

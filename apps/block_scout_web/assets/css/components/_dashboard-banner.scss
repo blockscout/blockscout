@@ -21,7 +21,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   overflow: hidden;
   padding: 0;
   position: relative;
-  height: 249px;
+  height: 264px;
   @include media-breakpoint-down(sm) {
       height: auto;
   }
@@ -35,6 +35,10 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   justify-content: space-between;
   position: relative;
   z-index: 9;
+
+  @include media-breakpoint-between(lg, xl) {
+    height: 249px;
+  }
 
   @include media-breakpoint-down(sm) {
     flex-direction: column;
@@ -156,7 +160,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   display: flex;
   height: $dashboard-banner-network-plain-container-height;
   justify-content: center;
-  margin: 45px 0 0 30px;
+  margin: 45px 0 -15px 30px;
   max-width: 100%;
   padding: 30px 0 30px 60px;
   width: 750px;

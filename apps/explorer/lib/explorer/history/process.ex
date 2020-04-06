@@ -1,7 +1,7 @@
 defmodule Explorer.History.Process do
   @moduledoc """
   Creates the GenServer process used by a Historian to compile_history and to save_records.
-  Specifically used by Market.History.Historian and Transaction.History.Historian
+  Specifically used by Transaction.History.Historian
   """
   use GenServer
   require Logger

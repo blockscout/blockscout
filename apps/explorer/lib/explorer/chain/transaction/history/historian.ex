@@ -41,7 +41,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
   @impl Historian
   def save_records(records) do
     {num_inserted, _} =
-      Repo.insert_all(TransactionStats, records, on_conflict: :replace_all_except_primary_key, conflict_target: [:date])
+      Repo.insert_all(TransactionStats, records, on_conflict: {:replace_all_except, [:id]}, conflict_target: [:date])
 
     Publisher.broadcast(:transaction_stats)
     num_inserted

@@ -9,9 +9,8 @@ import numeral from 'numeral'
 import socket from '../socket'
 import { updateAllCalculatedUsdValues, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { batchChannel } from '../lib/utils'
+import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
-import { createMarketHistoryChart } from '../lib/history_chart'
 import '../app'
 
 const BATCH_THRESHOLD = 6
@@ -163,24 +162,18 @@ function withMissingBlocks (reducer) {
 
 let chart
 const elements = {
-<<<<<<< HEAD
   '[data-chart="historyChart"]': {
-    load ($el) {
-      chart = createMarketHistoryChart($el[0])
-=======
-  '[data-chart="marketHistoryChart"]': {
     load () {
       chart = window.dashboardChart
->>>>>>> origin/master
     },
     render ($el, state, oldState) {
-      if (chart && !(oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) && state.availableSupply) {
-        chart.updateMarketHistory(state.availableSupply, state.marketHistoryData)
-      }
+      if (!chart || (oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) || !state.availableSupply) return
 
-      if (chart && !(JSON.stringify(oldState.transactionStats) === JSON.stringify(state.transactionStats))) {
-        chart.updateTransactionHistory(state.transactionStats)
-      }
+      chart.updateMarketHistory(state.availableSupply, state.marketHistoryData)
+
+      if (!chart || (JSON.stringify(oldState.transactionStats) === JSON.stringify(state.transactionStats))) return
+
+      chart.updateTransactionHistory(state.transactionStats)
     }
   },
   '[data-selector="transaction-count"]': {
@@ -244,7 +237,7 @@ const elements = {
     }
   },
   '[data-selector="chain-block-list"] [data-selector="error-message"]': {
-    render ($el, state, oldState) {
+    render ($el, state, _oldState) {
       if (state.blocksError) {
         $el.show()
       } else {
@@ -253,22 +246,18 @@ const elements = {
     }
   },
   '[data-selector="chain-block-list"] [data-selector="loading-message"]': {
-    render ($el, state, oldState) {
-      if (state.blocksLoading) {
-        $el.show()
-      } else {
-        $el.hide()
-      }
+    render ($el, state, _oldState) {
+      showLoader(state.blocksLoading, $el)
     }
   },
   '[data-selector="transactions-list"] [data-selector="error-message"]': {
-    render ($el, state, oldState) {
+    render ($el, state, _oldState) {
       $el.toggle(state.transactionsError)
     }
   },
   '[data-selector="transactions-list"] [data-selector="loading-message"]': {
-    render ($el, state, oldState) {
-      $el.toggle(state.transactionsLoading)
+    render ($el, state, _oldState) {
+      showLoader(state.transactionsLoading, $el)
     }
   },
   '[data-selector="transactions-list"]': {

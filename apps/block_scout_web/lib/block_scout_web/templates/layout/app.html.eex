@@ -29,7 +29,8 @@
         'Less than': '<%= gettext("Less than") %>',
         'Market Cap': '<%= gettext("Market Cap") %>',
         'Price': '<%= gettext("Price") %>',
-        'Ether': '<%= gettext("Ether") %>'
+        'Ether': '<%= gettext("Ether") %>',
+        'Tx/day': '<%= gettext("Tx/day") %>'
       }
     </script>
   </head>
@@ -64,18 +65,6 @@
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
-    <script>
-      window.localized = {
-        'Blocks Indexed': '<%= gettext("Blocks Indexed") %>',
-        'Block Processing': '<%= gettext("Block Mined, awaiting import...") %>',
-        'Indexing Tokens': '<%= gettext("Indexing Tokens") %>',
-        'Less than': '<%= gettext("Less than") %>',
-        'Market Cap': '<%= gettext("Market Cap") %>',
-        'Price': '<%= gettext("Price") %>',
-        'Ether': '<%= gettext("Ether") %>',
-        'Tx/day': '<%= gettext("Tx/day") %>'
-      }
-    </script>
     <%= if (
       @view_module != Elixir.BlockScoutWeb.ChainView &&
       @view_module != Elixir.BlockScoutWeb.BlockView &&

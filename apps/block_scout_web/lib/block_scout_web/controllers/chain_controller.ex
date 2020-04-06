@@ -84,6 +84,8 @@ defmodule BlockScoutWeb.ChainController do
     end
   end
 
+  def search(conn, _), do: not_found(conn)
+
   def token_autocomplete(conn, %{"q" => term}) when is_binary(term) do
     if term == "" do
       json(conn, "{}")

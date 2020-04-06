@@ -93,6 +93,8 @@ config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
+config :explorer, Explorer.Market.History.Cataloger, enabled: System.get_env("DISABLE_INDEXER") != "true"
+
 txs_stats_init_lag =
   System.get_env("TXS_HISTORIAN_INIT_LAG", "0")
   |> Integer.parse()
@@ -108,8 +110,6 @@ config :explorer, Explorer.Chain.Transaction.History.Historian,
   enabled: System.get_env("ENABLE_TXS_STATS", "false") != "false",
   init_lag: txs_stats_init_lag,
   days_to_compile_at_init: txs_stats_days_to_compile_at_init
-
-config :explorer, Explorer.Market.History.Historian, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
 history_fetch_interval =
   case Integer.parse(System.get_env("HISTORY_FETCH_INTERVAL", "")) do

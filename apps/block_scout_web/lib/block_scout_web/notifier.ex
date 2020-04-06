@@ -7,8 +7,8 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.{AddressContractVerificationView, Endpoint}
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
-  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Chain.Supply.RSK
+  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.SmartContract.{Solidity.CodeCompiler, Solidity.CompilerVersion}
