@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schema.Types do
   alias BlockScoutWeb.Resolvers.{
     Address,
     CeloAccount,
+    CeloClaim,
     CeloValidator,
     CeloValidatorGroup,
     InternalTransaction,
@@ -19,6 +20,7 @@ defmodule BlockScoutWeb.Schema.Types do
   import_types(BlockScoutWeb.Schema.Scalars)
 
   connection(node_type: :celo_account)
+  connection(node_type: :celo_claims)
   connection(node_type: :celo_validator)
   connection(node_type: :celo_validator_group)
   connection(node_type: :competitor)
@@ -93,6 +95,10 @@ defmodule BlockScoutWeb.Schema.Types do
 
     field(:group, :celo_validator_group) do
       resolve(&CeloValidatorGroup.get_by/3)
+    end
+
+    connection field(:claims, node_type: :celo_claims) do
+      resolve(&CeloClaim.get_by/3)
     end
   end
 
