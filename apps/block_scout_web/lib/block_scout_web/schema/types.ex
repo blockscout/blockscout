@@ -77,6 +77,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:account_type, :string)
     field(:nonvoting_locked_gold, :wei)
     field(:locked_gold, :wei)
+    field(:active_gold, :wei)
 
     field(:usd, :wei)
 

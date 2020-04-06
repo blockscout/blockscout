@@ -7,7 +7,7 @@ defmodule Explorer.Chain.CeloVoters do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Hash, Wei}
+  alias Explorer.Chain.{Address, CeloValidatorGroup, Hash, Wei}
 
   @typedoc """
   * `address` - address of the validator.
@@ -68,6 +68,13 @@ defmodule Explorer.Chain.CeloVoters do
       foreign_key: :voter_address_hash,
       references: :hash,
       type: Hash.Address
+    )
+
+    has_one(
+      :group,
+      CeloValidatorGroup,
+      foreign_key: :address,
+      references: :group_address_hash
     )
 
     field(:units, Wei)

@@ -932,6 +932,8 @@ defmodule Explorer.Chain do
             [{:celo_members, :validator_address}] => :optional,
             [{:celo_voters, :voter_address}] => :optional,
             [{:celo_voted, :group_address}] => :optional,
+            [{:celo_voters, :group}] => :optional,
+            [{:celo_voted, :group}] => :optional,
             :celo_validator => :optional,
             [{:celo_validator, :group_address}] => :optional,
             [{:celo_validator, :signer}] => :optional,
@@ -3888,9 +3890,21 @@ defmodule Explorer.Chain do
 
   @spec get_celo_account(Hash.Address.t()) :: {:ok, CeloAccount.t()} | {:error, :not_found}
   def get_celo_account(address_hash) do
+
+    compute_votes =
+      from(p in CeloVoters,
+      inner_join: g in assoc(p, :group),
+      where: p.voter_address_hash == ^address_hash, 
+      select: %{result: sum(p.pending+p.units*g.active_votes/g.total_units)}
+      )
+
     query =
       from(account in CeloAccount,
-        where: account.address == ^address_hash
+        inner_join: data in subquery(compute_votes),
+        where: account.address == ^address_hash,
+        select_merge: %{
+          active_gold: %{value: data.result}
+        }
       )
 
     query

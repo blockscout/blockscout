@@ -15,10 +15,7 @@ defmodule Indexer.Transform.CeloAccounts do
     %{
       # Add special items for voter epoch rewards
       accounts:
-        get_addresses(logs, CeloAccount.account_events()) ++
-          Enum.map(get_addresses(logs, CeloVoters.distributed_events()), fn %{address: a} ->
-            %{voter: a}
-          end),
+        get_addresses(logs, CeloAccount.account_events()),
       # Adding a group to updated validators means to update all members of the group
       validators:
         get_addresses(logs, CeloAccount.validator_events()) ++ get_addresses(logs, CeloAccount.membership_events()),
