@@ -49,3 +49,4 @@ tmpbriefly*
 /apps/block_scout_web/priv/cert
 
 tmpbriefly*
+node_modules

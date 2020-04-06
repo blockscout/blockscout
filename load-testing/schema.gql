@@ -1,0 +1,428 @@
+schema {
+  query: RootQueryType
+  subscription: RootSubscriptionType
+}
+
+"""
+A stored representation of a Web3 address.
+
+"""
+type Address {
+  celoAccount: CeloAccount
+  celoValidator: CeloValidator
+  celoValidatorGroup: CeloValidatorGroup
+  contractCode: Data
+  fetchedCoinBalance: Wei
+  fetchedCoinBalanceBlockNumber: Int
+  hash: AddressHash
+  smartContract: SmartContract
+  transactions(after: String, before: String, count: Int, first: Int, last: Int): TransactionConnection
+}
+
+"""
+The address (40 (hex) characters / 160 bits / 20 bytes) is derived from the public key (128 (hex) characters /
+512 bits / 64 bytes) which is derived from the private key (64 (hex) characters / 256 bits / 32 bytes).
+
+The address is actually the last 40 characters of the keccak-256 hash of the public key with `0x` appended.
+
+"""
+scalar AddressHash
+
+"""
+A package of data that contains zero or more transactions, the hash of the previous block ("parent"), and optionally
+other data. Because each block (except for the initial "genesis block") points to the previous block, the data
+structure that they form is called a "blockchain".
+
+"""
+type Block {
+  consensus: Boolean
+  difficulty: Decimal
+  gasLimit: Decimal
+  gasUsed: Decimal
+  hash: FullHash
+  minerHash: AddressHash
+  nonce: NonceHash
+  number: Int
+  parentHash: FullHash
+  size: Int
+  timestamp: DateTime
+  totalDifficulty: Decimal
+}
+
+enum CallType {
+  CALL
+  CALLCODE
+  DELEGATECALL
+  STATICCALL
+}
+
+"""
+Celo account information
+
+"""
+type CeloAccount {
+  accountType: String
+  address: AddressHash
+  addressInfo: Address
+  attestationsFulfilled: Int
+  attestationsRequested: Int
+  group: CeloValidatorGroup
+  lockedGold: Wei
+  name: String
+  nonvotingLockedGold: Wei
+  url: String
+  usd: Wei
+  validator: CeloValidator
+}
+
+"""
+Celo network parameters
+
+"""
+type CeloParameters {
+  maxElectableValidators: Int
+  minElectableValidators: Int
+  numRegisteredValidators: Int
+  totalLockedGold: Wei
+}
+
+"""
+Celo validator information
+
+"""
+type CeloValidator {
+  account: CeloAccount
+  address: AddressHash
+  addressInfo: Address
+  attestationsFulfilled: Int
+  attestationsRequested: Int
+  groupAddressHash: AddressHash
+  groupInfo: CeloValidatorGroup
+  lastElected: Int
+  lastOnline: Int
+  lockedGold: Wei
+  member: Int
+  name: String
+  nonvotingLockedGold: Wei
+  score: Wei
+  signerAddressHash: AddressHash
+  url: String
+  usd: Wei
+}
+
+type CeloValidatorConnection {
+  edges: [CeloValidatorEdge]
+  pageInfo: PageInfo!
+}
+
+type CeloValidatorEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: CeloValidator
+}
+
+"""
+Celo validator group information
+
+"""
+type CeloValidatorGroup {
+  account: CeloAccount
+  accumulatedActive: Wei
+  accumulatedRewards: Wei
+  address: AddressHash
+  addressInfo: Address
+  affiliates(after: String, before: String, first: Int, last: Int): CeloValidatorConnection
+  commission: Wei
+  lockedGold: Wei
+  name: String
+  nonvotingLockedGold: Wei
+  numMembers: Int
+  receivableVotes: Int
+  rewardsRatio: Wei
+  url: String
+  usd: Wei
+  votes: Wei
+}
+
+"""
+Leaderboard entry 
+
+"""
+type Competitor {
+  address: AddressHash
+  identity: String
+  points: Float
+}
+
+"""
+An unpadded hexadecimal number with 0 or more digits. Each pair of digits
+maps directly to a byte in the underlying binary representation. When
+interpreted as a number, it should be treated as big-endian.
+
+"""
+scalar Data
+
+"""
+The `DateTime` scalar type represents a date and time in the UTC
+timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+string, including UTC timezone ("Z"). The parsed date and time string will
+be converted to UTC and any UTC offset other than 0 will be rejected.
+"""
+scalar DateTime
+
+"""
+The `Decimal` scalar type represents signed double-precision fractional
+values parsed by the `Decimal` library.  The Decimal appears in a JSON
+response as a string to preserve precision.
+"""
+scalar Decimal
+
+"""
+A 32-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash.
+
+"""
+scalar FullHash
+
+"""
+Models internal transactions.
+
+"""
+type InternalTransaction implements Node {
+  blockNumber: Int
+  callType: CallType
+  createdContractAddressHash: AddressHash
+  createdContractCode: Data
+  error: String
+  fromAddressHash: AddressHash
+  gas: Decimal
+  gasUsed: Decimal
+
+  """The ID of an object"""
+  id: ID!
+  index: Int
+  init: Data
+  input: Data
+  output: Data
+  toAddressHash: AddressHash
+  traceAddress: Json
+  transactionHash: FullHash
+  transactionIndex: Int
+  type: Type
+  value: Wei
+}
+
+type InternalTransactionConnection {
+  edges: [InternalTransactionEdge]
+  pageInfo: PageInfo!
+}
+
+type InternalTransactionEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: InternalTransaction
+}
+
+"""
+The `JSON` scalar type represents arbitrary JSON string data, represented as UTF-8
+character sequences. The JSON type is most often used to represent a free-form
+human-readable JSON string.
+
+"""
+scalar Json
+
+"""An object with an ID"""
+interface Node {
+  """The id of the object."""
+  id: ID!
+}
+
+"""
+The nonce (16 (hex) characters / 128 bits / 8 bytes) is derived from the Proof-of-Work.
+
+"""
+scalar NonceHash
+
+type PageInfo {
+  """When paginating forwards, the cursor to continue."""
+  endCursor: String
+
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+
+  """When paginating backwards, the cursor to continue."""
+  startCursor: String
+}
+
+type RootQueryType {
+  """Gets an address by hash."""
+  address(hash: AddressHash!): Address
+
+  """Gets addresses by address hash."""
+  addresses(hashes: [AddressHash!]!): [Address]
+
+  """Gets a block by number."""
+  block(number: Int!): Block
+
+  """Gets an account by address hash."""
+  celoAccount(hash: AddressHash!): CeloAccount
+
+  """Gets Celo network parameters"""
+  celoParameters: CeloParameters
+
+  """Gets a validator by address hash."""
+  celoValidator(hash: AddressHash!): CeloValidator
+
+  """Gets a validator group by address hash."""
+  celoValidatorGroup(hash: AddressHash!): CeloValidatorGroup
+
+  """Gets all validator groups."""
+  celoValidatorGroups: [CeloValidatorGroup]
+
+  """Gets latest block number."""
+  latestBlock: Int
+
+  """Gets the leaderboard"""
+  leaderboard: [Competitor]
+
+  """Fetches an object given its ID"""
+  node(
+    """The id of an object."""
+    id: ID!
+  ): Node
+
+  """Gets token transfers by token contract address hash."""
+  tokenTransfers(after: String, before: String, count: Int, first: Int, last: Int, tokenContractAddressHash: AddressHash!): TokenTransferConnection
+
+  """Gets a transaction by hash."""
+  transaction(hash: FullHash!): Transaction
+}
+
+type RootSubscriptionType {
+  tokenTransfers(tokenContractAddressHash: AddressHash!): [TokenTransfer]
+}
+
+"""
+The representation of a verified Smart Contract.
+
+"A contract in the sense of Solidity is a collection of code (its functions)
+and data (its state) that resides at a specific address on the Ethereum
+blockchain."
+http://solidity.readthedocs.io/en/v0.4.24/introduction-to-smart-contracts.html
+
+"""
+type SmartContract {
+  abi: Json
+  addressHash: AddressHash
+  compilerVersion: String
+  contractSourceCode: String
+  name: String
+  optimization: Boolean
+}
+
+enum Status {
+  ERROR
+  OK
+}
+
+"""
+Represents a token transfer between addresses.
+
+"""
+type TokenTransfer implements Node {
+  amount: Decimal
+  blockHash: FullHash
+  blockNumber: Int
+  fromAddressHash: AddressHash
+
+  """The ID of an object"""
+  id: ID!
+  logIndex: Int
+  toAddressHash: AddressHash
+  tokenContractAddressHash: AddressHash
+  tokenId: Decimal
+  transactionHash: FullHash
+}
+
+type TokenTransferConnection {
+  edges: [TokenTransferEdge]
+  pageInfo: PageInfo!
+}
+
+type TokenTransferEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: TokenTransfer
+}
+
+"""
+Models a Web3 transaction.
+
+"""
+type Transaction implements Node {
+  blockNumber: Int
+  createdContractAddressHash: AddressHash
+  cumulativeGasUsed: Decimal
+  error: String
+  fromAddressHash: AddressHash
+  gas: Decimal
+  gasPrice: Wei
+  gasUsed: Decimal
+  hash: FullHash
+
+  """The ID of an object"""
+  id: ID!
+  index: Int
+  input: String
+  internalTransactions(after: String, before: String, count: Int, first: Int, last: Int): InternalTransactionConnection
+  nonce: NonceHash
+  r: Decimal
+  s: Decimal
+  status: Status
+  toAddressHash: AddressHash
+  v: Decimal
+  value: Wei
+}
+
+type TransactionConnection {
+  edges: [TransactionEdge]
+  pageInfo: PageInfo!
+}
+
+type TransactionEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: Transaction
+}
+
+enum Type {
+  CALL
+  CREATE
+  REWARD
+  SELFDESTRUCT
+}
+
+"""
+The smallest fractional unit of Ether. Using wei instead of ether allows code to do integer match instead of using
+floats.
+
+See [Ethereum Homestead Documentation](http://ethdocs.org/en/latest/ether.html)
+for examples of various denominations of wei.
+
+Etymology of "wei" comes from [Wei Dai (戴維)](https://en.wikipedia.org/wiki/Wei_Dai), a
+[cypherpunk](https://en.wikipedia.org/wiki/Cypherpunk) who came up with b-money, which outlined modern
+cryptocurrencies.
+
+"""
+scalar Wei
+
