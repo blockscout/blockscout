@@ -18,12 +18,13 @@ defmodule Explorer.Chain.CeloVoters do
           group_address_hash: Hash.Address.t(),
           voter_address_hash: Hash.Address.t(),
           active: Wei.t(),
+          units: Wei.t(),
           total: Wei.t(),
           pending: Wei.t()
         }
 
   @attrs ~w(
-    group_address_hash voter_address_hash active pending total
+    group_address_hash voter_address_hash active pending total units
       )a
 
   @required_attrs ~w(
@@ -67,6 +68,7 @@ defmodule Explorer.Chain.CeloVoters do
       type: Hash.Address
     )
 
+    field(:units, Wei)
     field(:pending, Wei)
     field(:active, Wei)
     field(:total, Wei)

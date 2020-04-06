@@ -17,13 +17,14 @@ defmodule Explorer.Chain.CeloValidatorGroup do
   @type t :: %__MODULE__{
           address: Hash.Address.t(),
           commission: Wei.t(),
+          total_units: Wei.t(),
           active_votes: Wei.t(),
           num_members: non_neg_integer(),
           votes: Wei.t()
         }
 
   @attrs ~w(
-        address commission votes active_votes num_members
+        address commission votes active_votes num_members total_units
     )a
 
   @required_attrs ~w(
@@ -31,18 +32,17 @@ defmodule Explorer.Chain.CeloValidatorGroup do
     )a
 
   schema "celo_validator_group" do
+    field(:num_members, :integer)
     field(:commission, Wei)
     field(:votes, Wei)
     field(:active_votes, Wei)
-    field(:num_members, :integer)
+    field(:total_units, Wei)
 
     field(:name, :string, virtual: true)
     field(:url, :string, virtual: true)
     field(:nonvoting_locked_gold, Wei, virtual: true)
     field(:locked_gold, Wei, virtual: true)
     field(:usd, Wei, virtual: true)
-    #    field(:domain, :string, virtual: true)
-    #    field(:domain_verified, :boolean, virtual: true)
 
     field(:accumulated_rewards, Wei, virtual: true)
     field(:rewards_ratio, Wei, virtual: true)

@@ -105,6 +105,7 @@ defmodule Explorer.Celo.AccountReader do
 
     with {:ok, [_ | [commission | _]]} <- data["getValidatorGroup"],
          {:ok, [active_votes]} <- data["getActiveVotesForGroup"],
+         {:ok, [total_units]} <- data["getActiveVoteUnitsForGroup"],
          {:ok, [num_members]} <- data["getGroupNumMembers"],
          {:ok, [votes]} <- data["getTotalVotesForGroup"] do
       {:ok,
@@ -113,6 +114,7 @@ defmodule Explorer.Celo.AccountReader do
          votes: votes,
          active_votes: active_votes,
          num_members: num_members,
+         total_units: total_units,
          commission: commission
        }}
     else
@@ -125,6 +127,7 @@ defmodule Explorer.Celo.AccountReader do
     call_methods([
       {:election, "getTotalVotesForGroup", [address]},
       {:election, "getActiveVotesForGroup", [address]},
+      {:election, "getActiveVoteUnitsForGroup", [address]},
       {:validators, "getGroupNumMembers", [address]},
       {:validators, "getValidatorGroup", [address]}
     ])
@@ -135,16 +138,19 @@ defmodule Explorer.Celo.AccountReader do
       call_methods([
         {:election, "getPendingVotesForGroupByAccount", [group_address, voter_address]},
         {:election, "getTotalVotesForGroupByAccount", [group_address, voter_address]},
+        {:election, "getTotalVoteUnitsForGroupByAccount", [group_address, voter_address]},
         {:election, "getActiveVotesForGroupByAccount", [group_address, voter_address]}
       ])
 
     with {:ok, [pending]} <- data["getPendingVotesForGroupByAccount"],
          {:ok, [total]} <- data["getTotalVotesForGroupByAccount"],
+         {:ok, [units]} <- data["getActiveVoteUnitsForGroupByAccount"],
          {:ok, [active]} <- data["getActiveVotesForGroupByAccount"] do
       {:ok,
        %{
          group_address_hash: group_address,
          voter_address_hash: voter_address,
+         units: units,
          total: total,
          pending: pending,
          active: active

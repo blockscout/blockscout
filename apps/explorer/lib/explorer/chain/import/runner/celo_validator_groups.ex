@@ -93,6 +93,7 @@ defmodule Explorer.Chain.Import.Runner.CeloValidatorGroups do
         set: [
           commission: fragment("EXCLUDED.commission"),
           votes: fragment("EXCLUDED.votes"),
+          total_units: fragment("EXCLUDED.total_units"),
           active_votes: fragment("EXCLUDED.active_votes"),
           num_members: fragment("EXCLUDED.num_members"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
