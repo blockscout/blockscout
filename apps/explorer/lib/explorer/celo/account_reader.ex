@@ -142,8 +142,6 @@ defmodule Explorer.Celo.AccountReader do
         {:election, "getActiveVotesForGroupByAccount", [group_address, voter_address]}
       ])
     
-    IO.inspect(data)
-
     with {:ok, [pending]} <- data["getPendingVotesForGroupByAccount"],
          {:ok, [total]} <- data["getTotalVotesForGroupByAccount"],
          {:ok, [units]} <- data["getActiveVoteUnitsForGroupByAccount"],
@@ -264,12 +262,13 @@ defmodule Explorer.Celo.AccountReader do
   def validator_history(block_number) do
     data = fetch_validators(block_number)
 
-    with {:ok, [bm]} <- data["getParentSealBitmap"],
-         {:ok, [num_validators]} <- data["getNumRegisteredValidators"],
+    with {:ok, [num_validators]} <- data["getNumRegisteredValidators"],
          {:ok, [min_validators, max_validators]} <- data["getElectableValidators"],
          {:ok, [total_gold]} <- data["getTotalLockedGold"],
-         {:ok, [epoch_size]} <- data["getEpochSize"],
-         {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
+         {:ok, [bm]} <- data["getParentSealBitmap"],
+         {:ok, [validators]} <- data["getCurrentValidatorSigners"],
+         {:ok, [epoch_size]} <- data["getEpochSize"] do
+
       list =
         validators
         |> Enum.with_index()
@@ -292,8 +291,8 @@ defmodule Explorer.Celo.AccountReader do
 
   defp fetch_validators(bn) do
     call_methods([
-      {:election, "getCurrentValidatorSigners", [], bn - 1},
-      {:election, "getParentSealBitmap", [bn], bn},
+      {:election, "getCurrentValidatorSigners", [], max(0,bn - 1)},
+      {:election, "getParentSealBitmap", [max(0,bn)], max(0,bn)},
       {:election, "getEpochSize", []},
       {:election, "getElectableValidators", []},
       {:lockedgold, "getTotalLockedGold", []},

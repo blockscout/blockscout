@@ -60,7 +60,6 @@ defmodule EthereumJSONRPC.Encoder do
 
   def decode_result(%{id: id, result: result}, function_selector) do
     types_list = List.wrap(function_selector.returns)
-
     tuple_list = [{:tuple, types_list}]
 
     decoded_data =
@@ -80,4 +79,5 @@ defmodule EthereumJSONRPC.Encoder do
     MatchError ->
       {id, {:error, :invalid_data}}
   end
+
 end
