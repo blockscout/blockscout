@@ -79,5 +79,4 @@ defmodule EthereumJSONRPC.Encoder do
     MatchError ->
       {id, {:error, :invalid_data}}
   end
-
 end

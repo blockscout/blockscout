@@ -14,5 +14,4 @@ defmodule BlockScoutWeb.Resolvers.CeloClaim do
     |> GraphQL.address_to_claims_query()
     |> Connection.from_query(&Repo.all/1, args, [])
   end
-
 end

@@ -46,5 +46,4 @@ defmodule BlockScoutWeb.Resolvers.CeloAccount do
   def get_claims(%{address: hash}, _, _) do
     {:ok, Chain.get_celo_claims(hash)}
   end
-
 end

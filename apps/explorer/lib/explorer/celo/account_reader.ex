@@ -141,7 +141,7 @@ defmodule Explorer.Celo.AccountReader do
         {:election, "getActiveVoteUnitsForGroupByAccount", [group_address, voter_address]},
         {:election, "getActiveVotesForGroupByAccount", [group_address, voter_address]}
       ])
-    
+
     with {:ok, [pending]} <- data["getPendingVotesForGroupByAccount"],
          {:ok, [total]} <- data["getTotalVotesForGroupByAccount"],
          {:ok, [units]} <- data["getActiveVoteUnitsForGroupByAccount"],
@@ -268,7 +268,6 @@ defmodule Explorer.Celo.AccountReader do
          {:ok, [bm]} <- data["getParentSealBitmap"],
          {:ok, [validators]} <- data["getCurrentValidatorSigners"],
          {:ok, [epoch_size]} <- data["getEpochSize"] do
-
       list =
         validators
         |> Enum.with_index()
@@ -291,8 +290,8 @@ defmodule Explorer.Celo.AccountReader do
 
   defp fetch_validators(bn) do
     call_methods([
-      {:election, "getCurrentValidatorSigners", [], max(0,bn - 1)},
-      {:election, "getParentSealBitmap", [max(0,bn)], max(0,bn)},
+      {:election, "getCurrentValidatorSigners", [], max(0, bn - 1)},
+      {:election, "getParentSealBitmap", [max(0, bn)], max(0, bn)},
       {:election, "getEpochSize", []},
       {:election, "getElectableValidators", []},
       {:lockedgold, "getTotalLockedGold", []},
