@@ -1,0 +1,21 @@
+config:
+#  target: 'https://baklava-blockscout.celo-testnet.org'
+  target: 'http://localhost:4000'
+  phases:
+    - duration: 30
+      arrivalRate: 50
+  processor: './lib/index.js'
+scenarios:
+  - name: 'GraphQL Query load test'
+    flow:
+      - function: 'testCases'
+      - loop:
+          - post:
+              url: '/graphiql'
+              json:
+                query: '{{ $loopElement.query }}'
+                variables: '{{ $loopElement.variables }}'
+          - log: '----------------------------------'
+          - log: 'Sent a request to the {{ $loopElement.operation }}: {{ $loopElement.name }}'
+          - log: 'And variables {{ $loopElement.variables }}'
+        over: cases
