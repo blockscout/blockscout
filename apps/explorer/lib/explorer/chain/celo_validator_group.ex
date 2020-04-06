@@ -7,7 +7,7 @@ defmodule Explorer.Chain.CeloValidatorGroup do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, CeloAccount, CeloAccumulatedRewards, CeloClaims, Hash, Wei}
+  alias Explorer.Chain.{Address, CeloAccount, CeloAccumulatedRewards, Hash, Wei}
 
   @typedoc """
   * `address` - address of the validator.
