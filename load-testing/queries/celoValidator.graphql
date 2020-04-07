@@ -1,0 +1,1 @@
+query CELO_VALIDATOR ($param0: String!) {celoValidator(hash: $param0) { account{accountType, group{address, name}}}}
