@@ -21,6 +21,11 @@ config :explorer, Explorer.Counters.AverageBlockTime, enabled: false
 
 config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: false, enable_consolidation: false
 
+# This historian is a GenServer whose init uses a Repo in a Task process.
+# This causes a ConnectionOwnership error
+config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
+config :explorer, Explorer.Market.History.Historian, enabled: false
+
 config :explorer, Explorer.Counters.AddressesCounter, enabled: false, enable_consolidation: false
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: false

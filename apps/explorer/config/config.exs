@@ -95,6 +95,31 @@ config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :ti
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: System.get_env("DISABLE_INDEXER") != "true"
 
+txs_stats_init_lag =
+  System.get_env("TXS_HISTORIAN_INIT_LAG", "0")
+  |> Integer.parse()
+  |> elem(0)
+  |> :timer.minutes()
+
+txs_stats_days_to_compile_at_init =
+  System.get_env("TXS_STATS_DAYS_TO_COMPILE_AT_INIT", "40")
+  |> Integer.parse()
+  |> elem(0)
+
+config :explorer, Explorer.Chain.Transaction.History.Historian,
+  enabled: System.get_env("ENABLE_TXS_STATS", "false") != "false",
+  init_lag: txs_stats_init_lag,
+  days_to_compile_at_init: txs_stats_days_to_compile_at_init
+
+history_fetch_interval =
+  case Integer.parse(System.get_env("HISTORY_FETCH_INTERVAL", "")) do
+    {mins, ""} -> mins
+    _ -> 60
+  end
+  |> :timer.minutes()
+
+config :explorer, Explorer.History.Process, history_fetch_interval: history_fetch_interval
+
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
 config :explorer, Explorer.Tracer,
