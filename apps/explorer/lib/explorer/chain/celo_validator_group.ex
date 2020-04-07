@@ -43,6 +43,7 @@ defmodule Explorer.Chain.CeloValidatorGroup do
     field(:nonvoting_locked_gold, Wei, virtual: true)
     field(:locked_gold, Wei, virtual: true)
     field(:usd, Wei, virtual: true)
+    field(:active_gold, Wei, virtual: true)
 
     field(:accumulated_rewards, Wei, virtual: true)
     field(:rewards_ratio, Wei, virtual: true)
