@@ -3892,13 +3892,12 @@ defmodule Explorer.Chain do
     from(p in CeloVoters,
       inner_join: g in assoc(p, :group),
       group_by: p.voter_address_hash,
-      select: %{result: sum(p.pending+p.units*g.active_votes/g.total_units), address: p.voter_address_hash}
+      select: %{result: sum(p.pending + p.units * g.active_votes / g.total_units), address: p.voter_address_hash}
     )
   end
 
   @spec get_celo_account(Hash.Address.t()) :: {:ok, CeloAccount.t()} | {:error, :not_found}
   def get_celo_account(address_hash) do
-
     query =
       from(account in CeloAccount,
         inner_join: data in subquery(compute_votes()),

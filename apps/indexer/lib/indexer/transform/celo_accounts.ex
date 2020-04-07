@@ -14,8 +14,7 @@ defmodule Indexer.Transform.CeloAccounts do
   def parse(logs) do
     %{
       # Add special items for voter epoch rewards
-      accounts:
-        get_addresses(logs, CeloAccount.account_events()),
+      accounts: get_addresses(logs, CeloAccount.account_events()),
       # Adding a group to updated validators means to update all members of the group
       validators:
         get_addresses(logs, CeloAccount.validator_events()) ++ get_addresses(logs, CeloAccount.membership_events()),

@@ -22,15 +22,17 @@ defmodule BlockScoutWeb.AddressCeloView do
 
   def compute_locked_gold(address) do
     non_locked = address.celo_account.nonvoting_locked_gold.value
-    votes = if list_with_items?(address.celo_voted) do
+
+    votes =
+      if list_with_items?(address.celo_voted) do
         Enum.reduce(address.celo_voted, Decimal.new(0), fn member, votes ->
           Decimal.add(votes, Decimal.add(member.pending.value, compute_active_votes(member)))
-      end)
-    else
-      Decimal.new(0)
-    end
+        end)
+      else
+        Decimal.new(0)
+      end
+
     result = Decimal.add(non_locked, votes)
     format_according_to_decimals(result, Decimal.new(18))
   end
-
 end
