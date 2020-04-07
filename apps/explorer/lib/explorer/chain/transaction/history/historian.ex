@@ -29,7 +29,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
         from(block in Block,
           where: block.timestamp >= ^earliest and block.timestamp <= ^latest,
           group_by: block.number,
-          order_by: [asc: block.number],
+          order_by: [asc: min(block.number)],
           limit: 1,
           select: min(block.number)
         )
@@ -40,7 +40,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
         from(block in Block,
           where: block.timestamp >= ^earliest and block.timestamp <= ^latest,
           group_by: block.number,
-          order_by: [desc: block.number],
+          order_by: [desc: max(block.number)],
           limit: 1,
           select: max(block.number)
         )
