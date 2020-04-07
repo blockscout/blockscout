@@ -3901,8 +3901,8 @@ defmodule Explorer.Chain do
     query =
       from(account in CeloAccount,
         left_join: data in subquery(compute_votes()),
+        on: data.address == account.address,
         where: account.address == ^address_hash,
-        where: data.address == account.address,
         select_merge: %{
           active_gold: %{value: data.result}
         }
@@ -3923,7 +3923,7 @@ defmodule Explorer.Chain do
       inner_join: a in assoc(v, :celo_account),
       inner_join: stat in assoc(v, :celo_attestation_stats),
       left_join: data in subquery(compute_votes()),
-      where: v.address == data.address,
+      on: v.address == data.address,
       select_merge: %{
         last_online: t.last_online,
         last_elected: t.last_elected,
@@ -3955,7 +3955,7 @@ defmodule Explorer.Chain do
       where: total_locked_gold.name == "totalLockedGold",
       inner_join: denom in subquery(denominator),
       left_join: data in subquery(compute_votes()),
-      where: g.address == data.address,
+      on: g.address == data.address,
       select_merge: %{
         name: a.name,
         url: a.url,
