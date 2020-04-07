@@ -10,7 +10,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
   alias Explorer.History.Process, as: HistoryProcess
   alias Explorer.Repo
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query, only: [from: 2, subquery: 1]
 
   @behaviour Historian
 
@@ -25,16 +25,49 @@ defmodule Explorer.Chain.Transaction.History.Historian do
       earliest = datetime(day_to_fetch, ~T[00:00:00])
       latest = datetime(day_to_fetch, ~T[23:59:59])
 
-      query =
+      min_block_query =
         from(block in Block,
           where: block.timestamp >= ^earliest and block.timestamp <= ^latest,
-          join: transaction in Transaction,
-          on: block.hash == transaction.block_hash
+          group_by: block.number,
+          order_by: [asc: block.number],
+          limit: 1,
+          select: min(block.number)
         )
 
-      num_transactions = Repo.aggregate(query, :count, :hash)
-      records = [%{date: day_to_fetch, number_of_transactions: num_transactions} | records]
-      compile_records(num_days - 1, records)
+      min_block = Repo.one(min_block_query)
+
+      max_block_query =
+        from(block in Block,
+          where: block.timestamp >= ^earliest and block.timestamp <= ^latest,
+          group_by: block.number,
+          order_by: [desc: block.number],
+          limit: 1,
+          select: max(block.number)
+        )
+
+      max_block = Repo.one(max_block_query)
+
+      if min_block && max_block do
+        all_transactions_query =
+          from(
+            transaction in Transaction,
+            where: transaction.block_number >= ^min_block and transaction.block_number <= ^max_block
+          )
+
+        query =
+          from(transaction in subquery(all_transactions_query),
+            join: block in Block,
+            on: transaction.block_hash == block.hash,
+            where: block.consensus == true,
+            select: transaction.hash
+          )
+
+        num_transactions = Repo.aggregate(query, :count, :hash)
+        records = [%{date: day_to_fetch, number_of_transactions: num_transactions} | records]
+        compile_records(num_days - 1, records)
+      else
+        compile_records(num_days - 1, records)
+      end
     end
   end
 
