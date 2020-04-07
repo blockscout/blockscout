@@ -34,7 +34,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
           select: min(block.number)
         )
 
-      min_block = Repo.one(min_block_query)
+      min_block = Repo.one(min_block_query, timeout: :infinity)
 
       max_block_query =
         from(block in Block,
@@ -45,7 +45,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
           select: max(block.number)
         )
 
-      max_block = Repo.one(max_block_query)
+      max_block = Repo.one(max_block_query, timeout: :infinity)
 
       if min_block && max_block do
         all_transactions_query =
@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
             select: transaction.hash
           )
 
-        num_transactions = Repo.aggregate(query, :count, :hash)
+        num_transactions = Repo.aggregate(query, :count, :hash, timeout: :infinity)
         records = [%{date: day_to_fetch, number_of_transactions: num_transactions} | records]
         compile_records(num_days - 1, records)
       else
