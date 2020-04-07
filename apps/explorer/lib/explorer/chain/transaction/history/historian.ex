@@ -66,6 +66,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
         records = [%{date: day_to_fetch, number_of_transactions: num_transactions} | records]
         compile_records(num_days - 1, records)
       else
+        records = [%{date: day_to_fetch, number_of_transactions: 0} | records]
         compile_records(num_days - 1, records)
       end
     end
