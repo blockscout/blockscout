@@ -2,7 +2,16 @@
   <div class="row tile-body">
     <!-- Color Block -->
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
-      <span class="tile-label"><%= gettext "Token Transfer" %></span>
+      <span class="tile-label">
+        <%= cond do %>
+          <% @token_transfer.to_address.hash == @burn_address_hash -> %>
+            <%= gettext("Token Burning") %>
+          <% @token_transfer.from_address.hash == @burn_address_hash -> %>
+            <%= gettext("Token Minting") %>
+          <% true -> %>
+            <%= gettext("Token Transfer") %>
+        <% end %>
+      </span>
     </div>
     <!-- Content -->
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
