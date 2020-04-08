@@ -1672,7 +1672,7 @@ msgid "custom RPC"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_contract_view.ex:23
+#: lib/block_scout_web/views/address_contract_view.ex:24
 msgid "false"
 msgstr ""
 
@@ -1714,7 +1714,7 @@ msgid "string"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_contract_view.ex:22
+#: lib/block_scout_web/views/address_contract_view.ex:23
 msgid "true"
 msgstr ""
 
