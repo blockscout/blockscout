@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#3069](https://github.com/poanetwork/blockscout/pull/3069) - Make a link to address page on decoded constructor argument of address type
 - [#3066](https://github.com/poanetwork/blockscout/pull/3066) - ERC-721 token instance page: link to token added
 
 ### Fixes
