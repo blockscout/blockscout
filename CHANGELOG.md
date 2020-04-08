@@ -2,6 +2,8 @@
 
 ### Features
 
+- [#3066](https://github.com/poanetwork/blockscout/pull/3066) - ERC-721 token instance page: link to token added
+
 ### Fixes
 
 - [#3064](https://github.com/poanetwork/blockscout/pull/3064) - Automatically define Block reward contract address in TokenBridge supply module
