@@ -24,6 +24,9 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
     }
   ]
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   def index(
         conn,
         %{
@@ -67,6 +70,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
             "_tile.html",
             conn: conn,
             transaction: transaction,
+            burn_address_hash: @burn_address_hash,
             current_address: address
           )
         end)
@@ -151,6 +155,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
             "_tile.html",
             conn: conn,
             transaction: transaction,
+            burn_address_hash: @burn_address_hash,
             current_address: address
           )
         end)
