@@ -53,7 +53,7 @@
               <h3><%= gettext "Constructor Arguments" %></h3>
             </div>
             <div class="tile tile-muted mb-4">
-              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_constructor_arguments(@address.smart_contract)) %></code>
+              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_constructor_arguments(@address.smart_contract, @conn)) %></code>
               </pre>
             </div>
           </section>
