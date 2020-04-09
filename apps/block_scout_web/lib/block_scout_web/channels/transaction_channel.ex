@@ -22,6 +22,10 @@ defmodule BlockScoutWeb.TransactionChannel do
     {:ok, %{}, socket}
   end
 
+  def join("transactions:stats", _params, socket) do
+    {:ok, %{}, socket}
+  end
+
   def join("transactions:" <> _transaction_hash, _params, socket) do
     {:ok, %{}, socket}
   end

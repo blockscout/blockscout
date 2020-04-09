@@ -2,9 +2,10 @@ defmodule BlockScoutWeb.ChainController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.ChainView
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.Chain.Supply.RSK
+  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market
@@ -26,18 +27,49 @@ defmodule BlockScoutWeb.ChainController do
 
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
+    transaction_stats = get_transaction_stats()
+
+    chart_data_paths = %{
+      market: market_history_chart_path(conn, :show),
+      transaction: transaction_history_chart_path(conn, :show)
+    }
+
+    chart_config = Application.get_env(:block_scout_web, :chart_config, %{})
+
     render(
       conn,
       "show.html",
       address_count: address_count,
       average_block_time: AverageBlockTime.average_block_time(),
       exchange_rate: exchange_rate,
-      chart_data_path: market_history_chart_path(conn, :show),
+      chart_config: chart_config,
+      chart_config_json: Jason.encode!(chart_config),
+      chart_data_paths: chart_data_paths,
       market_cap_calculation: market_cap_calculation,
       transaction_estimated_count: transaction_estimated_count,
       transactions_path: recent_transactions_path(conn, :index),
+      transaction_stats: transaction_stats,
       block_count: block_count
     )
+  end
+
+  def get_transaction_stats do
+    stats_scale = date_range(1)
+    transaction_stats = TransactionStats.by_date_range(stats_scale.earliest, stats_scale.latest)
+
+    # Need datapoint for legend if none currently available.
+    if Enum.empty?(transaction_stats) do
+      [%{number_of_transactions: 0}]
+    else
+      transaction_stats
+    end
+  end
+
+  def date_range(num_days) do
+    today = Date.utc_today()
+    latest = Date.add(today, -1)
+    x_days_back = Date.add(latest, -1 * (num_days - 1))
+    %{earliest: x_days_back, latest: latest}
   end
 
   def search(conn, %{"q" => query}) do
@@ -82,15 +114,9 @@ defmodule BlockScoutWeb.ChainController do
   def chain_blocks(conn, _params) do
     if ajax?(conn) do
       blocks =
-        [
-          paging_options: %PagingOptions{page_size: 4},
-          necessity_by_association: %{
-            [miner: :names] => :optional,
-            :transactions => :optional,
-            :rewards => :optional
-          }
-        ]
+        [paging_options: %PagingOptions{page_size: 4}]
         |> Chain.list_blocks()
+        |> Repo.preload([[miner: :names], :transactions, :rewards])
         |> Enum.map(fn block ->
           %{
             chain_block_html:
