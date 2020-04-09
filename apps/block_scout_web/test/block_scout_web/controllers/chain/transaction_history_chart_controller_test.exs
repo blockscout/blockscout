@@ -30,13 +30,12 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartControllerTest do
       dts = [latest, Date.add(latest, -1), Date.add(latest, -2)]
 
       some_transaction_stats = [
-        %{date: Enum.at(dts, 0), number_of_transactions: 10},
         %{date: Enum.at(dts, 1), number_of_transactions: 20},
         %{date: Enum.at(dts, 2), number_of_transactions: 30}
       ]
 
       {num, _} = Repo.insert_all(TransactionStats, some_transaction_stats)
-      assert num == 3
+      assert num == 2
 
       conn =
         build_conn()

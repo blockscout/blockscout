@@ -2,6 +2,7 @@ import $ from 'jquery'
 import Chart from 'chart.js'
 import humps from 'humps'
 import numeral from 'numeral'
+import moment from 'moment'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
 
@@ -118,6 +119,14 @@ function getTxHistoryData (transactionHistory) {
     return getDataFromLocalStorage('txHistoryData')
   }
   const data = transactionHistory.map(dataPoint => ({ x: dataPoint.date, y: dataPoint.number_of_transactions }))
+
+  // it should be empty value for tx history the current day
+  const prevDayStr = data[0].x
+  var prevDay = moment(prevDayStr)
+  let curDay = prevDay.add(1, 'days')
+  curDay = curDay.format('YYYY-MM-DD')
+  data.unshift({ x: curDay, y: null })
+
   setDataToLocalStorage('txHistoryData', data)
   return data
 }
