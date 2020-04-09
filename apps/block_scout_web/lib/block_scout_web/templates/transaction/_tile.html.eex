@@ -42,7 +42,7 @@
 
           <div class="collapse token-transfer-toggle" id="transaction-<%= @transaction.hash %>">
             <%= for token_transfer <- remaining_token_transfers do %>
-              <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer %>
+              <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer, burn_address_hash: @burn_address_hash %>
             <% end %>
           </div>
         </div>
