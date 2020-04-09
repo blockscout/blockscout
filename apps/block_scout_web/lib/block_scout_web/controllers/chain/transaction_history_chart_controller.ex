@@ -7,7 +7,8 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartController do
     if ajax?(conn) do
       [{:history_size, history_size}] = Application.get_env(:block_scout_web, __MODULE__, 30)
 
-      latest = Date.utc_today()
+      current = Date.utc_today()
+      latest = Date.add(current, -1)
       earliest = Date.add(latest, -1 * history_size)
 
       date_range = TransactionStats.by_date_range(earliest, latest)
