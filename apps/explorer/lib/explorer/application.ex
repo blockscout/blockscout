@@ -36,6 +36,7 @@ defmodule Explorer.Application do
     base_children = [
       Explorer.Repo,
       Supervisor.Spec.worker(SpandexDatadog.ApiServer, [datadog_opts()]),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor}, id: Explorer.HistoryTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.GenesisDataTaskSupervisor}, id: GenesisDataTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
@@ -67,7 +68,8 @@ defmodule Explorer.Application do
       configure(Explorer.ExchangeRates),
       configure(Explorer.ChainSpec.GenesisData),
       configure(Explorer.KnownTokens),
-      configure(Explorer.Market.History.Cataloger),
+      configure(Explorer.Chain.Transaction.History.Historian),
+      configure(Explorer.Market.History.Historian),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Validator.MetadataProcessor),
