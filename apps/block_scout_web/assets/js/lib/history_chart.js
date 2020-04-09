@@ -106,25 +106,25 @@ function setDataToLocalStorage (key, data) {
 
 function getPriceData (marketHistoryData) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('priceData')
+    return getDataFromLocalStorage('priceDataSokol')
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
-  setDataToLocalStorage('priceData', data)
+  setDataToLocalStorage('priceDataSokol', data)
   return data
 }
 
 function getTxHistoryData (transactionHistory) {
   if (transactionHistory.length === 0) {
-    return getDataFromLocalStorage('txHistoryData')
+    return getDataFromLocalStorage('txHistoryDataSokol')
   }
   const data = transactionHistory.map(dataPoint => ({ x: dataPoint.date, y: dataPoint.number_of_transactions }))
-  setDataToLocalStorage('txHistoryData', data)
+  setDataToLocalStorage('txHistoryDataSokol', data)
   return data
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('marketCapData')
+    return getDataFromLocalStorage('marketCapDataSokol')
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => {
     const supply = (availableSupply !== null && typeof availableSupply === 'object')
@@ -132,7 +132,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
       : availableSupply
     return { x: date, y: closingPrice * supply }
   })
-  setDataToLocalStorage('marketCapData', data)
+  setDataToLocalStorage('marketCapDataSokol', data)
   return data
 }
 
@@ -213,7 +213,7 @@ class MarketHistoryChart {
     this.availableSupply = availableSupply
     config.data.datasets = [this.price, this.marketCap, this.numTransactions]
 
-    const isChartLoadedKey = 'isChartLoaded'
+    const isChartLoadedKey = 'isChartLoadedSokol'
     const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
     if (isChartLoaded) {
       config.options.animation = false
