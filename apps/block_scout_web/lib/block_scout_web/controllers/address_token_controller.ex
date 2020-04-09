@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.AddressTokenController do
 
   alias BlockScoutWeb.AddressTokenView
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
@@ -63,7 +64,7 @@ defmodule BlockScoutWeb.AddressTokenController do
         current_path: current_path(conn),
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        counters_path: address_path(conn, :address_counters, %{"id" => to_string(address_hash)})
+        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
     else
       :error ->

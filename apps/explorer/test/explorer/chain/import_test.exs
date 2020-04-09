@@ -61,7 +61,7 @@ defmodule Explorer.Chain.ImportTest do
             to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             gas: 4_677_320,
             gas_used: 27770,
-            input: "0x",
+            input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
             output: "0x",
             value: 0
           },
@@ -77,7 +77,7 @@ defmodule Explorer.Chain.ImportTest do
             to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             gas: 4_677_320,
             gas_used: 27770,
-            input: "0x",
+            input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
             output: "0x",
             value: 0
           }
@@ -252,15 +252,6 @@ defmodule Explorer.Chain.ImportTest do
                   }
                 ],
                 internal_transactions: [
-                  %{
-                    index: 0,
-                    transaction_hash: %Hash{
-                      byte_count: 32,
-                      bytes:
-                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
-                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                    }
-                  },
                   %{
                     index: 1,
                     transaction_hash: %Hash{
@@ -485,8 +476,7 @@ defmodule Explorer.Chain.ImportTest do
       Subscriber.to(:internal_transactions, :realtime)
       Import.all(@import_data)
 
-      assert_receive {:chain_event, :internal_transactions, :realtime,
-                      [%{transaction_hash: _, index: _}, %{transaction_hash: _, index: _}]}
+      assert_receive {:chain_event, :internal_transactions, :realtime, [%{transaction_hash: _, index: _}]}
     end
 
     test "publishes transactions data to subscribers on insert" do
@@ -612,7 +602,8 @@ defmodule Explorer.Chain.ImportTest do
               gas_used: 269_607,
               hash: transaction_hash,
               index: 0,
-              input: "0x",
+              input:
+                "0x6060604052341561000f57600080fd5b7fb94ae47ec9f4248692e2ecf9740b67ab493f3dcc8452bedc7d9cd911c28d1ca5426040518082815260200191505060405180910390a1609e806100546000396000f300606060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063557ed1ba146044575b600080fd5b3415604e57600080fd5b6054606a565b6040518082815260200191505060405180910390f35b6000429050905600a165627a7a7230582053883c0c39da080adc15a91094921659c200b3bb60aed9e49b79b0274da3f4010029",
               nonce: 0,
               r: 0,
               s: 0,
@@ -639,6 +630,96 @@ defmodule Explorer.Chain.ImportTest do
               to_address_hash: to_address_hash,
               gas: 4_677_320,
               gas_used: 27770,
+              input:
+                "0x6060604052341561000f57600080fd5b7fb94ae47ec9f4248692e2ecf9740b67ab493f3dcc8452bedc7d9cd911c28d1ca5426040518082815260200191505060405180910390a1609e806100546000396000f300606060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063557ed1ba146044575b600080fd5b3415604e57600080fd5b6054606a565b6040518082815260200191505060405180910390f35b6000429050905600a165627a7a7230582053883c0c39da080adc15a91094921659c200b3bb60aed9e49b79b0274da3f4010029",
+              output: "0x",
+              value: 0
+            }
+          ],
+          with: :blockless_changeset
+        }
+      }
+
+      assert {:ok, _} = Import.all(options)
+
+      assert [block_hash] = Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
+
+      assert {:ok, _} = Import.all(internal_txs_options)
+
+      assert [] == Explorer.Repo.all(PendingBlockOperation.block_hashes(:fetch_internal_transactions))
+    end
+
+    test "blocks with simple coin transfers updates PendingBlockOperation status" do
+      block_hash = "0xe69314b702f403e00ec89cd63d5870182ed334d9d461bd042cdd6609fd6b7c17"
+      block_number = 13_255_416
+      miner_hash = from_address_hash = "0xe2ac1c6843A33f81aE4935E5EF1277a392990381"
+      to_address_hash = "0xDC1772b72d828ea9b7D4ded22dbef0f082578B8B"
+      transaction_hash = "0x8f20a5b3b79199db857323af7a5077d2dae7867368fef6f4e8cd8b14b88a9c6a"
+
+      options = %{
+        addresses: %{
+          params: [
+            %{hash: from_address_hash},
+            %{hash: to_address_hash}
+          ]
+        },
+        blocks: %{
+          params: [
+            %{
+              consensus: true,
+              difficulty: 340_282_366_920_938_463_463_374_607_400_000_000_000,
+              gas_limit: 9_999_991,
+              gas_used: 21_000,
+              hash: block_hash,
+              miner_hash: miner_hash,
+              nonce: 0,
+              number: block_number,
+              parent_hash: "0x4c4505527d99e07dbcd6274ffaac629099ae6d4e1f2bc2bd3cc48d3f5a511d6f",
+              size: 703,
+              timestamp: Timex.parse!("2020-02-12 10:48:21Z", "{ISO:Extended:Z}"),
+              total_difficulty: 4_510_584_331_001_678_443_607_831_185_000_000_000_000_000_000
+            }
+          ]
+        },
+        transactions: %{
+          params: [
+            %{
+              block_hash: block_hash,
+              block_number: block_number,
+              cumulative_gas_used: 21_000,
+              from_address_hash: from_address_hash,
+              gas: 21_000,
+              gas_price: 1,
+              gas_used: 21_000,
+              hash: transaction_hash,
+              index: 0,
+              input: "0x",
+              nonce: 0,
+              r: 0,
+              s: 0,
+              status: :ok,
+              v: 0,
+              value: 0
+            }
+          ]
+        }
+      }
+
+      internal_txs_options = %{
+        internal_transactions: %{
+          params: [
+            %{
+              block_number: block_number,
+              transaction_index: 0,
+              transaction_hash: transaction_hash,
+              index: 0,
+              trace_address: [],
+              type: "call",
+              call_type: "call",
+              from_address_hash: from_address_hash,
+              to_address_hash: to_address_hash,
+              gas: 21_000,
+              gas_used: 21000,
               input: "0x",
               output: "0x",
               value: 0
@@ -1709,7 +1790,7 @@ defmodule Explorer.Chain.ImportTest do
     end
 
     # https://github.com/poanetwork/blockscout/issues/868 regression test
-    test "errored transactions can be forked" do
+    test "errored simple coin transfer can be forked" do
       block_number = 0
 
       miner_hash_before = address_hash()
@@ -1771,6 +1852,125 @@ defmodule Explorer.Chain.ImportTest do
                        status: :error
                      }
                    ]
+                 }
+               })
+
+      %Block{consensus: true, number: ^block_number} = Repo.get(Block, block_hash_before)
+      transaction_before = Repo.get!(Transaction, transaction_hash)
+
+      refute transaction_before.block_hash == nil
+      refute transaction_before.block_number == nil
+      refute transaction_before.gas_used == nil
+      refute transaction_before.cumulative_gas_used == nil
+      refute transaction_before.index == nil
+      refute transaction_before.status == nil
+
+      miner_hash_after = address_hash()
+      from_address_hash_after = address_hash()
+      block_hash_after = block_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_after},
+                     %{hash: from_address_hash_after}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 1,
+                       gas_limit: 1,
+                       gas_used: 1,
+                       hash: block_hash_after,
+                       miner_hash: miner_hash_after,
+                       nonce: 1,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 1,
+                       timestamp: Timex.parse!("2019-01-01T02:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 1
+                     }
+                   ]
+                 }
+               })
+
+      transaction_after = Repo.get!(Transaction, transaction_hash)
+
+      assert transaction_after.block_hash == nil
+      assert transaction_after.block_number == nil
+      assert transaction_after.gas_used == nil
+      assert transaction_after.cumulative_gas_used == nil
+      assert transaction_after.index == nil
+      assert transaction_after.error == nil
+      assert transaction_after.status == nil
+    end
+
+    # https://github.com/poanetwork/blockscout/issues/868 regression test
+    test "errored other transactions can be forked" do
+      block_number = 0
+
+      miner_hash_before = address_hash()
+      from_address_hash_before = address_hash()
+      to_address_hash_before = address_hash()
+      block_hash_before = block_hash()
+      index_before = 0
+      error = "Reverted"
+
+      transaction_hash = transaction_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_before},
+                     %{hash: from_address_hash_before},
+                     %{hash: to_address_hash_before}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 0,
+                       gas_limit: 0,
+                       gas_used: 0,
+                       hash: block_hash_before,
+                       miner_hash: miner_hash_before,
+                       nonce: 0,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 0,
+                       timestamp: Timex.parse!("2019-01-01T01:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 0
+                     }
+                   ]
+                 },
+                 transactions: %{
+                   params: [
+                     %{
+                       block_hash: block_hash_before,
+                       block_number: block_number,
+                       error: error,
+                       from_address_hash: from_address_hash_before,
+                       to_address_hash: to_address_hash_before,
+                       gas: 666_000,
+                       gas_price: 1,
+                       gas_used: 555_000,
+                       cumulative_gas_used: 555_000,
+                       hash: transaction_hash,
+                       index: index_before,
+                       input: "0x0102",
+                       nonce: 0,
+                       r: 0,
+                       s: 0,
+                       v: 0,
+                       value: 0,
+                       status: :error
+                     }
+                   ]
                  },
                  internal_transactions: %{
                    params: [
@@ -1784,7 +1984,7 @@ defmodule Explorer.Chain.ImportTest do
                        to_address_hash: to_address_hash_before,
                        trace_address: [],
                        value: 0,
-                       input: "0x",
+                       input: "0x0102",
                        error: error,
                        block_number: block_number,
                        transaction_index: 0

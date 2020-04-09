@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   alias BlockScoutWeb.CurrencyHelpers
   alias Explorer.Chain.{Address, SmartContract, Token}
 
-  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
+  import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1, blockscout_url: 2]
 
   @tabs ["token_transfers", "metadata"]
 
@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def smart_contract_with_read_only_functions?(
         %Token{contract_address: %Address{smart_contract: %SmartContract{}}} = token
       ) do
-    Enum.any?(token.contract_address.smart_contract.abi, & &1["constant"])
+    Enum.any?(token.contract_address.smart_contract.abi, &(&1["constant"] || &1["stateMutability"] == "view"))
   end
 
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
@@ -55,8 +55,26 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def qr_code(conn, token_id, hash) do
     token_instance_path = token_instance_path(conn, :show, to_string(hash), to_string(token_id))
 
-    is_api = false
-    url = Path.join(blockscout_url(is_api), token_instance_path)
+    url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
+    api_path = url_params[:api_path]
+    path = url_params[:path]
+
+    url_prefix =
+      if String.length(path) > 0 && path != "/" do
+        set_path = false
+        blockscout_url(set_path)
+      else
+        if String.length(api_path) > 0 && api_path != "/" do
+          is_api = true
+          set_path = true
+          blockscout_url(set_path, is_api)
+        else
+          set_path = false
+          blockscout_url(set_path)
+        end
+      end
+
+    url = Path.join(url_prefix, token_instance_path)
 
     url
     |> QRCode.to_png()
