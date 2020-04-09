@@ -87,7 +87,7 @@ config :explorer, Explorer.Counters.AddressesCounter,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
 
-config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
+config :explorer, Explorer.ExchangeRates, enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true", store: :ets
 
 config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
 
