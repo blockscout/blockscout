@@ -2,6 +2,7 @@
 
 ### Features
 
+- [#3067](https://github.com/poanetwork/blockscout/pull/3067) - Show proper title of the tile or container for token burnings/mintings instead of "Token Transfer"
 - [#3065](https://github.com/poanetwork/blockscout/pull/3065) - Transactions history chart
 
 ### Fixes
