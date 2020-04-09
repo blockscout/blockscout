@@ -95,16 +95,56 @@ const config = {
   }
 }
 
+function getDataFromLocalStorage (key) {
+  const data = window.localStorage.getItem(key)
+  return data ? JSON.parse(data) : []
+}
+
+function setDataToLocalStorage (key, data) {
+  window.localStorage.setItem(key, JSON.stringify(data))
+}
+
 function getPriceData (marketHistoryData) {
-  return marketHistoryData && marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
+  if (marketHistoryData.length === 0) {
+    return getDataFromLocalStorage('priceData')
+  }
+  const data = marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
+  setDataToLocalStorage('priceData', data)
+  return data
+}
+
+function getTxHistoryData (transactionHistory) {
+  if (transactionHistory.length === 0) {
+    return getDataFromLocalStorage('txHistoryData')
+  }
+  const data = transactionHistory.map(dataPoint => ({ x: dataPoint.date, y: dataPoint.number_of_transactions }))
+  setDataToLocalStorage('txHistoryData', data)
+  return data
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
-  if (availableSupply !== null && typeof availableSupply === 'object') {
-    return marketHistoryData && marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice * availableSupply[date] }))
-  } else {
-    return marketHistoryData && marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice * availableSupply }))
+  if (marketHistoryData.length === 0) {
+    return getDataFromLocalStorage('marketCapData')
   }
+  const data = marketHistoryData.map(({ date, closingPrice }) => {
+    const supply = (availableSupply !== null && typeof availableSupply === 'object')
+      ? availableSupply[date]
+      : availableSupply
+    return { x: date, y: closingPrice * supply }
+  })
+  setDataToLocalStorage('marketCapData', data)
+  return data
+}
+
+// colors for light and dark theme
+var priceLineColor
+var mcapLineColor
+if (localStorage.getItem('current-color-mode') === 'dark') {
+  priceLineColor = sassVariables.darkprimary
+  mcapLineColor = sassVariables.darksecondary
+} else {
+  priceLineColor = sassVariables.dashboardLineColorPrice
+  mcapLineColor = sassVariables.dashboardLineColorMarket
 }
 
 class MarketHistoryChart {
@@ -124,8 +164,8 @@ class MarketHistoryChart {
       data: [],
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.dashboardLineColorPrice,
-      borderColor: sassVariables.dashboardLineColorPrice,
+      backgroundColor: priceLineColor,
+      borderColor: priceLineColor,
       lineTension: 0
     }
     if (dataConfig.market === undefined || dataConfig.market.indexOf('price') === -1) {
@@ -140,8 +180,8 @@ class MarketHistoryChart {
       data: [],
       fill: false,
       pointRadius: 0,
-      backgroundColor: sassVariables.dashboardLineColorMarket,
-      borderColor: sassVariables.dashboardLineColorMarket,
+      backgroundColor: mcapLineColor,
+      borderColor: mcapLineColor,
       lineTension: 0
     }
     if (dataConfig.market === undefined || dataConfig.market.indexOf('market_cap') === -1) {
@@ -172,6 +212,15 @@ class MarketHistoryChart {
 
     this.availableSupply = availableSupply
     config.data.datasets = [this.price, this.marketCap, this.numTransactions]
+
+    const isChartLoadedKey = 'isChartLoaded'
+    const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
+    if (isChartLoaded) {
+      config.options.animation = false
+    } else {
+      window.sessionStorage.setItem(isChartLoadedKey, true)
+    }
+
     this.chart = new Chart(el, config)
   }
 
@@ -188,9 +237,7 @@ class MarketHistoryChart {
   }
 
   updateTransactionHistory (transactionHistory) {
-    this.numTransactions.data = transactionHistory && transactionHistory.map(dataPoint => {
-      return { x: dataPoint.date, y: dataPoint.number_of_transactions }
-    })
+    this.numTransactions.data = getTxHistoryData(transactionHistory)
     this.chart.update()
   }
 }
@@ -199,7 +246,6 @@ export function createMarketHistoryChart (el) {
   const dataPaths = $(el).data('history_chart_paths')
   const dataConfig = $(el).data('history_chart_config')
 
-  const $chartLoading = $('[data-chart-loading-message]')
   const $chartError = $('[data-chart-error-message]')
   const chart = new MarketHistoryChart(el, 0, [], dataConfig)
   Object.keys(dataPaths).forEach(function (historySource) {
@@ -209,6 +255,7 @@ export function createMarketHistoryChart (el) {
           case 'market': {
             const availableSupply = JSON.parse(data.supply_data)
             const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
+
             $(el).show()
             chart.updateMarketHistory(availableSupply, marketHistoryData)
             break
@@ -223,17 +270,14 @@ export function createMarketHistoryChart (el) {
         }
       })
       .fail(() => {
+        $(el).hide()
         $chartError.show()
-      })
-      .always(() => {
-        $chartLoading.hide()
       })
   })
   return chart
 }
 
 $('[data-chart-error-message]').on('click', _event => {
-  $('[data-chart-loading-message]').show()
   $('[data-chart-error-message]').hide()
   createMarketHistoryChart($('[data-chart="historyChart"]')[0])
 })
