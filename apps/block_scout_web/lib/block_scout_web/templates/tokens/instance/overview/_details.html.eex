@@ -5,7 +5,7 @@
         <div class="card-body">
           <h1 class="card-title">
             <%= if token_name?(@token) do %>
-              <%= @token.name %>
+              <%= link(@token.name, to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash)) %>
             <% else %>
               <%= gettext("Token Details") %>
             <% end %>
