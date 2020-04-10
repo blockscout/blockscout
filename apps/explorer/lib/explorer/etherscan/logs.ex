@@ -158,13 +158,13 @@ defmodule Explorer.Etherscan.Logs do
         )
       end
 
-    res = query_with_consensus
-    |> order_by([log], asc: log.index)
-    |> page_logs(paging_options)
-    |> Repo.all()
+    res =
+      query_with_consensus
+      |> order_by([log], asc: log.index)
+      |> page_logs(paging_options)
+      |> Repo.all()
 
     IO.inspect(res)
-
   end
 
   # Since address_hash was not present, we know that a
