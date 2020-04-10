@@ -21,6 +21,7 @@ defmodule Explorer.Chain.Wei do
   """
 
   alias Explorer.Chain.Wei
+  alias Poison.Encoder.BitString
 
   defstruct ~w(value)a
 
@@ -253,6 +254,30 @@ defmodule Explorer.Chain.Wei do
 
   @spec to(t(), :wei) :: wei()
   def to(%__MODULE__{value: wei}, :wei), do: wei
+
+  defimpl String.Chars do
+    def to_string(%Explorer.Chain.Wei{value: wei}) do
+      Decimal.to_string(wei)
+    end
+  end
+
+  defimpl Poison.Encoder do
+    def encode(%Explorer.Chain.Wei{value: wei}, options) do
+      wei
+      |> Decimal.to_string()
+      |> BitString.encode(options)
+    end
+  end
+
+  defimpl Jason.Encoder do
+    alias Jason.Encode
+
+    def encode(%Explorer.Chain.Wei{value: wei}, opts) do
+      wei
+      |> Decimal.to_string()
+      |> Encode.string(opts)
+    end
+  end
 end
 
 defimpl Inspect, for: Explorer.Chain.Wei do
