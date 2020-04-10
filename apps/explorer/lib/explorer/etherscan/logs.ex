@@ -98,8 +98,8 @@ defmodule Explorer.Etherscan.Logs do
             gas_fee_recipient_hash: transaction.gas_fee_recipient_hash,
             gateway_fee: transaction.gateway_fee,
             gas_used: transaction.gas_used,
-            transaction_index: transaction.index,
-            block_number: transaction.block_number
+            block_number: transaction.block_number,
+            transaction_index: transaction.index
           })
       )
 
@@ -129,9 +129,11 @@ defmodule Explorer.Etherscan.Logs do
           ]),
         select_merge: %{
           transaction_index: transaction.index
-        },
-        union: ^internal_transaction_log_query
+        }
+        # union: ^internal_transaction_log_query
       )
+
+    IO.inspect(internal_transaction_log_query)
 
     query_with_blocks =
       from(log_transaction_data in subquery(all_transaction_logs_query),
@@ -156,10 +158,13 @@ defmodule Explorer.Etherscan.Logs do
         )
       end
 
-    query_with_consensus
+    res = query_with_consensus
     |> order_by([log], asc: log.index)
     |> page_logs(paging_options)
     |> Repo.all()
+
+    IO.inspect(res)
+
   end
 
   # Since address_hash was not present, we know that a
