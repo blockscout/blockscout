@@ -147,8 +147,9 @@ defmodule Explorer.Chain.TokenTransfer do
       from(
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number),
+        where: not is_nil(tt.block_number),
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
-        order_by: [desc: tt.block_number, desc: tt.log_index]
+        order_by: [desc: tt.block_number]
       )
 
     query
@@ -168,7 +169,7 @@ defmodule Explorer.Chain.TokenTransfer do
         where: tt.token_id == ^token_id,
         where: not is_nil(tt.block_number),
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
-        order_by: [desc: tt.block_number, desc: tt.log_index]
+        order_by: [desc: tt.block_number]
       )
 
     query
@@ -292,9 +293,8 @@ defmodule Explorer.Chain.TokenTransfer do
       tt in TokenTransfer,
       left_join: instance in Instance,
       on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
-      where: tt.token_contract_address_hash == ^contract_address_hash,
-      order_by: [desc: tt.block_number],
-      distinct: tt.token_id,
+      where: instance.token_contract_address_hash == ^contract_address_hash,
+      distinct: instance.token_id,
       preload: [:to_address],
       select: %{tt | instance: instance}
     )
