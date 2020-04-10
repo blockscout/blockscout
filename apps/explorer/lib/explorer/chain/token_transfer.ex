@@ -294,7 +294,6 @@ defmodule Explorer.Chain.TokenTransfer do
       left_join: instance in Instance,
       on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
       where: instance.token_contract_address_hash == ^contract_address_hash,
-      order_by: [desc: instance.token_id],
       distinct: instance.token_id,
       preload: [:to_address],
       select: %{tt | instance: instance}
