@@ -67,8 +67,9 @@ defmodule BlockScoutWeb.ChainController do
 
   def date_range(num_days) do
     today = Date.utc_today()
-    x_days_back = Date.add(today, -1 * (num_days - 1))
-    %{earliest: x_days_back, latest: today}
+    latest = Date.add(today, -1)
+    x_days_back = Date.add(latest, -1 * (num_days - 1))
+    %{earliest: x_days_back, latest: latest}
   end
 
   def search(conn, %{"q" => query}) do

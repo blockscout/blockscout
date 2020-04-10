@@ -13,6 +13,9 @@ defmodule BlockScoutWeb.AddressChannel do
 
   intercept(["balance_update", "coin_balance", "count", "internal_transaction", "transaction", "verification_result"])
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   def join("addresses:" <> address_hash, _params, socket) do
     {:ok, %{}, assign(socket, :address_hash, address_hash)}
   end
@@ -130,7 +133,7 @@ defmodule BlockScoutWeb.AddressChannel do
         conn: socket,
         current_address: address,
         transaction: transaction,
-        conn: socket
+        burn_address_hash: @burn_address_hash
       )
 
     push(socket, event, %{
