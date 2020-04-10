@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import './try_api'
 
 function composeCurlCommand (data) {
   const url = $('[data-endpoint-url]').attr('data-endpoint-url')
@@ -44,8 +45,9 @@ function parseInput (input) {
   }
 }
 
-function dropDomain (url) {
-  return new URL(url).pathname
+function composeRequestUrl () {
+  const url = $('[data-endpoint-url]').attr('data-endpoint-url')
+  return url
 }
 
 $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
@@ -64,10 +66,8 @@ $('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
     clickedButton.html(loadingText)
   }
 
-  const url = $('[data-endpoint-url]').attr('data-endpoint-url')
-
   $.ajax({
-    url: dropDomain(url),
+    url: composeRequestUrl(),
     type: 'POST',
     data: JSON.stringify(formData),
     dataType: 'json',

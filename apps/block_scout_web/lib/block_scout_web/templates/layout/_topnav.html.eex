@@ -1,7 +1,7 @@
-<link rel="preload" href="/css/awesomplete.css" as="style" onload="this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="/css/awesomplete.css"></noscript>
-<script src="/js/awesomplete.min.js"></script>
-<script src="/js/awesomplete-util.min.js"></script>
+<link rel="preload" href="<%= static_path(@conn, "/css/awesomplete.css") %>" as="style" onload="this.rel='stylesheet'">
+<link rel="stylesheet" href="<%= static_path(@conn, "/css/awesomplete.css") %>">
+<script src="<%= static_path(@conn, "/js/awesomplete.min.js") %>"></script>
+<script src="<%= static_path(@conn, "/js/awesomplete-util.min.js") %>"></script>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <script>
     if (localStorage.getItem("current-color-mode") === "dark") {
@@ -11,28 +11,14 @@
   <div class="container-fluid navbar-container">
     <%= link to: webapp_url(@conn), class: "navbar-brand", "data-test": "header_logo" do %>
       <img class="navbar-logo" id="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
-    <% end %>
-    <a class="nav-link-new nav-link topnav-nav-link active-icon dropdown-toggle js-show-network-selector" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-         <span class="nav-link-icon">
-         <svg xmlns="http://www.w3.org/2000/svg" width="6" height="6">
-         <circle cx="3" cy="3" r="3" fill="#80d6a1"></circle>
-         </svg> </span><%= subnetwork_title() %></a>
-     <button class="new-button" id="dark-mode-changer">
-        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="16">
-            <path fill="#a3a9b5" fill-rule="evenodd" d="M14.88 11.578a.544.544 0 0 0-.599-.166 5.7 5.7 0 0 1-1.924.321c-3.259 0-5.91-2.632-5.91-5.866 0-1.947.968-3.759 2.59-4.849a.534.534 0 0 0-.225-.97A5.289 5.289 0 0 0 8.059 0C3.615 0 0 3.588 0 8s3.615 8 8.059 8c2.82 0 5.386-1.423 6.862-3.806a.533.533 0 0 0-.041-.616z"></path>
-        </svg>
-      </button>    
+    <% end %>   
     <script>
       if (localStorage.getItem("current-color-mode") === "dark") {
         document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
       }
     </script>
-    <button class="navbar-toggler" id="toggleButton" type="button"  value="Click" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
-      <span class="navbar-toggler-icon" id="toggleImage1" style="width="26px;"></span>
-      <span class="navbar-toggler-icon-1" id="toggleImage2"> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 47.971 47.971" style="enable-background:new 0 0 47.971 47.971; width: 17px;
-    transform: translate(0px, -1.5px);" xml:space="preserve"> <g><g>
-	<path d="M28.228,23.986L47.092,5.122c1.172-1.171,1.172-3.071,0-4.242c-1.172-1.172-3.07-1.172-4.242,0L23.986,19.744L5.121,0.88   c-1.172-1.172-3.07-1.172-4.242,0c-1.172,1.171-1.172,3.071,0,4.242l18.865,18.864L0.879,42.85c-1.172,1.171-1.172,3.071,0,4.242   C1.465,47.677,2.233,47.97,3,47.97s1.535-0.293,2.121-0.879l18.865-18.864L42.85,47.091c0.586,0.586,1.354,0.879,2.121,0.879   s1.535-0.293,2.121-0.879c1.172-1.171,1.172-3.071,0-4.242L28.228,23.986z" data-original="#000000" class="active-path" data-old_color="#000000" fill="#a3a9b5"/>
-</g></g> </svg></span>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
+      <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav">
@@ -44,7 +30,7 @@
               </span>
               <%= gettext("Blocks") %>
             </a>
-            <div class="dropdown-menu" id="checkIfSmall" aria-labelledby="navbarBlocksDropdown">
+            <div class="dropdown-menu" aria-labelledby="navbarBlocksDropdown">
               <%= link to: block_path(@conn, :index), class: "dropdown-item #{tab_status("blocks", @conn.request_path)}" do %>
                 <%= gettext("Blocks") %>
               <% end %>
@@ -56,14 +42,14 @@
               <% end %>
             </div>
           </li>
-          <li class="nav-item dropdown" id="activeTransactions">
-            <a href="#" role="button" id="navbarTransactionsDropdown1" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <li class="nav-item dropdown">            <li class="nav-item dropdown" id="activeTransactions">
+            <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
               </span>
               <%= gettext("Transactions") %>
             </a>
-            <div class="dropdown-menu" id="checkIfSmall1" aria-labeledby="navbarTransactionsDropdown">
+            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
               <%= link(
                     gettext("Validated"),
                     class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
@@ -94,7 +80,7 @@
               </span>
               <%= gettext("APIs") %>
             </a>
-            <div class="dropdown-menu" id="checkIfSmall2" aria-labeledby="navbarTransactionsDropdown">
+            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
               <%= link(
                     gettext("GraphQL"),
                     class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
@@ -114,15 +100,29 @@
           </li>
         <% end %>
         <li class="nav-item dropdown">
-          <a class="nav-link last-child topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <a class="nav-link topnav-nav-link active-icon <%= if dropdown_nets() != [], do: "dropdown-toggle js-show-network-selector" %>" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
             </span>
             <%= subnetwork_title() %>
           </a>
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">  
+            <a class="dropdown-item header division">Mainnets</a> 
+            <%= for %{url: url, title: title} <- dropdown_head_main_nets() do %>  
+              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+            <% end %> 
+            <a class="dropdown-item header division">Testnets</a> 
+            <%= for %{url: url, title: title} <- test_nets(dropdown_nets()) do %> 
+              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+            <% end %> 
+            <a class="dropdown-item header division">Other Networks</a> 
+            <%= for %{url: url, title: title} <- dropdown_other_nets() do %>  
+              <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
+            <% end %> 
+          </div>
         </li>
       </ul>
-      <!-- Dark mode changer was there -->
+      <!-- Dark mode changer -->
       <button class="dark-mode-changer" id="dark-mode-changer">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="16">
             <path fill="#9B62FF" fill-rule="evenodd" d="M14.88 11.578a.544.544 0 0 0-.599-.166 5.7 5.7 0 0 1-1.924.321c-3.259 0-5.91-2.632-5.91-5.866 0-1.947.968-3.759 2.59-4.849a.534.534 0 0 0-.225-.97A5.289 5.289 0 0 0 8.059 0C3.615 0 0 3.588 0 8s3.615 8 8.059 8c2.82 0 5.386-1.423 6.862-3.806a.533.533 0 0 0-.041-.616z"/>
@@ -168,7 +168,6 @@
     </div>
   </div>
 </nav>
-<%= render BlockScoutWeb.LayoutView, "_network_selector.html" %>
 <script>
   if (localStorage.getItem("current-color-mode") === "dark") {
     var modeChanger = document.getElementById("dark-mode-changer");

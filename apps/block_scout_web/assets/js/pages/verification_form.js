@@ -4,6 +4,7 @@ import URI from 'urijs'
 import humps from 'humps'
 import { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import '../app'
 
 export const initialState = {
   channelDisconnected: false,
@@ -67,7 +68,7 @@ const elements = {
           })
 
           $('.js-btn-add-contract-library').on('click', function () {
-            let nextContractLibrary = $('.js-contract-library-form-group.active').next('.js-contract-library-form-group')
+            const nextContractLibrary = $('.js-contract-library-form-group.active').next('.js-contract-library-form-group')
 
             if (nextContractLibrary) {
               nextContractLibrary.addClass('active')
@@ -87,6 +88,26 @@ const elements = {
 }
 
 const $contractVerificationPage = $('[data-page="contract-verification"]')
+
+function filterNightlyBuilds (filter) {
+  var select, options
+  select = document.getElementById('smart_contract_compiler_version')
+  options = select.getElementsByTagName('option')
+  for (const option of options) {
+    var txtValue = option.textContent || option.innerText
+    if (filter) {
+      if (txtValue.toLowerCase().indexOf('nightly') > -1) {
+        option.style.display = 'none'
+      } else {
+        option.style.display = ''
+      }
+    } else {
+      if (txtValue.toLowerCase().indexOf('nightly') > -1) {
+        option.style.display = ''
+      }
+    }
+  }
+}
 
 if ($contractVerificationPage.length) {
   const store = createStore(reducer)
@@ -116,9 +137,37 @@ if ($contractVerificationPage.length) {
   })
 
   $(function () {
+    setTimeout(function () {
+      $('.nightly-builds-false').trigger('click')
+    }, 10)
+
     $('.js-btn-add-contract-libraries').on('click', function () {
       $('.js-smart-contract-libraries-wrapper').show()
       $(this).hide()
+    })
+
+    $('.autodetectfalse').on('click', function () {
+      if ($(this).prop('checked')) { $('.constructor-arguments').show() }
+    })
+
+    $('.autodetecttrue').on('click', function () {
+      if ($(this).prop('checked')) { $('.constructor-arguments').hide() }
+    })
+
+    $('.nightly-builds-true').on('click', function () {
+      if ($(this).prop('checked')) { filterNightlyBuilds(false) }
+    })
+
+    $('.nightly-builds-false').on('click', function () {
+      if ($(this).prop('checked')) { filterNightlyBuilds(true) }
+    })
+
+    $('.optimization-false').on('click', function () {
+      if ($(this).prop('checked')) { $('.optimization-runs').hide() }
+    })
+
+    $('.optimization-true').on('click', function () {
+      if ($(this).prop('checked')) { $('.optimization-runs').show() }
     })
 
     $('.js-smart-contract-form-reset').on('click', function () {
@@ -130,7 +179,7 @@ if ($contractVerificationPage.length) {
     })
 
     $('.js-btn-add-contract-library').on('click', function () {
-      let nextContractLibrary = $('.js-contract-library-form-group.active').next('.js-contract-library-form-group')
+      const nextContractLibrary = $('.js-contract-library-form-group.active').next('.js-contract-library-form-group')
 
       if (nextContractLibrary) {
         nextContractLibrary.addClass('active')

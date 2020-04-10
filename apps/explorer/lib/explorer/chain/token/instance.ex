@@ -12,18 +12,21 @@ defmodule Explorer.Chain.Token.Instance do
   * `token_id` - ID of the token
   * `token_contract_address_hash` - Address hash foreign key
   * `metadata` - Token instance metadata
+  * `error` - error fetching token instance
   """
 
   @type t :: %Instance{
           token_id: non_neg_integer(),
           token_contract_address_hash: Hash.Address.t(),
-          metadata: Map.t()
+          metadata: Map.t(),
+          error: String.t()
         }
 
   @primary_key false
   schema "token_instances" do
     field(:token_id, :decimal, primary_key: true)
     field(:metadata, :map)
+    field(:error, :string)
 
     belongs_to(
       :token,
@@ -39,7 +42,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   def changeset(%Instance{} = instance, params \\ %{}) do
     instance
-    |> cast(params, [:token_id, :metadata, :token_contract_address_hash])
+    |> cast(params, [:token_id, :metadata, :token_contract_address_hash, :error])
     |> validate_required([:token_id, :token_contract_address_hash])
     |> foreign_key_constraint(:token_contract_address_hash)
   end

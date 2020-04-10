@@ -49,5 +49,6 @@ defmodule Explorer.Chain.Import.Runner do
   """
   @callback ecto_schema_module() :: module()
   @callback run(Multi.t(), changes_list, %{optional(atom()) => term()}) :: Multi.t()
+  # @callback run_insert_only(Multi.t(), changes_list, %{optional(atom()) => term()}) :: Multi.t()
   @callback timeout() :: timeout()
 end

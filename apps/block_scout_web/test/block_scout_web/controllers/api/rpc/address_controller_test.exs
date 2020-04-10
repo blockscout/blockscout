@@ -88,21 +88,24 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       mining_address =
         insert(:address,
           fetched_coin_balance: 0,
-          fetched_coin_balance_block_number: 2,
+          fetched_coin_balance_block_number: 102,
           inserted_at: Timex.shift(now, minutes: -10)
         )
 
       mining_address_hash = to_string(mining_address.hash)
       # we space these very far apart so that we know it will consider the 0th block stale (it calculates how far
       # back we'd need to go to get 24 hours in the past)
-      insert(:block, number: 0, timestamp: Timex.shift(now, hours: -50), miner: mining_address)
-      insert(:block, number: 1, timestamp: Timex.shift(now, hours: -25), miner: mining_address)
+      Enum.each(0..100, fn i ->
+        insert(:block, number: i, timestamp: Timex.shift(now, hours: -(102 - i) * 25), miner: mining_address)
+      end)
+
+      insert(:block, number: 101, timestamp: Timex.shift(now, hours: -25), miner: mining_address)
       AverageBlockTime.refresh()
 
       address =
         insert(:address,
           fetched_coin_balance: 100,
-          fetched_coin_balance_block_number: 0,
+          fetched_coin_balance_block_number: 100,
           inserted_at: Timex.shift(now, minutes: -5)
         )
 
@@ -112,7 +115,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                                                      %{
                                                        id: id,
                                                        method: "eth_getBalance",
-                                                       params: [^address_hash, "0x1"]
+                                                       params: [^address_hash, "0x65"]
                                                      }
                                                    ],
                                                    _options ->
@@ -148,7 +151,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       assert received_address.hash == address.hash
       assert received_address.fetched_coin_balance == expected_wei
-      assert received_address.fetched_coin_balance_block_number == 1
+      assert received_address.fetched_coin_balance_block_number == 101
     end
   end
 
@@ -809,7 +812,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           String.to_integer(transaction["blockNumber"])
         end)
 
-      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 <= &2))
+      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 >= &2))
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
@@ -831,12 +834,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> insert_list(:transaction, from_address: address)
         |> with_block(second_block)
 
-      _third_block_transactions =
+      first_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
         |> with_block(third_block)
 
-      first_block_transactions =
+      _third_block_transactions =
         2
         |> insert_list(:transaction, from_address: address)
         |> with_block(first_block)
@@ -1453,7 +1456,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       internal_transaction =
         :internal_transaction_create
-        |> insert(transaction: transaction, index: 0, from_address: address)
+        |> insert(
+          transaction: transaction,
+          index: 0,
+          from_address: address,
+          block_hash: transaction.block_hash,
+          block_index: 0
+        )
         |> with_contract_creation(contract_address)
 
       params = %{
@@ -1502,7 +1511,9 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         transaction: transaction,
         index: 0,
         type: :reward,
-        error: "some error"
+        error: "some error",
+        block_hash: transaction.block_hash,
+        block_index: 0
       ]
 
       insert(:internal_transaction_create, internal_transaction_details)
@@ -1532,7 +1543,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> with_block()
 
       for index <- 0..2 do
-        insert(:internal_transaction_create, transaction: transaction, index: index)
+        insert(:internal_transaction_create,
+          transaction: transaction,
+          index: index,
+          block_hash: transaction.block_hash,
+          block_index: index
+        )
       end
 
       params = %{
@@ -1606,7 +1622,14 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       internal_transaction =
         :internal_transaction_create
-        |> insert(transaction: transaction, index: 0, from_address: address)
+        |> insert(
+          transaction: transaction,
+          index: 0,
+          from_address: address,
+          block_number: block.number,
+          block_hash: transaction.block_hash,
+          block_index: 0
+        )
         |> with_contract_creation(contract_address)
 
       params = %{
@@ -1658,7 +1681,10 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         transaction: transaction,
         index: 0,
         type: :reward,
-        error: "some error"
+        error: "some error",
+        block_number: transaction.block_number,
+        block_hash: transaction.block_hash,
+        block_index: 0
       ]
 
       insert(:internal_transaction_create, internal_transaction_details)
@@ -1693,7 +1719,10 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         internal_transaction_details = %{
           from_address: address,
           transaction: transaction,
-          index: index
+          index: index,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          block_index: index
         }
 
         insert(:internal_transaction_create, internal_transaction_details)
@@ -1787,7 +1816,9 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         insert(:token_transfer, %{
           token_contract_address: token_address,
           token_id: 666,
-          transaction: transaction
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number
         })
 
       {:ok, _} = Chain.token_from_address_hash(token_transfer.token_contract_address_hash)
@@ -1804,7 +1835,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert result["value"] == to_string(token_transfer.token_id)
+      assert result["tokenID"] == to_string(token_transfer.token_id)
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
@@ -1817,7 +1848,9 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> insert()
         |> with_block()
 
-      token_transfer = insert(:token_transfer, transaction: transaction)
+      token_transfer =
+        insert(:token_transfer, block: transaction.block, transaction: transaction, block_number: block.number)
+
       {:ok, token} = Chain.token_from_address_hash(token_transfer.token_contract_address_hash)
 
       params = %{
@@ -1894,8 +1927,20 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         |> insert()
         |> with_block()
 
-      insert(:token_transfer, from_address: address, transaction: transaction)
-      insert(:token_transfer, from_address: address, token_contract_address: contract_address, transaction: transaction)
+      insert(:token_transfer,
+        from_address: address,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
+
+      insert(:token_transfer,
+        from_address: address,
+        token_contract_address: contract_address,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
 
       params = %{
         "module" => "account",
@@ -2615,6 +2660,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "logIndex" => %{"type" => "string"},
           "value" => %{"type" => "string"},
           "tokenName" => %{"type" => "string"},
+          "tokenID" => %{"type" => "string"},
           "tokenSymbol" => %{"type" => "string"},
           "tokenDecimal" => %{"type" => "string"},
           "transactionIndex" => %{"type" => "string"},

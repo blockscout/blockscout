@@ -15,10 +15,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
     only: [
       async_import_block_rewards: 1,
       async_import_created_contract_codes: 1,
-      async_import_internal_transactions: 2,
+      async_import_internal_transactions: 1,
       async_import_replaced_transactions: 1,
       async_import_tokens: 1,
       async_import_token_balances: 1,
+      async_import_token_instances: 1,
       async_import_uncles: 1,
       fetch_and_import_range: 2,
       async_import_staking_pools: 0
@@ -36,7 +37,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @behaviour Block.Fetcher
 
-  @minimum_safe_polling_period :timer.seconds(10)
+  @minimum_safe_polling_period :timer.seconds(5)
 
   @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
@@ -156,7 +157,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     polling_period =
       case AverageBlockTime.average_block_time() do
         {:error, :disabled} -> 2_000
-        block_time -> round(Duration.to_milliseconds(block_time) * 2)
+        block_time -> round(Duration.to_milliseconds(block_time) / 2)
       end
 
     safe_polling_period = max(polling_period, @minimum_safe_polling_period)
@@ -168,7 +169,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @impl Block.Fetcher
   def import(
-        %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher,
+        block_fetcher,
         %{
           address_coin_balances: %{params: address_coin_balances_params},
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
@@ -194,8 +195,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(
         imported,
-        %{block_rewards: %{errors: block_reward_errors}},
-        json_rpc_named_arguments
+        %{block_rewards: %{errors: block_reward_errors}}
       )
 
       Accounts.drop(imported[:addresses])
@@ -350,14 +350,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp async_import_remaining_block_data(
          imported,
-         %{block_rewards: %{errors: block_reward_errors}},
-         json_rpc_named_arguments
+         %{block_rewards: %{errors: block_reward_errors}}
        ) do
     async_import_block_rewards(block_reward_errors)
     async_import_created_contract_codes(imported)
-    async_import_internal_transactions(imported, Keyword.get(json_rpc_named_arguments, :variant))
+    async_import_internal_transactions(imported)
     async_import_tokens(imported)
     async_import_token_balances(imported)
+    async_import_token_instances(imported)
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
     async_import_staking_pools()

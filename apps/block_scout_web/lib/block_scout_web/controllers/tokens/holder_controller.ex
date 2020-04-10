@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
 
   alias BlockScoutWeb.Tokens.HolderView
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Phoenix.View
 
   import BlockScoutWeb.Chain,
@@ -11,8 +12,6 @@ defmodule BlockScoutWeb.Tokens.HolderController do
       paging_options: 1,
       next_page_params: 3
     ]
-
-  import BlockScoutWeb.Tokens.TokenController, only: [fetch_token_counters: 2]
 
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -49,15 +48,12 @@ defmodule BlockScoutWeb.Tokens.HolderController do
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash, options) do
-      {total_token_transfers, total_token_holders} = fetch_token_counters(token, address_hash)
-
       render(
         conn,
         "index.html",
         current_path: current_path(conn),
         token: Market.add_price(token),
-        total_token_holders: total_token_holders,
-        total_token_transfers: total_token_transfers
+        counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)})
       )
     else
       :error ->

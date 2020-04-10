@@ -39,7 +39,8 @@
         <%= render BlockScoutWeb.AddressView,
           "_link.html",
           address: @block.miner,
-          contract: false %>
+          contract: false,
+          use_custom_tooltip: false %>
       </div>
       <%= if show_reward?(@block.rewards) do %>
         <div class="text-nowrap text-truncate mt-3 mt-md-0">

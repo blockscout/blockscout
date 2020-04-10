@@ -1,24 +1,32 @@
 <div class="tile tile-type-token-transfer fade-in">
   <div class="row justify-content-end">
     <div class="col-12 col-md-4 col-lg-2 d-flex align-items-center justify-content-start justify-content-lg-center tile-label">
-      <%=  gettext("Token Transfer") %>
+      <%= cond do %>
+        <% @token_transfer.to_address.hash == @burn_address_hash -> %>
+          <%= gettext("Token Burning") %>
+        <% @token_transfer.from_address.hash == @burn_address_hash -> %>
+          <%= gettext("Token Minting") %>
+        <% true -> %>
+          <%= gettext("Token Transfer") %>
+      <% end %>
     </div>
 
     <div class="col-12 col-md-8 col-lg-10 d-flex flex-column text-nowrap">
       <%= render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @token_transfer.transaction_hash %>
       <span class="text-nowrap">
-        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_transfer.from_address, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.from_address) %>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_transfer.from_address, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.from_address), use_custom_tooltip: false %>
         &rarr;
-        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_transfer.to_address, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.to_address) %>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_transfer.to_address, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.to_address), use_custom_tooltip: false %>
       </span>
 
       <span class="tile-title text-truncate">
         <%= case token_transfer_amount(@token_transfer) do%>
           <% {:ok, :erc721_instance} -> %>
-            <%= "TokenID ["%><%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, @token_transfer.token.contract_address_hash, to_string(@token_transfer.token_id))) %><%= "]" %>
+            <%= "TokenID2 ["%><%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, @token_transfer.token.contract_address_hash, to_string(@token_transfer.token_id))) %><%= "]" %>
           <% {:ok, value} -> %>
             <%= value %>
         <% end %>
+        <%= " "%>
         <%= link(token_symbol(@token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @token_transfer.token.contract_address_hash)) %>
       </span>
     </div>

@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1-node-browsers
+      - image: circleci/elixir:1.9.4-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -39,9 +39,6 @@ jobs:
 
       - run: mix deps.get
 
-      - run:
-          command: sed -i '68,68 s/^/%/' ./deps/hackney/src/hackney_ssl.erl
-
       - restore_cache:
           keys:
             - v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
@@ -64,6 +61,10 @@ jobs:
 
       - run:
           command: npm install
+          working_directory: "apps/block_scout_web/assets"
+
+      - run:
+          command: npm rebuild node-sass
           working_directory: "apps/block_scout_web/assets"
 
       - save_cache:
@@ -132,7 +133,7 @@ jobs:
   check_formatted:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -146,7 +147,7 @@ jobs:
   credo:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -180,7 +181,7 @@ jobs:
   dialyzer:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -232,7 +233,7 @@ jobs:
   eslint:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/node:9.10.1
+      - image: circleci/node:12.16.1-browsers-legacy
 
     working_directory: ~/app
 
@@ -250,7 +251,7 @@ jobs:
   gettext:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -274,7 +275,7 @@ jobs:
   jest:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/node:9.10.1
+      - image: circleci/node:12.16.1-browsers-legacy
 
     working_directory: ~/app
 
@@ -289,7 +290,7 @@ jobs:
   release:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: prod
 
@@ -315,7 +316,7 @@ jobs:
   sobelow:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -336,172 +337,172 @@ jobs:
           name: Scan block_scout_web for vulnerabilities
           command: mix sobelow --config
           working_directory: "apps/block_scout_web"
-  test_geth_http_websocket:
-    docker:
-      # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1-node-browsers
-        environment:
-          MIX_ENV: test
-          # match POSTGRES_PASSWORD for postgres image below
-          PGPASSWORD: postgres
-          # match POSTGRES_USER for postgres image below
-          PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Geth.HTTPWebSocket"
-          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Geth"
-      - image: circleci/postgres:10.3-alpine
-        environment:
-          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
-          POSTGRES_DB: explorer_test
-          # match PGPASSWORD for elixir image above
-          POSTGRES_PASSWORD: postgres
-          # match PGUSER for elixir image above
-          POSTGRES_USER: postgres
+  # test_geth_http_websocket:
+  #   docker:
+  #     # Ensure .tool-versions matches
+  #     - image: circleci/elixir:1.9.4-node-browsers
+  #       environment:
+  #         MIX_ENV: test
+  #         # match POSTGRES_PASSWORD for postgres image below
+  #         PGPASSWORD: postgres
+  #         # match POSTGRES_USER for postgres image below
+  #         PGUSER: postgres
+  #         ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Geth.HTTPWebSocket"
+  #         ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Geth"
+  #     - image: circleci/postgres:10.10-alpine
+  #       environment:
+  #         # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+  #         POSTGRES_DB: explorer_test
+  #         # match PGPASSWORD for elixir image above
+  #         POSTGRES_PASSWORD: postgres
+  #         # match PGUSER for elixir image above
+  #         POSTGRES_USER: postgres
 
-    working_directory: ~/app
+  #   working_directory: ~/app
 
-    steps:
-      - attach_workspace:
-          at: .
+  #   steps:
+  #     - attach_workspace:
+  #         at: .
 
-      - run:
-          command: ./bin/install_chrome_headless.sh
-          no_output_timeout: 2400
+  #     - run:
+  #         command: ./bin/install_chrome_headless.sh
+  #         no_output_timeout: 2400
 
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
+  #     - run: mix local.hex --force
+  #     - run: mix local.rebar --force
 
-      - run:
-          name: Wait for DB
-          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+  #     - run:
+  #         name: Wait for DB
+  #         command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
-      - run:
-          name: mix test --exclude no_geth
-          command: |
-            # Don't submit coverage report for forks, but let the build succeed
-            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --exclude no_geth --parallel --umbrella
-            else
-              mix coveralls.circle --exclude no_geth --parallel --umbrella ||
-                # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
-                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
-            fi
+  #     - run:
+  #         name: mix test --exclude no_geth
+  #         command: |
+  #           # Don't submit coverage report for forks, but let the build succeed
+  #           if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
+  #             mix coveralls.html --exclude no_geth --parallel --umbrella
+  #           else
+  #             mix coveralls.circle --exclude no_geth --parallel --umbrella ||
+  #               # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
+  #               (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
+  #           fi
 
-      - store_artifacts:
-          path: cover/excoveralls.html
-      - store_test_results:
-          path: _build/test/junit
-  test_geth_mox:
-    docker:
-      # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1-node-browsers
-        environment:
-          MIX_ENV: test
-          # match POSTGRES_PASSWORD for postgres image below
-          PGPASSWORD: postgres
-          # match POSTGRES_USER for postgres image below
-          PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Geth.Mox"
-          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
-      - image: circleci/postgres:10.3-alpine
-        environment:
-          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
-          POSTGRES_DB: explorer_test
-          # match PGPASSWORD for elixir image above
-          POSTGRES_PASSWORD: postgres
-          # match PGUSER for elixir image above
-          POSTGRES_USER: postgres
+  #     - store_artifacts:
+  #         path: cover/excoveralls.html
+  #     - store_test_results:
+  #         path: _build/test/junit
+  # test_geth_mox:
+  #   docker:
+  #     # Ensure .tool-versions matches
+  #     - image: circleci/elixir:1.9.4-node-browsers
+  #       environment:
+  #         MIX_ENV: test
+  #         # match POSTGRES_PASSWORD for postgres image below
+  #         PGPASSWORD: postgres
+  #         # match POSTGRES_USER for postgres image below
+  #         PGUSER: postgres
+  #         ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Geth.Mox"
+  #         ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+  #     - image: circleci/postgres:10.10-alpine
+  #       environment:
+  #         # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+  #         POSTGRES_DB: explorer_test
+  #         # match PGPASSWORD for elixir image above
+  #         POSTGRES_PASSWORD: postgres
+  #         # match PGUSER for elixir image above
+  #         POSTGRES_USER: postgres
 
-    working_directory: ~/app
+  #   working_directory: ~/app
 
-    steps:
-      - attach_workspace:
-          at: .
+  #   steps:
+  #     - attach_workspace:
+  #         at: .
 
-      - run:
-          command: ./bin/install_chrome_headless.sh
-          no_output_timeout: 2400
+  #     - run:
+  #         command: ./bin/install_chrome_headless.sh
+  #         no_output_timeout: 2400
 
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
+  #     - run: mix local.hex --force
+  #     - run: mix local.rebar --force
 
-      - run:
-          name: Wait for DB
-          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+  #     - run:
+  #         name: Wait for DB
+  #         command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
-      - run:
-          name: mix test --exclude no_geth
-          command: |
-            # Don't submit coverage report for forks, but let the build succeed
-            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --exclude no_geth --parallel --umbrella
-            else
-              mix coveralls.circle --exclude no_geth --parallel --umbrella ||
-                # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
-                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
-            fi
+  #     - run:
+  #         name: mix test --exclude no_geth
+  #         command: |
+  #           # Don't submit coverage report for forks, but let the build succeed
+  #           if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
+  #             mix coveralls.html --exclude no_geth --parallel --umbrella
+  #           else
+  #             mix coveralls.circle --exclude no_geth --parallel --umbrella ||
+  #               # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
+  #               (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
+  #           fi
 
-      - store_artifacts:
-          path: cover/excoveralls.html
-      - store_test_results:
-          path: _build/test/junit
-  test_parity_http_websocket:
-    docker:
-      # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1-node-browsers
-        environment:
-          MIX_ENV: test
-          # match POSTGRES_PASSWORD for postgres image below
-          PGPASSWORD: postgres
-          # match POSTGRES_USER for postgres image below
-          PGUSER: postgres
-          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.HTTPWebSocket"
-          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Parity"
-      - image: circleci/postgres:10.3-alpine
-        environment:
-          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
-          POSTGRES_DB: explorer_test
-          # match PGPASSWORD for elixir image above
-          POSTGRES_PASSWORD: postgres
-          # match PGUSER for elixir image above
-          POSTGRES_USER: postgres
+  #     - store_artifacts:
+  #         path: cover/excoveralls.html
+  #     - store_test_results:
+  #         path: _build/test/junit
+  # test_parity_http_websocket:
+  #   docker:
+  #     # Ensure .tool-versions matches
+  #     - image: circleci/elixir:1.9.4-node-browsers
+  #       environment:
+  #         MIX_ENV: test
+  #         # match POSTGRES_PASSWORD for postgres image below
+  #         PGPASSWORD: postgres
+  #         # match POSTGRES_USER for postgres image below
+  #         PGUSER: postgres
+  #         ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.HTTPWebSocket"
+  #         ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Parity"
+  #     - image: circleci/postgres:10.10-alpine
+  #       environment:
+  #         # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+  #         POSTGRES_DB: explorer_test
+  #         # match PGPASSWORD for elixir image above
+  #         POSTGRES_PASSWORD: postgres
+  #         # match PGUSER for elixir image above
+  #         POSTGRES_USER: postgres
 
-    working_directory: ~/app
+  #   working_directory: ~/app
 
-    steps:
-      - attach_workspace:
-          at: .
+  #   steps:
+  #     - attach_workspace:
+  #         at: .
 
-      - run:
-          command: ./bin/install_chrome_headless.sh
-          no_output_timeout: 2400
+  #     - run:
+  #         command: ./bin/install_chrome_headless.sh
+  #         no_output_timeout: 2400
 
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
+  #     - run: mix local.hex --force
+  #     - run: mix local.rebar --force
 
-      - run:
-          name: Wait for DB
-          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+  #     - run:
+  #         name: Wait for DB
+  #         command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
-      - run:
-          name: mix test --exclude no_parity
-          command: |
-            # Don't submit coverage report for forks, but let the build succeed
-            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --exclude no_parity --parallel --umbrella
-            else
-              mix coveralls.circle --exclude no_parity --parallel --umbrella ||
-                # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
-                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
-            fi
+  #     - run:
+  #         name: mix test --exclude no_parity
+  #         command: |
+  #           # Don't submit coverage report for forks, but let the build succeed
+  #           if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
+  #             mix coveralls.html --exclude no_parity --parallel --umbrella
+  #           else
+  #             mix coveralls.circle --exclude no_parity --parallel --umbrella ||
+  #               # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
+  #               (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
+  #           fi
 
-      - store_artifacts:
-          path: cover/excoveralls.html
-      - store_test_results:
-          path: _build/test/junit
+  #     - store_artifacts:
+  #         path: cover/excoveralls.html
+  #     - store_test_results:
+  #         path: _build/test/junit
   test_parity_mox:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1-node-browsers
+      - image: circleci/elixir:1.9.4-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -510,7 +511,7 @@ jobs:
           PGUSER: postgres
           ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
           ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
-      - image: circleci/postgres:10.3-alpine
+      - image: circleci/postgres:10.10-alpine
         environment:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
@@ -555,7 +556,7 @@ jobs:
   coveralls_merge:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.9.1
+      - image: circleci/elixir:1.9.4
         environment:
           MIX_ENV: test
 
@@ -574,10 +575,10 @@ workflows:
       # This unfortunately will only fire if all the tests pass because of how `requires` works
       - coveralls_merge:
           requires:
-            - test_parity_http_websocket
+            # - test_parity_http_websocket
             - test_parity_mox
-            - test_geth_http_websocket
-            - test_geth_mox
+            # - test_geth_http_websocket
+            # - test_geth_mox
       - credo:
           requires:
             - build
@@ -594,10 +595,10 @@ workflows:
             - eslint
             - jest
             - sobelow
-            - test_parity_http_websocket
+            # - test_parity_http_websocket
             - test_parity_mox
-            - test_geth_http_websocket
-            - test_geth_mox
+            # - test_geth_http_websocket
+            # - test_geth_mox
       - dialyzer:
           requires:
             - build
@@ -616,15 +617,15 @@ workflows:
       - sobelow:
           requires:
             - build
-      - test_parity_http_websocket:
-          requires:
-            - build
+      # - test_parity_http_websocket:
+      #     requires:
+      #       - build
       - test_parity_mox:
           requires:
             - build
-      - test_geth_http_websocket:
-          requires:
-            - build
-      - test_geth_mox:
-          requires:
-            - build
+      # - test_geth_http_websocket:
+      #     requires:
+      #       - build
+      # - test_geth_mox:
+      #     requires:
+      #       - build

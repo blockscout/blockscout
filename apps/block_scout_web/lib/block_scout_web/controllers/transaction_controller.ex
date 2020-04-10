@@ -7,6 +7,9 @@ defmodule BlockScoutWeb.TransactionController do
   alias Explorer.Chain
   alias Phoenix.View
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   def index(conn, %{"type" => "JSON"} = params) do
     full_options =
       Keyword.merge(
@@ -42,6 +45,7 @@ defmodule BlockScoutWeb.TransactionController do
               TransactionView,
               "_tile.html",
               transaction: transaction,
+              burn_address_hash: @burn_address_hash,
               conn: conn
             )
           end),

@@ -20,42 +20,13 @@ defmodule BlockScoutWeb.LayoutView do
       url: "https://blockscout.com/poa/dai"
     },
     %{
-      title: "Ethereum Mainnet",
-      url: "https://blockscout.com/eth/mainnet"
-    },
-    %{
       title: "Kovan Testnet",
       url: "https://blockscout.com/eth/kovan",
       test_net?: true
     },
     %{
-      title: "Ropsten Testnet",
-      url: "https://blockscout.com/eth/ropsten",
-      test_net?: true
-    },
-    %{
-      title: "Goerli Testnet",
-      url: "https://blockscout.com/eth/goerli",
-      test_net?: true
-    },
-    %{
-      title: "Rinkeby Testnet",
-      url: "https://blockscout.com/eth/rinkeby",
-      test_net?: true
-    },
-    %{
       title: "Ethereum Classic",
       url: "https://blockscout.com/etc/mainnet",
-      other?: true
-    },
-    %{
-      title: "Aerum Mainnet",
-      url: "https://blockscout.com/aerum/mainnet",
-      other?: true
-    },
-    %{
-      title: "Callisto Mainnet",
-      url: "https://blockscout.com/callisto/mainnet",
       other?: true
     },
     %{
@@ -67,10 +38,6 @@ defmodule BlockScoutWeb.LayoutView do
 
   alias BlockScoutWeb.SocialMedia
 
-  def network_icon_partial do
-    Keyword.get(application_config(), :network_icon) || "_network_icon.html"
-  end
-
   def logo do
     Keyword.get(application_config(), :logo) || "/images/blockscout_logo.svg"
   end
@@ -81,7 +48,7 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   def subnetwork_title do
-    Keyword.get(application_config(), :subnetwork) || "Sokol Testnet"
+    Keyword.get(application_config(), :subnetwork) || "POA Sokol"
   end
 
   def network_title do
@@ -170,9 +137,14 @@ defmodule BlockScoutWeb.LayoutView do
   def other_networks do
     get_other_networks =
       if Application.get_env(:block_scout_web, :other_networks) do
-        :block_scout_web
-        |> Application.get_env(:other_networks)
-        |> Parser.parse!(%{keys: :atoms!})
+        try do
+          :block_scout_web
+          |> Application.get_env(:other_networks)
+          |> Parser.parse!(%{keys: :atoms!})
+        rescue
+          _ ->
+            []
+        end
       else
         @default_other_networks
       end

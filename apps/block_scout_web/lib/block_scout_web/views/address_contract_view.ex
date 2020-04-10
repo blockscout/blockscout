@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
 
   alias ABI.{FunctionSelector, TypeDecoder}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, InternalTransaction, SmartContract}
 
   def render("scripts.html", %{conn: conn}) do
@@ -22,7 +23,7 @@ defmodule BlockScoutWeb.AddressContractView do
   def format_optimization_text(true), do: gettext("true")
   def format_optimization_text(false), do: gettext("false")
 
-  def format_constructor_arguments(contract) do
+  def format_constructor_arguments(contract, conn) do
     constructor_abi = Enum.find(contract.abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
 
     input_types = Enum.map(constructor_abi["inputs"], &FunctionSelector.parse_specification_type/1)
@@ -32,11 +33,24 @@ defmodule BlockScoutWeb.AddressContractView do
       |> decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.reduce({0, "#{contract.constructor_arguments}\n\n"}, fn {val, %{"type" => type}}, {count, acc} ->
+        address_hash = "0x" <> Base.encode16(val, case: :lower)
+
+        address =
+          case Chain.string_to_address_hash(address_hash) do
+            {:ok, address} -> address
+            _ -> nil
+          end
+
         formatted_val =
-          if is_binary(val) do
-            Base.encode16(val, case: :lower)
-          else
-            val
+          cond do
+            type =~ "address" ->
+              get_formatted_address_data(address, address_hash, conn)
+
+            type =~ "bytes" ->
+              Base.encode16(val, case: :lower)
+
+            true ->
+              val
           end
 
         {count + 1, "#{acc}Arg [#{count}] (<b>#{type}</b>) : #{formatted_val}\n"}
@@ -45,6 +59,14 @@ defmodule BlockScoutWeb.AddressContractView do
     result
   rescue
     _ -> contract.constructor_arguments
+  end
+
+  defp get_formatted_address_data(address, address_hash, conn) do
+    if address != nil do
+      "<a href=" <> address_path(conn, :show, address) <> ">" <> address_hash <> "</a>"
+    else
+      address_hash
+    end
   end
 
   defp decode_data("0x" <> encoded_data, types) do

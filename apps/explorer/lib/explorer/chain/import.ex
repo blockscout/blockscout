@@ -12,7 +12,8 @@ defmodule Explorer.Chain.Import do
     Import.Stage.Addresses,
     Import.Stage.AddressReferencing,
     Import.Stage.BlockReferencing,
-    Import.Stage.BlockFollowing
+    Import.Stage.BlockFollowing,
+    Import.Stage.BlockPending
   ]
 
   # in order so that foreign keys are inserted before being referenced
@@ -333,7 +334,7 @@ defmodule Explorer.Chain.Import do
   end
 
   @spec timestamps() :: timestamps
-  defp timestamps do
+  def timestamps do
     now = DateTime.utc_now()
     %{inserted_at: now, updated_at: now}
   end

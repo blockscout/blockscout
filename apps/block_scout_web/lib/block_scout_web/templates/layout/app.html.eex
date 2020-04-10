@@ -4,21 +4,35 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
-    <link rel="preload" href="/css/non-critical.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="/css/non-critical.css"></noscript>
+    <link rel="preload" href="<%= static_path(@conn, "/css/non-critical.css") %>" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="stylesheet" href="<%= static_path(@conn, "/css/non-critical.css") %>">
 
     <link rel="apple-touch-icon" sizes="180x180" href="<%= static_path(@conn, "/apple-touch-icon.png") %>">
-    <link rel="icon" type="image/png" sizes="32x32" href="<%= static_path(@conn, "/favicon-32x32.png") %>">
-    <link rel="icon" type="image/png" sizes="16x16" href="<%= static_path(@conn, "/favicon-16x16.png") %>">
-    <link rel="manifest" href="<%= static_path(@conn, "/site.webmanifest") %>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<%= static_path(@conn, "/images/favicon-32x32.png") %>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<%= static_path(@conn, "/images/favicon-16x16.png") %>">
+    <link rel="manifest" href="<%= static_path(@conn, "/manifest.webmanifest") %>">
     <link rel="mask-icon" href="<%= static_path(@conn, "/safari-pinned-tab.svg") %>" color="#5bbad5">
-    <link rel="shortcut icon" href="<%= static_path(@conn, "/favicon.ico") %>">
+    <link rel="shortcut icon" type='image/x-icon' href="<%= static_path(@conn, "/images/favicon.ico") %>">
     <meta name="msapplication-TileColor" content="#7dd79f">
     <meta name="msapplication-config" content="<%= static_path(@conn, "/browserconfig.xml") %>">
     <meta name="theme-color" content="#ffffff">
 
     <%= render_existing(@view_module, "_metatags.html", assigns) || render("_default_title.html") %>
+
+    <script defer data-cfasync="false">
+      window.localized = {
+        'Blocks Indexed': '<%= gettext("Blocks Indexed") %>',
+        'Block Processing': '<%= gettext("Block Mined, awaiting import...") %>',
+        'Indexing Tokens': '<%= gettext("Indexing Tokens") %>',
+        'Less than': '<%= gettext("Less than") %>',
+        'Market Cap': '<%= gettext("Market Cap") %>',
+        'Price': '<%= gettext("Price") %>',
+        'Ether': '<%= gettext("Ether") %>',
+        'Tx/day': '<%= gettext("Tx/day") %>'
+      }
+    </script>
   </head>
 
   <body>
@@ -51,18 +65,40 @@
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
-    <script>
-      window.localized = {
-        'Blocks Indexed': '<%= gettext("Blocks Indexed") %>',
-        'Block Processing': '<%= gettext("Block Mined, awaiting import...") %>',
-        'Indexing Tokens': '<%= gettext("Indexing Tokens") %>',
-        'Less than': '<%= gettext("Less than") %>',
-        'Market Cap': '<%= gettext("Market Cap") %>',
-        'Price': '<%= gettext("Price") %>',
-        'Ether': '<%= gettext("Ether") %>'
-      }
-    </script>
-    <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+    <%= if (
+      @view_module != Elixir.BlockScoutWeb.ChainView &&
+      @view_module != Elixir.BlockScoutWeb.BlockView &&
+      @view_module != Elixir.BlockScoutWeb.BlockTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.AddressView &&
+      @view_module != Elixir.BlockScoutWeb.TransactionView &&
+      @view_module != Elixir.BlockScoutWeb.PendingTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.TransactionInternalTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.TransactionLogView &&
+      @view_module != Elixir.BlockScoutWeb.TransactionRawTraceView &&
+      @view_module != Elixir.BlockScoutWeb.TransactionTokenTransferView &&
+      @view_module != Elixir.BlockScoutWeb.AddressTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.AddressTokenTransferView &&
+      @view_module != Elixir.BlockScoutWeb.AddressTokenView &&
+      @view_module != Elixir.BlockScoutWeb.AddressInternalTransactionView &&
+      @view_module != Elixir.BlockScoutWeb.AddressCoinBalanceView &&
+      @view_module != Elixir.BlockScoutWeb.AddressLogsView &&
+      @view_module != Elixir.BlockScoutWeb.AddressValidationView &&
+      @view_module != Elixir.BlockScoutWeb.AddressContractView &&
+      @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView &&
+      @view_module != Elixir.BlockScoutWeb.AddressReadContractView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.TransferView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.ReadContractView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.HolderView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.InventoryView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.InstanceView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.MetadataView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.OverviewView &&
+      @view_module != Elixir.BlockScoutWeb.Tokens.Instance.TransferView &&
+      @view_module != Elixir.BlockScoutWeb.APIDocsView &&
+      @view_module != Elixir.BlockScoutWeb.Admin.DashboardView
+    ) do %>
+      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
+    <% end %>
     <%= render_existing(@view_module, "scripts.html", assigns) %>
   </body>
 </html>
