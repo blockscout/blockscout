@@ -133,8 +133,6 @@ defmodule Explorer.Etherscan.Logs do
         # union: ^internal_transaction_log_query
       )
 
-    IO.inspect(internal_transaction_log_query)
-
     query_with_blocks =
       from(log_transaction_data in subquery(all_transaction_logs_query),
         join: block in Block,
@@ -158,13 +156,11 @@ defmodule Explorer.Etherscan.Logs do
         )
       end
 
-    res =
       query_with_consensus
       |> order_by([log], asc: log.index)
       |> page_logs(paging_options)
       |> Repo.all()
 
-    IO.inspect(res)
   end
 
   # Since address_hash was not present, we know that a
