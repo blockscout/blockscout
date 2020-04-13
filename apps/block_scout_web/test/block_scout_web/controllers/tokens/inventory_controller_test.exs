@@ -61,11 +61,6 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
           insert(
             :token_instance,
             token_contract_address_hash: token.contract_address.hash,
-<<<<<<< HEAD
-            metadata: %{key: "value"},
-            error: nil,
-=======
->>>>>>> vb-speedup-list-token-transfers
             token_id: i + 1000
           )
         end)
