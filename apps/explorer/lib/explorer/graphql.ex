@@ -12,7 +12,7 @@ defmodule Explorer.GraphQL do
       subquery: 1,
       where: 3
     ]
-  
+
   alias Explorer.Chain.{
     Address,
     Block,
@@ -138,36 +138,76 @@ defmodule Explorer.GraphQL do
   end
 
   def list_gold_transfers_query() do
-    tt_query = from(
-      tt in TokenTransfer,
-      join: t in Token,
-      where: tt.token_contract_address_hash == t.contract_address_hash,
-      where: t.symbol == "cGLD",
-      select: %{transaction_hash: tt.transaction_hash, from_address_hash: tt.from_address_hash, to_address_hash: tt.to_address_hash, log_index: tt.log_index, tx_index: -1, index: -1, value: tt.amount, block_number: tt.block_number}
-    )
-    tx_query = from(
-      tx in Transaction,
-      where: tx.value > ^0,
-      select: %{transaction_hash: tx.hash, from_address_hash: tx.from_address_hash, to_address_hash: tx.to_address_hash, log_index: 0-tx.index, tx_index: tx.index, index: 0-tx.index, value: tx.value, block_number: tx.block_number}
-    )
+    tt_query =
+      from(
+        tt in TokenTransfer,
+        join: t in Token,
+        where: tt.token_contract_address_hash == t.contract_address_hash,
+        where: t.symbol == "cGLD",
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          from_address_hash: tt.from_address_hash,
+          to_address_hash: tt.to_address_hash,
+          log_index: tt.log_index,
+          tx_index: -1,
+          index: -1,
+          value: tt.amount,
+          block_number: tt.block_number
+        }
+      )
 
-    internal_query = from(
-      tx in InternalTransaction,
-      where: tx.value > ^0,
-      where: tx.call_type != fragment("'delegatecall'"),
-      where: tx.index != 0,
-      select: %{transaction_hash: tx.transaction_hash, from_address_hash: tx.from_address_hash, to_address_hash: tx.to_address_hash, log_index: 0-tx.index, tx_index: 0-tx.index, index: tx.index, value: tx.value, block_number: tx.block_number}
-    )
+    tx_query =
+      from(
+        tx in Transaction,
+        where: tx.value > ^0,
+        select: %{
+          transaction_hash: tx.hash,
+          from_address_hash: tx.from_address_hash,
+          to_address_hash: tx.to_address_hash,
+          log_index: 0 - tx.index,
+          tx_index: tx.index,
+          index: 0 - tx.index,
+          value: tx.value,
+          block_number: tx.block_number
+        }
+      )
 
-    query = tt_query
-    |> union_all(^tx_query)
-    |> union_all(^internal_query)
+    internal_query =
+      from(
+        tx in InternalTransaction,
+        where: tx.value > ^0,
+        where: tx.call_type != fragment("'delegatecall'"),
+        where: tx.index != 0,
+        select: %{
+          transaction_hash: tx.transaction_hash,
+          from_address_hash: tx.from_address_hash,
+          to_address_hash: tx.to_address_hash,
+          log_index: 0 - tx.index,
+          tx_index: 0 - tx.index,
+          index: tx.index,
+          value: tx.value,
+          block_number: tx.block_number
+        }
+      )
+
+    query =
+      tt_query
+      |> union_all(^tx_query)
+      |> union_all(^internal_query)
 
     from(tt in subquery(query),
-      select: %{transaction_hash: tt.transaction_hash, from_address_hash: tt.from_address_hash, to_address_hash: tt.to_address_hash, log_index: tt.log_index, tx_index: tt.tx_index, index: tt.index, value: tt.value, block_number: tt.block_number},
+      select: %{
+        transaction_hash: tt.transaction_hash,
+        from_address_hash: tt.from_address_hash,
+        to_address_hash: tt.to_address_hash,
+        log_index: tt.log_index,
+        tx_index: tt.tx_index,
+        index: tt.index,
+        value: tt.value,
+        block_number: tt.block_number
+      },
       order_by: [desc: tt.block_number, desc: tt.tx_index, desc: tt.log_index, desc: tt.index]
     )
-
   end
 
   def list_gold_transfers_query_for_address(address_hash) do

@@ -341,8 +341,16 @@ defmodule BlockScoutWeb.Schema.Types do
     Jason.encode!(%{transaction_hash: to_string(transaction_hash), log_index: log_index})
   end
 
-  def gold_transfer_id_fetcher(%{transaction_hash: transaction_hash, log_index: log_index, tx_index: tx_index, index: index}, _) do
-    Jason.encode!(%{transaction_hash: to_string(transaction_hash), log_index: log_index, tx_index: tx_index, index: index})
+  def gold_transfer_id_fetcher(
+        %{transaction_hash: transaction_hash, log_index: log_index, tx_index: tx_index, index: index},
+        _
+      ) do
+    Jason.encode!(%{
+      transaction_hash: to_string(transaction_hash),
+      log_index: log_index,
+      tx_index: tx_index,
+      index: index
+    })
   end
 
   def coin_balance_id_fetcher(%{address_hash: address_hash, block_number: block_number}, _) do
