@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.Schema do
     Address,
     Block,
     CeloAccount,
+    CeloGoldTransfer,
     CeloParameters,
     CeloUtil,
     CeloValidator,
@@ -145,6 +146,22 @@ defmodule BlockScoutWeb.Schema do
       arg(:count, :integer)
 
       resolve(&TokenTransfer.get_by/3)
+
+      complexity(fn
+        %{first: first}, child_complexity ->
+          first * child_complexity
+
+        %{last: last}, child_complexity ->
+          last * child_complexity
+      end)
+    end
+
+    @desc "Gets Gold token transfers."
+    connection field(:gold_transfers, node_type: :gold_transfer) do
+      arg(:address_hash, :address_hash)
+      arg(:count, :integer)
+
+      resolve(&CeloGoldTransfer.get_by/3)
 
       complexity(fn
         %{first: first}, child_complexity ->

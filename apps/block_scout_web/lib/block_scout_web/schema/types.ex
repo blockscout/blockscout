@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.Schema.Types do
   connection(node_type: :transaction)
   connection(node_type: :internal_transaction)
   connection(node_type: :token_transfer)
+  connection(node_type: :gold_transfer)
   connection(node_type: :coin_balance)
 
   @desc """
@@ -279,6 +280,17 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   @desc """
+  Represents a gold token transfer between addresses.
+  """
+  node object(:gold_transfer, id_fetcher: &gold_transfer_id_fetcher/2) do
+    field(:value, :decimal)
+    field(:block_number, :integer)
+    field(:from_address_hash, :address_hash)
+    field(:to_address_hash, :address_hash)
+    field(:transaction_hash, :full_hash)
+  end
+
+  @desc """
   Models a Web3 transaction.
   """
   node object(:transaction, id_fetcher: &transaction_id_fetcher/2) do
@@ -327,6 +339,10 @@ defmodule BlockScoutWeb.Schema.Types do
 
   def token_transfer_id_fetcher(%{transaction_hash: transaction_hash, log_index: log_index}, _) do
     Jason.encode!(%{transaction_hash: to_string(transaction_hash), log_index: log_index})
+  end
+
+  def gold_transfer_id_fetcher(%{transaction_hash: transaction_hash, log_index: log_index, tx_index: tx_index, index: index}, _) do
+    Jason.encode!(%{transaction_hash: to_string(transaction_hash), log_index: log_index, tx_index: tx_index, index: index})
   end
 
   def coin_balance_id_fetcher(%{address_hash: address_hash, block_number: block_number}, _) do
