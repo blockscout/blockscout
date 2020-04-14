@@ -137,7 +137,7 @@ defmodule Explorer.GraphQL do
     )
   end
 
-  def list_gold_transfers_query() do
+  def list_gold_transfers_query do
     tt_query =
       from(
         tt in TokenTransfer,
