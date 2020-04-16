@@ -6,8 +6,19 @@ defmodule BlockScoutWeb.BlockView do
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.SmartContract.Reader
 
   @dialyzer :no_match
+
+  @get_payout_by_mining_abi %{
+    "type" => "function",
+    "stateMutability" => "view",
+    "payable" => false,
+    "outputs" => [%{"type" => "address", "name" => ""}],
+    "name" => "getPayoutByMining",
+    "inputs" => [%{"type" => "address", "name" => ""}],
+    "constant" => true
+  }
 
   def average_gas_price(%Block{transactions: transactions}) do
     average =
@@ -52,15 +63,34 @@ defmodule BlockScoutWeb.BlockView do
   def show_reward?([]), do: false
   def show_reward?(_), do: true
 
-  def block_reward_text(%Reward{address_type: :validator}) do
-    gettext("Miner Reward")
+  defp get_validator_payout_key_by_mining(payout_key) do
+    address = System.get_env("KEYS_MANAGER_CONTRACT")
+
+    get_payout_by_mining_params = %{"getPayoutByMining" => [payout_key]}
+
+    call_contract(address, @get_payout_by_mining_abi, get_payout_by_mining_params)
   end
 
-  def block_reward_text(%Reward{address_type: :emission_funds}) do
+  def block_reward_text(%Reward{address_hash: beneficiary_address, address_type: :validator}, block_miner_address_hash) do
+    if System.get_env("KEYS_MANAGER_CONTRACT") do
+      reward_beneficiary_address_hash = "0x" <> Base.encode16(beneficiary_address.bytes, case: :lower)
+      block_miner_payout_address_hash = get_validator_payout_key_by_mining(block_miner_address_hash.bytes)
+
+      if reward_beneficiary_address_hash == block_miner_payout_address_hash do
+        gettext("Miner Reward")
+      else
+        gettext("Chore Reward")
+      end
+    else
+      gettext("Miner Reward")
+    end
+  end
+
+  def block_reward_text(%Reward{address_type: :emission_funds}, _block_miner_address_hash) do
     gettext("Emission Reward")
   end
 
-  def block_reward_text(%Reward{address_type: :uncle}) do
+  def block_reward_text(%Reward{address_type: :uncle}, _block_miner_address_hash) do
     gettext("Uncle Reward")
   end
 
@@ -68,5 +98,35 @@ defmodule BlockScoutWeb.BlockView do
     block
     |> Chain.block_combined_rewards()
     |> format_wei_value(:ether)
+  end
+
+  defp call_contract(address, abi, params) do
+    abi = [abi]
+
+    method_name =
+      params
+      |> Enum.map(fn {key, _value} -> key end)
+      |> List.first()
+
+    value =
+      case Reader.query_contract(address, abi, params) do
+        %{^method_name => {:ok, [result]}} -> result
+        _ -> "0x0000000000000000000000000000000000000000"
+      end
+
+    type =
+      abi
+      |> Enum.at(0)
+      |> Map.get("outputs", [])
+      |> Enum.at(0)
+      |> Map.get("type", "")
+
+    case type do
+      "address" ->
+        "0x" <> Base.encode16(value, case: :lower)
+
+      _ ->
+        value
+    end
   end
 end
