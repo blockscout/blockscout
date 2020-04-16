@@ -321,32 +321,36 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
-      blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
+      if address_has_rewards?(address_hash) do
+        blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
 
-      rewards_task =
-        Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
+        rewards_task =
+          Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
 
-      [rewards_task | address_to_transactions_tasks(address_hash, options)]
-      |> wait_for_address_transactions()
-      |> Enum.sort_by(fn item ->
-        case item do
-          {%Reward{} = emission_reward, _} ->
-            {-emission_reward.block.number, 1}
+        [rewards_task | address_to_transactions_tasks(address_hash, options)]
+        |> wait_for_address_transactions()
+        |> Enum.sort_by(fn item ->
+          case item do
+            {%Reward{} = emission_reward, _} ->
+              {-emission_reward.block.number, 1}
 
-          item ->
-            {-item.block_number, -item.index}
-        end
-      end)
-      |> Enum.dedup_by(fn item ->
-        case item do
-          {%Reward{} = emission_reward, _} ->
-            {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
+            item ->
+              {-item.block_number, -item.index}
+          end
+        end)
+        |> Enum.dedup_by(fn item ->
+          case item do
+            {%Reward{} = emission_reward, _} ->
+              {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
 
-          transaction ->
-            transaction.hash
-        end
-      end)
-      |> Enum.take(paging_options.page_size)
+            transaction ->
+              transaction.hash
+          end
+        end)
+        |> Enum.take(paging_options.page_size)
+      else
+        address_to_transactions_without_rewards(address_hash, options)
+      end
     else
       address_to_transactions_without_rewards(address_hash, options)
     end
@@ -3212,6 +3216,13 @@ defmodule Explorer.Chain do
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
   def transaction_has_token_transfers?(transaction_hash) do
     query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash)
+
+    Repo.exists?(query)
+  end
+
+  @spec address_has_rewards?(Address.t()) :: boolean()
+  def address_has_rewards?(address_hash) do
+    query = from(r in Reward, where: r.address_hash == ^address_hash)
 
     Repo.exists?(query)
   end
