@@ -4466,6 +4466,18 @@ defmodule Explorer.ChainTest do
       token_contract_address = insert(:contract_address)
       token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
 
+      insert(
+        :token_instance,
+        token_contract_address_hash: token_contract_address.hash,
+        token_id: 11
+      )
+
+      insert(
+        :token_instance,
+        token_contract_address_hash: token_contract_address.hash,
+        token_id: 29
+      )
+
       transaction =
         :transaction
         |> insert()

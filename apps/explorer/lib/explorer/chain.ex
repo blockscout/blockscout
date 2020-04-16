@@ -2831,7 +2831,7 @@ defmodule Explorer.Chain do
       )
 
     repo.update_all(
-      from(n in Address.Name, join: s in subquery(query), on: n.address_hash == s.address_hash),
+      from(n in Address.Name, join: s in subquery(query), on: n.address_hash == s.address_hash and n.name == s.name),
       set: [primary: false]
     )
 
