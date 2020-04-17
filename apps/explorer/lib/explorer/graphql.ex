@@ -425,8 +425,8 @@ defmodule Explorer.GraphQL do
         log_index: tt.log_index,
         tx_index: tt.tx_index,
         index: tt.index,
-        value: fragment("greatest(0, ?)", tt.value),
-        usd_value: fragment("greatest(0, ?)", tt.usd_value),
+        value: fragment("greatest(?, ?)", tt.value, tt.usd_value),
+        token: fragment("(case when ? > ? then 'cUSD' else 'cGLD' end)", tt.usd_value, tt.value),
         block_number: tt.block_number
       },
       order_by: [desc: tt.block_number, desc: tt.tx_index, desc: tt.log_index, desc: tt.index]

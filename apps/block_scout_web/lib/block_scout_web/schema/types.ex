@@ -298,7 +298,7 @@ defmodule BlockScoutWeb.Schema.Types do
   """
   node object(:celo_transfer, id_fetcher: &celo_transfer_id_fetcher/2) do
     field(:value, :decimal)
-    field(:usd_value, :decimal)
+    field(:token, :string)
     field(:block_number, :integer)
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)
