@@ -425,7 +425,7 @@ defmodule Explorer.GraphQL do
         log_index: tt.log_index,
         tx_index: tt.tx_index,
         index: tt.index,
-        value: tt.value,
+        value: fragment("greatest(0, ?)", tt.value),
         usd_value: fragment("greatest(0, ?)", tt.usd_value),
         block_number: tt.block_number
       },
