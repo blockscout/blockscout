@@ -618,11 +618,11 @@ defmodule Explorer.ChainTest do
       )
 
       :transaction
-      |> insert(from_address: block.miner)
+      |> insert(to_address: block.miner)
       |> with_block(block)
       |> Repo.preload(:token_transfers)
 
-      assert [_, {_, _}] = Chain.address_to_transactions_with_rewards(block.miner.hash, direction: :from)
+      assert [_, {_, _}] = Chain.address_to_transactions_with_rewards(block.miner.hash, direction: :to)
 
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
     end
