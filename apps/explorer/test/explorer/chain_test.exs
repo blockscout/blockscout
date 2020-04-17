@@ -679,6 +679,103 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "address_to_transactions_tasks_range_of_blocks/2" do
+    test "returns empty extremums if no transactions" do
+      address = insert(:address)
+
+      extremums = Chain.address_to_transactions_tasks_range_of_blocks(address.hash, [])
+
+      assert extremums == %{
+               :min_block_number => nil,
+               :max_block_number => 0
+             }
+    end
+
+    test "returns correct extremums for from_address" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      extremums = Chain.address_to_transactions_tasks_range_of_blocks(address.hash, [])
+
+      assert extremums == %{
+               :min_block_number => 1000,
+               :max_block_number => 1000
+             }
+    end
+
+    test "returns correct extremums for to_address" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(to_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      extremums = Chain.address_to_transactions_tasks_range_of_blocks(address.hash, [])
+
+      assert extremums == %{
+               :min_block_number => 1000,
+               :max_block_number => 1000
+             }
+    end
+
+    test "returns correct extremums for created_contract_address" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(created_contract_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      extremums = Chain.address_to_transactions_tasks_range_of_blocks(address.hash, [])
+
+      assert extremums == %{
+               :min_block_number => 1000,
+               :max_block_number => 1000
+             }
+    end
+
+    test "returns correct extremums for multiple number of transactions" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(created_contract_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      :transaction
+      |> insert(created_contract_address: address)
+      |> with_block(insert(:block, number: 999))
+
+      :transaction
+      |> insert(created_contract_address: address)
+      |> with_block(insert(:block, number: 1003))
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block(insert(:block, number: 1001))
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block(insert(:block, number: 1004))
+
+      :transaction
+      |> insert(to_address: address)
+      |> with_block(insert(:block, number: 1002))
+
+      :transaction
+      |> insert(to_address: address)
+      |> with_block(insert(:block, number: 998))
+
+      extremums = Chain.address_to_transactions_tasks_range_of_blocks(address.hash, [])
+
+      assert extremums == %{
+               :min_block_number => 998,
+               :max_block_number => 1004
+             }
+    end
+  end
+
   describe "total_transactions_sent_by_address/1" do
     test "increments +1 in the last nonce result" do
       address = insert(:address)
