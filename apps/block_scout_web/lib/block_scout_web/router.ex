@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.Router do
 
   if Application.get_env(:block_scout_web, ApiRouter)[:reading_enabled] do
     # Needs to be 200 to support the schema introspection for graphiql
-    @max_complexity 200
+    @max_complexity 2000
 
     Logger.info("GRAPHQL Max Complexity: #{@max_complexity}")
 

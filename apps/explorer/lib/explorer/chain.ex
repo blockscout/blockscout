@@ -1026,7 +1026,7 @@ defmodule Explorer.Chain do
         where: ilike(it.name, ^name),
         select: it.address_hash
       )
-    
+
     query = union(token_query, ^name_query)
 
     query
@@ -3943,6 +3943,21 @@ defmodule Explorer.Chain do
         usd: a.usd
       }
     )
+  end
+
+  def get_celo_address(name) do
+    query =
+      from(p in CeloParams,
+        where: p.name == ^name,
+        select: p.address_value
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
   end
 
   def celo_validator_group_query do

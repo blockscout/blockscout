@@ -11,7 +11,7 @@ defmodule Indexer.Transform.CeloAccounts do
   @doc """
   Returns a list of account addresses given a list of logs.
   """
-  def parse(logs) do
+  def parse(logs, oracle_address) do
     %{
       # Add special items for voter epoch rewards
       accounts:
@@ -35,12 +35,13 @@ defmodule Indexer.Transform.CeloAccounts do
         get_addresses(logs, [CeloAccount.attestation_completed_event()], fn a -> a.fourth_topic end),
       attestations_requested:
         get_addresses(logs, [CeloAccount.attestation_issuer_selected_event()], fn a -> a.fourth_topic end),
-      exchange_rates: get_rates(logs)
+      exchange_rates: get_rates(logs, oracle_address)
     }
   end
 
-  defp get_rates(logs) do
+  defp get_rates(logs, oracle_address) do
     logs
+    |> Enum.filter(fn log -> log.address_hash == oracle_address end)
     |> Enum.filter(fn log -> log.first_topic == CeloAccount.oracle_reported_event() end)
     |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
   end
@@ -124,15 +125,15 @@ defmodule Indexer.Transform.CeloAccounts do
   end
 
   defp do_parse_rate(log, rates) do
-    {token, numerator, denumerator, stamp} = parse_rate_params(log.data)
+    {numerator, denumerator, stamp} = parse_rate_params(log.data)
     numerator = Decimal.new(numerator)
     denumerator = Decimal.new(denumerator)
 
     if Decimal.new(0) == denumerator do
       rates
     else
-      rate = Decimal.to_float(Decimal.div(numerator, denumerator))
-      res = %{token: token, rate: rate, stamp: stamp}
+      rate = Decimal.to_float(Decimal.div(denumerator, numerator))
+      res = %{token: truncate_address_hash(log.second_topic), rate: rate, stamp: stamp}
       [res | rates]
     end
   rescue
@@ -152,10 +153,9 @@ defmodule Indexer.Transform.CeloAccounts do
   end
 
   defp parse_rate_params(data) do
-    [token, _oracle, timestamp, num, denum] =
-      decode_data(data, [:address, :address, {:uint, 256}, {:uint, 256}, {:uint, 256}])
+    [timestamp, value] = decode_data(data, [{:uint, 256}, {:uint, 256}])
 
-    {token, num, denum, timestamp}
+    {value, Decimal.new("1000000000000000000000000"), timestamp}
   end
 
   defp parse_params(log, get_topic) do
