@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Chain do
       string_to_address_hash: 1,
       string_to_block_hash: 1,
       string_to_transaction_hash: 1,
-      token_contract_address_from_token_name: 1
+      address_from_name: 1
     ]
 
   alias Explorer.Chain.Block.Reward

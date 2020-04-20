@@ -1022,12 +1022,12 @@ defmodule Explorer.Chain do
       )
 
     name_query =
-      from(token in Address.Names,
-        where: ilike(name, ^name),
-        select: token.address_hash
+      from(it in Address.Name,
+        where: ilike(it.name, ^name),
+        select: it.address_hash
       )
     
-    query = union(token_query, name_query)
+    query = union(token_query, ^name_query)
 
     query
     |> Repo.all()
