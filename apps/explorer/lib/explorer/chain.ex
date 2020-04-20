@@ -323,7 +323,11 @@ defmodule Explorer.Chain do
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
       cond do
         Keyword.get(options, :direction) == :from ->
+<<<<<<< HEAD
           address_to_transactions_without_rewards(address_hash, options)
+=======
+          address_to_mined_transactions_without_rewards(address_hash, options)
+>>>>>>> vb-check-if-address-has-reward
 
         address_has_rewards?(address_hash) ->
           blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
@@ -354,10 +358,14 @@ defmodule Explorer.Chain do
           |> Enum.take(paging_options.page_size)
 
         true ->
+<<<<<<< HEAD
           address_to_transactions_without_rewards(address_hash, options)
+=======
+          address_to_mined_transactions_without_rewards(address_hash, options)
+>>>>>>> vb-check-if-address-has-reward
       end
     else
-      address_to_transactions_without_rewards(address_hash, options)
+      address_to_mined_transactions_without_rewards(address_hash, options)
     end
   end
 
@@ -366,6 +374,17 @@ defmodule Explorer.Chain do
 
     address_hash
     |> address_to_transactions_tasks(options)
+    |> wait_for_address_transactions()
+    |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
+    |> Enum.dedup_by(& &1.hash)
+    |> Enum.take(paging_options.page_size)
+  end
+
+  def address_to_mined_transactions_without_rewards(address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    address_hash
+    |> address_to_mined_transactions_tasks(options)
     |> wait_for_address_transactions()
     |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
     |> Enum.dedup_by(& &1.hash)
@@ -385,6 +404,18 @@ defmodule Explorer.Chain do
     options
     |> address_to_transactions_tasks_query()
     |> join_associations(necessity_by_association)
+    |> Transaction.matching_address_queries_list(direction, address_hash)
+    |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
+  end
+
+  defp address_to_mined_transactions_tasks(address_hash, options) do
+    direction = Keyword.get(options, :direction)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    options
+    |> address_to_transactions_tasks_query()
+    |> join_associations(necessity_by_association)
+    |> Transaction.not_pending_transactions()
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
   end
