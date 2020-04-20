@@ -591,7 +591,7 @@ msgid "Emission Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:60
+#: lib/block_scout_web/views/block_view.ex:90
 msgid "Emission Reward"
 msgstr ""
 
@@ -722,7 +722,7 @@ msgid "GraphQL"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:20
+#: lib/block_scout_web/views/block_view.ex:31
 #: lib/block_scout_web/views/wei_helpers.ex:77
 msgid "Gwei"
 msgstr ""
@@ -1497,7 +1497,7 @@ msgid "UTF-8"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:64
+#: lib/block_scout_web/views/block_view.ex:94
 msgid "Uncle Reward"
 msgstr ""
 
@@ -1877,3 +1877,8 @@ msgstr ""
 #: lib/block_scout_web/views/transaction_view.ex:316
 msgid "Token Minting"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/block_view.ex:82
+msgid "Chore Reward"
+msgstr "POA Mania Reward"
