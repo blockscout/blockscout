@@ -323,11 +323,7 @@ defmodule Explorer.Chain do
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
       cond do
         Keyword.get(options, :direction) == :from ->
-<<<<<<< HEAD
-          address_to_transactions_without_rewards(address_hash, options)
-=======
           address_to_mined_transactions_without_rewards(address_hash, options)
->>>>>>> vb-check-if-address-has-reward
 
         address_has_rewards?(address_hash) ->
           blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
@@ -358,11 +354,7 @@ defmodule Explorer.Chain do
           |> Enum.take(paging_options.page_size)
 
         true ->
-<<<<<<< HEAD
-          address_to_transactions_without_rewards(address_hash, options)
-=======
           address_to_mined_transactions_without_rewards(address_hash, options)
->>>>>>> vb-check-if-address-has-reward
       end
     else
       address_to_mined_transactions_without_rewards(address_hash, options)
