@@ -18,7 +18,8 @@ defmodule Explorer.Chain do
       union: 2,
       union_all: 2,
       where: 2,
-      where: 3
+      where: 3,
+      select: 3
     ]
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
@@ -314,10 +315,11 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) :: [
-          Transaction.t()
-        ]
-  def address_to_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
+  @spec address_to_mined_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) ::
+          [
+            Transaction.t()
+          ]
+  def address_to_mined_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
@@ -331,7 +333,7 @@ defmodule Explorer.Chain do
           rewards_task =
             Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
 
-          [rewards_task | address_to_transactions_tasks(address_hash, options)]
+          [rewards_task | address_to_mined_transactions_tasks(address_hash, options)]
           |> wait_for_address_transactions()
           |> Enum.sort_by(fn item ->
             case item do
@@ -389,6 +391,16 @@ defmodule Explorer.Chain do
     |> fetch_transactions()
   end
 
+  defp transactions_block_numbers_at_address(address_hash, options) do
+    direction = Keyword.get(options, :direction)
+
+    options
+    |> address_to_transactions_tasks_query()
+    |> Transaction.not_pending_transactions()
+    |> select([t], t.block_number)
+    |> Transaction.matching_address_queries_list(direction, address_hash)
+  end
+
   defp address_to_transactions_tasks(address_hash, options) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
@@ -406,20 +418,16 @@ defmodule Explorer.Chain do
 
     options
     |> address_to_transactions_tasks_query()
-    |> join_associations(necessity_by_association)
     |> Transaction.not_pending_transactions()
+    |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
   end
 
   def address_to_transactions_tasks_range_of_blocks(address_hash, options) do
-    direction = Keyword.get(options, :direction)
-
     extremums_list =
-      options
-      |> address_to_transactions_tasks_query()
-      |> Transaction.not_pending_transactions()
-      |> Transaction.matching_address_queries_list(direction, address_hash)
+      address_hash
+      |> transactions_block_numbers_at_address(options)
       |> Enum.map(fn query ->
         extremum_query =
           from(
