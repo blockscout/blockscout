@@ -23,6 +23,9 @@ defmodule BlockScoutWeb.AddressTransactionController do
     }
   ]
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     address_options = [necessity_by_association: %{:names => :optional}]
 
@@ -69,7 +72,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
                 "_tile.html",
                 conn: conn,
                 current_address: address,
-                transaction: transaction
+                transaction: transaction,
+                burn_address_hash: @burn_address_hash
               )
           end
         end)

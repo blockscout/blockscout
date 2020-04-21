@@ -88,6 +88,36 @@ defmodule BlockScoutWeb.ChainControllerTest do
 
       assert Enum.count(json_response(conn, 200)) == 2
     end
+
+    test "finds verified contract" do
+      insert(:smart_contract, name: "SuperToken")
+
+      conn = get(conn(), "/token_autocomplete?q=sup")
+
+      assert Enum.count(json_response(conn, 200)) == 1
+    end
+
+    test "finds verified contract and token" do
+      insert(:smart_contract, name: "MagicContract")
+      insert(:token, name: "magicToken")
+
+      conn = get(conn(), "/token_autocomplete?q=mag")
+
+      assert Enum.count(json_response(conn, 200)) == 2
+    end
+
+    test "finds verified contracts and tokens" do
+      insert(:smart_contract, name: "something")
+      insert(:smart_contract, name: "MagicContract")
+      insert(:token, name: "Magic3")
+      insert(:smart_contract, name: "magicContract2")
+      insert(:token, name: "magicToken")
+      insert(:token, name: "OneMoreToken")
+
+      conn = get(conn(), "/token_autocomplete?q=mag")
+
+      assert Enum.count(json_response(conn, 200)) == 4
+    end
   end
 
   describe "GET search/2" do

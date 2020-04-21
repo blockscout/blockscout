@@ -62,6 +62,28 @@ config :block_scout_web, BlockScoutWeb.SocialMedia,
   facebook: "PoaNetwork",
   instagram: "PoaNetwork"
 
+# Configures History
+price_chart_config =
+  if System.get_env("SHOW_PRICE_CHART", "true") != "false" do
+    %{market: [:price, :market_cap]}
+  else
+    %{}
+  end
+
+tx_chart_config =
+  if System.get_env("SHOW_TXS_CHART", "false") == "true" do
+    %{transactions: [:transactions_per_day]}
+  else
+    %{}
+  end
+
+config :block_scout_web,
+  chart_config: Map.merge(price_chart_config, tx_chart_config)
+
+config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
+  # days
+  history_size: 30
+
 config :ex_cldr,
   default_locale: "en",
   default_backend: BlockScoutWeb.Cldr
