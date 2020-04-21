@@ -63,20 +63,11 @@ defmodule BlockScoutWeb.BlockView do
   def show_reward?([]), do: false
   def show_reward?(_), do: true
 
-  defp get_validator_payout_key_by_mining(payout_key) do
-    address = System.get_env("KEYS_MANAGER_CONTRACT")
+  def block_reward_text(%Reward{address_hash: beneficiary_address, address_type: :validator}, block_miner_address) do
+    if Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:keys_manager_contract_address] do
+      %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining(block_miner_address)
 
-    get_payout_by_mining_params = %{"getPayoutByMining" => [payout_key]}
-
-    call_contract(address, @get_payout_by_mining_abi, get_payout_by_mining_params)
-  end
-
-  def block_reward_text(%Reward{address_hash: beneficiary_address, address_type: :validator}, block_miner_address_hash) do
-    if System.get_env("KEYS_MANAGER_CONTRACT") do
-      reward_beneficiary_address_hash = "0x" <> Base.encode16(beneficiary_address.bytes, case: :lower)
-      block_miner_payout_address_hash = get_validator_payout_key_by_mining(block_miner_address_hash.bytes)
-
-      if reward_beneficiary_address_hash == block_miner_payout_address_hash do
+      if beneficiary_address == block_miner_payout_address do
         gettext("Miner Reward")
       else
         gettext("Chore Reward")
@@ -86,11 +77,11 @@ defmodule BlockScoutWeb.BlockView do
     end
   end
 
-  def block_reward_text(%Reward{address_type: :emission_funds}, _block_miner_address_hash) do
+  def block_reward_text(%Reward{address_type: :emission_funds}, _block_miner_address) do
     gettext("Emission Reward")
   end
 
-  def block_reward_text(%Reward{address_type: :uncle}, _block_miner_address_hash) do
+  def block_reward_text(%Reward{address_type: :uncle}, _block_miner_address) do
     gettext("Uncle Reward")
   end
 

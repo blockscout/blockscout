@@ -328,32 +328,13 @@ defmodule Explorer.Chain do
           address_to_mined_transactions_without_rewards(address_hash, options)
 
         address_has_rewards?(address_hash) ->
-          blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
+          %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining(address_hash)
 
-          rewards_task =
-            Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
-
-          [rewards_task | address_to_mined_transactions_tasks(address_hash, options)]
-          |> wait_for_address_transactions()
-          |> Enum.sort_by(fn item ->
-            case item do
-              {%Reward{} = emission_reward, _} ->
-                {-emission_reward.block.number, 1}
-
-              item ->
-                {-item.block_number, -item.index}
-            end
-          end)
-          |> Enum.dedup_by(fn item ->
-            case item do
-              {%Reward{} = emission_reward, _} ->
-                {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
-
-              transaction ->
-                transaction.hash
-            end
-          end)
-          |> Enum.take(paging_options.page_size)
+          if block_miner_payout_address && address_hash == block_miner_payout_address do
+            transactions_with_rewards_results(address_hash, options, paging_options)
+          else
+            address_to_mined_transactions_without_rewards(address_hash, options)
+          end
 
         true ->
           address_to_mined_transactions_without_rewards(address_hash, options)
@@ -361,6 +342,35 @@ defmodule Explorer.Chain do
     else
       address_to_mined_transactions_without_rewards(address_hash, options)
     end
+  end
+
+  defp transactions_with_rewards_results(address_hash, options, paging_options) do
+    blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
+
+    rewards_task =
+      Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
+
+    [rewards_task | address_to_mined_transactions_tasks(address_hash, options)]
+    |> wait_for_address_transactions()
+    |> Enum.sort_by(fn item ->
+      case item do
+        {%Reward{} = emission_reward, _} ->
+          {-emission_reward.block.number, 1}
+
+        item ->
+          {-item.block_number, -item.index}
+      end
+    end)
+    |> Enum.dedup_by(fn item ->
+      case item do
+        {%Reward{} = emission_reward, _} ->
+          {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
+
+        transaction ->
+          transaction.hash
+      end
+    end)
+    |> Enum.take(paging_options.page_size)
   end
 
   def address_to_transactions_without_rewards(address_hash, options) do

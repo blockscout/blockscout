@@ -577,7 +577,14 @@ defmodule Explorer.ChainTest do
     test "with emission rewards" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
 
+      Application.put_env(:explorer, Explorer.Chain.Block.Reward,
+        validators_contract_address: "0x0000000000000000000000000000000000000005",
+        keys_manager_contract_address: "0x0000000000000000000000000000000000000006"
+      )
+
       block = insert(:block)
+
+      block_miner_hash_string = Base.encode16(block.miner_hash.bytes, case: :lower)
 
       insert(
         :reward,
@@ -593,15 +600,50 @@ defmodule Explorer.ChainTest do
         address_type: :emission_funds
       )
 
-      assert [{_, _}] = Chain.address_to_mined_transactions_with_rewards(block.miner.hash)
+      # isValidator => true
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000001"}]}
+        end
+      )
 
-      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+      # getPayoutByMining => 0x0000000000000000000000000000000000000001
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok, [%{id: id, result: "0x000000000000000000000000" <> block_miner_hash_string}]}
+        end
+      )
+
+      res = Chain.address_to_mined_transactions_with_rewards(block.miner.hash)
+
+      assert [{_, _}] = res
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+
+        Application.put_env(:explorer, Explorer.Chain.Block.Reward,
+          validators_contract_address: nil,
+          keys_manager_contract_address: nil
+        )
+      end)
     end
 
     test "with emission rewards and transactions" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
 
+      Application.put_env(:explorer, Explorer.Chain.Block.Reward,
+        validators_contract_address: "0x0000000000000000000000000000000000000005",
+        keys_manager_contract_address: "0x0000000000000000000000000000000000000006"
+      )
+
       block = insert(:block)
+
+      block_miner_hash_string = Base.encode16(block.miner_hash.bytes, case: :lower)
 
       insert(
         :reward,
@@ -622,9 +664,35 @@ defmodule Explorer.ChainTest do
       |> with_block(block)
       |> Repo.preload(:token_transfers)
 
+      # isValidator => true
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000001"}]}
+        end
+      )
+
+      # getPayoutByMining => 0x0000000000000000000000000000000000000001
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok, [%{id: id, result: "0x000000000000000000000000" <> block_miner_hash_string}]}
+        end
+      )
+
       assert [_, {_, _}] = Chain.address_to_mined_transactions_with_rewards(block.miner.hash, direction: :to)
 
-      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+
+        Application.put_env(:explorer, Explorer.Chain.Block.Reward,
+          validators_contract_address: nil,
+          keys_manager_contract_address: nil
+        )
+      end)
     end
 
     test "with transactions if rewards are not in the range of blocks" do
@@ -773,6 +841,7 @@ defmodule Explorer.ChainTest do
                :min_block_number => 998,
                :max_block_number => 1004
              }
+<<<<<<< HEAD
     end
   end
 
@@ -870,6 +939,8 @@ defmodule Explorer.ChainTest do
                :min_block_number => 998,
                :max_block_number => 1004
              }
+=======
+>>>>>>> vb-check-if-address-has-reward
     end
   end
 

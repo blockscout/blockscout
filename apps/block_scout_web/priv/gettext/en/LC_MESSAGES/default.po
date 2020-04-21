@@ -585,7 +585,7 @@ msgid "Emission Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:90
+#: lib/block_scout_web/views/block_view.ex:70
 msgid "Emission Reward"
 msgstr ""
 
@@ -1505,7 +1505,7 @@ msgid "UTF-8"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:94
+#: lib/block_scout_web/views/block_view.ex:74
 msgid "Uncle Reward"
 msgstr ""
 
