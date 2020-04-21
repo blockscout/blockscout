@@ -26,7 +26,6 @@ defmodule BlockScoutWeb.Router do
   if Application.get_env(:block_scout_web, ApiRouter)[:reading_enabled] do
     # Needs to be 200 to support the schema introspection for graphiql
     max_complexity = Application.get_env(:block_scout_web, ApiRouter)[:max_complexity]
-
     Logger.info("GRAPHQL Max Complexity: #{max_complexity}")
 
     forward("/graphql", Absinthe.Plug,

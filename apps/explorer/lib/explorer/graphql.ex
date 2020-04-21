@@ -232,6 +232,8 @@ defmodule Explorer.GraphQL do
         join: t in CeloParams,
         where: tt.token_contract_address_hash == t.address_value,
         where: t.name == "goldToken" or t.name == "stableToken",
+        where: not is_nil(tt.transaction_hash),
+        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
           address_hash: tt.from_address_hash
@@ -244,6 +246,8 @@ defmodule Explorer.GraphQL do
         join: t in CeloParams,
         where: tt.token_contract_address_hash == t.address_value,
         where: t.name == "goldToken" or t.name == "stableToken",
+        where: not is_nil(tt.transaction_hash),
+        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
           address_hash: tt.to_address_hash
@@ -275,6 +279,7 @@ defmodule Explorer.GraphQL do
         tx in InternalTransaction,
         where: tx.value > ^0,
         where: tx.call_type != fragment("'delegatecall'"),
+        where: not is_nil(tx.transaction_hash),
         where: tx.index != 0,
         select: %{
           transaction_hash: tx.transaction_hash,
@@ -287,6 +292,7 @@ defmodule Explorer.GraphQL do
         tx in InternalTransaction,
         where: tx.value > ^0,
         where: tx.call_type != fragment("'delegatecall'"),
+        where: not is_nil(tx.transaction_hash),
         where: tx.index != 0,
         select: %{
           transaction_hash: tx.transaction_hash,
@@ -306,7 +312,8 @@ defmodule Explorer.GraphQL do
       select: %{
         transaction_hash: tt.transaction_hash,
         address_hash: tt.address_hash
-      }
+      },
+      distinct: [tt.transaction_hash, tt.address_hash]
     )
   end
 
