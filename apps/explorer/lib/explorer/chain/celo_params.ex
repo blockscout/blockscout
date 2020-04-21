@@ -7,7 +7,7 @@ defmodule Explorer.Chain.CeloParams do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{Hash, Wei}
 
   @typedoc """
   * `name` - parameter name.
@@ -17,15 +17,17 @@ defmodule Explorer.Chain.CeloParams do
   @type t :: %__MODULE__{
           name: String.t(),
           number_value: Wei.t(),
+          address_value: Hash.Address.t(),
           block_number: Explorer.Chain.Block.block_number()
         }
 
-  @attrs ~w( name number_value )a
-  @required_attrs ~w( name number_value )a
+  @attrs ~w( name number_value address_value block_number )a
+  @required_attrs ~w( name )a
 
   schema "celo_params" do
     field(:name, :string, primary_key: true)
     field(:number_value, Wei)
+    field(:address_value, Hash.Address)
     field(:block_number, :integer)
 
     timestamps(null: false, type: :utc_datetime_usec)

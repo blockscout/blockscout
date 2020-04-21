@@ -1013,6 +1013,30 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec address_from_name(String.t()) :: {:ok, Hash.Address.t()} | {:error, :not_found}
+  def address_from_name(name) when is_binary(name) do
+    token_query =
+      from(token in Token,
+        where: ilike(token.symbol, ^name),
+        select: token.contract_address_hash
+      )
+
+    name_query =
+      from(it in Address.Name,
+        where: ilike(it.name, ^name),
+        select: it.address_hash
+      )
+
+    query = union(token_query, ^name_query)
+
+    query
+    |> Repo.all()
+    |> case do
+      [] -> {:error, :not_found}
+      hashes -> {:ok, List.first(hashes)}
+    end
+  end
+
   @spec search_token(String.t()) :: [Token.t()]
   def search_token(word) do
     term = String.replace(word, ~r/\W/u, "") <> ":*"
@@ -3919,6 +3943,21 @@ defmodule Explorer.Chain do
         usd: a.usd
       }
     )
+  end
+
+  def get_celo_address(name) do
+    query =
+      from(p in CeloParams,
+        where: p.name == ^name,
+        select: p.address_value
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
   end
 
   def celo_validator_group_query do

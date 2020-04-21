@@ -142,7 +142,7 @@ defmodule Explorer.Chain.CeloAccount do
   @attestation_completed "0x414ff2c18c092697c4b8de49f515ac44f8bebc19b24553cf58ace913a6ac639d"
 
   @median_updated "0x01f3db74cdcb3b158f2144fb78c5ab54e9e8a8c09d3d3b7713050cdb6b6bcb97"
-  @oracle_reported "0xdbf09271932e018b9c31e9988e4fbe3109fdd79d78f5d19a764dfb56035ed775"
+  @oracle_reported "0x7cebb17173a9ed273d2b7538f64395c0ebf352ff743f1cf8ce66b437a6144213"
 
   def attestation_issuer_selected_event,
     do: @attestation_issuer_selected

@@ -186,6 +186,13 @@ defmodule Indexer.Block.Fetcher do
             else
               {:ok, nil}
             end},
+         {:read_oracle_address, {:ok, oracle_address}} <-
+           {:read_oracle_address,
+            if gold_token_enabled do
+              AccountReader.get_address("SortedOracles")
+            else
+              {:ok, nil}
+            end},
          # Non gold fees should be handled by events
          fee_tokens = [],
          fee_token_transfers = [],
@@ -200,10 +207,10 @@ defmodule Indexer.Block.Fetcher do
            exchange_rates: exchange_rates,
            account_names: account_names,
            voter_rewards: celo_voter_rewards
-         } = CeloAccounts.parse(logs),
+         } = CeloAccounts.parse(logs, oracle_address),
          market_history =
            exchange_rates
-           |> Enum.filter(fn el -> "0x" <> Base.encode16(el.token, case: :lower) == stable_token end)
+           |> Enum.filter(fn el -> el.token == stable_token end)
            |> Enum.map(fn %{rate: rate, stamp: time} ->
              inv_rate = Decimal.from_float(1 / rate)
              date = DateTime.to_date(DateTime.from_unix!(time))

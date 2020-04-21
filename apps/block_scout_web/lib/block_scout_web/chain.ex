@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Chain do
       string_to_address_hash: 1,
       string_to_block_hash: 1,
       string_to_transaction_hash: 1,
-      token_contract_address_from_token_name: 1
+      address_from_name: 1
     ]
 
   alias Explorer.Chain.Block.Reward
@@ -195,7 +195,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp token_address_from_name(name) do
-    case token_contract_address_from_token_name(name) do
+    case address_from_name(name) do
       {:ok, hash} -> find_or_insert_address_from_hash(hash)
       _ -> {:error, :not_found}
     end

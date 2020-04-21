@@ -261,6 +261,9 @@ defmodule Explorer.Celo.AccountReader do
          {:ok, [min_validators, max_validators]} <- data["getElectableValidators"],
          {:ok, [total_gold]} <- data["getTotalLockedGold"],
          {:ok, [epoch_size]} <- data["getEpochSize"],
+         {:ok, gold_address} <- get_address("GoldToken"),
+         {:ok, usd_address} <- get_address("StableToken"),
+         {:ok, oracle_address} <- get_address("SortedOracles"),
          {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
       list =
         validators
@@ -270,6 +273,9 @@ defmodule Explorer.Celo.AccountReader do
       params = [
         %{name: "numRegisteredValidators", number_value: num_validators},
         %{name: "totalLockedGold", number_value: total_gold},
+        %{name: "stableToken", address_value: usd_address},
+        %{name: "goldToken", address_value: gold_address},
+        %{name: "sortedOracles", address_value: oracle_address},
         %{name: "maxElectableValidators", number_value: max_validators},
         %{name: "minElectableValidators", number_value: min_validators},
         %{name: "epochSize", number_value: epoch_size}

@@ -18,9 +18,9 @@ defmodule Explorer.GraphQL do
     Block,
     CeloAccount,
     CeloClaims,
+    CeloParams,
     Hash,
     InternalTransaction,
-    Token,
     TokenTransfer,
     Transaction
   }
@@ -141,9 +141,9 @@ defmodule Explorer.GraphQL do
     tt_query =
       from(
         tt in TokenTransfer,
-        join: t in Token,
-        where: tt.token_contract_address_hash == t.contract_address_hash,
-        where: t.symbol == "cGLD",
+        join: t in CeloParams,
+        where: tt.token_contract_address_hash == t.address_value,
+        where: t.name == "goldToken",
         select: %{
           transaction_hash: tt.transaction_hash,
           from_address_hash: tt.from_address_hash,
@@ -229,9 +229,11 @@ defmodule Explorer.GraphQL do
     tt_query =
       from(
         tt in TokenTransfer,
-        join: t in Token,
-        where: tt.token_contract_address_hash == t.contract_address_hash,
-        where: t.symbol == "cGLD",
+        join: t in CeloParams,
+        where: tt.token_contract_address_hash == t.address_value,
+        where: t.name == "goldToken" or t.name == "stableToken",
+        where: not is_nil(tt.transaction_hash),
+        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
           address_hash: tt.from_address_hash
@@ -241,33 +243,11 @@ defmodule Explorer.GraphQL do
     tt_query2 =
       from(
         tt in TokenTransfer,
-        join: t in Token,
-        where: tt.token_contract_address_hash == t.contract_address_hash,
-        where: t.symbol == "cGLD",
-        select: %{
-          transaction_hash: tt.transaction_hash,
-          address_hash: tt.to_address_hash
-        }
-      )
-
-    usd_query =
-      from(
-        tt in TokenTransfer,
-        join: t in Token,
-        where: tt.token_contract_address_hash == t.contract_address_hash,
-        where: t.symbol == "cUSD",
-        select: %{
-          transaction_hash: tt.transaction_hash,
-          address_hash: tt.from_address_hash
-        }
-      )
-
-    usd_query2 =
-      from(
-        tt in TokenTransfer,
-        join: t in Token,
-        where: tt.token_contract_address_hash == t.contract_address_hash,
-        where: t.symbol == "cUSD",
+        join: t in CeloParams,
+        where: tt.token_contract_address_hash == t.address_value,
+        where: t.name == "goldToken" or t.name == "stableToken",
+        where: not is_nil(tt.transaction_hash),
+        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
           address_hash: tt.to_address_hash
@@ -299,6 +279,7 @@ defmodule Explorer.GraphQL do
         tx in InternalTransaction,
         where: tx.value > ^0,
         where: tx.call_type != fragment("'delegatecall'"),
+        where: not is_nil(tx.transaction_hash),
         where: tx.index != 0,
         select: %{
           transaction_hash: tx.transaction_hash,
@@ -311,6 +292,7 @@ defmodule Explorer.GraphQL do
         tx in InternalTransaction,
         where: tx.value > ^0,
         where: tx.call_type != fragment("'delegatecall'"),
+        where: not is_nil(tx.transaction_hash),
         where: tx.index != 0,
         select: %{
           transaction_hash: tx.transaction_hash,
@@ -321,18 +303,17 @@ defmodule Explorer.GraphQL do
     query =
       tt_query
       |> union_all(^tx_query)
-      |> union_all(^usd_query)
       |> union_all(^internal_query)
       |> union_all(^tt_query2)
       |> union_all(^tx_query2)
-      |> union_all(^usd_query2)
       |> union_all(^internal_query2)
 
     from(tt in subquery(query),
       select: %{
         transaction_hash: tt.transaction_hash,
         address_hash: tt.address_hash
-      }
+      },
+      distinct: [tt.transaction_hash, tt.address_hash]
     )
   end
 
@@ -340,9 +321,9 @@ defmodule Explorer.GraphQL do
     tt_query =
       from(
         tt in TokenTransfer,
-        join: t in Token,
-        where: tt.token_contract_address_hash == t.contract_address_hash,
-        where: t.symbol == "cGLD",
+        join: t in CeloParams,
+        where: tt.token_contract_address_hash == t.address_value,
+        where: t.name == "goldToken",
         select: %{
           transaction_hash: tt.transaction_hash,
           from_address_hash: tt.from_address_hash,
@@ -359,9 +340,9 @@ defmodule Explorer.GraphQL do
     usd_query =
       from(
         tt in TokenTransfer,
-        join: t in Token,
-        where: tt.token_contract_address_hash == t.contract_address_hash,
-        where: t.symbol == "cUSD",
+        join: t in CeloParams,
+        where: tt.token_contract_address_hash == t.address_value,
+        where: t.name == "stableToken",
         select: %{
           transaction_hash: tt.transaction_hash,
           from_address_hash: tt.from_address_hash,
@@ -426,7 +407,7 @@ defmodule Explorer.GraphQL do
         tx_index: tt.tx_index,
         index: tt.index,
         value: fragment("greatest(?, ?)", tt.value, tt.usd_value),
-        token: fragment("(case when ? > ? then 'cUSD' else 'cGLD' end)", tt.usd_value, tt.value),
+        token: fragment("(case when ? < ? then 'cGLD' else 'cUSD' end)", tt.usd_value, tt.value),
         block_number: tt.block_number
       },
       order_by: [desc: tt.block_number, desc: tt.tx_index, desc: tt.log_index, desc: tt.index]
