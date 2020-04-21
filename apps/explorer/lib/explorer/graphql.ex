@@ -236,7 +236,8 @@ defmodule Explorer.GraphQL do
         where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
-          address_hash: tt.from_address_hash
+          address_hash: tt.from_address_hash,
+          block_number: tt.block_number
         }
       )
 
@@ -250,7 +251,8 @@ defmodule Explorer.GraphQL do
         where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
-          address_hash: tt.to_address_hash
+          address_hash: tt.to_address_hash,
+          block_number: tt.block_number
         }
       )
 
@@ -260,7 +262,8 @@ defmodule Explorer.GraphQL do
         where: tx.value > ^0,
         select: %{
           transaction_hash: tx.hash,
-          address_hash: tx.from_address_hash
+          address_hash: tx.from_address_hash,
+          block_number: tx.block_number
         }
       )
 
@@ -270,7 +273,8 @@ defmodule Explorer.GraphQL do
         where: tx.value > ^0,
         select: %{
           transaction_hash: tx.hash,
-          address_hash: tx.to_address_hash
+          address_hash: tx.to_address_hash,
+          block_number: tx.block_number
         }
       )
 
@@ -283,7 +287,8 @@ defmodule Explorer.GraphQL do
         where: tx.index != 0,
         select: %{
           transaction_hash: tx.transaction_hash,
-          address_hash: tx.from_address_hash
+          address_hash: tx.from_address_hash,
+          block_number: tx.block_number
         }
       )
 
@@ -296,7 +301,8 @@ defmodule Explorer.GraphQL do
         where: tx.index != 0,
         select: %{
           transaction_hash: tx.transaction_hash,
-          address_hash: tx.to_address_hash
+          address_hash: tx.to_address_hash,
+          block_number: tx.block_number
         }
       )
 
@@ -308,12 +314,18 @@ defmodule Explorer.GraphQL do
       |> union_all(^tx_query2)
       |> union_all(^internal_query2)
 
-    from(tt in subquery(query),
-      select: %{
-        transaction_hash: tt.transaction_hash,
-        address_hash: tt.address_hash
-      },
-      distinct: [tt.transaction_hash, tt.address_hash]
+    result =
+      from(tt in subquery(query),
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          address_hash: tt.address_hash,
+          block_number: tt.block_number
+        },
+        distinct: [tt.block_number, tt.transaction_hash, tt.address_hash]
+      )
+
+    from(tt in subquery(result),
+      order_by: [desc: tt.block_number]
     )
   end
 
@@ -324,6 +336,7 @@ defmodule Explorer.GraphQL do
         join: t in CeloParams,
         where: tt.token_contract_address_hash == t.address_value,
         where: t.name == "goldToken",
+        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
           from_address_hash: tt.from_address_hash,
@@ -343,6 +356,7 @@ defmodule Explorer.GraphQL do
         join: t in CeloParams,
         where: tt.token_contract_address_hash == t.address_value,
         where: t.name == "stableToken",
+        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
           from_address_hash: tt.from_address_hash,
