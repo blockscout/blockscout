@@ -503,7 +503,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         where: block.hash in ^hashes or block.number in ^numbers,
         # Enforce Reward ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :address_hash, asc: :address_type, asc: :block_hash],
-        # NOTE: find a better way to know the alias that ecto gives to token
+        # acquire locks for `reward`s only
         lock: "FOR UPDATE OF b0"
       )
 
