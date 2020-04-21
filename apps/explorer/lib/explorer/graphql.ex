@@ -412,20 +412,21 @@ defmodule Explorer.GraphQL do
       |> union_all(^tx_query)
       |> union_all(^internal_query)
 
-    result = from(tt in subquery(query),
-      select: %{
-        transaction_hash: tt.transaction_hash,
-        from_address_hash: tt.from_address_hash,
-        to_address_hash: tt.to_address_hash,
-        log_index: tt.log_index,
-        tx_index: tt.tx_index,
-        index: tt.index,
-        value: fragment("greatest(?, ?)", tt.value, tt.usd_value),
-        token: fragment("(case when ? < ? then 'cGLD' else 'cUSD' end)", tt.usd_value, tt.value),
-        block_number: tt.block_number
-      }
-    )
-    
+    result =
+      from(tt in subquery(query),
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          from_address_hash: tt.from_address_hash,
+          to_address_hash: tt.to_address_hash,
+          log_index: tt.log_index,
+          tx_index: tt.tx_index,
+          index: tt.index,
+          value: fragment("greatest(?, ?)", tt.value, tt.usd_value),
+          token: fragment("(case when ? < ? then 'cGLD' else 'cUSD' end)", tt.usd_value, tt.value),
+          block_number: tt.block_number
+        }
+      )
+
     from(tt in subquery(result),
       order_by: [desc: tt.value, desc: tt.block_number, desc: tt.tx_index, desc: tt.log_index, desc: tt.index]
     )
