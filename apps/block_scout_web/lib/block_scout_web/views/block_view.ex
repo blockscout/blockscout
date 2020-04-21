@@ -10,16 +10,6 @@ defmodule BlockScoutWeb.BlockView do
 
   @dialyzer :no_match
 
-  @get_payout_by_mining_abi %{
-    "type" => "function",
-    "stateMutability" => "view",
-    "payable" => false,
-    "outputs" => [%{"type" => "address", "name" => ""}],
-    "name" => "getPayoutByMining",
-    "inputs" => [%{"type" => "address", "name" => ""}],
-    "constant" => true
-  }
-
   def average_gas_price(%Block{transactions: transactions}) do
     average =
       transactions
@@ -89,35 +79,5 @@ defmodule BlockScoutWeb.BlockView do
     block
     |> Chain.block_combined_rewards()
     |> format_wei_value(:ether)
-  end
-
-  defp call_contract(address, abi, params) do
-    abi = [abi]
-
-    method_name =
-      params
-      |> Enum.map(fn {key, _value} -> key end)
-      |> List.first()
-
-    value =
-      case Reader.query_contract(address, abi, params) do
-        %{^method_name => {:ok, [result]}} -> result
-        _ -> "0x0000000000000000000000000000000000000000"
-      end
-
-    type =
-      abi
-      |> Enum.at(0)
-      |> Map.get("outputs", [])
-      |> Enum.at(0)
-      |> Map.get("type", "")
-
-    case type do
-      "address" ->
-        "0x" <> Base.encode16(value, case: :lower)
-
-      _ ->
-        value
-    end
   end
 end
