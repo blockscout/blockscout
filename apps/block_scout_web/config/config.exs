@@ -100,7 +100,7 @@ config :wobserver,
 config :block_scout_web, BlockScoutWeb.ApiRouter,
   writing_enabled: System.get_env("DISABLE_WRITE_API") != "true",
   reading_enabled: System.get_env("DISABLE_READ_API") != "true",
-  max_complexity: 2000
+  max_complexity: System.get_env("GRAPHQL_COMPLEXITY") || 200
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 
