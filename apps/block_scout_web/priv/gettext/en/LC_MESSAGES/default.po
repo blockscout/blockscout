@@ -306,7 +306,7 @@ msgid "Change Network"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:36
+#: lib/block_scout_web/templates/layout/_footer.html.eex:33
 msgid "Chat"
 msgstr ""
 
@@ -451,7 +451,7 @@ msgid "Contracts that self destruct in their constructors have no contract code 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:35
+#: lib/block_scout_web/templates/layout/_footer.html.eex:32
 msgid "Contribute"
 msgstr ""
 
@@ -988,7 +988,7 @@ msgid "Logs"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:44
+#: lib/block_scout_web/templates/layout/_footer.html.eex:41
 msgid "Main Networks"
 msgstr ""
 
@@ -1110,7 +1110,7 @@ msgid "Optimization runs"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:68
+#: lib/block_scout_web/templates/layout/_footer.html.eex:65
 msgid "Other Explorers"
 msgstr ""
 
@@ -1352,7 +1352,7 @@ msgid "Static Call"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:34
+#: lib/block_scout_web/templates/layout/_footer.html.eex:31
 msgid "Submit an Issue"
 msgstr ""
 
@@ -1363,11 +1363,6 @@ msgid "Success"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:37
-msgid "Support"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:21
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:32
 #: lib/block_scout_web/templates/transaction/overview.html.eex:85
@@ -1375,12 +1370,7 @@ msgid "TX Fee"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:25
-msgid "Telegram"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:57
+#: lib/block_scout_web/templates/layout/_footer.html.eex:54
 msgid "Test Networks"
 msgstr ""
 
@@ -1775,7 +1765,7 @@ msgid "Verify the contract "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:83
+#: lib/block_scout_web/templates/layout/_footer.html.eex:80
 msgid "Version"
 msgstr ""
 
@@ -1967,4 +1957,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_celo/index.html.eex:41
 msgid "Domain"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/layout/_footer.html.eex:34
+msgid "Forum"
 msgstr ""
