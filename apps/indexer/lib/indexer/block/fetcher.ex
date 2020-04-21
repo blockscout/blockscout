@@ -187,7 +187,12 @@ defmodule Indexer.Block.Fetcher do
               {:ok, nil}
             end},
          {:read_oracle_address, {:ok, oracle_address}} <-
-           {:read_oracle_address, AccountReader.get_address("SortedOracles")},
+           {:read_oracle_address,
+            if gold_token_enabled do
+              AccountReader.get_address("SortedOracles")
+            else
+              {:ok, nil}
+            end},
          # Non gold fees should be handled by events
          fee_tokens = [],
          fee_token_transfers = [],

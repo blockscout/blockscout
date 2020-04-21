@@ -25,14 +25,14 @@ defmodule BlockScoutWeb.Router do
 
   if Application.get_env(:block_scout_web, ApiRouter)[:reading_enabled] do
     # Needs to be 200 to support the schema introspection for graphiql
-    @max_complexity 2000
+    max_complexity = Application.get_env(:block_scout_web, ApiRouter)[:max_complexity]
 
-    Logger.info("GRAPHQL Max Complexity: #{@max_complexity}")
+    Logger.info("GRAPHQL Max Complexity: #{max_complexity}")
 
     forward("/graphql", Absinthe.Plug,
       schema: BlockScoutWeb.Schema,
       analyze_complexity: true,
-      max_complexity: @max_complexity
+      max_complexity: max_complexity
     )
 
     forward("/graphiql", Absinthe.Plug.GraphiQL,
@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.Router do
       default_query: GraphQL.default_query(),
       socket: BlockScoutWeb.UserSocket,
       analyze_complexity: true,
-      max_complexity: @max_complexity
+      max_complexity: max_complexity
     )
   else
     scope "/", BlockScoutWeb do
