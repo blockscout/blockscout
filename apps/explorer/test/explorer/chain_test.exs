@@ -842,6 +842,7 @@ defmodule Explorer.ChainTest do
                :max_block_number => 1004
              }
 <<<<<<< HEAD
+<<<<<<< HEAD
     end
   end
 
@@ -939,8 +940,6 @@ defmodule Explorer.ChainTest do
                :min_block_number => 998,
                :max_block_number => 1004
              }
-=======
->>>>>>> vb-check-if-address-has-reward
     end
   end
 

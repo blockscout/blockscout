@@ -1044,6 +1044,15 @@ msgid "Method Id"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
+=======
+#: lib/block_scout_web/views/block_view.ex:60
+#: lib/block_scout_web/views/block_view.ex:65
+msgid "Miner Reward"
+msgstr ""
+
+#, elixir-format
+>>>>>>> vb-check-if-address-has-reward
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:223
 msgid "Model"
 msgstr ""
