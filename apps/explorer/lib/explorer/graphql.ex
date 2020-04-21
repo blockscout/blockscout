@@ -6,8 +6,10 @@ defmodule Explorer.GraphQL do
   import Ecto.Query,
     only: [
       from: 2,
+      union_all: 2,
       order_by: 3,
       or_where: 3,
+      subquery: 1,
       where: 3
     ]
 
@@ -18,6 +20,7 @@ defmodule Explorer.GraphQL do
     CeloClaims,
     Hash,
     InternalTransaction,
+    Token,
     TokenTransfer,
     Transaction
   }
@@ -131,6 +134,302 @@ defmodule Explorer.GraphQL do
       where: tt.token_contract_address_hash == ^token_contract_address_hash,
       order_by: [desc: tt.block_number, desc: t.index, asc: tt.log_index],
       select: tt
+    )
+  end
+
+  def list_gold_transfers_query do
+    tt_query =
+      from(
+        tt in TokenTransfer,
+        join: t in Token,
+        where: tt.token_contract_address_hash == t.contract_address_hash,
+        where: t.symbol == "cGLD",
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          from_address_hash: tt.from_address_hash,
+          to_address_hash: tt.to_address_hash,
+          log_index: tt.log_index,
+          tx_index: -1,
+          index: -1,
+          value: tt.amount,
+          block_number: tt.block_number
+        }
+      )
+
+    tx_query =
+      from(
+        tx in Transaction,
+        where: tx.value > ^0,
+        select: %{
+          transaction_hash: tx.hash,
+          from_address_hash: tx.from_address_hash,
+          to_address_hash: tx.to_address_hash,
+          log_index: 0 - tx.index,
+          tx_index: tx.index,
+          index: 0 - tx.index,
+          value: tx.value,
+          block_number: tx.block_number
+        }
+      )
+
+    internal_query =
+      from(
+        tx in InternalTransaction,
+        where: tx.value > ^0,
+        where: tx.call_type != fragment("'delegatecall'"),
+        where: tx.index != 0,
+        select: %{
+          transaction_hash: tx.transaction_hash,
+          from_address_hash: tx.from_address_hash,
+          to_address_hash: tx.to_address_hash,
+          log_index: 0 - tx.index,
+          tx_index: 0 - tx.index,
+          index: tx.index,
+          value: tx.value,
+          block_number: tx.block_number
+        }
+      )
+
+    query =
+      tt_query
+      |> union_all(^tx_query)
+      |> union_all(^internal_query)
+
+    from(tt in subquery(query),
+      select: %{
+        transaction_hash: tt.transaction_hash,
+        from_address_hash: tt.from_address_hash,
+        to_address_hash: tt.to_address_hash,
+        log_index: tt.log_index,
+        tx_index: tt.tx_index,
+        index: tt.index,
+        value: tt.value,
+        block_number: tt.block_number
+      },
+      order_by: [desc: tt.block_number, desc: tt.tx_index, desc: tt.log_index, desc: tt.index]
+    )
+  end
+
+  def list_gold_transfers_query_for_address(address_hash) do
+    list_gold_transfers_query()
+    |> where([t], t.from_address_hash == ^address_hash or t.to_address_hash == ^address_hash)
+  end
+
+  def txtransfers_query_for_address(address_hash) do
+    txtransfers_query()
+    |> where([t], t.address_hash == ^address_hash)
+  end
+
+  def celo_tx_transfers_query_by_txhash(tx_hash) do
+    celo_tx_transfers_query()
+    |> where([t], t.transaction_hash == ^tx_hash)
+  end
+
+  def txtransfers_query do
+    tt_query =
+      from(
+        tt in TokenTransfer,
+        join: t in Token,
+        where: tt.token_contract_address_hash == t.contract_address_hash,
+        where: t.symbol == "cGLD",
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          address_hash: tt.from_address_hash
+        }
+      )
+
+    tt_query2 =
+      from(
+        tt in TokenTransfer,
+        join: t in Token,
+        where: tt.token_contract_address_hash == t.contract_address_hash,
+        where: t.symbol == "cGLD",
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          address_hash: tt.to_address_hash
+        }
+      )
+
+    usd_query =
+      from(
+        tt in TokenTransfer,
+        join: t in Token,
+        where: tt.token_contract_address_hash == t.contract_address_hash,
+        where: t.symbol == "cUSD",
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          address_hash: tt.from_address_hash
+        }
+      )
+
+    usd_query2 =
+      from(
+        tt in TokenTransfer,
+        join: t in Token,
+        where: tt.token_contract_address_hash == t.contract_address_hash,
+        where: t.symbol == "cUSD",
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          address_hash: tt.to_address_hash
+        }
+      )
+
+    tx_query =
+      from(
+        tx in Transaction,
+        where: tx.value > ^0,
+        select: %{
+          transaction_hash: tx.hash,
+          address_hash: tx.from_address_hash
+        }
+      )
+
+    tx_query2 =
+      from(
+        tx in Transaction,
+        where: tx.value > ^0,
+        select: %{
+          transaction_hash: tx.hash,
+          address_hash: tx.to_address_hash
+        }
+      )
+
+    internal_query =
+      from(
+        tx in InternalTransaction,
+        where: tx.value > ^0,
+        where: tx.call_type != fragment("'delegatecall'"),
+        where: tx.index != 0,
+        select: %{
+          transaction_hash: tx.transaction_hash,
+          address_hash: tx.from_address_hash
+        }
+      )
+
+    internal_query2 =
+      from(
+        tx in InternalTransaction,
+        where: tx.value > ^0,
+        where: tx.call_type != fragment("'delegatecall'"),
+        where: tx.index != 0,
+        select: %{
+          transaction_hash: tx.transaction_hash,
+          address_hash: tx.to_address_hash
+        }
+      )
+
+    query =
+      tt_query
+      |> union_all(^tx_query)
+      |> union_all(^usd_query)
+      |> union_all(^internal_query)
+      |> union_all(^tt_query2)
+      |> union_all(^tx_query2)
+      |> union_all(^usd_query2)
+      |> union_all(^internal_query2)
+
+    from(tt in subquery(query),
+      select: %{
+        transaction_hash: tt.transaction_hash,
+        address_hash: tt.address_hash
+      }
+    )
+  end
+
+  def celo_tx_transfers_query do
+    tt_query =
+      from(
+        tt in TokenTransfer,
+        join: t in Token,
+        where: tt.token_contract_address_hash == t.contract_address_hash,
+        where: t.symbol == "cGLD",
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          from_address_hash: tt.from_address_hash,
+          to_address_hash: tt.to_address_hash,
+          log_index: tt.log_index,
+          tx_index: -1,
+          index: -1,
+          value: tt.amount,
+          usd_value: 0,
+          block_number: tt.block_number
+        }
+      )
+
+    usd_query =
+      from(
+        tt in TokenTransfer,
+        join: t in Token,
+        where: tt.token_contract_address_hash == t.contract_address_hash,
+        where: t.symbol == "cUSD",
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          from_address_hash: tt.from_address_hash,
+          to_address_hash: tt.to_address_hash,
+          log_index: tt.log_index,
+          tx_index: 0 - tt.log_index,
+          index: 0 - tt.log_index,
+          value: 0 - tt.amount,
+          usd_value: tt.amount,
+          block_number: tt.block_number
+        }
+      )
+
+    tx_query =
+      from(
+        tx in Transaction,
+        where: tx.value > ^0,
+        select: %{
+          transaction_hash: tx.hash,
+          from_address_hash: tx.from_address_hash,
+          to_address_hash: tx.to_address_hash,
+          log_index: 0 - tx.index,
+          tx_index: tx.index,
+          index: 0 - tx.index,
+          value: tx.value,
+          usd_value: 0 - tx.value,
+          block_number: tx.block_number
+        }
+      )
+
+    internal_query =
+      from(
+        tx in InternalTransaction,
+        where: tx.value > ^0,
+        where: tx.call_type != fragment("'delegatecall'"),
+        where: tx.index != 0,
+        select: %{
+          transaction_hash: tx.transaction_hash,
+          from_address_hash: tx.from_address_hash,
+          to_address_hash: tx.to_address_hash,
+          log_index: 0 - tx.index,
+          tx_index: 0 - tx.index,
+          index: tx.index,
+          value: tx.value,
+          usd_value: 0 - tx.value,
+          block_number: tx.block_number
+        }
+      )
+
+    query =
+      tt_query
+      |> union_all(^usd_query)
+      |> union_all(^tx_query)
+      |> union_all(^internal_query)
+
+    from(tt in subquery(query),
+      select: %{
+        transaction_hash: tt.transaction_hash,
+        from_address_hash: tt.from_address_hash,
+        to_address_hash: tt.to_address_hash,
+        log_index: tt.log_index,
+        tx_index: tt.tx_index,
+        index: tt.index,
+        value: fragment("greatest(?, ?)", tt.value, tt.usd_value),
+        token: fragment("(case when ? > ? then 'cUSD' else 'cGLD' end)", tt.usd_value, tt.value),
+        block_number: tt.block_number
+      },
+      order_by: [desc: tt.block_number, desc: tt.tx_index, desc: tt.log_index, desc: tt.index]
     )
   end
 

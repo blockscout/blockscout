@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.Schema.Types do
     Address,
     CeloAccount,
     CeloClaim,
+    CeloTransfer,
     CeloValidator,
     CeloValidatorGroup,
     InternalTransaction,
@@ -28,7 +29,10 @@ defmodule BlockScoutWeb.Schema.Types do
   connection(node_type: :transaction)
   connection(node_type: :internal_transaction)
   connection(node_type: :token_transfer)
+  connection(node_type: :gold_transfer)
   connection(node_type: :coin_balance)
+  connection(node_type: :transfer_tx)
+  connection(node_type: :celo_transfer)
 
   @desc """
   A stored representation of a Web3 address.
@@ -279,6 +283,50 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   @desc """
+  Represents a gold token transfer between addresses.
+  """
+  node object(:gold_transfer, id_fetcher: &gold_transfer_id_fetcher/2) do
+    field(:value, :decimal)
+    field(:block_number, :integer)
+    field(:from_address_hash, :address_hash)
+    field(:to_address_hash, :address_hash)
+    field(:transaction_hash, :full_hash)
+  end
+
+  @desc """
+  Represents a gold or usd token transfer between addresses.
+  """
+  node object(:celo_transfer, id_fetcher: &celo_transfer_id_fetcher/2) do
+    field(:value, :decimal)
+    field(:token, :string)
+    field(:block_number, :integer)
+    field(:from_address_hash, :address_hash)
+    field(:to_address_hash, :address_hash)
+    field(:transaction_hash, :full_hash)
+  end
+
+  @desc """
+  Represents a gold token transfer between addresses.
+  """
+  node object(:transfer_tx, id_fetcher: &transfer_tx_id_fetcher/2) do
+    field(:address_hash, :address_hash)
+    field(:transaction_hash, :full_hash)
+
+    connection field(:celo_transfer, node_type: :celo_transfer) do
+      arg(:count, :integer)
+      resolve(&CeloTransfer.get_by/3)
+
+      complexity(fn
+        %{first: first}, child_complexity ->
+          first * child_complexity
+
+        %{last: last}, child_complexity ->
+          last * child_complexity
+      end)
+    end
+  end
+
+  @desc """
   Models a Web3 transaction.
   """
   node object(:transaction, id_fetcher: &transaction_id_fetcher/2) do
@@ -329,6 +377,30 @@ defmodule BlockScoutWeb.Schema.Types do
     Jason.encode!(%{transaction_hash: to_string(transaction_hash), log_index: log_index})
   end
 
+  def gold_transfer_id_fetcher(
+        %{transaction_hash: transaction_hash, log_index: log_index, tx_index: tx_index, index: index},
+        _
+      ) do
+    Jason.encode!(%{
+      transaction_hash: to_string(transaction_hash),
+      log_index: log_index,
+      tx_index: tx_index,
+      index: index
+    })
+  end
+
+  def celo_transfer_id_fetcher(
+        %{transaction_hash: transaction_hash, log_index: log_index, tx_index: tx_index, index: index},
+        _
+      ) do
+    Jason.encode!(%{
+      transaction_hash: to_string(transaction_hash),
+      log_index: log_index,
+      tx_index: tx_index,
+      index: index
+    })
+  end
+
   def coin_balance_id_fetcher(%{address_hash: address_hash, block_number: block_number}, _) do
     Jason.encode!(%{address_hash: to_string(address_hash), block_number: block_number})
   end
@@ -337,5 +409,9 @@ defmodule BlockScoutWeb.Schema.Types do
 
   def internal_transaction_id_fetcher(%{transaction_hash: transaction_hash, index: index}, _) do
     Jason.encode!(%{transaction_hash: to_string(transaction_hash), index: index})
+  end
+
+  def transfer_tx_id_fetcher(%{transaction_hash: transaction_hash, address_hash: address_hash}, _) do
+    Jason.encode!(%{transaction_hash: to_string(transaction_hash), address_hash: to_string(address_hash)})
   end
 end
