@@ -7,6 +7,7 @@
 - [#3065](https://github.com/poanetwork/blockscout/pull/3065) - Transactions history chart
 
 ### Fixes
+- [#3077](https://github.com/poanetwork/blockscout/pull/3077) - Finally speedup pending tx list
 - [#3071](https://github.com/poanetwork/blockscout/pull/3071) - Speedup list of token transfers per token query
 - [#3070](https://github.com/poanetwork/blockscout/pull/3070) - Index creation to blazingly speedup token holders query
 - [#3064](https://github.com/poanetwork/blockscout/pull/3064) - Automatically define Block reward contract address in TokenBridge supply module
