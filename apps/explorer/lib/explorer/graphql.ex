@@ -332,6 +332,19 @@ defmodule Explorer.GraphQL do
       )
 
     from(tt in subquery(result),
+      inner_join: tx in Transaction,
+      on: tx.hash == tt.transaction_hash,
+      inner_join: b in Block,
+      on: tx.block_hash == b.hash,
+      select: %{
+        transaction_hash: tt.transaction_hash,
+        address_hash: tt.address_hash,
+        gas_used: tx.gas_used,
+        gas_price: tx.gas_price,
+        timestamp: b.timestamp,
+        input: tx.input,
+        block_number: tt.block_number
+      },
       order_by: [desc: tt.block_number]
     )
   end
@@ -421,7 +434,15 @@ defmodule Explorer.GraphQL do
 
     result =
       from(tt in subquery(query),
+        inner_join: tx in Transaction,
+        on: tx.hash == tt.transaction_hash,
+        inner_join: b in Block,
+        on: tx.block_hash == b.hash,
         select: %{
+          gas_used: tx.gas_used,
+          gas_price: tx.gas_price,
+          timestamp: b.timestamp,
+          input: tx.input,
           transaction_hash: tt.transaction_hash,
           from_address_hash: tt.from_address_hash,
           to_address_hash: tt.to_address_hash,

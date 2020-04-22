@@ -303,6 +303,11 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
+
+    field(:gas_price, :wei)
+    field(:gas_used, :decimal)
+    field(:input, :string)
+    field(:timestamp, :datetime)
   end
 
   @desc """
@@ -311,6 +316,11 @@ defmodule BlockScoutWeb.Schema.Types do
   node object(:transfer_tx, id_fetcher: &transfer_tx_id_fetcher/2) do
     field(:address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
+    field(:block_number, :integer)
+    field(:gas_price, :wei)
+    field(:gas_used, :decimal)
+    field(:input, :string)
+    field(:timestamp, :datetime)
 
     connection field(:celo_transfer, node_type: :celo_transfer) do
       arg(:count, :integer)
