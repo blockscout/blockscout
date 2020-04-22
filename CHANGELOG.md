@@ -15,6 +15,7 @@
 - [#2756](https://github.com/poanetwork/blockscout/pull/2756) - Improve subquery joins
 
 ### Chore
+- [#3079](https://github.com/poanetwork/blockscout/pull/3079) - Extend optionality of websockets to Geth
 
 
 ## 3.1.1-beta
