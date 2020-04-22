@@ -185,6 +185,8 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:num_registered_validators, :integer)
     field(:min_electable_validators, :integer)
     field(:max_electable_validators, :integer)
+    field(:gold_token, :address_hash)
+    field(:stable_token, :address_hash)
   end
 
   @desc """
