@@ -156,8 +156,6 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:usd, :wei)
     field(:name, :string)
     field(:url, :string)
-    #    field(:domain, :string)
-    #    field(:domain_verified, :boolean)
 
     field(:rewards_ratio, :wei)
     field(:accumulated_rewards, :wei)
@@ -306,6 +304,8 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:to_address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
 
+    field(:log_index, :integer)
+
     field(:gas_price, :wei)
     field(:gas_used, :decimal)
     field(:input, :string)
@@ -316,6 +316,10 @@ defmodule BlockScoutWeb.Schema.Types do
   Represents a gold token transfer between addresses.
   """
   node object(:transfer_tx, id_fetcher: &transfer_tx_id_fetcher/2) do
+    field(:gateway_fee_recipient, :address_hash)
+    field(:gateway_fee, :address_hash)
+    field(:fee_currency, :address_hash)
+    field(:fee_token, :string)
     field(:address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
     field(:block_number, :integer)

@@ -21,6 +21,7 @@ defmodule Explorer.GraphQL do
     CeloParams,
     Hash,
     InternalTransaction,
+    Token,
     TokenTransfer,
     Transaction
   }
@@ -221,9 +222,13 @@ defmodule Explorer.GraphQL do
   end
 
   def celo_tx_transfers_query_by_txhash(tx_hash) do
-    celo_tx_transfers_query()
-    |> where([t], t.transaction_hash == ^tx_hash)
-    |> order_by([t], desc: t.value)
+    query = celo_tx_transfers_query()
+
+    from(
+      t in subquery(query),
+      where: t.transaction_hash == ^tx_hash,
+      order_by: [t.log_index]
+    )
   end
 
   def celo_tx_transfers_query_by_address(address_hash) do
@@ -336,11 +341,18 @@ defmodule Explorer.GraphQL do
       on: tx.hash == tt.transaction_hash,
       inner_join: b in Block,
       on: tx.block_hash == b.hash,
+      left_join: token in Token,
+      on: tx.gas_currency_hash == token.contract_address_hash,
       select: %{
         transaction_hash: tt.transaction_hash,
         address_hash: tt.address_hash,
         gas_used: tx.gas_used,
         gas_price: tx.gas_price,
+        fee_currency: tx.gas_currency_hash,
+        #        fee_token: fragment("(case when ? is null then 'cGLD' else ? end)", tx.gas_currency_hash, token.symbol),
+        fee_token: fragment("coalesce(?, 'cGLD')", token.symbol),
+        gateway_fee: tx.gateway_fee,
+        gateway_fee_recipient: tx.gas_fee_recipient_hash,
         timestamp: b.timestamp,
         input: tx.input,
         block_number: tt.block_number
