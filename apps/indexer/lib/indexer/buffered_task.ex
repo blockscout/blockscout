@@ -446,7 +446,7 @@ defmodule Indexer.BufferedTask do
   # was shrunk and was out of work, get more work from `init/2`
   defp schedule_next(%BufferedTask{bound_queue: %BoundQueue{size: 0, maximum_size: maximum_size}} = state)
        when maximum_size != nil do
-      Logger.info(fn ->
+    Logger.info(fn ->
       [
         "BufferedTask ",
         process(self())

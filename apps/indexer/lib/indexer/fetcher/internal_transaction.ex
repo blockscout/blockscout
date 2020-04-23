@@ -78,6 +78,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
       Chain.stream_blocks_with_unfetched_internal_transactions(initial, fn block_number, acc ->
         reducer.(block_number, acc)
       end)
+
     final
   end
 

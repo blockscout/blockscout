@@ -196,7 +196,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         order_by: [asc: b.hash],
         lock: "FOR UPDATE"
       )
-    
+
     {:ok, repo.all(query)}
   end
 
@@ -251,7 +251,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> MapSet.new(fn {_hash, block_number} -> block_number end)
       |> MapSet.to_list()
 
-      {:ok, invalid_numbers}
+    {:ok, invalid_numbers}
   end
 
   defp valid_internal_transactions(transactions, internal_transactions_params, invalid_block_numbers) do
