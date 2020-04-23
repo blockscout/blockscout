@@ -245,7 +245,6 @@ defmodule Explorer.GraphQL do
         where: tt.token_contract_address_hash == t.address_value,
         where: t.name == "goldToken" or t.name == "stableToken",
         where: not is_nil(tt.transaction_hash),
-        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
           address_hash: tt.from_address_hash,
@@ -260,7 +259,6 @@ defmodule Explorer.GraphQL do
         where: tt.token_contract_address_hash == t.address_value,
         where: t.name == "goldToken" or t.name == "stableToken",
         where: not is_nil(tt.transaction_hash),
-        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
           address_hash: tt.to_address_hash,
@@ -349,7 +347,6 @@ defmodule Explorer.GraphQL do
         gas_used: tx.gas_used,
         gas_price: tx.gas_price,
         fee_currency: tx.gas_currency_hash,
-        #        fee_token: fragment("(case when ? is null then 'cGLD' else ? end)", tx.gas_currency_hash, token.symbol),
         fee_token: fragment("coalesce(?, 'cGLD')", token.symbol),
         gateway_fee: tx.gateway_fee,
         gateway_fee_recipient: tx.gas_fee_recipient_hash,
@@ -368,7 +365,6 @@ defmodule Explorer.GraphQL do
         join: t in CeloParams,
         where: tt.token_contract_address_hash == t.address_value,
         where: t.name == "goldToken",
-        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
           from_address_hash: tt.from_address_hash,
@@ -388,7 +384,6 @@ defmodule Explorer.GraphQL do
         join: t in CeloParams,
         where: tt.token_contract_address_hash == t.address_value,
         where: t.name == "stableToken",
-        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
           from_address_hash: tt.from_address_hash,
