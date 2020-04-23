@@ -269,6 +269,10 @@ defmodule Explorer.Celo.AccountReader do
         validators
         |> Enum.with_index()
         |> Enum.map(fn {addr, idx} -> %{address: addr, index: idx, online: get_index(bm, idx)} end)
+      
+      debug = Enum.filter(list, fn a -> not a.online end)
+
+      IO.inspect(%{block_number: block_number, down: Enum.count(debug)})
 
       params = [
         %{name: "numRegisteredValidators", number_value: num_validators},
@@ -281,7 +285,7 @@ defmodule Explorer.Celo.AccountReader do
         %{name: "epochSize", number_value: epoch_size}
       ]
 
-      {:ok, %{validators: list, params: params}}
+      {:ok, %{validators: list, params: params, block_number: block_number-1}}
     else
       _ ->
         :error

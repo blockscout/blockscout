@@ -66,12 +66,9 @@ defmodule Indexer.Fetcher.CeloValidatorHistory do
     blocks
     |> Enum.filter(&(&1.retries_count <= @max_retries))
     |> Enum.map(fn %{block_number: block_number} = block ->
-      case AccountReader.validator_history(block_number - 1) do
-        {:ok, data} ->
-          Map.merge(block, data)
-
-        error ->
-          Map.put(block, :error, error)
+      case AccountReader.validator_history(block_number) do
+        {:ok, data} -> data
+        error -> Map.put(block, :error, error)
       end
     end)
   end
