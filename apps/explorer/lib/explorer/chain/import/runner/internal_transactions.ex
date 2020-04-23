@@ -36,6 +36,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   @impl Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) when is_map(options) do
+    IO.inspect(%{running: Enum.count(changes_list), trace: Process.info(self(), :current_stacktrace)})
     insert_options =
       options
       |> Map.get(option_key(), %{})
@@ -196,8 +197,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         order_by: [asc: b.hash],
         lock: "FOR UPDATE"
       )
-
-    {:ok, repo.all(query)}
+    
+    res = repo.all(query)
+    IO.inspect(%{blocks: block_numbers, got_blocks: Enum.count(res)})
+    {:ok, res}
   end
 
   defp acquire_pending_internal_txs(repo, block_hashes) do
@@ -226,7 +229,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         lock: "FOR UPDATE"
       )
 
-    {:ok, repo.all(query)}
+    res = repo.all(query)
+    IO.inspect(%{trs: Enum.count(res), blocks: Enum.count(pending_block_hashes)})
+    {:ok, res}
   end
 
   defp invalid_block_numbers(transactions, internal_transactions_params) do
@@ -251,7 +256,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> MapSet.new(fn {_hash, block_number} -> block_number end)
       |> MapSet.to_list()
 
-    {:ok, invalid_numbers}
+      IO.inspect(%{tr: Enum.count(transactions), internal: Enum.count(internal_transactions_params), invalid: invalid_numbers})
+      {:ok, invalid_numbers}
   end
 
   defp valid_internal_transactions(transactions, internal_transactions_params, invalid_block_numbers) do
@@ -288,7 +294,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   def remove_left_over_internal_transactions(repo, valid_internal_transactions) do
     # Removes internal transactions that were part of a block before a refetch
     # and have not been upserted with new ones (if any exist).
-
+    IO.inspect(%{removing: Enum.count(valid_internal_transactions)})
     case valid_internal_transactions do
       [] ->
         {:ok, []}
@@ -313,6 +319,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
           # ShareLocks order already enforced by `acquire_pending_internal_txs` (see docs: sharelocks.md)
           {count, result} = repo.delete_all(delete_query, [])
+          IO.inspect(%{removed: count})
 
           {:ok, {count, result}}
         rescue
@@ -371,6 +378,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
+    IO.inspect(%{remove_invalid: invalid_block_numbers})
     update_query =
       from(
         b in Block,

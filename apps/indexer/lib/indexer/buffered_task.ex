@@ -351,6 +351,7 @@ defmodule Indexer.BufferedTask do
          } = state
        ) do
     parent = self()
+    IO.inspect("do initial stream")
 
     task =
       Task.Supervisor.async(task_supervisor, fn ->
@@ -439,13 +440,17 @@ defmodule Indexer.BufferedTask do
 
   # get more work from `init/2`
   defp schedule_next(%BufferedTask{poll: true, bound_queue: %BoundQueue{size: 0}} = state) do
-    do_initial_stream(state)
+    IO.inspect("schedule polling")
+    timer = Process.send_after(self(), :initial_stream, state.flush_interval)
+    %{state | flush_timer: timer}
+#    do_initial_stream(state)
   end
 
   # was shrunk and was out of work, get more work from `init/2`
   defp schedule_next(%BufferedTask{bound_queue: %BoundQueue{size: 0, maximum_size: maximum_size}} = state)
        when maximum_size != nil do
-    Logger.info(fn ->
+      IO.inspect("schedule NOT polling")
+      Logger.info(fn ->
       [
         "BufferedTask ",
         process(self())

@@ -23,7 +23,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   @behaviour BufferedTask
 
   @max_batch_size 10
-  @max_concurrency 4
+  @max_concurrency 1
   @defaults [
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
@@ -51,6 +51,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   """
   @spec async_fetch([Block.block_number()]) :: :ok
   def async_fetch(block_numbers, timeout \\ 5000) when is_list(block_numbers) do
+    # IO.inspect(%{running: block_numbers, trace: Process.info(self(), :current_stacktrace)})
     BufferedTask.buffer(__MODULE__, block_numbers, timeout)
   end
 
@@ -69,16 +70,19 @@ defmodule Indexer.Fetcher.InternalTransaction do
       |> Keyword.merge(mergeable_init_options)
       |> Keyword.put(:state, state)
 
-    Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
+    res = Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
+    IO.inspect(%{internal: res})
+    res
   end
 
   @impl BufferedTask
   def init(initial, reducer, _json_rpc_named_arguments) do
+    IO.inspect(%{what: "????", trace: Process.info(self(), :current_stacktrace)})
     {:ok, final} =
       Chain.stream_blocks_with_unfetched_internal_transactions(initial, fn block_number, acc ->
         reducer.(block_number, acc)
       end)
-
+    IO.inspect(%{final: final})
     final
   end
 
@@ -95,6 +99,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
             )
   def run(block_numbers, json_rpc_named_arguments) do
     unique_numbers = Enum.uniq(block_numbers)
+    IO.inspect(%{unique: unique_numbers})
 
     unique_numbers_count = Enum.count(unique_numbers)
     Logger.metadata(count: unique_numbers_count)
@@ -112,7 +117,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
     |> case do
       {:ok, internal_transactions_params} ->
-        import_internal_transaction(internal_transactions_params, unique_numbers)
+        res = import_internal_transaction(internal_transactions_params, unique_numbers)
+        IO.inspect(%{what_next: res})
+        res
 
       {:error, reason} ->
         Logger.error(fn -> ["failed to fetch internal transactions for blocks: ", inspect(reason)] end,

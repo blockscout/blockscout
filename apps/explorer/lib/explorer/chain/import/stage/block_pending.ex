@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Import.Stage.BlockPending do
 
   @impl Stage
   def multis(runner_to_changes_list, options) do
+#    IO.inspect(%{running: runner_to_changes_list, trace: Process.info(self(), :current_stacktrace)})
     {final_multi, final_remaining_runner_to_changes_list} =
       Stage.single_multi(runners(), runner_to_changes_list, options)
 

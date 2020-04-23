@@ -291,6 +291,7 @@ defmodule Indexer.Block.Fetcher do
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
+      IO.inspect(%{inserted: Enum.count(inserted), errors: Enum.count(blocks_errors)})
 
       accounts = Enum.uniq(celo_accounts ++ attestations_fulfilled ++ attestations_requested)
 
@@ -409,6 +410,7 @@ defmodule Indexer.Block.Fetcher do
   def async_import_created_contract_codes(_), do: :ok
 
   def async_import_internal_transactions(%{blocks: blocks}) do
+    IO.inspect(%{async: Enum.count(blocks)})
     blocks
     |> Enum.map(fn %Block{number: block_number} -> block_number end)
     |> InternalTransaction.async_fetch(10_000)
@@ -443,6 +445,7 @@ defmodule Indexer.Block.Fetcher do
   def async_import_celo_validators(_), do: :ok
 
   def async_import_celo_validator_history(range) do
+    IO.inspect("async_import_celo_validator_history")
     CeloValidatorHistory.async_fetch(range)
   end
 
