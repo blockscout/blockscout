@@ -393,7 +393,7 @@ defmodule Explorer.GraphQL do
           index: 0 - tt.log_index,
           value: 0 - tt.amount,
           usd_value: tt.amount,
-          block_number: tt.block_number
+          block_number: 0 - tt.block_number
         }
       )
 
@@ -457,8 +457,8 @@ defmodule Explorer.GraphQL do
           tx_index: tt.tx_index,
           index: tt.index,
           value: fragment("greatest(?, ?)", tt.value, tt.usd_value),
-          token: fragment("(case when ? < ? then 'cGLD' else 'cUSD' end)", tt.usd_value, tt.value),
-          block_number: tt.block_number
+          token: fragment("(case when ? < 0 then 'cUSD' else 'cGLD' end)", tt.block_number),
+          block_number: fragment("abs(?)", tt.block_number)
         }
       )
 
