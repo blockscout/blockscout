@@ -132,7 +132,6 @@ defmodule Explorer.Chain.Import do
   end
 
   defp runner_to_changes_list(runner_options_pairs) when is_list(runner_options_pairs) do
-    # IO.inspect(%{running: Enum.map(runner_options_pairs, fn {a,_} -> a end), trace: Process.info(self(), :current_stacktrace)})
     runner_options_pairs
     |> Stream.map(fn {runner, options} -> runner_changes_list(runner, options) end)
     |> Enum.reduce({:ok, %{}}, fn

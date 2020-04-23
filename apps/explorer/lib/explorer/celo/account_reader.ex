@@ -272,8 +272,6 @@ defmodule Explorer.Celo.AccountReader do
       
       debug = Enum.filter(list, fn a -> not a.online end)
 
-      IO.inspect(%{block_number: block_number, down: Enum.count(debug)})
-
       params = [
         %{name: "numRegisteredValidators", number_value: num_validators},
         %{name: "totalLockedGold", number_value: total_gold},
