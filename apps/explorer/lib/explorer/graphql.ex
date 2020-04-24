@@ -21,6 +21,7 @@ defmodule Explorer.GraphQL do
     CeloParams,
     Hash,
     InternalTransaction,
+    Token,
     TokenTransfer,
     Transaction
   }
@@ -221,8 +222,19 @@ defmodule Explorer.GraphQL do
   end
 
   def celo_tx_transfers_query_by_txhash(tx_hash) do
+    query = celo_tx_transfers_query()
+
+    from(
+      t in subquery(query),
+      where: t.transaction_hash == ^tx_hash,
+      order_by: [t.log_index]
+    )
+  end
+
+  def celo_tx_transfers_query_by_address(address_hash) do
     celo_tx_transfers_query()
-    |> where([t], t.transaction_hash == ^tx_hash)
+    |> where([t], t.from_address_hash == ^address_hash or t.to_address_hash == ^address_hash)
+    |> order_by([t], desc: t.block_number)
   end
 
   def txtransfers_query do
@@ -233,10 +245,10 @@ defmodule Explorer.GraphQL do
         where: tt.token_contract_address_hash == t.address_value,
         where: t.name == "goldToken" or t.name == "stableToken",
         where: not is_nil(tt.transaction_hash),
-        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
-          address_hash: tt.from_address_hash
+          address_hash: tt.from_address_hash,
+          block_number: tt.block_number
         }
       )
 
@@ -247,10 +259,10 @@ defmodule Explorer.GraphQL do
         where: tt.token_contract_address_hash == t.address_value,
         where: t.name == "goldToken" or t.name == "stableToken",
         where: not is_nil(tt.transaction_hash),
-        where: tt.amount > ^0,
         select: %{
           transaction_hash: tt.transaction_hash,
-          address_hash: tt.to_address_hash
+          address_hash: tt.to_address_hash,
+          block_number: tt.block_number
         }
       )
 
@@ -260,7 +272,8 @@ defmodule Explorer.GraphQL do
         where: tx.value > ^0,
         select: %{
           transaction_hash: tx.hash,
-          address_hash: tx.from_address_hash
+          address_hash: tx.from_address_hash,
+          block_number: tx.block_number
         }
       )
 
@@ -270,7 +283,8 @@ defmodule Explorer.GraphQL do
         where: tx.value > ^0,
         select: %{
           transaction_hash: tx.hash,
-          address_hash: tx.to_address_hash
+          address_hash: tx.to_address_hash,
+          block_number: tx.block_number
         }
       )
 
@@ -283,7 +297,8 @@ defmodule Explorer.GraphQL do
         where: tx.index != 0,
         select: %{
           transaction_hash: tx.transaction_hash,
-          address_hash: tx.from_address_hash
+          address_hash: tx.from_address_hash,
+          block_number: tx.block_number
         }
       )
 
@@ -296,7 +311,8 @@ defmodule Explorer.GraphQL do
         where: tx.index != 0,
         select: %{
           transaction_hash: tx.transaction_hash,
-          address_hash: tx.to_address_hash
+          address_hash: tx.to_address_hash,
+          block_number: tx.block_number
         }
       )
 
@@ -308,12 +324,37 @@ defmodule Explorer.GraphQL do
       |> union_all(^tx_query2)
       |> union_all(^internal_query2)
 
-    from(tt in subquery(query),
+    result =
+      from(tt in subquery(query),
+        select: %{
+          transaction_hash: tt.transaction_hash,
+          address_hash: tt.address_hash,
+          block_number: tt.block_number
+        },
+        distinct: [tt.block_number, tt.transaction_hash, tt.address_hash]
+      )
+
+    from(tt in subquery(result),
+      inner_join: tx in Transaction,
+      on: tx.hash == tt.transaction_hash,
+      inner_join: b in Block,
+      on: tx.block_hash == b.hash,
+      left_join: token in Token,
+      on: tx.gas_currency_hash == token.contract_address_hash,
       select: %{
         transaction_hash: tt.transaction_hash,
-        address_hash: tt.address_hash
+        address_hash: tt.address_hash,
+        gas_used: tx.gas_used,
+        gas_price: tx.gas_price,
+        fee_currency: tx.gas_currency_hash,
+        fee_token: fragment("coalesce(?, 'cGLD')", token.symbol),
+        gateway_fee: tx.gateway_fee,
+        gateway_fee_recipient: tx.gas_fee_recipient_hash,
+        timestamp: b.timestamp,
+        input: tx.input,
+        block_number: tt.block_number
       },
-      distinct: [tt.transaction_hash, tt.address_hash]
+      order_by: [desc: tt.block_number]
     )
   end
 
@@ -352,7 +393,7 @@ defmodule Explorer.GraphQL do
           index: 0 - tt.log_index,
           value: 0 - tt.amount,
           usd_value: tt.amount,
-          block_number: tt.block_number
+          block_number: 0 - tt.block_number
         }
       )
 
@@ -398,19 +439,31 @@ defmodule Explorer.GraphQL do
       |> union_all(^tx_query)
       |> union_all(^internal_query)
 
-    from(tt in subquery(query),
-      select: %{
-        transaction_hash: tt.transaction_hash,
-        from_address_hash: tt.from_address_hash,
-        to_address_hash: tt.to_address_hash,
-        log_index: tt.log_index,
-        tx_index: tt.tx_index,
-        index: tt.index,
-        value: fragment("greatest(?, ?)", tt.value, tt.usd_value),
-        token: fragment("(case when ? < ? then 'cGLD' else 'cUSD' end)", tt.usd_value, tt.value),
-        block_number: tt.block_number
-      },
-      order_by: [desc: tt.block_number, desc: tt.tx_index, desc: tt.log_index, desc: tt.index]
+    result =
+      from(tt in subquery(query),
+        inner_join: tx in Transaction,
+        on: tx.hash == tt.transaction_hash,
+        inner_join: b in Block,
+        on: tx.block_hash == b.hash,
+        select: %{
+          gas_used: tx.gas_used,
+          gas_price: tx.gas_price,
+          timestamp: b.timestamp,
+          input: tx.input,
+          transaction_hash: tt.transaction_hash,
+          from_address_hash: tt.from_address_hash,
+          to_address_hash: tt.to_address_hash,
+          log_index: tt.log_index,
+          tx_index: tt.tx_index,
+          index: tt.index,
+          value: fragment("greatest(?, ?)", tt.value, tt.usd_value),
+          token: fragment("(case when ? < 0 then 'cUSD' else 'cGLD' end)", tt.block_number),
+          block_number: fragment("abs(?)", tt.block_number)
+        }
+      )
+
+    from(tt in subquery(result),
+      order_by: [desc: tt.block_number, desc: tt.value, desc: tt.tx_index, desc: tt.log_index, desc: tt.index]
     )
   end
 

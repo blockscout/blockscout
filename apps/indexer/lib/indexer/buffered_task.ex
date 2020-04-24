@@ -439,7 +439,8 @@ defmodule Indexer.BufferedTask do
 
   # get more work from `init/2`
   defp schedule_next(%BufferedTask{poll: true, bound_queue: %BoundQueue{size: 0}} = state) do
-    do_initial_stream(state)
+    timer = Process.send_after(self(), :initial_stream, state.flush_interval)
+    %{state | flush_timer: timer}
   end
 
   # was shrunk and was out of work, get more work from `init/2`

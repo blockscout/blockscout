@@ -34,6 +34,10 @@ max_skipping_distance =
     _ -> 5
   end
 
+config :indexer, :stacktrace_depth, 20
+
+:erlang.system_flag(:backtrace_depth, 20)
+
 config :indexer,
   block_transformer: block_transformer,
   ecto_repos: [Explorer.Repo],

@@ -281,7 +281,7 @@ defmodule Explorer.Celo.AccountReader do
         %{name: "epochSize", number_value: epoch_size}
       ]
 
-      {:ok, %{validators: list, params: params}}
+      {:ok, %{validators: list, params: params, block_number: block_number - 1}}
     else
       _ ->
         :error
