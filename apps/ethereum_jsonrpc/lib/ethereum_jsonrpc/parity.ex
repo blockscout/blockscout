@@ -94,7 +94,7 @@ defmodule EthereumJSONRPC.Parity do
           {:ok, [Transaction.params()]} | {:error, reason :: term}
   def fetch_pending_transactions(json_rpc_named_arguments) do
     with {:ok, transactions} <-
-           %{id: 1, method: "parity_pendingTransactions", params: []}
+           %{id: 1, method: "txpool_besuTransactions", params: []}
            |> request()
            |> json_rpc(json_rpc_named_arguments) do
       transactions_params =
