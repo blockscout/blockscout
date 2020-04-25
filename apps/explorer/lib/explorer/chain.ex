@@ -2908,14 +2908,14 @@ defmodule Explorer.Chain do
       {:ok, %{smart_contract: smart_contract}} ->
         {:ok, smart_contract}
 
-        {:error, :smart_contract, changeset, _} ->
-          {:error, changeset}
-  
-        {:error, :proxy_address_contract, changeset, _} ->
-          {:error, changeset}
-    
-        {:error, :set_address_verified, message, _} ->
-          {:error, message}
+      {:error, :smart_contract, changeset, _} ->
+        {:error, changeset}
+
+      {:error, :proxy_address_contract, changeset, _} ->
+        {:error, changeset}
+
+      {:error, :set_address_verified, message, _} ->
+        {:error, message}
     end
   end
 
