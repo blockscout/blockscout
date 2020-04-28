@@ -3,17 +3,16 @@ defmodule Indexer.Transform.Blocks.Celo do
   Default block transformer to be used.
   """
 
-  alias Indexer.Transform.Blocks
   alias Explorer.Celo.AccountReader
+  alias Indexer.Transform.Blocks
 
   @behaviour Blocks
 
   @impl Blocks
   def transform(block) when is_map(block) do
-    with {:ok, limit} <- AccountReader.block_gas_limit(block.number) do
-      Map.put(block, :gas_limit, limit)
-    else
-      _ -> block
+    case AccountReader.block_gas_limit(block.number) do
+      {:ok, limit} -> Map.put(block, :gas_limit, limit)
+      :error -> block
     end
   end
 end

@@ -161,11 +161,9 @@ defmodule Explorer.Celo.AccountReader do
         {:blockchainparameters, "blockGasLimit", [], bn}
       ])
 
-    with {:ok, [limit]} <- data["blockGasLimit"] do
-      {:ok, limit}
-    else
-      _ ->
-        :error
+    case data["blockGasLimit"] do
+      {:ok, [limit]} -> {:ok, limit}
+      _ -> :error
     end
   end
 
