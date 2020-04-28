@@ -8,6 +8,9 @@ config :indexer, Indexer.Fetcher.CeloValidatorHistory.Supervisor, disabled?: tru
 # TODO: write a test where gold token is in
 config :indexer, Indexer.Block.Fetcher, enable_gold_token: false
 
+config :indexer,
+  block_transformer: Indexer.Transform.Blocks.Base
+
 config :logger, :indexer,
   level: :warn,
   path: Path.absname("logs/test/indexer.log")
