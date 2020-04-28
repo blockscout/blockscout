@@ -155,6 +155,20 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
+  def block_gas_limit(bn) do
+    data =
+      call_methods([
+        {:blockchainparameters, "blockGasLimit", [], bn}
+      ])
+
+    with {:ok, [limit]} <- data["blockGasLimit"] do
+      {:ok, limit}
+    else
+      _ ->
+        :error
+    end
+  end
+
   # how to delete them from the table?
   def withdrawal_data(%{address: address}) do
     data = fetch_withdrawal_data(address)
@@ -335,6 +349,7 @@ defmodule Explorer.Celo.AccountReader do
     }
   end
 
+  defp contract(:blockchainparameters), do: get_address("BlockchainParameters")
   defp contract(:lockedgold), do: get_address("LockedGold")
   defp contract(:validators), do: get_address("Validators")
   defp contract(:election), do: get_address("Election")
