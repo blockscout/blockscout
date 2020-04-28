@@ -2878,7 +2878,7 @@ defmodule Explorer.Chain do
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     insert_result =
-      if proxy_address != nil do
+      if proxy_address != nil and proxy_address != "" do
         proxy_address = attrs[:proxy_address]
         Logger.debug(fn -> "Adding Proxy Address Mapping: #{proxy_address}" end)
 
@@ -2909,6 +2909,9 @@ defmodule Explorer.Chain do
         {:ok, smart_contract}
 
       {:error, :smart_contract, changeset, _} ->
+        {:error, changeset}
+
+      {:error, :proxy_address_contract, changeset, _} ->
         {:error, changeset}
 
       {:error, :set_address_verified, message, _} ->
