@@ -928,7 +928,7 @@ defmodule Explorer.Chain do
             [{:celo_delegator, :celo_validator, :signer}] => :optional,
             [{:celo_delegator, :account_address}] => :optional,
             [{:celo_signers, :signer_address}] => :optional,
-            [{:celo_claims, :account_address}] => :optional,
+            [{:celo_claims, :celo_account}] => :optional,
             [{:celo_members, :validator_address}] => :optional,
             [{:celo_voters, :voter_address}] => :optional,
             [{:celo_voted, :group_address}] => :optional,
