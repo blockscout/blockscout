@@ -465,13 +465,10 @@ defmodule Explorer.Chain.Transaction do
         to_address: %{implementation_contract: %{smart_contract: %{abi: impl_abi}}, smart_contract: %{abi: abi}},
         hash: hash
       }) do
-    IO.inspect(%{msg: "case BEST", abi: abi, impl_abi: impl_abi})
     do_decoded_input_data(data, abi ++ impl_abi, hash)
   end
 
-  def decoded_input_data(
-        %__MODULE__{input: %{bytes: data}, to_address: %{smart_contract: %{abi: abi}}, hash: hash} = tr
-      ) do
+  def decoded_input_data(%__MODULE__{input: %{bytes: data}, to_address: %{smart_contract: %{abi: abi}}, hash: hash}) do
     do_decoded_input_data(data, abi, hash)
   end
 

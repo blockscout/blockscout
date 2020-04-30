@@ -124,6 +124,19 @@ defmodule Explorer.Chain.Log do
   """
   def decode(_log, %Transaction{to_address: nil}), do: {:error, :no_to_address}
 
+  def decode(
+        log,
+        transaction = %Transaction{
+          to_address: %{implementation_contract: %{smart_contract: %{abi: impl_abi}}, smart_contract: %{abi: abi}}
+        }
+      )
+      when not is_nil(abi) do
+    with {:ok, selector, mapping} <- find_and_decode(abi ++ impl_abi, log, transaction),
+         identifier <- Base.encode16(selector.method_id, case: :lower),
+         text <- function_call(selector.function, mapping),
+         do: {:ok, identifier, text, mapping}
+  end
+
   def decode(log, transaction = %Transaction{to_address: %{smart_contract: %{abi: abi}}}) when not is_nil(abi) do
     with {:ok, selector, mapping} <- find_and_decode(abi, log, transaction),
          identifier <- Base.encode16(selector.method_id, case: :lower),

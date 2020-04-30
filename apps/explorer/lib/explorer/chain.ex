@@ -491,7 +491,7 @@ defmodule Explorer.Chain do
       from(
         log in subquery(base_query),
         inner_join: transaction in Transaction,
-        preload: [:transaction, transaction: [to_address: :smart_contract]],
+        preload: [:transaction, transaction: [to_address: :smart_contract], transaction: [to_address: [implementation_contract: :smart_contract]]],
         where:
           log.block_hash == transaction.block_hash and
             log.block_number == transaction.block_number and
