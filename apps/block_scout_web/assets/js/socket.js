@@ -6,7 +6,7 @@ if (!websocketRootUrl || websocketRootUrl === '/') {
   websocketRootUrl = ''
 }
 
-const socket = new Socket(websocketRootUrl + '/socket', { params: { locale: locale } })
+const socket = new Socket('/etc/mainnet/socket', { params: { locale: locale } })
 socket.connect()
 
 export default socket
