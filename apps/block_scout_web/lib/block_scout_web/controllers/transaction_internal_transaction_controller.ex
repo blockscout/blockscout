@@ -85,6 +85,8 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
                [from_address: :names] => :optional,
                [to_address: :names] => :optional,
                [to_address: :smart_contract] => :optional,
+               [to_address: :implementation_contract] => :optional,
+               [{:to_address, :implementation_contract, :smart_contract}] => :optional,
                :token_transfers => :optional
              }
            ) do
