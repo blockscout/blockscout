@@ -1,11 +1,6 @@
 import { Socket } from 'phoenix'
 import { locale } from './locale'
 
-let websocketRootUrl = process.env.SOCKET_ROOT
-if (!websocketRootUrl || websocketRootUrl === '/') {
-  websocketRootUrl = ''
-}
-
 const socket = new Socket('/etc/mainnet/socket', { params: { locale: locale } })
 socket.connect()
 
