@@ -434,7 +434,6 @@ defmodule Explorer.Chain.Transaction do
         input: %{bytes: <<method_id::binary-size(4), _::binary>> = data},
         hash: hash
       }) do
-    IO.inspect("case 4")
 
     candidates_query =
       from(

@@ -13,9 +13,9 @@ defmodule BlockScoutWeb.TransactionLogController do
          {:ok, transaction} <-
            Chain.hash_to_transaction(transaction_hash,
              necessity_by_association: %{
-              [to_address: :smart_contract] => :optional,
-              [{:to_address, :implementation_contract, :smart_contract}] => :optional
-            }
+               [to_address: :smart_contract] => :optional,
+               [{:to_address, :implementation_contract, :smart_contract}] => :optional
+             }
            ) do
       full_options =
         Keyword.merge(
