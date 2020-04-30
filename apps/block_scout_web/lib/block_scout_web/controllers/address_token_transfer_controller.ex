@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
   alias BlockScoutWeb.TransactionView
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -22,6 +23,9 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
       :block => :required
     }
   ]
+
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
 
   def index(
         conn,
@@ -66,6 +70,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
             "_tile.html",
             conn: conn,
             transaction: transaction,
+            burn_address_hash: @burn_address_hash,
             current_address: address
           )
         end)
@@ -96,7 +101,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         current_path: current_path(conn),
         token: token,
-        counters_path: address_path(conn, :address_counters, %{"id" => to_string(address_hash)})
+        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
     else
       :error ->
@@ -150,6 +155,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
             "_tile.html",
             conn: conn,
             transaction: transaction,
+            burn_address_hash: @burn_address_hash,
             current_address: address
           )
         end)
@@ -178,7 +184,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         current_path: current_path(conn),
-        counters_path: address_path(conn, :address_counters, %{"id" => to_string(address_hash)})
+        counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
     else
       :error ->

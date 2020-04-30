@@ -12,7 +12,8 @@ config :block_scout_web,
   version: System.get_env("BLOCKSCOUT_VERSION"),
   release_link: System.get_env("RELEASE_LINK"),
   decompiled_smart_contract_token: System.get_env("DECOMPILED_SMART_CONTRACT_TOKEN"),
-  show_percentage: if(System.get_env("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true") == "false", do: false, else: true)
+  show_percentage: if(System.get_env("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true") == "false", do: false, else: true),
+  checksum_address_hashes: if(System.get_env("CHECKSUM_ADDRESS_HASHES", "true") == "false", do: false, else: true)
 
 config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
@@ -59,6 +60,28 @@ config :block_scout_web, BlockScoutWeb.SocialMedia,
   telegram: "poa_network",
   facebook: "PoaNetwork",
   instagram: "PoaNetwork"
+
+# Configures History
+price_chart_config =
+  if System.get_env("SHOW_PRICE_CHART", "true") != "false" do
+    %{market: [:price, :market_cap]}
+  else
+    %{}
+  end
+
+tx_chart_config =
+  if System.get_env("SHOW_TXS_CHART", "false") == "true" do
+    %{transactions: [:transactions_per_day]}
+  else
+    %{}
+  end
+
+config :block_scout_web,
+  chart_config: Map.merge(price_chart_config, tx_chart_config)
+
+config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
+  # days
+  history_size: 30
 
 config :ex_cldr,
   default_locale: "en",

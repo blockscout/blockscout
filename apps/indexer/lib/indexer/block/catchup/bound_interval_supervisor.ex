@@ -213,7 +213,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
           Logger.info(
             "Index had to catch up.",
             first_block_number: first_block_number,
-            last_block_number: 0,
+            last_block_number: last_block_number,
             missing_block_count: missing_block_count,
             shrunk: shrunk
           )
@@ -236,7 +236,12 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
   def handle_info(
         {ref,
-         %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: true = shrunk}},
+         %{
+           first_block_number: first_block_number,
+           missing_block_count: missing_block_count,
+           last_block_number: last_block_number,
+           shrunk: true = shrunk
+         }},
         %__MODULE__{
           task: %Task{ref: ref}
         } = state
@@ -247,7 +252,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
     Logger.info(
       "Index had to catch up, but the sequence was shrunk to save memory, so retrying immediately.",
       first_block_number: first_block_number,
-      last_block_number: 0,
+      last_block_number: last_block_number,
       missing_block_count: missing_block_count,
       shrunk: shrunk
     )

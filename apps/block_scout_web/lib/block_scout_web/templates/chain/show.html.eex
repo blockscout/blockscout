@@ -8,24 +8,68 @@
           <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
             <span><%= gettext("There was a problem loading the chart.") %></span>
           </button>
-          <canvas data-chart="marketHistoryChart" data-market_history_chart_path="<%= @chart_data_path %>" width="350" height="152" style="display: none;"></canvas>
+          <canvas data-chart="historyChart"
+
+                  data-history_chart_paths=
+                  '{<%= for {{key, value}, x} <- Enum.with_index(@chart_data_paths) do %>
+                        "<%= key %>":"<%= value %>"
+                        <%= if x<(map_size(@chart_data_paths)-1) do %>
+                        ,
+                        <% end %>
+                  <% end %>}'
+
+                  data-history_chart_config = '<%= @chart_config_json %>'
+
+                  width="350" height="152" style="display: none;"></canvas>
         </div>
         <!-- Legend -->
+        <script>
+         numChartData = <%= Enum.reduce(@chart_config, 0, fn (source, acc) ->
+                        acc + length(elem(source, 1)) end) %>
+         document.documentElement.style.setProperty("--numChartData", numChartData);
+        </script>
         <div class="dashboard-banner-chart-legend">
-          <div class="dashboard-banner-chart-legend-item">
-            <span class="dashboard-banner-chart-legend-label">
-              <%= gettext "Price" %>
-            </span>
-            <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
-            </span>
-          </div>
-          <div class="dashboard-banner-chart-legend-item">
-            <span class="dashboard-banner-chart-legend-label">
-              <%= gettext "Market Cap" %>
-            </span>
-            <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= market_cap(@market_cap_calculation, @exchange_rate) %>">
-            </span>
-          </div>
+          <%= if Map.has_key?(@chart_config, :market) do %>
+
+            <%# THE FOLLOWING LINE PREVENTS COPY/PASTE ERRORS %>
+            <%# Explicity put @chart_config.market in a variable %>
+            <%# This is done so that when people add a new chart source, x, %>
+            <%# They wont just access @chart_config.x w/o first checking if x exists%>
+            <% market_chart_config = @chart_config.market%>
+
+            <%= if Enum.member?(market_chart_config, :price) do %>
+                <div class="dashboard-banner-chart-legend-item">
+                    <span class="dashboard-banner-chart-legend-label">
+                    <%= gettext "Price" %>
+                    </span>
+                    <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+                    </span>
+                </div>
+            <% end %>
+            <%= if Enum.member?(@chart_config.market, :market_cap) do %>
+            <div class="dashboard-banner-chart-legend-item">
+                <span class="dashboard-banner-chart-legend-label">
+                <%= gettext "Market Cap" %>
+                </span>
+                <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= market_cap(@market_cap_calculation, @exchange_rate) %>">
+                </span>
+            </div>
+            <% end %>
+          <% end %>
+          <%= if Map.has_key?(@chart_config, :transactions) do %>
+
+            <% transaction_chart_config = @chart_config.transactions%>
+            <%= if Enum.member?(transaction_chart_config, :transactions_per_day) do %>
+            <div class="dashboard-banner-chart-legend-item">
+                <span class="dashboard-banner-chart-legend-label">
+                    <%= gettext "Tx/day" %>
+                </span>
+                <span class="dashboard-banner-chart-legend-value" data-selector="tx_per_day">
+                    <%= BlockScoutWeb.Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).number_of_transactions, format: "#,###") %>
+                </span>
+            </div>
+            <% end %>
+          <% end %>
         </div>
       </div>
       <!-- Stats -->
@@ -73,6 +117,7 @@
     </div>
   </div>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/chain.js") %>"></script>
 </div>
 <section class="container">
   <div class="card card-chain-blocks">

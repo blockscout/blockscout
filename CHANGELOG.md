@@ -1,15 +1,71 @@
 ## Current
 
 ### Features
+- [#3069](https://github.com/poanetwork/blockscout/pull/3069) - Make a link to address page on decoded constructor argument of address type
+- [#3067](https://github.com/poanetwork/blockscout/pull/3067) - Show proper title of the tile or container for token burnings/mintings instead of "Token Transfer"
+- [#3066](https://github.com/poanetwork/blockscout/pull/3066) - ERC-721 token instance page: link to token added
+- [#3065](https://github.com/poanetwork/blockscout/pull/3065) - Transactions history chart
 
 ### Fixes
+- [#3077](https://github.com/poanetwork/blockscout/pull/3077) - Finally speedup pending tx list
+- [#3071](https://github.com/poanetwork/blockscout/pull/3071) - Speedup list of token transfers per token query
+- [#3070](https://github.com/poanetwork/blockscout/pull/3070) - Index creation to blazingly speedup token holders query
+- [#3064](https://github.com/poanetwork/blockscout/pull/3064) - Automatically define Block reward contract address in TokenBridge supply module
+- [#3061](https://github.com/poanetwork/blockscout/pull/3061) - Fix verification of contracts with error messages in require in parent contract
+- [#2756](https://github.com/poanetwork/blockscout/pull/2756) - Improve subquery joins
+
+### Chore
+- [#3079](https://github.com/poanetwork/blockscout/pull/3079) - Extend optionality of websockets to Geth
+
+
+## 3.1.1-beta
+
+### Features
+- [#3058](https://github.com/poanetwork/blockscout/pull/3058) - Searching by verified contract name
+
+### Fixes
+- [#3053](https://github.com/poanetwork/blockscout/pull/3053) - Fix ABI decoding in contracts methods, logs (migrate to ex_abi 0.3.0)
+- [#3044](https://github.com/poanetwork/blockscout/pull/3044) - Prevent division by zero on /accounts page
+- [#3043](https://github.com/poanetwork/blockscout/pull/3043) - Extract host name for split couple of indexer and web app
+- [#3042](https://github.com/poanetwork/blockscout/pull/3042) - Speedup pending txs list query
+- [#2944](https://github.com/poanetwork/blockscout/pull/2944), [#3046](https://github.com/poanetwork/blockscout/pull/3046) - Split js logic into multiple files
+
+
+## 3.1.0-beta
+
+### Features
+- [#3013](https://github.com/poanetwork/blockscout/pull/3013), [#3026](https://github.com/poanetwork/blockscout/pull/3026), [#3031](https://github.com/poanetwork/blockscout/pull/3031) - Raw trace of transaction on-demand
+- [#3000](https://github.com/poanetwork/blockscout/pull/3000) - Get rid of storing of first trace for all types of transactions for Parity variant
+- [#2875](https://github.com/poanetwork/blockscout/pull/2875) - Save contract code from Parity genesis file
+- [#2834](https://github.com/poanetwork/blockscout/pull/2834), [#3009](https://github.com/poanetwork/blockscout/pull/3009), [#3014](https://github.com/poanetwork/blockscout/pull/3014), [#3033](https://github.com/poanetwork/blockscout/pull/3033) - always redirect to checksummed hash
+
+### Fixes
+- [#3037](https://github.com/poanetwork/blockscout/pull/3037) - Make buttons color at verification page consistent
+- [#3034](https://github.com/poanetwork/blockscout/pull/3034) - Support stateMutability=view to define reading functions in smart-contracts
+- [#3029](https://github.com/poanetwork/blockscout/pull/3029) - Fix transactions and blocks appearance on the main page
+- [#3028](https://github.com/poanetwork/blockscout/pull/3028) - Decrease polling period value for realtime fetcher
+- [#3027](https://github.com/poanetwork/blockscout/pull/3027) - Rescue for SUPPORTED_CHAINS env var parsing
+- [#3025](https://github.com/poanetwork/blockscout/pull/3025) - Fix splitting of indexer/web components setup
+- [#3024](https://github.com/poanetwork/blockscout/pull/3024) - Fix pool size default value in config
+- [#3021](https://github.com/poanetwork/blockscout/pull/3021), [#3022](https://github.com/poanetwork/blockscout/pull/3022) - Refine dev/test config
+- [#3016](https://github.com/poanetwork/blockscout/pull/3016), [#3017](https://github.com/poanetwork/blockscout/pull/3017) - Fix token instance QR code data
+- [#3012](https://github.com/poanetwork/blockscout/pull/3012) - Speedup token transfers list query
+- [#3011](https://github.com/poanetwork/blockscout/pull/3011) - Revert realtime fetcher small skips feature
+- [#3007](https://github.com/poanetwork/blockscout/pull/3007) - Fix copy UTF8 tx input action
+- [#2996](https://github.com/poanetwork/blockscout/pull/2996) - Fix awesomplete lib loading in Firefox
 - [#2993](https://github.com/poanetwork/blockscout/pull/2993) - Fix path definition for contract verification endpoint
 - [#2990](https://github.com/poanetwork/blockscout/pull/2990) - Fix import of Parity spec file
 - [#2989](https://github.com/poanetwork/blockscout/pull/2989) - Introduce API_PATH env var
 - [#2988](https://github.com/poanetwork/blockscout/pull/2988) - Fix web manifest accessibility
+- [#2967](https://github.com/poanetwork/blockscout/pull/2967) - Fix styles loading for firefox
+- [#2950](https://github.com/poanetwork/blockscout/pull/2950) - Add `creationMethod` to `EthereumJSONRPC.Parity.Trace.Action.entry_to_elixir`
 - [#2897](https://github.com/poanetwork/blockscout/pull/2897) - remove duplicate indexes
+- [#2883](https://github.com/poanetwork/blockscout/pull/2883) - Fix long contracts names
 
 ### Chore
+- [#3032](https://github.com/poanetwork/blockscout/pull/3032) - Remove indexing status alert for Ganache variant
+- [#3030](https://github.com/poanetwork/blockscout/pull/3030) - Remove default websockets URL from config
+- [#2995](https://github.com/poanetwork/blockscout/pull/2995) - Support API_PATH env var in Docker file
 
 
 ## 3.0.0-beta
@@ -35,7 +91,7 @@
 - [#2924](https://github.com/poanetwork/blockscout/pull/2924) - Speedup address to logs query
 - [#2915](https://github.com/poanetwork/blockscout/pull/2915) - Speedup of blocks_without_reward_query
 - [#2914](https://github.com/poanetwork/blockscout/pull/2914) - Reduce execution time of stream_unfetched_token_instances query
-- [2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
+- [#2910](https://github.com/poanetwork/blockscout/pull/2910) - Reorganize queries and indexes for internal_transactions table
 - [#2908](https://github.com/poanetwork/blockscout/pull/2908) - Fix performance of address page
 - [#2906](https://github.com/poanetwork/blockscout/pull/2906) - fix address sum cache
 - [#2902](https://github.com/poanetwork/blockscout/pull/2902) - Offset in blocks retrieval for average block time
@@ -50,6 +106,7 @@
 - [#2946](https://github.com/poanetwork/blockscout/pull/2946) - Fix vulnerable NPM deps
 - [#2942](https://github.com/poanetwork/blockscout/pull/2942) - Actualize Docker setup
 - [#2896](https://github.com/poanetwork/blockscout/pull/2896) - Disable Parity websockets tests
+- [#2873](https://github.com/poanetwork/blockscout/pull/2873) - bump elixir to 1.9.4
 
 
 ## 2.1.1-beta

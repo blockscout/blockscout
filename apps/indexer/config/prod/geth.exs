@@ -4,7 +4,7 @@ config :indexer,
   block_interval: :timer.seconds(5),
   json_rpc_named_arguments: [
     transport:
-      if(System.get_env("ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT", "http") == "http",
+      if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http",
         do: EthereumJSONRPC.HTTP,
         else: EthereumJSONRPC.IPC
       ),
@@ -16,9 +16,9 @@ config :indexer,
     variant: EthereumJSONRPC.Geth
   ],
   subscribe_named_arguments: [
-    transport: EthereumJSONRPC.WebSocket,
+    transport: System.get_env("ETHEREUM_JSONRPC_WS_URL") && EthereumJSONRPC.WebSocket,
     transport_options: [
       web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
-      url: System.get_env("ETHEREUM_JSONRPC_WS_URL") || "wss://mainnet.infura.io/ws/8lTvJTKmHPCHazkneJsY"
+      url: System.get_env("ETHEREUM_JSONRPC_WS_URL")
     ]
   ]

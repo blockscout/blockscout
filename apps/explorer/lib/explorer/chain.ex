@@ -21,11 +21,13 @@ defmodule Explorer.Chain do
       where: 3
     ]
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
 
   alias ABI.TypeDecoder
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
+
+  alias Explorer.Chain
 
   alias Explorer.Chain.{
     Address,
@@ -63,6 +65,7 @@ defmodule Explorer.Chain do
   }
 
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
@@ -843,20 +846,27 @@ defmodule Explorer.Chain do
   """
   @spec finished_indexing?() :: boolean()
   def finished_indexing? do
-    with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
-         min_block_number when not is_nil(min_block_number) <- Repo.aggregate(Transaction, :min, :block_number) do
-      query =
-        from(
-          b in Block,
-          join: pending_ops in assoc(b, :pending_operations),
-          where: pending_ops.fetch_internal_transactions,
-          where: b.consensus and b.number == ^min_block_number
-        )
+    json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-      !Repo.exists?(query)
+    if variant == EthereumJSONRPC.Ganache do
+      true
     else
-      {:transactions_exist, false} -> true
-      nil -> false
+      with {:transactions_exist, true} <- {:transactions_exist, Repo.exists?(Transaction)},
+           min_block_number when not is_nil(min_block_number) <- Repo.aggregate(Transaction, :min, :block_number) do
+        query =
+          from(
+            b in Block,
+            join: pending_ops in assoc(b, :pending_operations),
+            where: pending_ops.fetch_internal_transactions,
+            where: b.consensus and b.number == ^min_block_number
+          )
+
+        !Repo.exists?(query)
+      else
+        {:transactions_exist, false} -> true
+        nil -> false
+      end
     end
   end
 
@@ -964,7 +974,22 @@ defmodule Explorer.Chain do
     query =
       from(token in Token,
         where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
-        limit: 5
+        limit: 5,
+        select: %{contract_address_hash: token.contract_address_hash, symbol: token.symbol, name: token.name}
+      )
+
+    Repo.all(query)
+  end
+
+  @spec search_contract(String.t()) :: [SmartContract.t()]
+  def search_contract(word) do
+    term = String.replace(word, ~r/\W/u, "") <> ":*"
+
+    query =
+      from(smart_contract in SmartContract,
+        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
+        limit: 5,
+        select: %{contract_address_hash: smart_contract.address_hash, symbol: smart_contract.name}
       )
 
     Repo.all(query)
@@ -2493,6 +2518,24 @@ defmodule Explorer.Chain do
 
   """
 
+  @spec all_transaction_to_internal_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [
+          InternalTransaction.t()
+        ]
+  def all_transaction_to_internal_transactions(hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    InternalTransaction
+    |> for_parent_transaction(hash)
+    |> join_associations(necessity_by_association)
+    |> InternalTransaction.where_nonpending_block()
+    |> page_internal_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([internal_transaction], asc: internal_transaction.index)
+    |> preload(:transaction)
+    |> Repo.all()
+  end
+
   @spec transaction_to_internal_transactions(Hash.Full.t(), [paging_options | necessity_by_association_option]) :: [
           InternalTransaction.t()
         ]
@@ -2788,7 +2831,7 @@ defmodule Explorer.Chain do
       )
 
     repo.update_all(
-      from(n in Address.Name, join: s in subquery(query), on: n.address_hash == s.address_hash),
+      from(n in Address.Name, join: s in subquery(query), on: n.address_hash == s.address_hash and n.name == s.name),
       set: [primary: false]
     )
 
@@ -4033,4 +4076,158 @@ defmodule Explorer.Chain do
   defp boolean_to_check_result(true), do: :ok
 
   defp boolean_to_check_result(false), do: :not_found
+
+  def extract_db_name(db_url) do
+    if db_url == nil do
+      ""
+    else
+      db_url
+      |> String.split("/")
+      |> Enum.take(-1)
+      |> Enum.at(0)
+    end
+  end
+
+  def extract_db_host(db_url) do
+    if db_url == nil do
+      ""
+    else
+      db_url
+      |> String.split("@")
+      |> Enum.take(-1)
+      |> Enum.at(0)
+      |> String.split(":")
+      |> Enum.at(0)
+    end
+  end
+
+  @doc """
+  Fetches the first trace from the Parity trace URL.
+  """
+  def fetch_first_trace(transactions_params, json_rpc_named_arguments) do
+    case EthereumJSONRPC.fetch_first_trace(transactions_params, json_rpc_named_arguments) do
+      {:ok, [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]} ->
+        format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments)
+
+      {:error, error} ->
+        {:error, error}
+
+      :ignore ->
+        :ignore
+    end
+  end
+
+  defp format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments) do
+    {:ok, to_address_hash} =
+      if Map.has_key?(first_trace, :to_address_hash) do
+        Chain.string_to_address_hash(first_trace.to_address_hash)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, from_address_hash} = Chain.string_to_address_hash(first_trace.from_address_hash)
+
+    {:ok, created_contract_address_hash} =
+      if Map.has_key?(first_trace, :created_contract_address_hash) do
+        Chain.string_to_address_hash(first_trace.created_contract_address_hash)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, transaction_hash} = Chain.string_to_transaction_hash(first_trace.transaction_hash)
+
+    {:ok, call_type} =
+      if Map.has_key?(first_trace, :call_type) do
+        CallType.load(first_trace.call_type)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, type} = Type.load(first_trace.type)
+
+    {:ok, input} =
+      if Map.has_key?(first_trace, :input) do
+        Data.cast(first_trace.input)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, output} =
+      if Map.has_key?(first_trace, :output) do
+        Data.cast(first_trace.output)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, created_contract_code} =
+      if Map.has_key?(first_trace, :created_contract_code) do
+        Data.cast(first_trace.created_contract_code)
+      else
+        {:ok, nil}
+      end
+
+    {:ok, init} =
+      if Map.has_key?(first_trace, :init) do
+        Data.cast(first_trace.init)
+      else
+        {:ok, nil}
+      end
+
+    block_index =
+      get_block_index(%{
+        transaction_index: first_trace.transaction_index,
+        transaction_hash: first_trace.transaction_hash,
+        block_number: first_trace.block_number,
+        json_rpc_named_arguments: json_rpc_named_arguments
+      })
+
+    value = %Wei{value: Decimal.new(first_trace.value)}
+
+    first_trace_formatted =
+      first_trace
+      |> Map.merge(%{
+        block_index: block_index,
+        block_hash: block_hash,
+        call_type: call_type,
+        to_address_hash: to_address_hash,
+        created_contract_address_hash: created_contract_address_hash,
+        from_address_hash: from_address_hash,
+        input: input,
+        output: output,
+        created_contract_code: created_contract_code,
+        init: init,
+        transaction_hash: transaction_hash,
+        type: type,
+        value: value
+      })
+
+    {:ok, [first_trace_formatted]}
+  end
+
+  defp get_block_index(%{
+         transaction_index: transaction_index,
+         transaction_hash: transaction_hash,
+         block_number: block_number,
+         json_rpc_named_arguments: json_rpc_named_arguments
+       }) do
+    if transaction_index == 0 do
+      0
+    else
+      {:ok, traces} = fetch_block_internal_transactions([block_number], json_rpc_named_arguments)
+
+      sorted_traces =
+        traces
+        |> Enum.sort_by(&{&1.transaction_index, &1.index})
+        |> Enum.with_index()
+
+      {_, block_index} =
+        sorted_traces
+        |> Enum.find(fn {trace, _} ->
+          trace.transaction_index == transaction_index &&
+            trace.transaction_hash == transaction_hash
+        end)
+
+      block_index
+    end
+  end
 end

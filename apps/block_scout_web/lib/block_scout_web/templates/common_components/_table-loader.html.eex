@@ -8,7 +8,7 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if balance_percentage_enabled?() do %>
+  <%= if balance_percentage_enabled?(@total_supply) do %>
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
@@ -27,7 +27,7 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if balance_percentage_enabled?() do %>
+  <%= if balance_percentage_enabled?(@total_supply) do %>
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
@@ -46,7 +46,7 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if balance_percentage_enabled?() do %>
+  <%= if balance_percentage_enabled?(@total_supply) do %>
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
@@ -65,7 +65,7 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if balance_percentage_enabled?() do %>
+  <%= if balance_percentage_enabled?(@total_supply) do %>
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
@@ -84,7 +84,7 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if balance_percentage_enabled?() do %>
+  <%= if balance_percentage_enabled?(@total_supply) do %>
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
