@@ -401,9 +401,6 @@ defmodule Indexer.Block.Fetcher do
   defp add_gas_payments(beneficiaries, transactions, blocks) do
     transactions_by_block_number = Enum.group_by(transactions, & &1.block_number)
 
-    Logger.info(fn ->
-      ["Check beneficiaries: ", inspect(beneficiaries)]
-    end)
     Enum.map(beneficiaries, fn beneficiary ->
       case beneficiary.address_type do
         :validator ->
