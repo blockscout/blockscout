@@ -63,24 +63,25 @@ defmodule Explorer.Counters.AverageBlockTime do
 
   defp refresh_timestamps do
     timestamps_query =
-      from(block in Block,
-        limit: 100,
-        offset: 0,
-        order_by: [desc: block.number],
-        select: {block.number, block.timestamp}
-      )
-
-    query =
       if Application.get_env(:explorer, :include_uncles_in_average_block_time) do
-        timestamps_query
+        from(block in Block,
+          limit: 100,
+          offset: 100,
+          order_by: [desc: block.number],
+          select: {block.number, block.timestamp}
+        )
       else
-        from(block in timestamps_query,
-          where: block.consensus == true
+        from(block in Block,
+          limit: 100,
+          offset: 100,
+          order_by: [desc: block.number],
+          where: block.consensus == true,
+          select: {block.number, block.timestamp}
         )
       end
 
     timestamps =
-      query
+      timestamps_query
       |> Repo.all()
       |> Enum.sort_by(fn {_, timestamp} -> timestamp end, &>=/2)
       |> Enum.map(fn {number, timestamp} ->

@@ -255,11 +255,11 @@ $transition-cont: all 0.4s ease-in-out !default;
 // Font, line-height, and color for body text, headings, and more.
 
 // stylelint-disable value-keyword-case
-$font-family-sans-serif: Nunito, "Helvetica Neue", Arial, sans-serif,
+$font-family: Nunito, "Helvetica Neue", Arial, sans-serif,
   "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
 $font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas,
   "Liberation Mono", "Courier New", monospace !default;
-$font-family-base: $font-family-sans-serif !default;
+$font-family-base: $font-family !default;
 // stylelint-enable value-keyword-case
 
 $font-size-base: 1rem !default; // Assumes the browser default, typically `16px`

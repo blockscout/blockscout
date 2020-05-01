@@ -8,13 +8,14 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.Chain.Supply.RSK
+  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.SmartContract.{Solidity.CodeCompiler, Solidity.CompilerVersion}
   alias Phoenix.View
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
-    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.count_addresses_from_cache()})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
 
     addresses
     |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)
@@ -95,7 +96,7 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :internal_transactions, :realtime, internal_transactions}) do
     internal_transactions
     |> Stream.map(
-      &(InternalTransaction
+      &(InternalTransaction.where_nonpending_block()
         |> Repo.get_by(transaction_hash: &1.transaction_hash, index: &1.index)
         |> Repo.preload([:from_address, :to_address, transaction: :block]))
     )
@@ -127,6 +128,20 @@ defmodule BlockScoutWeb.Notifier do
       }
     )
     |> Enum.each(&broadcast_transaction/1)
+  end
+
+  def handle_event({:chain_event, :transaction_stats}) do
+    today = Date.utc_today()
+
+    [{:history_size, history_size}] =
+      Application.get_env(:block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController, 30)
+
+    x_days_back = Date.add(today, -1 * history_size)
+
+    date_range = TransactionStats.by_date_range(x_days_back, today)
+    stats = Enum.map(date_range, fn item -> Map.drop(item, [:__meta__]) end)
+
+    Endpoint.broadcast("transactions:stats", "update", %{stats: stats})
   end
 
   def handle_event(_), do: nil

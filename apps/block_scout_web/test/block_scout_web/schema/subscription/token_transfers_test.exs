@@ -1,9 +1,23 @@
 defmodule BlockScoutWeb.Schema.Subscription.TokenTransfersTest do
   use BlockScoutWeb.SubscriptionCase
+  import Mox
 
   alias BlockScoutWeb.Notifier
 
   describe "token_transfers field" do
+    setup :set_mox_global
+
+    setup do
+      configuration = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)
+      Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint, pubsub: [name: BlockScoutWeb.PubSub])
+
+      :ok
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, BlockScoutWeb.Endpoint, configuration)
+      end)
+    end
+
     test "with valid argument, returns all expected fields", %{socket: socket} do
       transaction = insert(:transaction)
       token_transfer = insert(:token_transfer, transaction: transaction)

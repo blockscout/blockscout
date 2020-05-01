@@ -41,6 +41,7 @@ defmodule Explorer.SmartContract.Verifier do
     constructor_arguments = Map.get(params, "constructor_arguments", "")
     evm_version = Map.get(params, "evm_version")
     optimization_runs = Map.get(params, "optimization_runs", 200)
+    autodetect_contructor_arguments = params |> Map.get("autodetect_contructor_args", "false") |> parse_boolean()
 
     solc_output =
       CodeCompiler.run(
@@ -53,13 +54,28 @@ defmodule Explorer.SmartContract.Verifier do
         external_libs: external_libraries
       )
 
-    compare_bytecodes(solc_output, address_hash, constructor_arguments)
+    compare_bytecodes(
+      solc_output,
+      address_hash,
+      constructor_arguments,
+      autodetect_contructor_arguments,
+      contract_source_code,
+      name
+    )
   end
 
-  defp compare_bytecodes({:error, :name}, _, _), do: {:error, :name}
-  defp compare_bytecodes({:error, _}, _, _), do: {:error, :compilation}
+  defp compare_bytecodes({:error, :name}, _, _, _, _, _), do: {:error, :name}
+  defp compare_bytecodes({:error, _}, _, _, _, _, _), do: {:error, :compilation}
 
-  defp compare_bytecodes({:ok, %{"abi" => abi, "bytecode" => bytecode}}, address_hash, arguments_data) do
+  # credo:disable-for-next-line /Complexity/
+  defp compare_bytecodes(
+         {:ok, %{"abi" => abi, "bytecode" => bytecode}},
+         address_hash,
+         arguments_data,
+         autodetect_contructor_arguments,
+         contract_source_code,
+         contract_name
+       ) do
     generated_bytecode = extract_bytecode(bytecode)
 
     "0x" <> blockchain_bytecode =
@@ -67,14 +83,33 @@ defmodule Explorer.SmartContract.Verifier do
       |> Chain.smart_contract_bytecode()
 
     blockchain_bytecode_without_whisper = extract_bytecode(blockchain_bytecode)
+    empty_constructor_arguments = arguments_data == "" or arguments_data == nil
 
     cond do
       generated_bytecode != blockchain_bytecode_without_whisper &&
           !try_library_verification(generated_bytecode, blockchain_bytecode_without_whisper) ->
         {:error, :generated_bytecode}
 
+      has_constructor_with_params?(abi) && autodetect_contructor_arguments ->
+        result = ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name)
+
+        if result do
+          {:ok, %{abi: abi, contructor_arguments: result}}
+        else
+          {:error, :constructor_arguments}
+        end
+
+      has_constructor_with_params?(abi) && empty_constructor_arguments ->
+        {:error, :constructor_arguments}
+
       has_constructor_with_params?(abi) &&
-          !ConstructorArguments.verify(address_hash, blockchain_bytecode_without_whisper, arguments_data) ->
+          !ConstructorArguments.verify(
+            address_hash,
+            blockchain_bytecode_without_whisper,
+            arguments_data,
+            contract_source_code,
+            contract_name
+          ) ->
         {:error, :constructor_arguments}
 
       true ->
@@ -136,6 +171,22 @@ defmodule Explorer.SmartContract.Verifier do
         |> Enum.reverse()
         |> :binary.list_to_bin()
 
+      # Solidity >= 0.6.0 https://github.com/ethereum/solidity/blob/develop/Changelog.md#060-2019-12-17
+      # https://github.com/ethereum/solidity/blob/26b700771e9cc9c956f0503a05de69a1be427963/docs/metadata.rst#encoding-of-the-metadata-hash-in-the-bytecode
+      # IPFS is used instead of Swarm
+      # The current version of the Solidity compiler usually adds the following to the end of the deployed bytecode:
+      # 0xa2
+      # 0x64 'i' 'p' 'f' 's' 0x58 0x22 <34 bytes IPFS hash>
+      # 0x64 's' 'o' 'l' 'c' 0x43 <3 byte version encoding>
+      # 0x00 0x32
+      # Note: there is a bug in the docs. Instead of 0x32, 0x33 should be used.
+      # Fixing PR has been created https://github.com/ethereum/solidity/pull/8174
+      "a264697066735822" <>
+          <<_::binary-size(68)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0033" <> _constructor_arguments ->
+        extracted
+        |> Enum.reverse()
+        |> :binary.list_to_bin()
+
       <<next::binary-size(2)>> <> rest ->
         do_extract_bytecode([next | extracted], rest)
     end
@@ -162,4 +213,7 @@ defmodule Explorer.SmartContract.Verifier do
   defp has_constructor_with_params?(abi) do
     Enum.any?(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
   end
+
+  defp parse_boolean("true"), do: true
+  defp parse_boolean("false"), do: false
 end

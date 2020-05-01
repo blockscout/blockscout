@@ -2,6 +2,8 @@ import $ from 'jquery'
 import omit from 'lodash/omit'
 import humps from 'humps'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import '../lib/async_listing_load'
+import '../app'
 
 export const initialState = {
   channelDisconnected: false,
@@ -66,13 +68,13 @@ const elements = {
 
 function loadCounters (store) {
   const $element = $('[data-async-counters]')
-  const path = $element.data().asyncCounters
+  const path = $element.data() && $element.data().asyncCounters
   function fetchCounters () {
-    store.dispatch({type: 'START_REQUEST'})
+    store.dispatch({ type: 'START_REQUEST' })
     $.getJSON(path)
-      .done(response => store.dispatch(Object.assign({type: 'COUNTERS_FETCHED'}, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-      .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+      .done(response => store.dispatch(Object.assign({ type: 'COUNTERS_FETCHED' }, humps.camelizeKeys(response))))
+      .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
+      .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
   }
 
   fetchCounters()

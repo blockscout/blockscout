@@ -7,8 +7,16 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
     RPCView.render("show.json", data: Decimal.to_string(token_supply))
   end
 
+  def render("ethsupplyexchange.json", %{total_supply: total_supply}) do
+    RPCView.render("show.json", data: total_supply)
+  end
+
   def render("ethsupply.json", %{total_supply: total_supply}) do
     RPCView.render("show.json", data: total_supply)
+  end
+
+  def render("coinsupply.json", total_supply) do
+    RPCView.render("show_value.json", total_supply)
   end
 
   def render("ethprice.json", %{rates: rates}) do

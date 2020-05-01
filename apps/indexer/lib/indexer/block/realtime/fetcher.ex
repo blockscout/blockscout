@@ -15,7 +15,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     only: [
       async_import_block_rewards: 1,
       async_import_created_contract_codes: 1,
-      async_import_internal_transactions: 2,
+      async_import_internal_transactions: 1,
       async_import_replaced_transactions: 1,
       async_import_tokens: 1,
       async_import_token_balances: 1,
@@ -37,7 +37,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @behaviour Block.Fetcher
 
-  @minimum_safe_polling_period :timer.seconds(10)
+  @minimum_safe_polling_period :timer.seconds(5)
 
   @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
@@ -88,16 +88,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
     number = quantity_to_integer(quantity)
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
-    {new_previous_number, new_max_number} =
-      case start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen) do
-        # The number may have not been inserted if it was part of a small skip
-        :skip ->
-          Logger.debug(["#{inspect(number)} was skipped"])
-          {previous_number, max_number_seen}
+    start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
 
-        _ ->
-          {number, new_max_number(number, max_number_seen)}
-      end
+    new_max_number = new_max_number(number, max_number_seen)
 
     Process.cancel_timer(timer)
     new_timer = schedule_polling()
@@ -105,7 +98,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {:noreply,
      %{
        state
-       | previous_number: new_previous_number,
+       | previous_number: number,
          max_number_seen: new_max_number,
          timer: new_timer
      }}
@@ -123,14 +116,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {number, new_max_number} =
       case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
         {:ok, number} when is_nil(max_number_seen) or number > max_number_seen ->
-          # in case of polling the realtime fetcher should take care of all the
-          # blocks in the skipping window, because the cathup fetcher wont
-          max_skipping_distance = Application.get_env(:indexer, :max_skipping_distance)
-
-          last_catchup_number = max(0, 10 - max_skipping_distance - 1)
-          starting_number = max(previous_number, last_catchup_number) || last_catchup_number
-
-          start_fetch_and_import(number, block_fetcher, starting_number, nil)
+          start_fetch_and_import(number, block_fetcher, previous_number, number)
 
           {max_number_seen, number}
 
@@ -171,7 +157,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     polling_period =
       case AverageBlockTime.average_block_time() do
         {:error, :disabled} -> 2_000
-        block_time -> round(Duration.to_milliseconds(block_time) * 2)
+        block_time -> round(Duration.to_milliseconds(block_time) / 2)
       end
 
     safe_polling_period = max(polling_period, @minimum_safe_polling_period)
@@ -183,7 +169,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @impl Block.Fetcher
   def import(
-        %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher,
+        block_fetcher,
         %{
           address_coin_balances: %{params: address_coin_balances_params},
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
@@ -209,8 +195,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(
         imported,
-        %{block_rewards: %{errors: block_reward_errors}},
-        json_rpc_named_arguments
+        %{block_rewards: %{errors: block_reward_errors}}
       )
 
       Accounts.drop(imported[:addresses])
@@ -226,31 +211,27 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   defp start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen) do
-    fetching_action = determine_fetching_action(number, previous_number, max_number_seen)
+    start_at = determine_start_at(number, previous_number, max_number_seen)
 
-    if fetching_action != :skip do
-      for block_number_to_fetch <- fetching_action do
-        args = [block_number_to_fetch, block_fetcher, reorg?(number, max_number_seen)]
-        Task.Supervisor.start_child(TaskSupervisor, __MODULE__, :fetch_and_import_block, args)
-      end
+    for block_number_to_fetch <- start_at..number do
+      args = [block_number_to_fetch, block_fetcher, reorg?(number, max_number_seen)]
+      Task.Supervisor.start_child(TaskSupervisor, __MODULE__, :fetch_and_import_block, args)
     end
-
-    fetching_action
   end
 
-  def determine_fetching_action(number, previous_number, max_number_seen) do
-    cond do
-      reorg?(number, max_number_seen) ->
-        [number]
+  defp determine_start_at(number, nil, nil), do: number
 
-      can_be_skipped?(number, max_number_seen) ->
-        :skip
+  defp determine_start_at(number, nil, max_number_seen) do
+    determine_start_at(number, number - 1, max_number_seen)
+  end
 
-      is_nil(previous_number) ->
-        [number]
-
-      true ->
-        (previous_number + 1)..number
+  defp determine_start_at(number, previous_number, max_number_seen) do
+    if reorg?(number, max_number_seen) do
+      # set start_at to NOT fill in skipped numbers
+      number
+    else
+      # set start_at to fill in skipped numbers, if any
+      previous_number + 1
     end
   end
 
@@ -259,14 +240,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   defp reorg?(_, _), do: false
-
-  defp can_be_skipped?(number, max_number_seen) when is_integer(max_number_seen) and number > max_number_seen + 1 do
-    max_skipping_distance = Application.get_env(:indexer, :max_skipping_distance)
-
-    max_skipping_distance > 1 and number <= max_number_seen + max_skipping_distance
-  end
-
-  defp can_be_skipped?(_, _), do: false
 
   @reorg_delay 5_000
 
@@ -377,12 +350,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp async_import_remaining_block_data(
          imported,
-         %{block_rewards: %{errors: block_reward_errors}},
-         json_rpc_named_arguments
+         %{block_rewards: %{errors: block_reward_errors}}
        ) do
     async_import_block_rewards(block_reward_errors)
     async_import_created_contract_codes(imported)
-    async_import_internal_transactions(imported, Keyword.get(json_rpc_named_arguments, :variant))
+    async_import_internal_transactions(imported)
     async_import_tokens(imported)
     async_import_token_balances(imported)
     async_import_token_instances(imported)

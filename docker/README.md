@@ -1,4 +1,4 @@
-# BlockScout Docker integration
+# BlockScout Docker Integration
 
 For now this integration is not production ready. It made only for local usage only !
 
@@ -74,4 +74,4 @@ Available options are:
  * For `parity` - `ws://localhost:8546`
  * For `geth` - `wss://mainnet.infura.io/8lTvJTKmHPCHazkneJsY/ws`
  * For `ganache` - `ws://localhost:7545`
-
+For usage instructions and ENV variables, see the [docker integration documentation](https://docs.blockscout.com/for-developers/information-and-settings/docker-integration-local-use-only).
