@@ -294,7 +294,7 @@ defmodule BlockScoutWeb.TransactionView do
   def status_class(transaction) do
     case Chain.transaction_to_status(transaction) do
       :pending -> "tile-status--pending"
-      :awaiting_internal_transactions -> "tile-status--success"
+      :awaiting_internal_transactions -> "tile-status--awaiting-internal-transactions"
       :success -> "tile-status--success"
       {:error, :awaiting_internal_transactions} -> "tile-status--error--awaiting-internal-transactions"
       {:error, reason} when is_binary(reason) -> "tile-status--error--reason"
