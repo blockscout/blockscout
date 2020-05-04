@@ -14,15 +14,15 @@
 
     <div class="row">
       <div class="col-xs-12 col-lg-3">
-        <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
+        <p class="footer-info-text"><%= gettext("Matic is a layer 2 scaling solution") %></p>
         <div class="footer-social-icons">
-          <a href="https://github.com/poanetwork/blockscout" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
+          <a href="https://github.com/maticnetwork/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
             <i class="fab fa-github"></i>
           </a>
-          <a href="https://www.twitter.com/_blockscout/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
+          <a href="https://www.twitter.com/maticnetwork/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <i class="fab fa-twitter"></i>
           </a>
-          <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
+          <a href="https://t.me/maticnetwork" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
             <i class="fab fa-telegram-plane"></i>
           </a>
         </div>
