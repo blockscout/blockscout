@@ -38,17 +38,6 @@ defmodule BlockScoutWeb.LayoutView do
       "/images/celo_logo.svg"
   end
 
-  def combined_network_title do
-    sub = subnetwork_title()
-    title = network_title()
-
-    if title == sub do
-      title
-    else
-      sub <> " " <> title
-    end
-  end
-
   def subnetwork_title do
     Keyword.get(application_config(), :subnetwork) || "Testnet"
   end

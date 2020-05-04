@@ -3,6 +3,17 @@ defmodule BlockScoutWeb.ChainView do
 
   alias BlockScoutWeb.LayoutView
 
+  def combined_network_title do
+    sub = LayoutView.subnetwork_title()
+    title = LayoutView.network_title()
+
+    if title == sub do
+      title
+    else
+      sub <> " " <> title
+    end
+  end
+
   defp market_cap(:standard, %{available_supply: available_supply, usd_value: usd_value})
        when is_nil(available_supply) or is_nil(usd_value) do
     Decimal.new(0)
