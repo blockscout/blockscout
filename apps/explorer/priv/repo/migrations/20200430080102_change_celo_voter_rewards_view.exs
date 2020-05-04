@@ -11,7 +11,6 @@ defmodule Explorer.Repo.Migrations.ChangeCeloVoterRewardsView do
       and p.name = \'epochSize\'
     group by address_hash
     """)
-
   end
 
   def down do
@@ -25,6 +24,5 @@ defmodule Explorer.Repo.Migrations.ChangeCeloVoterRewardsView do
       and p.name = \'epochSize\'
     group by address_hash
     """)
-
   end
 end
