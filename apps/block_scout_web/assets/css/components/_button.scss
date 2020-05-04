@@ -1,13 +1,14 @@
-$button-primary-color: $primary !default;
+$button-primary-color: #2b6def !default;
 $button-secondary-color: $secondary !default;
 
 .button, .btn {
-  border-radius: 2px;
+  border-radius: 5px;
   border: none;
   cursor: pointer;
   display: inline-block;
   line-height: 1.2;
   padding: 10px 16px;
+  font-size: 14px;
   text-align: center;
   text-decoration: none;
   transition: $transition-cont;

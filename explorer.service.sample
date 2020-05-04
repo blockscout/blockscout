@@ -1,0 +1,24 @@
+[Unit]
+Description=BlockSkout Daemon
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+Restart=on-failure
+
+Environment=COIN=MATIC
+Environment=ETHEREUM_JSONRPC_VARIANT=parity
+Environment=ETHEREUM_JSONRPC_HTTP_URL=http://localhost:8545
+Environment=ETHEREUM_JSONRPC_TRACE_URL=http://localhost:8545
+Environment=LOGO=/images/matic.svg
+Environment=ETHEREUM_JSONRPC_WS_URL=ws://localhost:8546
+Environment=NETWORK="MATIC NETWORK"
+Environment=SUBNETWORK=TESTNET
+Environment=LINK_TO_OTHER_EXPLORERS=false
+Environment=HEART_COMMAND=systemctl restart explorer
+WorkingDirectory=/home/ubuntu/blockskout
+ExecStart=/usr/bin/mix phx.server
+
+[Install]
+WantedBy=multi-user.target

@@ -27,7 +27,7 @@ BlockScout is an Elixir application that allows users to search transactions, vi
 Currently available full-featured block explorers (Etherscan, Etherchain, Blockchair) are closed systems which are not independently verifiable.  As Ethereum sidechains continue to proliferate in both private and public settings, transparent, open-source tools are needed to analyze and validate transactions.
 
 ## Matic 
-Matic uses Blockscout explorer for its test networks: Testnetv2, Testnetv3, Alpha and BetaV2 networks.
+Matic uses Blockscout explorer for its test networks: Testnetv2, Testnetv3, Alpha and BetaV2.
 
 ### Deployment Instructions
 
