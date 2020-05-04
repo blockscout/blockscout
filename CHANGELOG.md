@@ -8,6 +8,7 @@
 
 ### Fixes
 - [#3077](https://github.com/poanetwork/blockscout/pull/3077) - Finally speedup pending tx list
+- [#3076](https://github.com/poanetwork/blockscout/pull/3076) - Speedup tx list query on address page: check if an address has a reward, check if this is actual payout key of the validator - beneficiary, return only mined txs in tx list query
 - [#3071](https://github.com/poanetwork/blockscout/pull/3071) - Speedup list of token transfers per token query
 - [#3070](https://github.com/poanetwork/blockscout/pull/3070) - Index creation to blazingly speedup token holders query
 - [#3064](https://github.com/poanetwork/blockscout/pull/3064) - Automatically define Block reward contract address in TokenBridge supply module

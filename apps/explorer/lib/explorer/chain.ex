@@ -18,7 +18,8 @@ defmodule Explorer.Chain do
       union: 2,
       union_all: 2,
       where: 2,
-      where: 3
+      where: 3,
+      select: 3
     ]
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
@@ -314,42 +315,62 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) :: [
-          Transaction.t()
-        ]
-  def address_to_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
+  @spec address_to_mined_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) ::
+          [
+            Transaction.t()
+          ]
+  def address_to_mined_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
-      blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
+      cond do
+        Keyword.get(options, :direction) == :from ->
+          address_to_mined_transactions_without_rewards(address_hash, options)
 
-      rewards_task =
-        Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
+        address_has_rewards?(address_hash) ->
+          %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining(address_hash)
 
-      [rewards_task | address_to_transactions_tasks(address_hash, options)]
-      |> wait_for_address_transactions()
-      |> Enum.sort_by(fn item ->
-        case item do
-          {%Reward{} = emission_reward, _} ->
-            {-emission_reward.block.number, 1}
+          if block_miner_payout_address && address_hash == block_miner_payout_address do
+            transactions_with_rewards_results(address_hash, options, paging_options)
+          else
+            address_to_mined_transactions_without_rewards(address_hash, options)
+          end
 
-          item ->
-            {-item.block_number, -item.index}
-        end
-      end)
-      |> Enum.dedup_by(fn item ->
-        case item do
-          {%Reward{} = emission_reward, _} ->
-            {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
-
-          transaction ->
-            transaction.hash
-        end
-      end)
-      |> Enum.take(paging_options.page_size)
+        true ->
+          address_to_mined_transactions_without_rewards(address_hash, options)
+      end
     else
-      address_to_transactions_without_rewards(address_hash, options)
+      address_to_mined_transactions_without_rewards(address_hash, options)
     end
+  end
+
+  defp transactions_with_rewards_results(address_hash, options, paging_options) do
+    blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
+
+    rewards_task =
+      Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
+
+    [rewards_task | address_to_mined_transactions_tasks(address_hash, options)]
+    |> wait_for_address_transactions()
+    |> Enum.sort_by(fn item ->
+      case item do
+        {%Reward{} = emission_reward, _} ->
+          {-emission_reward.block.number, 1}
+
+        item ->
+          {-item.block_number, -item.index}
+      end
+    end)
+    |> Enum.dedup_by(fn item ->
+      case item do
+        {%Reward{} = emission_reward, _} ->
+          {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
+
+        transaction ->
+          transaction.hash
+      end
+    end)
+    |> Enum.take(paging_options.page_size)
   end
 
   def address_to_transactions_without_rewards(address_hash, options) do
@@ -363,10 +384,31 @@ defmodule Explorer.Chain do
     |> Enum.take(paging_options.page_size)
   end
 
+  def address_to_mined_transactions_without_rewards(address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    address_hash
+    |> address_to_mined_transactions_tasks(options)
+    |> wait_for_address_transactions()
+    |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
+    |> Enum.dedup_by(& &1.hash)
+    |> Enum.take(paging_options.page_size)
+  end
+
   defp address_to_transactions_tasks_query(options) do
     options
     |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions()
+  end
+
+  defp transactions_block_numbers_at_address(address_hash, options) do
+    direction = Keyword.get(options, :direction)
+
+    options
+    |> address_to_transactions_tasks_query()
+    |> Transaction.not_pending_transactions()
+    |> select([t], t.block_number)
+    |> Transaction.matching_address_queries_list(direction, address_hash)
   end
 
   defp address_to_transactions_tasks(address_hash, options) do
@@ -380,21 +422,30 @@ defmodule Explorer.Chain do
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
   end
 
-  defp address_to_transactions_tasks_range_of_blocks(address_hash, options) do
+  defp address_to_mined_transactions_tasks(address_hash, options) do
     direction = Keyword.get(options, :direction)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
+    options
+    |> address_to_transactions_tasks_query()
+    |> Transaction.not_pending_transactions()
+    |> join_associations(necessity_by_association)
+    |> Transaction.matching_address_queries_list(direction, address_hash)
+    |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
+  end
+
+  def address_to_transactions_tasks_range_of_blocks(address_hash, options) do
     extremums_list =
-      options
-      |> address_to_transactions_tasks_query()
-      |> Transaction.matching_address_queries_list(direction, address_hash)
+      address_hash
+      |> transactions_block_numbers_at_address(options)
       |> Enum.map(fn query ->
-        max_query =
+        extremum_query =
           from(
             q in subquery(query),
             select: %{min_block_number: min(q.block_number), max_block_number: max(q.block_number)}
           )
 
-        max_query
+        extremum_query
         |> Repo.one!()
       end)
 
@@ -3212,6 +3263,13 @@ defmodule Explorer.Chain do
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
   def transaction_has_token_transfers?(transaction_hash) do
     query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash)
+
+    Repo.exists?(query)
+  end
+
+  @spec address_has_rewards?(Address.t()) :: boolean()
+  def address_has_rewards?(address_hash) do
+    query = from(r in Reward, where: r.address_hash == ^address_hash)
 
     Repo.exists?(query)
   end
