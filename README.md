@@ -36,8 +36,8 @@ Matic uses Blockscout explorer for its test networks: Testnetv2, Testnetv3, Alph
 3. Configure `config.env` file according to `config.env.sample`
 4. Export variables `source config.env`
 5. Install Mix dependencies, compile them and compile the application: `mix do deps.get, local.rebar --force, deps.compile, compile`
-6.  Create and migrate database `mix do ecto.create, ecto.migrate`
-7.  Install Node.js dependencies
+6. Create and migrate database `mix do ecto.create, ecto.migrate`
+7. Install Node.js dependencies
 
     - `cd apps/block_scout_web/assets; npm install && node_modules/webpack/bin/webpack.js --mode production; cd -`
     - `cd apps/explorer && npm install; cd -`
