@@ -23,6 +23,9 @@ defmodule BlockScoutWeb.AddressTransactionController do
     }
   ]
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     address_options = [necessity_by_association: %{:names => :optional}]
 
@@ -33,7 +36,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      results_plus_one = Chain.address_to_transactions_with_rewards(address_hash, options)
+      results_plus_one = Chain.address_to_mined_transactions_with_rewards(address_hash, options)
       {results, next_page} = split_list_by_page(results_plus_one)
 
       next_page_url =
@@ -57,7 +60,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
               View.render_to_string(
                 TransactionView,
                 "_emission_reward_tile.html",
-                conn: conn,
                 current_address: address,
                 emission_funds: emission_reward,
                 validator: validator_reward
@@ -69,7 +71,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
                 "_tile.html",
                 conn: conn,
                 current_address: address,
-                transaction: transaction
+                transaction: transaction,
+                burn_address_hash: @burn_address_hash
               )
           end
         end)

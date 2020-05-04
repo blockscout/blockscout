@@ -8,6 +8,9 @@ defmodule BlockScoutWeb.Tokens.TransferController do
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash),
@@ -35,7 +38,8 @@ defmodule BlockScoutWeb.Tokens.TransferController do
             "_token_transfer.html",
             conn: conn,
             token: token,
-            token_transfer: transfer
+            token_transfer: transfer,
+            burn_address_hash: @burn_address_hash
           )
         end)
 
