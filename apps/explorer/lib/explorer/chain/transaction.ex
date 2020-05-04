@@ -434,7 +434,6 @@ defmodule Explorer.Chain.Transaction do
         input: %{bytes: <<method_id::binary-size(4), _::binary>> = data},
         hash: hash
       }) do
-
     candidates_query =
       from(
         contract_method in ContractMethod,
