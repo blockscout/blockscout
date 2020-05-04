@@ -26,34 +26,29 @@ BlockScout is an Elixir application that allows users to search transactions, vi
 
 Currently available full-featured block explorers (Etherscan, Etherchain, Blockchair) are closed systems which are not independently verifiable.  As Ethereum sidechains continue to proliferate in both private and public settings, transparent, open-source tools are needed to analyze and validate transactions.
 
-## Supported Projects
+## Matic 
+Matic uses Blockscout explorer for its test networks: Testnetv2, Testnetv3, Alpha and BetaV2 networks.
 
-BlockScout supports a number of projects. Hosted instances include POA Network, xDai Chain, Ethereum Classic, Sokol & Kovan testnets, and other EVM chains. 
+### Deployment Instructions
 
-- [List of hosted mainnets, testnets, and additional chains using BlockScout](https://docs.blockscout.com/for-projects/supported-projects)
-- [Hosted instance versions](https://docs.blockscout.com/about/use-cases/hosted-blockscout)
+1. Clone the repository
+2. `cd blockscout`
+3. Configure `config.env` file according to `config.env.sample`
+4. Export variables `source config.env`
+5. Install Mix dependencies, compile them and compile the application: `mix do deps.get, local.rebar --force, deps.compile, compile`
+6.  Create and migrate database `mix do ecto.create, ecto.migrate`
+7.  Install Node.js dependencies
 
-
-## Getting Started
-
-See the [project documentation](https://docs.blockscout.com/) for instructions:
-- [Requirements](https://docs.blockscout.com/for-developers/information-and-settings/requirements)
-- [Ansible deployment](https://docs.blockscout.com/for-developers/ansible-deployment)
-- [Manual deployment](https://docs.blockscout.com/for-developers/manual-deployment)
-- [ENV variables](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
-- [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
-
-
-## Acknowledgements
-
-We would like to thank the [EthPrize foundation](http://ethprize.io/) for their funding support.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution and pull request protocol. We expect contributors to follow our [code of conduct](CODE_OF_CONDUCT.md) when submitting code or comments.
-
-## License
-
-[![License: GPL v3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-
-This project is licensed under the GNU General Public License v3.0. See the [LICENSE](LICENSE) file for details.
+    - `cd apps/block_scout_web/assets; npm install && node_modules/webpack/bin/webpack.js --mode production; cd -`
+    - `cd apps/explorer && npm install; cd -`
+8. (Make relevant directories if not already present)
+    - ```bash 
+      $ mkdir apps/block_scout_web/priv/static
+      $ mkdir apps/ethereum_jsonrpc/priv/static
+      $ mkdir apps/explorer/priv/static
+      $ mkdir apps/indexer/priv
+      $ mkdir apps/indexer/priv/static
+      ```
+9. Build static assets for deployment `mix phx.digest`
+10. Enable HTTPS: `cd apps/block_scout_web; mix phx.gen.cert blockscout blockscout.local; cd -`
+11. Return to the root directory and start the Phoenix Server. `mix phx.server`
