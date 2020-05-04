@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
+defmodule Explorer.Repo.Migrations.ChangeCeloVoterRewardsView do
   use Ecto.Migration
 
   def up do
@@ -11,6 +11,7 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
       and p.name = \'epochSize\'
     group by address_hash
     """)
+
   end
 
   def down do
@@ -24,5 +25,6 @@ defmodule Explorer.Repo.Migrations.CreateCeloVoterRewardsView do
       and p.name = \'epochSize\'
     group by address_hash
     """)
+
   end
 end
