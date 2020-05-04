@@ -16,6 +16,7 @@
 - [#2756](https://github.com/poanetwork/blockscout/pull/2756) - Improve subquery joins
 
 ### Chore
+- [#3084](https://github.com/poanetwork/blockscout/pull/3084) - Bump Elixir version 1.10.2
 - [#3079](https://github.com/poanetwork/blockscout/pull/3079) - Extend optionality of websockets to Geth
 
 
