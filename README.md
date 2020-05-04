@@ -33,15 +33,16 @@ Matic uses Blockscout explorer for its test networks: Testnetv2, Testnetv3, Alph
 
 1. Clone the repository
 2. `cd blockscout`
-3. Configure `config.env` file according to `config.env.sample`
-4. Export variables `source config.env`
-5. Install Mix dependencies, compile them and compile the application: `mix do deps.get, local.rebar --force, deps.compile, compile`
-6. Create and migrate database `mix do ecto.create, ecto.migrate`
-7. Install Node.js dependencies
+3. Install Mix dependencies, compile them and compile the application: `mix do deps.get, local.rebar --force, deps.compile, compile`
+4. Generate db secret `mix phx.gen.secret`
+5. Update `config.env` (add secret key and network specific details)
+6. Export variables `source config.env`
+7. Create and migrate database `mix do ecto.create, ecto.migrate`
+8. Install Node.js dependencies
 
     - `cd apps/block_scout_web/assets; npm install && node_modules/webpack/bin/webpack.js --mode production; cd -`
     - `cd apps/explorer && npm install; cd -`
-8. (Make relevant directories if not already present)
+9.  (Make relevant directories if not already present)
     - ```bash 
       $ mkdir apps/block_scout_web/priv/static
       $ mkdir apps/ethereum_jsonrpc/priv/static
@@ -49,6 +50,6 @@ Matic uses Blockscout explorer for its test networks: Testnetv2, Testnetv3, Alph
       $ mkdir apps/indexer/priv
       $ mkdir apps/indexer/priv/static
       ```
-9. Build static assets for deployment `mix phx.digest`
-10. Enable HTTPS: `cd apps/block_scout_web; mix phx.gen.cert blockscout blockscout.local; cd -`
-11. Return to the root directory and start the Phoenix Server. `mix phx.server`
+10. Build static assets for deployment `mix phx.digest`
+11. Enable HTTPS: `cd apps/block_scout_web; mix phx.gen.cert blockscout blockscout.local; cd -`
+12. Return to the root directory and start the Phoenix Server. `mix phx.server`
