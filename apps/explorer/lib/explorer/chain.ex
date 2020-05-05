@@ -3928,9 +3928,10 @@ defmodule Explorer.Chain do
     query
     |> Repo.one()
     |> case do
-      nil ->  {:error, :not_found}
+      nil ->
+        {:error, :not_found}
+
       data ->
-        IO.inspect(%{data: data})
         {:ok, data}
     end
   end
