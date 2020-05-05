@@ -59,10 +59,13 @@ defmodule Explorer.Chain.Import.Runner.StakingPoolsDelegators do
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
+    # Enforce StackingPoolDelegator ShareLocks order (see docs: sharelocks.md)
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.delegator_address_hash, &1.pool_address_hash})
+
     {:ok, _} =
       Import.insert_changes_list(
         repo,
-        changes_list,
+        ordered_changes_list,
         conflict_target: [:pool_address_hash, :delegator_address_hash],
         on_conflict: on_conflict,
         for: StakingPoolsDelegator,

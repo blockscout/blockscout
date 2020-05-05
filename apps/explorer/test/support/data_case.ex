@@ -39,11 +39,16 @@ defmodule Explorer.DataCase do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
     end
 
-    Explorer.Chain.BlockNumberCache.setup()
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.TransactionsCache.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.TransactionsCache.cache_name()})
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Accounts.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Accounts.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.PendingTransactions.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.PendingTransactions.child_id())
 
     :ok
   end

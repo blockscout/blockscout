@@ -3,10 +3,12 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     # Because ETS tables is shared for `Explorer.Counters.*`
     async: false
 
-  alias Explorer.Counters.AddressesWithBalanceCounter
+  alias Explorer.Counters.AddressesCounter
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
+    Application.put_env(:block_scout_web, :checksum_address_hashes, false)
+
     block = insert(:block, number: 42)
 
     lincoln = insert(:address, fetched_coin_balance: 5)
@@ -38,6 +40,10 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         address_type: :validator
       )
 
+    on_exit(fn ->
+      Application.put_env(:block_scout_web, :checksum_address_hashes, true)
+    end)
+
     {:ok,
      %{
        addresses: %{lincoln: lincoln, taft: taft},
@@ -58,8 +64,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       [first_address | _] = addresses
       [last_address | _] = Enum.reverse(addresses)
 
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
+      start_supervised!(AddressesCounter)
+      AddressesCounter.consolidate()
 
       session
       |> AddressPage.visit_page()
@@ -73,14 +79,14 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
     session
     |> AddressPage.visit_page(address)
-    |> assert_text(AddressPage.balance(), "0.0000000000000005 POA")
+    |> assert_text(AddressPage.balance(), "0.0000000000000005 Ether")
   end
 
   describe "viewing contract creator" do
     test "see the contract creator and transaction links", %{session: session} do
       address = insert(:address)
       contract = insert(:contract_address)
-      transaction = insert(:transaction, from_address: address, created_contract_address: contract)
+      transaction = insert(:transaction, from_address: address, created_contract_address: contract) |> with_block()
 
       internal_transaction =
         insert(
@@ -88,7 +94,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           index: 1,
           transaction: transaction,
           from_address: address,
-          created_contract_address: contract
+          created_contract_address: contract,
+          block_hash: transaction.block_hash,
+          block_index: 1
         )
 
       address_hash = AddressView.trimmed_hash(address.hash)
@@ -102,7 +110,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     test "see the contract creator and transaction links even when the creator is another contract", %{session: session} do
       lincoln = insert(:address)
       contract = insert(:contract_address)
-      transaction = insert(:transaction)
+      transaction = insert(:transaction) |> with_block()
       another_contract = insert(:contract_address)
 
       insert(
@@ -112,7 +120,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: lincoln,
         to_address: contract,
         created_contract_address: contract,
-        type: :call
+        type: :call,
+        block_hash: transaction.block_hash,
+        block_index: 1
       )
 
       internal_transaction =
@@ -121,7 +131,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           index: 2,
           transaction: transaction,
           from_address: contract,
-          created_contract_address: another_contract
+          created_contract_address: another_contract,
+          block_hash: transaction.block_hash,
+          block_index: 2
         )
 
       contract_hash = AddressView.trimmed_hash(contract.hash)
@@ -208,7 +220,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           to_address: address,
           index: 1,
           block_number: 7000,
-          transaction_index: 1
+          transaction_index: 1,
+          block_hash: transaction.block_hash,
+          block_index: 1
         )
 
       insert(:internal_transaction,
@@ -216,7 +230,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: address,
         index: 2,
         block_number: 8000,
-        transaction_index: 2
+        transaction_index: 2,
+        block_hash: transaction.block_hash,
+        block_index: 2
       )
 
       {:ok, %{internal_transaction_lincoln_to_address: internal_transaction_lincoln_to_address}}
@@ -251,7 +267,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           index: 2,
           from_address: addresses.lincoln,
           block_number: transaction.block_number,
-          transaction_index: transaction.index
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
+          block_index: 2
         )
 
       Notifier.handle_event({:chain_event, :internal_transactions, :realtime, [internal_transaction]})
@@ -259,143 +277,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       session
       |> assert_has(AddressPage.internal_transactions(count: 3))
       |> assert_has(AddressPage.internal_transaction(internal_transaction))
-    end
-  end
-
-  describe "viewing token transfers" do
-    test "contributor can see all token transfers that he sent", %{
-      addresses: addresses,
-      block: block,
-      session: session
-    } do
-      lincoln = addresses.lincoln
-      taft = addresses.taft
-
-      contract_address = insert(:contract_address)
-      insert(:token, contract_address: contract_address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: lincoln, to_address: contract_address)
-        |> with_block(block)
-
-      insert(
-        :token_transfer,
-        from_address: lincoln,
-        to_address: taft,
-        transaction: transaction,
-        token_contract_address: contract_address
-      )
-
-      session
-      |> AddressPage.visit_page(lincoln)
-      |> assert_has(AddressPage.token_transfers(transaction, count: 1))
-      |> assert_has(AddressPage.token_transfer(transaction, lincoln, count: 1))
-      |> assert_has(AddressPage.token_transfer(transaction, taft, count: 1))
-      |> refute_has(AddressPage.token_transfers_expansion(transaction))
-    end
-
-    test "contributor can see only token transfers related to him", %{
-      addresses: addresses,
-      block: block,
-      session: session
-    } do
-      lincoln = addresses.lincoln
-      taft = addresses.taft
-      morty = build(:address)
-
-      contract_address = insert(:contract_address)
-      insert(:token, contract_address: contract_address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: lincoln, to_address: contract_address)
-        |> with_block(block)
-
-      insert(
-        :token_transfer,
-        from_address: lincoln,
-        to_address: taft,
-        transaction: transaction,
-        token_contract_address: contract_address
-      )
-
-      insert(
-        :token_transfer,
-        from_address: lincoln,
-        to_address: morty,
-        transaction: transaction,
-        token_contract_address: contract_address
-      )
-
-      session
-      |> AddressPage.visit_page(morty)
-      |> assert_has(AddressPage.token_transfers(transaction, count: 1))
-      |> assert_has(AddressPage.token_transfer(transaction, lincoln, count: 1))
-      |> assert_has(AddressPage.token_transfer(transaction, morty, count: 1))
-      |> refute_has(AddressPage.token_transfer(transaction, taft, count: 1))
-    end
-
-    test "transactions with multiple token transfers shows only the first one by default", %{
-      addresses: addresses,
-      block: block,
-      session: session
-    } do
-      lincoln = addresses.lincoln
-      taft = addresses.taft
-
-      contract_address = insert(:contract_address)
-
-      insert(:token, contract_address: contract_address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: lincoln, to_address: contract_address)
-        |> with_block(block)
-
-      insert_list(
-        3,
-        :token_transfer,
-        from_address: lincoln,
-        to_address: taft,
-        transaction: transaction,
-        token_contract_address: contract_address
-      )
-
-      session
-      |> AddressPage.visit_page(lincoln)
-      |> assert_has(AddressPage.token_transfers(transaction, count: 1))
-    end
-
-    test "transaction with multiple token transfers shows all transfers if expanded", %{
-      addresses: addresses,
-      block: block,
-      session: session
-    } do
-      lincoln = addresses.lincoln
-      taft = addresses.taft
-
-      contract_address = insert(:contract_address)
-      insert(:token, contract_address: contract_address)
-
-      transaction =
-        :transaction
-        |> insert(from_address: lincoln, to_address: contract_address)
-        |> with_block(block)
-
-      insert_list(
-        3,
-        :token_transfer,
-        from_address: lincoln,
-        to_address: taft,
-        transaction: transaction,
-        token_contract_address: contract_address
-      )
-
-      session
-      |> AddressPage.visit_page(lincoln)
-      |> click(AddressPage.token_transfers_expansion(transaction))
-      |> assert_has(AddressPage.token_transfers(transaction, count: 3))
     end
   end
 

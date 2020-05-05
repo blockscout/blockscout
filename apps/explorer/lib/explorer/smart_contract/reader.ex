@@ -8,7 +8,7 @@ defmodule Explorer.SmartContract.Reader do
 
   alias EthereumJSONRPC.Contract
   alias Explorer.Chain
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, SmartContract}
 
   @typedoc """
   Map of functions to call with the values for the function to be called with.
@@ -34,6 +34,8 @@ defmodule Explorer.SmartContract.Reader do
   @doc """
   Queries the contract functions on the blockchain and returns the call results.
 
+  Optionally accepts the abi if it has already been fetched.
+
   ## Examples
 
   Note that for this example to work the database must be up to date with the
@@ -57,14 +59,20 @@ defmodule Explorer.SmartContract.Reader do
       )
       # => %{"sum" => {:error, "Data overflow encoding int, data `abc` cannot fit in 256 bits"}}
   """
-  @spec query_verified_contract(Hash.Address.t(), functions()) :: functions_results()
-  def query_verified_contract(address_hash, functions) do
+  @spec query_verified_contract(Hash.Address.t(), functions(), SmartContract.abi() | nil) :: functions_results()
+  def query_verified_contract(address_hash, functions, mabi \\ nil) do
     contract_address = Hash.to_string(address_hash)
 
     abi =
-      address_hash
-      |> Chain.address_hash_to_smart_contract()
-      |> Map.get(:abi)
+      case mabi do
+        nil ->
+          address_hash
+          |> Chain.address_hash_to_smart_contract()
+          |> Map.get(:abi)
+
+        _ ->
+          mabi
+      end
 
     query_contract(contract_address, abi, functions)
   end
@@ -156,40 +164,40 @@ defmodule Explorer.SmartContract.Reader do
   """
   @spec read_only_functions(Hash.t()) :: [%{}]
   def read_only_functions(contract_address_hash) do
-    contract_address_hash
-    |> Chain.address_hash_to_smart_contract()
-    |> Map.get(:abi, [])
-    |> Enum.filter(& &1["constant"])
-    |> fetch_current_value_from_blockchain(contract_address_hash, [])
-    |> Enum.reverse()
+    abi =
+      contract_address_hash
+      |> Chain.address_hash_to_smart_contract()
+      |> Map.get(:abi)
+
+    case abi do
+      nil ->
+        []
+
+      _ ->
+        abi
+        |> Enum.filter(&(&1["constant"] || &1["stateMutability"] == "view"))
+        |> Enum.map(&fetch_current_value_from_blockchain(&1, abi, contract_address_hash))
+    end
   end
 
-  def fetch_current_value_from_blockchain(
-        [%{"inputs" => []} = function | tail],
-        contract_address_hash,
-        acc
-      ) do
+  defp fetch_current_value_from_blockchain(function, abi, contract_address_hash) do
     values =
-      fetch_from_blockchain(contract_address_hash, %{
-        name: function["name"],
-        args: function["inputs"],
-        outputs: function["outputs"]
-      })
+      case function do
+        %{"inputs" => []} ->
+          name = function["name"]
+          args = function["inputs"]
+          outputs = function["outputs"]
 
-    formatted = Map.replace!(function, "outputs", values)
+          contract_address_hash
+          |> query_verified_contract(%{name => normalize_args(args)}, abi)
+          |> link_outputs_and_values(outputs, name)
 
-    fetch_current_value_from_blockchain(tail, contract_address_hash, [formatted | acc])
+        _ ->
+          link_outputs_and_values(%{}, Map.get(function, "outputs", []), function["name"])
+      end
+
+    Map.replace!(function, "outputs", values)
   end
-
-  def fetch_current_value_from_blockchain([function | tail], contract_address_hash, acc) do
-    values = link_outputs_and_values(%{}, Map.get(function, "outputs", []), function["name"])
-
-    formatted = Map.replace!(function, "outputs", values)
-
-    fetch_current_value_from_blockchain(tail, contract_address_hash, [formatted | acc])
-  end
-
-  def fetch_current_value_from_blockchain([], _contract_address_hash, acc), do: acc
 
   @doc """
   Fetches the blockchain value of a function that requires arguments.
@@ -201,23 +209,27 @@ defmodule Explorer.SmartContract.Reader do
 
   @spec query_function(Hash.t(), %{name: String.t(), args: [term()]}) :: [%{}]
   def query_function(contract_address_hash, %{name: name, args: args}) do
-    function =
+    abi =
       contract_address_hash
       |> Chain.address_hash_to_smart_contract()
-      |> Map.get(:abi, [])
-      |> Enum.filter(fn function -> function["name"] == name end)
-      |> List.first()
+      |> Map.get(:abi)
 
-    fetch_from_blockchain(contract_address_hash, %{
-      name: name,
-      args: args,
-      outputs: function["outputs"]
-    })
-  end
+    outputs =
+      case abi do
+        nil ->
+          nil
 
-  defp fetch_from_blockchain(contract_address_hash, %{name: name, args: args, outputs: outputs}) do
+        _ ->
+          function =
+            abi
+            |> Enum.filter(fn function -> function["name"] == name end)
+            |> List.first()
+
+          function["outputs"]
+      end
+
     contract_address_hash
-    |> query_verified_contract(%{name => normalize_args(args)})
+    |> query_verified_contract(%{name => normalize_args(args)}, abi)
     |> link_outputs_and_values(outputs, name)
   end
 
@@ -250,7 +262,8 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   def link_outputs_and_values(blockchain_values, outputs, function_name) do
-    {_, value} = Map.get(blockchain_values, function_name, {:ok, [""]})
+    default_value = Enum.map(outputs, fn _ -> "" end)
+    {_, value} = Map.get(blockchain_values, function_name, {:ok, default_value})
 
     for {output, index} <- Enum.with_index(outputs) do
       new_value(output, List.wrap(value), index)
@@ -261,8 +274,12 @@ defmodule Explorer.SmartContract.Reader do
     Map.put_new(output, "value", bytes_to_string(value))
   end
 
-  defp new_value(%{"type" => "bytes" <> _number} = output, [value], _index) do
-    Map.put_new(output, "value", bytes_to_string(value))
+  defp new_value(%{"type" => "bytes" <> _number} = output, values, index) do
+    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+  end
+
+  defp new_value(%{"type" => "bytes"} = output, values, index) do
+    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
   end
 
   defp new_value(output, [value], _index) do

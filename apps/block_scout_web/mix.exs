@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Mixfile do
         plt_add_deps: :transitive,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.8",
+      elixir: "~> 1.9",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -50,7 +50,6 @@ defmodule BlockScoutWeb.Mixfile do
 
   defp extra_applications,
     do: [
-      :ex_cldr,
       :logger,
       :runtime_tools
     ]
@@ -61,25 +60,27 @@ defmodule BlockScoutWeb.Mixfile do
   defp deps do
     [
       # GraphQL toolkit
-      {:absinthe, "~> 1.4"},
+      {:absinthe, "~> 1.5.0-rc.2"},
       # Integrates Absinthe subscriptions with Phoenix
-      {:absinthe_phoenix, git: "https://github.com/ayrat555/absinthe_phoenix.git", branch: "master"},
+      {:absinthe_phoenix, "~> 1.5.0-rc.0"},
       # Plug support for Absinthe
-      {:absinthe_plug, git: "https://github.com/ayrat555/absinthe_plug.git", branch: "ab-allow-to-set-default-query"},
+      {:absinthe_plug, "~> 1.5.0-rc.1"},
       # Absinthe support for the Relay framework
-      {:absinthe_relay, "~> 1.4"},
+      {:absinthe_relay, "~> 1.5.0-rc.0"},
       {:bypass, "~> 1.0", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 2.0"},
-      {:credo, "1.0.0", only: :test, runtime: false},
+      {:credo, "~> 1.1", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Need until https://github.com/absinthe-graphql/absinthe_relay/pull/125 is released, then can be removed
       # The current `absinthe_relay` is compatible though as shown from that PR
-      {:ecto, "~> 3.0", override: true},
-      {:ex_cldr_numbers, "~> 1.0"},
-      {:ex_cldr_units, "~> 1.0"},
+      {:ecto, "~> 3.3", override: true},
+      {:ex_cldr, "~> 2.7"},
+      {:ex_cldr_numbers, "~> 2.6"},
+      {:ex_cldr_units, "~> 2.5"},
+      {:cldr_utils, "~> 2.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
       {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
@@ -98,10 +99,10 @@ defmodule BlockScoutWeb.Mixfile do
       {:logger_file_backend, "~> 0.0.10"},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:phoenix, "~> 1.4"},
+      {:phoenix, "== 1.4.0"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.10"},
-      {:phoenix_live_reload, "~> 1.0", only: [:dev]},
+      {:phoenix_live_reload, "~> 1.2", only: [:dev]},
       {:phoenix_pubsub, "~> 1.0"},
       # use `:cowboy` for WebServer with `:plug`
       {:plug_cowboy, "~> 2.0"},
@@ -125,11 +126,12 @@ defmodule BlockScoutWeb.Mixfile do
       {:spandex_datadog, "~> 0.4.0"},
       # `:spandex` tracing of `:phoenix`
       {:spandex_phoenix, "~> 0.3.1"},
-      {:timex, "~> 3.4"},
+      {:timex, "~> 3.6"},
       {:wallaby, "~> 0.22", only: [:test], runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
-      {:phoenix_form_awesomplete, "~> 0.1.4"}
+      {:phoenix_form_awesomplete, "~> 0.1.4"},
+      {:ex_json_schema, "~> 0.6.2"}
     ]
   end
 

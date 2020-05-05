@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.ConnCase do
       # Import conveniences for testing with connections
       use Phoenix.ConnTest
       import BlockScoutWeb.Router.Helpers
+      import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
 
       # The default endpoint for testing
       @endpoint BlockScoutWeb.Endpoint
@@ -27,6 +28,7 @@ defmodule BlockScoutWeb.ConnCase do
       import Explorer.Factory
 
       alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
+      alias BlockScoutWeb.ApiRouter.Helpers, as: ApiRoutes
     end
   end
 
@@ -38,8 +40,12 @@ defmodule BlockScoutWeb.ConnCase do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
     end
 
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.TransactionsCache.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.TransactionsCache.cache_name()})
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Accounts.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Accounts.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.PendingTransactions.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.PendingTransactions.child_id())
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end

@@ -24,7 +24,17 @@ defmodule Explorer.Chain.Supply.RSKTest do
 
       exchange_rate = %{Token.null() | usd_value: Decimal.new(1_000_000)}
 
-      assert Decimal.equal?(RSK.market_cap(exchange_rate), Decimal.new(100.0000))
+      assert Decimal.equal?(RSK.market_cap(exchange_rate), Decimal.from_float(100.0000))
+    end
+
+    test "returns zero when exchange_rate is empty" do
+      assert RSK.market_cap(nil) == Decimal.new(0)
+    end
+
+    test "returns zero when usd_value is nil" do
+      exchange_rate = %{Token.null() | usd_value: nil}
+
+      assert RSK.market_cap(exchange_rate) == Decimal.new(0)
     end
   end
 

@@ -286,4 +286,18 @@ defmodule Explorer.Chain.TransactionTest do
       assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}
     end
   end
+
+  describe "Poison.encode!/1" do
+    test "encodes transaction input" do
+      assert %{
+               insert(:transaction)
+               | input: %Explorer.Chain.Data{
+                   bytes:
+                     <<169, 5, 156, 187, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 193, 108, 45, 196, 42, 228, 149, 239, 119,
+                       191, 128, 248>>
+                 }
+             }
+             |> Poison.encode!()
+    end
+  end
 end

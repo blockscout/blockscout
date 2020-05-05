@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.PendingTransactionControllerTest do
   use BlockScoutWeb.ConnCase
   alias Explorer.Chain.{Hash, Transaction}
 
-  import BlockScoutWeb.Router.Helpers, only: [pending_transaction_path: 2, pending_transaction_path: 3]
+  import BlockScoutWeb.WebRouter.Helpers, only: [pending_transaction_path: 2, pending_transaction_path: 3]
 
   describe "GET index/2" do
     test "returns no transactions that are in a block", %{conn: conn} do

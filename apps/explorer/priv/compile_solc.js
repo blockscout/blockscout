@@ -16,15 +16,7 @@ var solc = solc.setupMethods(compilerSnapshot);
 var fs = require('fs');
 var sourceCode = fs.readFileSync(sourceCodePath, 'utf8');
 
-const input = {
-  language: 'Solidity',
-  sources: {
-    [newContractName]: {
-      content: sourceCode
-    }
-  },
-  settings: {
-    evmVersion: evmVersion,
+var settings = {
     optimizer: {
       enabled: optimize == '1',
       runs: optimizationRuns
@@ -37,7 +29,20 @@ const input = {
         '*': ['*']
       }
     }
-  }
+}
+
+if (evmVersion !== 'default') {
+    settings = Object.assign(settings, {evmVersion: evmVersion})
+}
+
+const input = {
+  language: 'Solidity',
+  sources: {
+    [newContractName]: {
+      content: sourceCode
+    }
+  },
+  settings: settings
 }
 
 

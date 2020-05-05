@@ -44,6 +44,7 @@ $btn-line-bg: #fff; // button bg
 $btn-line-color: $primary; // button border and font color && hover bg color
 $btn-copy-color: $primary; // btn copy
 $btn-qr-color: $primary; // btn qr-code
+$btn-address-card-icon-color: $primary; // btn address color
 
 // card
 $card-background-1: $primary;
@@ -55,6 +56,9 @@ $dashboard-banner-network-stats-static-image: "/images/lukso_dashboard_image.png
 $dashboard-banner-network-plain-container-height: 150px;
 
 .layout-container {
+  .dashboard-banner-container {
+    height: auto !important;
+  }
   .dashboard-banner-container::after {
     display: none;
   }
@@ -151,3 +155,20 @@ $dashboard-banner-network-plain-container-height: 150px;
 $badge-neutral-color: $tertiary;
 $badge-neutral-background-color: rgba($tertiary, .1);
 $api-text-monospace-color: $tertiary;
+
+// Dark theme
+$dark-primary: #fdcec4;
+$dark-secondary: #a96c55;
+$dark-primary-alternate: #a96c55;
+
+.dark-theme-applied {
+  .dashboard-banner-network-stats-value {
+    color: $dark-primary !important;
+  }
+  .layout-container .dashboard-banner-container {
+    background-color: #282945 !important;
+  }
+  .dashboard-banner-network-plain-container::after {
+    box-shadow: none !important;
+  }
+}

@@ -4,7 +4,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
   """
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, TokenTransfer, Transaction}
+  alias Explorer.Chain.{TokenTransfer, Transaction}
   alias NimbleCSV.RFC4180
 
   @necessity_by_association [
@@ -24,18 +24,18 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
   @paging_options %PagingOptions{page_size: @page_size + 1}
 
   def export(address) do
-    address
+    address.hash
     |> fetch_all_transactions(@paging_options)
     |> to_token_transfers()
     |> to_csv_format(address)
     |> dump_to_stream()
   end
 
-  defp fetch_all_transactions(address, paging_options, acc \\ []) do
+  defp fetch_all_transactions(address_hash, paging_options, acc \\ []) do
     options = Keyword.merge(@necessity_by_association, paging_options: paging_options)
 
     transactions =
-      address
+      address_hash
       |> Chain.address_to_transactions_with_rewards(options)
       |> Enum.filter(fn transaction -> Enum.count(transaction.token_transfers) > 0 end)
 
@@ -44,7 +44,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
     case Enum.split(transactions, @page_size) do
       {_transactions, [%Transaction{block_number: block_number, index: index}]} ->
         new_paging_options = %{@paging_options | key: {block_number, index}}
-        fetch_all_transactions(address, new_paging_options, new_acc)
+        fetch_all_transactions(address_hash, new_paging_options, new_acc)
 
       {_, []} ->
         new_acc
@@ -90,7 +90,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
           token_transfer.from_address |> to_string() |> String.downcase(),
           token_transfer.to_address |> to_string() |> String.downcase(),
           token_transfer.token_contract_address |> to_string() |> String.downcase(),
-          type(token_transfer, address),
+          type(token_transfer, address.hash),
           token_transfer.token.symbol,
           token_transfer.amount,
           fee(token_transfer.transaction),
@@ -102,9 +102,9 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
     Stream.concat([row_names], token_transfer_lists)
   end
 
-  defp type(%TokenTransfer{from_address_hash: from_address}, %Address{hash: from_address}), do: "OUT"
+  defp type(%TokenTransfer{from_address_hash: address_hash}, address_hash), do: "OUT"
 
-  defp type(%TokenTransfer{to_address_hash: to_address}, %Address{hash: to_address}), do: "IN"
+  defp type(%TokenTransfer{to_address_hash: address_hash}, address_hash), do: "IN"
 
   defp type(_, _), do: ""
 

@@ -3,7 +3,11 @@ use Mix.Config
 config :indexer,
   block_interval: :timer.seconds(5),
   json_rpc_named_arguments: [
-    transport: EthereumJSONRPC.HTTP,
+    transport:
+      if(System.get_env("ETHEREUM_JSONRPC_TRANSPORT", "http") == "http",
+        do: EthereumJSONRPC.HTTP,
+        else: EthereumJSONRPC.IPC
+      ),
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
       url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL"),

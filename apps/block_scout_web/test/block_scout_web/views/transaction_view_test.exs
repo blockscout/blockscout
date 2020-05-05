@@ -136,7 +136,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
           gas_used: nil
         )
 
-      expected_value = "Max of 0.009 POA"
+      expected_value = "Max of 0.009 Ether"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
     end
 
@@ -144,11 +144,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
       {:ok, gas_price} = Wei.cast(3_000_000_000)
       transaction = build(:transaction, gas_price: gas_price, gas_used: Decimal.from_float(1_034_234.0))
 
-      expected_value = "0.003102702 POA"
+      expected_value = "0.003102702 Ether"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
-    end
-
-    test "with fee but no available exchange_rate" do
     end
   end
 
@@ -195,6 +192,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(block, status: :error)
 
+      insert(:pending_block_operation, block_hash: block.hash, fetch_internal_transactions: true)
+
       status = TransactionView.transaction_status(transaction)
       assert TransactionView.formatted_status(status) == "Error: (Awaiting internal transactions for reason)"
     end
@@ -203,7 +202,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
       transaction =
         :transaction
         |> insert()
-        |> with_block(status: :error, internal_transactions_indexed_at: DateTime.utc_now(), error: "Out of Gas")
+        |> with_block(status: :error, error: "Out of Gas")
 
       status = TransactionView.transaction_status(transaction)
       assert TransactionView.formatted_status(status) == "Error: Out of Gas"
@@ -251,6 +250,36 @@ defmodule BlockScoutWeb.TransactionViewTest do
       assert TransactionView.current_tab_name(token_transfers_path) == "Token Transfers"
       assert TransactionView.current_tab_name(internal_transactions_path) == "Internal Transactions"
       assert TransactionView.current_tab_name(logs_path) == "Logs"
+    end
+  end
+
+  describe "aggregate_token_transfers/1" do
+    test "aggregates token transfers" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer = insert(:token_transfer, transaction: transaction, amount: Decimal.new(1))
+
+      result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
+
+      assert Enum.count(result) == 1
+      assert List.first(result).amount == Decimal.new(3)
+    end
+
+    test "does not aggregate NFT tokens" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer = insert(:token_transfer, transaction: transaction, amount: nil)
+
+      result = TransactionView.aggregate_token_transfers([token_transfer, token_transfer, token_transfer])
+
+      assert Enum.count(result) == 3
+      assert List.first(result).amount == nil
     end
   end
 end

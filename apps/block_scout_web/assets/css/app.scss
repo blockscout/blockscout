@@ -16,6 +16,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 
 // Bootstrap Core CSS
 @import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
 @import "node_modules/bootstrap/scss/mixins";
 
 @import "theme/variables";
@@ -24,7 +25,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "node_modules/bootstrap/scss/reboot";
 @import "node_modules/bootstrap/scss/grid";
 @import "node_modules/bootstrap/scss/code";
-@import "node_modules/bootstrap/scss/modal";
 @import "node_modules/bootstrap/scss/close";
 @import "node_modules/bootstrap/scss/buttons";
 @import "node_modules/bootstrap/scss/forms";
@@ -50,7 +50,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "node_modules/bootstrap/scss/navbar";
 @import "node_modules/bootstrap/scss/pagination";
 @import "node_modules/bootstrap/scss/tables";
-@import "node_modules/bootstrap/scss/tooltip";
 @import "node_modules/bootstrap/scss/transitions";
 
 // Code highlight
@@ -75,8 +74,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/filter";
 @import "components/button";
 @import "components/table";
-@import "components/qr-code";
 @import "components/navbar";
+@import "components/alerts";
 @import "components/animations";
 @import "components/card";
 @import "components/tile";
@@ -93,46 +92,40 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/transaction-input";
 @import "components/coin-balance-tile";
 @import "components/highlight";
-@import "components/copy_icon";
 @import "components/btn_full";
 @import "components/btn_line";
-@import "components/stakes";
 @import "components/check";
+@import "components/stakes_variables";
 @import "components/stakes_table";
-@import "components/i_tooltip";
-@import "components/check_tooltip";
-@import "components/tooltip";
-@import "components/progress_from_to";
-@import "components/stakes_empty_content";
-@import "components/stakes_btn_remove_pool";
-@import "components/modal";
-@import "components/modal_validator_info";
 @import "components/form";
-@import "components/stakes_progress";
-@import "components/modal_status";
-@import "components/modal_bottom_disclaimer";
-@import "components/modal_become_candidate";
-@import "components/modal_stake";
 @import "components/btn_copy";
 @import "components/btn_qr";
+@import "components/btn_contract";
 @import "components/btn_address_card";
 @import "components/btn_dropdown_line";
 @import "components/transaction";
 @import "components/api";
-@import "components/alerts";
 @import "components/verify_other_explorers";
 @import "components/errors";
 @import "components/log-search";
 @import "components/radio";
-@import "components/network-selector";
+@import "components/modal_variables";
 @import "components/new_smart_contract";
 @import "components/radio_big";
 @import "components/btn_no_border";
+@import "components/custom_tooltips_block_details";
+@import "components/_erc721_token_image_container";
+@import "components/_inventory_token_instance_image_container";
+
+@import "theme/dark-theme";
 
 :export {
   dashboardBannerChartAxisFontColor: $dashboard-banner-chart-axis-font-color;
   dashboardLineColorMarket: $dashboard-line-color-market;
   dashboardLineColorPrice: $dashboard-line-color-price;
+  dashboardLineColorTransactions: $dashboard-line-color-transactions;
   primary: $primary;
   secondary: $secondary;
+  darkprimary: $dark-primary;
+  darksecondary: $dark-secondary;
 }

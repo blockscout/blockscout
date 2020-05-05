@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Block.Range do
           to: integer() | :infinity
         }
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @doc """
   The underlying Postgres type, `int8range`.
@@ -136,10 +136,12 @@ defmodule Explorer.Chain.Block.Range do
 
   def load(_), do: :error
 
+  defp parse_upper(%PGRange{upper: :unbound}), do: :infinity
   defp parse_upper(%PGRange{upper: nil}), do: :infinity
   defp parse_upper(%PGRange{upper: upper, upper_inclusive: true}), do: upper
   defp parse_upper(%PGRange{upper: upper, upper_inclusive: false}), do: upper - 1
 
+  defp parse_upper(%PGRange{lower: :unbound}), do: :negative_infinity
   defp parse_lower(%PGRange{lower: nil}), do: :negative_infinity
   defp parse_lower(%PGRange{lower: lower, lower_inclusive: true}), do: lower
   defp parse_lower(%PGRange{lower: lower, lower_inclusive: false}), do: lower + 1

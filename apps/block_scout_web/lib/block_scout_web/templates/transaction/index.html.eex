@@ -28,9 +28,12 @@
         </div>
       </div>
 
-      <div data-selector="transactions-list" data-items></div>
+      <div data-selector="transactions-list" data-items>
+        <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
+      </div>
 
       <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
   </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/validated-transactions.js") %>"></script>
 </section>

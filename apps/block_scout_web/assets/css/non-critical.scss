@@ -1,0 +1,18 @@
+// Bootstrap Core CSS
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/mixins";
+
+@import "theme/variables-non-critical";
+
+@import "node_modules/bootstrap/scss/modal";
+@import "node_modules/bootstrap/scss/tooltip";
+
+@import "components/i_tooltip";
+@import "components/check_tooltip";
+@import "components/tooltip";
+
+@import "components/qr-code";
+@import "components/modal_variables";
+@import "components/modal";
+@import "components/modal_status";

@@ -37,6 +37,8 @@ $btn-line-bg: #fff; // button bg
 $btn-line-color: $secondary; // button border and font color && hover bg color
 $btn-copy-color: $secondary; // btn copy
 $btn-qr-color: $secondary; // btn qr-code
+$btn-address-card-icon-color: $secondary; // btn address color
+$btn-contract-color: $secondary;
 
 //links & tile
 $tile-body-a-color: $secondary;
@@ -56,4 +58,18 @@ $card-tab-active: $secondary;
 	    $dashboard-banner-gradient-end
 	  );
 	}
+}
+
+// Dark theme
+$dark-primary: #49a2ee;
+$dark-secondary: #4ad7a7;
+$dark-primary-alternate: #49a2ee;
+
+.dark-theme-applied {
+  .dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(1)::before {
+    background-color: $dark-primary !important;
+  }
+  .dashboard-banner-chart-legend .dashboard-banner-chart-legend-item:nth-child(2)::before {
+    background-color: $dark-secondary !important;
+  }
 }

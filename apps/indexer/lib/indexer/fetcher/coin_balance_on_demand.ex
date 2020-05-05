@@ -17,8 +17,9 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
 
   alias EthereumJSONRPC.FetchedBalances
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, BlockNumberCache}
+  alias Explorer.Chain.Address
   alias Explorer.Chain.Address.CoinBalance
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.Fetcher.CoinBalance, as: CoinBalanceFetcher
   alias Timex.Duration
@@ -70,7 +71,11 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   end
 
   def handle_cast({:fetch_and_update, block_number, address}, state) do
-    fetch_and_update(block_number, address, state.json_rpc_named_arguments)
+    result = fetch_and_update(block_number, address, state.json_rpc_named_arguments)
+
+    with {:ok, %{addresses: addresses}} <- result do
+      Accounts.drop(addresses)
+    end
 
     {:noreply, state}
   end
@@ -161,7 +166,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   end
 
   defp latest_block_number do
-    BlockNumberCache.max_number()
+    BlockNumber.get_max()
   end
 
   defp stale_balance_window(block_number) do

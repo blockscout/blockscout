@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   use BlockScoutWeb, :controller
 
   alias Explorer.Chain.SmartContract
-  alias Explorer.SmartContract.{Publisher, Solidity.CodeCompiler, Solidity.CompilerVersion}
+  alias Explorer.SmartContract.{PublisherWorker, Solidity.CodeCompiler, Solidity.CompilerVersion}
 
   def new(conn, %{"address_id" => address_hash_string}) do
     changeset =
@@ -16,31 +16,21 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     render(conn, "new.html",
       changeset: changeset,
       compiler_versions: compiler_versions,
-      evm_versions: CodeCompiler.allowed_evm_versions()
+      evm_versions: CodeCompiler.allowed_evm_versions(),
+      address_hash: address_hash_string
     )
   end
 
   def create(
         conn,
         %{
-          "address_id" => address_hash_string,
           "smart_contract" => smart_contract,
           "external_libraries" => external_libraries
         }
       ) do
-    case Publisher.publish(address_hash_string, smart_contract, external_libraries) do
-      {:ok, _smart_contract} ->
-        redirect(conn, to: address_contract_path(conn, :index, address_hash_string))
+    Que.add(PublisherWorker, {smart_contract["address_hash"], smart_contract, external_libraries, conn})
 
-      {:error, changeset} ->
-        {:ok, compiler_versions} = CompilerVersion.fetch_versions()
-
-        render(conn, "new.html",
-          changeset: changeset,
-          compiler_versions: compiler_versions,
-          evm_versions: CodeCompiler.allowed_evm_versions()
-        )
-    end
+    send_resp(conn, 204, "")
   end
 
   def parse_optimization_runs(%{"runs" => runs}) do

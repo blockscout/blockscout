@@ -1,7 +1,11 @@
-const path = require('path');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const glob = require("glob");
+const path = require('path')
+const TerserJSPlugin = require('terser-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const { ContextReplacementPlugin } = require('webpack')
+const glob = require('glob')
+const webpack = require('webpack')
 
 function transpileViewScript(file) {
   return {
@@ -18,18 +22,86 @@ function transpileViewScript(file) {
           use: {
             loader: 'babel-loader'
           }
-        },
+        }
       ]
     }
   }
 };
 
+const jsOptimizationParams = {
+  cache: true,
+  parallel: true,
+  sourceMap: true
+}
+
+const awesompleteJs = {
+  entry: {
+    awesomplete: './js/lib/awesomplete.js',
+    'awesomplete-util': './js/lib/awesomplete-util.js',
+  },
+  output: {
+    filename: '[name].min.js',
+    path: path.resolve(__dirname, '../priv/static/js')
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: "css-loader",
+          }
+        ]
+      }
+    ]
+  },
+  optimization: {
+    minimizer: [
+      new TerserJSPlugin(jsOptimizationParams),
+    ]
+  },
+  plugins: [
+    new MiniCssExtractPlugin({
+      filename: '../css/awesomplete.css'
+    })
+  ]
+}
+
 const appJs =
   {
-    entry: './js/app.js',
+    entry: {
+      app: './js/app.js',
+      stakes: './js/pages/stakes.js',
+      'chart-loader': './js/chart-loader.js',
+      'chain': './js/pages/chain.js',
+      'blocks': './js/pages/blocks.js',
+      'address': './js/pages/address.js',
+      'address-transactions': './js/pages/address/transactions.js',
+      'address-coin-balances': './js/pages/address/coin_balances.js',
+      'address-internal-transactions': './js/pages/address/internal_transactions.js',
+      'address-logs': './js/pages/address/logs.js',
+      'address-validations': './js/pages/address/validations.js',
+      'validated-transactions': './js/pages/transactions.js',
+      'pending-transactions': './js/pages/pending_transactions.js',
+      'transaction': './js/pages/transaction.js',
+      'verification-form': './js/pages/verification_form.js',
+      'token-counters': './js/pages/token_counters.js',
+      'admin-tasks': './js/pages/admin/tasks.js',
+      'read-token-contract': './js/pages/read_token_contract.js',
+      'smart-contract-helpers': './js/lib/smart_contract/index.js',
+      'token-transfers-toggle': './js/lib/token_transfers_toggle.js',
+      'try-api': './js/lib/try_api.js',
+      'try-eth-api': './js/lib/try_eth_api.js',
+      'async-listing-load': './js/lib/async_listing_load',
+      'non-critical': './css/non-critical.scss'
+    },
     output: {
-      filename: 'app.js',
+      filename: '[name].js',
       path: path.resolve(__dirname, '../priv/static/js')
+    },
+    optimization: {
+      minimizer: [new TerserJSPlugin(jsOptimizationParams), new OptimizeCSSAssetsPlugin({})],
     },
     module: {
       rules: [
@@ -42,23 +114,25 @@ const appJs =
         },
         {
           test: /\.scss$/,
-          use: ExtractTextPlugin.extract({
-            use: [{
-              loader: "css-loader"
+          use: [
+            MiniCssExtractPlugin.loader,
+            {
+              loader: 'css-loader'
             }, {
-              loader: "postcss-loader"
+              loader: 'postcss-loader'
             }, {
-              loader: "sass-loader",
+              loader: 'sass-loader',
               options: {
-                precision: 8,
-                includePaths: [
-                  'node_modules/bootstrap/scss',
-                  'node_modules/@fortawesome/fontawesome-free/scss'
-                ]
+                sassOptions: {
+                  precision: 8,
+                  includePaths: [
+                    'node_modules/bootstrap/scss',
+                    'node_modules/@fortawesome/fontawesome-free/scss'
+                  ]
+                }
               }
-            }],
-            fallback: 'style-loader'
-          })
+            }
+          ]
         }, {
           test: /\.(svg|ttf|eot|woff|woff2)$/,
           use: {
@@ -73,11 +147,17 @@ const appJs =
       ]
     },
     plugins: [
-      new ExtractTextPlugin('../css/app.css'),
-      new CopyWebpackPlugin([{ from: 'static/', to: '../' }])
+      new MiniCssExtractPlugin({
+        filename: '../css/[name].css'
+      }),
+      new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
+      new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
+      new webpack.DefinePlugin({
+        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT)
+      })
     ]
   }
 
-const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript);
+const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs);
+module.exports = viewScripts.concat(appJs, awesompleteJs)

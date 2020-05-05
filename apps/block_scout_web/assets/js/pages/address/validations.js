@@ -1,9 +1,10 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import omit from 'lodash/omit'
 import humps from 'humps'
 import socket from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load.js'
+import '../address'
 
 export const initialState = {
   addressHash: null,
@@ -14,7 +15,7 @@ export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD':
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, _.omit(action, 'type'))
+      return Object.assign({}, state, omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
       return Object.assign({}, state, { channelDisconnected: true })

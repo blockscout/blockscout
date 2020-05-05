@@ -11,7 +11,10 @@ defmodule BlockScoutWeb.AddressChannel do
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
-  intercept(["balance_update", "coin_balance", "count", "internal_transaction", "transaction"])
+  intercept(["balance_update", "coin_balance", "count", "internal_transaction", "transaction", "verification_result"])
+
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
 
   def join("addresses:" <> address_hash, _params, socket) do
     {:ok, %{}, assign(socket, :address_hash, address_hash)}
@@ -58,10 +61,22 @@ defmodule BlockScoutWeb.AddressChannel do
     end
   end
 
+  def handle_out("verification_result", result, socket) do
+    case result[:result] do
+      {:ok, _contract} ->
+        push(socket, "verification", %{verification_result: :ok})
+        {:noreply, socket}
+
+      {:error, result} ->
+        push(socket, "verification", %{verification_result: result})
+        {:noreply, socket}
+    end
+  end
+
   def handle_out("count", %{count: count}, socket) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
-    push(socket, "count", %{count: Cldr.Number.to_string!(count, format: "#,###")})
+    push(socket, "count", %{count: BlockScoutWeb.Cldr.Number.to_string!(count, format: "#,###")})
 
     {:noreply, socket}
   end
@@ -115,8 +130,10 @@ defmodule BlockScoutWeb.AddressChannel do
       View.render_to_string(
         TransactionView,
         "_tile.html",
+        conn: socket,
         current_address: address,
-        transaction: transaction
+        transaction: transaction,
+        burn_address_hash: @burn_address_hash
       )
 
     push(socket, event, %{

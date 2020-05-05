@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedControllerTest do
 
   test "verifying a smart contract with external libraries", %{conn: conn} do
     contract_data =
-      "#{File.cwd!()}/test/support/fixture/smart_contract/compiler_tests.json"
+      "#{File.cwd!()}/test/support/fixture/smart_contract/contract_with_lib.json"
       |> File.read!()
       |> Jason.decode!()
       |> List.first()
@@ -68,5 +68,9 @@ defmodule BlockScoutWeb.API.V1.VerifiedControllerTest do
 
     assert response.status == 201
     assert Jason.decode!(response.resp_body) == %{"status" => "success"}
+  end
+
+  defp api_v1_verified_smart_contract_path(conn, action) do
+    "/api" <> ApiRoutes.api_v1_verified_smart_contract_path(conn, action)
   end
 end

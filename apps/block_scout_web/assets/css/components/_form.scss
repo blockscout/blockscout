@@ -9,6 +9,11 @@ $form-control-border-color: #e2e5ec !default;
     border-radius: 4px;
   }
 
+  &:focus {
+    border-color: $secondary;
+    box-shadow: none;
+  }
+
   &.n-b-r {
     border-right: none;
   }

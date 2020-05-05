@@ -1,15 +1,20 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import omit from 'lodash/omit'
+import first from 'lodash/first'
+import rangeRight from 'lodash/rangeRight'
+import find from 'lodash/find'
+import map from 'lodash/map'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
+import { updateAllCalculatedUsdValues, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { batchChannel } from '../lib/utils'
+import { batchChannel, showLoader } from '../lib/utils'
 import listMorph from '../lib/list_morph'
-import { createMarketHistoryChart } from '../lib/market_history_chart'
+import '../app'
 
 const BATCH_THRESHOLD = 6
+const BLOCKS_PER_PAGE = 4
 
 export const initialState = {
   addressCount: null,
@@ -33,7 +38,7 @@ export const reducer = withMissingBlocks(baseReducer)
 function baseReducer (state = initialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, _.omit(action, 'type'))
+      return Object.assign({}, state, omit(action, 'type'))
     }
     case 'RECEIVED_NEW_ADDRESS_COUNT': {
       return Object.assign({}, state, {
@@ -42,11 +47,17 @@ function baseReducer (state = initialState, action) {
     }
     case 'RECEIVED_NEW_BLOCK': {
       if (!state.blocks.length || state.blocks[0].blockNumber < action.msg.blockNumber) {
+        let pastBlocks
+        if (state.blocks.length < BLOCKS_PER_PAGE) {
+          pastBlocks = state.blocks
+        } else {
+          pastBlocks = state.blocks.slice(0, -1)
+        }
         return Object.assign({}, state, {
           averageBlockTime: action.msg.averageBlockTime,
           blocks: [
             action.msg,
-            ...state.blocks.slice(0, -1)
+            ...pastBlocks
           ],
           blockCount: action.msg.blockNumber + 1
         })
@@ -64,10 +75,10 @@ function baseReducer (state = initialState, action) {
       return Object.assign({}, state, { blocksLoading: false })
     }
     case 'BLOCKS_FETCHED': {
-      return Object.assign({}, state, { blocks: [...action.msg.blocks] })
+      return Object.assign({}, state, { blocks: [...action.msg.blocks], blocksLoading: false })
     }
     case 'BLOCKS_REQUEST_ERROR': {
-      return Object.assign({}, state, { blocksError: true })
+      return Object.assign({}, state, { blocksError: true, blocksLoading: false })
     }
     case 'RECEIVED_NEW_EXCHANGE_RATE': {
       return Object.assign({}, state, {
@@ -85,7 +96,16 @@ function baseReducer (state = initialState, action) {
         return Object.assign({}, state, { transactionCount })
       }
 
-      if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
+      const transactionsLength = state.transactions.length + action.msgs.length
+      if (transactionsLength < BATCH_THRESHOLD) {
+        return Object.assign({}, state, {
+          transactions: [
+            ...action.msgs.reverse(),
+            ...state.transactions
+          ],
+          transactionCount
+        })
+      } else if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
           transactions: [
             ...action.msgs.reverse(),
@@ -102,6 +122,11 @@ function baseReducer (state = initialState, action) {
           transactionCount
         })
       }
+    }
+    case 'RECEIVED_UPDATED_TRANSACTION_STATS': {
+      return Object.assign({}, state, {
+        transactionStats: action.msg.stats
+      })
     }
     case 'START_TRANSACTIONS_FETCH':
       return Object.assign({}, state, { transactionsError: false, transactionsLoading: true })
@@ -122,12 +147,12 @@ function withMissingBlocks (reducer) {
 
     if (!result.blocks || result.blocks.length < 2) return result
 
-    const maxBlock = _.first(result.blocks).blockNumber
+    const maxBlock = first(result.blocks).blockNumber
     const minBlock = maxBlock - (result.blocks.length - 1)
 
     return Object.assign({}, result, {
-      blocks: _.rangeRight(minBlock, maxBlock + 1)
-        .map((blockNumber) => _.find(result.blocks, ['blockNumber', blockNumber]) || {
+      blocks: rangeRight(minBlock, maxBlock + 1)
+        .map((blockNumber) => find(result.blocks, ['blockNumber', blockNumber]) || {
           blockNumber,
           chainBlockHtml: placeHolderBlock(blockNumber)
         })
@@ -137,13 +162,18 @@ function withMissingBlocks (reducer) {
 
 let chart
 const elements = {
-  '[data-chart="marketHistoryChart"]': {
-    load ($el) {
-      chart = createMarketHistoryChart($el[0])
+  '[data-chart="historyChart"]': {
+    load () {
+      chart = window.dashboardChart
     },
     render ($el, state, oldState) {
       if (!chart || (oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) || !state.availableSupply) return
-      chart.update(state.availableSupply, state.marketHistoryData)
+
+      chart.updateMarketHistory(state.availableSupply, state.marketHistoryData)
+
+      if (!chart || (JSON.stringify(oldState.transactionStats) === JSON.stringify(state.transactionStats))) return
+
+      chart.updateTransactionHistory(state.transactionStats)
     }
   },
   '[data-selector="transaction-count"]': {
@@ -182,6 +212,13 @@ const elements = {
       $el.empty().append(formatUsdValue(state.usdMarketCap))
     }
   },
+  '[data-selector="tx_per_day"]': {
+    render ($el, state, oldState) {
+      if (!(JSON.stringify(oldState.transactionStats) === JSON.stringify(state.transactionStats))) {
+        $el.empty().append(numeral(state.transactionStats[0].number_of_transactions).format('0,0'))
+      }
+    }
+  },
   '[data-selector="chain-block-list"]': {
     load ($el) {
       return {
@@ -194,13 +231,13 @@ const elements = {
       const container = $el[0]
 
       if (state.blocksLoading === false) {
-        const blocks = _.map(state.blocks, ({ chainBlockHtml }) => $(chainBlockHtml)[0])
+        const blocks = map(state.blocks, ({ chainBlockHtml }) => $(chainBlockHtml)[0])
         listMorph(container, blocks, { key: 'dataset.blockNumber', horizontal: true })
       }
     }
   },
   '[data-selector="chain-block-list"] [data-selector="error-message"]': {
-    render ($el, state, oldState) {
+    render ($el, state, _oldState) {
       if (state.blocksError) {
         $el.show()
       } else {
@@ -209,22 +246,18 @@ const elements = {
     }
   },
   '[data-selector="chain-block-list"] [data-selector="loading-message"]': {
-    render ($el, state, oldState) {
-      if (state.blocksLoading) {
-        $el.show()
-      } else {
-        $el.hide()
-      }
+    render ($el, state, _oldState) {
+      showLoader(state.blocksLoading, $el)
     }
   },
   '[data-selector="transactions-list"] [data-selector="error-message"]': {
-    render ($el, state, oldState) {
+    render ($el, state, _oldState) {
       $el.toggle(state.transactionsError)
     }
   },
   '[data-selector="transactions-list"] [data-selector="loading-message"]': {
-    render ($el, state, oldState) {
-      $el.toggle(state.transactionsLoading)
+    render ($el, state, _oldState) {
+      showLoader(state.transactionsLoading, $el)
     }
   },
   '[data-selector="transactions-list"]': {
@@ -234,7 +267,7 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.transactions === state.transactions) return
       const container = $el[0]
-      const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
+      const newElements = map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
       listMorph(container, newElements, { key: 'dataset.identifierHash' })
     }
   },
@@ -259,40 +292,52 @@ if ($chainDetailsPage.length) {
   loadBlocks(store)
   bindBlockErrorMessage(store)
 
-  exchangeRateChannel.on('new_rate', (msg) => store.dispatch({
-    type: 'RECEIVED_NEW_EXCHANGE_RATE',
-    msg: humps.camelizeKeys(msg)
-  }))
+  const exchangeRateChannel = socket.channel('exchange_rate:new_rate')
+  exchangeRateChannel.join()
+  exchangeRateChannel.on('new_rate', (msg) => {
+    updateAllCalculatedUsdValues(humps.camelizeKeys(msg).exchangeRate.usdValue)
+    store.dispatch({
+      type: 'RECEIVED_NEW_EXCHANGE_RATE',
+      msg: humps.camelizeKeys(msg)
+    })
+  })
 
-  const addressesChannel = socket.channel(`addresses:new_address`)
+  const addressesChannel = socket.channel('addresses:new_address')
   addressesChannel.join()
   addressesChannel.on('count', msg => store.dispatch({
     type: 'RECEIVED_NEW_ADDRESS_COUNT',
     msg: humps.camelizeKeys(msg)
   }))
 
-  const blocksChannel = socket.channel(`blocks:new_block`)
+  const blocksChannel = socket.channel('blocks:new_block')
   blocksChannel.join()
   blocksChannel.on('new_block', msg => store.dispatch({
     type: 'RECEIVED_NEW_BLOCK',
     msg: humps.camelizeKeys(msg)
   }))
 
-  const transactionsChannel = socket.channel(`transactions:new_transaction`)
+  const transactionsChannel = socket.channel('transactions:new_transaction')
   transactionsChannel.join()
   transactionsChannel.on('transaction', batchChannel((msgs) => store.dispatch({
     type: 'RECEIVED_NEW_TRANSACTION_BATCH',
     msgs: humps.camelizeKeys(msgs)
   })))
+
+  const transactionStatsChannel = socket.channel('transactions:stats')
+  transactionStatsChannel.join()
+  transactionStatsChannel.on('update', msg => store.dispatch({
+    type: 'RECEIVED_UPDATED_TRANSACTION_STATS',
+    msg: msg
+  }))
 }
 
 function loadTransactions (store) {
   const path = store.getState().transactionsPath
-  store.dispatch({type: 'START_TRANSACTIONS_FETCH'})
+  store.dispatch({ type: 'START_TRANSACTIONS_FETCH' })
   $.getJSON(path)
-    .done(response => store.dispatch({type: 'TRANSACTIONS_FETCHED', msg: humps.camelizeKeys(response)}))
-    .fail(() => store.dispatch({type: 'TRANSACTIONS_FETCH_ERROR'}))
-    .always(() => store.dispatch({type: 'FINISH_TRANSACTIONS_FETCH'}))
+    .done(response => store.dispatch({ type: 'TRANSACTIONS_FETCHED', msg: humps.camelizeKeys(response) }))
+    .fail(() => store.dispatch({ type: 'TRANSACTIONS_FETCH_ERROR' }))
+    .always(() => store.dispatch({ type: 'FINISH_TRANSACTIONS_FETCH' }))
 }
 
 function bindTransactionErrorMessage (store) {
@@ -325,14 +370,14 @@ export function placeHolderBlock (blockNumber) {
 function loadBlocks (store) {
   const url = store.getState().blocksPath
 
-  store.dispatch({type: 'START_BLOCKS_FETCH'})
+  store.dispatch({ type: 'START_BLOCKS_FETCH' })
 
   $.getJSON(url)
     .done(response => {
-      store.dispatch({type: 'BLOCKS_FETCHED', msg: humps.camelizeKeys(response)})
+      store.dispatch({ type: 'BLOCKS_FETCHED', msg: humps.camelizeKeys(response) })
     })
-    .fail(() => store.dispatch({type: 'BLOCKS_REQUEST_ERROR'}))
-    .always(() => store.dispatch({type: 'BLOCKS_FINISH_REQUEST'}))
+    .fail(() => store.dispatch({ type: 'BLOCKS_REQUEST_ERROR' }))
+    .always(() => store.dispatch({ type: 'BLOCKS_FINISH_REQUEST' }))
 }
 
 function bindBlockErrorMessage (store) {

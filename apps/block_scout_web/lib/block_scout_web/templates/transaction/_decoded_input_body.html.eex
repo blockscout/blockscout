@@ -1,4 +1,5 @@
-<table summary="<%= gettext "Transaction Info" %>" class="table thead-light table-bordered table-responsive transaction-info-table">
+<div class="table-responsive text-center">
+  <table style="color: black;" summary="<%= gettext "Transaction Inputs" %>" class="table thead-light table-bordered">
   <tr>
   <td><%= gettext "Method Id" %></td>
   <td colspan="3"><code>0x<%= @method_id %></code></td>
@@ -7,49 +8,52 @@
   <td>Call</td>
   <td colspan="3"><code><%= @text %></code></td>
   </tr>
-</table>
+  </table>
+</div>
 
 <%= unless Enum.empty?(@mapping) do %>
-  <table summary="<%= gettext "Transaction Inputs" %>" class="table thead-light table-bordered table-responsive">
-    <tr>
-    <th scope="col"></th>
-    <th scope="col"><%= gettext "Name" %></th>
-    <th scope="col"><%= gettext "Type" %></th>
-    <th scope="col"><%= gettext "Data" %></th>
-    <tr>
-    <%= for {name, type, value} <- @mapping do %>
+  <div class="table-responsive text-center">
+    <table style="color: black; table-layout: fixed;" summary="<%= gettext "Transaction Inputs" %>" class="table thead-light table-bordered">
       <tr>
-        <th scope="row">
-          <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
-            <% :error -> %>
-              <%= nil %>
-            <% copy_text -> %>
-              <span
-                aria-label='<%= gettext "Copy Value" %>'
-                class="btn-copy-ico"
-                data-clipboard-text='<%= copy_text %>'
-                data-placement="top"
-                data-toggle="tooltip"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
-                  <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
-                </svg>
-              </span>
-          <% end %>
-        </th>
-        <td><%= name %></td>
-        <td><%= type %></td>
-        <td>
-          <%= case BlockScoutWeb.ABIEncodedValueView.value_html(type, value) do %>
-            <% :error -> %>
-              <div class="alert alert-danger">
-                <%= gettext "Error rendering value" %>
-              </div>
-            <% value -> %>
-              <pre class="transaction-input-text tile"><code><%= value %></code></pre>
+      <th scope="col" style="width: 60px;"></th>
+      <th scope="col" style="width: 10%;"><%= gettext "Name" %></th>
+      <th scope="col" style="width: 10%;"><%= gettext "Type" %></th>
+      <th scope="col"><%= gettext "Data" %></th>
+      <tr>
+      <%= for {name, type, value} <- @mapping do %>
+        <tr>
+          <th scope="row">
+            <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
+              <% :error -> %>
+                <%= nil %>
+              <% copy_text -> %>
+                <span
+                  aria-label='<%= gettext "Copy Value" %>'
+                  class="btn-copy-ico"
+                  data-clipboard-text='<%= copy_text %>'
+                  data-placement="top"
+                  data-toggle="tooltip"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+                    <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+                  </svg>
+                </span>
             <% end %>
-        </td>
-      </tr>
-    <% end %>
-  </table>
+          </th>
+          <td><%= name %></td>
+          <td><%= type %></td>
+          <td>
+            <%= case BlockScoutWeb.ABIEncodedValueView.value_html(type, value) do %>
+              <% :error -> %>
+                <div class="alert alert-danger">
+                  <%= gettext "Error rendering value" %>
+                </div>
+              <% value -> %>
+                <pre class="transaction-input-text tile pre-wrap"><code><%= value %></code></pre>
+              <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+   </div>
 <% end %>

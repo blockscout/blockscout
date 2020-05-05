@@ -1,0 +1,95 @@
+<tr class="table-content-pseudo">
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <%= if balance_percentage_enabled?(@total_supply) do %>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <% end %>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+</tr>
+<tr class="table-content-pseudo">
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <%= if balance_percentage_enabled?(@total_supply) do %>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <% end %>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+</tr>
+<tr class="table-content-pseudo">
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <%= if balance_percentage_enabled?(@total_supply) do %>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <% end %>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+</tr>
+<tr class="table-content-pseudo">
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <%= if balance_percentage_enabled?(@total_supply) do %>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <% end %>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+</tr>
+<tr class="table-content-pseudo">
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <%= if balance_percentage_enabled?(@total_supply) do %>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+  <% end %>
+  <td class="stakes-td">
+    <span class="table-content-loader"></span>
+  </td>
+</tr>

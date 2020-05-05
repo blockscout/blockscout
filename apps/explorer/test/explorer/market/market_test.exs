@@ -6,12 +6,12 @@ defmodule Explorer.MarketTest do
   alias Explorer.Repo
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
-    Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
 
     on_exit(fn ->
-      Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
-      Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Chain.BlocksCache.cache_name()})
+      Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     end)
 
     :ok
@@ -72,9 +72,30 @@ defmodule Explorer.MarketTest do
       assert missing_records == %{}
     end
 
-    test "overrides existing records on date conflict" do
+    test "doesn't replace existing records with zeros" do
       date = ~D[2018-04-01]
-      Repo.insert(%MarketHistory{date: date})
+
+      {:ok, old_record} =
+        Repo.insert(%MarketHistory{date: date, closing_price: Decimal.new(1), opening_price: Decimal.new(1)})
+
+      new_record = %{
+        date: date,
+        closing_price: Decimal.new(0),
+        opening_price: Decimal.new(0)
+      }
+
+      Market.bulk_insert_history([new_record])
+
+      fetched_record = Repo.get_by(MarketHistory, date: date)
+      assert fetched_record.closing_price == old_record.closing_price
+      assert fetched_record.opening_price == old_record.opening_price
+    end
+
+    test "does not override existing records on date conflict" do
+      date = ~D[2018-04-01]
+
+      {:ok, old_record} =
+        Repo.insert(%MarketHistory{date: date, closing_price: Decimal.new(2), opening_price: Decimal.new(2)})
 
       new_record = %{
         date: date,
@@ -85,8 +106,8 @@ defmodule Explorer.MarketTest do
       Market.bulk_insert_history([new_record])
 
       fetched_record = Repo.get_by(MarketHistory, date: date)
-      assert fetched_record.closing_price == new_record.closing_price
-      assert fetched_record.opening_price == new_record.opening_price
+      assert fetched_record.closing_price == old_record.closing_price
+      assert fetched_record.opening_price == old_record.opening_price
     end
   end
 end

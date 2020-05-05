@@ -70,7 +70,10 @@ $colors: map-merge(
 );
 
 $primary: $indigo !default;
+$dark-primary: #9b62ff !default;
+$dark-primary-alternate: #9b62ff !default;
 $secondary: #7dd79f !default;
+$dark-secondary: #87e1a9 !default;
 $tertiary: $purple !default;
 $success: $green !default;
 $info: $cyan !default;
@@ -252,10 +255,11 @@ $transition-cont: all 0.4s ease-in-out !default;
 // Font, line-height, and color for body text, headings, and more.
 
 // stylelint-disable value-keyword-case
-$font-family-sans-serif: "Roboto", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
-$font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !default;
-$font-family-base: $font-family-sans-serif !default;
-$font-family-heading: 'Lato', sans-serif;
+$font-family: Nunito, "Helvetica Neue", Arial, sans-serif,
+  "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
+$font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas,
+  "Liberation Mono", "Courier New", monospace !default;
+$font-family-base: $font-family !default;
 // stylelint-enable value-keyword-case
 
 $font-size-base: 1rem !default; // Assumes the browser default, typically `16px`
@@ -355,7 +359,7 @@ $input-btn-padding-y: 0.375rem !default;
 $input-btn-padding-x: 0.75rem !default;
 $input-btn-line-height: $line-height-base !default;
 
-$input-btn-focus-width: 0.2rem !default;
+$input-btn-focus-width: 1px !default;
 $input-btn-focus-color: rgba($component-active-bg, 0.25) !default;
 $input-btn-focus-box-shadow: 0 0 0 $input-btn-focus-width $input-btn-focus-color !default;
 

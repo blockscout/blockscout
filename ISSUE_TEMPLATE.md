@@ -4,6 +4,7 @@
 
 * Elixir & Erlang/OTP versions (`elixir -version`):
 * Operating System:
+* Blockscout Version/branch: 
 
 ### Steps to reproduce
 

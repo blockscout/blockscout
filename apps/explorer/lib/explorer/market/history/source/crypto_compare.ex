@@ -24,7 +24,12 @@ defmodule Explorer.Market.History.Source.CryptoCompare do
 
     case HTTPoison.get(url, headers) do
       {:ok, %Response{body: body, status_code: 200}} ->
-        {:ok, format_data(body)}
+        result =
+          body
+          |> format_data()
+          |> reject_zeros()
+
+        {:ok, result}
 
       _ ->
         :error
@@ -66,5 +71,11 @@ defmodule Explorer.Market.History.Source.CryptoCompare do
     }
 
     "#{base_url()}/data/histoday?#{URI.encode_query(query_params)}"
+  end
+
+  defp reject_zeros(items) do
+    Enum.reject(items, fn item ->
+      Decimal.equal?(item.closing_price, 0) && Decimal.equal?(item.opening_price, 0)
+    end)
   end
 end

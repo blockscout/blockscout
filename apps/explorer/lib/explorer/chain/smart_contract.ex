@@ -13,6 +13,7 @@ defmodule Explorer.Chain.SmartContract do
   use Explorer.Schema
 
   alias Explorer.Chain.{Address, ContractMethod, DecompiledSmartContract, Hash}
+  alias Explorer.Chain.SmartContract.ExternalLibrary
   alias Explorer.Repo
 
   @typedoc """
@@ -212,7 +213,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:constructor_arguments, :string)
     field(:evm_version, :string)
     field(:optimization_runs, :integer)
-    field(:external_libraries, :map)
+    embeds_many(:external_libraries, ExternalLibrary)
     field(:abi, {:array, :map})
 
     has_many(
@@ -247,8 +248,7 @@ defmodule Explorer.Chain.SmartContract do
       :abi,
       :constructor_arguments,
       :evm_version,
-      :optimization_runs,
-      :external_libraries
+      :optimization_runs
     ])
     |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
@@ -269,6 +269,45 @@ defmodule Explorer.Chain.SmartContract do
     ])
     |> validate_required([:name, :compiler_version, :optimization, :address_hash])
     |> add_error(:contract_source_code, error_message(error))
+  end
+
+  def add_submitted_comment(code, inserted_at) when is_binary(code) do
+    code
+    |> String.split("\n")
+    |> add_submitted_comment(inserted_at)
+    |> Enum.join("\n")
+  end
+
+  def add_submitted_comment(contract_lines, inserted_at) when is_list(contract_lines) do
+    etherscan_index =
+      Enum.find_index(contract_lines, fn line ->
+        String.contains?(line, "Submitted for verification at Etherscan.io")
+      end)
+
+    blockscout_index =
+      Enum.find_index(contract_lines, fn line ->
+        String.contains?(line, "Submitted for verification at blockscout.com")
+      end)
+
+    cond do
+      etherscan_index && blockscout_index ->
+        List.replace_at(contract_lines, etherscan_index, "*")
+
+      etherscan_index && !blockscout_index ->
+        List.replace_at(
+          contract_lines,
+          etherscan_index,
+          "* Submitted for verification at blockscout.com on #{inserted_at}"
+        )
+
+      !etherscan_index && !blockscout_index ->
+        header = ["/**", "* Submitted for verification at blockscout.com on #{inserted_at}", "*/"]
+
+        header ++ contract_lines
+
+      true ->
+        contract_lines
+    end
   end
 
   defp upsert_contract_methods(%Ecto.Changeset{changes: %{abi: abi}} = changeset) do

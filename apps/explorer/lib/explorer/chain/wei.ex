@@ -24,28 +24,32 @@ defmodule Explorer.Chain.Wei do
 
   defstruct ~w(value)a
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @impl Ecto.Type
   def type, do: :decimal
 
   @impl Ecto.Type
   def cast("0x" <> hex_wei) do
-    with {int_wei, ""} <- Integer.parse(hex_wei, 16) do
-      decimal = Decimal.new(int_wei)
-      {:ok, %__MODULE__{value: decimal}}
-    else
-      _ -> :error
+    case Integer.parse(hex_wei, 16) do
+      {int_wei, ""} ->
+        decimal = Decimal.new(int_wei)
+        {:ok, %__MODULE__{value: decimal}}
+
+      _ ->
+        :error
     end
   end
 
   @impl Ecto.Type
   def cast(string_wei) when is_binary(string_wei) do
-    with {int_wei, ""} <- Integer.parse(string_wei) do
-      decimal = Decimal.new(int_wei)
-      {:ok, %__MODULE__{value: decimal}}
-    else
-      _ -> :error
+    case Integer.parse(string_wei) do
+      {int_wei, ""} ->
+        decimal = Decimal.new(int_wei)
+        {:ok, %__MODULE__{value: decimal}}
+
+      _ ->
+        :error
     end
   end
 

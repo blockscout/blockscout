@@ -3,8 +3,7 @@
     OverviewView,
     "_details.html",
     token: @token,
-    total_token_transfers: @total_token_transfers,
-    total_token_holders: @total_token_holders,
+    counters_path: @counters_path,
     conn: @conn
   ) %>
 
@@ -27,11 +26,14 @@
           </div>
         </div>
 
-        <div data-items></div>
+        <div data-items>
+          <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
+        </div>
 
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
       </div>
     </div>
   </section>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-counters.js") %>"></script>
 </section>

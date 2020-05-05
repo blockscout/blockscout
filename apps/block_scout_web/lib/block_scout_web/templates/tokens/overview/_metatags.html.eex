@@ -2,4 +2,4 @@
   <%= "#{token_name(@token)} (#{token_symbol(@token)}) - #{LayoutView.subnetwork_title()} - BlockScout" %>
 </title>
 <meta name="description" content="<%= token_name(@token) %>, balances, and analytics on the <%= LayoutView.network_title() %>">
-<meta name="keywords" content="<%= "#{token_name(@token)}, #{token_symbol(@token)}, #{to_string(@token.contract_address_hash)}, #{LayoutView.network_title()}, #{Explorer.coin()}" %>">
+<meta name="keywords" content="<%= "#{token_name(@token)}, #{token_symbol(@token)}, #{Address.checksum(@token.contract_address_hash)}, #{LayoutView.network_title()}, #{Explorer.coin()}" %>">

@@ -1,9 +1,16 @@
 // general
-$primary: #0a1647;
-$secondary: #2990f9;
-$tertiary: #2bbdf7;
 
+// $primary: #101f25;
+$primary: #0a1647;
+$secondary: #27ac8d;
+$tertiary: #e39a54;
+// $additional-font: #a1ded1;
 $additional-font: #fff;
+
+$tile-body-a-color: $secondary;
+$tile-type-block-color: $secondary;
+$tile-type-progress-bar-color: $secondary;
+a.tile-title { color: $secondary !important; }
 
 // footer
 $footer-background-color: #0a1647;
@@ -18,18 +25,53 @@ $dashboard-banner-chart-legend-label-color: #27ffbc;
 $dashboard-stats-item-label-color: $dashboard-banner-chart-legend-label-color;
 $dashboard-banner-chart-legend-value-color: #fff; // chart labels
 $dashboard-stats-item-value-color: #fff; // stat values
-
 $dashboard-stats-item-border-color: $secondary; // stat border
-
 $dashboard-banner-gradient-start: $primary; // gradient begin
-
 $dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
-
 $dashboard-banner-network-plain-container-background-color: #15429d; // stats bg
 
-
 // navigation
-.navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
+$header-icon-border-color-hover: $secondary; // top border on hover
+$header-icon-color-hover: $secondary; // nav icon on hover
+
+// fonts
+$font-family-sans-serif: "Roboto", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
+$font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !default;
+$font-family-heading: 'Lato', sans-serif;
+$headings-font-family: $font-family-heading !default;
+
+.layout-container {
+    .navbar {
+      box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12);
+    }
+
+    .dashboard-banner-container {
+      background-image: linear-gradient(
+        to bottom,
+        $dashboard-banner-gradient-start,
+        $dashboard-banner-gradient-end
+      );
+    }
+
+    .footer-logo {
+      filter: brightness(0) invert(1);
+    }
+
+    .button, .btn {
+      border-radius: 5px;
+      font-size: 14px;
+    }
+}
+
+// Badges
+$badge-neutral-color: #1a323b;
+$badge-neutral-background-color: rgba(#1a323b, .1);
+
+// Dark theme
+$dark-primary: #140953;
+$dark-secondary: #e39a54;
+$dark-primary-alternate: #30ab8d;
+
 $dropdown-menu-item-hover-color: $primary !default;
 $dropdown-menu-item-hover-background: rgba($primary, .1) !default;
 $header-icon-color-hover: $primary;
@@ -50,18 +92,3 @@ a.tile-title { color: $primary !important; }
 // card
 $card-background-1: $primary;
 $card-tab-active: $primary;
-
-.layout-container {
-	.dashboard-banner-container {
-	  background-image: linear-gradient(
-	    to bottom,
-	    $dashboard-banner-gradient-start,
-	    $dashboard-banner-gradient-end
-	  );
-	}
-}
-
-// Badges
-$badge-neutral-color: $primary;
-$badge-neutral-background-color: rgba($primary, .1);
-$api-text-monospace-color: $primary;

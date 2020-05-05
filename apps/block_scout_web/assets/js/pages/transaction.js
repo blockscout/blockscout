@@ -1,9 +1,12 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import omit from 'lodash/omit'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import '../lib/transaction_input_dropdown'
+import '../lib/async_listing_load'
+import '../app'
 
 export const initialState = {
   blockNumber: null,
@@ -13,7 +16,7 @@ export const initialState = {
 export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, _.omit(action, 'type'))
+      return Object.assign({}, state, omit(action, 'type'))
     }
     case 'RECEIVED_NEW_BLOCK': {
       if ((action.msg.blockNumber - state.blockNumber) > state.confirmations) {
@@ -47,7 +50,7 @@ if ($transactionDetailsPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
 
-  const blocksChannel = socket.channel(`blocks:new_block`, {})
+  const blocksChannel = socket.channel('blocks:new_block', {})
   blocksChannel.join()
   blocksChannel.on('new_block', (msg) => store.dispatch({
     type: 'RECEIVED_NEW_BLOCK',

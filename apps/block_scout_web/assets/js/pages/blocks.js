@@ -1,9 +1,15 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import omit from 'lodash/omit'
+import last from 'lodash/last'
+import min from 'lodash/min'
+import max from 'lodash/max'
+import keys from 'lodash/keys'
+import rangeRight from 'lodash/rangeRight'
 import humps from 'humps'
 import socket from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../lib/async_listing_load'
+import '../app'
 
 export const initialState = {
   channelDisconnected: false
@@ -14,7 +20,7 @@ export const blockReducer = withMissingBlocks(baseReducer)
 function baseReducer (state = initialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, _.omit(action, 'type'))
+      return Object.assign({}, state, omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
       return Object.assign({}, state, {
@@ -25,7 +31,7 @@ function baseReducer (state = initialState, action) {
       if (state.channelDisconnected || state.beyondPageOne || state.blockType !== 'block') return state
 
       const blockNumber = getBlockNumber(action.msg.blockHtml)
-      const minBlock = getBlockNumber(_.last(state.items))
+      const minBlock = getBlockNumber(last(state.items))
 
       if (state.items.length && blockNumber < minBlock) return state
 
@@ -62,12 +68,12 @@ function withMissingBlocks (reducer) {
       return acc
     }, {})
 
-    const blockNumbers = _(blockNumbersToItems).keys().map(x => parseInt(x, 10)).value()
-    const minBlock = _.min(blockNumbers)
-    const maxBlock = _.max(blockNumbers)
+    const blockNumbers = keys(blockNumbersToItems).map(x => parseInt(x, 10))
+    const minBlock = min(blockNumbers)
+    const maxBlock = max(blockNumbers)
 
     return Object.assign({}, result, {
-      items: _.rangeRight(minBlock, maxBlock + 1)
+      items: rangeRight(minBlock, maxBlock + 1)
         .map((blockNumber) => blockNumbersToItems[blockNumber] || placeHolderBlock(blockNumber))
     })
   }
@@ -86,7 +92,7 @@ if ($blockListPage.length || $uncleListPage.length || $reorgListPage.length) {
   )
   connectElements({ store, elements })
 
-  const blocksChannel = socket.channel(`blocks:new_block`, {})
+  const blocksChannel = socket.channel('blocks:new_block', {})
   blocksChannel.join()
   blocksChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'

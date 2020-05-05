@@ -35,23 +35,23 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
   def export(address) do
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
-    address
+    address.hash
     |> fetch_all_transactions(@paging_options)
     |> to_csv_format(address, exchange_rate)
     |> dump_to_stream()
   end
 
-  defp fetch_all_transactions(address, paging_options, acc \\ []) do
-    options = Keyword.merge(@necessity_by_association, paging_options: paging_options)
+  defp fetch_all_transactions(address_hash, paging_options, acc \\ []) do
+    options = Keyword.put(@necessity_by_association, :paging_options, paging_options)
 
-    transactions = Chain.address_to_transactions_with_rewards(address, options)
+    transactions = Chain.address_to_transactions_without_rewards(address_hash, options)
 
     new_acc = transactions ++ acc
 
     case Enum.split(transactions, @page_size) do
       {_transactions, [%Transaction{block_number: block_number, index: index}]} ->
         new_paging_options = %{@paging_options | key: {block_number, index}}
-        fetch_all_transactions(address, new_paging_options, new_acc)
+        fetch_all_transactions(address_hash, new_paging_options, new_acc)
 
       {_, []} ->
         new_acc
@@ -93,7 +93,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
           to_string(transaction.from_address),
           to_string(transaction.to_address),
           to_string(transaction.created_contract_address),
-          type(transaction, address),
+          type(transaction, address.hash),
           Wei.to(transaction.value, :wei),
           fee(transaction),
           transaction.status,
@@ -107,9 +107,9 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
     Stream.concat([row_names], transaction_lists)
   end
 
-  defp type(%Transaction{from_address_hash: from_address}, %Address{hash: from_address}), do: "OUT"
+  defp type(%Transaction{from_address_hash: address_hash}, address_hash), do: "OUT"
 
-  defp type(%Transaction{to_address_hash: to_address}, %Address{hash: to_address}), do: "IN"
+  defp type(%Transaction{to_address_hash: address_hash}, address_hash), do: "IN"
 
   defp type(_, _), do: ""
 

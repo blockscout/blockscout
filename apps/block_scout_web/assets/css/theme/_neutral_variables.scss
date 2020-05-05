@@ -40,6 +40,7 @@ $btn-line-bg: #fff; // button bg
 $btn-line-color: $primary; // button border and font color && hover bg color
 $btn-copy-color: $primary; // btn copy
 $btn-qr-color: $primary; // btn qr-code
+$btn-address-card-icon-color: $primary; // btn address color
 
 //links & tile
 $tile-body-a-color: $primary;
@@ -71,4 +72,9 @@ $api-text-monospace-color: $primary;
   .dropdown-items .dropdown-item:hover {
     color: $primary !important;
   }
-} 
+}
+
+// Dark theme
+$dark-primary: #9b62ff;
+$dark-secondary: #87e1a9;
+$dark-primary-alternate: #7e50d0; 

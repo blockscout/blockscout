@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-body">
       <h1 class="card-title margin-bottom-sm"><%= gettext("ETH RPC API Documentation") %></h2>
-      <p class="api-text-monospace" data-endpoint-url="<%= blockscout_url() %>/api/eth_rpc">[ <%= gettext "Base URL:" %> <%= blockscout_url() %>/api/eth_rpc ]</p>
+      <p class="api-text-monospace" data-endpoint-url="<%= eth_rpc_api_url() %>">[ <%= gettext "Base URL:" %> <%= eth_rpc_api_url()%> ]</p>
       <p class="card-subtitle margin-bottom-0">
         <%= gettext "This API is provided to support some rpc methods in the exact format specified for ethereum nodes, which can be found " %>
 
@@ -17,18 +17,9 @@
     </div>
   </div>
   <div class="card">
-    <div class="card-body">
-        <table class="table">
-          <tr>
-            <th>Supported Method</th>
-            <th>Notes</th>
-          </tr>
-          <%= for {method, info} <- Map.to_list(@documentation) do %>
-            <tr>
-              <td> <a href="https://github.com/ethereum/wiki/wiki/JSON-RPC#<%= method %>"> <%= method %> </a> </td>
-              <td> <%= Map.get(info, :notes, "N/A") %> </td>
-            </tr>
-          <% end %>
-        </table>
+    <%= for {method, info} <- Map.to_list(@documentation) do %>
+      <%= render "_eth_rpc_item.html", action: method, info: info %>
+    <% end %>
   </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/try-eth-api.js") %>"></script>
 </section>

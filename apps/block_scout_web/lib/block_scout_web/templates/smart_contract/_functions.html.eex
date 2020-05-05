@@ -9,7 +9,7 @@
     </div>
 
     <%= if queryable?(function["inputs"]) do %>
-      <div>
+      <div style="width: 100%; overflow: hidden;">
         <form class="form-inline" data-function-form data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
 
@@ -19,7 +19,7 @@
             </div>
           <% end %>
 
-          <input type="submit" value='<%= gettext("Query")%>' class="button button-secondary button-xs py-0 mt-2" />
+          <input type="submit" value='<%= gettext("Query")%>' class="button btn-line button-xs py-0 mt-2" style="padding: 6px 8px!important;height: 26px;font-size: 11px;" />
         </form>
 
         <div class='p-2 text-muted <%= if (queryable?(function["inputs"]) == true), do: "w-100" %>'>

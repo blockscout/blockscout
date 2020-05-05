@@ -4,8 +4,6 @@ defmodule BlockScoutWeb.AddressValidationController do
   """
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
-
   import BlockScoutWeb.Chain,
     only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
@@ -17,7 +15,7 @@ defmodule BlockScoutWeb.AddressValidationController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_or_insert_address_from_hash(address_hash) do
+         {:ok, _} <- Chain.find_or_insert_address_from_hash(address_hash, [], false) do
       full_options =
         Keyword.merge(
           [
@@ -31,7 +29,7 @@ defmodule BlockScoutWeb.AddressValidationController do
           paging_options(params)
         )
 
-      blocks_plus_one = Chain.get_blocks_validated_by_address(full_options, address)
+      blocks_plus_one = Chain.get_blocks_validated_by_address(full_options, address_hash)
       {blocks, next_page} = split_list_by_page(blocks_plus_one)
 
       next_page_path =
@@ -63,9 +61,6 @@ defmodule BlockScoutWeb.AddressValidationController do
     else
       :error ->
         unprocessable_entity(conn)
-
-      {:error, :not_found} ->
-        not_found(conn)
     end
   end
 
@@ -78,8 +73,7 @@ defmodule BlockScoutWeb.AddressValidationController do
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         current_path: current_path(conn),
-        transaction_count: transaction_count(address),
-        validation_count: validation_count(address),
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
       )
     else

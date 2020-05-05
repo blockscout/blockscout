@@ -9,7 +9,12 @@ defmodule BlockScoutWeb.AddressCoinBalanceByDayController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
-      balances_by_day = Chain.address_to_balances_by_day(address_hash)
+      balances_by_day =
+        address_hash
+        |> Chain.address_to_balances_by_day()
+        |> Enum.map(fn %{value: value} = map ->
+          Map.put(map, :value, Decimal.to_float(value))
+        end)
 
       json(conn, balances_by_day)
     end

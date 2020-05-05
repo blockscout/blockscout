@@ -5,7 +5,7 @@ defmodule EthereumJSONRPC.Geth do
 
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
-  alias EthereumJSONRPC.{FetchedBalance, FetchedCode}
+  alias EthereumJSONRPC.{FetchedBalance, FetchedCode, Transactions}
   alias EthereumJSONRPC.Geth.{Calls, Tracer}
 
   @behaviour EthereumJSONRPC.Variant
@@ -38,6 +38,12 @@ defmodule EthereumJSONRPC.Geth do
   end
 
   @doc """
+  Fetches the first trace from the Parity trace URL.
+  """
+  @impl EthereumJSONRPC.Variant
+  def fetch_first_trace(_transactions_params, _json_rpc_named_arguments), do: :ignore
+
+  @doc """
   Internal transaction fetching for entire blocks is not currently supported for Geth.
 
   To signal to the caller that fetching is not supported, `:ignore` is returned.
@@ -46,12 +52,31 @@ defmodule EthereumJSONRPC.Geth do
   def fetch_block_internal_transactions(_block_range, _json_rpc_named_arguments), do: :ignore
 
   @doc """
-  Pending transaction fetching is not supported currently for Geth.
-
-  To signal to the caller that fetching is not supported, `:ignore` is returned.
+  Fetches the pending transactions from the Geth node.
   """
   @impl EthereumJSONRPC.Variant
-  def fetch_pending_transactions(_json_rpc_named_arguments), do: :ignore
+  def fetch_pending_transactions(json_rpc_named_arguments) do
+    with {:ok, transaction_data} <-
+           %{id: 1, method: "txpool_content", params: []} |> request() |> json_rpc(json_rpc_named_arguments) do
+      transactions_params =
+        transaction_data["pending"]
+        |> Enum.flat_map(fn {_address, nonce_transactions_map} ->
+          nonce_transactions_map
+          |> Enum.map(fn {_nonce, transaction} ->
+            transaction
+          end)
+        end)
+        |> Transactions.to_elixir()
+        |> Transactions.elixir_to_params()
+        |> Enum.map(fn params ->
+          # txpool_content always returns transaction with 0x0000000000000000000000000000000000000000000000000000000000000000 value in block hash and index is null.
+          # https://github.com/ethereum/go-ethereum/issues/19897
+          %{params | block_hash: nil, index: nil}
+        end)
+
+      {:ok, transactions_params}
+    end
+  end
 
   defp debug_trace_transaction_requests(id_to_params) when is_map(id_to_params) do
     Enum.map(id_to_params, fn {id, %{hash_data: hash_data}} ->

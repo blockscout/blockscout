@@ -14,15 +14,14 @@
     <!-- Pagination -->
     <ul class="pagination">
         <!-- First -->
-        <%= if assigns[:first_page_path] do %>
-          <li class="page-item">
-              <a
-                  <%= if !assigns[:first_page_path] do %>disabled<% end %>
-                  class="page-link"
-                  href='<%= "#{assigns[:first_page_path]}" %>'
-              >First</a>
-          </li>
-        <% end %>
+        <li class="page-item">
+          <a
+                disabled
+                class="page-link"
+                href
+                data-first-page-button
+            >First</a>
+        </li>
         <!-- Previous -->
         <li class="page-item">
             <a

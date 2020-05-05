@@ -1,32 +1,41 @@
 defmodule Explorer.ExchangeRates.Source.TokenBridgeTest do
   use Explorer.DataCase
+
+  alias Explorer.ExchangeRates.Source.CoinGecko
   alias Explorer.ExchangeRates.Source.TokenBridge
   alias Explorer.ExchangeRates.Token
+  alias Plug.Conn
 
-  @json """
-  [
-    {
-      "id": "poa-network",
-      "name": "POA Network",
-      "symbol": "POA",
-      "rank": "103",
-      "price_usd": "0.485053",
-      "price_btc": "0.00007032",
-      "24h_volume_usd": "20185000.0",
-      "market_cap_usd": "98941986.0",
-      "available_supply": "203981804.0",
-      "total_supply": "254473964.0",
-      "max_supply": null,
-      "percent_change_1h": "-0.66",
-      "percent_change_24h": "12.34",
-      "percent_change_7d": "49.15",
-      "last_updated": "1523473200"
+  @json "#{File.cwd!()}/test/support/fixture/exchange_rates/coin_gecko.json"
+        |> File.read!()
+        |> Jason.decode!()
+
+  @json_btc_price """
+  {
+    "rates": {
+      "usd": {
+        "name": "US Dollar",
+        "unit": "$",
+        "value": 6547.418,
+        "type": "fiat"
+      }
     }
-  ]
+  }
   """
 
   describe "format_data/1" do
-    test "bring a list with one %Token{}" do
+    setup do
+      bypass = Bypass.open()
+      Application.put_env(:explorer, CoinGecko, base_url: "http://localhost:#{bypass.port}")
+
+      {:ok, bypass: bypass}
+    end
+
+    test "bring a list with one %Token{}", %{bypass: bypass} do
+      Bypass.expect(bypass, "GET", "/exchange_rates", fn conn ->
+        Conn.resp(conn, 200, @json_btc_price)
+      end)
+
       assert [%Token{}] = TokenBridge.format_data(@json)
     end
   end

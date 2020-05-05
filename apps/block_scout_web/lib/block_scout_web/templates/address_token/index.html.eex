@@ -19,7 +19,9 @@
           </div>
         </div>
 
-        <div data-items></div>
+        <div data-items>
+          <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
+        </div>
 
         <div class="transaction-bottom-panel">
           <div csv-download class="download-all-transactions">
@@ -34,5 +36,6 @@
 
       </div>
     </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address.js") %>"></script>
   </section>
 </section>

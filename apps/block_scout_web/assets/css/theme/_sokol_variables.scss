@@ -49,7 +49,8 @@ $btn-line-bg: #fff; // button bg
 $btn-line-color: $sub-accent-color; // button border and font color && hover bg color
 $btn-copy-color: $sub-accent-color; // btn copy
 $btn-qr-color: $sub-accent-color; // btn qr-code
-
+$btn-address-card-icon-color: $sub-accent-color; // btn address color
+$btn-contract-color: $sub-accent-color;
 //links & tile
 $tile-body-a-color: $sub-accent-color;
 $tile-type-block-color: $sub-accent-color;
@@ -73,3 +74,8 @@ $card-tab-active: $sub-accent-color;
 // Badges
 $badge-neutral-color: $tertiary;
 $badge-neutral-background-color: rgba($tertiary, .1);
+
+// Dark theme
+$dark-primary: #40bfb2;
+$dark-secondary: #25c9ff;
+$dark-primary-alternate: #1c9f90; 

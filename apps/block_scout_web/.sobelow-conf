@@ -5,5 +5,5 @@
   router: "lib/block_scout_web/router.ex",
   exit: "low",
   format: "compact",
-  ignore: ["Config.Headers"]
+  ignore: ["Config.Headers", "Config.CSWH"]
 ]

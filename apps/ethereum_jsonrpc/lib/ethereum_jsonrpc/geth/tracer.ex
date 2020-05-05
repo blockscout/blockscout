@@ -113,6 +113,7 @@ defmodule EthereumJSONRPC.Geth.Tracer do
   end
 
   defp op(%{"op" => "CREATE"} = log, ctx), do: create_op(log, ctx)
+  defp op(%{"op" => "CREATE2"} = log, ctx), do: create_op(log, ctx, "create2")
   defp op(%{"op" => "SELFDESTRUCT"} = log, ctx), do: self_destruct_op(log, ctx)
   defp op(%{"op" => "CALL"} = log, ctx), do: call_op(log, "call", ctx)
   defp op(%{"op" => "CALLCODE"} = log, ctx), do: call_op(log, "callcode", ctx)
@@ -155,7 +156,8 @@ defmodule EthereumJSONRPC.Geth.Tracer do
 
   defp create_op(
          %{"stack" => log_stack, "memory" => log_memory},
-         %{depth: stack_depth, stack: stack, trace_address: trace_address, calls: calls} = ctx
+         %{depth: stack_depth, stack: stack, trace_address: trace_address, calls: calls} = ctx,
+         type \\ "create"
        ) do
     [value, input_offset, input_length | _] = Enum.reverse(log_stack)
 
@@ -165,7 +167,7 @@ defmodule EthereumJSONRPC.Geth.Tracer do
       |> String.slice(quantity_to_integer("0x" <> input_offset) * 2, quantity_to_integer("0x" <> input_length) * 2)
 
     call = %{
-      "type" => "create",
+      "type" => type,
       "from" => nil,
       "traceAddress" => Enum.reverse(trace_address),
       "init" => "0x" <> init,

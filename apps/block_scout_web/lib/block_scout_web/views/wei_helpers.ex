@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.WeiHelpers do
 
   import BlockScoutWeb.Gettext
 
-  alias BlockScoutWeb.Cldr
+  alias BlockScoutWeb.CldrHelper
   alias Explorer.Chain.Wei
 
   @valid_units ~w(wei gwei ether)a
@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.WeiHelpers do
       "10,000 Gwei"
 
       iex> format_wei_value(%Wei{value: Decimal.new(1, 10, 21)}, :ether)
-      "10,000 POA"
+      "10,000 Ether"
 
       # With formatting options
 
@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.WeiHelpers do
       ...>   %Wei{value: Decimal.new(1000500000000000000)},
       ...>   :ether
       ...> )
-      "1.0005 POA"
+      "1.0005 Ether"
 
       iex> format_wei_value(
       ...>   %Wei{value: Decimal.new(10)},
@@ -60,9 +60,9 @@ defmodule BlockScoutWeb.WeiHelpers do
 
     formatted_value =
       if Decimal.cmp(converted_value, 1_000_000_000_000) == :gt do
-        Cldr.Number.to_string!(converted_value, format: "0.###E+0")
+        CldrHelper.Number.to_string!(converted_value, format: "0.###E+0")
       else
-        Cldr.Number.to_string!(converted_value, format: "#,##0.##################")
+        CldrHelper.Number.to_string!(converted_value, format: "#,##0.##################")
       end
 
     if Keyword.get(options, :include_unit_label, true) do

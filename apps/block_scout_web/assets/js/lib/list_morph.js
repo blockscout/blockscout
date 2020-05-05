@@ -1,5 +1,10 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import map from 'lodash/map'
+import get from 'lodash/get'
+import noop from 'lodash/noop'
+import find from 'lodash/find'
+import intersectionBy from 'lodash/intersectionBy'
+import differenceBy from 'lodash/differenceBy'
 import morph from 'nanomorph'
 import { updateAllAges } from './from_now'
 
@@ -25,12 +30,12 @@ import { updateAllAges } from './from_now'
 export default function (container, newElements, { key, horizontal } = {}) {
   if (!container) return
   const oldElements = $(container).children().get()
-  let currentList = _.map(oldElements, (el) => ({ id: _.get(el, key), el }))
-  const newList = _.map(newElements, (el) => ({ id: _.get(el, key), el }))
-  const overlap = _.intersectionBy(newList, currentList, 'id').map(({ id, el }) => ({ id, el: updateAllAges($(el))[0] }))
+  let currentList = map(oldElements, (el) => ({ id: get(el, key), el }))
+  const newList = map(newElements, (el) => ({ id: get(el, key), el }))
+  const overlap = intersectionBy(newList, currentList, 'id').map(({ id, el }) => ({ id, el: updateAllAges($(el))[0] }))
 
   // remove old items
-  const removals = _.differenceBy(currentList, newList, 'id')
+  const removals = differenceBy(currentList, newList, 'id')
   let canAnimate = !horizontal && removals.length <= 1
   removals.forEach(({ el }) => {
     if (!canAnimate) return el.remove()
@@ -38,7 +43,7 @@ export default function (container, newElements, { key, horizontal } = {}) {
     $el.addClass('shrink-out')
     setTimeout(() => { slideUpRemove($el) }, 400)
   })
-  currentList = _.differenceBy(currentList, removals, 'id')
+  currentList = differenceBy(currentList, removals, 'id')
 
   // update kept items
   currentList = currentList.map(({ el }, i) => ({
@@ -47,14 +52,14 @@ export default function (container, newElements, { key, horizontal } = {}) {
   }))
 
   // add new items
-  const finalList = newList.map(({ id, el }) => _.get(_.find(currentList, { id }), 'el', el)).reverse()
+  const finalList = newList.map(({ id, el }) => get(find(currentList, { id }), 'el', el)).reverse()
   canAnimate = !horizontal
   finalList.forEach((el, i) => {
     if (el.parentElement) return
-    if (!canAnimate) return container.insertBefore(el, _.get(finalList, `[${i - 1}]`))
+    if (!canAnimate) return container.insertBefore(el, get(finalList, `[${i - 1}]`))
     canAnimate = false
-    if (!_.get(finalList, `[${i - 1}]`)) return slideDownAppend($(container), el)
-    slideDownBefore($(_.get(finalList, `[${i - 1}]`)), el)
+    if (!get(finalList, `[${i - 1}]`)) return slideDownAppend($(container), el)
+    slideDownBefore($(get(finalList, `[${i - 1}]`)), el)
   })
 }
 
@@ -80,7 +85,7 @@ function slideUpRemove ($el) {
   })
 }
 
-function smarterSlideDown ($el, { insert = _.noop } = {}) {
+function smarterSlideDown ($el, { insert = noop } = {}) {
   if (!$el.length) return
   const originalScrollHeight = document.body.scrollHeight
   const scrollPosition = window.scrollY
@@ -100,7 +105,7 @@ function smarterSlideDown ($el, { insert = _.noop } = {}) {
   }
 }
 
-function smarterSlideUp ($el, { complete = _.noop } = {}) {
+function smarterSlideUp ($el, { complete = noop } = {}) {
   if (!$el.length) return
   const originalScrollHeight = document.body.scrollHeight
   const scrollPosition = window.scrollY

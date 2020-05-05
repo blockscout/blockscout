@@ -8,10 +8,12 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   def index(conn, %{"transaction_id" => hash_string, "type" => "JSON"} = params) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
-         {:ok, transaction} <-
-           Chain.hash_to_transaction(hash) do
+         :ok <- Chain.check_transaction_exists(hash) do
       full_options =
         Keyword.merge(
           [
@@ -24,7 +26,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
           paging_options(params)
         )
 
-      token_transfers_plus_one = Chain.transaction_to_token_transfers(transaction, full_options)
+      token_transfers_plus_one = Chain.transaction_to_token_transfers(hash, full_options)
 
       {token_transfers, next_page} = split_list_by_page(token_transfers_plus_one)
 
@@ -34,7 +36,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
             nil
 
           next_page_params ->
-            transaction_token_transfer_path(conn, :index, transaction, Map.delete(next_page_params, "type"))
+            transaction_token_transfer_path(conn, :index, hash, Map.delete(next_page_params, "type"))
         end
 
       items =
@@ -44,6 +46,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
             TransactionTokenTransferView,
             "_token_transfer.html",
             token_transfer: transfer,
+            burn_address_hash: @burn_address_hash,
             conn: conn
           )
         end)
@@ -62,7 +65,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
         |> put_view(TransactionView)
         |> render("invalid.html", transaction_hash: hash_string)
 
-      {:error, :not_found} ->
+      :not_found ->
         conn
         |> put_status(404)
         |> put_view(TransactionView)

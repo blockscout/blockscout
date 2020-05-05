@@ -38,7 +38,8 @@ $btn-line-bg: #fff; // button bg
 $btn-line-color: $secondary; // button border and font color && hover bg color
 $btn-copy-color: $secondary; // btn copy
 $btn-qr-color: $secondary; // btn qr-code
-
+$btn-address-card-icon-color: $secondary; // btn address color
+$btn-contract-color: $secondary;
 // card
 $card-background-1: $secondary;
 $card-tab-active: $secondary;
@@ -65,3 +66,8 @@ $card-tab-active: $secondary;
 // Badges
 $badge-neutral-color: #1a323b;
 $badge-neutral-background-color: rgba(#1a323b, .1);
+
+// Dark theme
+$dark-primary: #38c5a4;
+$dark-secondary: #e39a54;
+$dark-primary-alternate: #30ab8d;

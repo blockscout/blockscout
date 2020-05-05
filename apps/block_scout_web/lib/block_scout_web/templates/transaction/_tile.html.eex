@@ -26,12 +26,10 @@
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">
-          <%= value(@transaction, include_label: false) %>
-          <%= gettext "Ether" %>
+          <%= value(@transaction, include_label: false) %> <%= gettext "Ether" %>
         </span>
         <span class="ml-0 ml-md-1 text-nowrap">
-          <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %>
-          <%= gettext "TX Fee" %>
+          <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %>
         </span>
       </span>
 
@@ -44,7 +42,7 @@
 
           <div class="collapse token-transfer-toggle" id="transaction-<%= @transaction.hash %>">
             <%= for token_transfer <- remaining_token_transfers do %>
-              <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer %>
+              <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer, burn_address_hash: @burn_address_hash %>
             <% end %>
           </div>
         </div>
@@ -78,4 +76,5 @@
       <% end %>
     </div>
   </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers-toggle.js") %>"></script>
 </div>

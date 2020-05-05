@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.TransactionView
@@ -20,23 +19,24 @@ defmodule BlockScoutWeb.AddressTransactionController do
       [created_contract_address: :names] => :optional,
       [from_address: :names] => :optional,
       [to_address: :names] => :optional,
-      [token_transfers: :token] => :optional,
-      [token_transfers: :to_address] => :optional,
-      [token_transfers: :from_address] => :optional,
-      [token_transfers: :token_contract_address] => :optional
+      :block => :required
     }
   ]
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
+    address_options = [necessity_by_association: %{:names => :optional}]
+
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, [:names], false) do
+         {:ok, address} <- Chain.hash_to_address(address_hash, address_options, false) do
       options =
         @transaction_necessity_by_association
-        |> put_in([:necessity_by_association, :block], :required)
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      results_plus_one = Chain.address_to_transactions_with_rewards(address, options)
+      results_plus_one = Chain.address_to_transactions_with_rewards(address_hash, options)
       {results, next_page} = split_list_by_page(results_plus_one)
 
       next_page_url =
@@ -60,6 +60,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
               View.render_to_string(
                 TransactionView,
                 "_emission_reward_tile.html",
+                conn: conn,
                 current_address: address,
                 emission_funds: emission_reward,
                 validator: validator_reward
@@ -69,8 +70,10 @@ defmodule BlockScoutWeb.AddressTransactionController do
               View.render_to_string(
                 TransactionView,
                 "_tile.html",
+                conn: conn,
                 current_address: address,
-                transaction: transaction
+                transaction: transaction,
+                burn_address_hash: @burn_address_hash
               )
           end
         end)
@@ -81,7 +84,13 @@ defmodule BlockScoutWeb.AddressTransactionController do
         unprocessable_entity(conn)
 
       {:error, :not_found} ->
-        not_found(conn)
+        case Chain.Hash.Address.validate(address_hash_string) do
+          {:ok, _} ->
+            json(conn, %{items: [], next_page_path: ""})
+
+          _ ->
+            not_found(conn)
+        end
     end
   end
 
@@ -95,8 +104,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        transaction_count: transaction_count(address),
-        validation_count: validation_count(address),
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
         current_path: current_path(conn)
       )
     else
@@ -104,11 +112,29 @@ defmodule BlockScoutWeb.AddressTransactionController do
         unprocessable_entity(conn)
 
       {:error, :not_found} ->
-        not_found(conn)
+        {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
+        address = %Chain.Address{hash: address_hash, smart_contract: nil, token: nil}
+
+        case Chain.Hash.Address.validate(address_hash_string) do
+          {:ok, _} ->
+            render(
+              conn,
+              "index.html",
+              address: address,
+              coin_balance_status: nil,
+              exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+              filter: params["filter"],
+              counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
+              current_path: current_path(conn)
+            )
+
+          _ ->
+            not_found(conn)
+        end
     end
   end
 
-  def token_transfers_csv(conn, %{"address_id" => address_hash_string}) do
+  def token_transfers_csv(conn, %{"address_id" => address_hash_string}) when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       address
@@ -127,6 +153,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
         not_found(conn)
     end
   end
+
+  def token_transfers_csv(conn, _), do: not_found(conn)
 
   def transactions_csv(conn, %{"address_id" => address_hash_string}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -147,4 +175,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
         not_found(conn)
     end
   end
+
+  def transactions_csv(conn, _), do: not_found(conn)
 end

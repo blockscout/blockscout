@@ -8,7 +8,7 @@ export function createCoinBalanceHistoryChart (el) {
   const $chartError = $('[data-chart-error-message]')
   const dataPath = el.dataset.coin_balance_history_data_path
 
-  $.getJSON(dataPath, {type: 'JSON'})
+  $.getJSON(dataPath, { type: 'JSON' })
     .done(data => {
       $chartContainer.show()
 
@@ -18,6 +18,14 @@ export function createCoinBalanceHistoryChart (el) {
           y: balance.value
         }))
 
+      var stepSize = 3
+
+      if (data.length > 1) {
+        var diff = Math.abs(new Date(data[data.length - 1].date) - new Date(data[data.length - 2].date))
+        var periodInDays = diff / (1000 * 60 * 60 * 24)
+
+        stepSize = periodInDays
+      }
       return new Chart(el, {
         type: 'line',
         data: {
@@ -36,7 +44,7 @@ export function createCoinBalanceHistoryChart (el) {
               type: 'time',
               time: {
                 unit: 'day',
-                stepSize: 3
+                stepSize: stepSize
               }
             }],
             yAxes: [{
@@ -45,7 +53,7 @@ export function createCoinBalanceHistoryChart (el) {
               },
               scaleLabel: {
                 display: true,
-                labelString: window.localized['Ether']
+                labelString: window.localized.Ether
               }
             }]
           }

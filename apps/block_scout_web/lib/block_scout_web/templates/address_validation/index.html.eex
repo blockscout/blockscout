@@ -22,11 +22,14 @@
             <%= gettext "Something went wrong, click to reload." %>
           </span>
         </button>
-        <div data-items data-selector="validations-list"></div>
+        <div data-items data-selector="validations-list">
+          <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
+        </div>
 
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
       </div> <!-- Card Body -->
     </div> <!-- Card -->
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address-validations.js") %>"></script>
   <section>
 </section>

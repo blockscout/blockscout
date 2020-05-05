@@ -1,5 +1,7 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import reduce from 'lodash/reduce'
+import isObject from 'lodash/isObject'
+import forIn from 'lodash/forIn'
 import { createStore as reduxCreateStore } from 'redux'
 
 /**
@@ -97,17 +99,17 @@ export function createStore (reducer) {
  */
 export function connectElements ({ elements, store, action = 'ELEMENTS_LOAD' }) {
   function loadElements () {
-    return _.reduce(elements, (pageLoadParams, { load }, selector) => {
+    return reduce(elements, (pageLoadParams, { load }, selector) => {
       if (!load) return pageLoadParams
       const $el = $(selector)
       if (!$el.length) return pageLoadParams
       const morePageLoadParams = load($el, store)
-      return _.isObject(morePageLoadParams) ? Object.assign(pageLoadParams, morePageLoadParams) : pageLoadParams
+      return isObject(morePageLoadParams) ? Object.assign(pageLoadParams, morePageLoadParams) : pageLoadParams
     }, {})
   }
 
   function renderElements (state, oldState) {
-    _.forIn(elements, ({ render }, selector) => {
+    forIn(elements, ({ render }, selector) => {
       if (!render) return
       const $el = $(selector)
       if (!$el.length) return

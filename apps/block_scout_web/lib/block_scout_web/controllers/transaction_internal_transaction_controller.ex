@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
 
   def index(conn, %{"transaction_id" => hash_string, "type" => "JSON"} = params) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
-         {:ok, transaction} <- Chain.hash_to_transaction(hash) do
+         :ok <- Chain.check_transaction_exists(hash) do
       full_options =
         Keyword.merge(
           [
@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
           paging_options(params)
         )
 
-      internal_transactions_plus_one = Chain.transaction_to_internal_transactions(transaction, full_options)
+      internal_transactions_plus_one = Chain.transaction_to_internal_transactions(hash, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
             transaction_internal_transaction_path(
               conn,
               :index,
-              transaction,
+              hash,
               Map.delete(next_page_params, "type")
             )
         end
@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
         |> put_view(TransactionView)
         |> render("invalid.html", transaction_hash: hash_string)
 
-      {:error, :not_found} ->
+      :not_found ->
         conn
         |> put_status(404)
         |> put_view(TransactionView)

@@ -137,7 +137,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:r, :decimal)
     field(:s, :decimal)
     field(:status, :status)
-    field(:v, :integer)
+    field(:v, :decimal)
     field(:value, :wei)
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)

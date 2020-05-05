@@ -46,14 +46,12 @@ describe('REQUEST_ERROR', () => {
 describe('FINISH_REQUEST', () => {
   test('sets loading status to false', () => {
     const state = Object.assign({}, asyncInitialState, {
-      loading: true,
-      loadingFirstPage: true
+      loading: true
     })
     const action = { type: 'FINISH_REQUEST' } 
     const output = asyncReducer(state, action)
 
     expect(output.loading).toEqual(false)
-    expect(output.loadingFirstPage).toEqual(false)
   })
 })
 

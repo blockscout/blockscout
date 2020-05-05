@@ -7,6 +7,9 @@ defmodule BlockScoutWeb.PendingTransactionController do
   alias Explorer.Chain
   alias Phoenix.View
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   def index(conn, %{"type" => "JSON"} = params) do
     full_options =
       Keyword.merge(
@@ -43,7 +46,9 @@ defmodule BlockScoutWeb.PendingTransactionController do
             View.render_to_string(
               TransactionView,
               "_tile.html",
-              transaction: transaction
+              transaction: transaction,
+              burn_address_hash: @burn_address_hash,
+              conn: conn
             )
           end),
         next_page_path: next_page_url

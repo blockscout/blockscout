@@ -7,13 +7,18 @@ defmodule Explorer.Application do
 
   alias Explorer.Admin
 
-  alias Explorer.Chain.{
-    BlockCountCache,
-    BlockNumberCache,
-    BlocksCache,
-    NetVersionCache,
-    TransactionCountCache,
-    TransactionsCache
+  alias Explorer.Chain.Cache.{
+    Accounts,
+    AddressSum,
+    AddressSumMinusBurnt,
+    BlockCount,
+    BlockNumber,
+    Blocks,
+    NetVersion,
+    PendingTransactions,
+    TransactionCount,
+    Transactions,
+    Uncles
   }
 
   alias Explorer.Chain.Supply.RSK
@@ -36,37 +41,45 @@ defmodule Explorer.Application do
     base_children = [
       Explorer.Repo,
       Supervisor.Spec.worker(SpandexDatadog.ApiServer, [datadog_opts()]),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor}, id: Explorer.HistoryTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.GenesisDataTaskSupervisor}, id: GenesisDataTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
       Explorer.SmartContract.SolcDownloader,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       {Admin.Recovery, [[], [name: Admin.Recovery]]},
-      {TransactionCountCache, [[], []]},
-      {BlockCountCache, []},
-      con_cache_child_spec(BlocksCache.cache_name()),
-      con_cache_child_spec(NetVersionCache.cache_name()),
+      TransactionCount,
+      AddressSum,
+      AddressSumMinusBurnt,
+      BlockCount,
+      Blocks,
+      NetVersion,
+      BlockNumber,
       con_cache_child_spec(MarketHistoryCache.cache_name()),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
-      con_cache_child_spec(TransactionsCache.cache_name())
+      Transactions,
+      Accounts,
+      PendingTransactions,
+      Uncles
     ]
 
     children = base_children ++ configurable_children()
 
     opts = [strategy: :one_for_one, name: Explorer.Supervisor]
 
-    res = Supervisor.start_link(children, opts)
-
-    BlockNumberCache.setup()
-
-    res
+    Supervisor.start_link(children, opts)
   end
 
   defp configurable_children do
     [
       configure(Explorer.ExchangeRates),
+      configure(Explorer.ChainSpec.GenesisData),
       configure(Explorer.KnownTokens),
       configure(Explorer.Market.History.Cataloger),
+      configure(Explorer.Chain.Transaction.History.Historian),
+      configure(Explorer.Chain.Events.Listener),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
+      configure(Explorer.Counters.AddressesCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Validator.MetadataProcessor),
       configure(Explorer.Staking.EpochCounter)

@@ -243,6 +243,46 @@ $network-selector-item-icon-dimensions: 30px !default;
   height: $network-selector-item-icon-dimensions;
   margin: 0 15px 0 0;
   width: $network-selector-item-icon-dimensions;
+
+  &-callisto-mainnet {
+    background-image: url(/images/network-selector-icons/callisto-mainnet.svg)
+  }
+  &-ethereum-mainnet {
+    background-image: url(/images/network-selector-icons/ethereum-mainnet.svg)
+  }
+  &-ethereum-classic {
+    background-image: url(/images/network-selector-icons/ethereum-classic.svg)
+  }
+  &-goerli-testnet {
+    background-image: url(/images/network-selector-icons/goerli-testnet.svg)
+  }
+  &-kovan-testnet {
+    background-image: url(/images/network-selector-icons/kovan-testnet.svg)
+  }
+  &-poa-core {
+    background-image: url(/images/network-selector-icons/poa-core.svg)
+  }
+  &-poa-sokol {
+    background-image: url(/images/network-selector-icons/poa-sokol.svg)
+  }
+  &-rinkeby-testnet {
+    background-image: url(/images/network-selector-icons/rinkeby-testnet.svg)
+  }
+  &-rsk-mainnet {
+    background-image: url(/images/network-selector-icons/rsk-mainnet.svg)
+  }
+  &-ropsten-testnet {
+    background-image: url(/images/network-selector-icons/ropsten-testnet.svg)
+  }
+  &-xdai-chain {
+    background-image: url(/images/network-selector-icons/xdai-chain.svg)
+  }
+  &-lukso-l14-testnet {
+    background-image: url(/images/network-selector-icons/lukso-l14-testnet.svg)
+  }
+  &-xusdt-chain {
+    background-image: url(/images/network-selector-icons/circle-xusdt.svg)
+  }
 }
 
 .network-selector-item-title {
@@ -284,16 +324,6 @@ $network-selector-item-icon-dimensions: 30px !default;
   padding: 0 $network-selector-horizontal-mobile-padding;
   @media (min-width: 375px) {
     padding: 0 $network-selector-horizontal-padding;
-  }
-}
-
-.network-selector-load-more-container {
-  flex-shrink: 1;
-  padding: 0 $network-selector-horizontal-padding;
-
-  .btn-network-selector-load-more {
-    @include btn-line($btn-network-selector-load-more-background, $btn-network-selector-load-more-color);
-    width: 100%;
   }
 }
 

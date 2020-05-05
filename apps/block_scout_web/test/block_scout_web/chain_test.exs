@@ -71,4 +71,12 @@ defmodule BlockScoutWeb.ChainTest do
       assert {:error, :not_found} = Chain.from_param(address_hash)
     end
   end
+
+  describe "Posion.encode!" do
+    test "correctly encodes decimal values" do
+      val = Decimal.from_float(5.55)
+
+      assert "\"5.55\"" == Poison.encode!(val)
+    end
+  end
 end

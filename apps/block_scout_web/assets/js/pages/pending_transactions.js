@@ -1,11 +1,12 @@
 import $ from 'jquery'
-import _ from 'lodash'
+import omit from 'lodash/omit'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
 import { batchChannel } from '../lib/utils'
 import { createAsyncLoadStore } from '../lib/async_listing_load'
+import '../app'
 
 const BATCH_THRESHOLD = 10
 
@@ -20,7 +21,7 @@ export const initialState = {
 export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
-      return Object.assign({}, state, _.omit(action, 'type'))
+      return Object.assign({}, state, omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
       return Object.assign({}, state, {
@@ -102,7 +103,7 @@ if ($transactionPendingListPage.length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
   connectElements({ store, elements })
 
-  const transactionsChannel = socket.channel(`transactions:new_transaction`)
+  const transactionsChannel = socket.channel('transactions:new_transaction')
   transactionsChannel.join()
   transactionsChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'
@@ -118,7 +119,7 @@ if ($transactionPendingListPage.length) {
     }), 1000)
   })
 
-  const pendingTransactionsChannel = socket.channel(`transactions:new_pending_transaction`)
+  const pendingTransactionsChannel = socket.channel('transactions:new_pending_transaction')
   pendingTransactionsChannel.join()
   pendingTransactionsChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'

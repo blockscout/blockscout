@@ -23,6 +23,7 @@ defmodule BlockScoutWeb.InternalTransactionView do
   def type(%InternalTransaction{type: :call, call_type: :delegatecall}), do: gettext("Delegate Call")
   def type(%InternalTransaction{type: :call, call_type: :staticcall}), do: gettext("Static Call")
   def type(%InternalTransaction{type: :create}), do: gettext("Create")
+  def type(%InternalTransaction{type: :create2}), do: gettext("Create2")
   def type(%InternalTransaction{type: :selfdestruct}), do: gettext("Self-Destruct")
   def type(%InternalTransaction{type: :reward}), do: gettext("Reward")
 end

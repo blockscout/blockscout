@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Hash.Address do
 
   alias Explorer.Chain.Hash
 
-  @behaviour Ecto.Type
+  use Ecto.Type
   @behaviour Hash
 
   @byte_count 20
@@ -166,7 +166,7 @@ defmodule Explorer.Chain.Hash.Address do
       iex> Explorer.Chain.Hash.Address.validate("0xc1912fEE45d61C87Cc5EA59DaE31190FFFFf232H")
       {:error, :invalid_characters}
   """
-  @spec validate(String.t()) :: {:ok, String.t()} | {:error, :invalid_length | :invalid_characters, :invalid_checksum}
+  @spec validate(String.t()) :: {:ok, String.t()} | {:error, :invalid_length | :invalid_characters | :invalid_checksum}
   def validate("0x" <> hash) do
     with {:length, true} <- {:length, String.length(hash) == 40},
          {:hex, true} <- {:hex, is_hex?(hash)},

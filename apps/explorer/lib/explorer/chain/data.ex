@@ -7,8 +7,9 @@ defmodule Explorer.Chain.Data do
   """
 
   alias Explorer.Chain.Data
+  alias Poison.Encoder.BitString
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @typedoc """
   A variable-byte-length binary, wrapped in a struct, so that it can use protocols.
@@ -378,6 +379,24 @@ defmodule Explorer.Chain.Data do
     """
     def to_string(data) do
       @for.to_string(data)
+    end
+  end
+
+  defimpl Poison.Encoder do
+    def encode(data, options) do
+      data
+      |> to_string()
+      |> BitString.encode(options)
+    end
+  end
+
+  defimpl Jason.Encoder do
+    alias Jason.Encode
+
+    def encode(data, opts) do
+      data
+      |> to_string()
+      |> Encode.string(opts)
     end
   end
 end

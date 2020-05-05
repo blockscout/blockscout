@@ -5,7 +5,7 @@ defmodule EthereumJSONRPC.Application do
 
   use Application
 
-  alias EthereumJSONRPC.{RequestCoordinator, RollingWindow}
+  alias EthereumJSONRPC.{IPC, RequestCoordinator, RollingWindow}
 
   @impl Application
   def start(_type, _args) do
@@ -18,6 +18,7 @@ defmodule EthereumJSONRPC.Application do
       Supervisor.child_spec({RollingWindow, [rolling_window_opts]}, id: RollingWindow.ErrorThrottle)
     ]
     |> add_throttle_rolling_window(config)
+    |> add_ipc_client()
     |> Supervisor.start_link(strategy: :one_for_one, name: EthereumJSONRPC.Supervisor)
   end
 
@@ -36,5 +37,27 @@ defmodule EthereumJSONRPC.Application do
     else
       children
     end
+  end
+
+  defp add_ipc_client(children) do
+    case Application.get_env(:ethereum_jsonrpc, :rpc_transport) do
+      :ipc ->
+        [
+          :poolboy.child_spec(:worker, poolboy_config(), path: Application.get_env(:ethereum_jsonrpc, :ipc_path))
+          | children
+        ]
+
+      _ ->
+        children
+    end
+  end
+
+  defp poolboy_config do
+    [
+      {:name, {:local, :ipc_worker}},
+      {:worker_module, IPC},
+      {:size, 10},
+      {:max_overflow, 5}
+    ]
   end
 end

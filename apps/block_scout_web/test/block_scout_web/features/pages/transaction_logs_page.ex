@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.TransactionLogsPage do
   use Wallaby.DSL
 
   import Wallaby.Query, only: [css: 1, css: 2]
-  import BlockScoutWeb.Router.Helpers, only: [transaction_log_path: 3]
+  import BlockScoutWeb.WebRouter.Helpers, only: [transaction_log_path: 3]
 
   alias Explorer.Chain.Transaction
   alias BlockScoutWeb.Endpoint

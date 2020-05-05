@@ -5,8 +5,11 @@ defmodule BlockScoutWeb.RecentTransactionsController do
   alias Explorer.Chain.Hash
   alias Phoenix.View
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   def index(conn, _params) do
-    with true <- ajax?(conn) do
+    if ajax?(conn) do
       recent_transactions =
         Chain.recent_collated_transactions(
           necessity_by_association: %{
@@ -23,13 +26,17 @@ defmodule BlockScoutWeb.RecentTransactionsController do
           %{
             transaction_hash: Hash.to_string(transaction.hash),
             transaction_html:
-              View.render_to_string(BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction)
+              View.render_to_string(BlockScoutWeb.TransactionView, "_tile.html",
+                transaction: transaction,
+                burn_address_hash: @burn_address_hash,
+                conn: conn
+              )
           }
         end)
 
       json(conn, %{transactions: transactions})
     else
-      _ -> unprocessable_entity(conn)
+      unprocessable_entity(conn)
     end
   end
 end
