@@ -10,9 +10,7 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
-  alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, VLX}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
@@ -23,7 +21,6 @@ defmodule Indexer.Block.Fetcher do
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
-    StakingPools,
     Token,
     TokenBalance,
     TokenInstance,
@@ -155,7 +152,7 @@ defmodule Indexer.Block.Fetcher do
            |> AddressCoinBalances.params_set(),
          beneficiaries_with_gas_payment <-
            beneficiary_params_set
-           |> add_gas_payments(transactions_with_receipts, blocks)
+           |> add_gas_payments(transactions_with_receipts)
            |> BlockReward.reduce_uncle_rewards(),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
@@ -249,7 +246,7 @@ defmodule Indexer.Block.Fetcher do
       }) do
     addresses
     |> Enum.map(fn %Address{hash: address_hash} ->
-      block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
+      block_number = Map.fetch!(address_hash_to_block_number, VLX.vlx_to_eth!(to_string(address_hash)))
       %{address_hash: address_hash, block_number: block_number}
     end)
     |> CoinBalance.async_fetch_balances()
@@ -297,10 +294,6 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_token_balances(_), do: :ok
-
-  def async_import_staking_pools do
-    StakingPools.async_fetch()
-  end
 
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}) do
     UncleBlock.async_fetch_blocks(block_second_degree_relations)
@@ -398,48 +391,23 @@ defmodule Indexer.Block.Fetcher do
     |> Enum.into(MapSet.new())
   end
 
-  defp add_gas_payments(beneficiaries, transactions, blocks) do
+  defp add_gas_payments(beneficiaries, transactions) do
     transactions_by_block_number = Enum.group_by(transactions, & &1.block_number)
 
     Enum.map(beneficiaries, fn beneficiary ->
       case beneficiary.address_type do
         :validator ->
-          block_hash = beneficiary.block_hash
+          gas_payment = gas_payment(beneficiary, transactions_by_block_number)
 
-          block = find_block(blocks, block_hash)
+          "0x" <> minted_hex = beneficiary.reward
+          {minted, _} = Integer.parse(minted_hex, 16)
 
-          block_miner_hash = block.miner_hash
-
-          {:ok, block_miner} = Chain.string_to_address_hash(block_miner_hash)
-          %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining(block_miner)
-
-          reward_with_gas(block_miner_payout_address, beneficiary, transactions_by_block_number)
+          %{beneficiary | reward: minted + gas_payment}
 
         _ ->
           beneficiary
       end
     end)
-  end
-
-  defp reward_with_gas(block_miner_payout_address, beneficiary, transactions_by_block_number) do
-    {:ok, beneficiary_address} = Chain.string_to_address_hash(beneficiary.address_hash)
-
-    "0x" <> minted_hex = beneficiary.reward
-    {minted, _} = Integer.parse(minted_hex, 16)
-
-    if block_miner_payout_address && beneficiary_address.bytes == block_miner_payout_address.bytes do
-      gas_payment = gas_payment(beneficiary, transactions_by_block_number)
-
-      %{beneficiary | reward: minted + gas_payment}
-    else
-      %{beneficiary | reward: minted}
-    end
-  end
-
-  defp find_block(blocks, block_hash) do
-    blocks
-    |> Enum.filter(fn block -> block.hash == block_hash end)
-    |> Enum.at(0)
   end
 
   defp gas_payment(transactions) when is_list(transactions) do

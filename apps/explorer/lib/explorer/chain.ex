@@ -18,8 +18,7 @@ defmodule Explorer.Chain do
       union: 2,
       union_all: 2,
       where: 2,
-      where: 3,
-      select: 3
+      where: 3
     ]
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
@@ -45,11 +44,13 @@ defmodule Explorer.Chain do
     PendingBlockOperation,
     SmartContract,
     StakingPool,
+    StakingPoolsDelegator,
     Token,
     Token.Instance,
     TokenTransfer,
     Transaction,
-    Wei
+    Wei,
+    VLX
   }
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
@@ -169,6 +170,64 @@ defmodule Explorer.Chain do
       Address.count(),
       timeout: :infinity
     )
+  end
+
+  @spec address_total_received(Hash.Address.t()) :: Explorer.Chain.Wei.t()
+  def address_total_received(address_hash) do
+    total_received =
+      fetch_transactions()
+      |> where([t], t.to_address_hash == ^address_hash)
+      |> Repo.aggregate(:sum, :value)
+      |> case do
+        nil -> %Wei{value: 0}
+        val -> val
+      end
+
+    initial_balance = case get_coin_balance(address_hash, 0) do
+      nil -> %Wei{value: 0}
+      number = %Explorer.Chain.Address.CoinBalance{} -> number.value
+    end
+
+    Wei.sum(total_received, initial_balance)
+  end
+
+  @spec address_total_sent(Hash.Address.t()) :: Explorer.Chain.Wei.t()
+  def address_total_sent(address_hash) do
+    query =
+      from t in Transaction,
+        where: t.from_address_hash == ^address_hash,
+        select: sum(t.value) + sum(t.cumulative_gas_used * t.gas_price)
+    total_sent = Repo.one(query)
+
+    case total_sent do
+      nil -> %Wei{value: 0}
+      number -> %Wei{value: number}
+    end
+  end
+
+  @spec address_staking_amount(Hash.Address.t()) :: Explorer.Chain.Wei.t()
+  def address_staking_amount(address_hash) do
+    pool_query =
+      from p in StakingPool,
+        where: p.staking_address_hash == ^address_hash,
+        select: p.self_staked_amount
+    pool_stake =
+      case Repo.one(pool_query) do
+        nil -> %Wei{value: 0}
+        number -> number
+      end
+
+    delegator_query =
+      from d in StakingPoolsDelegator,
+        where: d.delegator_address_hash == ^address_hash,
+        select: sum(d.stake_amount) - sum(d.ordered_withdraw)
+    delegator_stake =
+      case Repo.one(delegator_query) do
+        nil -> %Wei{value: 0}
+        number -> %Wei{value: number}
+      end
+
+    Wei.sum(pool_stake, delegator_stake)
   end
 
   @doc """
@@ -315,62 +374,42 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_mined_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) ::
-          [
-            Transaction.t()
-          ]
-  def address_to_mined_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
+  @spec address_to_transactions_with_rewards(Hash.Address.t(), [paging_options | necessity_by_association_option]) :: [
+          Transaction.t()
+        ]
+  def address_to_transactions_with_rewards(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
-      cond do
-        Keyword.get(options, :direction) == :from ->
-          address_to_mined_transactions_without_rewards(address_hash, options)
+      blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
 
-        address_has_rewards?(address_hash) ->
-          %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining(address_hash)
+      rewards_task =
+        Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
 
-          if block_miner_payout_address && address_hash == block_miner_payout_address do
-            transactions_with_rewards_results(address_hash, options, paging_options)
-          else
-            address_to_mined_transactions_without_rewards(address_hash, options)
-          end
+      [rewards_task | address_to_transactions_tasks(address_hash, options)]
+      |> wait_for_address_transactions()
+      |> Enum.sort_by(fn item ->
+        case item do
+          {%Reward{} = emission_reward, _} ->
+            {-emission_reward.block.number, 1}
 
-        true ->
-          address_to_mined_transactions_without_rewards(address_hash, options)
-      end
+          item ->
+            {-item.block_number, -item.index}
+        end
+      end)
+      |> Enum.dedup_by(fn item ->
+        case item do
+          {%Reward{} = emission_reward, _} ->
+            {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
+
+          transaction ->
+            transaction.hash
+        end
+      end)
+      |> Enum.take(paging_options.page_size)
     else
-      address_to_mined_transactions_without_rewards(address_hash, options)
+      address_to_transactions_without_rewards(address_hash, options)
     end
-  end
-
-  defp transactions_with_rewards_results(address_hash, options, paging_options) do
-    blocks_range = address_to_transactions_tasks_range_of_blocks(address_hash, options)
-
-    rewards_task =
-      Task.async(fn -> Reward.fetch_emission_rewards_tuples(address_hash, paging_options, blocks_range) end)
-
-    [rewards_task | address_to_mined_transactions_tasks(address_hash, options)]
-    |> wait_for_address_transactions()
-    |> Enum.sort_by(fn item ->
-      case item do
-        {%Reward{} = emission_reward, _} ->
-          {-emission_reward.block.number, 1}
-
-        item ->
-          {-item.block_number, -item.index}
-      end
-    end)
-    |> Enum.dedup_by(fn item ->
-      case item do
-        {%Reward{} = emission_reward, _} ->
-          {emission_reward.block_hash, emission_reward.address_hash, emission_reward.address_type}
-
-        transaction ->
-          transaction.hash
-      end
-    end)
-    |> Enum.take(paging_options.page_size)
   end
 
   def address_to_transactions_without_rewards(address_hash, options) do
@@ -384,31 +423,10 @@ defmodule Explorer.Chain do
     |> Enum.take(paging_options.page_size)
   end
 
-  def address_to_mined_transactions_without_rewards(address_hash, options) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    address_hash
-    |> address_to_mined_transactions_tasks(options)
-    |> wait_for_address_transactions()
-    |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
-    |> Enum.dedup_by(& &1.hash)
-    |> Enum.take(paging_options.page_size)
-  end
-
   defp address_to_transactions_tasks_query(options) do
     options
     |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions()
-  end
-
-  defp transactions_block_numbers_at_address(address_hash, options) do
-    direction = Keyword.get(options, :direction)
-
-    options
-    |> address_to_transactions_tasks_query()
-    |> Transaction.not_pending_transactions()
-    |> select([t], t.block_number)
-    |> Transaction.matching_address_queries_list(direction, address_hash)
   end
 
   defp address_to_transactions_tasks(address_hash, options) do
@@ -422,30 +440,21 @@ defmodule Explorer.Chain do
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
   end
 
-  defp address_to_mined_transactions_tasks(address_hash, options) do
+  defp address_to_transactions_tasks_range_of_blocks(address_hash, options) do
     direction = Keyword.get(options, :direction)
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    options
-    |> address_to_transactions_tasks_query()
-    |> Transaction.not_pending_transactions()
-    |> join_associations(necessity_by_association)
-    |> Transaction.matching_address_queries_list(direction, address_hash)
-    |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
-  end
-
-  def address_to_transactions_tasks_range_of_blocks(address_hash, options) do
     extremums_list =
-      address_hash
-      |> transactions_block_numbers_at_address(options)
+      options
+      |> address_to_transactions_tasks_query()
+      |> Transaction.matching_address_queries_list(direction, address_hash)
       |> Enum.map(fn query ->
-        extremum_query =
+        max_query =
           from(
             q in subquery(query),
             select: %{min_block_number: min(q.block_number), max_block_number: max(q.block_number)}
           )
 
-        extremum_query
+        max_query
         |> Repo.one!()
       end)
 
@@ -1025,22 +1034,7 @@ defmodule Explorer.Chain do
     query =
       from(token in Token,
         where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
-        limit: 5,
-        select: %{contract_address_hash: token.contract_address_hash, symbol: token.symbol, name: token.name}
-      )
-
-    Repo.all(query)
-  end
-
-  @spec search_contract(String.t()) :: [SmartContract.t()]
-  def search_contract(word) do
-    term = String.replace(word, ~r/\W/u, "") <> ":*"
-
-    query =
-      from(smart_contract in SmartContract,
-        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
-        limit: 5,
-        select: %{contract_address_hash: smart_contract.address_hash, symbol: smart_contract.name}
+        limit: 5
       )
 
     Repo.all(query)
@@ -2433,7 +2427,7 @@ defmodule Explorer.Chain do
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> pending_transactions_query()
-    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
+    |> order_by([transaction], desc: transaction.hash, desc: transaction.inserted_at)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
@@ -2465,7 +2459,15 @@ defmodule Explorer.Chain do
   """
   @spec string_to_address_hash(String.t()) :: {:ok, Hash.Address.t()} | :error
   def string_to_address_hash(string) when is_binary(string) do
-    Hash.Address.cast(string)
+    if String.starts_with?(string, "V") do
+      with {:ok, eth_string} <- VLX.vlx_to_eth(string) do
+        Hash.Address.cast(eth_string)
+      else
+        {:error, _} -> :error
+      end
+    else
+      Hash.Address.cast(string)
+    end
   end
 
   @doc """
@@ -2882,7 +2884,7 @@ defmodule Explorer.Chain do
       )
 
     repo.update_all(
-      from(n in Address.Name, join: s in subquery(query), on: n.address_hash == s.address_hash and n.name == s.name),
+      from(n in Address.Name, join: s in subquery(query), on: n.address_hash == s.address_hash),
       set: [primary: false]
     )
 
@@ -2927,15 +2929,64 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp contract_abi(file_name) do
+    :explorer
+    |> Application.app_dir("priv/contracts_abi/velas/#{file_name}")
+    |> File.read!()
+    |> Jason.decode!()
+  end
+
+  @system_contracts %{
+    "0x1000000000000000000000000000000000000001" => "ValidatorSetAuRa",
+    "0x2000000000000000000000000000000000000001" => "BlockRewardAuRa",
+    "0x3000000000000000000000000000000000000001" => "RandomAuRa",
+    "0x1100000000000000000000000000000000000001" => "StakingAuRa",
+    "0x4000000000000000000000000000000000000001" => "TxPermission",
+    "0x5000000000000000000000000000000000000001" => "Certifier"
+  }
+
+  def get_address_smart_contract(address) do
+    case get_system_contract(address.hash) do
+      nil -> address.smart_contract
+      contract -> contract
+    end
+  end
+
+  @spec get_system_contract(Hash.Address.t()) :: SmartContract.t() | nil
+  def get_system_contract(address_hash) do
+    addr = "0x" <> Hash.to_string(address_hash)
+    case Map.fetch(@system_contracts, addr) do
+      {:ok, name} ->
+        abi = contract_abi(name <> ".json")
+        %SmartContract{
+          address_hash: address_hash,
+          compiler_version: "v0.5.10+commit.5a6ea5b1",
+          name: name,
+          contract_source_code: "",
+          evm_version: "constantinopole",
+          optimization_runs: 200,
+          optimization: true,
+          abi: abi
+        }
+      _ -> nil
+    end
+  end
+
+  def is_system_contract?(address_hash), do: get_system_contract(address_hash) != nil
+
   @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil
   def address_hash_to_smart_contract(address_hash) do
-    query =
-      from(
-        smart_contract in SmartContract,
-        where: smart_contract.address_hash == ^address_hash
-      )
+    case get_system_contract(address_hash) do
+      nil ->
+        query =
+          from(
+            smart_contract in SmartContract,
+            where: smart_contract.address_hash == ^address_hash
+          )
+        Repo.one(query)
 
-    Repo.one(query)
+      contract -> contract
+    end
   end
 
   defp fetch_transactions(paging_options \\ nil) do
@@ -3263,13 +3314,6 @@ defmodule Explorer.Chain do
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
   def transaction_has_token_transfers?(transaction_hash) do
     query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash)
-
-    Repo.exists?(query)
-  end
-
-  @spec address_has_rewards?(Address.t()) :: boolean()
-  def address_has_rewards?(address_hash) do
-    query = from(r in Reward, where: r.address_hash == ^address_hash)
 
     Repo.exists?(query)
   end
@@ -3967,7 +4011,7 @@ defmodule Explorer.Chain do
         where: smart_contract.address_hash == ^address_hash
       )
 
-    Repo.exists?(query)
+    is_system_contract?(address_hash) or Repo.exists?(query)
   end
 
   @doc """

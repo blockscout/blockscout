@@ -121,14 +121,18 @@ defmodule Explorer.Chain.Log do
   """
   def decode(_log, %Transaction{to_address: nil}), do: {:error, :no_to_address}
 
-  def decode(log, transaction = %Transaction{to_address: %{smart_contract: %{abi: abi}}}) when not is_nil(abi) do
-    with {:ok, selector, mapping} <- find_and_decode(abi, log, transaction),
-         identifier <- Base.encode16(selector.method_id, case: :lower),
-         text <- function_call(selector.function, mapping),
-         do: {:ok, identifier, text, mapping}
+  def decode(log, transaction = %Transaction{to_address: %{contract_code: code}}) when not is_nil(code) do
+    case Explorer.Chain.get_address_smart_contract(transaction.to_address) do
+      nil -> decode_on_nil(log, transaction)
+      contract ->
+        with {:ok, selector, mapping} <- find_and_decode(contract.abi, log, transaction),
+          identifier <- Base.encode16(selector.method_id, case: :lower),
+          text <- function_call(selector.function, mapping),
+          do: {:ok, identifier, text, mapping}
+    end
   end
 
-  def decode(log, transaction) do
+  def decode_on_nil(log, transaction) do
     case log.first_topic do
       "0x" <> hex_part ->
         case Integer.parse(hex_part, 16) do

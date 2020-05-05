@@ -8,7 +8,6 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.Chain.Supply.RSK
-  alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.SmartContract.{Solidity.CodeCompiler, Solidity.CompilerVersion}
@@ -130,20 +129,6 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.each(&broadcast_transaction/1)
   end
 
-  def handle_event({:chain_event, :transaction_stats}) do
-    today = Date.utc_today()
-
-    [{:history_size, history_size}] =
-      Application.get_env(:block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController, 30)
-
-    x_days_back = Date.add(today, -1 * history_size)
-
-    date_range = TransactionStats.by_date_range(x_days_back, today)
-    stats = Enum.map(date_range, fn item -> Map.drop(item, [:__meta__]) end)
-
-    Endpoint.broadcast("transactions:stats", "update", %{stats: stats})
-  end
-
   def handle_event(_), do: nil
 
   @doc """
@@ -190,15 +175,11 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_rewards(rewards) do
     preloaded_rewards = Repo.preload(rewards, [:address, :block])
-    emission_reward = Enum.find(preloaded_rewards, fn reward -> reward.address_type == :emission_funds end)
 
-    preloaded_rewards_except_emission =
-      Enum.reject(preloaded_rewards, fn reward -> reward.address_type == :emission_funds end)
-
-    Enum.each(preloaded_rewards_except_emission, fn reward ->
+    Enum.each(preloaded_rewards, fn reward ->
       Endpoint.broadcast("rewards:#{to_string(reward.address_hash)}", "new_reward", %{
-        emission_funds: emission_reward,
-        validator: reward
+        emission_funds: Enum.at(preloaded_rewards, 1),
+        validator: Enum.at(preloaded_rewards, 0)
       })
     end)
   end

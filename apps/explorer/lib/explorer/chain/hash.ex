@@ -5,6 +5,7 @@ defmodule Explorer.Chain.Hash do
 
   import Bitwise
   alias Poison.Encoder.BitString
+  alias Explorer.Chain.VLX, as: VLX
 
   @bits_per_byte 8
   @hexadecimal_digits_per_byte 2
@@ -54,6 +55,9 @@ defmodule Explorer.Chain.Hash do
 
       <<"0x", hexadecimal_digits::binary>> ->
         cast_hexadecimal_digits(hexadecimal_digits, byte_count)
+
+      <<"V", vlx_address::binary>> ->        
+        cast_vlx_address("V" <> vlx_address, byte_count)
 
       integer when is_integer(integer) ->
         cast_integer(integer, byte_count)
@@ -154,8 +158,11 @@ defmodule Explorer.Chain.Hash do
     integer = to_integer(hash)
     hexadecimal_digit_count = byte_count_to_hexadecimal_digit_count(byte_count)
     unprefixed = :io_lib.format('~#{hexadecimal_digit_count}.16.0b', [integer])
-
-    ["0x", unprefixed]
+    if byte_count == 20 do
+      [unprefixed]
+    else
+      ["0x", unprefixed]
+    end
   end
 
   @doc """
@@ -207,6 +214,14 @@ defmodule Explorer.Chain.Hash do
     end
   end
 
+  defp cast_vlx_address(address, byte_count) do
+    with {:ok, "0x" <> hex} <- VLX.vlx_to_eth(address) do
+      cast_hexadecimal_digits(hex, byte_count)
+    else
+      _ -> :error
+    end
+  end
+
   defp cast_integer(integer, byte_count) when is_integer(integer) do
     max_integer = byte_count_to_max_integer(byte_count)
 
@@ -222,13 +237,21 @@ defmodule Explorer.Chain.Hash do
 
   defimpl String.Chars do
     def to_string(hash) do
-      @for.to_string(hash)
+      string_hash = @for.to_string(hash)
+      if hash.byte_count() == 20 do
+        case VLX.eth_to_vlx("0x" <> string_hash) do
+          {:ok, res} -> res
+          {:error, _e} -> string_hash
+        end
+      else
+        string_hash
+      end
     end
   end
 
   defimpl Poison.Encoder do
     def encode(hash, options) do
-      hash
+    hash
       |> to_string()
       |> BitString.encode(options)
     end
@@ -238,7 +261,7 @@ defmodule Explorer.Chain.Hash do
     alias Jason.Encode
 
     def encode(hash, opts) do
-      hash
+     hash
       |> to_string()
       |> Encode.string(opts)
     end

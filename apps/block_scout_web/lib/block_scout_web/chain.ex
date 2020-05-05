@@ -26,7 +26,8 @@ defmodule BlockScoutWeb.Chain do
     Log,
     TokenTransfer,
     Transaction,
-    Wei
+    Wei,
+    VLX
   }
 
   alias Explorer.PagingOptions
@@ -42,7 +43,7 @@ defmodule BlockScoutWeb.Chain do
 
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
-  @address_hash_len 40
+  @address_hash_len 34
   @tx_block_hash_len 64
 
   def default_paging_options do
@@ -79,7 +80,7 @@ defmodule BlockScoutWeb.Chain do
     do: block_or_transaction_from_param(param)
 
   def from_param(param) when byte_size(param) == @address_hash_len,
-    do: address_from_param("0x" <> param)
+    do: address_from_param(param)
 
   def from_param(param) when byte_size(param) == @tx_block_hash_len,
     do: block_or_transaction_from_param("0x" <> param)
@@ -245,7 +246,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%CurrentTokenBalance{address_hash: address_hash, value: value}) do
-    %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
+    %{"address_hash" => VLX.vlx_to_eth!(to_string(address_hash)), "value" => Decimal.to_integer(value)}
   end
 
   defp paging_params(%CoinBalance{block_number: block_number}) do

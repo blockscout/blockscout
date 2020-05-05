@@ -404,28 +404,33 @@ defmodule Explorer.Chain.Transaction do
   def decoded_input_data(%__MODULE__{to_address: %{contract_code: nil}}), do: {:error, :not_a_contract_call}
 
   def decoded_input_data(%__MODULE__{
-        to_address: %{smart_contract: nil},
+        to_address: %{hash: address, smart_contract: nil},
         input: %{bytes: <<method_id::binary-size(4), _::binary>> = data},
         hash: hash
       }) do
-    candidates_query =
-      from(
-        contract_method in ContractMethod,
-        where: contract_method.identifier == ^method_id,
-        limit: 1
-      )
+    case Explorer.Chain.get_system_contract(address) do
+      nil -> 
+        candidates_query =
+          from(
+            contract_method in ContractMethod,
+            where: contract_method.identifier == ^method_id,
+            limit: 1
+          )
 
-    candidates =
-      candidates_query
-      |> Repo.all()
-      |> Enum.flat_map(fn candidate ->
-        case do_decoded_input_data(data, [candidate.abi], hash) do
-          {:ok, _, _, _} = decoded -> [decoded]
-          _ -> []
-        end
-      end)
+        candidates =
+          candidates_query
+          |> Repo.all()
+          |> Enum.flat_map(fn candidate ->
+            case do_decoded_input_data(data, [candidate.abi], hash) do
+              {:ok, _, _, _} = decoded -> [decoded]
+              _ -> []
+            end
+          end)
 
-    {:error, :contract_not_verified, candidates}
+        {:error, :contract_not_verified, candidates}
+
+      contract -> do_decoded_input_data(data, contract.abi, hash)
+    end
   end
 
   def decoded_input_data(%__MODULE__{to_address: %{smart_contract: nil}}) do
@@ -499,10 +504,6 @@ defmodule Explorer.Chain.Transaction do
       where(query, [t], t.to_address_hash == ^address_hash),
       where(query, [t], t.created_contract_address_hash == ^address_hash)
     ]
-  end
-
-  def not_pending_transactions(query) do
-    where(query, [t], not is_nil(t.block_number))
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a

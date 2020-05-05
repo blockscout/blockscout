@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.API.V1.VerifiedControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Factory
-
   # alias Explorer.Chain.DecompiledSmartContract
 
   # import Ecto.Query,

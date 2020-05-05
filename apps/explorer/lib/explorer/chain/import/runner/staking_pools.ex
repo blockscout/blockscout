@@ -51,9 +51,6 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
     |> Multi.run(:insert_staking_pools, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
-    |> Multi.run(:calculate_stakes_ratio, fn repo, _ ->
-      calculate_stakes_ratio(repo, insert_options)
-    end)
   end
 
   @impl Import.Runner
@@ -131,51 +128,18 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           is_banned: fragment("EXCLUDED.is_banned"),
           is_validator: fragment("EXCLUDED.is_validator"),
           likelihood: fragment("EXCLUDED.likelihood"),
+          block_reward_ratio: fragment("EXCLUDED.block_reward_ratio"),
           staked_ratio: fragment("EXCLUDED.staked_ratio"),
           self_staked_amount: fragment("EXCLUDED.self_staked_amount"),
           staked_amount: fragment("EXCLUDED.staked_amount"),
           was_banned_count: fragment("EXCLUDED.was_banned_count"),
           was_validator_count: fragment("EXCLUDED.was_validator_count"),
           is_deleted: fragment("EXCLUDED.is_deleted"),
+          banned_until: fragment("EXCLUDED.banned_until"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", pool.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", pool.updated_at)
         ]
       ]
     )
-  end
-
-  defp calculate_stakes_ratio(repo, %{timeout: timeout}) do
-    total_query =
-      from(
-        pool in StakingPool,
-        where: pool.is_active == true,
-        select: sum(pool.staked_amount)
-      )
-
-    total = repo.one!(total_query)
-
-    if total.value > Decimal.new(0) do
-      update_query =
-        from(
-          p in StakingPool,
-          where: p.is_active == true,
-          # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
-          update: [
-            set: [
-              staked_ratio: p.staked_amount / ^total.value * 100,
-              likelihood: p.staked_amount / ^total.value * 100
-            ]
-          ]
-        )
-
-      {count, _} = repo.update_all(update_query, [], timeout: timeout)
-
-      {:ok, count}
-    else
-      {:ok, 1}
-    end
-  rescue
-    postgrex_error in Postgrex.Error ->
-      {:error, %{exception: postgrex_error}}
   end
 end

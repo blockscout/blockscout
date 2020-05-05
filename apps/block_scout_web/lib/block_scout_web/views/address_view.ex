@@ -106,8 +106,8 @@ defmodule BlockScoutWeb.AddressView do
   """
   def balance(%Address{fetched_coin_balance: nil}), do: ""
 
-  def balance(%Address{fetched_coin_balance: balance}) do
-    format_wei_value(balance, :ether)
+  def balance(%Address{fetched_coin_balance: balance}, short \\ false) do
+    format_wei_value(balance, :ether, short_format: short)
   end
 
   def balance_percentage_enabled?(total_supply) do
@@ -170,7 +170,12 @@ defmodule BlockScoutWeb.AddressView do
     end
   end
 
-  def primary_name(%Address{names: _}), do: nil
+  def primary_name(%Address{names: _} = address) do
+    case Chain.get_system_contract(address.hash) do
+      nil -> nil
+      contract -> contract.name
+    end
+  end
 
   def primary_validator_metadata(%Address{names: [_ | _] = address_names}) do
     case Enum.find(address_names, &(&1.primary == true)) do
@@ -209,13 +214,23 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
 
-  def smart_contract_verified?(%Address{smart_contract: nil}), do: false
-
-  def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
-    Enum.any?(address.smart_contract.abi, &(&1["constant"] || &1["stateMutability"] == "view"))
+  def smart_contract_verified?(%Address{smart_contract: nil} = address) do
+    case Chain.get_system_contract(address.hash) do
+      nil -> false
+      _contract -> true
+    end
   end
 
-  def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
+  def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
+    Enum.any?(Chain.get_address_smart_contract(address).abi, &(&1["constant"] || &1["stateMutability"] == "view"))
+  end
+
+  def smart_contract_with_read_only_functions?(%Address{smart_contract: nil} = address) do
+    case Chain.get_system_contract(address.hash) do
+      nil -> false
+      contract -> Enum.any?(contract.abi, &(&1["constant"] || &1["stateMutability"] == "view"))
+    end
+  end
 
   def has_decompiled_code?(address) do
     address.has_decompiled_code? ||
@@ -321,12 +336,10 @@ defmodule BlockScoutWeb.AddressView do
 
   def short_hash(%Address{hash: hash}) do
     <<
-      "0x",
       short_address::binary-size(6),
       _rest::binary
     >> = to_string(hash)
-
-    "0x" <> short_address
+    short_address
   end
 
   def short_contract_name(name, max_length) do
@@ -339,7 +352,8 @@ defmodule BlockScoutWeb.AddressView do
 
   def address_page_title(address) do
     cond do
-      smart_contract_verified?(address) -> "#{address.smart_contract.name} (#{to_string(address)})"
+      Chain.is_system_contract?(address.hash) -> "#{Chain.get_system_contract(address.hash).name} (#{to_string(address)})"
+      smart_contract_verified?(address) -> "#{Chain.get_address_smart_contract(address).name} (#{to_string(address)})"
       contract?(address) -> "Contract #{to_string(address)}"
       true -> "#{to_string(address)}"
     end

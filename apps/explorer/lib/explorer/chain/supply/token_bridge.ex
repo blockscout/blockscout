@@ -20,18 +20,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   }
   @total_burned_coins_params %{"totalBurntCoins" => []}
 
-  @block_reward_contract_abi %{
-    "type" => "function",
-    "stateMutability" => "view",
-    "payable" => false,
-    "outputs" => [%{"type" => "address", "name" => ""}],
-    "name" => "blockRewardContract",
-    "inputs" => [],
-    "constant" => true
-  }
-
-  @block_reward_contract_params %{"blockRewardContract" => []}
-
+  @block_reward_contract_address "0x867305d19606aadba405ce534e303d0e225f9556"
   @total_minted_coins_abi %{
     "type" => "function",
     "stateMutability" => "view",
@@ -41,7 +30,6 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     "inputs" => [],
     "constant" => true
   }
-
   @total_minted_coins_params %{"mintedTotally" => []}
 
   @ets_table :token_bridge_contract_coin_cache
@@ -59,22 +47,16 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     cached_total_coins(cache_period)
   end
 
+  defp minted_coins do
+    address = System.get_env("BLOCK_REWARD_CONTRACT") || @block_reward_contract_address
+
+    call_contract(address, @total_minted_coins_abi, @total_minted_coins_params)
+  end
+
   defp burned_coins do
     address = System.get_env("TOKEN_BRIDGE_CONTRACT") || @token_bridge_contract_address
 
     call_contract(address, @total_burned_coins_abi, @total_burned_coins_params)
-  end
-
-  defp block_reward_contract do
-    address = System.get_env("TOKEN_BRIDGE_CONTRACT") || @token_bridge_contract_address
-
-    call_contract(address, @block_reward_contract_abi, @block_reward_contract_params)
-  end
-
-  defp minted_coins do
-    address = block_reward_contract()
-
-    call_contract(address, @total_minted_coins_abi, @total_minted_coins_params)
   end
 
   defp call_contract(address, abi, params) do
@@ -91,23 +73,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
         _ -> 0
       end
 
-    type =
-      abi
-      |> Enum.at(0)
-      |> Map.get("outputs", [])
-      |> Enum.at(0)
-      |> Map.get("type", "")
-
-    case type do
-      "address" ->
-        "0x" <> Base.encode16(value)
-
-      "uint256" ->
-        %Wei{value: Decimal.new(value)}
-
-      _ ->
-        value
-    end
+    %Wei{value: Decimal.new(value)}
   end
 
   def cached_total_coins(cache_period) do

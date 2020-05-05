@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.WeiHelpers do
 
   @valid_units ~w(wei gwei ether)a
 
-  @type format_option :: {:include_unit_label, boolean()}
+  @type format_option :: {:include_unit_label, boolean()} | {:short_format, boolean()}
 
   @type format_options :: [format_option()]
 
@@ -59,10 +59,13 @@ defmodule BlockScoutWeb.WeiHelpers do
       |> Wei.to(unit)
 
     formatted_value =
-      if Decimal.cmp(converted_value, 1_000_000_000_000) == :gt do
-        CldrHelper.Number.to_string!(converted_value, format: "0.###E+0")
-      else
-        CldrHelper.Number.to_string!(converted_value, format: "#,##0.##################")
+      cond do
+        Decimal.cmp(converted_value, 1_000_000_000_000) == :gt ->
+          CldrHelper.Number.to_string!(converted_value, format: "0.###E+0")
+        Keyword.get(options, :short_format, false) ->
+          CldrHelper.Number.to_string!(converted_value, format: "#,##0.############")
+        true ->
+          CldrHelper.Number.to_string!(converted_value, format: "#,##0.##################")
       end
 
     if Keyword.get(options, :include_unit_label, true) do
@@ -75,5 +78,5 @@ defmodule BlockScoutWeb.WeiHelpers do
 
   defp display_unit(:wei), do: gettext("Wei")
   defp display_unit(:gwei), do: gettext("Gwei")
-  defp display_unit(:ether), do: gettext("Ether")
+  defp display_unit(:ether), do: gettext("VLX")
 end

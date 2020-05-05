@@ -14,7 +14,9 @@
     <% end %>   
     <script>
       if (localStorage.getItem("current-color-mode") === "dark") {
-        document.getElementById("navbar-logo").style.filter = "brightness(0) invert(1)";
+        document.getElementById("navbar-logo").src = '/images/violet_name_logo_velas.svg'
+      } else {
+        document.getElementById("navbar-logo").src = '/images/2_violet_grey_logo_velas.svg'
       }
     </script>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
@@ -64,11 +66,19 @@
             </div>
           </li>
           <li class="nav-item">
-            <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("accounts", @conn.request_path)}" do %>
+            <%= link to: accounts_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("accounts", @conn.request_path)}" do %>
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
               </span>
               <%= gettext("Accounts") %>
+            <% end %>
+          </li>
+          <li class="nav-item">
+            <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("balances", @conn.request_path)}" do %>
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
+              </span>
+              <%= gettext("Balances") %>
             <% end %>
           </li>
         <% end %>
@@ -111,14 +121,14 @@
             <%= for %{url: url, title: title} <- dropdown_head_main_nets() do %>  
               <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
             <% end %> 
-            <a class="dropdown-item header division">Testnets</a> 
+          <!--  <a class="dropdown-item header division">Testnets</a> 
             <%= for %{url: url, title: title} <- test_nets(dropdown_nets()) do %> 
               <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
             <% end %> 
             <a class="dropdown-item header division">Other Networks</a> 
             <%= for %{url: url, title: title} <- dropdown_other_nets() do %>  
               <a class="dropdown-item" href="<%= url%>"><%= title %></a>  
-            <% end %> 
+            <% end %> -->
           </div>
         </li>
       </ul>

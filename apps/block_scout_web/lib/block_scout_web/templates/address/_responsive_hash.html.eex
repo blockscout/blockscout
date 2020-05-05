@@ -1,3 +1,4 @@
+<span class="text-info font-weight-bold"><%= if @contract do %>Smart contract <% end %></span>
 <span class="<%= if @contract do %>contract-address<% end %>" data-address-hash="<%= @address %>">
   <%= if name = primary_name(@address) do %>
      <%= if @use_custom_tooltip == true do %>

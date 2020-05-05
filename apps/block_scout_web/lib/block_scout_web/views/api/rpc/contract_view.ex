@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
   defp prepare_source_code_contract(address) do
     decompiled_smart_contract = latest_decompiled_smart_contract(address.decompiled_smart_contracts)
-    contract = address.smart_contract || %{}
+    contract = Explorer.Chain.get_address_smart_contract(address) || %{}
 
     optimization = Map.get(contract, :optimization, "")
 
@@ -112,7 +112,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
 
   defp set_verified_contract_data(contract_output, contract, address, optimization) do
     contract_abi =
-      if is_nil(address.smart_contract) do
+      if is_nil(Explorer.Chain.get_address_smart_contract(address)) do
         "Contract source code not verified"
       else
         Jason.encode!(contract.abi)

@@ -25,6 +25,11 @@
 		  Balance
 		</div>
 	      </th>
+	      <th class="stakes-table-th">
+		<div class="stakes-table-th-content">
+		  Stake
+		</div>
+	      </th>
               <%= if balance_percentage_enabled?(@total_supply) do %>
               <th class="stakes-table-th">
                 <div class="stakes-table-th-content">

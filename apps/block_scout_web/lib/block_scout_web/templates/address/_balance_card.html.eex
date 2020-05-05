@@ -12,9 +12,18 @@
             data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
             data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
           </span>
-          <small>(@ <span data-usd-unit-price="<%= @exchange_rate.usd_value %>"></span>/<%= gettext("Ether") %>)</small>
+          <small>(@ <span data-usd-unit-price="<%= @exchange_rate.usd_value %>"></span>/<%= gettext("VLX") %>)</small>
         </p>
       <% end %>
+
+      <p class="address-current-balance">
+        <span class="address-balance-text">Total received:</span>
+        <%= format_wei_value(Explorer.Chain.address_total_received(@address.hash), :ether) %>
+      </p>
+      <p class="address-current-balance">
+        <span class="address-balance-text">Total sent:</span>
+         <%= format_wei_value(Explorer.Chain.address_total_sent(@address.hash), :ether) %>
+      </p>
 
       <p
         class="address-current-balance"

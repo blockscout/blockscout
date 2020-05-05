@@ -7,52 +7,32 @@ defmodule BlockScoutWeb.LayoutView do
   @issue_url "https://github.com/poanetwork/blockscout/issues/new"
   @default_other_networks [
     %{
-      title: "POA Core",
-      url: "https://blockscout.com/poa/core"
+      title: "Velas mainnet",
+      url: "https://mainnet-v2.velas.com"
     },
     %{
-      title: "POA Sokol",
-      url: "https://blockscout.com/poa/sokol",
-      test_net?: true
-    },
-    %{
-      title: "xDai Chain",
-      url: "https://blockscout.com/poa/dai"
-    },
-    %{
-      title: "Kovan Testnet",
-      url: "https://blockscout.com/eth/kovan",
-      test_net?: true
-    },
-    %{
-      title: "Ethereum Classic",
-      url: "https://blockscout.com/etc/mainnet",
-      other?: true
-    },
-    %{
-      title: "RSK Mainnet",
-      url: "https://blockscout.com/rsk/mainnet",
-      other?: true
+      title: "Velas testnet",
+      url: "https://testnet-v2.velas.com"
     }
   ]
 
   alias BlockScoutWeb.SocialMedia
 
   def logo do
-    Keyword.get(application_config(), :logo) || "/images/blockscout_logo.svg"
+    Keyword.get(application_config(), :logo) || "/images/velas-logo-title.svg"
   end
 
   def logo_footer do
     Keyword.get(application_config(), :logo_footer) || Keyword.get(application_config(), :logo) ||
-      "/images/blockscout_logo.svg"
+      "/images/violet_grey_logo_velas.png"
   end
 
   def subnetwork_title do
-    Keyword.get(application_config(), :subnetwork) || "POA Sokol"
+    Keyword.get(application_config(), :subnetwork) || "Velas"
   end
 
   def network_title do
-    Keyword.get(application_config(), :network) || "POA"
+    Keyword.get(application_config(), :network) || "Velas"
   end
 
   defp application_config do

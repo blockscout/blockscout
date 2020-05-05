@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.AddressReadContractController do
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true),
-         false <- is_nil(address.smart_contract) do
+         false <- is_nil(Chain.get_address_smart_contract(address)) do
       render(
         conn,
         "index.html",

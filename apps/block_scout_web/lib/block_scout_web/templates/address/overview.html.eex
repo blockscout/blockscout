@@ -106,7 +106,7 @@
                   "data-test": "transaction_hash_link"
                 ) %>
               <% else %>
-                <p class="alert alert-danger" role="alert"><%= gettext("Error: Could not determine contract creator.") %></p>
+                <!--<p class="alert alert-danger" role="alert"><%= gettext("Error: Could not determine contract creator.") %></p>-->
               <% end %>
             </span>
           <% end %>

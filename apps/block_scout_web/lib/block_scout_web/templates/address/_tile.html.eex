@@ -9,7 +9,7 @@
     <%= @address |> BlockScoutWeb.AddressView.address_partial_selector(nil, nil) |> BlockScoutWeb.RenderHelpers.render_partial() %>
   </td>
   <td class="stakes-td">
-    <span data-test="address_balance"><%= balance(@address) %></span>
+    <span data-test="address_balance"><%= balance(@address, true) %></span>
     <!-- USD value of the balance -->
     <span
       data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
@@ -17,6 +17,9 @@
         data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
       <% end %>
     </span>
+  </td>
+  <td class="stakes-td">
+    <span><%= format_wei_value(Explorer.Chain.address_staking_amount(@address.hash), :ether, short_format: true) %></span>
   </td>
   <%= if balance_percentage_enabled?(@total_supply) do %>
     <td class="stakes-td color-lighten">

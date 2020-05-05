@@ -8,8 +8,7 @@ use Mix.Config
 # General application configuration
 config :explorer,
   ecto_repos: [Explorer.Repo],
-  coin: System.get_env("COIN") || "POA",
-  coingecko_coin_id: System.get_env("COINGECKO_COIN_ID"),
+  coin: System.get_env("COIN") || "VLX",
   token_functions_reader_max_retries: 3,
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
@@ -88,38 +87,13 @@ config :explorer, Explorer.Counters.AddressesCounter,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
 
-config :explorer, Explorer.ExchangeRates, enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true", store: :ets
+config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
 config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: System.get_env("DISABLE_INDEXER") != "true"
-
-txs_stats_init_lag =
-  System.get_env("TXS_HISTORIAN_INIT_LAG", "0")
-  |> Integer.parse()
-  |> elem(0)
-  |> :timer.minutes()
-
-txs_stats_days_to_compile_at_init =
-  System.get_env("TXS_STATS_DAYS_TO_COMPILE_AT_INIT", "40")
-  |> Integer.parse()
-  |> elem(0)
-
-config :explorer, Explorer.Chain.Transaction.History.Historian,
-  enabled: System.get_env("ENABLE_TXS_STATS", "false") != "false",
-  init_lag: txs_stats_init_lag,
-  days_to_compile_at_init: txs_stats_days_to_compile_at_init
-
-history_fetch_interval =
-  case Integer.parse(System.get_env("HISTORY_FETCH_INTERVAL", "")) do
-    {mins, ""} -> mins
-    _ -> 60
-  end
-  |> :timer.minutes()
-
-config :explorer, Explorer.History.Process, history_fetch_interval: history_fetch_interval
 
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
@@ -138,20 +112,12 @@ else
   config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
 end
 
-config :explorer, Explorer.Chain.Block.Reward,
-  validators_contract_address: System.get_env("VALIDATORS_CONTRACT"),
-  keys_manager_contract_address: System.get_env("KEYS_MANAGER_CONTRACT")
-
-config :explorer, Explorer.Staking.PoolsReader,
-  validators_contract_address: System.get_env("POS_VALIDATORS_CONTRACT"),
-  staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
-
 if System.get_env("POS_STAKING_CONTRACT") do
-  config :explorer, Explorer.Staking.EpochCounter,
+  config :explorer, Explorer.Staking.ContractState,
     enabled: true,
     staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
 else
-  config :explorer, Explorer.Staking.EpochCounter, enabled: false
+  config :explorer, Explorer.Staking.ContractState, enabled: false
 end
 
 case System.get_env("SUPPLY_MODULE") do

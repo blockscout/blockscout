@@ -44,14 +44,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
   @impl Source
   def source_url do
-    explicit_coin_id = Application.get_env(:explorer, :coingecko_coin_id)
-
-    {:ok, id} =
-      if explicit_coin_id do
-        {:ok, explicit_coin_id}
-      else
-        coin_id()
-      end
+    {:ok, id} = coin_id()
 
     "#{base_url()}/coins/#{id}"
   end

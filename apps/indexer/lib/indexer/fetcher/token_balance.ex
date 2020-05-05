@@ -19,7 +19,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   require Logger
 
   alias Explorer.Chain
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, VLX}
   alias Indexer.{BufferedTask, TokenBalances, Tracer}
 
   @behaviour BufferedTask
@@ -151,8 +151,8 @@ defmodule Indexer.Fetcher.TokenBalance do
     {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
 
     %{
-      token_contract_address_hash: to_string(token_contract_address_hash),
-      address_hash: to_string(address_hash),
+      token_contract_address_hash: VLX.vlx_to_eth!(to_string(token_contract_address_hash)),
+      address_hash: VLX.vlx_to_eth!(to_string(address_hash)),
       block_number: block_number,
       retries_count: retries_count
     }

@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Hash.Address do
   The address is actually the last 40 characters of the keccak-256 hash of the public key with `0x` appended.
   """
 
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, VLX}
 
   use Ecto.Type
   @behaviour Hash
@@ -149,11 +149,20 @@ defmodule Explorer.Chain.Hash.Address do
   @impl Hash
   def byte_count, do: @byte_count
 
+  defp prepare(hash_addr) do
+      case hash_addr do
+        "V" <> _ -> VLX.vlx_to_eth(hash_addr)
+        "0x" <> _ -> {:ok, hash_addr}
+        _ -> {:error, :unexpected_prefix}
+      end
+  end
+
   @doc """
   Validates a hexadecimal encoded string to see if it conforms to an address.
 
   ## Error Descriptions
 
+  * `:unexpected_prefix` - Only V and 0x prefixes are supported
   * `:invalid_characters` - String used non-hexadecimal characters
   * `:invalid_checksum` - Mixed-case string didn't pass [EIP-55 checksum](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-55.md)
   * `:invalid_length` - Addresses are expected to be 40 hex characters long
@@ -166,9 +175,10 @@ defmodule Explorer.Chain.Hash.Address do
       iex> Explorer.Chain.Hash.Address.validate("0xc1912fEE45d61C87Cc5EA59DaE31190FFFFf232H")
       {:error, :invalid_characters}
   """
-  @spec validate(String.t()) :: {:ok, String.t()} | {:error, :invalid_length | :invalid_characters | :invalid_checksum}
-  def validate("0x" <> hash) do
-    with {:length, true} <- {:length, String.length(hash) == 40},
+  @spec validate(String.t()) :: {:ok, String.t()} | {:error, :unexpected_prefix | :invalid_length | :invalid_characters | :invalid_checksum}
+  def validate(hash_addr) do
+    with {:ok, "0x" <> hash} <- prepare(hash_addr),
+         {:length, true} <- {:length, String.length(hash) == 40},
          {:hex, true} <- {:hex, is_hex?(hash)},
          {:mixed_case, true} <- {:mixed_case, is_mixed_case?(hash)},
          {:checksummed, true} <- {:checksummed, is_checksummed?(hash)} do
@@ -181,7 +191,7 @@ defmodule Explorer.Chain.Hash.Address do
         {:error, :invalid_characters}
 
       {:mixed_case, false} ->
-        {:ok, "0x" <> hash}
+        {:ok, hash_addr}
 
       {:checksummed, false} ->
         {:error, :invalid_checksum}

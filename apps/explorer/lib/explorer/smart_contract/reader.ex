@@ -8,7 +8,7 @@ defmodule Explorer.SmartContract.Reader do
 
   alias EthereumJSONRPC.Contract
   alias Explorer.Chain
-  alias Explorer.Chain.{Hash, SmartContract}
+  alias Explorer.Chain.{Hash, SmartContract, VLX}
 
   @typedoc """
   Map of functions to call with the values for the function to be called with.
@@ -61,8 +61,7 @@ defmodule Explorer.SmartContract.Reader do
   """
   @spec query_verified_contract(Hash.Address.t(), functions(), SmartContract.abi() | nil) :: functions_results()
   def query_verified_contract(address_hash, functions, mabi \\ nil) do
-    contract_address = Hash.to_string(address_hash)
-
+    contract_address = "0x" <> Hash.to_string(address_hash)
     abi =
       case mabi do
         nil ->
@@ -241,6 +240,14 @@ defmodule Explorer.SmartContract.Reader do
     Enum.map(args, &parse_item/1)
   end
 
+  defp parse_item("V" <> vlx) when is_binary(vlx) and byte_size(vlx) == 33 do
+    vlx_addr = "V" <> vlx
+    case VLX.vlx_to_eth(vlx_addr) do
+      {:ok, eth_addr} -> eth_addr
+      _ -> parse_item(vlx_addr)
+    end
+  end
+
   defp parse_item("true"), do: true
   defp parse_item("false"), do: false
 
@@ -262,24 +269,36 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   def link_outputs_and_values(blockchain_values, outputs, function_name) do
-    default_value = Enum.map(outputs, fn _ -> "" end)
-    {_, value} = Map.get(blockchain_values, function_name, {:ok, default_value})
+    {_, value} = Map.get(blockchain_values, function_name, {:ok, [""]})
 
     for {output, index} <- Enum.with_index(outputs) do
       new_value(output, List.wrap(value), index)
     end
   end
 
+  defp new_value(%{"type" => "address[]"} = output, [values], _index) when is_list(values) do
+    parsed = Enum.map(values, fn v ->
+          v
+          |> bytes_to_string
+          |> VLX.eth_to_vlx
+          |> case do
+            {:ok, vlx} -> vlx
+            unparsed -> unparsed
+          end
+        end)
+    Map.put_new(output, "value", parsed)
+  end
+
   defp new_value(%{"type" => "address"} = output, [value], _index) do
+    val = case VLX.eth_to_vlx(value) do
+      {:ok, vlx} -> vlx
+      _ -> bytes_to_string(value)
+    end
+    Map.put_new(output, "value", val)
+  end
+
+  defp new_value(%{"type" => "bytes" <> _number} = output, [value], _index) do
     Map.put_new(output, "value", bytes_to_string(value))
-  end
-
-  defp new_value(%{"type" => "bytes" <> _number} = output, values, index) do
-    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
-  end
-
-  defp new_value(%{"type" => "bytes"} = output, values, index) do
-    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
   end
 
   defp new_value(output, [value], _index) do
@@ -287,7 +306,15 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   defp new_value(output, values, index) do
-    Map.put_new(output, "value", Enum.at(values, index))
+    parsed = case value = Enum.at(values, index) do
+      [head | _] when is_integer(head) ->
+        Enum.map(value, fn v ->
+          " " <> Integer.to_string(v)
+        end)
+      val -> val
+    end
+
+    Map.put_new(output, "value", parsed)
   end
 
   @spec bytes_to_string(<<_::_*8>>) :: String.t()

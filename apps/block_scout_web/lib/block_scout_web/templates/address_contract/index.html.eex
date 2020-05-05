@@ -24,61 +24,64 @@
         <div class="mb-4">
           <dl class="row">
             <dt class="col-md-2 text-muted"><%= gettext "Contract name:" %></dt>
-            <dd class="col-md-4"><%= @address.smart_contract.name %></dd>
+            <dd class="col-md-4"><%= Explorer.Chain.get_address_smart_contract(@address).name %></dd>
             <div class="d-none d-sm-block d-md-none"></br></br></div>
             <div class="d-block d-sm-none"></br></br></div>
             <dt class="col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
-            <dd class="col-md-4"><%= format_optimization_text(@address.smart_contract.optimization) %></dd>
+            <dd class="col-md-4"><%= format_optimization_text(Explorer.Chain.get_address_smart_contract(@address).optimization) %></dd>
           </dl>
           <dl class="row">
             <dt class="col-md-2 text-muted"><%= gettext "Compiler version" %></dt>
-            <dd class="col-md-4"><%= @address.smart_contract.compiler_version %></dd>
+            <dd class="col-md-4"><%= Explorer.Chain.get_address_smart_contract(@address).compiler_version %></dd>
             <div class="d-none d-sm-block d-md-none"></br></br></div>
             <div class="d-block d-sm-none"></br></br></div>
-            <%= if @address.smart_contract.optimization && @address.smart_contract.optimization_runs do %>
+            <%= if Explorer.Chain.get_address_smart_contract(@address).optimization && Explorer.Chain.get_address_smart_contract(@address).optimization_runs do %>
               <dt class="col-md-2 text-muted"><%= gettext "Optimization runs" %></dt>
-              <dd class="col-md-4"><%= @address.smart_contract.optimization_runs %></dd>
+              <dd class="col-md-4"><%= Explorer.Chain.get_address_smart_contract(@address).optimization_runs %></dd>
             <% end %>
           </dl>
-          <%= if @address.smart_contract.evm_version do %>
+          <%= if Explorer.Chain.get_address_smart_contract(@address).evm_version do %>
             <dl class="row">
               <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "EVM Version" %></dt>
-              <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.evm_version %></dd>
+              <dd class="col-sm-8 col-md-10"><%= Explorer.Chain.get_address_smart_contract(@address).evm_version %></dd>
             </dl>
           <% end %>
         <hr/>
-        <%= if @address.smart_contract.constructor_arguments do %>
+        <%= if Explorer.Chain.get_address_smart_contract(@address).constructor_arguments do %>
           <section>
             <div class="d-flex justify-content-between align-items-baseline">
               <h3><%= gettext "Constructor Arguments" %></h3>
             </div>
             <div class="tile tile-muted mb-4">
-              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_constructor_arguments(@address.smart_contract, @conn)) %></code>
+              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_constructor_arguments(Explorer.Chain.get_address_smart_contract(@address))) %></code>
               </pre>
             </div>
           </section>
         <% end %>
+
+        <%= if String.length(Explorer.Chain.get_address_smart_contract(@address).contract_source_code) > 0 do %>
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= gettext "Contract source code" %></h3>
-            <button type="button" class="btn-line" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= @address.smart_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
+            <button type="button" class="btn-line" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= Explorer.Chain.get_address_smart_contract(@address).contract_source_code %>" aria-label="Copy Contract Source Code">
               <%= gettext "Copy Source Code" %>
             </button>
           </div>
           <div class="tile tile-muted mb-4">
-            <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(@address.smart_contract.contract_source_code, @address.smart_contract.inserted_at) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
+            <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(Explorer.Chain.get_address_smart_contract(@address).contract_source_code, Explorer.Chain.get_address_smart_contract(@address).inserted_at) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
           </div>
         </section>
+        <% end %>
 
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= gettext "Contract ABI" %></h3>
-            <button type="button" class="btn-line" id="button" data-clipboard-text="<%= format_smart_contract_abi(@address.smart_contract.abi) %>" aria-label="Copy Contract ABI">
+            <button type="button" class="btn-line" id="button" data-clipboard-text="<%= format_smart_contract_abi(Explorer.Chain.get_address_smart_contract(@address).abi) %>" aria-label="Copy Contract ABI">
               <%= gettext "Copy ABI" %>
             </button>
           </div>
           <div class="tile tile-muted mb-4">
-            <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= format_smart_contract_abi(@address.smart_contract.abi) %></code>
+            <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= format_smart_contract_abi(Explorer.Chain.get_address_smart_contract(@address).abi) %></code>
             </pre>
           </div>
         </section>
@@ -114,13 +117,13 @@
       </section>
 
       <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
-        <%= if @address.smart_contract.external_libraries && @address.smart_contract.external_libraries != [] do %>
+        <%= if Explorer.Chain.get_address_smart_contract(@address).external_libraries && Explorer.Chain.get_address_smart_contract(@address).external_libraries != [] do %>
           <section>
             <div class="d-flex justify-content-between align-items-baseline">
               <h3><%= gettext "External libraries" %></h3>
             </div>
             <div class="tile tile-muted mb-4">
-              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_external_libraries(@address.smart_contract.external_libraries)) %></code>
+              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_external_libraries(Explorer.Chain.get_address_smart_contract(@address).external_libraries)) %></code>
               </pre>
             </div>
           </section>
