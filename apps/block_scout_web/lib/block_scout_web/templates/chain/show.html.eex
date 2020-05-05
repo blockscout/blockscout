@@ -3,14 +3,13 @@
     <div class="dashboard-banner">
       <!-- Graph and legend -->
       <div class="dashboard-banner-network-graph">
-        <!-- Graph -->
+        <!--
         <div class="dashboard-banner-chart">
           <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
             <span><%= gettext("There was a problem loading the chart.") %></span>
           </button>
           <canvas data-chart="marketHistoryChart" data-market_history_chart_path="<%= @chart_data_path %>" width="350" height="152" style="display: none;"></canvas>
         </div>
-        <!-- Legend -->
         <div class="dashboard-banner-chart-legend">
           <div class="dashboard-banner-chart-legend-item">
             <span class="dashboard-banner-chart-legend-label">
@@ -27,6 +26,7 @@
             </span>
           </div>
         </div>
+        -->
       </div>
       <!-- Stats -->
       <div class="dashboard-banner-network-plain-container">
