@@ -38,6 +38,7 @@ defmodule Explorer.Chain do
     CeloAccount,
     CeloClaims,
     CeloParams,
+    CeloSigners,
     CeloValidator,
     CeloValidatorGroup,
     CeloValidatorHistory,
@@ -3915,6 +3916,10 @@ defmodule Explorer.Chain do
 
   @spec get_celo_account(Hash.Address.t()) :: {:ok, CeloAccount.t()} | {:error, :not_found}
   def get_celo_account(address_hash) do
+    get_signer_account(address_hash)
+  end
+
+  defp do_get_celo_account(address_hash) do
     query =
       from(account in CeloAccount,
         where: account.address == ^address_hash
@@ -3923,7 +3928,26 @@ defmodule Explorer.Chain do
     query
     |> Repo.one()
     |> case do
-      nil -> {:error, :not_found}
+      nil ->  {:error, :not_found}
+      data ->
+        IO.inspect(%{data: data})
+        {:ok, data}
+    end
+  end
+
+  defp get_signer_account(address_hash) do
+    query =
+      from(s in CeloSigners,
+        inner_join: a in CeloAccount,
+        on: s.address == a.address,
+        where: s.signer == ^address_hash,
+        select: a
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> do_get_celo_account(address_hash)
       data -> {:ok, data}
     end
   end
