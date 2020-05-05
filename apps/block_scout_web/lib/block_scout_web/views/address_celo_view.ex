@@ -9,4 +9,11 @@ defmodule BlockScoutWeb.AddressCeloView do
 
   def member_number(n), do: n
 
+  defp conv(-1), do: 1_000_000
+  defp conv(n), do: n
+
+  def sort_members(lst) do
+    lst
+    |> Enum.sort(fn a, b -> conv(a.member) <= conv(b.member) end)
+  end
 end
