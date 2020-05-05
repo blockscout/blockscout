@@ -16,4 +16,10 @@ defmodule BlockScoutWeb.AddressCeloView do
     lst
     |> Enum.sort(fn a, b -> conv(a.member) <= conv(b.member) end)
   end
+
+  def sort_voters(lst) do
+    lst
+    |> Enum.filter(fn a -> a.total.value > Decimal.new(0) end)
+    |> Enum.sort(fn a, b -> a.total.value >= b.total.value end)
+  end
 end
