@@ -147,7 +147,7 @@
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All affiliated members for this group">
        <ul>
        <%= for member <- @address.celo_members do %>
-         <li><%= member.member %>:
+         <li><%= member_number(member.member) %>:
          <%= if member.validator_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:members, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
             end %></li>
