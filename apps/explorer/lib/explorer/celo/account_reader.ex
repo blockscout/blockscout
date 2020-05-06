@@ -278,8 +278,8 @@ defmodule Explorer.Celo.AccountReader do
          {:ok, gold_address} <- get_address("GoldToken"),
          {:ok, usd_address} <- get_address("StableToken"),
          {:ok, oracle_address} <- get_address("SortedOracles") do
-      
       validators = SignerCache.epoch_signers(epoch, epoch_size, block_number)
+
       list =
         validators
         |> Enum.with_index()
@@ -317,5 +317,4 @@ defmodule Explorer.Celo.AccountReader do
   defp fetch_withdrawal_data(address) do
     call_methods([{:lockedgold, "getPendingWithdrawals", [address]}])
   end
-
 end

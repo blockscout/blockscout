@@ -23,6 +23,7 @@ defmodule Explorer.Celo.SignerCache do
 
   def fetch_signers(bn) do
     data = call_methods([{:election, "getCurrentValidatorSigners", [], bn - 1}])
+
     case data["getCurrentValidatorSigners"] do
       {:ok, [lst]} -> lst
       _ -> []
@@ -32,11 +33,12 @@ defmodule Explorer.Celo.SignerCache do
   @impl GenServer
   def handle_call({:fetch, epoch, _epoch_size, block_number}, _, state) do
     case Map.fetch(state, epoch) do
-      {:ok, lst} -> {:reply, lst, state}
+      {:ok, lst} ->
+        {:reply, lst, state}
+
       _ ->
         lst = fetch_signers(block_number)
         {:reply, lst, Map.put(state, epoch, lst)}
     end
   end
-
 end
