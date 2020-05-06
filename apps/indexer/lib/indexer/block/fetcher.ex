@@ -250,11 +250,15 @@ defmodule Indexer.Block.Fetcher do
                  []
                end
            }),
+         gold_transfers =
+           normal_token_transfers
+           |> Enum.filter(fn %{token_contract_address_hash: contract} -> contract == gold_token end),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
              blocks_params: blocks,
              logs_params: logs,
+             gold_transfers: gold_transfers,
              transactions_params: transactions_with_receipts
            }
            |> AddressCoinBalances.params_set(),

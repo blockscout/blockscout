@@ -27,6 +27,14 @@ defmodule Indexer.Transform.AddressCoinBalances do
     Enum.reduce(internal_transactions_params, initial, &internal_transactions_params_reducer/2)
   end
 
+  defp reducer({:gold_transfers, gold_transfers}, acc) when is_list(gold_transfers) do
+    Enum.reduce(gold_transfers, acc, fn %{from_address_hash: from, to_address_hash: to, block_number: bn}, lst ->
+      lst
+      |> MapSet.put(%{block_number: bn, address_hash: to})
+      |> MapSet.put(%{block_number: bn, address_hash: from})
+    end)
+  end
+
   defp reducer({:logs_params, logs_params}, acc) when is_list(logs_params) do
     # a log MUST have address_hash and block_number
     logs_params
