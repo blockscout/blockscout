@@ -2,9 +2,30 @@
 
 ### Features
 
+- [#3069](https://github.com/poanetwork/blockscout/pull/3069) - Make a link to address page on decoded constructor argument of address type
+- [#3067](https://github.com/poanetwork/blockscout/pull/3067) - Show proper title of the tile or container for token burnings/mintings instead of "Token Transfer"
+- [#3066](https://github.com/poanetwork/blockscout/pull/3066) - ERC-721 token instance page: link to token added
+- [#3065](https://github.com/poanetwork/blockscout/pull/3065) - Transactions history chart
+
 ### Fixes
 
+- [#3064](https://github.com/poanetwork/blockscout/pull/3064) - Automatically define Block reward contract address in TokenBridge supply module
+- [#3061](https://github.com/poanetwork/blockscout/pull/3061) - Fix verification of contracts with error messages in require in parent contract
+
 ### Chore
+
+
+## 3.1.1-beta
+
+### Features
+- [#3058](https://github.com/poanetwork/blockscout/pull/3058) - Searching by verified contract name
+
+### Fixes
+- [#3053](https://github.com/poanetwork/blockscout/pull/3053) - Fix ABI decoding in contracts methods, logs (migrate to ex_abi 0.3.0)
+- [#3044](https://github.com/poanetwork/blockscout/pull/3044) - Prevent division by zero on /accounts page
+- [#3043](https://github.com/poanetwork/blockscout/pull/3043) - Extract host name for split couple of indexer and web app
+- [#3042](https://github.com/poanetwork/blockscout/pull/3042) - Speedup pending txs list query
+- [#2944](https://github.com/poanetwork/blockscout/pull/2944), [#3046](https://github.com/poanetwork/blockscout/pull/3046) - Split js logic into multiple files
 
 
 ## 3.1.0-beta

@@ -143,6 +143,26 @@ defmodule BlockScoutWeb.AddressViewTest do
     end
   end
 
+  describe "balance_percentage_enabled/1" do
+    test "with non_zero market cap" do
+      Application.put_env(:block_scout_web, :show_percentage, true)
+
+      assert AddressView.balance_percentage_enabled?(100_500) == true
+    end
+
+    test "with zero market cap" do
+      Application.put_env(:block_scout_web, :show_percentage, true)
+
+      assert AddressView.balance_percentage_enabled?(0) == false
+    end
+
+    test "with switched off show_percentage" do
+      Application.put_env(:block_scout_web, :show_percentage, false)
+
+      assert AddressView.balance_percentage_enabled?(100_501) == false
+    end
+  end
+
   test "balance_percentage/1" do
     Application.put_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
     address = insert(:address, fetched_coin_balance: 2_524_608_000_000_000_000_000_000)
