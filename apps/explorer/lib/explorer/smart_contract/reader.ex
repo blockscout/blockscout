@@ -262,7 +262,8 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   def link_outputs_and_values(blockchain_values, outputs, function_name) do
-    {_, value} = Map.get(blockchain_values, function_name, {:ok, [""]})
+    default_value = Enum.map(outputs, fn _ -> "" end)
+    {_, value} = Map.get(blockchain_values, function_name, {:ok, default_value})
 
     for {output, index} <- Enum.with_index(outputs) do
       new_value(output, List.wrap(value), index)
@@ -273,8 +274,12 @@ defmodule Explorer.SmartContract.Reader do
     Map.put_new(output, "value", bytes_to_string(value))
   end
 
-  defp new_value(%{"type" => "bytes" <> _number} = output, [value], _index) do
-    Map.put_new(output, "value", bytes_to_string(value))
+  defp new_value(%{"type" => "bytes" <> _number} = output, values, index) do
+    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+  end
+
+  defp new_value(%{"type" => "bytes"} = output, values, index) do
+    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
   end
 
   defp new_value(output, [value], _index) do

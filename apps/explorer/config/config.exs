@@ -20,9 +20,7 @@ config :explorer,
     if(System.get_env("DISABLE_WEBAPP") != "true",
       do: Explorer.Chain.Events.SimpleSender,
       else: Explorer.Chain.Events.DBSender
-    ),
-  index_internal_transactions_for_token_transfers:
-    if(System.get_env("INTERNAL_TRANSACTIONOS_FOR_TOKEN_TRANSFERS") == "true", do: true, else: false)
+    )
 
 average_block_period =
   case Integer.parse(System.get_env("AVERAGE_BLOCK_CACHE_PERIOD", "")) do
@@ -89,13 +87,38 @@ config :explorer, Explorer.Counters.AddressesCounter,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
 
-config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
+config :explorer, Explorer.ExchangeRates, enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true", store: :ets
 
 config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: System.get_env("DISABLE_INDEXER") != "true"
+
+txs_stats_init_lag =
+  System.get_env("TXS_HISTORIAN_INIT_LAG", "0")
+  |> Integer.parse()
+  |> elem(0)
+  |> :timer.minutes()
+
+txs_stats_days_to_compile_at_init =
+  System.get_env("TXS_STATS_DAYS_TO_COMPILE_AT_INIT", "40")
+  |> Integer.parse()
+  |> elem(0)
+
+config :explorer, Explorer.Chain.Transaction.History.Historian,
+  enabled: System.get_env("ENABLE_TXS_STATS", "false") != "false",
+  init_lag: txs_stats_init_lag,
+  days_to_compile_at_init: txs_stats_days_to_compile_at_init
+
+history_fetch_interval =
+  case Integer.parse(System.get_env("HISTORY_FETCH_INTERVAL", "")) do
+    {mins, ""} -> mins
+    _ -> 60
+  end
+  |> :timer.minutes()
+
+config :explorer, Explorer.History.Process, history_fetch_interval: history_fetch_interval
 
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
@@ -113,6 +136,10 @@ if System.get_env("METADATA_CONTRACT") && System.get_env("VALIDATORS_CONTRACT") 
 else
   config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
 end
+
+config :explorer, Explorer.Chain.Block.Reward,
+  validators_contract_address: System.get_env("VALIDATORS_CONTRACT"),
+  keys_manager_contract_address: System.get_env("KEYS_MANAGER_CONTRACT")
 
 config :explorer, Explorer.Staking.PoolsReader,
   validators_contract_address: System.get_env("POS_VALIDATORS_CONTRACT"),
