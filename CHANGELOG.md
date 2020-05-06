@@ -8,6 +8,7 @@
 - [#3065](https://github.com/poanetwork/blockscout/pull/3065) - Transactions history chart
 
 ### Fixes
+- [#3092](https://github.com/poanetwork/blockscout/pull/3092) - Contract verification: constructor arguments search search refinement
 - [#3077](https://github.com/poanetwork/blockscout/pull/3077) - Finally speedup pending tx list
 - [#3076](https://github.com/poanetwork/blockscout/pull/3076) - Speedup tx list query on address page: check if an address has a reward, check if this is actual payout key of the validator - beneficiary, return only mined txs in tx list query
 - [#3071](https://github.com/poanetwork/blockscout/pull/3071) - Speedup list of token transfers per token query
