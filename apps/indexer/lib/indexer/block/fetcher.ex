@@ -13,8 +13,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-  alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
+  alias Explorer.Chain.Cache.{Accounts, Uncles}
   alias Indexer.Block.Fetcher.Receipts
 
   alias Indexer.Fetcher.{
