@@ -8,6 +8,7 @@ defmodule Explorer.Celo.AccountReader do
   alias Explorer.SmartContract.Reader
 
   use Bitwise
+  use Explorer.Celo.Util
 
   def account_data(%{address: account_address}) do
     data = fetch_account_data(account_address)
@@ -265,6 +266,12 @@ defmodule Explorer.Celo.AccountReader do
     data
   end
 
+  def epoch_signers(epoch, epoch_size, block_number) do
+    case SignerCache.fetch_signers(epoch) do
+      {:ok, signers} -> signers
+      _ -> 
+  end
+
   def validator_history(block_number) do
     data = fetch_validators(block_number)
 
@@ -273,10 +280,11 @@ defmodule Explorer.Celo.AccountReader do
          {:ok, [min_validators, max_validators]} <- data["getElectableValidators"],
          {:ok, [total_gold]} <- data["getTotalLockedGold"],
          {:ok, [epoch_size]} <- data["getEpochSize"],
+         {:ok, [epoch]} <- data["getEpochNumberOfBlock"],
          {:ok, gold_address} <- get_address("GoldToken"),
          {:ok, usd_address} <- get_address("StableToken"),
          {:ok, oracle_address} <- get_address("SortedOracles"),
-         {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
+         {:ok, [validators]} <- epoch_signers(epoch, epoch_size, block_number) do
       list =
         validators
         |> Enum.with_index()
@@ -302,9 +310,9 @@ defmodule Explorer.Celo.AccountReader do
 
   defp fetch_validators(bn) do
     call_methods([
-      {:election, "getCurrentValidatorSigners", [], bn - 1},
       {:election, "getParentSealBitmap", [bn], bn},
       {:election, "getEpochSize", []},
+      {:election, "getEpochNumberOfBlock", [bn - 1]},
       {:election, "getElectableValidators", []},
       {:lockedgold, "getTotalLockedGold", []},
       {:validators, "getNumRegisteredValidators", []}
@@ -315,7 +323,7 @@ defmodule Explorer.Celo.AccountReader do
     call_methods([{:lockedgold, "getPendingWithdrawals", [address]}])
   end
 
-  defp call_methods(methods) do
+  def call_methods(methods) do
     contract_abi = AbiHandler.get_abi()
 
     methods
