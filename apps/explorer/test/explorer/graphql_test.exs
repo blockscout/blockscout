@@ -289,7 +289,7 @@ defmodule Explorer.GraphQLTest do
       end
     end
 
-    test "orders token transfers by descending block number, descending transaction index, and ascending log index" do
+    test "orders token transfers by descending block number" do
       first_block = insert(:block)
       second_block = insert(:block)
       third_block = insert(:block)
@@ -340,17 +340,8 @@ defmodule Explorer.GraphQLTest do
         |> Repo.preload(:transaction)
 
       block_number_order = Enum.map(found_token_transfers, & &1.block_number)
-      transaction_index_order = Enum.map(found_token_transfers, &{&1.block_number, &1.transaction.index})
 
       assert block_number_order == Enum.sort(block_number_order, &(&1 >= &2))
-      assert transaction_index_order == Enum.sort(transaction_index_order, &(&1 >= &2))
-
-      tt_by_block_transaction = Enum.group_by(found_token_transfers, &{&1.block_number, &1.transaction.index})
-
-      for {_, token_transfers} <- tt_by_block_transaction do
-        log_index_order = Enum.map(token_transfers, & &1.log_index)
-        assert log_index_order == Enum.sort(log_index_order)
-      end
     end
   end
 end
