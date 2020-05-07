@@ -8,6 +8,7 @@
 - [#3065](https://github.com/poanetwork/blockscout/pull/3065) - Transactions history chart
 
 ### Fixes
+- [#3095](https://github.com/poanetwork/blockscout/pull/3095) - Fix constructor arguments decoding
 - [#3092](https://github.com/poanetwork/blockscout/pull/3092) - Contract verification: constructor arguments search search refinement
 - [#3077](https://github.com/poanetwork/blockscout/pull/3077) - Finally speedup pending tx list
 - [#3076](https://github.com/poanetwork/blockscout/pull/3076) - Speedup tx list query on address page: check if an address has a reward, check if this is actual payout key of the validator - beneficiary, return only mined txs in tx list query
@@ -18,6 +19,7 @@
 - [#2756](https://github.com/poanetwork/blockscout/pull/2756) - Improve subquery joins
 
 ### Chore
+- [#3093](https://github.com/poanetwork/blockscout/pull/3093) - Extend list of env vars for Docker setup
 - [#3084](https://github.com/poanetwork/blockscout/pull/3084) - Bump Elixir version 1.10.2
 - [#3079](https://github.com/poanetwork/blockscout/pull/3079) - Extend optionality of websockets to Geth
 
