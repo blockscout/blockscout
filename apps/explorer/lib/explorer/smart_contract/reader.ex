@@ -292,6 +292,10 @@ defmodule Explorer.SmartContract.Reader do
 
   @spec bytes_to_string(<<_::_*8>>) :: String.t()
   defp bytes_to_string(value) do
-    Hash.to_string(%Hash{byte_count: byte_size(value), bytes: value})
+    if value do
+      Hash.to_string(%Hash{byte_count: byte_size(value), bytes: value})
+    else
+      "0x"
+    end
   end
 end
