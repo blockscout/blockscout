@@ -8,6 +8,7 @@
 - [#3065](https://github.com/poanetwork/blockscout/pull/3065) - Transactions history chart
 
 ### Fixes
+- [#3097](https://github.com/poanetwork/blockscout/pull/3097) - Fix contract reader decoding
 - [#3095](https://github.com/poanetwork/blockscout/pull/3095) - Fix constructor arguments decoding
 - [#3092](https://github.com/poanetwork/blockscout/pull/3092) - Contract verification: constructor arguments search search refinement
 - [#3077](https://github.com/poanetwork/blockscout/pull/3077) - Finally speedup pending tx list
