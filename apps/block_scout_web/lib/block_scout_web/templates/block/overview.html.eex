@@ -146,7 +146,7 @@
             <h2 class="card-title balance-card-title"><%= gettext "Block Rewards" %></h2>
             <div class="text-right" style="margin-left: 50%;" data-toggle="tooltip" data-placement="top" title="" data-original-title="Amount of distributed reward. Miners receive a static block reward + Tx fees + uncle fees.">
               <%= for block_reward <- @block.rewards do %>
-                <p class="address-current-balance"><%= block_reward_text(block_reward) %> <span class="text-muted"><%= format_wei_value(block_reward.reward, :ether) %></span></p>
+                <p class="address-current-balance"><%= block_reward_text(block_reward, @block.miner.hash) %> <span class="text-muted"><%= format_wei_value(block_reward.reward, :ether) %></span></p>
               <% end %>
             </div>
           <% else %>
