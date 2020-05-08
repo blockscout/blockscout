@@ -664,7 +664,7 @@ defmodule Explorer.Factory do
       is_banned: false,
       is_validator: true,
       total_staked_amount: wei_per_ether * 500,
-      self_staked_amount: wei_per_ether * 300,
+      self_staked_amount: wei_per_ether * 500,
       was_banned_count: 0,
       was_validator_count: 1
     }

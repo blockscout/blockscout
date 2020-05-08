@@ -19,31 +19,31 @@ defmodule BlockScoutWeb.StakesControllerTest do
     end
 
     test "returns rendered table", %{conn: conn} do
-      address_hashes = Enum.map(1..4, fn _ -> insert(:staking_pool) end)
+      pools = Enum.map(1..4, fn _ -> insert(:staking_pool) end)
 
-      conn = get(conn, validators_path(conn, :index, %{type: "JSON", filterMy: true}))
+      conn = get(conn, validators_path(conn, :index, %{type: "JSON", filterMy: false}))
       assert {:ok, %{"items" => items, "next_page_path" => _}} = Poison.decode(conn.resp_body)
-      assert Enum.count(items) == Enum.count(address_hashes)
+      assert Enum.count(items) == Enum.count(pools)
     end
   end
 
   describe "GET active_pools/2" do
     test "returns rendered table", %{conn: conn} do
-      address_hashes = Enum.map(1..4, fn _ -> insert(:staking_pool) end)
+      pools = Enum.map(1..4, fn _ -> insert(:staking_pool) end)
 
-      conn = get(conn, active_pools_path(conn, :index, %{type: "JSON", filterMy: true}))
+      conn = get(conn, active_pools_path(conn, :index, %{type: "JSON", filterMy: false}))
       assert {:ok, %{"items" => items, "next_page_path" => _}} = Poison.decode(conn.resp_body)
-      assert Enum.count(items) == Enum.count(address_hashes)
+      assert Enum.count(items) == Enum.count(pools)
     end
   end
 
   describe "GET inactive_pools/2" do
     test "returns rendered table", %{conn: conn} do
-      address_hashes = Enum.map(1..4, fn _ -> insert(:staking_pool, is_active: false) end)
+      pools = Enum.map(1..4, fn _ -> insert(:staking_pool, is_active: false) end)
 
-      conn = get(conn, inactive_pools_path(conn, :index, %{type: "JSON", filterMy: true}))
+      conn = get(conn, inactive_pools_path(conn, :index, %{type: "JSON", filterMy: false}))
       assert {:ok, %{"items" => items, "next_page_path" => _}} = Poison.decode(conn.resp_body)
-      assert Enum.count(items) == Enum.count(address_hashes)
+      assert Enum.count(items) == Enum.count(pools)
     end
   end
 end
