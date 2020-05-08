@@ -85,7 +85,7 @@ defmodule Explorer.GraphQL do
   @doc """
   Returns a query to fetch token transfers for a token contract address hash.
 
-  Orders token transfers by descending block number, descending transaction index, and ascending log index.
+  Orders token transfers by descending block number.
   """
   @spec list_token_transfers_query(Hash.t()) :: Ecto.Query.t()
   def list_token_transfers_query(%Hash{byte_count: unquote(Hash.Address.byte_count())} = token_contract_address_hash) do
@@ -93,7 +93,7 @@ defmodule Explorer.GraphQL do
       tt in TokenTransfer,
       inner_join: t in assoc(tt, :transaction),
       where: tt.token_contract_address_hash == ^token_contract_address_hash,
-      order_by: [desc: tt.block_number, desc: t.index, asc: tt.log_index],
+      order_by: [desc: tt.block_number],
       select: tt
     )
   end

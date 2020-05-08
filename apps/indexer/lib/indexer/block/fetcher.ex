@@ -10,9 +10,11 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
+  alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-  alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
 
   alias Indexer.Fetcher.{
@@ -153,7 +155,7 @@ defmodule Indexer.Block.Fetcher do
            |> AddressCoinBalances.params_set(),
          beneficiaries_with_gas_payment <-
            beneficiary_params_set
-           |> add_gas_payments(transactions_with_receipts)
+           |> add_gas_payments(transactions_with_receipts, blocks)
            |> BlockReward.reduce_uncle_rewards(),
          address_token_balances = AddressTokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
@@ -174,7 +176,7 @@ defmodule Indexer.Block.Fetcher do
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
       update_block_cache(inserted[:blocks])
-      update_transactions_cache(inserted[:transactions], inserted[:fork_transactions])
+      update_transactions_cache(inserted[:transactions])
       update_addresses_cache(inserted[:addresses])
       update_uncles_cache(inserted[:block_second_degree_relations])
       result
@@ -196,10 +198,8 @@ defmodule Indexer.Block.Fetcher do
 
   defp update_block_cache(_), do: :ok
 
-  defp update_transactions_cache(transactions, forked_transactions) do
+  defp update_transactions_cache(transactions) do
     Transactions.update(transactions)
-    PendingTransactions.update_pending(transactions)
-    PendingTransactions.update_pending(forked_transactions)
   end
 
   defp update_addresses_cache(addresses), do: Accounts.drop(addresses)
@@ -396,23 +396,48 @@ defmodule Indexer.Block.Fetcher do
     |> Enum.into(MapSet.new())
   end
 
-  defp add_gas_payments(beneficiaries, transactions) do
+  defp add_gas_payments(beneficiaries, transactions, blocks) do
     transactions_by_block_number = Enum.group_by(transactions, & &1.block_number)
 
     Enum.map(beneficiaries, fn beneficiary ->
       case beneficiary.address_type do
         :validator ->
-          gas_payment = gas_payment(beneficiary, transactions_by_block_number)
+          block_hash = beneficiary.block_hash
 
-          "0x" <> minted_hex = beneficiary.reward
-          {minted, _} = Integer.parse(minted_hex, 16)
+          block = find_block(blocks, block_hash)
 
-          %{beneficiary | reward: minted + gas_payment}
+          block_miner_hash = block.miner_hash
+
+          {:ok, block_miner} = Chain.string_to_address_hash(block_miner_hash)
+          %{payout_key: block_miner_payout_address} = Reward.get_validator_payout_key_by_mining(block_miner)
+
+          reward_with_gas(block_miner_payout_address, beneficiary, transactions_by_block_number)
 
         _ ->
           beneficiary
       end
     end)
+  end
+
+  defp reward_with_gas(block_miner_payout_address, beneficiary, transactions_by_block_number) do
+    {:ok, beneficiary_address} = Chain.string_to_address_hash(beneficiary.address_hash)
+
+    "0x" <> minted_hex = beneficiary.reward
+    {minted, _} = Integer.parse(minted_hex, 16)
+
+    if block_miner_payout_address && beneficiary_address.bytes == block_miner_payout_address.bytes do
+      gas_payment = gas_payment(beneficiary, transactions_by_block_number)
+
+      %{beneficiary | reward: minted + gas_payment}
+    else
+      %{beneficiary | reward: minted}
+    end
+  end
+
+  defp find_block(blocks, block_hash) do
+    blocks
+    |> Enum.filter(fn block -> block.hash == block_hash end)
+    |> Enum.at(0)
   end
 
   defp gas_payment(transactions) when is_list(transactions) do

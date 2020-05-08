@@ -26,6 +26,7 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     Subscriber.to(:contract_verification_result, :on_demand)
     # Does not come from the indexer
     Subscriber.to(:exchange_rate)
+    Subscriber.to(:transaction_stats)
     {:ok, []}
   end
 

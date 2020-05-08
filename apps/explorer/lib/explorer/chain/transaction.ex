@@ -501,6 +501,10 @@ defmodule Explorer.Chain.Transaction do
     ]
   end
 
+  def not_pending_transactions(query) do
+    where(query, [t], not is_nil(t.block_number))
+  end
+
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a
 
   @collated_message "can't be blank when the transaction is collated into a block"
