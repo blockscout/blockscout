@@ -16,7 +16,7 @@ config :indexer,
     variant: EthereumJSONRPC.Geth
   ],
   subscribe_named_arguments: [
-    transport: EthereumJSONRPC.WebSocket,
+    transport: System.get_env("ETHEREUM_JSONRPC_WS_URL") && EthereumJSONRPC.WebSocket,
     transport_options: [
       web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
       url: System.get_env("ETHEREUM_JSONRPC_WS_URL")
