@@ -15,7 +15,6 @@ defmodule Explorer.Application do
     BlockNumber,
     Blocks,
     NetVersion,
-    PendingTransactions,
     TransactionCount,
     Transactions,
     Uncles
@@ -59,7 +58,6 @@ defmodule Explorer.Application do
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       Transactions,
       Accounts,
-      PendingTransactions,
       Uncles
     ]
 
