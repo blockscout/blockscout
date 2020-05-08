@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 3.1.2-beta
+
+### Features
 - [#3089](https://github.com/poanetwork/blockscout/pull/3089) - CoinGecko API coin id environment variable
 - [#3069](https://github.com/poanetwork/blockscout/pull/3069) - Make a link to address page on decoded constructor argument of address type
 - [#3067](https://github.com/poanetwork/blockscout/pull/3067) - Show proper title of the tile or container for token burnings/mintings instead of "Token Transfer"
@@ -8,6 +17,8 @@
 - [#3065](https://github.com/poanetwork/blockscout/pull/3065) - Transactions history chart
 
 ### Fixes
+- [#3097](https://github.com/poanetwork/blockscout/pull/3097) - Fix contract reader decoding
+- [#3095](https://github.com/poanetwork/blockscout/pull/3095) - Fix constructor arguments decoding
 - [#3092](https://github.com/poanetwork/blockscout/pull/3092) - Contract verification: constructor arguments search search refinement
 - [#3077](https://github.com/poanetwork/blockscout/pull/3077) - Finally speedup pending tx list
 - [#3076](https://github.com/poanetwork/blockscout/pull/3076) - Speedup tx list query on address page: check if an address has a reward, check if this is actual payout key of the validator - beneficiary, return only mined txs in tx list query
@@ -18,6 +29,8 @@
 - [#2756](https://github.com/poanetwork/blockscout/pull/2756) - Improve subquery joins
 
 ### Chore
+- [#3099](https://github.com/poanetwork/blockscout/pull/3099) - Remove pending txs cache
+- [#3093](https://github.com/poanetwork/blockscout/pull/3093) - Extend list of env vars for Docker setup
 - [#3084](https://github.com/poanetwork/blockscout/pull/3084) - Bump Elixir version 1.10.2
 - [#3079](https://github.com/poanetwork/blockscout/pull/3079) - Extend optionality of websockets to Geth
 
