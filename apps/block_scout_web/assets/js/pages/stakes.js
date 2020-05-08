@@ -278,7 +278,6 @@ function initialize (store) {
 }
 
 async function checkNetworkAndAccount (store, web3) {
-  let timeoutId
   const networkId = await web3.eth.net.getId()
   const state = store.getState()
   let refresh = false
@@ -297,8 +296,9 @@ async function checkNetworkAndAccount (store, web3) {
     refreshPageWrapper(store)
   }
 
-  clearTimeout(timeoutId)
-  timeoutId = setTimeout(checkNetworkAndAccount, 100)
+  setTimeout(() => {
+    checkNetworkAndAccount(store, web3)
+  }, 100)
 }
 
 async function loginByMetamask () {
