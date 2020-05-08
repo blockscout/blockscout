@@ -35,7 +35,7 @@
                     gettext("Current Stake Amount")
                   end
 
-                render BlockScoutWeb.StakesView, "_stakes_th.html", title: amount_col_title, tooltip: gettext("Amount of STAKE placed by an address")
+                render BlockScoutWeb.StakesView, "_stakes_th.html", title: amount_col_title, tooltip: gettext("Amount of %{symbol} placed by an address.", symbol: @token.symbol)
               %>
             </div>
             <div class="col-3">
