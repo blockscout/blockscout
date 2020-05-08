@@ -1893,12 +1893,6 @@ msgid "<p>Pending stake (stake placed on a candidate pool or placed during the c
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:26
-msgid "<p>To become a candidate, your staking address must be funded with STAKE tokens <strong>and</strong> xDai coins, and your Parity node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:131
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:11
 msgid "Active Pools"
@@ -1916,12 +1910,6 @@ msgstr ""
 #: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:11
 #: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:11
 msgid "Amount"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:38
-msgid "Amount of STAKE placed by an address"
 msgstr ""
 
 #, elixir-format
@@ -2452,4 +2440,16 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:14
 msgid "Show only those I have stake in"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:38
+msgid "Amount of %{symbol} placed by an address."
+msgstr ""
+
+#, elixir-format, fuzzy
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:26
+msgid "<p>To become a candidate, your staking address must be funded with %{symbol} tokens <strong>and</strong> xDai coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
 msgstr ""
