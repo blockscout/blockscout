@@ -36,10 +36,6 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   position: relative;
   z-index: 9;
 
-  @include media-breakpoint-between(lg, xl) {
-    height: 249px;
-  }
-
   @include media-breakpoint-down(sm) {
     flex-direction: column;
   }
