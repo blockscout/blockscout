@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+-  [#3100](https://github.com/poanetwork/blockscout/pull/3100) - Update npm packages
 
 
 ## 3.1.2-beta
