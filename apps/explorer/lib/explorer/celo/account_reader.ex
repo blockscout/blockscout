@@ -311,12 +311,7 @@ defmodule Explorer.Celo.AccountReader do
 
   defp fetch_validators(bn) do
     call_methods([
-<<<<<<< HEAD
-      {:election, "getCurrentValidatorSigners", [], max(0, bn - 1)},
-      {:election, "getParentSealBitmap", [max(0, bn)], max(0, bn)},
-=======
       {:election, "getParentSealBitmap", [bn], bn},
->>>>>>> 0eb8547baf5627b3072754b39c006dd1c56c7aae
       {:election, "getEpochSize", []},
       {:election, "getEpochNumberOfBlock", [bn - 1]},
       {:election, "getElectableValidators", []},

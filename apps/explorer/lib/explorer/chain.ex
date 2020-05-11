@@ -3920,7 +3920,10 @@ defmodule Explorer.Chain do
     from(p in CeloVoters,
       inner_join: g in assoc(p, :group),
       group_by: p.voter_address_hash,
-      select: %{result: sum(p.pending + p.units * g.active_votes / g.total_units), address: p.voter_address_hash}
+      select: %{
+        result: fragment("sum(? + ? * ? / nullif(?,0))", p.pending, p.units, g.active_votes, g.total_units),
+        address: p.voter_address_hash
+      }
     )
   end
 
