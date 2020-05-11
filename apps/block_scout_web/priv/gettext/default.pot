@@ -218,7 +218,7 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/app.html.eex:27
 #: lib/block_scout_web/templates/layout/app.html.eex:70
 msgid "Block Mined, awaiting import..."
-msgstr ""
+msgstr "Block Proposed, awaiting import..."
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:59
@@ -1028,7 +1028,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/block_view.ex:77
 msgid "Miner Reward"
-msgstr ""
+msgstr "Validator Reward"
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:223
