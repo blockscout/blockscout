@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.LayoutView do
   alias Plug.Conn
   alias Poison.Parser
 
-  @issue_url "https://github.com/celo-org/blockscout/issues/new"
+  @issue_url "https://github.com/celo-org/celo-monorepo/issues/new"
   @default_other_networks [
     %{
       title: "Celo Alfajores",

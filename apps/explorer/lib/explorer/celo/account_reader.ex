@@ -4,10 +4,11 @@ defmodule Explorer.Celo.AccountReader do
   """
 
   require Logger
-  alias Explorer.Celo.AbiHandler
-  alias Explorer.SmartContract.Reader
+  alias Explorer.Celo.SignerCache
 
   use Bitwise
+
+  import Explorer.Celo.Util
 
   def account_data(%{address: account_address}) do
     data = fetch_account_data(account_address)
@@ -161,6 +162,18 @@ defmodule Explorer.Celo.AccountReader do
     end
   end
 
+  def block_gas_limit(bn) do
+    data =
+      call_methods([
+        {:blockchainparameters, "blockGasLimit", [], bn}
+      ])
+
+    case data["blockGasLimit"] do
+      {:ok, [limit]} -> {:ok, limit}
+      _ -> :error
+    end
+  end
+
   # how to delete them from the table?
   def withdrawal_data(%{address: address}) do
     data = fetch_withdrawal_data(address)
@@ -266,8 +279,13 @@ defmodule Explorer.Celo.AccountReader do
          {:ok, [min_validators, max_validators]} <- data["getElectableValidators"],
          {:ok, [total_gold]} <- data["getTotalLockedGold"],
          {:ok, [bm]} <- data["getParentSealBitmap"],
-         {:ok, [validators]} <- data["getCurrentValidatorSigners"],
-         {:ok, [epoch_size]} <- data["getEpochSize"] do
+         {:ok, [epoch_size]} <- data["getEpochSize"],
+         {:ok, [epoch]} <- data["getEpochNumberOfBlock"],
+         {:ok, gold_address} <- get_address("GoldToken"),
+         {:ok, usd_address} <- get_address("StableToken"),
+         {:ok, oracle_address} <- get_address("SortedOracles") do
+      validators = SignerCache.epoch_signers(epoch, epoch_size, block_number)
+
       list =
         validators
         |> Enum.with_index()
@@ -276,12 +294,15 @@ defmodule Explorer.Celo.AccountReader do
       params = [
         %{name: "numRegisteredValidators", number_value: num_validators},
         %{name: "totalLockedGold", number_value: total_gold},
+        %{name: "stableToken", address_value: usd_address},
+        %{name: "goldToken", address_value: gold_address},
+        %{name: "sortedOracles", address_value: oracle_address},
         %{name: "maxElectableValidators", number_value: max_validators},
         %{name: "minElectableValidators", number_value: min_validators},
         %{name: "epochSize", number_value: epoch_size}
       ]
 
-      {:ok, %{validators: list, params: params}}
+      {:ok, %{validators: list, params: params, block_number: block_number - 1}}
     else
       _ ->
         :error
@@ -290,9 +311,14 @@ defmodule Explorer.Celo.AccountReader do
 
   defp fetch_validators(bn) do
     call_methods([
+<<<<<<< HEAD
       {:election, "getCurrentValidatorSigners", [], max(0, bn - 1)},
       {:election, "getParentSealBitmap", [max(0, bn)], max(0, bn)},
+=======
+      {:election, "getParentSealBitmap", [bn], bn},
+>>>>>>> 0eb8547baf5627b3072754b39c006dd1c56c7aae
       {:election, "getEpochSize", []},
+      {:election, "getEpochNumberOfBlock", [bn - 1]},
       {:election, "getElectableValidators", []},
       {:lockedgold, "getTotalLockedGold", []},
       {:validators, "getNumRegisteredValidators", []}
@@ -301,77 +327,5 @@ defmodule Explorer.Celo.AccountReader do
 
   defp fetch_withdrawal_data(address) do
     call_methods([{:lockedgold, "getPendingWithdrawals", [address]}])
-  end
-
-  defp call_methods(methods) do
-    contract_abi = AbiHandler.get_abi()
-
-    methods
-    |> Enum.map(&format_request/1)
-    |> Enum.filter(fn req -> req.contract_address != :error end)
-    |> Enum.map(fn %{contract_address: {:ok, address}} = req -> Map.put(req, :contract_address, address) end)
-    |> Reader.query_contracts(contract_abi)
-    |> Enum.zip(methods)
-    |> Enum.into(%{}, fn
-      {response, {_, function_name, _}} -> {function_name, response}
-      {response, {_, function_name, _, _}} -> {function_name, response}
-    end)
-  end
-
-  defp format_request({contract_name, function_name, params}) do
-    %{
-      contract_address: contract(contract_name),
-      function_name: function_name,
-      args: params
-    }
-  end
-
-  defp format_request({contract_name, function_name, params, bn}) do
-    %{
-      contract_address: contract(contract_name),
-      function_name: function_name,
-      args: params,
-      block_number: bn
-    }
-  end
-
-  defp contract(:lockedgold), do: get_address("LockedGold")
-  defp contract(:validators), do: get_address("Validators")
-  defp contract(:election), do: get_address("Election")
-  defp contract(:epochrewards), do: get_address("EpochRewards")
-  defp contract(:accounts), do: get_address("Accounts")
-  defp contract(:gold), do: get_address("GoldToken")
-  defp contract(:usd), do: get_address("StableToken")
-
-  def get_address(name) do
-    case get_address_raw(name) do
-      {:ok, address} -> {:ok, "0x" <> Base.encode16(address, case: :lower)}
-      _ -> :error
-    end
-  end
-
-  def get_address_raw(name) do
-    contract_abi = AbiHandler.get_abi()
-
-    methods = [
-      %{
-        contract_address: "0x000000000000000000000000000000000000ce10",
-        function_name: "getAddressForString",
-        args: [name]
-      }
-    ]
-
-    res =
-      methods
-      |> Reader.query_contracts(contract_abi)
-      |> Enum.zip(methods)
-      |> Enum.into(%{}, fn {response, %{function_name: function_name}} ->
-        {function_name, response}
-      end)
-
-    case res["getAddressForString"] do
-      {:ok, [address]} -> {:ok, address}
-      _ -> :error
-    end
   end
 end

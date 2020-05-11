@@ -152,8 +152,8 @@
        <dd class="col-sm-9">
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All affiliated members for this group">
        <ul>
-       <%= for member <- @address.celo_members do %>
-         <li><%= member.member %>:
+       <%= for member <- sort_members(@address.celo_members) do %>
+         <li><%= member_number(member.member) %>:
          <%= if member.validator_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:members, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
             end %></li>
@@ -169,7 +169,7 @@
        <dd class="col-sm-9">
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All voters of this group">
        <ul>
-       <%= for member <- @address.celo_voters do %>
+       <%= for member <- sort_voters(@address.celo_voters) do %>
          <li><%= format_pending_votes(member) %> pending, <%= format_active_votes(member) %> active cGLD:
          <%= if member.group_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:voters, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
@@ -186,7 +186,7 @@
        <dd class="col-sm-9">
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Groups voted by this account">
        <ul>
-       <%= for member <- @address.celo_voted do %>
+       <%= for member <- sort_voters(@address.celo_voted) do %>
          <li><%= format_pending_votes(member) %> pending, <%= format_active_votes(member) %> active cGLD:
          <%= if member.group_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:voted, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()

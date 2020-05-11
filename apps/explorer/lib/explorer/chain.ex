@@ -38,6 +38,7 @@ defmodule Explorer.Chain do
     CeloAccount,
     CeloClaims,
     CeloParams,
+    CeloSigners,
     CeloValidator,
     CeloValidatorGroup,
     CeloValidatorHistory,
@@ -928,7 +929,7 @@ defmodule Explorer.Chain do
             [{:celo_delegator, :celo_validator, :signer}] => :optional,
             [{:celo_delegator, :account_address}] => :optional,
             [{:celo_signers, :signer_address}] => :optional,
-            [{:celo_claims, :account_address}] => :optional,
+            [{:celo_claims, :celo_account}] => :optional,
             [{:celo_members, :validator_address}] => :optional,
             [{:celo_voters, :voter_address}] => :optional,
             [{:celo_voted, :group_address}] => :optional,
@@ -1006,6 +1007,30 @@ defmodule Explorer.Chain do
         where: ilike(token.symbol, ^name),
         select: token.contract_address_hash
       )
+
+    query
+    |> Repo.all()
+    |> case do
+      [] -> {:error, :not_found}
+      hashes -> {:ok, List.first(hashes)}
+    end
+  end
+
+  @spec address_from_name(String.t()) :: {:ok, Hash.Address.t()} | {:error, :not_found}
+  def address_from_name(name) when is_binary(name) do
+    token_query =
+      from(token in Token,
+        where: ilike(token.symbol, ^name),
+        select: token.contract_address_hash
+      )
+
+    name_query =
+      from(it in Address.Name,
+        where: ilike(it.name, ^name),
+        select: it.address_hash
+      )
+
+    query = union(token_query, ^name_query)
 
     query
     |> Repo.all()
@@ -2856,7 +2881,7 @@ defmodule Explorer.Chain do
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     insert_result =
-      if proxy_address != nil do
+      if proxy_address != nil and proxy_address != "" do
         proxy_address = attrs[:proxy_address]
         Logger.debug(fn -> "Adding Proxy Address Mapping: #{proxy_address}" end)
 
@@ -2887,6 +2912,9 @@ defmodule Explorer.Chain do
         {:ok, smart_contract}
 
       {:error, :smart_contract, changeset, _} ->
+        {:error, changeset}
+
+      {:error, :proxy_address_contract, changeset, _} ->
         {:error, changeset}
 
       {:error, :set_address_verified, message, _} ->
@@ -3898,6 +3926,10 @@ defmodule Explorer.Chain do
 
   @spec get_celo_account(Hash.Address.t()) :: {:ok, CeloAccount.t()} | {:error, :not_found}
   def get_celo_account(address_hash) do
+    get_signer_account(address_hash)
+  end
+
+  defp do_get_celo_account(address_hash) do
     query =
       from(account in CeloAccount,
         left_join: data in subquery(compute_votes()),
@@ -3911,7 +3943,27 @@ defmodule Explorer.Chain do
     query
     |> Repo.one()
     |> case do
-      nil -> {:error, :not_found}
+      nil ->
+        {:error, :not_found}
+
+      data ->
+        {:ok, data}
+    end
+  end
+
+  defp get_signer_account(address_hash) do
+    query =
+      from(s in CeloSigners,
+        inner_join: a in CeloAccount,
+        on: s.address == a.address,
+        where: s.signer == ^address_hash,
+        select: a
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> do_get_celo_account(address_hash)
       data -> {:ok, data}
     end
   end
@@ -3939,6 +3991,21 @@ defmodule Explorer.Chain do
     )
   end
 
+  def get_celo_address(name) do
+    query =
+      from(p in CeloParams,
+        where: p.name == ^name,
+        select: p.address_value
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      data -> {:ok, data}
+    end
+  end
+
   def celo_validator_group_query do
     denominator =
       from(p in CeloParams,
@@ -3950,7 +4017,6 @@ defmodule Explorer.Chain do
       g in CeloValidatorGroup,
       inner_join: a in assoc(g, :celo_account),
       inner_join: b in assoc(g, :celo_accumulated_rewards),
-      left_join: c in CeloClaims,
       inner_join: total_locked_gold in CeloParams,
       where: total_locked_gold.name == "totalLockedGold",
       inner_join: denom in subquery(denominator),

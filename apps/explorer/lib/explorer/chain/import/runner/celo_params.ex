@@ -75,6 +75,7 @@ defmodule Explorer.Chain.Import.Runner.CeloParams do
       update: [
         set: [
           number_value: fragment("EXCLUDED.number_value"),
+          address_value: fragment("EXCLUDED.address_value"),
           block_number: fragment("EXCLUDED.block_number"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", account.updated_at)

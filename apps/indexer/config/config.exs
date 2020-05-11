@@ -6,11 +6,12 @@ import Bitwise
 
 block_transformers = %{
   "clique" => Indexer.Transform.Blocks.Clique,
+  "celo" => Indexer.Transform.Blocks.Celo,
   "base" => Indexer.Transform.Blocks.Base
 }
 
 # Compile time environment variable access requires recompilation.
-configured_transformer = System.get_env("BLOCK_TRANSFORMER") || "base"
+configured_transformer = System.get_env("BLOCK_TRANSFORMER") || "celo"
 
 block_transformer =
   case Map.get(block_transformers, configured_transformer) do
@@ -33,6 +34,10 @@ max_skipping_distance =
     {num, ""} -> num
     _ -> 5
   end
+
+config :indexer, :stacktrace_depth, 20
+
+:erlang.system_flag(:backtrace_depth, 20)
 
 config :indexer,
   block_transformer: block_transformer,

@@ -68,7 +68,7 @@ defmodule Indexer.Memory.Monitor do
 
     if limit < total do
       log_memory(%{limit: limit, total: total})
-      shrink_or_log(state)
+      # shrink_or_log(state)
     end
 
     flush(:check)
@@ -106,7 +106,7 @@ defmodule Indexer.Memory.Monitor do
     end)
   end
 
-  defp shrink_or_log(%__MODULE__{} = state) do
+  def shrink_or_log(%__MODULE__{} = state) do
     case shrink(state) do
       :ok ->
         :ok

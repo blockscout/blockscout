@@ -62,7 +62,8 @@ defmodule Explorer.Chain.CeloAccount do
   @gold_locked "0x0f0f2fc5b4c987a49e1663ce2c2d65de12f3b701ff02b4d09461421e63e609e7"
 
   # Election events
-  @validator_group_vote_revoked "0xa06c722f7d446349fdd811f3d539bc91c7b11df8a2f4e012685712a30068f668"
+  @validator_group_pending_vote_revoked "0x148075455e24d5cf538793db3e917a157cbadac69dd6a304186daf11b23f76fe"
+  @validator_group_active_vote_revoked "0xae7458f8697a680da6be36406ea0b8f40164915ac9cc40c0dad05a2ff6e8c6a8"
   @validator_group_vote_activated "0x50363f7a646042bcb294d6afdef2d53f4122379845e67627b6db367f31934f16"
   @validator_group_vote_cast "0xd3532f70444893db82221041edb4dc26c94593aeb364b0b14dfc77d5ee905152"
 
@@ -85,7 +86,8 @@ defmodule Explorer.Chain.CeloAccount do
       @account_url_set,
       @account_name_set,
       @account_data_encryption_key_set,
-      @validator_group_vote_revoked,
+      @validator_group_pending_vote_revoked,
+      @validator_group_active_vote_revoked,
       @validator_group_vote_activated,
       @validator_group_vote_cast,
       @validator_group_epoch_rewards_distributed,
@@ -126,7 +128,8 @@ defmodule Explorer.Chain.CeloAccount do
 
   def vote_events,
     do: [
-      @validator_group_vote_revoked,
+      @validator_group_pending_vote_revoked,
+      @validator_group_active_vote_revoked,
       @validator_group_vote_cast
     ]
 
@@ -142,7 +145,7 @@ defmodule Explorer.Chain.CeloAccount do
   @attestation_completed "0x414ff2c18c092697c4b8de49f515ac44f8bebc19b24553cf58ace913a6ac639d"
 
   @median_updated "0x01f3db74cdcb3b158f2144fb78c5ab54e9e8a8c09d3d3b7713050cdb6b6bcb97"
-  @oracle_reported "0xdbf09271932e018b9c31e9988e4fbe3109fdd79d78f5d19a764dfb56035ed775"
+  @oracle_reported "0x7cebb17173a9ed273d2b7538f64395c0ebf352ff743f1cf8ce66b437a6144213"
 
   def attestation_issuer_selected_event,
     do: @attestation_issuer_selected

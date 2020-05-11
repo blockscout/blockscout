@@ -16,7 +16,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
 
-  alias Explorer.Celo.AccountReader
+  alias Explorer.Celo.Util
 
   alias Indexer.Fetcher.{
     BlockReward,
@@ -175,14 +175,21 @@ defmodule Indexer.Block.Fetcher do
          {:read_token_address, {:ok, gold_token}} <-
            {:read_token_address,
             if gold_token_enabled do
-              AccountReader.get_address("GoldToken")
+              Util.get_address("GoldToken")
             else
               {:ok, nil}
             end},
          {:read_stable_token_address, {:ok, stable_token}} <-
            {:read_stable_token_address,
             if gold_token_enabled do
-              AccountReader.get_address("StableToken")
+              Util.get_address("StableToken")
+            else
+              {:ok, nil}
+            end},
+         {:read_oracle_address, {:ok, oracle_address}} <-
+           {:read_oracle_address,
+            if gold_token_enabled do
+              Util.get_address("SortedOracles")
             else
               {:ok, nil}
             end},
@@ -200,10 +207,10 @@ defmodule Indexer.Block.Fetcher do
            exchange_rates: exchange_rates,
            account_names: account_names,
            voter_rewards: celo_voter_rewards
-         } = CeloAccounts.parse(logs),
+         } = CeloAccounts.parse(logs, oracle_address),
          market_history =
            exchange_rates
-           |> Enum.filter(fn el -> "0x" <> Base.encode16(el.token, case: :lower) == stable_token end)
+           |> Enum.filter(fn el -> el.token == stable_token end)
            |> Enum.map(fn %{rate: rate, stamp: time} ->
              inv_rate = Decimal.from_float(1 / rate)
              date = DateTime.to_date(DateTime.from_unix!(time))
@@ -243,11 +250,15 @@ defmodule Indexer.Block.Fetcher do
                  []
                end
            }),
+         gold_transfers =
+           normal_token_transfers
+           |> Enum.filter(fn %{token_contract_address_hash: contract} -> contract == gold_token end),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
              blocks_params: blocks,
              logs_params: logs,
+             gold_transfers: gold_transfers,
              transactions_params: transactions_with_receipts
            }
            |> AddressCoinBalances.params_set(),

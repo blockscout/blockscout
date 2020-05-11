@@ -12,6 +12,11 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
 
 config :block_scout_web, BlockScoutWeb.Tracer, disabled?: false
 
+config :block_scout_web, BlockScoutWeb.ApiRouter,
+  writing_enabled: System.get_env("DISABLE_WRITE_API") != "true",
+  reading_enabled: System.get_env("DISABLE_READ_API") != "true",
+  max_complexity: 200
+
 config :logger, :block_scout_web,
   level: :warn,
   path: Path.absname("logs/test/block_scout_web.log")

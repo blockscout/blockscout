@@ -17,6 +17,7 @@ defmodule Explorer.Celo.AbiHandler do
         abi("validators.json") ++
         abi("election.json") ++
         abi("accounts.json") ++
+        abi("blockchainparameters.json") ++
         abi("epochrewards.json") ++
         abi("registry.json") ++
         abi("erc20.json")

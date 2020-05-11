@@ -288,7 +288,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   def remove_left_over_internal_transactions(repo, valid_internal_transactions) do
     # Removes internal transactions that were part of a block before a refetch
     # and have not been upserted with new ones (if any exist).
-
     case valid_internal_transactions do
       [] ->
         {:ok, []}
