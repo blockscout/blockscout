@@ -321,7 +321,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   describe "viewing token balances" do
     setup do
       block = insert(:block)
-      lincoln = insert(:address, fetched_coin_balance: 5)
+      lincoln = insert(:address, fetched_coin_balance: 5, fetched_coin_balance_block_number: block.number)
       taft = insert(:address, fetched_coin_balance: 5)
 
       contract_address = insert(:contract_address)
