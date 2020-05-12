@@ -1930,6 +1930,7 @@ defmodule Explorer.Chain do
         join: pending_ops in assoc(b, :pending_operations),
         where: pending_ops.fetch_internal_transactions,
         where: b.consensus,
+        where: b.update_count < 100,
         select: b.number
       )
 
@@ -3923,7 +3924,7 @@ defmodule Explorer.Chain do
         where: b.number in ^pending_numbers,
         select: b.hash,
         # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
-        update: [set: [update_count: b.update_count+1]]
+        update: [set: [update_count: b.update_count + 1]]
       )
 
     try do
@@ -3944,13 +3945,13 @@ defmodule Explorer.Chain do
     end
   end
 
-
   defp compute_votes do
     from(p in CeloVoters,
       inner_join: g in assoc(p, :group),
       group_by: p.voter_address_hash,
       select: %{
-        result: fragment("sum(? + coalesce(? * ? / nullif(?,0), 0))", p.pending, p.units, g.active_votes, g.total_units),
+        result:
+          fragment("sum(? + coalesce(? * ? / nullif(?,0), 0))", p.pending, p.units, g.active_votes, g.total_units),
         address: p.voter_address_hash
       }
     )

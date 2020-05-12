@@ -84,13 +84,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     |> Multi.run(:remove_consensus_of_invalid_blocks, fn repo, %{invalid_block_numbers: invalid_block_numbers} ->
       remove_consensus_of_invalid_blocks(repo, invalid_block_numbers)
     end)
-    |> Multi.run(:bump_pending_blocks, fn repo,
-                                                   %{
-                                                     acquire_pending_internal_txs: pending_block_hashes,
-                                                     remove_consensus_of_invalid_blocks: invalid_block_hashes
-                                                   } ->
-      bump_pending_blocks(repo, pending_block_hashes, invalid_block_hashes)
-    end)
     |> Multi.run(:update_pending_blocks_status, fn repo,
                                                    %{
                                                      acquire_pending_internal_txs: pending_block_hashes,
@@ -193,7 +186,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   defp acquire_blocks(repo, changes_list) do
     block_numbers = Enum.map(changes_list, & &1.block_number)
-    IO.inspect(%{acquired_blocks: block_numbers})
 
     query =
       from(
@@ -379,14 +371,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
-    IO.inspect(%{invalid: invalid_block_numbers})
     update_query =
       from(
         b in Block,
         where: b.number in ^invalid_block_numbers and b.consensus,
         select: b.hash,
         # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
-        update: [set: [consensus: false, update_count: b.update_count+1]]
+        update: [set: [consensus: false, update_count: b.update_count + 1]]
       )
 
     try do
@@ -407,36 +398,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
-  defp bump_pending_blocks(repo, pending_hashes, _invalid_block_hashes) do
-    update_query =
-      from(
-        b in Block,
-        where: b.hash in ^pending_hashes,
-        select: b.hash,
-        # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
-        update: [set: [update_count: b.update_count+1]]
-      )
-
-    try do
-      {_num, result} = repo.update_all(update_query, [])
-
-      Logger.debug(fn ->
-        [
-          "bumping following blocks: ",
-          inspect(pending_hashes),
-          " because of internal transaction issues"
-        ]
-      end)
-
-      {:ok, result}
-    rescue
-      postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, pending_hashes: pending_hashes}}
-    end
-  end
-
   def update_pending_blocks_status(repo, pending_hashes, invalid_block_hashes) do
-    IO.inspect(%{pending: pending_hashes})
     valid_block_hashes =
       pending_hashes
       |> MapSet.new()
