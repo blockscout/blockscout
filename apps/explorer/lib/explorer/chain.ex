@@ -3916,6 +3916,35 @@ defmodule Explorer.Chain do
 
   defp staking_pool_filter(query, _), do: query
 
+  def bump_pending_blocks(pending_numbers) do
+    update_query =
+      from(
+        b in Block,
+        where: b.number in ^pending_numbers,
+        select: b.hash,
+        # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+        update: [set: [update_count: b.update_count+1]]
+      )
+
+    try do
+      {_num, result} = Repo.update_all(update_query, [])
+
+      Logger.debug(fn ->
+        [
+          "bumping following blocks: ",
+          inspect(pending_numbers),
+          " because of internal transaction issues"
+        ]
+      end)
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, pending_numbers: pending_numbers}}
+    end
+  end
+
+
   defp compute_votes do
     from(p in CeloVoters,
       inner_join: g in assoc(p, :group),
