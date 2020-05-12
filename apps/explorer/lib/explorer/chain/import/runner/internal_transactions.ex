@@ -370,8 +370,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
-    IO.inspect(invalid_block_numbers)
-
     update_query =
       from(
         b in Block,
