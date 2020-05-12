@@ -9,6 +9,7 @@ use Mix.Config
 config :explorer,
   ecto_repos: [Explorer.Repo],
   coin: System.get_env("COIN") || "POA",
+  coingecko_coin_id: System.get_env("COINGECKO_COIN_ID"),
   token_functions_reader_max_retries: 3,
   allowed_evm_versions:
     System.get_env("ALLOWED_EVM_VERSIONS") ||
@@ -136,6 +137,10 @@ if System.get_env("METADATA_CONTRACT") && System.get_env("VALIDATORS_CONTRACT") 
 else
   config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
 end
+
+config :explorer, Explorer.Chain.Block.Reward,
+  validators_contract_address: System.get_env("VALIDATORS_CONTRACT"),
+  keys_manager_contract_address: System.get_env("KEYS_MANAGER_CONTRACT")
 
 config :explorer, Explorer.Staking.PoolsReader,
   validators_contract_address: System.get_env("POS_VALIDATORS_CONTRACT"),

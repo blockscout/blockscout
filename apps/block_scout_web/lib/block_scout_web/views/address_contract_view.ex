@@ -33,17 +33,13 @@ defmodule BlockScoutWeb.AddressContractView do
       |> decode_data(input_types)
       |> Enum.zip(constructor_abi["inputs"])
       |> Enum.reduce({0, "#{contract.constructor_arguments}\n\n"}, fn {val, %{"type" => type}}, {count, acc} ->
-        address_hash = "0x" <> Base.encode16(val, case: :lower)
-
-        address =
-          case Chain.string_to_address_hash(address_hash) do
-            {:ok, address} -> address
-            _ -> nil
-          end
-
         formatted_val =
           cond do
             type =~ "address" ->
+              address_hash = "0x" <> Base.encode16(val, case: :lower)
+
+              address = get_address(address_hash)
+
               get_formatted_address_data(address, address_hash, conn)
 
             type =~ "bytes" ->
@@ -59,6 +55,13 @@ defmodule BlockScoutWeb.AddressContractView do
     result
   rescue
     _ -> contract.constructor_arguments
+  end
+
+  defp get_address(address_hash) do
+    case Chain.string_to_address_hash(address_hash) do
+      {:ok, address} -> address
+      _ -> nil
+    end
   end
 
   defp get_formatted_address_data(address, address_hash, conn) do
