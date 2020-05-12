@@ -9,6 +9,14 @@ defmodule BlockScoutWeb.AddressCeloView do
     format_according_to_decimals(member.pending.value, Decimal.new(18))
   end
 
+  def compute_active_votes(%{units: nil}) do
+    Decimal.new(0)
+  end
+
+  def compute_active_votes(%{group: %{units: nil}}) do
+    Decimal.new(0)
+  end
+
   def compute_active_votes(member) do
     units = member.units.value
     total_units = member.group.total_units.value
