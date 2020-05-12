@@ -127,7 +127,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
         Logger.error(fn -> ["Bumping", inspect(result)] end)
         # re-queue the de-duped entries
-        {:retry, unique_numbers}
+        # {:retry, unique_numbers}
+        :ok
 
       :ignore ->
         :ok

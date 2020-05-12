@@ -190,8 +190,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     query =
       from(
         b in Block,
-        where: b.number in ^block_numbers and b.consensus,
-        where: b.update_count < 10,
+        where: b.number in ^block_numbers,
         select: b.hash,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: b.hash],
@@ -371,6 +370,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp remove_consensus_of_invalid_blocks(repo, invalid_block_numbers) do
+    IO.inspect(invalid_block_numbers)
+
     update_query =
       from(
         b in Block,
