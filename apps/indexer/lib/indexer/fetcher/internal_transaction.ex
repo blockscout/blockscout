@@ -99,16 +99,18 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     Logger.debug("fetching internal transactions for blocks")
 
-    # json_rpc_named_arguments
-    # |> Keyword.fetch!(:variant)
-    # |> case do
-    #   EthereumJSONRPC.Parity ->
-    #     EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
+    json_rpc_named_arguments
+    |> Keyword.fetch!(:variant)
+    |> case do
+      EthereumJSONRPC.Parity ->
+        EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
 
-    #   _ ->
-    #     fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments)
-    # end
-    EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
+      EthereumJSONRPC.Besu ->
+        EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
+
+      _ ->
+        fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments)
+    end
     |> case do
       {:ok, internal_transactions_params} ->
         import_internal_transaction(internal_transactions_params, unique_numbers)

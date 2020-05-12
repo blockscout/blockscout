@@ -1,41 +1,23 @@
-defmodule EthereumJSONRPC.Parity do
+defmodule EthereumJSONRPC.Besu do
   @moduledoc """
-  Ethereum JSONRPC methods that are only supported by [Parity](https://wiki.parity.io/).
+  Ethereum JSONRPC methods that are only supported by [Besu](https://besu.hyperledger.org/en/stable/Reference/API-Methods).
   """
   require Logger
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
-  alias EthereumJSONRPC.Parity.{FetchedBeneficiaries, Traces}
+  alias EthereumJSONRPC.Parity.{Traces}
   alias EthereumJSONRPC.{Transaction, Transactions}
 
   @behaviour EthereumJSONRPC.Variant
 
   @impl EthereumJSONRPC.Variant
-  def fetch_beneficiaries(block_numbers, json_rpc_named_arguments)
-      when is_list(block_numbers) and is_list(json_rpc_named_arguments) do
-    id_to_params =
-      block_numbers
-      |> block_numbers_to_params_list()
-      |> id_to_params()
+  def fetch_beneficiaries(_block_range, _json_rpc_named_arguments), do: :ignore
 
-    with {:ok, responses} <-
-           id_to_params
-           |> FetchedBeneficiaries.requests()
-           |> json_rpc(json_rpc_named_arguments) do
-      {:ok, FetchedBeneficiaries.from_responses(responses, id_to_params)}
-    end
-  end
-
-  @doc """
-  Internal transaction fetching for individual transactions is no longer supported for Parity.
-
-  To signal to the caller that fetching is not supported, `:ignore` is returned.
-  """
   @impl EthereumJSONRPC.Variant
   def fetch_internal_transactions(_transactions_params, _json_rpc_named_arguments), do: :ignore
 
   @doc """
-  Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Parity trace URL.
+  Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Besu trace URL.
   """
   @impl EthereumJSONRPC.Variant
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
@@ -84,7 +66,7 @@ defmodule EthereumJSONRPC.Parity do
   end
 
   @doc """
-  Fetches the pending transactions from the Parity node.
+  Fetches the pending transactions from the Besu node.
 
   *NOTE*: The pending transactions are local to the node that is contacted and may not be consistent across nodes based
   on the transactions that each node has seen and how each node prioritizes collating transactions into the next block.
@@ -94,7 +76,7 @@ defmodule EthereumJSONRPC.Parity do
           {:ok, [Transaction.params()]} | {:error, reason :: term}
   def fetch_pending_transactions(json_rpc_named_arguments) do
     with {:ok, transactions} <-
-           %{id: 1, method: "parity_pendingTransactions", params: []}
+           %{id: 1, method: "txpool_besuTransactions", params: []}
            |> request()
            |> json_rpc(json_rpc_named_arguments) do
       transactions_params =
@@ -104,10 +86,6 @@ defmodule EthereumJSONRPC.Parity do
 
       {:ok, transactions_params}
     end
-  end
-
-  defp block_numbers_to_params_list(block_numbers) when is_list(block_numbers) do
-    Enum.map(block_numbers, &%{block_quantity: integer_to_quantity(&1)})
   end
 
   defp trace_replay_block_transactions_responses_to_internal_transactions_params(responses, id_to_params)
