@@ -3921,7 +3921,8 @@ defmodule Explorer.Chain do
       inner_join: g in assoc(p, :group),
       group_by: p.voter_address_hash,
       select: %{
-        result: fragment("sum(? + coalesce(? * ? / nullif(?,0), 0))", p.pending, p.units, g.active_votes, g.total_units),
+        result:
+          fragment("sum(? + coalesce(? * ? / nullif(?,0), 0))", p.pending, p.units, g.active_votes, g.total_units),
         address: p.voter_address_hash
       }
     )
