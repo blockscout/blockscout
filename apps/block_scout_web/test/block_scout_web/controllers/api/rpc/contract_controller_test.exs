@@ -609,6 +609,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       contract_code_info = Factory.contract_code_info()
 
       contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
+      insert(:transaction, created_contract_address_hash: contract_address.hash, input: contract_code_info.tx_input)
 
       params = %{
         "module" => "contract",
@@ -658,10 +659,12 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         "name" => name,
         "optimize" => optimize,
         "contract" => contract_source_code,
-        "expected_bytecode" => expected_bytecode
+        "expected_bytecode" => expected_bytecode,
+        "tx_input" => tx_input
       } = contract_data
 
       contract_address = insert(:contract_address, contract_code: "0x" <> expected_bytecode)
+      insert(:transaction, created_contract_address_hash: contract_address.hash, input: "0x" <> tx_input)
 
       params = %{
         "module" => "contract",

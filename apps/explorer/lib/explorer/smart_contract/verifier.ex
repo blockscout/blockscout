@@ -11,6 +11,13 @@ defmodule Explorer.SmartContract.Verifier do
   alias Explorer.SmartContract.Solidity.CodeCompiler
   alias Explorer.SmartContract.Verifier.ConstructorArguments
 
+  @metadata_hash_prefix_0_4_23 "a165627a7a72305820"
+  @metadata_hash_prefix_0_5_10 "a265627a7a72305820"
+  @metadata_hash_prefix_0_5_11 "a265627a7a72315820"
+  @metadata_hash_prefix_0_6_0 "a264697066735822"
+
+  @metadata_hash_common_suffix "64736f6c6343"
+
   def evaluate_authenticity(_, %{"name" => ""}), do: {:error, :name}
 
   def evaluate_authenticity(_, %{"contract_source_code" => ""}),
@@ -76,13 +83,16 @@ defmodule Explorer.SmartContract.Verifier do
          contract_source_code,
          contract_name
        ) do
-    generated_bytecode = extract_bytecode(bytecode)
+    %{"metadata_hash" => _generated_metadata_hash, "bytecode" => generated_bytecode} =
+      extract_bytecode_and_metadata_hash(bytecode)
 
-    "0x" <> blockchain_bytecode =
+    "0x" <> blockchain_created_tx_input =
       address_hash
-      |> Chain.smart_contract_bytecode()
+      |> Chain.smart_contract_creation_tx_bytecode()
 
-    blockchain_bytecode_without_whisper = extract_bytecode(blockchain_bytecode)
+    %{"metadata_hash" => _metadata_hash, "bytecode" => blockchain_bytecode_without_whisper} =
+      extract_bytecode_and_metadata_hash(blockchain_created_tx_input)
+
     empty_constructor_arguments = arguments_data == "" or arguments_data == nil
 
     cond do
@@ -136,40 +146,55 @@ defmodule Explorer.SmartContract.Verifier do
   For more information on the swarm hash, check out:
   https://solidity.readthedocs.io/en/v0.5.3/metadata.html#encoding-of-the-metadata-hash-in-the-bytecode
   """
-  def extract_bytecode("0x" <> code) do
-    "0x" <> extract_bytecode(code)
+  def extract_bytecode_and_metadata_hash("0x" <> code) do
+    %{"metadata_hash" => metadata_hash, "bytecode" => bytecode} = extract_bytecode_and_metadata_hash(code)
+    %{"metadata_hash" => metadata_hash, "bytecode" => "0x" <> bytecode}
   end
 
-  def extract_bytecode(code) do
-    do_extract_bytecode([], String.downcase(code))
+  def extract_bytecode_and_metadata_hash(code) do
+    do_extract_bytecode_and_metadata_hash([], String.downcase(code), "")
   end
 
-  defp do_extract_bytecode(extracted, remaining) do
+  defp do_extract_bytecode_and_metadata_hash(extracted, remaining, metadata_hash) do
     case remaining do
       <<>> ->
-        extracted
-        |> Enum.reverse()
-        |> :binary.list_to_bin()
+        bytecode =
+          extracted
+          |> Enum.reverse()
+          |> :binary.list_to_bin()
 
-      "a165627a7a72305820" <> <<_::binary-size(64)>> <> "0029" <> _constructor_arguments ->
-        extracted
-        |> Enum.reverse()
-        |> :binary.list_to_bin()
+        %{"metadata_hash" => metadata_hash, "bytecode" => bytecode}
+
+      @metadata_hash_prefix_0_4_23 <> <<metadata_hash::binary-size(64)>> <> "0029" <> _constructor_arguments ->
+        bytecode =
+          extracted
+          |> Enum.reverse()
+          |> :binary.list_to_bin()
+
+        %{"metadata_hash" => metadata_hash, "bytecode" => bytecode}
 
       # Solidity >= 0.5.9; https://github.com/ethereum/solidity/blob/aa4ee3a1559ebc0354926af962efb3fcc7dc15bd/docs/metadata.rst
-      "a265627a7a72305820" <>
-          <<_::binary-size(64)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0032" <> _constructor_arguments ->
-        extracted
-        |> Enum.reverse()
-        |> :binary.list_to_bin()
+      @metadata_hash_prefix_0_5_10 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> <<_::binary-size(6)>> <> "0032" <> _constructor_arguments ->
+        bytecode =
+          extracted
+          |> Enum.reverse()
+          |> :binary.list_to_bin()
+
+        %{"metadata_hash" => metadata_hash, "bytecode" => bytecode}
 
       # Solidity >= 0.5.11 https://github.com/ethereum/solidity/blob/develop/Changelog.md#0511-2019-08-12
       # Metadata: Update the swarm hash to the current specification, changes bzzr0 to bzzr1 and urls to use bzz-raw://
-      "a265627a7a72315820" <>
-          <<_::binary-size(64)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0032" <> _constructor_arguments ->
-        extracted
-        |> Enum.reverse()
-        |> :binary.list_to_bin()
+      @metadata_hash_prefix_0_5_11 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> <<_::binary-size(6)>> <> "0032" <> _constructor_arguments ->
+        bytecode =
+          extracted
+          |> Enum.reverse()
+          |> :binary.list_to_bin()
+
+        %{"metadata_hash" => metadata_hash, "bytecode" => bytecode}
 
       # Solidity >= 0.6.0 https://github.com/ethereum/solidity/blob/develop/Changelog.md#060-2019-12-17
       # https://github.com/ethereum/solidity/blob/26b700771e9cc9c956f0503a05de69a1be427963/docs/metadata.rst#encoding-of-the-metadata-hash-in-the-bytecode
@@ -181,14 +206,18 @@ defmodule Explorer.SmartContract.Verifier do
       # 0x00 0x32
       # Note: there is a bug in the docs. Instead of 0x32, 0x33 should be used.
       # Fixing PR has been created https://github.com/ethereum/solidity/pull/8174
-      "a264697066735822" <>
-          <<_::binary-size(68)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0033" <> _constructor_arguments ->
-        extracted
-        |> Enum.reverse()
-        |> :binary.list_to_bin()
+      @metadata_hash_prefix_0_6_0 <>
+          <<metadata_hash::binary-size(68)>> <>
+          @metadata_hash_common_suffix <> <<_::binary-size(6)>> <> "0033" <> _constructor_arguments ->
+        bytecode =
+          extracted
+          |> Enum.reverse()
+          |> :binary.list_to_bin()
+
+        %{"metadata_hash" => metadata_hash, "bytecode" => bytecode}
 
       <<next::binary-size(2)>> <> rest ->
-        do_extract_bytecode([next | extracted], rest)
+        do_extract_bytecode_and_metadata_hash([next | extracted], rest, metadata_hash)
     end
   end
 

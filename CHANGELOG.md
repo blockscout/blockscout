@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3106](https://github.com/poanetwork/blockscout/pull/3106) - Verify contract using creation tx input
 
 ### Chore
 
