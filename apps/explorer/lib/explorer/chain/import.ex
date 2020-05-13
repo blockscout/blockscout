@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Import do
 
   alias Ecto.Changeset
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-  alias Explorer.Chain.Cache.{BlockNumber, PendingTransactions, Transactions}
+  alias Explorer.Chain.Cache.{BlockNumber, Transactions}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
   alias Explorer.Repo
@@ -154,7 +154,7 @@ defmodule Explorer.Chain.Import do
       %{blocks: blocks, transactions: transactions, fork_transactions: fork_transactions} = block_data(options, data)
 
       update_block_cache(blocks)
-      update_transactions_cache(transactions, fork_transactions)
+      update_transactions_cache(transactions)
       Publisher.broadcast(data, Map.get(options, :broadcast, false))
 
       with {:ok, other_runner_options_pairs} <- validate_options(options, @other_runners),
@@ -215,10 +215,8 @@ defmodule Explorer.Chain.Import do
 
   defp update_block_cache(_), do: :ok
 
-  defp update_transactions_cache(transactions, forked_transactions) do
+  defp update_transactions_cache(transactions) do
     Transactions.update(transactions)
-    PendingTransactions.update_pending(transactions)
-    PendingTransactions.update_pending(forked_transactions)
   end
 
   defp runner_to_changes_list(runner_options_pairs) when is_list(runner_options_pairs) do
