@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AddBlockPendingParams do
+defmodule Explorer.Repo.Migrations.AddBlocksPendingLimit do
   use Ecto.Migration
 
   def change do
