@@ -151,7 +151,7 @@ defmodule Explorer.Chain.Import do
          {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options, @basic_stages) do
-      %{blocks: blocks, transactions: transactions, fork_transactions: fork_transactions} = block_data(options, data)
+      %{blocks: blocks, transactions: transactions, fork_transactions: _fork_transactions} = block_data(options, data)
 
       update_block_cache(blocks)
       update_transactions_cache(transactions)
