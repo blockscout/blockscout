@@ -75,12 +75,12 @@ defmodule Explorer.Staking.ContractState do
     staking_contract_address = Application.get_env(:explorer, __MODULE__)[:staking_contract_address]
 
     %{
-      "validatorSetContract" => {:ok, [validator_set_contract_address]},
-      "erc677TokenContract" => {:ok, [token_contract_address]}
+      "erc677TokenContract" => {:ok, [token_contract_address]},
+      "validatorSetContract" => {:ok, [validator_set_contract_address]}
     } =
       Reader.query_contract(staking_contract_address, staking_abi, %{
-        "validatorSetContract" => [],
-        "erc677TokenContract" => []
+        "erc677TokenContract" => [],
+        "validatorSetContract" => []
       })
 
     %{"blockRewardContract" => {:ok, [block_reward_contract_address]}} =
