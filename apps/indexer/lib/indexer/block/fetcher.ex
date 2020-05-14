@@ -16,7 +16,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
 
-  alias Explorer.Celo.AccountReader
+  alias Explorer.Celo.Util
 
   alias Indexer.Fetcher.{
     BlockReward,
@@ -175,21 +175,21 @@ defmodule Indexer.Block.Fetcher do
          {:read_token_address, {:ok, gold_token}} <-
            {:read_token_address,
             if gold_token_enabled do
-              AccountReader.get_address("GoldToken")
+              Util.get_address("GoldToken")
             else
               {:ok, nil}
             end},
          {:read_stable_token_address, {:ok, stable_token}} <-
            {:read_stable_token_address,
             if gold_token_enabled do
-              AccountReader.get_address("StableToken")
+              Util.get_address("StableToken")
             else
               {:ok, nil}
             end},
          {:read_oracle_address, {:ok, oracle_address}} <-
            {:read_oracle_address,
             if gold_token_enabled do
-              AccountReader.get_address("SortedOracles")
+              Util.get_address("SortedOracles")
             else
               {:ok, nil}
             end},
@@ -250,11 +250,15 @@ defmodule Indexer.Block.Fetcher do
                  []
                end
            }),
+         gold_transfers =
+           normal_token_transfers
+           |> Enum.filter(fn %{token_contract_address_hash: contract} -> contract == gold_token end),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
              blocks_params: blocks,
              logs_params: logs,
+             gold_transfers: gold_transfers,
              transactions_params: transactions_with_receipts
            }
            |> AddressCoinBalances.params_set(),

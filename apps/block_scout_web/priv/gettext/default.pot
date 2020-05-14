@@ -61,11 +61,6 @@ msgid "%{count} Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/_metatags.html.eex:2
-msgid "%{subnetwork} %{network} Explorer"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/layout/_default_title.html.eex:2
 msgid "%{subnetwork} Explorer - BlockScout"
 msgstr ""
@@ -997,7 +992,7 @@ msgid "Mainnet"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:24
+#: lib/block_scout_web/templates/chain/show.html.eex:23
 #: lib/block_scout_web/templates/layout/app.html.eex:30
 #: lib/block_scout_web/templates/layout/app.html.eex:73
 #: lib/block_scout_web/views/address_view.ex:189
@@ -1903,7 +1898,7 @@ msgid "true"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:17
+#: lib/block_scout_web/templates/chain/show.html.eex:16
 msgid "cGLD Price"
 msgstr ""
 
@@ -1961,4 +1956,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:34
 msgid "Forum"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/chain/_metatags.html.eex:2
+msgid "%{network} Explorer"
 msgstr ""
