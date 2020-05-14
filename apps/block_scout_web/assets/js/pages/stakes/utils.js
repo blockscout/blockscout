@@ -83,12 +83,19 @@ export function setupChart ($canvas, self, total) {
   })
 }
 
-export function isSupportedNetwork (store) {
-  if (store.getState().network.authorized) {
+export function checkForTokenDefinition (store) {
+  if (store.getState().stakingTokenDefined) {
     return true
   }
+  openWarningModal('Token unavailable', 'Token contract is not defined yet. Please try later.')
+  return false
+}
 
-  openWarningModal('Unauthorized', 'Connect to the xDai Chain for staking.<br /> <a href="https://docs.xdaichain.com" target="_blank">Instructions</a>')
-
+export function isSupportedNetwork (store) {
+  const state = store.getState()
+  if (state.network && state.network.authorized) {
+    return true
+  }
+  openWarningModal('Unauthorized', 'Please, connect to the xDai Chain.<br /><a href="https://xdaichain.com" target="_blank">Instructions</a>')
   return false
 }

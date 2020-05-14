@@ -15,6 +15,9 @@ defmodule BlockScoutWeb.StakesController do
     render_template(assigns.filter, conn, params)
   end
 
+  # this is called when account in MetaMask is changed on client side (see `staking_update` event handled in `StakesChannel`),
+  # when a new block appears (see `staking_update` event handled in `StakesChannel`),
+  # or when the page is loaded for the first time or reloaded by a user (i.e. it is called by the `render_template(filter, conn, _)`)
   def render_top(conn) do
     epoch_number = ContractState.get(:epoch_number, 0)
     epoch_end_block = ContractState.get(:epoch_end_block, 0)
@@ -25,7 +28,7 @@ defmodule BlockScoutWeb.StakesController do
     account =
       if account_address = conn.assigns[:account] do
         account_address
-        |> Chain.get_total_staked()
+        |> Chain.get_total_staked_and_ordered()
         |> Map.merge(%{
           address: account_address,
           balance: Chain.fetch_last_token_balance(account_address, token.contract_address_hash),
@@ -43,67 +46,77 @@ defmodule BlockScoutWeb.StakesController do
     )
   end
 
+  # this is called when account in MetaMask is changed on client side
+  # or when UI periodically reloads the pool list (e.g. once per 10 blocks)
   defp render_template(filter, conn, %{"type" => "JSON"} = params) do
-    [paging_options: options] = paging_options(params)
+    {items, next_page_path} =
+      if Map.has_key?(params, "filterMy") do
+        [paging_options: options] = paging_options(params)
 
-    last_index =
-      params
-      |> Map.get("position", "0")
-      |> String.to_integer()
+        last_index =
+          params
+          |> Map.get("position", "0")
+          |> String.to_integer()
 
-    pools_plus_one =
-      Chain.staking_pools(
-        filter,
-        options,
-        unless params["account"] == "" do
-          params["account"]
-        end,
-        params["filterBanned"] == "true",
-        params["filterMy"] == "true"
-      )
+        pools_plus_one =
+          Chain.staking_pools(
+            filter,
+            options,
+            unless params["account"] == "" do
+              params["account"]
+            end,
+            params["filterBanned"] == "true",
+            params["filterMy"] == "true"
+          )
 
-    {pools, next_page} = split_list_by_page(pools_plus_one)
+        {pools, next_page} = split_list_by_page(pools_plus_one)
 
-    next_page_path =
-      case next_page_params(next_page, pools, params) do
-        nil ->
-          nil
+        next_page_path =
+          case next_page_params(next_page, pools, params) do
+            nil ->
+              nil
 
-        next_page_params ->
-          updated_page_params =
-            next_page_params
-            |> Map.delete("type")
-            |> Map.put("position", last_index + 1)
+            next_page_params ->
+              updated_page_params =
+                next_page_params
+                |> Map.delete("type")
+                |> Map.put("position", last_index + 1)
 
-          next_page_path(filter, conn, updated_page_params)
+              next_page_path(filter, conn, updated_page_params)
+          end
+
+        average_block_time = AverageBlockTime.average_block_time()
+        token = ContractState.get(:token, %Token{})
+        epoch_number = ContractState.get(:epoch_number, 0)
+        staking_allowed = ContractState.get(:staking_allowed, false)
+
+        items =
+          pools
+          |> Enum.with_index(last_index + 1)
+          |> Enum.map(fn {%{pool: pool, delegator: delegator}, index} ->
+            View.render_to_string(
+              StakesView,
+              "_rows.html",
+              token: token,
+              pool: pool,
+              delegator: delegator,
+              index: index,
+              average_block_time: average_block_time,
+              pools_type: filter,
+              buttons: %{
+                stake: staking_allowed and stake_allowed?(pool, delegator),
+                move: staking_allowed and move_allowed?(delegator),
+                withdraw: staking_allowed and withdraw_allowed?(delegator),
+                claim: staking_allowed and claim_allowed?(delegator, epoch_number)
+              }
+            )
+          end)
+
+        {items, next_page_path}
+      else
+        loading_item = View.render_to_string(StakesView, "_rows_loading.html", %{})
+        {[loading_item], nil}
       end
-
-    average_block_time = AverageBlockTime.average_block_time()
-    token = ContractState.get(:token, %Token{})
-    epoch_number = ContractState.get(:epoch_number, 0)
-    staking_allowed = ContractState.get(:staking_allowed, false)
-
-    items =
-      pools
-      |> Enum.with_index(last_index + 1)
-      |> Enum.map(fn {%{pool: pool, delegator: delegator}, index} ->
-        View.render_to_string(
-          StakesView,
-          "_rows.html",
-          token: token,
-          pool: pool,
-          delegator: delegator,
-          index: index,
-          average_block_time: average_block_time,
-          pools_type: filter,
-          buttons: %{
-            stake: staking_allowed and stake_allowed?(pool, delegator),
-            move: staking_allowed and move_allowed?(delegator),
-            withdraw: staking_allowed and withdraw_allowed?(delegator),
-            claim: staking_allowed and claim_allowed?(delegator, epoch_number)
-          }
-        )
-      end)
 
     json(
       conn,
@@ -114,13 +127,15 @@ defmodule BlockScoutWeb.StakesController do
     )
   end
 
+  # this is called when the page is loaded for the first time
+  # or when it is reloaded by a user
   defp render_template(filter, conn, _) do
     render(conn, "index.html",
       top: render_top(conn),
       pools_type: filter,
       current_path: current_path(conn),
       average_block_time: AverageBlockTime.average_block_time(),
-      refresh_interval: Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_table_refresh_interval]
+      refresh_interval: Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_pool_list_refresh_interval]
     )
   end
 
@@ -141,7 +156,7 @@ defmodule BlockScoutWeb.StakesController do
   end
 
   defp stake_allowed?(pool, delegator) do
-    Decimal.positive?(pool.self_staked_amount) or delegator.delegator_address_hash == pool.staking_address_hash
+    Decimal.positive?(pool.self_staked_amount) or delegator.address_hash == pool.staking_address_hash
   end
 
   defp move_allowed?(nil), do: false

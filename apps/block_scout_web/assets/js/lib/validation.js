@@ -49,14 +49,14 @@ function updateSubmit ($submit, errors) {
   $submit.prop('disabled', !$.isEmptyObject(errors))
 }
 
-function displayInputError ($input, message) {
+export function displayInputError ($input, message) {
   const group = $input.parent('.input-group')
 
   group.addClass('input-status-error')
   group.find('.input-group-message').html(message)
 }
 
-function hideInputError ($input) {
+export function hideInputError ($input) {
   const group = $input.parent('.input-group')
 
   group.removeClass('input-status-error')

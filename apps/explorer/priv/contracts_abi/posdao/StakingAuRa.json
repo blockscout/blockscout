@@ -24,13 +24,8 @@
   },
   {
     "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "stakeAmountTotal",
+    "inputs": [],
+    "name": "candidateMinStake",
     "outputs": [
       {
         "name": "",
@@ -43,8 +38,40 @@
   },
   {
     "constant": true,
-    "inputs": [],
-    "name": "candidateMinStake",
+    "inputs": [
+      {
+        "name": "_staker",
+        "type": "address"
+      },
+      {
+        "name": "_offset",
+        "type": "uint256"
+      },
+      {
+        "name": "_length",
+        "type": "uint256"
+      }
+    ],
+    "name": "getStakerPools",
+    "outputs": [
+      {
+        "name": "result",
+        "type": "address[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_staker",
+        "type": "address"
+      }
+    ],
+    "name": "getStakerPoolsLength",
     "outputs": [
       {
         "name": "",
@@ -105,7 +132,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "erc20TokenContract",
+    "name": "erc677TokenContract",
     "outputs": [
       {
         "name": "",
@@ -182,29 +209,6 @@
       {
         "name": "",
         "type": "address"
-      },
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "stakeAmount",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
       }
     ],
     "name": "poolIndex",
@@ -212,34 +216,6 @@
       {
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "STAKE_UNIT",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "erc20Restricted",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
       }
     ],
     "payable": false,
@@ -332,20 +308,6 @@
   },
   {
     "constant": true,
-    "inputs": [],
-    "name": "MAX_DELEGATORS_PER_POOL",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
     "inputs": [
       {
         "name": "",
@@ -420,7 +382,7 @@
         "type": "uint256"
       }
     ],
-    "name": "Claimed",
+    "name": "ClaimedOrderedWithdrawal",
     "type": "event"
   },
   {
@@ -447,7 +409,7 @@
         "type": "uint256"
       }
     ],
-    "name": "Staked",
+    "name": "PlacedStake",
     "type": "event"
   },
   {
@@ -479,7 +441,7 @@
         "type": "uint256"
       }
     ],
-    "name": "StakeMoved",
+    "name": "MovedStake",
     "type": "event"
   },
   {
@@ -506,7 +468,7 @@
         "type": "int256"
       }
     ],
-    "name": "WithdrawalOrdered",
+    "name": "OrderedWithdrawal",
     "type": "event"
   },
   {
@@ -533,7 +495,7 @@
         "type": "uint256"
       }
     ],
-    "name": "Withdrawn",
+    "name": "WithdrewStake",
     "type": "event"
   },
   {
@@ -558,14 +520,18 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_miningAddress",
+        "name": "_stakingEpochs",
+        "type": "uint256[]"
+      },
+      {
+        "name": "_poolStakingAddress",
         "type": "address"
       }
     ],
-    "name": "addPoolNative",
+    "name": "claimReward",
     "outputs": [],
-    "payable": true,
-    "stateMutability": "payable",
+    "payable": false,
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -621,10 +587,6 @@
       {
         "name": "_stakeWithdrawDisallowPeriod",
         "type": "uint256"
-      },
-      {
-        "name": "_erc20Restricted",
-        "type": "bool"
       }
     ],
     "name": "initialize",
@@ -714,20 +676,6 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_toPoolStakingAddress",
-        "type": "address"
-      }
-    ],
-    "name": "stakeNative",
-    "outputs": [],
-    "payable": true,
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
         "name": "_fromPoolStakingAddress",
         "type": "address"
       },
@@ -778,11 +726,11 @@
     "constant": false,
     "inputs": [
       {
-        "name": "_erc20TokenContract",
+        "name": "_erc677TokenContract",
         "type": "address"
       }
     ],
-    "name": "setErc20TokenContract",
+    "name": "setErc677TokenContract",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -1083,7 +1031,7 @@
         "type": "address"
       }
     ],
-    "name": "stakeAmountMinusOrderedWithdraw",
+    "name": "stakeAmount",
     "outputs": [
       {
         "name": "",
@@ -1102,7 +1050,7 @@
         "type": "address"
       }
     ],
-    "name": "stakeAmountTotalMinusOrderedWithdraw",
+    "name": "stakeAmountTotal",
     "outputs": [
       {
         "name": "",

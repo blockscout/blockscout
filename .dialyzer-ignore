@@ -13,3 +13,5 @@ apps/explorer/lib/explorer/smart_contract/publisher_worker.ex:6: The pattern 'fa
 apps/explorer/lib/explorer/smart_contract/publisher_worker.ex:6: The test 5 == 'infinity' can never evaluate to 'true'
 lib/block_scout_web/router.ex:1
 lib/phoenix/router.ex:324
+lib/explorer/staking/stake_snapshotting.ex:14: Function do_snapshotting/6 has no local return
+lib/explorer/staking/stake_snapshotting.ex:179

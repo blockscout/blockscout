@@ -1,12 +1,21 @@
 [
   {
     "constant": true,
-    "inputs": [],
-    "name": "DELEGATORS_ALIQUOT",
+    "inputs": [
+      {
+        "name": "_poolStakingAddress",
+        "type": "address"
+      },
+      {
+        "name": "_staker",
+        "type": "address"
+      }
+    ],
+    "name": "epochsToClaimRewardFrom",
     "outputs": [
       {
-        "name": "",
-        "type": "uint256"
+        "name": "epochsToClaimFrom",
+        "type": "uint256[]"
       }
     ],
     "payable": false,
@@ -16,25 +25,11 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "bridgeTokenFee",
+    "name": "bridgeTokenReward",
     "outputs": [
       {
         "name": "",
         "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "isRewarding",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
       }
     ],
     "payable": false,
@@ -169,20 +164,6 @@
   },
   {
     "constant": true,
-    "inputs": [],
-    "name": "isSnapshotting",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
     "inputs": [
       {
         "name": "",
@@ -225,6 +206,25 @@
   },
   {
     "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "validatorMinRewardPercent",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
     "inputs": [],
     "name": "validatorSetContract",
     "outputs": [
@@ -240,21 +240,7 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "bridgeNativeFee",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "snapshotTotalStakeAmount",
+    "name": "bridgeNativeReward",
     "outputs": [
       {
         "name": "",
@@ -335,7 +321,7 @@
         "type": "uint256"
       }
     ],
-    "name": "addBridgeNativeFeeReceivers",
+    "name": "addBridgeNativeRewardReceivers",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -349,7 +335,7 @@
         "type": "uint256"
       }
     ],
-    "name": "addBridgeTokenFeeReceivers",
+    "name": "addBridgeTokenRewardReceivers",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -562,63 +548,77 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_validatorStakingAddress",
-        "type": "address"
-      }
-    ],
-    "name": "snapshotRewardPercents",
-    "outputs": [
-      {
-        "name": "result",
-        "type": "uint256[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_validatorStakingAddress",
-        "type": "address"
-      }
-    ],
-    "name": "snapshotStakers",
-    "outputs": [
-      {
-        "name": "result",
-        "type": "address[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "snapshotStakingAddresses",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address[]"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
         "name": "_stakingAddress",
         "type": "address"
       }
     ],
     "name": "validatorRewardPercent",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_stakingEpoch",
+        "type": "uint256"
+      },
+      {
+        "name": "_validatorStaked",
+        "type": "uint256"
+      },
+      {
+        "name": "_totalStaked",
+        "type": "uint256"
+      },
+      {
+        "name": "_poolReward",
+        "type": "uint256"
+      }
+    ],
+    "name": "validatorShare",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_stakingEpoch",
+        "type": "uint256"
+      },
+      {
+        "name": "_delegatorStaked",
+        "type": "uint256"
+      },
+      {
+        "name": "_validatorStaked",
+        "type": "uint256"
+      },
+      {
+        "name": "_totalStaked",
+        "type": "uint256"
+      },
+      {
+        "name": "_poolReward",
+        "type": "uint256"
+      }
+    ],
+    "name": "delegatorShare",
     "outputs": [
       {
         "name": "",

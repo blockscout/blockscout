@@ -16,7 +16,7 @@ export function openWithdrawStakeModal (event, store) {
 
 function setupWithdrawStakeModal (address, store, msg) {
   const $modal = $(msg.html)
-  setupChart($modal.find('.js-stakes-progress'), msg.self_staked_amount, msg.staked_amount)
+  setupChart($modal.find('.js-stakes-progress'), msg.self_staked_amount, msg.total_staked_amount)
   setupValidation(
     $modal.find('form'),
     {

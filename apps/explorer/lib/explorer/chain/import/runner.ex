@@ -50,4 +50,11 @@ defmodule Explorer.Chain.Import.Runner do
   @callback ecto_schema_module() :: module()
   @callback run(Multi.t(), changes_list, %{optional(atom()) => term()}) :: Multi.t()
   @callback timeout() :: timeout()
+
+  @doc """
+  The optional list of runner-specific options.
+  """
+  @callback runner_specific_options() :: [atom()]
+
+  @optional_callbacks runner_specific_options: 0
 end

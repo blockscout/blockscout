@@ -24,6 +24,9 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
   def option_key, do: :staking_pools
 
   @impl Import.Runner
+  def runner_specific_options, do: [:clear_snapshotted_values]
+
+  @impl Import.Runner
   def imported_table_row do
     %{
       value_type: "[#{ecto_schema_module()}.t()]",
@@ -36,17 +39,29 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
     insert_options =
       options
       |> Map.get(option_key(), %{})
-      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.take(~w(on_conflict timeout clear_snapshotted_values)a)
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    clear_snapshotted_values =
+      case Map.fetch(insert_options, :clear_snapshotted_values) do
+        {:ok, v} -> v
+        :error -> false
+      end
+
+    multi =
+      if clear_snapshotted_values do
+        multi
+      else
+        # Enforce ShareLocks tables order (see docs: sharelocks.md)
+        Multi.run(multi, :acquire_all_staking_pools, fn repo, _ ->
+          acquire_all_staking_pools(repo)
+        end)
+      end
+
     multi
-    |> Multi.run(:acquire_all_staking_pools, fn repo, _ ->
-      acquire_all_staking_pools(repo)
-    end)
     |> Multi.run(:mark_as_deleted, fn repo, _ ->
-      mark_as_deleted(repo, changes_list, insert_options)
+      mark_as_deleted(repo, changes_list, insert_options, clear_snapshotted_values)
     end)
     |> Multi.run(:insert_staking_pools, fn repo, _ ->
       insert(repo, changes_list, insert_options)
@@ -70,16 +85,29 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
     {:ok, pools}
   end
 
-  defp mark_as_deleted(repo, changes_list, %{timeout: timeout}) when is_list(changes_list) do
-    addresses = Enum.map(changes_list, & &1.staking_address_hash)
-
+  defp mark_as_deleted(repo, changes_list, %{timeout: timeout}, clear_snapshotted_values) when is_list(changes_list) do
     query =
-      from(
-        pool in StakingPool,
-        where: pool.staking_address_hash not in ^addresses,
-        # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
-        update: [set: [is_deleted: true, is_active: false]]
-      )
+      if clear_snapshotted_values do
+        from(
+          pool in StakingPool,
+          update: [
+            set: [
+              snapshotted_self_staked_amount: nil,
+              snapshotted_total_staked_amount: nil,
+              snapshotted_validator_reward_ratio: nil
+            ]
+          ]
+        )
+      else
+        addresses = Enum.map(changes_list, & &1.staking_address_hash)
+
+        from(
+          pool in StakingPool,
+          where: pool.staking_address_hash not in ^addresses,
+          # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
+          update: [set: [is_deleted: true, is_active: false]]
+        )
+      end
 
     try do
       {_, result} = repo.update_all(query, [], timeout: timeout)
@@ -130,10 +158,11 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           is_unremovable: fragment("EXCLUDED.is_unremovable"),
           are_delegators_banned: fragment("EXCLUDED.are_delegators_banned"),
           likelihood: fragment("EXCLUDED.likelihood"),
-          block_reward_ratio: fragment("EXCLUDED.block_reward_ratio"),
-          staked_ratio: fragment("EXCLUDED.staked_ratio"),
+          validator_reward_percent: fragment("EXCLUDED.validator_reward_percent"),
+          stakes_ratio: fragment("EXCLUDED.stakes_ratio"),
+          validator_reward_ratio: fragment("EXCLUDED.validator_reward_ratio"),
           self_staked_amount: fragment("EXCLUDED.self_staked_amount"),
-          staked_amount: fragment("EXCLUDED.staked_amount"),
+          total_staked_amount: fragment("EXCLUDED.total_staked_amount"),
           ban_reason: fragment("EXCLUDED.ban_reason"),
           was_banned_count: fragment("EXCLUDED.was_banned_count"),
           was_validator_count: fragment("EXCLUDED.was_validator_count"),

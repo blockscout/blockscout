@@ -21,10 +21,20 @@ $(document.body).on('hide.bs.modal', e => {
   $currentModal = null
 })
 
-export function openModal ($modal) {
+export function currentModal () {
+  return $currentModal
+}
+
+export function openModal ($modal, unclosable) {
   // Hide all tooltips before showing a modal,
   // since they are sticking on top of modal
   $('.tooltip').tooltip('hide')
+
+  if (unclosable) {
+    $('.close-modal, .modal-status-button-wrapper', $modal).addClass('hidden')
+    $('.modal-status-text', $modal).addClass('m-b-0')
+  }
+
   if ($currentModal) {
     modalLocked = false
 
@@ -32,15 +42,21 @@ export function openModal ($modal) {
       .one('hidden.bs.modal', () => {
         $modal.modal('show')
         $currentModal = $modal
+        if (unclosable) {
+          modalLocked = true
+        }
       })
       .modal('hide')
   } else {
     $modal.modal('show')
     $currentModal = $modal
+    if (unclosable) {
+      modalLocked = true
+    }
   }
 }
 
-export function lockModal ($modal, $submitButton = null) {
+export function lockModal ($modal, $submitButton = null, spinnerText = '') {
   $modal.find('.close-modal').attr('disabled', true)
 
   const $button = $submitButton || $modal.find('.btn-add-full')
@@ -48,7 +64,16 @@ export function lockModal ($modal, $submitButton = null) {
   $button
     .attr('data-text', $button.text())
     .attr('disabled', true)
-    .html(spinner)
+
+  const $span = $('span', $button)
+  const waitHtml = spinner + (spinnerText ? ` ${spinnerText}` : '')
+
+  if ($span.length) {
+    $('svg', $button).hide()
+    $span.html(waitHtml)
+  } else {
+    $button.html(waitHtml)
+  }
 
   modalLocked = true
 }
@@ -57,19 +82,26 @@ export function unlockModal ($modal, $submitButton = null) {
   $modal.find('.close-modal').attr('disabled', false)
 
   const $button = $submitButton || $modal.find('.btn-add-full')
+  const buttonText = $button.attr('data-text')
 
-  $button
-    .text($button.attr('data-text'))
-    .attr('disabled', false)
+  $button.attr('disabled', false)
+
+  const $span = $('span', $button)
+  if ($span.length) {
+    $('svg', $button).show()
+    $span.text(buttonText)
+  } else {
+    $button.text(buttonText)
+  }
 
   modalLocked = false
 }
 
-export function openErrorModal (title, text) {
+export function openErrorModal (title, text, unclosable) {
   const $modal = $('#errorStatusModal')
   $modal.find('.modal-status-title').text(title)
   $modal.find('.modal-status-text').html(text)
-  openModal($modal)
+  openModal($modal, unclosable)
 }
 
 export function openWarningModal (title, text) {
