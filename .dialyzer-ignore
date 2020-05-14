@@ -27,3 +27,5 @@ lib/explorer/exchange_rates/source.ex:41
 lib/explorer/exchange_rates/source/coin_gecko.ex:148
 lib/explorer/exchange_rates/source/coin_gecko.ex:169
 lib/explorer/smart_contract/verifier.ex:89
+lib/explorer/staking/stake_snapshotting.ex:14: Function do_snapshotting/6 has no local return
+lib/explorer/staking/stake_snapshotting.ex:179
