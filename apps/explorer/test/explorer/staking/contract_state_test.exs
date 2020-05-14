@@ -614,22 +614,22 @@ defmodule Explorer.Staking.ContractStateTest do
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn requests, _opts ->
-        assert length(requests) == 16
+        assert length(requests) == 10
 
         {:ok,
          format_responses([
            # 1 BlockRewardAuRa.delegatorShare
-           "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 2 BlockRewardAuRa.delegatorShare
-           "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 3 BlockRewardAuRa.delegatorShare
-           "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # 4 BlockRewardAuRa.delegatorShare
-           "0x00000000000000000000000000000000000000000000000000000000000a2c2a",
-           # 5 BlockRewardAuRa.delegatorShare
            "0x0000000000000000000000000000000000000000000000000000000000051615",
+           # 2 BlockRewardAuRa.delegatorShare
+           "0x0000000000000000000000000000000000000000000000000000000000012fd1",
+           # 3 BlockRewardAuRa.delegatorShare
+           "0x0000000000000000000000000000000000000000000000000000000000012fd1",
+           # 4 BlockRewardAuRa.delegatorShare
+           "0x0000000000000000000000000000000000000000000000000000000000012fd1",
+           # 5 BlockRewardAuRa.delegatorShare
+           "0x0000000000000000000000000000000000000000000000000000000000012fd1",
            # 6 BlockRewardAuRa.delegatorShare
-           "0x00000000000000000000000000000000000000000000000000000000000f4240",
+           "0x0000000000000000000000000000000000000000000000000000000000012fd1",
            # 7 BlockRewardAuRa.delegatorShare
            "0x0000000000000000000000000000000000000000000000000000000000012fd1",
            # 8 BlockRewardAuRa.delegatorShare
@@ -637,18 +637,6 @@ defmodule Explorer.Staking.ContractStateTest do
            # 9 BlockRewardAuRa.delegatorShare
            "0x0000000000000000000000000000000000000000000000000000000000012fd1",
            # 10 BlockRewardAuRa.delegatorShare
-           "0x0000000000000000000000000000000000000000000000000000000000012fd1",
-           # 11 BlockRewardAuRa.delegatorShare
-           "0x0000000000000000000000000000000000000000000000000000000000012fd1",
-           # 12 BlockRewardAuRa.delegatorShare
-           "0x0000000000000000000000000000000000000000000000000000000000012fd1",
-           # 13 BlockRewardAuRa.delegatorShare
-           "0x0000000000000000000000000000000000000000000000000000000000012fd1",
-           # 14 BlockRewardAuRa.delegatorShare
-           "0x0000000000000000000000000000000000000000000000000000000000025fa3",
-           # 15 BlockRewardAuRa.delegatorShare
-           "0x0000000000000000000000000000000000000000000000000000000000012fd1",
-           # 16 BlockRewardAuRa.delegatorShare
            "0x0000000000000000000000000000000000000000000000000000000000012fd1"
          ])}
       end
@@ -998,19 +986,13 @@ defmodule Explorer.Staking.ContractStateTest do
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn requests, _opts ->
-        assert length(requests) == 14
+        assert length(requests) == 10
 
         {:ok,
          format_responses([
            # BlockRewardAuRa.delegatorShare
-           "0x0000000000000000000000000000000000000000000000000000000000000000",
-           # BlockRewardAuRa.delegatorShare
-           "0x00000000000000000000000000000000000000000000000000000000000a2c2a",
-           # BlockRewardAuRa.delegatorShare
            "0x0000000000000000000000000000000000000000000000000000000000051615",
            # BlockRewardAuRa.delegatorShare
-           "0x00000000000000000000000000000000000000000000000000000000000f4240",
-           # BlockRewardAuRa.delegatorShare
            "0x0000000000000000000000000000000000000000000000000000000000012fd1",
            # BlockRewardAuRa.delegatorShare
            "0x0000000000000000000000000000000000000000000000000000000000012fd1",
@@ -1024,8 +1006,6 @@ defmodule Explorer.Staking.ContractStateTest do
            "0x0000000000000000000000000000000000000000000000000000000000012fd1",
            # BlockRewardAuRa.delegatorShare
            "0x0000000000000000000000000000000000000000000000000000000000012fd1",
-           # BlockRewardAuRa.delegatorShare
-           "0x0000000000000000000000000000000000000000000000000000000000025fa3",
            # BlockRewardAuRa.delegatorShare
            "0x0000000000000000000000000000000000000000000000000000000000012fd1",
            # BlockRewardAuRa.delegatorShare

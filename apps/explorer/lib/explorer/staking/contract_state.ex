@@ -177,17 +177,22 @@ defmodule Explorer.Staking.ContractState do
     candidate_reward_responses =
       get_candidate_reward_responses(pool_staking_responses, global_responses, pool_staking_keys, contracts, abi)
 
-    # to keep sort order when using `perform_grouped_requests` (see below)
-    delegator_keys = Enum.map(staker_responses, fn {key, _} -> key end)
-
     # call `BlockReward.delegatorShare` function for each delegator
     # to get their reward share of the pool (needed for the `Delegators` list in UI)
+    delegator_responses =
+      Enum.reduce(staker_responses, %{}, fn {{pool_staking_address, staker_address, _is_active} = key, value}, acc ->
+        if pool_staking_address != staker_address do
+          Map.put(acc, key, value)
+        else
+          acc
+        end
+      end)
+
     delegator_reward_responses =
       get_delegator_reward_responses(
-        staker_responses,
+        delegator_responses,
         pool_staking_responses,
         global_responses,
-        delegator_keys,
         contracts,
         abi
       )
@@ -325,14 +330,16 @@ defmodule Explorer.Staking.ContractState do
   end
 
   defp get_delegator_reward_responses(
-         staker_responses,
+         delegator_responses,
          pool_staking_responses,
          global_responses,
-         delegator_keys,
          contracts,
          abi
        ) do
-    staker_responses
+    # to keep sort order when using `perform_grouped_requests` (see below)
+    delegator_keys = Enum.map(delegator_responses, fn {key, _} -> key end)
+
+    delegator_responses
     |> Enum.map(fn {{pool_staking_address, _staker_address, _is_active}, resp} ->
       staking_resp = pool_staking_responses[pool_staking_address]
 
@@ -348,14 +355,19 @@ defmodule Explorer.Staking.ContractState do
   end
 
   defp get_delegator_entries(staker_responses, delegator_reward_responses) do
-    Enum.map(staker_responses, fn {{pool_address, delegator_address, is_active}, response} ->
-      delegator_reward_response = delegator_reward_responses[{pool_address, delegator_address, is_active}]
+    Enum.map(staker_responses, fn {{pool_address, delegator_address, is_active} = key, response} ->
+      delegator_share =
+        if Map.has_key?(delegator_reward_responses, key) do
+          delegator_reward_responses[key].delegator_share
+        else
+          0
+        end
 
       Map.merge(response, %{
         address_hash: delegator_address,
         staking_address_hash: pool_address,
         is_active: is_active,
-        reward_ratio: Float.floor(delegator_reward_response.delegator_share / 10_000, 2)
+        reward_ratio: Float.floor(delegator_share / 10_000, 2)
       })
     end)
   end

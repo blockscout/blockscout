@@ -98,13 +98,21 @@ defmodule Explorer.Staking.StakeSnapshotting do
       end)
       |> ContractReader.perform_grouped_requests(pool_staking_keys, contracts, abi)
 
-    # to keep sort order when using `perform_grouped_requests` (see below)
-    delegator_keys = Enum.map(staker_responses, fn {key, _} -> key end)
-
     # call `BlockReward.delegatorShare` function for each delegator
     # to get their reward share of the pool (needed for the `Delegators` list in UI)
+    delegator_responses =
+      Enum.reduce(staker_responses, %{}, fn {{pool_staking_address, staker_address} = key, value}, acc ->
+        if pool_staking_address != staker_address do
+          Map.put(acc, key, value)
+        else
+          acc
+        end
+      end)
+
+    delegator_keys = Enum.map(delegator_responses, fn {key, _} -> key end)
+
     delegator_reward_responses =
-      staker_responses
+      delegator_responses
       |> Enum.map(fn {{pool_staking_address, _staker_address}, resp} ->
         staking_resp = pool_staking_responses[pool_staking_address]
 
@@ -145,8 +153,13 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
     # form entries for updating the `staking_pools_delegators` table in DB
     delegator_entries =
-      Enum.map(staker_responses, fn {{pool_staking_address, staker_address}, resp} ->
-        delegator_reward_resp = delegator_reward_responses[{pool_staking_address, staker_address}]
+      Enum.map(staker_responses, fn {{pool_staking_address, staker_address} = key, resp} ->
+        delegator_share =
+          if Map.has_key?(delegator_reward_responses, key) do
+            delegator_reward_responses[key].delegator_share
+          else
+            0
+          end
 
         %{
           address_hash: staker_address,
@@ -155,7 +168,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
           max_withdraw_allowed: 0,
           ordered_withdraw: 0,
           ordered_withdraw_epoch: 0,
-          snapshotted_reward_ratio: Float.floor(delegator_reward_resp.delegator_share / 10_000, 2),
+          snapshotted_reward_ratio: Float.floor(delegator_share / 10_000, 2),
           snapshotted_stake_amount: resp.snapshotted_stake_amount,
           stake_amount: 0,
           staking_address_hash: pool_staking_address
