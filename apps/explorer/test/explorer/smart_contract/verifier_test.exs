@@ -7,6 +7,57 @@ defmodule Explorer.SmartContract.VerifierTest do
   alias Explorer.SmartContract.Verifier
   alias Explorer.Factory
 
+  @code_0_4 """
+  pragma solidity ^0.4.0;
+  contract Incrementer {
+      event Incremented(address indexed sender, uint256 newValue);
+      uint256 public value;
+      address public lastSender;
+      constructor(uint256 initialValue) public {
+          value = initialValue;
+          lastSender = msg.sender;
+      }
+      function inc(uint256 delta) public {
+          value = value + delta;
+          lastSender = msg.sender;
+      }
+  }
+  """
+
+  @code_0_5 """
+  pragma solidity ^0.5.0;
+  contract Incrementer {
+      event Incremented(address indexed sender, uint256 newValue);
+      uint256 public value;
+      address public lastSender;
+      constructor(uint256 initialValue) public {
+          value = initialValue;
+          lastSender = msg.sender;
+      }
+      function inc(uint256 delta) public {
+          value = value + delta;
+          lastSender = msg.sender;
+      }
+  }
+  """
+
+  @code_0_6 """
+  pragma solidity ^0.6.0;
+  contract Incrementer {
+      event Incremented(address indexed sender, uint256 newValue);
+      uint256 public value;
+      address public lastSender;
+      constructor(uint256 initialValue) public {
+          value = initialValue;
+          lastSender = msg.sender;
+      }
+      function inc(uint256 delta) public {
+          value = value + delta;
+          lastSender = msg.sender;
+      }
+  }
+  """
+
   describe "evaluate_authenticity/2" do
     setup do
       {:ok, contract_code_info: Factory.contract_code_info()}
@@ -301,7 +352,7 @@ defmodule Explorer.SmartContract.VerifierTest do
       bytecode =
         "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600"
 
-      %{"metadata_hash" => _metadata_hash, "bytecode" => bytecode_from_code} =
+      %{"metadata_hash" => _metadata_hash, "bytecode" => bytecode_from_code, "compiler_version" => _compiler_version} =
         Verifier.extract_bytecode_and_metadata_hash(code)
 
       assert bytecode == bytecode_from_code
@@ -320,7 +371,7 @@ defmodule Explorer.SmartContract.VerifierTest do
       bytecode =
         "0x608060405234801561001057600080fd5b5060df80610010029f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600"
 
-      %{"metadata_hash" => _metadata_hash, "bytecode" => bytecode_from_code} =
+      %{"metadata_hash" => _metadata_hash, "bytecode" => bytecode_from_code, "compiler_version" => _compiler_version} =
         Verifier.extract_bytecode_and_metadata_hash(code)
 
       assert bytecode == bytecode_from_code
@@ -423,6 +474,234 @@ defmodule Explorer.SmartContract.VerifierTest do
 
       assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
       assert abi != nil
+    end
+  end
+
+  describe "compiler version tests" do
+    test "verification is failed if wrong version of compiler" do
+      bytecode_0_5_10 =
+        "0x608060405234801561001057600080fd5b506040516102453803806102458339818101604052602081101561003357600080fd5b81019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101a98061009c6000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c010000000000000000000000000000000000000000000000000000000090048063256fec88146100635780633fa4f245146100ad578063812600df146100cb575b600080fd5b61006b6100f9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100b561011f565b6040518082815260200191505060405180910390f35b6100f7600480360360208110156100e157600080fd5b8101908080359060200190929190505050610125565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a72305820fb47165501c50aae8ccb0394b15f4302606e0ba55eb6d59fe12eca19ba494d5e64736f6c634300050a0032"
+
+      constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
+      contract_address = insert(:contract_address, contract_code: bytecode_0_5_10)
+      bytecode_construtor_arguments = "#{bytecode_0_5_10}#{constructor_arguments}"
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: bytecode_construtor_arguments
+      )
+      |> with_block()
+
+      params = %{
+        "contract_source_code" => @code_0_5,
+        "compiler_version" => "v0.5.11+commit.c082d0b4",
+        "evm_version" => "homestead",
+        "name" => "Incrementer",
+        "optimization" => false,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      response = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert {:error, :compiler_version} = response
+    end
+
+    test "verification is successful if proper version of compiler" do
+      bytecode_0_5_10 =
+        "0x608060405234801561001057600080fd5b506040516102453803806102458339818101604052602081101561003357600080fd5b81019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101a98061009c6000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c010000000000000000000000000000000000000000000000000000000090048063256fec88146100635780633fa4f245146100ad578063812600df146100cb575b600080fd5b61006b6100f9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100b561011f565b6040518082815260200191505060405180910390f35b6100f7600480360360208110156100e157600080fd5b8101908080359060200190929190505050610125565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a72305820fb47165501c50aae8ccb0394b15f4302606e0ba55eb6d59fe12eca19ba494d5e64736f6c634300050a0032"
+
+      constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
+      contract_address = insert(:contract_address, contract_code: bytecode_0_5_10)
+      bytecode_construtor_arguments = "#{bytecode_0_5_10}#{constructor_arguments}"
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: bytecode_construtor_arguments
+      )
+      |> with_block()
+
+      params = %{
+        "contract_source_code" => @code_0_5,
+        "compiler_version" => "v0.5.10+commit.5a6ea5b1",
+        "evm_version" => "homestead",
+        "name" => "Incrementer",
+        "optimization" => false,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert abi != nil
+    end
+  end
+
+  describe "verification with nightly builds" do
+    test "verification is successful if proper nightly version of compiler ~0.4" do
+      bytecode_v0_4_24_nightly_2018_4_26_commit_ef2111a2 =
+        "0x608060405234801561001057600080fd5b5060405160208061023d833981018060405281019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101b28061008b6000396000f300608060405260043610610057576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063256fec881461005c5780633fa4f245146100b3578063812600df146100de575b600080fd5b34801561006857600080fd5b5061007161010b565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b3480156100bf57600080fd5b506100c8610131565b6040518082815260200191505060405180910390f35b3480156100ea57600080fd5b5061010960048036038101908080359060200190929190505050610137565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550505600a165627a7a723058202d622d653be0a507f7ac0bc89d8934ccdbaf5e127abd603c3864a462149885070029"
+
+      constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
+      contract_address = insert(:contract_address, contract_code: bytecode_v0_4_24_nightly_2018_4_26_commit_ef2111a2)
+      bytecode_construtor_arguments = "#{bytecode_v0_4_24_nightly_2018_4_26_commit_ef2111a2}#{constructor_arguments}"
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: bytecode_construtor_arguments
+      )
+      |> with_block()
+
+      params = %{
+        "contract_source_code" => @code_0_4,
+        "compiler_version" => "v0.4.24-nightly.2018.4.26+commit.ef2111a2",
+        "evm_version" => "homestead",
+        "name" => "Incrementer",
+        "optimization" => false,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert abi != nil
+    end
+
+    test "verification is successful if proper nightly version of compiler ~0.5.10" do
+      bytecode_0_5_10_nightly_2019_6_4_commit_95e6b2e4 =
+        "0x608060405234801561001057600080fd5b5060405161026a38038061026a8339818101604052602081101561003357600080fd5b81019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101ce8061009c6000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c010000000000000000000000000000000000000000000000000000000090048063256fec88146100635780633fa4f245146100ad578063812600df146100cb575b600080fd5b61006b6100f9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100b561011f565b6040518082815260200191505060405180910390f35b6100f7600480360360208110156100e157600080fd5b8101908080359060200190929190505050610125565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a723058208d4e3fa9b2179a8384e617e388dde334be1b44e7b11b42ab964ab1050e7cedca64736f6c637827302e352e31302d6e696768746c792e323031392e362e342b636f6d6d69742e39356536623265340057"
+
+      constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
+      contract_address = insert(:contract_address, contract_code: bytecode_0_5_10_nightly_2019_6_4_commit_95e6b2e4)
+      bytecode_construtor_arguments = "#{bytecode_0_5_10_nightly_2019_6_4_commit_95e6b2e4}#{constructor_arguments}"
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: bytecode_construtor_arguments
+      )
+      |> with_block()
+
+      params = %{
+        "contract_source_code" => @code_0_5,
+        "compiler_version" => "v0.5.10-nightly.2019.6.4+commit.95e6b2e4",
+        "evm_version" => "homestead",
+        "name" => "Incrementer",
+        "optimization" => false,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert abi != nil
+    end
+
+    test "verification is successful if proper nightly version of compiler ~0.5.11" do
+      bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753 =
+        "0x608060405234801561001057600080fd5b5060405161026b38038061026b8339818101604052602081101561003357600080fd5b81019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101cf8061009c6000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c010000000000000000000000000000000000000000000000000000000090048063256fec88146100635780633fa4f245146100ad578063812600df146100cb575b600080fd5b61006b6100f9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100b561011f565b6040518082815260200191505060405180910390f35b6100f7600480360360208110156100e157600080fd5b8101908080359060200190929190505050610125565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a72305820f7420b8c3b16d83ce728d8c279f0f887c4dcd7bfcd38c484acc9cdb82fde785764736f6c637828302e352e31312d6e696768746c792e323031392e362e32352b636f6d6d69742e31636338343735330058"
+
+      constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
+      contract_address = insert(:contract_address, contract_code: bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753)
+      bytecode_construtor_arguments = "#{bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753}#{constructor_arguments}"
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: bytecode_construtor_arguments
+      )
+      |> with_block()
+
+      params = %{
+        "contract_source_code" => @code_0_5,
+        "compiler_version" => "v0.5.11-nightly.2019.6.25+commit.1cc84753",
+        "evm_version" => "homestead",
+        "name" => "Incrementer",
+        "optimization" => false,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert abi != nil
+    end
+
+    test "verification is successful if proper nightly version of compiler ~0.5.14" do
+      bytecode_0_5_14_nightly_2019_12_10_commit_45aa7a88 =
+        "0x608060405234801561001057600080fd5b5060405161026c38038061026c8339818101604052602081101561003357600080fd5b81019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101d08061009c6000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c010000000000000000000000000000000000000000000000000000000090048063256fec88146100635780633fa4f245146100ad578063812600df146100cb575b600080fd5b61006b6100f9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100b561011f565b6040518082815260200191505060405180910390f35b6100f7600480360360208110156100e157600080fd5b8101908080359060200190929190505050610125565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a72315820ec5a7ce04b1c2f97a3d3e61ae1b5cb06585e81c504542fd9668a8ead654da72764736f6c637829302e352e31342d6e696768746c792e323031392e31322e31302b636f6d6d69742e34356161376138380059"
+
+      constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
+      contract_address = insert(:contract_address, contract_code: bytecode_0_5_14_nightly_2019_12_10_commit_45aa7a88)
+      bytecode_construtor_arguments = "#{bytecode_0_5_14_nightly_2019_12_10_commit_45aa7a88}#{constructor_arguments}"
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: bytecode_construtor_arguments
+      )
+      |> with_block()
+
+      params = %{
+        "contract_source_code" => @code_0_5,
+        "compiler_version" => "v0.5.14-nightly.2019.12.10+commit.45aa7a88",
+        "evm_version" => "homestead",
+        "name" => "Incrementer",
+        "optimization" => false,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert abi != nil
+    end
+
+    test "verification is successful if proper nightly version of compiler ~0.6.0" do
+      bytecode_0_6_1_nightly_2020_1_2_commit_d082b9b8 =
+        "0x608060405234801561001057600080fd5b5060405161026a38038061026a8339818101604052602081101561003357600080fd5b81019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101ce8061009c6000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c010000000000000000000000000000000000000000000000000000000090048063256fec88146100635780633fa4f245146100ad578063812600df146100cb575b600080fd5b61006b6100f9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100b561011f565b6040518082815260200191505060405180910390f35b6100f7600480360360208110156100e157600080fd5b8101908080359060200190929190505050610125565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea264697066735822122029b5dde5889a195ed02cebb1a638ae3754be34464b9a2bc8b48b6286636031fb64736f6c637826302e362e312d6e696768746c792e323032302e312e322b636f6d6d69742e64303832623962380057"
+
+      constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
+      contract_address = insert(:contract_address, contract_code: bytecode_0_6_1_nightly_2020_1_2_commit_d082b9b8)
+      bytecode_construtor_arguments = "#{bytecode_0_6_1_nightly_2020_1_2_commit_d082b9b8}#{constructor_arguments}"
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: bytecode_construtor_arguments
+      )
+      |> with_block()
+
+      params = %{
+        "contract_source_code" => @code_0_6,
+        "compiler_version" => "v0.6.1-nightly.2020.1.2+commit.d082b9b8",
+        "evm_version" => "homestead",
+        "name" => "Incrementer",
+        "optimization" => false,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert abi != nil
+    end
+
+    test "verification is failed if wrong nightly version of compiler ~0.5.11" do
+      bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753 =
+        "0x608060405234801561001057600080fd5b5060405161026b38038061026b8339818101604052602081101561003357600080fd5b81019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101cf8061009c6000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c010000000000000000000000000000000000000000000000000000000090048063256fec88146100635780633fa4f245146100ad578063812600df146100cb575b600080fd5b61006b6100f9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100b561011f565b6040518082815260200191505060405180910390f35b6100f7600480360360208110156100e157600080fd5b8101908080359060200190929190505050610125565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a72305820f7420b8c3b16d83ce728d8c279f0f887c4dcd7bfcd38c484acc9cdb82fde785764736f6c637828302e352e31312d6e696768746c792e323031392e362e32352b636f6d6d69742e31636338343735330058"
+
+      constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
+      contract_address = insert(:contract_address, contract_code: bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753)
+      bytecode_construtor_arguments = "#{bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753}#{constructor_arguments}"
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: bytecode_construtor_arguments
+      )
+      |> with_block()
+
+      params = %{
+        "contract_source_code" => @code_0_5,
+        "compiler_version" => "v0.5.11-nightly.2019.8.10+commit.f5f2bbb2",
+        "evm_version" => "homestead",
+        "name" => "Incrementer",
+        "optimization" => false,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      response = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert {:error, :compiler_version} = response
     end
   end
 end
