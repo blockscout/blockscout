@@ -32,7 +32,7 @@
           </a>
         </div>
       </div>
-      <!-- <% main_nets = main_nets(other_networks()) %>
+      <% main_nets = main_nets(other_networks()) %>
 
       <%= unless Enum.empty?(main_nets) do %>
         <div class="col-md-<%= col_size %> footer-list">
@@ -56,9 +56,9 @@
             <% end %>
           </ul>
         </div>
-      <% end %> -->
+      <% end %> 
 
-      <!-- <%= unless Enum.empty?(other_explorers) do %>
+      <%= unless Enum.empty?(other_explorers) do %>
         <div class="col-md-<%= col_size %> footer-list">
           <h3><%= gettext("Other Explorers") %></h3>
           <ul>
@@ -77,6 +77,6 @@
       <div>
         <%= gettext("Version") %>: <%= release_link %>
       </div>
-    <% end %> -->
+    <% end %>
   </div>
 </footer>
