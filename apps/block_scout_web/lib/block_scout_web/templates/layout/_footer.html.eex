@@ -2,40 +2,45 @@
   <div class="footer-body container">
     <!-- Logo -->
     <div class="row footer-logo-row">
-
-      <div class="col-md-2">
-        <%= link to: chain_path(@conn, :show), class: "footer-brand" do %>
-
+      <div class="col-md-12">
+        <%= link to: webapp_url(@conn), class: "footer-brand" do %>
           <img class="footer-logo" src="<%= logo_footer() %>" alt="<%= subnetwork_title() %>" />
         <% end %>
       </div>
     </div>
 
     <% other_explorers = other_explorers() %>
-    <% col_size = if Enum.empty?(other_explorers), do: 3, else: 4 %>
+    <% col_size = if Enum.empty?(other_explorers), do: 3, else: 2 %>
 
     <div class="row">
-
       <div class="col-xs-12 col-lg-3">
         <p class="footer-info-text"><%= gettext("Matic is a layer 2 scaling solution") %></p>
         <div class="footer-social-icons">
           <a href="https://github.com/maticnetwork/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
-
             <i class="fab fa-github"></i>
           </a>
           <a href="https://www.twitter.com/maticnetwork/" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Twitter") %>'>
             <i class="fab fa-twitter"></i>
           </a>
-
           <a href="https://t.me/maticnetwork" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
             <i class="fab fa-telegram-plane"></i>
           </a>
         </div>
       </div>
+
+      <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
+        <h3>BlockScout</h3>
+        <ul>
+          <li><a href="<%= issue_link(@conn) %>" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
+          <li><a href="https://github.com/poanetwork/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Contribute") %></a></li>
+          <li><a href="https://gitter.im/poanetwork/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Chat") %></a></li>
+          <li><a href="https://forum.poa.network/c/blockscout" rel="noreferrer" class="footer-link"><%= gettext("Support") %></a></li>
+        </ul>
+      </div>
       <% main_nets = main_nets(other_networks()) %>
 
       <%= unless Enum.empty?(main_nets) do %>
-        <div class="col-md-<%= col_size %> footer-list">
+        <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
           <h3><%= gettext("Main Networks") %></h3>
           <ul>
             <%= for %{title: title, url: url} <- main_nets do %>
@@ -48,7 +53,7 @@
       <% test_nets = test_nets(other_networks()) %>
 
       <%= unless Enum.empty?(test_nets) do %>
-        <div class="col-md-<%= col_size %> footer-list">
+        <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
           <h3><%= gettext("Test Networks") %></h3>
           <ul>
             <%= for %{title: title, url: url} <- test_nets do %>
@@ -56,10 +61,10 @@
             <% end %>
           </ul>
         </div>
-      <% end %> 
+      <% end %>
 
       <%= unless Enum.empty?(other_explorers) do %>
-        <div class="col-md-<%= col_size %> footer-list">
+        <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
           <h3><%= gettext("Other Explorers") %></h3>
           <ul>
             <%= for {name, url} <- other_explorers do %>
