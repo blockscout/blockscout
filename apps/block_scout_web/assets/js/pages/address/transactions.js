@@ -5,6 +5,7 @@ import humps from 'humps'
 import { subscribeChannel } from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
+import '../address'
 
 export const initialState = {
   addressHash: null,
@@ -32,12 +33,12 @@ export function reducer (state, action) {
         return state
       }
 
-      return Object.assign({}, state, { items: [ action.msg.transactionHtml, ...state.items ] })
+      return Object.assign({}, state, { items: [action.msg.transactionHtml, ...state.items] })
     }
     case 'RECEIVED_NEW_REWARD': {
       if (state.channelDisconnected) return state
 
-      return Object.assign({}, state, { items: [ action.msg.rewardHtml, ...state.items ] })
+      return Object.assign({}, state, { items: [action.msg.rewardHtml, ...state.items] })
     }
     default:
       return state

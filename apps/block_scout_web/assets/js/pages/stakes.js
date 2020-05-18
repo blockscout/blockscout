@@ -369,7 +369,7 @@ function setAccount (account, store) {
 function setNetwork (networkId, store) {
   hideCurrentModal()
 
-  let network = {
+  const network = {
     id: networkId,
     authorized: false
   }

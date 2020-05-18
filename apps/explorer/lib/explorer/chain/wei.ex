@@ -24,7 +24,7 @@ defmodule Explorer.Chain.Wei do
 
   defstruct ~w(value)a
 
-  @behaviour Ecto.Type
+  use Ecto.Type
 
   @impl Ecto.Type
   def type, do: :decimal

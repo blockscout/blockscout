@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.{Chain, Repo}
 
   describe "run/1" do
@@ -113,78 +113,6 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
               }} = run_block_consensus_change(block, false, options)
 
       assert count(Address.CurrentTokenBalance) == count
-    end
-
-    test "remove_nonconsensus_token_transfers deletes token transfer rows with matching block number when new consensus block is inserted",
-         %{consensus_block: %{number: block_number} = block, options: options} do
-      consensus_block = insert(:block, number: block_number, consensus: true)
-
-      transaction = insert(:transaction) |> with_block(consensus_block)
-
-      %TokenTransfer{transaction_hash: transaction_hash, log_index: log_index} =
-        insert(:token_transfer, block_number: block_number, transaction: transaction)
-
-      assert count(TokenTransfer) == 1
-
-      assert {:ok,
-              %{
-                remove_nonconsensus_token_transfers: [
-                  %{transaction_hash: ^transaction_hash, log_index: ^log_index}
-                ]
-              }} = run_block_consensus_change(block, true, options)
-
-      assert count(TokenTransfer) == 0
-    end
-
-    test "remove_nonconsensus_token_transfers does not delete token transfer rows with matching block number when new consensus block wasn't inserted",
-         %{consensus_block: %{number: block_number} = block, options: options} do
-      consensus_block = insert(:block, number: block_number, consensus: true)
-
-      transaction = insert(:transaction) |> with_block(consensus_block)
-
-      insert(:token_transfer, block_number: block_number, transaction: transaction)
-
-      count = 1
-
-      assert count(TokenTransfer) == count
-
-      assert {:ok, %{remove_nonconsensus_token_transfers: []}} = run_block_consensus_change(block, false, options)
-
-      assert count(TokenTransfer) == count
-    end
-
-    test "remove_nonconsensus_logs deletes nonconsensus logs", %{
-      consensus_block: %{number: block_number} = block,
-      options: options
-    } do
-      old_block = insert(:block, number: block_number, consensus: true)
-      forked_transaction = :transaction |> insert() |> with_block(old_block)
-      %Log{transaction_hash: hash, index: index} = insert(:log, transaction: forked_transaction)
-
-      assert count(Log) == 1
-
-      assert {:ok, %{remove_nonconsensus_logs: [%{transaction_hash: ^hash, index: ^index}]}} =
-               run_block_consensus_change(block, true, options)
-
-      assert count(Log) == 0
-    end
-
-    test "remove_nonconsensus_internal_transactions deletes nonconsensus internal transactions", %{
-      consensus_block: %{number: block_number} = block,
-      options: options
-    } do
-      old_block = insert(:block, number: block_number, consensus: true)
-      forked_transaction = :transaction |> insert() |> with_block(old_block)
-
-      %InternalTransaction{index: index, transaction_hash: hash} =
-        insert(:internal_transaction, index: 0, transaction: forked_transaction)
-
-      assert count(InternalTransaction) == 1
-
-      assert {:ok, %{remove_nonconsensus_internal_transactions: [%{transaction_hash: ^hash, index: ^index}]}} =
-               run_block_consensus_change(block, true, options)
-
-      assert count(InternalTransaction) == 0
     end
 
     test "derive_address_current_token_balances inserts rows if there is an address_token_balance left for the rows deleted by delete_address_current_token_balances",
@@ -381,6 +309,20 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       transaction2 = transaction_params_with_block([hash: trans_hash], new_block2)
       insert_transaction(transaction2, options)
       assert Chain.missing_block_number_ranges(range) == [(block_number + 1)..(block_number + 1)]
+    end
+
+    test "removes duplicate blocks (by hash) before inserting",
+         %{consensus_block: %{number: _, hash: _block_hash, miner_hash: miner_hash}, options: options} do
+      new_block = params_for(:block, miner_hash: miner_hash, consensus: true)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block)
+
+      result =
+        Multi.new()
+        |> Blocks.run([block_changes, block_changes], options)
+        |> Repo.transaction()
+
+      assert {:ok, %{blocks: [%{hash: _block_hash, consensus: true}]}} = result
     end
   end
 

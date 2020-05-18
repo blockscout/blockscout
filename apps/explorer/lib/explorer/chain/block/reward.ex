@@ -5,11 +5,35 @@ defmodule Explorer.Chain.Block.Reward do
 
   use Explorer.Schema
 
+  alias Explorer.Chain
   alias Explorer.Chain.Block.Reward.AddressType
   alias Explorer.Chain.{Address, Block, Hash, Wei}
   alias Explorer.{PagingOptions, Repo}
+  alias Explorer.SmartContract.Reader
 
   @required_attrs ~w(address_hash address_type block_hash reward)a
+
+  @get_payout_by_mining_abi %{
+    "type" => "function",
+    "stateMutability" => "view",
+    "payable" => false,
+    "outputs" => [%{"type" => "address", "name" => ""}],
+    "name" => "getPayoutByMining",
+    "inputs" => [%{"type" => "address", "name" => ""}],
+    "constant" => true
+  }
+
+  @is_validator_abi %{
+    "type" => "function",
+    "stateMutability" => "view",
+    "payable" => false,
+    "outputs" => [%{"type" => "bool", "name" => ""}],
+    "name" => "isValidator",
+    "inputs" => [%{"type" => "address", "name" => ""}],
+    "constant" => true
+  }
+
+  @empty_address "0x0000000000000000000000000000000000000000"
 
   @typedoc """
   The validation reward given related to a block.
@@ -68,8 +92,10 @@ defmodule Explorer.Chain.Block.Reward do
   Returns a list of tuples representing rewards by the EmissionFunds on POA chains.
   The tuples have the format {EmissionFunds, Validator}
   """
-  @spec fetch_emission_rewards_tuples(Hash.Address.t(), PagingOptions.t()) :: [{t(), t()}]
-  def fetch_emission_rewards_tuples(address_hash, paging_options) do
+  def fetch_emission_rewards_tuples(address_hash, paging_options, %{
+        min_block_number: min_block_number,
+        max_block_number: max_block_number
+      }) do
     address_rewards =
       __MODULE__
       |> join_associations()
@@ -77,6 +103,7 @@ defmodule Explorer.Chain.Block.Reward do
       |> limit(^paging_options.page_size)
       |> order_by([_, block], desc: block.number)
       |> where([reward], reward.address_hash == ^address_hash)
+      |> address_rewards_blocks_ranges_clause(min_block_number, max_block_number, paging_options)
       |> Repo.all()
 
     case List.first(address_rewards) do
@@ -111,10 +138,108 @@ defmodule Explorer.Chain.Block.Reward do
     end
   end
 
+  defp is_validator(mining_key) do
+    validators_contract_address =
+      Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:validators_contract_address]
+
+    if validators_contract_address do
+      is_validator_params = %{"isValidator" => [mining_key.bytes]}
+
+      call_contract(validators_contract_address, @is_validator_abi, is_validator_params)
+    else
+      nil
+    end
+  end
+
+  def get_validator_payout_key_by_mining(mining_key) do
+    is_validator = is_validator(mining_key)
+
+    if is_validator do
+      keys_manager_contract_address =
+        Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:keys_manager_contract_address]
+
+      if keys_manager_contract_address do
+        payout_key =
+          if keys_manager_contract_address do
+            get_payout_by_mining_params = %{"getPayoutByMining" => [mining_key.bytes]}
+
+            payout_key_hash =
+              call_contract(keys_manager_contract_address, @get_payout_by_mining_abi, get_payout_by_mining_params)
+
+            if payout_key_hash == @empty_address do
+              mining_key
+            else
+              {:ok, payout_key} = Chain.string_to_address_hash(payout_key_hash)
+              payout_key
+            end
+          else
+            mining_key
+          end
+
+        %{is_validator: is_validator, payout_key: payout_key}
+      else
+        %{is_validator: is_validator, payout_key: mining_key}
+      end
+    else
+      %{is_validator: is_validator, payout_key: mining_key}
+    end
+  end
+
+  defp call_contract(address, abi, params) do
+    abi = [abi]
+
+    method_name =
+      params
+      |> Enum.map(fn {key, _value} -> key end)
+      |> List.first()
+
+    value =
+      case Reader.query_contract(address, abi, params) do
+        %{^method_name => {:ok, [result]}} -> result
+        _ -> @empty_address
+      end
+
+    type =
+      abi
+      |> Enum.at(0)
+      |> Map.get("outputs", [])
+      |> Enum.at(0)
+      |> Map.get("type", "")
+
+    case type do
+      "address" ->
+        "0x" <> Base.encode16(value, case: :lower)
+
+      _ ->
+        value
+    end
+  end
+
   defp join_associations(query) do
     query
     |> preload(:address)
     |> join(:inner, [reward], block in assoc(reward, :block))
     |> preload(:block)
+  end
+
+  defp address_rewards_blocks_ranges_clause(query, min_block_number, max_block_number, paging_options) do
+    if is_number(min_block_number) and max_block_number > 0 and min_block_number > 0 do
+      cond do
+        paging_options.page_number == 1 ->
+          query
+          |> where([_, block], block.number >= ^min_block_number)
+
+        min_block_number == max_block_number ->
+          query
+          |> where([_, block], block.number == ^min_block_number)
+
+        true ->
+          query
+          |> where([_, block], block.number >= ^min_block_number)
+          |> where([_, block], block.number <= ^max_block_number)
+      end
+    else
+      query
+    end
   end
 end

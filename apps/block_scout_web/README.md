@@ -4,9 +4,9 @@ This is a tool for inspecting and analyzing the POA Network blockchain from a we
 
 ## Machine Requirements
 
-* Erlang/OTP 20.2+
-* Elixir 1.5+
-* Postgres 10.0
+* Erlang/OTP 21+
+* Elixir 1.9+
+* Postgres 10.3
 
 
 ## Required Accounts
@@ -21,7 +21,6 @@ This is a tool for inspecting and analyzing the POA Network blockchain from a we
 To get BlockScout Web interface up and running locally:
 
   * Setup `../explorer`
-  * Set up some default configuration with: `$ cp config/dev.secret.exs.example config/dev.secret.esx`
   * Install Node.js dependencies with `$ cd assets && npm install && cd ..`
   * Start Phoenix with `$ mix phx.server` (This can be run from this directory or the project root: the project root is recommended.)
 

@@ -986,13 +986,18 @@ $dark-stakes-banned-background: #3e314c;
 }
 
 .dark-theme-applied .dropdown-item {
+	background-color: $dark-light!important;
     color: #fff!important;
 }
 
-.dark-theme-applied .dropdown-item.active, .dark-theme-applied .dropdown-item:hover, .dark-theme-applied .dropdown-item:focus {
+.dark-theme-applied .dropdown-item.active:not(.header), .dark-theme-applied .dropdown-item:not(.header):hover, .dark-theme-applied .dropdown-item:not(.header):focus {
     background-image: none;
     width: 100%;
-    background-color: #3f426c!important;
+    background-color: #3f426c !important;
+}
+
+.dark-theme-applied .dropdown-item.active.header, .dark-theme-applied .dropdown-item.header:hover, .dark-theme-applied .dropdown-item.header:focus {
+    background-color: $dark-light !important;
 }
 
 @media (max-width: 991.98px) {

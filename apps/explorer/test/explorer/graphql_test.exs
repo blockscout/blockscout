@@ -92,9 +92,15 @@ defmodule Explorer.GraphQLTest do
 
   describe "get_internal_transaction/1" do
     test "returns existing internal transaction" do
-      transaction = insert(:transaction)
+      transaction = insert(:transaction) |> with_block()
 
-      internal_transaction = insert(:internal_transaction, transaction: transaction, index: 0)
+      internal_transaction =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 0,
+          block_hash: transaction.block_hash,
+          block_index: 0
+        )
 
       clauses = %{transaction_hash: transaction.hash, index: internal_transaction.index}
 
@@ -117,11 +123,23 @@ defmodule Explorer.GraphQLTest do
 
   describe "transcation_to_internal_transactions_query/1" do
     test "with transaction with one internal transaction" do
-      transaction1 = insert(:transaction)
-      transaction2 = insert(:transaction)
+      transaction1 = insert(:transaction) |> with_block()
+      transaction2 = insert(:transaction) |> with_block()
 
-      internal_transaction = insert(:internal_transaction_create, transaction: transaction1, index: 0)
-      insert(:internal_transaction_create, transaction: transaction2, index: 0)
+      internal_transaction =
+        insert(:internal_transaction_create,
+          transaction: transaction1,
+          index: 0,
+          block_hash: transaction1.block_hash,
+          block_index: 0
+        )
+
+      insert(:internal_transaction_create,
+        transaction: transaction2,
+        index: 0,
+        block_hash: transaction2.block_hash,
+        block_index: 0
+      )
 
       [found_internal_transaction] =
         transaction1
@@ -133,14 +151,24 @@ defmodule Explorer.GraphQLTest do
     end
 
     test "with transaction with multiple internal transactions" do
-      transaction1 = insert(:transaction)
-      transaction2 = insert(:transaction)
+      transaction1 = insert(:transaction) |> with_block()
+      transaction2 = insert(:transaction) |> with_block()
 
       for index <- 0..2 do
-        insert(:internal_transaction_create, transaction: transaction1, index: index)
+        insert(:internal_transaction_create,
+          transaction: transaction1,
+          index: index,
+          block_hash: transaction1.block_hash,
+          block_index: index
+        )
       end
 
-      insert(:internal_transaction_create, transaction: transaction2, index: 0)
+      insert(:internal_transaction_create,
+        transaction: transaction2,
+        index: 0,
+        block_hash: transaction2.block_hash,
+        block_index: 0
+      )
 
       found_internal_transactions =
         transaction1
@@ -155,11 +183,28 @@ defmodule Explorer.GraphQLTest do
     end
 
     test "orders internal transactions by ascending index" do
-      transaction = insert(:transaction)
+      transaction = insert(:transaction) |> with_block()
 
-      insert(:internal_transaction_create, transaction: transaction, index: 2)
-      insert(:internal_transaction_create, transaction: transaction, index: 0)
-      insert(:internal_transaction_create, transaction: transaction, index: 1)
+      insert(:internal_transaction_create,
+        transaction: transaction,
+        index: 2,
+        block_hash: transaction.block_hash,
+        block_index: 2
+      )
+
+      insert(:internal_transaction_create,
+        transaction: transaction,
+        index: 0,
+        block_hash: transaction.block_hash,
+        block_index: 0
+      )
+
+      insert(:internal_transaction_create,
+        transaction: transaction,
+        index: 1,
+        block_hash: transaction.block_hash,
+        block_index: 1
+      )
 
       found_internal_transactions =
         transaction
@@ -244,7 +289,7 @@ defmodule Explorer.GraphQLTest do
       end
     end
 
-    test "orders token transfers by descending block number, descending transaction index, and ascending log index" do
+    test "orders token transfers by descending block number" do
       first_block = insert(:block)
       second_block = insert(:block)
       third_block = insert(:block)
@@ -295,17 +340,8 @@ defmodule Explorer.GraphQLTest do
         |> Repo.preload(:transaction)
 
       block_number_order = Enum.map(found_token_transfers, & &1.block_number)
-      transaction_index_order = Enum.map(found_token_transfers, &{&1.block_number, &1.transaction.index})
 
       assert block_number_order == Enum.sort(block_number_order, &(&1 >= &2))
-      assert transaction_index_order == Enum.sort(transaction_index_order, &(&1 >= &2))
-
-      tt_by_block_transaction = Enum.group_by(found_token_transfers, &{&1.block_number, &1.transaction.index})
-
-      for {_, token_transfers} <- tt_by_block_transaction do
-        log_index_order = Enum.map(token_transfers, & &1.log_index)
-        assert log_index_order == Enum.sort(log_index_order)
-      end
     end
   end
 end

@@ -6,6 +6,7 @@ import humps from 'humps'
 import listMorph from '../lib/list_morph'
 import reduceReducers from 'reduce-reducers'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import '../app'
 
 /**
  * This is a generic lib to add pagination with asynchronous page loading. There are two ways of
@@ -283,7 +284,7 @@ export function createAsyncLoadStore (reducer, initialState, itemKey) {
     })
   }
 
-  connectElements({store, elements})
+  connectElements({ store, elements })
   firstPageLoad(store)
   return store
 }
@@ -293,11 +294,11 @@ export function refreshPage (store) {
 }
 
 function loadPage (store, path) {
-  store.dispatch({type: 'START_REQUEST', path})
-  $.getJSON(path, merge({type: 'JSON'}, store.getState().additionalParams))
-    .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
-    .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-    .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+  store.dispatch({ type: 'START_REQUEST', path })
+  $.getJSON(path, merge({ type: 'JSON' }, store.getState().additionalParams))
+    .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
+    .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
+    .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
 }
 
 function firstPageLoad (store) {
@@ -319,14 +320,14 @@ function firstPageLoad (store) {
   $element.on('click', '[data-next-page-button]', (event) => {
     event.preventDefault()
     loadItemsNext()
-    store.dispatch({type: 'NAVIGATE_TO_OLDER'})
+    store.dispatch({ type: 'NAVIGATE_TO_OLDER' })
     event.stopImmediatePropagation()
   })
 
   $element.on('click', '[data-prev-page-button]', (event) => {
     event.preventDefault()
     loadItemsPrev()
-    store.dispatch({type: 'NAVIGATE_TO_NEWER'})
+    store.dispatch({ type: 'NAVIGATE_TO_NEWER' })
     event.stopImmediatePropagation()
   })
 }
@@ -334,6 +335,6 @@ function firstPageLoad (store) {
 const $element = $('[data-async-load]')
 if ($element.length) {
   const store = createStore(asyncReducer)
-  connectElements({store, elements})
+  connectElements({ store, elements })
   firstPageLoad(store)
 }

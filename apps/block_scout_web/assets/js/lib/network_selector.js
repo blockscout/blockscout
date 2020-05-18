@@ -36,7 +36,7 @@ $(function () {
     window.location = $(this).attr('network-selector-item-url')
   })
 
-  let setNetworkTab = (currentTab) => {
+  const setNetworkTab = (currentTab) => {
     if (currentTab.hasClass('active')) return
 
     networkSelectorTab.removeClass('active')
@@ -45,31 +45,31 @@ $(function () {
     $(`[network-selector-tab="${currentTab.attr('network-selector-tab-filter')}"]`).addClass('active')
   }
 
-  let openNetworkSelector = () => {
+  const openNetworkSelector = () => {
     mainBody.addClass('network-selector-visible')
     networkSelectorOverlay.fadeIn(FADE_IN_DELAY)
     setNetworkSelectorVisiblePosition()
   }
 
-  let closeNetworkSelector = () => {
+  const closeNetworkSelector = () => {
     mainBody.removeClass('network-selector-visible')
     networkSelectorOverlay.fadeOut(FADE_IN_DELAY)
     setNetworkSelectorHiddenPosition()
   }
 
-  let getNetworkSelectorWidth = () => {
+  const getNetworkSelectorWidth = () => {
     return parseInt(networkSelector.css('width')) || parseInt(networkSelector.css('max-width'))
   }
 
-  let setNetworkSelectorHiddenPosition = () => {
-    return networkSelector.css({ 'right': `-${getNetworkSelectorWidth()}px` })
+  const setNetworkSelectorHiddenPosition = () => {
+    return networkSelector.css({ right: `-${getNetworkSelectorWidth()}px` })
   }
 
-  let setNetworkSelectorVisiblePosition = () => {
-    return networkSelector.css({ 'right': '0' })
+  const setNetworkSelectorVisiblePosition = () => {
+    return networkSelector.css({ right: '0' })
   }
 
-  let init = () => {
+  const init = () => {
     setNetworkSelectorHiddenPosition()
   }
 
