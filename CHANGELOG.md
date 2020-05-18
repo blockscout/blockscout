@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3114](https://github.com/poanetwork/blockscout/pull/3114) - Fix performance of "Blocks validated" page
 - [#3112](https://github.com/poanetwork/blockscout/pull/3112) - Fix verification of contracts, compiled with nightly builds of solc compiler
 - [#3112](https://github.com/poanetwork/blockscout/pull/3112) - Check compiler version at contract verification
 - [#3106](https://github.com/poanetwork/blockscout/pull/3106) - Fix verification of contracts with `immutable` declaration
