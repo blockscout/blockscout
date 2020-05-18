@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3114](https://github.com/poanetwork/blockscout/pull/3114) - Fix performance of "Blocks validated" page
 
 ### Chore
 
