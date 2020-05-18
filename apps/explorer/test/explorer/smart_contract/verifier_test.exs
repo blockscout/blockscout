@@ -445,10 +445,14 @@ defmodule Explorer.SmartContract.VerifierTest do
 
       contract_address = insert(:contract_address, contract_code: bytecode)
 
+      transaction_success_details = [
+        status: :ok
+      ]
+
       transaction =
         :transaction
         |> insert()
-        |> with_block()
+        |> with_block(transaction_success_details)
 
       :internal_transaction
       |> insert(
@@ -460,6 +464,77 @@ defmodule Explorer.SmartContract.VerifierTest do
         transaction_hash: transaction.hash,
         index: 0,
         block_hash: transaction.block_hash,
+        block_index: 0
+      )
+
+      params = %{
+        "contract_source_code" => contract,
+        "compiler_version" => "v0.4.26+commit.4563c3fc",
+        "evm_version" => "default",
+        "name" => "ContractFromFactory",
+        "optimization" => true,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert abi != nil
+    end
+
+    test "verifies smart-contract created from another contract using successful tx" do
+      path = File.cwd!() <> "/test/support/fixture/smart_contract/contract_from_factory.sol"
+      contract = File.read!(path)
+
+      constructor_arguments = "4e1477bdc40fc2458bf646f96f269502658277779fdf0f4080fe798a2d45bc37"
+
+      bytecode =
+        "0x608060405260043610603e5763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416638052474d81146043575b600080fd5b348015604e57600080fd5b5060556067565b60408051918252519081900360200190f35b600054815600a165627a7a72305820a1a0ec90e133c3064fab0ae82aa02a020224ea39d2b5421b6788f800bdde02f60029"
+
+      init =
+        "0x608060405234801561001057600080fd5b506040516020806100cc83398101604052516000556099806100336000396000f300608060405260043610603e5763ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416638052474d81146043575b600080fd5b348015604e57600080fd5b5060556067565b60408051918252519081900360200190f35b600054815600a165627a7a72305820a1a0ec90e133c3064fab0ae82aa02a020224ea39d2b5421b6788f800bdde02f600294e1477bdc40fc2458bf646f96f269502658277779fdf0f4080fe798a2d45bc37"
+
+      contract_address = insert(:contract_address, contract_code: bytecode)
+
+      transaction_success_details = [
+        status: :ok
+      ]
+
+      transaction_success =
+        :transaction
+        |> insert()
+        |> with_block(transaction_success_details)
+
+      transaction_failure_details = [
+        status: :error
+      ]
+
+      transaction_failure =
+        :transaction
+        |> insert()
+        |> with_block(transaction_failure_details)
+
+      :internal_transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        init: init,
+        type: "create",
+        created_contract_code: bytecode,
+        input: nil,
+        transaction_hash: transaction_success.hash,
+        index: 0,
+        block_hash: transaction_success.block_hash,
+        block_index: 0
+      )
+
+      :internal_transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        init: init,
+        type: "create",
+        created_contract_code: bytecode,
+        input: nil,
+        transaction_hash: transaction_failure.hash,
+        index: 0,
+        block_hash: transaction_failure.block_hash,
         block_index: 0
       )
 
