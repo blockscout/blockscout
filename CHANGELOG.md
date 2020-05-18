@@ -1,6 +1,16 @@
 ## Current
 
 ### Features
+
+### Fixes
+- [#3114](https://github.com/poanetwork/blockscout/pull/3114) - Fix performance of "Blocks validated" page
+
+### Chore
+
+
+## 3.1.2-beta
+
+### Features
 - [#3089](https://github.com/poanetwork/blockscout/pull/3089) - CoinGecko API coin id environment variable
 - [#3069](https://github.com/poanetwork/blockscout/pull/3069) - Make a link to address page on decoded constructor argument of address type
 - [#3067](https://github.com/poanetwork/blockscout/pull/3067) - Show proper title of the tile or container for token burnings/mintings instead of "Token Transfer"
@@ -20,6 +30,7 @@
 - [#2756](https://github.com/poanetwork/blockscout/pull/2756) - Improve subquery joins
 
 ### Chore
+- [#3100](https://github.com/poanetwork/blockscout/pull/3100) - Update npm packages
 - [#3099](https://github.com/poanetwork/blockscout/pull/3099) - Remove pending txs cache
 - [#3093](https://github.com/poanetwork/blockscout/pull/3093) - Extend list of env vars for Docker setup
 - [#3084](https://github.com/poanetwork/blockscout/pull/3084) - Bump Elixir version 1.10.2
