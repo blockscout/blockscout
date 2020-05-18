@@ -2734,7 +2734,9 @@ defmodule Explorer.Chain do
       creation_int_tx_query =
         from(
           itx in InternalTransaction,
+          join: t in assoc(itx, :transaction),
           where: itx.created_contract_address_hash == ^address_hash,
+          where: t.status == ^1,
           select: itx.init
         )
 
