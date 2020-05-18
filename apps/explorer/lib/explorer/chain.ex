@@ -2716,6 +2716,40 @@ defmodule Explorer.Chain do
     |> Data.to_string()
   end
 
+  def smart_contract_creation_tx_bytecode(address_hash) do
+    creation_tx_query =
+      from(
+        tx in Transaction,
+        where: tx.created_contract_address_hash == ^address_hash,
+        select: tx.input
+      )
+
+    tx_input =
+      creation_tx_query
+      |> Repo.one()
+
+    if tx_input do
+      Data.to_string(tx_input)
+    else
+      creation_int_tx_query =
+        from(
+          itx in InternalTransaction,
+          where: itx.created_contract_address_hash == ^address_hash,
+          select: itx.init
+        )
+
+      itx_init_code =
+        creation_int_tx_query
+        |> Repo.one()
+
+      if itx_init_code do
+        Data.to_string(itx_init_code)
+      else
+        nil
+      end
+    end
+  end
+
   @doc """
   Checks if an address is a contract
   """
@@ -2776,6 +2810,9 @@ defmodule Explorer.Chain do
 
       transaction.contracts_creation_internal_transaction && transaction.contracts_creation_internal_transaction.input ->
         Data.to_string(transaction.contracts_creation_internal_transaction.input)
+
+      transaction.contracts_creation_internal_transaction && transaction.contracts_creation_internal_transaction.init ->
+        Data.to_string(transaction.contracts_creation_internal_transaction.init)
 
       transaction.contracts_creation_transaction && transaction.contracts_creation_transaction.input ->
         Data.to_string(transaction.contracts_creation_transaction.input)
