@@ -131,6 +131,7 @@ defmodule BlockScoutWeb.StakesController do
   # or when it is reloaded by a user
   defp render_template(filter, conn, _) do
     token = ContractState.get(:token, %Token{})
+
     render(conn, "index.html",
       top: render_top(conn),
       token: token,
