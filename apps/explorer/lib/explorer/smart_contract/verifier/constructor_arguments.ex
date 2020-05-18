@@ -1,9 +1,17 @@
+# credo:disable-for-this-file
 defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
   @moduledoc """
   Smart contract contrstructor arguments verification logic.
   """
   alias ABI.{FunctionSelector, TypeDecoder}
   alias Explorer.Chain
+
+  @metadata_hash_prefix_0_4_23 "a165627a7a72305820"
+  @metadata_hash_prefix_0_5_10 "a265627a7a72305820"
+  @metadata_hash_prefix_0_5_11 "a265627a7a72315820"
+  @metadata_hash_prefix_0_6_0 "a264697066735822"
+
+  @metadata_hash_common_suffix "64736f6c63"
 
   def verify(address_hash, contract_code, arguments_data, contract_source_code, contract_name) do
     arguments_data = arguments_data |> String.trim_trailing() |> String.trim_leading("0x")
@@ -34,19 +42,127 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
   defp extract_constructor_arguments(code, check_func, contract_source_code, contract_name) do
     case code do
       # Solidity ~ 4.23 # https://solidity.readthedocs.io/en/v0.4.23/metadata.html
-      "a165627a7a72305820" <> <<_::binary-size(64)>> <> "0029" <> constructor_arguments ->
-        extract_constructor_arguments_check_func(constructor_arguments, check_func, contract_source_code, contract_name)
+      @metadata_hash_prefix_0_4_23 <> <<_::binary-size(64)>> <> "0029" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_4_23
+        )
 
       # Solidity >= 0.5.10 https://solidity.readthedocs.io/en/v0.5.10/metadata.html
-      "a265627a7a72305820" <>
-          <<_::binary-size(64)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
-        extract_constructor_arguments_check_func(constructor_arguments, check_func, contract_source_code, contract_name)
+      @metadata_hash_prefix_0_5_10 <>
+          <<_::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> "43" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_10
+        )
+
+      @metadata_hash_prefix_0_5_10 <>
+          <<_::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> "7826" <> <<_::binary-size(76)>> <> "0057" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_10
+        )
+
+      @metadata_hash_prefix_0_5_10 <>
+          <<_::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> "7827" <> <<_::binary-size(78)>> <> "0057" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_10
+        )
+
+      @metadata_hash_prefix_0_5_10 <>
+          <<_::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> "7828" <> <<_::binary-size(80)>> <> "0058" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_10
+        )
+
+      @metadata_hash_prefix_0_5_10 <>
+          <<_::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> "7829" <> <<_::binary-size(82)>> <> "0059" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_10
+        )
 
       # Solidity >= 0.5.11 https://github.com/ethereum/solidity/blob/develop/Changelog.md#0511-2019-08-12
       # Metadata: Update the swarm hash to the current specification, changes bzzr0 to bzzr1 and urls to use bzz-raw://
-      "a265627a7a72315820" <>
-          <<_::binary-size(64)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
-        extract_constructor_arguments_check_func(constructor_arguments, check_func, contract_source_code, contract_name)
+      @metadata_hash_prefix_0_5_11 <>
+          <<_::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> "43" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_11
+        )
+
+      @metadata_hash_prefix_0_5_11 <>
+          <<_::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> "7826" <> <<_::binary-size(76)>> <> "0057" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_11
+        )
+
+      @metadata_hash_prefix_0_5_11 <>
+          <<_::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> "7827" <> <<_::binary-size(78)>> <> "0057" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_11
+        )
+
+      @metadata_hash_prefix_0_5_11 <>
+          <<_::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> "7828" <> <<_::binary-size(80)>> <> "0058" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_11
+        )
+
+      @metadata_hash_prefix_0_5_11 <>
+          <<_::binary-size(64)>> <>
+          @metadata_hash_common_suffix <> "7829" <> <<_::binary-size(82)>> <> "0059" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_11
+        )
 
       # Solidity >= 0.6.0 https://github.com/ethereum/solidity/blob/develop/Changelog.md#060-2019-12-17
       # https://github.com/ethereum/solidity/blob/26b700771e9cc9c956f0503a05de69a1be427963/docs/metadata.rst#encoding-of-the-metadata-hash-in-the-bytecode
@@ -58,15 +174,95 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
       # 0x00 0x32
       # Note: there is a bug in the docs. Instead of 0x32, 0x33 should be used.
       # Fixing PR has been created https://github.com/ethereum/solidity/pull/8174
-      "a264697066735822" <>
-          <<_::binary-size(68)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0033" <> constructor_arguments ->
-        extract_constructor_arguments_check_func(constructor_arguments, check_func, contract_source_code, contract_name)
+      @metadata_hash_prefix_0_6_0 <>
+          <<_::binary-size(68)>> <>
+          @metadata_hash_common_suffix <> "43" <> <<_::binary-size(6)>> <> "0033" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_6_0
+        )
+
+      @metadata_hash_prefix_0_6_0 <>
+          <<_::binary-size(68)>> <>
+          @metadata_hash_common_suffix <> "7826" <> <<_::binary-size(76)>> <> "0057" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_6_0
+        )
+
+      @metadata_hash_prefix_0_6_0 <>
+          <<_::binary-size(68)>> <>
+          @metadata_hash_common_suffix <> "7827" <> <<_::binary-size(78)>> <> "0057" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_6_0
+        )
+
+      @metadata_hash_prefix_0_6_0 <>
+          <<_::binary-size(68)>> <>
+          @metadata_hash_common_suffix <> "7828" <> <<_::binary-size(80)>> <> "0058" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_6_0
+        )
+
+      @metadata_hash_prefix_0_6_0 <>
+          <<_::binary-size(68)>> <>
+          @metadata_hash_common_suffix <> "7829" <> <<_::binary-size(82)>> <> "0059" <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_6_0
+        )
 
       <<>> ->
         check_func.("")
 
       <<_::binary-size(2)>> <> rest ->
         extract_constructor_arguments(rest, check_func, contract_source_code, contract_name)
+    end
+  end
+
+  defp is_constructor_arguments_still_has_metadata_prefix(constructor_arguments, prefix) do
+    constructor_arguments_parts =
+      constructor_arguments
+      |> String.split(prefix)
+      |> Enum.count()
+
+    constructor_arguments_parts > 1
+  end
+
+  defp split_constructor_arguments_and_extract_check_func(
+         constructor_arguments,
+         check_func,
+         contract_source_code,
+         contract_name,
+         metadata_hash_prefix
+       ) do
+    if is_constructor_arguments_still_has_metadata_prefix(constructor_arguments, metadata_hash_prefix) do
+      <<_::binary-size(2)>> <> rest = constructor_arguments
+      extract_constructor_arguments(rest, check_func, contract_source_code, contract_name)
+    else
+      extract_constructor_arguments_check_func(
+        constructor_arguments,
+        check_func,
+        contract_source_code,
+        contract_name
+      )
     end
   end
 
@@ -195,11 +391,17 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
 
   def find_all_requires(contract_source_code) do
     if contract_source_code do
-      [_ | requires] = String.split(contract_source_code, "require")
+      trimmed_source_code =
+        contract_source_code
+        |> String.replace(~r/ +/, " ")
+        |> String.replace("require(", "require (")
+
+      [_ | requires] =
+        trimmed_source_code
+        |> String.split("require (")
 
       Enum.reduce(requires, [], fn right_from_require, requires_list ->
-        [_ | [right_from_require_inside]] = String.split(right_from_require, "(", parts: 2)
-        [require_content | _] = String.split(right_from_require_inside, ");", parts: 2)
+        [require_content | _] = String.split(right_from_require, ");", parts: 2)
         [require_content | requires_list]
       end)
     else
