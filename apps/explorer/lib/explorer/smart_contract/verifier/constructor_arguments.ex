@@ -74,12 +74,15 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     constructor_arguments =
       remove_require_messages_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name)
 
-    check_func_result = check_func.(constructor_arguments)
+    filtered_constructor_arguments =
+      remove_keccak256_strings_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name)
+
+    check_func_result = check_func.(filtered_constructor_arguments)
 
     if check_func_result do
       check_func_result
     else
-      extract_constructor_arguments(constructor_arguments, check_func, contract_source_code, contract_name)
+      extract_constructor_arguments(filtered_constructor_arguments, check_func, contract_source_code, contract_name)
     end
   end
 
@@ -97,6 +100,26 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
       |> Enum.reverse()
 
     Enum.reduce(msgs_list, constructor_arguments, fn msg, pure_constructor_arguments ->
+      case String.split(pure_constructor_arguments, msg, parts: 2) do
+        [_, constructor_arguments_part] ->
+          constructor_arguments_part
+
+        [_] ->
+          pure_constructor_arguments
+      end
+    end)
+  end
+
+  def remove_keccak256_strings_from_constructor_arguments(contract_source_code, constructor_arguments, contract_name) do
+    all_strings =
+      contract_source_code
+      |> extract_strings_from_constructor(contract_name)
+
+    strings_list =
+      all_strings
+      |> Enum.reverse()
+
+    Enum.reduce(strings_list, constructor_arguments, fn msg, pure_constructor_arguments ->
       case String.split(pure_constructor_arguments, msg, parts: 2) do
         [_, constructor_arguments_part] ->
           constructor_arguments_part
@@ -146,6 +169,18 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     if messages_list, do: messages_list, else: []
   end
 
+  def extract_strings_from_constructor(contract_source_code, _contract_name) do
+    keccak256_contents = find_all_strings(contract_source_code)
+
+    strings_list =
+      Enum.reduce(keccak256_contents, [], fn keccak256_content, strs ->
+        str = get_keccak256_string_hex(keccak256_content)
+        if str, do: [str | strs], else: strs
+      end)
+
+    if strings_list, do: strings_list, else: []
+  end
+
   def find_constructor_content(contract_source_code) do
     case String.split(contract_source_code, "constructor", parts: 2) do
       [_, right_from_contstructor] ->
@@ -155,20 +190,6 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
 
       [_] ->
         nil
-    end
-  end
-
-  def find_require_in_constructor(constructor) do
-    if constructor do
-      [_ | requires] = String.split(constructor, "require")
-
-      Enum.reduce(requires, [], fn right_from_require, requires_list ->
-        [_ | [right_from_require_inside]] = String.split(right_from_require, "(", parts: 2)
-        [require_content | _] = String.split(right_from_require_inside, ");", parts: 2)
-        [require_content | requires_list]
-      end)
-    else
-      []
     end
   end
 
@@ -186,6 +207,26 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
     end
   end
 
+  def find_all_strings(contract_source_code) do
+    if contract_source_code do
+      [_ | keccak256s] = String.split(contract_source_code, "keccak256")
+
+      Enum.reduce(keccak256s, [], fn right_from_keccak256, keccak256s_list ->
+        parts = String.split(right_from_keccak256, "\"")
+
+        if Enum.count(parts) >= 3 do
+          [_ | [right_from_keccak256_inside]] = String.split(right_from_keccak256, "\"", parts: 2)
+          [keccak256_content | _] = String.split(right_from_keccak256_inside, "\"", parts: 2)
+          [keccak256_content | keccak256s_list]
+        else
+          keccak256s_list
+        end
+      end)
+    else
+      []
+    end
+  end
+
   def get_require_message_hex(require_content) do
     parts = String.split(require_content, ",")
 
@@ -193,6 +234,20 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
       [msg] = Enum.take(parts, -1)
 
       msg
+      |> String.trim()
+      |> String.trim_leading("\"")
+      |> String.trim_trailing("\"")
+      |> String.trim_leading("'")
+      |> String.trim_trailing("'")
+      |> Base.encode16(case: :lower)
+    else
+      nil
+    end
+  end
+
+  def get_keccak256_string_hex(keccak256_content) do
+    if keccak256_content !== "" do
+      keccak256_content
       |> String.trim()
       |> String.trim_leading("\"")
       |> String.trim_trailing("\"")
