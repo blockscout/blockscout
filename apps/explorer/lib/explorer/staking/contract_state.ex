@@ -115,7 +115,7 @@ defmodule Explorer.Staking.ContractState do
 
   @doc "Handles new blocks and decides to fetch fresh chain info"
   def handle_info({:chain_event, :blocks, :realtime, blocks}, state) do
-    latest_block = Enum.max_by(blocks, & &1.number)
+    latest_block = Enum.max_by(blocks, & &1.number, fn -> %{number: 0} end)
 
     if latest_block.number > state.seen_block do
       fetch_state(state.contracts, state.abi, latest_block.number)
