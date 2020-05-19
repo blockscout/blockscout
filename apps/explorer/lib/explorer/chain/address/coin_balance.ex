@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
   use Explorer.Schema
 
-  alias Explorer.PagingOptions
+  alias Explorer.{PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Hash, Wei}
   alias Explorer.Chain.Address.CoinBalance
 
@@ -87,24 +87,101 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
   @doc """
   Builds an `Ecto.Query` to fetch a series of balances by day for the given account. Each element in the series
-  corresponds to the maximum balance in that day. Only the last 90 days of data are used.
+  corresponds to the maximum balance in that day. Only the last 30 days of data are used.
   """
   def balances_by_day(address_hash, block_timestamp \\ nil) do
+    batch_days = 1
+    batches_count = 10
+    balances = balances_by_period(address_hash, block_timestamp, batch_days, batches_count)
+
+    balances
+  end
+
+  defp balances_by_period(address_hash, block_timestamp, batch_days, batches_count) do
+    batches = 1..batches_count
+
+    queries =
+      Enum.reduce(batches, [], fn batches_step, queries ->
+        query =
+          address_hash
+          |> balances_query()
+          |> limit_time_interval(block_timestamp, batch_days, batches_step)
+
+        [query | queries]
+      end)
+
+    queries
+    |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
+    |> Enum.flat_map(fn task -> Task.await(task, :infinity) end)
+  end
+
+  defp balances_query(address_hash) do
     CoinBalance
     |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
     |> where([cb], cb.address_hash == ^address_hash)
-    |> limit_time_interval(block_timestamp)
     |> group_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
     |> order_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
     |> select([cb, b], %{date: type(fragment("date_trunc('day', ?)", b.timestamp), :date), value: max(cb.value)})
   end
 
-  def limit_time_interval(query, nil) do
-    query |> where([cb, b], b.timestamp >= fragment("date_trunc('day', now()) - interval '90 days'"))
+  def limit_time_interval(query, nil, batch_days, step) do
+    if step == 1 do
+      query
+      |> where(
+        [cb, b],
+        b.timestamp >= fragment("date_trunc('day', now()) - CAST(? AS INTERVAL)", ^%Postgrex.Interval{days: batch_days})
+      )
+    else
+      query
+      |> where(
+        [cb, b],
+        b.timestamp >=
+          fragment("date_trunc('day', now()) - CAST(? AS INTERVAL)", ^%Postgrex.Interval{days: batch_days * step})
+      )
+      |> where(
+        [cb, b],
+        b.timestamp <
+          fragment("date_trunc('day', now()) - CAST(? AS INTERVAL)", ^%Postgrex.Interval{days: batch_days * (step - 1)})
+      )
+    end
   end
 
-  def limit_time_interval(query, %{timestamp: timestamp}) do
-    query |> where([cb, b], b.timestamp >= fragment("(? AT TIME ZONE ?) - interval '90 days'", ^timestamp, ^"Etc/UTC"))
+  def limit_time_interval(query, %{timestamp: timestamp}, batch_days, step) do
+    if step == 1 do
+      query
+      |> where(
+        [cb, b],
+        b.timestamp >=
+          fragment(
+            "(? AT TIME ZONE ?) - CAST(? AS INTERVAL)",
+            ^timestamp,
+            ^"Etc/UTC",
+            ^%Postgrex.Interval{days: batch_days}
+          )
+      )
+    else
+      query
+      |> where(
+        [cb, b],
+        b.timestamp >=
+          fragment(
+            "(? AT TIME ZONE ?) - CAST(? AS INTERVAL)",
+            ^timestamp,
+            ^"Etc/UTC",
+            ^%Postgrex.Interval{days: batch_days * step}
+          )
+      )
+      |> where(
+        [cb, b],
+        b.timestamp <
+          fragment(
+            "(? AT TIME ZONE ?) - CAST(? AS INTERVAL)",
+            ^timestamp,
+            ^"Etc/UTC",
+            ^%Postgrex.Interval{days: batch_days * (step - 1)}
+          )
+      )
+    end
   end
 
   def last_coin_balance_timestamp(address_hash) do

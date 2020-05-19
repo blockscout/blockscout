@@ -3495,7 +3495,6 @@ defmodule Explorer.Chain do
 
     address_hash
     |> CoinBalance.balances_by_day(latest_block_timestamp)
-    |> Repo.all()
     |> replace_last_value(latest_block_timestamp)
     |> normalize_balances_by_day()
   end

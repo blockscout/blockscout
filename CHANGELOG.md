@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3118](https://github.com/poanetwork/blockscout/pull/3118) - Fix performance of coin balance history chart
 - [#3114](https://github.com/poanetwork/blockscout/pull/3114) - Fix performance of "Blocks validated" page
 - [#3112](https://github.com/poanetwork/blockscout/pull/3112) - Fix verification of contracts, compiled with nightly builds of solc compiler
 - [#3112](https://github.com/poanetwork/blockscout/pull/3112) - Check compiler version at contract verification

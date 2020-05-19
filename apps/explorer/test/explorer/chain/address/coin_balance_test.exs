@@ -146,7 +146,6 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       result =
         address.hash
         |> CoinBalance.balances_by_day()
-        |> Repo.all()
 
       assert(length(result) == 2)
 
@@ -171,7 +170,6 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       result =
         address_a.hash
         |> CoinBalance.balances_by_day()
-        |> Repo.all()
 
       assert(length(result) == 2)
 
@@ -191,7 +189,6 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       result =
         address.hash
         |> CoinBalance.balances_by_day()
-        |> Repo.all()
 
       assert(length(result) == 2)
 
@@ -221,7 +218,6 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       result =
         address.hash
         |> CoinBalance.balances_by_day()
-        |> Repo.all()
 
       assert(length(result) == 1)
 
@@ -243,7 +239,6 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       result =
         address.hash
         |> CoinBalance.balances_by_day()
-        |> Repo.all()
 
       assert(length(result) == 1)
 
@@ -265,7 +260,6 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       result =
         address.hash
         |> CoinBalance.balances_by_day()
-        |> Repo.all()
 
       assert(length(result) == 1)
 
@@ -289,7 +283,6 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       result =
         address.hash
         |> CoinBalance.balances_by_day(latest_block_timestamp)
-        |> Repo.all()
 
       assert(length(result) == 1)
 
