@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.LayoutView do
   @issue_url "https://github.com/poanetwork/blockscout/issues/new"
   @default_other_networks [
     %{
-      title: "POA Core",
+      title: "POA",
       url: "https://blockscout.com/poa/core"
     },
     %{
@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.LayoutView do
       other?: true
     },
     %{
-      title: "RSK Mainnet",
+      title: "RSK",
       url: "https://blockscout.com/rsk/mainnet",
       other?: true
     }
