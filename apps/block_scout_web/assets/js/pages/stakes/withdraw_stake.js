@@ -16,9 +16,12 @@ export function openWithdrawStakeModal (event, store) {
 
 function setupWithdrawStakeModal (address, store, msg) {
   const $modal = $(msg.html)
+  const $form = $modal.find('form')
+
   setupChart($modal.find('.js-stakes-progress'), msg.self_staked_amount, msg.total_staked_amount)
+
   setupValidation(
-    $modal.find('form'),
+    $form,
     {
       'amount': value => isAmountValid(value, store, msg)
     },
@@ -26,7 +29,7 @@ function setupWithdrawStakeModal (address, store, msg) {
   )
 
   setupValidation(
-    $modal.find('form'),
+    $form,
     {
       'amount': value => isWithdrawAmountValid(value, store, msg)
     },
@@ -34,12 +37,19 @@ function setupWithdrawStakeModal (address, store, msg) {
   )
 
   setupValidation(
-    $modal.find('form'),
+    $form,
     {
       'amount': value => isOrderWithdrawAmountValid(value, store, msg)
     },
     $modal.find('form button.order-withdraw')
   )
+
+  $modal.find('[data-available-amount]').click(e => {
+    const amount = $(e.currentTarget).data('available-amount')
+    $('[amount]', $form).val(amount).trigger('input')
+    $('.tooltip').tooltip('hide')
+    return false
+  })
 
   $modal.find('.btn-full-primary.withdraw').click(() => {
     withdrawStake($modal, address, store, msg)
@@ -100,7 +110,7 @@ function isWithdrawAmountValid (value, store, msg) {
   const maxAllowed = new BigNumber(msg.max_withdraw_allowed)
   const amount = new BigNumber(value.replace(',', '.').trim()).shiftedBy(decimals).integerValue()
 
-  if (!amount.isPositive()) {
+  if (!amount.isPositive() || amount.isZero()) {
     return null
   } else if (amount.isLessThan(currentStake) && currentStake.minus(amount).isLessThan(minStake)) {
     return null
@@ -119,7 +129,7 @@ function isOrderWithdrawAmountValid (value, store, msg) {
   const maxAllowed = new BigNumber(msg.max_ordered_withdraw_allowed)
   const amount = new BigNumber(value.replace(',', '.').trim()).shiftedBy(decimals).integerValue()
 
-  if (!amount.isPositive() && !amount.isNegative()) {
+  if ((!amount.isPositive() && !amount.isNegative()) || amount.isZero()) {
     return null
   } else if (amount.isLessThan(currentStake) && currentStake.minus(amount).isLessThan(minStake)) {
     return null

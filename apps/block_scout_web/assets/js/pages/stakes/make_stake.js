@@ -18,19 +18,30 @@ export function openMakeStakeModal (event, store) {
     .push('render_make_stake', { address })
     .receive('ok', msg => {
       const $modal = $(msg.html)
+      const $form = $modal.find('form')
+
       setupChart($modal.find('.js-stakes-progress'), msg.self_staked_amount, msg.total_staked_amount)
+
       setupValidation(
-        $modal.find('form'),
+        $form,
         {
           'delegator-stake': value => isDelegatorStakeValid(value, store, msg, address)
         },
         $modal.find('form button')
       )
 
-      $modal.find('form').submit(() => {
+      $modal.find('[data-available-amount]').click(e => {
+        const amount = $(e.currentTarget).data('available-amount')
+        $('[delegator-stake]', $form).val(amount).trigger('input')
+        $('.tooltip').tooltip('hide')
+        return false
+      })
+
+      $form.submit(() => {
         makeStake($modal, address, store, msg)
         return false
       })
+
       openModal($modal)
     })
 }
@@ -54,7 +65,7 @@ function isDelegatorStakeValid (value, store, msg, address) {
   const stake = new BigNumber(value.replace(',', '.').trim()).shiftedBy(decimals).integerValue()
   const account = store.getState().account
 
-  if (!stake.isPositive()) {
+  if (!stake.isPositive() || stake.isZero()) {
     return 'Invalid amount'
   } else if (stake.plus(currentStake).isLessThan(minStake)) {
     const staker = (account === address) ? 'candidate' : 'delegate'

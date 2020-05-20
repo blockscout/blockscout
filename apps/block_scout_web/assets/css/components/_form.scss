@@ -26,12 +26,28 @@ $form-control-border-color-active: $primary !default;
   font-weight: normal;
   line-height: 1.8;
 
+  .i-tooltip {
+    display: inline;
+    margin-left: 3px;
+  }
+
+  .link-dotted {
+    border-bottom-width: 1px;
+    border-bottom-style: dotted;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
   .text-dark {
     color: #333;
   }
 
   &.m-b-0 {
     margin-bottom: 0;
+  }
+
+  &.m-b-0-7 {
+    margin-bottom: 0.7rem;
   }
 }
 

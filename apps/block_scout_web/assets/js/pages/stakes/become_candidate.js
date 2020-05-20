@@ -61,7 +61,7 @@ function isCandidateStakeValid (value, store, msg) {
   const balance = new BigNumber(msg.balance)
   const stake = new BigNumber(value.replace(',', '.').trim()).shiftedBy(decimals).integerValue()
 
-  if (!stake.isPositive()) {
+  if (!stake.isPositive() || stake.isZero()) {
     return 'Invalid amount'
   } else if (stake.isLessThan(minStake)) {
     return `Minimum candidate stake is ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`
