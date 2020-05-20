@@ -210,7 +210,7 @@ defmodule Indexer.Block.Fetcher do
          } = CeloAccounts.parse(logs, oracle_address),
          market_history =
            exchange_rates
-           |> Enum.filter(fn el -> el.token == stable_token end)
+           |> Enum.filter(fn el -> el.token == stable_token && el.rate > 0 end)
            |> Enum.map(fn %{rate: rate, stamp: time} ->
              inv_rate = Decimal.from_float(1 / rate)
              date = DateTime.to_date(DateTime.from_unix!(time))

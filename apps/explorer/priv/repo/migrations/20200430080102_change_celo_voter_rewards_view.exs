@@ -9,6 +9,7 @@ defmodule Explorer.Repo.Migrations.ChangeCeloVoterRewardsView do
     from celo_voter_rewards as r, (select max(block_number) as max_block_number from celo_voter_rewards) as t, celo_params as p
     where r.block_number > max_block_number - 28*p.number_value
       and p.name = \'epochSize\'
+      and total_reward > 0
     group by address_hash
     """)
   end
