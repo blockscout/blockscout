@@ -41,6 +41,14 @@ defmodule BlockScoutWeb.StakesHelpers do
   def list_title(:active), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Active Pools")
   def list_title(:inactive), do: Gettext.dgettext(BlockScoutWeb.Gettext, "default", "Inactive Pools")
 
+  def from_wei(%Decimal{} = amount, %Token{} = token) do
+    decimals = if token.decimals, do: Decimal.to_integer(token.decimals), else: 0
+
+    amount.sign
+    |> Decimal.new(amount.coef, amount.exp - decimals)
+    |> Decimal.reduce()
+  end
+
   def format_token_amount(amount, token, options \\ [])
   def format_token_amount(nil, _token, _options), do: "-"
   def format_token_amount(amount, nil, options), do: format_token_amount(amount, %Token{}, options)
@@ -55,12 +63,8 @@ defmodule BlockScoutWeb.StakesHelpers do
     symbol = if Keyword.get(options, :symbol, true), do: " #{token.symbol}"
     digits = Keyword.get(options, :digits, 5)
     ellipsize = Keyword.get(options, :ellipsize, true)
-    decimals = if token.decimals, do: Decimal.to_integer(token.decimals), else: 0
 
-    reduced =
-      amount.sign
-      |> Decimal.new(amount.coef, amount.exp - decimals)
-      |> Decimal.reduce()
+    reduced = from_wei(amount, token)
 
     if digits >= -reduced.exp or not ellipsize do
       "#{Number.to_string!(reduced, fractional_digits: min(digits, -reduced.exp))}#{symbol}"
