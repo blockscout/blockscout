@@ -71,10 +71,18 @@
                     </span>
                     <%= if staker.address_hash == @pool.staking_address_hash do %>
                       <%=
+                        tooltip_text = gettext("This is a %{pool_type}.", pool_type: pool_type)
+
+                        tooltip_text = if Enum.count(@stakers) > 1 do
+                          tooltip_text <> " " <> gettext("The rest addresses are delegators of its pool.")
+                        else
+                          tooltip_text
+                        end
+
                         render(
                           BlockScoutWeb.CommonComponentsView,
                           "_check_tooltip.html",
-                          text: gettext("This is a %{pool_type}. The rest addresses are delegators of its pool.", pool_type: pool_type)
+                          text: tooltip_text
                         )
                       %>
                     <% end %>

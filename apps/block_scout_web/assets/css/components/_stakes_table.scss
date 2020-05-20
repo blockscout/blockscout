@@ -92,6 +92,15 @@ $stakes-link-color: $primary !default;
     padding-top: 15px;
     padding-right: 15px;
     display: none;
+
+    a {
+      color: $primary;
+      text-decoration: underline;
+
+      &:hover {
+        text-decoration: none;
+      }
+    }
   }
 }
 
