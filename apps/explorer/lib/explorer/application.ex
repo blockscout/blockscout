@@ -80,6 +80,7 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.AddressesCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Celo.AbiHandler),
+      configure(Explorer.Celo.SignerCache),
       configure(Explorer.Validator.MetadataProcessor),
       configure(Explorer.Staking.EpochCounter)
     ]

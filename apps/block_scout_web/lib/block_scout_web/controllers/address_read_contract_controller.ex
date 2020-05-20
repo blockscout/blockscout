@@ -19,6 +19,7 @@ defmodule BlockScoutWeb.AddressReadContractController do
         :names => :optional,
         :smart_contract => :optional,
         :implementation_contract => :optional,
+        :celo_account => :optional,
         :token => :optional,
         :contracts_creation_transaction => :optional
       }
