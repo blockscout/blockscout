@@ -70,7 +70,7 @@ function isMoveAmountValid (value, store, msg) {
   const currentToStake = (msg.to) ? new BigNumber(msg.to.stake_amount) : null
   const stake = new BigNumber(value.replace(',', '.').trim()).shiftedBy(decimals).integerValue()
 
-  if (!stake.isPositive()) {
+  if (!stake.isPositive() || stake.isZero()) {
     return 'Invalid amount'
   } else if (stake.plus(currentToStake).isLessThan(minToStake)) {
     return `You must move at least ${minToStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol} to the selected pool`

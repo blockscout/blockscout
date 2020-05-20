@@ -1881,7 +1881,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:52
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:53
 msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
 msgstr ""
 
@@ -1906,13 +1906,8 @@ msgid "Amount"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:25
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:39
 msgid "Available Now:"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:38
-msgid "Available after the Current Epoch:"
 msgstr ""
 
 #, elixir-format
@@ -1969,7 +1964,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:36
-#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:14
 msgid "Current Stake:"
 msgstr ""
 
@@ -2008,7 +2002,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:89
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:97
 msgid "It's me!"
 msgstr ""
 
@@ -2019,7 +2013,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:91
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:99
 msgid "ME"
 msgstr ""
 
@@ -2031,7 +2025,6 @@ msgstr ""
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:13
-#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:20
 msgid "Minimum Stake:"
 msgstr ""
 
@@ -2057,7 +2050,7 @@ msgid "No Information"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:46
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:34
 msgid "Order Withdrawal"
 msgstr ""
 
@@ -2068,7 +2061,7 @@ msgid "Ordered"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:37
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:45
 msgid "Place stake"
 msgstr ""
 
@@ -2106,7 +2099,7 @@ msgid "Stake"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:35
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:43
 msgid "Stake More"
 msgstr ""
 
@@ -2116,7 +2109,7 @@ msgid "Stake placed on a candidate pool or an active validator pool <strong>duri
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:45
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:53
 msgid "Stake placed on a pool is <strong>pending</strong> for the current staking epoch. It will be applied to the next staking epoch. You may withdraw or move pending stake at any time until it becomes active. Once active (the pool you staked with becomes a validator), a withdrawal order can be placed. This amount will be available to claim after that staking epoch is complete."
 msgstr ""
 
@@ -2201,7 +2194,7 @@ msgid "Withdraw"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:33
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:47
 msgid "Withdraw Now"
 msgstr ""
 
@@ -2230,7 +2223,7 @@ msgstr ""
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:18
-#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:26
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:28
 msgid "Your Balance:"
 msgstr ""
 
@@ -2268,12 +2261,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:49
 msgid "Share of Pool’s Reward"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:77
-msgid "This is a %{pool_type}. The rest addresses are delegators of its pool."
 msgstr ""
 
 #, elixir-format
@@ -2496,4 +2483,36 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_metatags.html.eex:6
 msgid "DApp for Staking %{symbol} tokens"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:22
+msgid "Minimum Stake Allowed:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:29
+msgid "The amount can be claimed after the current epoch finishes."
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:77
+msgid "The rest addresses are delegators of its pool."
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:74
+msgid "This is a %{pool_type}."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:25
+msgid "You Can Order:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:16
+msgid "Your Current Stake:"
 msgstr ""

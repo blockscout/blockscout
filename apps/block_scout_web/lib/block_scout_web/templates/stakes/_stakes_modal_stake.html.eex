@@ -10,28 +10,36 @@
           <form>
             <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "delegator-stake", classes: "form-group", input_classes: "form-control n-b-r", attributes: "delegator-stake", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
 
-            <%= if @delegator && Decimal.positive?(@delegator.stake_amount) do %>
-              <p class="form-p m-b-0"><%= gettext("Current Stake:") %>
+            <% has_stake = @delegator && Decimal.positive?(@delegator.stake_amount) %>
+
+            <%= if has_stake do %>
+              <p class="form-p m-b-0"><%= gettext("Your Current Stake:") %>
                 <span class="text-dark">
                   <%= format_token_amount(@delegator.stake_amount, @token) %>
                 </span>
               </p>
             <% else %>
-              <p class="form-p m-b-0"><%= gettext("Minimum Stake:") %>
+              <p class="form-p m-b-0"><%= gettext("Minimum Stake Allowed:") %>
                 <span class="text-dark">
                   <%= format_token_amount(@min_stake, @token) %>
                 </span>
               </p>
             <% end %>
             <p class="form-p"><%= gettext("Your Balance:") %>
-              <span class="text-dark">
-                <%= format_token_amount(@balance, @token) %>
-              </span>
+              <%= if Decimal.positive?(@balance) do %>
+                <span class="text-dark link-dotted" data-available-amount="<%= from_wei(@balance, @token) %>">
+                  <%= format_token_amount(@balance, @token) %>
+                </span>
+              <% else %>
+                <span class="text-dark">
+                  <%= format_token_amount(@balance, @token) %>
+                </span>
+              <% end %>
             </p>
             <div class="form-buttons">
               <%=
                 label =
-                  if @delegator && Decimal.positive?(@delegator.stake_amount) do
+                  if has_stake do
                     gettext("Stake More")
                   else
                     gettext("Place stake")
