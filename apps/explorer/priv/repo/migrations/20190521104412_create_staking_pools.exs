@@ -6,7 +6,7 @@ defmodule Explorer.Repo.Migrations.CreateStakingPools do
       add(:is_active, :boolean, default: false, null: false)
       add(:is_deleted, :boolean, default: false, null: false)
       add(:delegators_count, :integer)
-      add(:total_staked_amount, :numeric, precision: 100)
+      add(:staked_amount, :numeric, precision: 100)
       add(:self_staked_amount, :numeric, precision: 100)
       add(:is_validator, :boolean, default: false, null: false)
       add(:was_validator_count, :integer)
@@ -14,7 +14,7 @@ defmodule Explorer.Repo.Migrations.CreateStakingPools do
       add(:was_banned_count, :integer)
       add(:banned_until, :bigint)
       add(:likelihood, :decimal, precision: 5, scale: 2)
-      add(:stakes_ratio, :decimal, precision: 5, scale: 2)
+      add(:staked_ratio, :decimal, precision: 5, scale: 2)
       add(:staking_address_hash, :bytea)
       add(:mining_address_hash, :bytea)
 
