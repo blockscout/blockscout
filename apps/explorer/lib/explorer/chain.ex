@@ -4015,7 +4015,7 @@ defmodule Explorer.Chain do
         accumulated_active: b.active,
         accumulated_rewards: b.reward,
         rewards_ratio: b.ratio,
-        receivable_votes: (g.num_members + 1) * total_locked_gold.number_value / denom.value
+        receivable_votes: (g.num_members + 1) * total_locked_gold.number_value / fragment("nullif(?,0)", denom.value)
       }
     )
   end
