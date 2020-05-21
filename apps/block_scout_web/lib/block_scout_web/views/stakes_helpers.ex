@@ -71,6 +71,7 @@ defmodule BlockScoutWeb.StakesHelpers do
       "#{Number.to_string!(reduced, fractional_digits: min(digits, -reduced.exp))}#{symbol}"
     else
       clipped = "#{Number.to_string!(reduced, fractional_digits: digits)}...#{symbol}"
+
       if no_tooltip do
         clipped
       else
