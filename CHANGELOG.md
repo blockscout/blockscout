@@ -7,7 +7,7 @@
 - [#3112](https://github.com/poanetwork/blockscout/pull/3112) - Fix verification of contracts, compiled with nightly builds of solc compiler
 - [#3112](https://github.com/poanetwork/blockscout/pull/3112) - Check compiler version at contract verification
 - [#3106](https://github.com/poanetwork/blockscout/pull/3106) - Fix verification of contracts with `immutable` declaration
-- [#3106](https://github.com/poanetwork/blockscout/pull/3106) - Fix verification of contracts, created from factory (from internal transaction)
+- [#3106](https://github.com/poanetwork/blockscout/pull/3106), [#3115](https://github.com/poanetwork/blockscout/pull/3115) - Fix verification of contracts, created from factory (from internal transaction)
 
 ### Chore
 
