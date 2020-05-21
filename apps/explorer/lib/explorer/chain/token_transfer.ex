@@ -296,7 +296,7 @@ defmodule Explorer.Chain.TokenTransfer do
       on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
       where: instance.token_contract_address_hash == ^contract_address_hash,
       order_by: [desc: tt.block_number],
-      distinct: tt.token_id,
+      distinct: [desc: tt.token_id],
       preload: [:to_address],
       select: %{tt | instance: instance}
     )
