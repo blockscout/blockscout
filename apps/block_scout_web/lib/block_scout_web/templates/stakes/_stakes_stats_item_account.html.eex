@@ -17,18 +17,36 @@
   </span>
   <span class="stakes-top-stats-label">
     <%
-      balance = format_token_amount(@account[:balance], @token, digits: 5, ellipsize: false, symbol: true)
-      stake_amount = format_token_amount(@account[:stake_amount], @token, digits: 5, ellipsize: false, symbol: true)
-      ordered_withdraw = format_token_amount(@account[:ordered_withdraw], @token, digits: 5, ellipsize: false, symbol: true)
+      balance = format_token_amount(@account[:balance], @token, digits: 5, no_tooltip: true, symbol: true)
+      balance_full = if @account[:balance] do
+        "#{from_wei(@account[:balance], @token)} #{@token.symbol}"
+      else
+        "-"
+      end
+      
+      stake_amount = format_token_amount(@account[:stake_amount], @token, digits: 5, no_tooltip: true, symbol: true)
+      stake_amount_full = if @account[:stake_amount] do
+        "#{from_wei(@account[:stake_amount], @token)} #{@token.symbol}"
+      else
+        "-"
+      end
+
+      ordered_withdraw = format_token_amount(@account[:ordered_withdraw], @token, digits: 5, no_tooltip: true, symbol: true)
+      ordered_withdraw_full = if @account[:ordered_withdraw] do
+        "#{from_wei(@account[:ordered_withdraw], @token)} #{@token.symbol}"
+      else
+        "-"
+      end
     %>
-    <span class="stakes-top-stats-label-item" data-placement="bottom" data-toggle="tooltip" title="<%= gettext "Balance" %>: <%= balance %>">
+
+    <span class="stakes-top-stats-label-item" data-placement="bottom" data-toggle="tooltip" title="<%= gettext "Balance" %>: <%= balance_full %>">
       <%= gettext "Balance" %>: <%= balance %>
     </span>
-    <span class="stakes-top-stats-label-item" data-placement="bottom" data-toggle="tooltip" title="<%= gettext "Staked" %>: <%= stake_amount %>">
+    <span class="stakes-top-stats-label-item" data-placement="bottom" data-toggle="tooltip" title="<%= gettext "Staked" %>: <%= stake_amount_full %>">
       <%= gettext "Staked" %>: <%= stake_amount %>
     </span>
     <%= if @account[:ordered_withdraw] && @account[:ordered_withdraw] > 0 do %>
-      <span class="stakes-top-stats-label-item" data-placement="bottom" data-toggle="tooltip" title="<%= gettext "Ordered" %>: <%= ordered_withdraw %>">
+      <span class="stakes-top-stats-label-item" data-placement="bottom" data-toggle="tooltip" title="<%= gettext "Ordered" %>: <%= ordered_withdraw_full %>">
         <%= gettext "Ordered" %>: <%= ordered_withdraw %>
       </span>
     <% end %>
