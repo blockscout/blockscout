@@ -1,0 +1,37 @@
+<div class="table-responsive text-center">
+  <table summary="<%= @summary %>" class="<%= @class %>">
+    <%= for {key, value} <- @data do %>
+      <tr>
+        <th scope="row" class="col-ld-2">
+        <span
+          aria-label='<%= gettext "Copy Value" %>'
+          class="btn-copy-ico"
+          data-clipboard-text="<%= value %>"
+          data-placement="top"
+          data-toggle="tooltip"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+            <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+          </svg>
+        </span>
+        </th>
+        <td class="col-ld-2"><%= camelcase_key_to_normal_key(key) %></td>
+        <td colspan="3">
+          <%= cond do %>
+            <% key == "from" or key == "to" or key == "address" -> %>
+              <%= link(
+                value,
+                to: address_path(@conn, :show, value)
+                ) %>
+            <% key == "init" or key == "code" or key == "input" -> %>
+              <textarea readonly class="text-dark">
+                <%= value %>
+              </textarea>
+            <% true -> %>
+              <%= value %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </table>
+</div>

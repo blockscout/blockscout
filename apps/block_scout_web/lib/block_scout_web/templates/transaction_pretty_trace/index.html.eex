@@ -1,0 +1,20 @@
+<section class="container">
+  <%= render BlockScoutWeb.TransactionView, "overview.html", assigns %>
+
+  <div class="card">
+    <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
+
+    <div class="card-body">
+      <h2 class="card-title"><%= gettext "Pretty Trace" %></h2>
+
+      <%= if Enum.count(@internal_transactions) > 0 do %>
+          <%= render "_pretty_trace.html", assigns %>
+      <% else %>
+        <div class="tile tile-muted text-center">
+          <span>No trace entries found.</span>
+        </div>
+      <% end %>
+
+    </div>
+  </div>
+</section>

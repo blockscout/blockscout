@@ -25,4 +25,9 @@
       class: "card-tab #{tab_status("raw_trace", @conn.request_path)}",
       to: transaction_raw_trace_path(@conn, :index, @transaction)
       ) %>
+  <%= link(
+      gettext("Pretty Trace"),
+      class: "card-tab #{tab_status("pretty_trace", @conn.request_path)}",
+      to: transaction_pretty_trace_path(@conn, :index, @transaction)
+      ) %>
 </div>

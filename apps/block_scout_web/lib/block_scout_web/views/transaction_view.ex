@@ -395,6 +395,7 @@ defmodule BlockScoutWeb.TransactionView do
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["logs"]), do: gettext("Logs")
   defp tab_name(["raw_trace"]), do: gettext("Raw Trace")
+  defp tab_name(["pretty_trace"]), do: gettext("Pretty Trace")
 
   defp get_token_transfer_type(token_transfers) do
     token_transfers

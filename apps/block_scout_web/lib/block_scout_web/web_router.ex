@@ -63,6 +63,13 @@ defmodule BlockScoutWeb.WebRouter do
         as: :raw_trace
       )
 
+      resources(
+        "/pretty_trace",
+        TransactionPrettyTraceController,
+        only: [:index],
+        as: :pretty_trace
+      )
+
       resources("/logs", TransactionLogController, only: [:index], as: :log)
 
       resources("/token_transfers", TransactionTokenTransferController,

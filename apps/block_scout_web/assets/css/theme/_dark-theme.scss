@@ -300,6 +300,10 @@ $labels-dark: #8a8dba; // header nav, labels
 	.table th, .table td {
 		border-top-color: darken($labels-dark, 30);
 	}
+	.table textarea {
+		background-color: $dark-light;
+		color: $labels-dark;
+	}
 	hr {
 		border-top-color: darken($labels-dark, 30);
 	}
