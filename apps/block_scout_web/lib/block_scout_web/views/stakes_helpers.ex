@@ -63,20 +63,26 @@ defmodule BlockScoutWeb.StakesHelpers do
     symbol = if Keyword.get(options, :symbol, true), do: " #{token.symbol}"
     digits = Keyword.get(options, :digits, 5)
     ellipsize = Keyword.get(options, :ellipsize, true)
+    no_tooltip = Keyword.get(options, :no_tooltip, false)
 
     reduced = from_wei(amount, token)
 
     if digits >= -reduced.exp or not ellipsize do
       "#{Number.to_string!(reduced, fractional_digits: min(digits, -reduced.exp))}#{symbol}"
     else
-      HTML.raw(~s"""
-        <span
-          data-placement="top"
-          data-toggle="tooltip"
-          title="#{Number.to_string!(reduced, fractional_digits: -reduced.exp)}#{symbol}">
-          #{Number.to_string!(reduced, fractional_digits: digits)}...#{symbol}
-        </span>
-      """)
+      clipped = "#{Number.to_string!(reduced, fractional_digits: digits)}...#{symbol}"
+      if no_tooltip do
+        clipped
+      else
+        HTML.raw(~s"""
+          <span
+            data-placement="top"
+            data-toggle="tooltip"
+            title="#{Number.to_string!(reduced, fractional_digits: -reduced.exp)}#{symbol}">
+            #{clipped}
+          </span>
+        """)
+      end
     end
   end
 end
