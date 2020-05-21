@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule Explorer.Chain.Address.CoinBalance do
   @moduledoc """
   The `t:Explorer.Chain.Wei.t/0` `value` of `t:Explorer.Chain.Address.t/0` at the end of a `t:Explorer.Chain.Block.t/0`
@@ -87,101 +88,135 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
   @doc """
   Builds an `Ecto.Query` to fetch a series of balances by day for the given account. Each element in the series
-  corresponds to the maximum balance in that day. Only the last 30 days of data are used.
+  corresponds to the maximum balance in that day. Only the last `n` days of data are used.
+  `n` is configurable via COIN_BALANCE_HISTORY_DAYS ENV var.
   """
-  def balances_by_day(address_hash, block_timestamp \\ nil) do
-    batch_days = 1
-    batches_count = 10
-    balances = balances_by_period(address_hash, block_timestamp, batch_days, batches_count)
+  def balances_by_day(address_hash) do
+    days_to_consider =
+      Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
 
-    balances
-  end
+    {days_to_consider, _} = Integer.parse(days_to_consider)
+    now = Timex.now()
 
-  defp balances_by_period(address_hash, block_timestamp, batch_days, batches_count) do
-    batches = 1..batches_count
-
-    queries =
-      Enum.reduce(batches, [], fn batches_step, queries ->
-        query =
-          address_hash
-          |> balances_query()
-          |> limit_time_interval(block_timestamp, batch_days, batches_step)
-
-        [query | queries]
-      end)
-
-    queries
-    |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
-    |> Enum.flat_map(fn task -> Task.await(task, :infinity) end)
-  end
-
-  defp balances_query(address_hash) do
-    CoinBalance
-    |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
-    |> where([cb], cb.address_hash == ^address_hash)
-    |> group_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
-    |> order_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
-    |> select([cb, b], %{date: type(fragment("date_trunc('day', ?)", b.timestamp), :date), value: max(cb.value)})
-  end
-
-  def limit_time_interval(query, nil, batch_days, step) do
-    if step == 1 do
-      query
+    target_block_number_query =
+      Block
       |> where(
-        [cb, b],
-        b.timestamp >= fragment("date_trunc('day', now()) - CAST(? AS INTERVAL)", ^%Postgrex.Interval{days: batch_days})
-      )
-    else
-      query
-      |> where(
-        [cb, b],
+        [b],
         b.timestamp >=
-          fragment("date_trunc('day', now()) - CAST(? AS INTERVAL)", ^%Postgrex.Interval{days: batch_days * step})
+          fragment("date_trunc('day', now() - CAST(? AS INTERVAL))", ^%Postgrex.Interval{days: days_to_consider})
       )
       |> where(
-        [cb, b],
-        b.timestamp <
-          fragment("date_trunc('day', now()) - CAST(? AS INTERVAL)", ^%Postgrex.Interval{days: batch_days * (step - 1)})
+        [b],
+        fragment("date_trunc('day', ?)", b.timestamp) ==
+          ^Timex.beginning_of_day(Timex.shift(now, days: -(days_to_consider - 1)))
       )
+      |> limit(1)
+      |> select([b], %{block_number: b.number, block_timestamp: b.timestamp})
+
+    result =
+      target_block_number_query
+      |> Repo.one()
+
+    min_block_number_target =
+      if result do
+        %{block_number: min_block_number_target, block_timestamp: _} = result
+        min_block_number_target
+      else
+        0
+      end
+
+    balances =
+      CoinBalance
+      |> where([cb], cb.address_hash == ^address_hash)
+      |> where([cb], cb.block_number >= ^min_block_number_target)
+      |> select([cb], %{block: cb.block_number, value: cb.value})
+      |> Repo.all()
+
+    if Enum.empty?(balances) do
+      []
+    else
+      [%{block: max_block_number, value: _value}] =
+        balances
+        |> Enum.sort(&(&1.block <= &2.block))
+        |> Enum.take(-1)
+
+      [%{block: min_block_number, value: _value}] =
+        balances
+        |> Enum.sort(&(&1.block <= &2.block))
+        |> Enum.take(1)
+
+      min_block_timestamp = find_block_timestamp(min_block_number)
+      max_block_timestamp = find_block_timestamp(max_block_number)
+
+      min_block_unix_timestamp =
+        min_block_timestamp
+        |> Timex.to_unix()
+
+      max_block_unix_timestamp =
+        max_block_timestamp
+        |> Timex.to_unix()
+
+      blocks_delta = max_block_number - min_block_number
+
+      balances_with_dates =
+        if blocks_delta > 0 do
+          balances
+          |> Enum.map(fn balance ->
+            date =
+              trunc(
+                min_block_unix_timestamp +
+                  (balance.block - min_block_number) * (max_block_unix_timestamp - min_block_unix_timestamp) /
+                    blocks_delta
+              )
+
+            {:ok, formatted_date} = Timex.format(Timex.from_unix(date), "{YYYY}-{0M}-{0D}")
+            %{date: formatted_date, value: balance.value}
+          end)
+        else
+          balances
+          |> Enum.map(fn balance ->
+            date = min_block_unix_timestamp
+
+            {:ok, formatted_date} = Timex.format(Timex.from_unix(date), "{YYYY}-{0M}-{0D}")
+            %{date: formatted_date, value: balance.value}
+          end)
+        end
+        |> Enum.filter(fn balance -> balance.value end)
+        |> Enum.sort(fn balance1, balance2 -> balance1.date <= balance2.date end)
+
+      balances_with_dates_grouped =
+        balances_with_dates
+        |> Enum.reduce([], fn balance, acc ->
+          if Enum.empty?(acc) do
+            acc ++ [balance]
+          else
+            [current_last_balance] = Enum.take(acc, -1)
+
+            if Map.get(current_last_balance, :date) == Map.get(balance, :date) do
+              acc =
+                if Map.get(current_last_balance, :value) < Map.get(balance, :value) do
+                  acc = Enum.drop(acc, -1)
+                  acc ++ [balance]
+                else
+                  acc
+                end
+
+              acc
+            else
+              acc ++ [balance]
+            end
+          end
+        end)
+
+      balances_with_dates_grouped
     end
   end
 
-  def limit_time_interval(query, %{timestamp: timestamp}, batch_days, step) do
-    if step == 1 do
-      query
-      |> where(
-        [cb, b],
-        b.timestamp >=
-          fragment(
-            "(? AT TIME ZONE ?) - CAST(? AS INTERVAL)",
-            ^timestamp,
-            ^"Etc/UTC",
-            ^%Postgrex.Interval{days: batch_days}
-          )
-      )
-    else
-      query
-      |> where(
-        [cb, b],
-        b.timestamp >=
-          fragment(
-            "(? AT TIME ZONE ?) - CAST(? AS INTERVAL)",
-            ^timestamp,
-            ^"Etc/UTC",
-            ^%Postgrex.Interval{days: batch_days * step}
-          )
-      )
-      |> where(
-        [cb, b],
-        b.timestamp <
-          fragment(
-            "(? AT TIME ZONE ?) - CAST(? AS INTERVAL)",
-            ^timestamp,
-            ^"Etc/UTC",
-            ^%Postgrex.Interval{days: batch_days * (step - 1)}
-          )
-      )
-    end
+  defp find_block_timestamp(number) do
+    Block
+    |> where([b], b.number == ^number)
+    |> select([b], b.timestamp)
+    |> Repo.one()
   end
 
   def last_coin_balance_timestamp(address_hash) do

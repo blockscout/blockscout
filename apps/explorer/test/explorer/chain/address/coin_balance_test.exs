@@ -138,8 +138,8 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
     test "returns one row per day" do
       address = insert(:address)
       noon = Timex.now() |> Timex.beginning_of_day() |> Timex.set(hour: 12)
-      block = insert(:block, timestamp: noon)
-      block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1))
+      block = insert(:block, timestamp: noon, number: 2)
+      block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1), number: 1)
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
       insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_one_day_ago.number)
 
@@ -181,8 +181,8 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
     test "returns dates at midnight" do
       address = insert(:address)
       noon = Timex.now() |> Timex.beginning_of_day() |> Timex.set(hour: 12)
-      block = %Block{timestamp: noon_with_usec} = insert(:block, timestamp: noon)
-      block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1))
+      block = %Block{timestamp: noon_with_usec} = insert(:block, timestamp: noon, number: 2)
+      block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1), number: 1)
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
       insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_one_day_ago.number)
 
@@ -201,16 +201,17 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       dates
       |> Stream.zip(expected_dates)
       |> Enum.each(fn {date, expected_date} ->
-        assert Date.compare(date, expected_date) == :eq
+        {:ok, expected_date_formatted} = Timex.format(expected_date, "{YYYY}-{0M}-{0D}")
+        assert(date == expected_date_formatted)
       end)
     end
 
     test "gets the max value of the day (value is at the beginning)" do
       address = insert(:address)
       noon = Timex.now() |> Timex.beginning_of_day() |> Timex.set(hour: 12)
-      block = insert(:block, timestamp: noon)
-      block_one_hour_ago = insert(:block, timestamp: Timex.shift(noon, hours: -1))
-      block_two_hours_ago = insert(:block, timestamp: Timex.shift(noon, hours: -2))
+      block = insert(:block, timestamp: noon, number: 300)
+      block_one_hour_ago = insert(:block, timestamp: Timex.shift(noon, hours: -1), number: 200)
+      block_two_hours_ago = insert(:block, timestamp: Timex.shift(noon, hours: -2), number: 100)
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
       insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_one_hour_ago.number)
       insert(:fetched_balance, address_hash: address.hash, value: 3000, block_number: block_two_hours_ago.number)
@@ -218,6 +219,8 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       result =
         address.hash
         |> CoinBalance.balances_by_day()
+
+      IO.inspect(result)
 
       assert(length(result) == 1)
 
@@ -272,17 +275,13 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       address = insert(:address)
       noon = Timex.now() |> Timex.beginning_of_day() |> Timex.set(hour: 12)
 
-      old_block = insert(:block, timestamp: Timex.shift(noon, days: -700))
+      old_block = insert(:block, timestamp: Timex.shift(noon, days: -700), number: 1)
+      insert(:block, timestamp: noon, number: 100_500)
       insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: old_block.number)
-
-      latest_block_timestamp =
-        address.hash
-        |> CoinBalance.last_coin_balance_timestamp()
-        |> Repo.one()
 
       result =
         address.hash
-        |> CoinBalance.balances_by_day(latest_block_timestamp)
+        |> CoinBalance.balances_by_day()
 
       assert(length(result) == 1)
 
