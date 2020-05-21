@@ -281,6 +281,7 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @doc """
+  Innventory tab query.
   A token ERC-721 is considered unique because it corresponds to the possession
   of a specific asset.
 
@@ -293,7 +294,7 @@ defmodule Explorer.Chain.TokenTransfer do
       tt in TokenTransfer,
       left_join: instance in Instance,
       on: tt.token_contract_address_hash == instance.token_contract_address_hash and tt.token_id == instance.token_id,
-      where: tt.token_contract_address_hash == ^contract_address_hash,
+      where: instance.token_contract_address_hash == ^contract_address_hash,
       order_by: [desc: tt.block_number],
       distinct: tt.token_id,
       preload: [:to_address],
