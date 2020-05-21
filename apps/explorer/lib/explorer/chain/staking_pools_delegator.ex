@@ -13,42 +13,56 @@ defmodule Explorer.Chain.StakingPoolsDelegator do
   }
 
   @type t :: %__MODULE__{
-          staking_address_hash: Hash.Address.t(),
           address_hash: Hash.Address.t(),
+          is_active: boolean(),
+          is_deleted: boolean(),
           max_ordered_withdraw_allowed: Decimal.t(),
           max_withdraw_allowed: Decimal.t(),
           ordered_withdraw: Decimal.t(),
           ordered_withdraw_epoch: integer(),
-          stake_amount: Decimal.t(),
-          snapshotted_stake_amount: Decimal.t(),
           reward_ratio: Decimal.t(),
           snapshotted_reward_ratio: Decimal.t(),
-          is_active: boolean(),
-          is_deleted: boolean()
+          snapshotted_stake_amount: Decimal.t(),
+          stake_amount: Decimal.t(),
+          staking_address_hash: Hash.Address.t()
         }
 
   @attrs ~w(
-    staking_address_hash address_hash max_ordered_withdraw_allowed
-    max_withdraw_allowed ordered_withdraw stake_amount snapshotted_stake_amount ordered_withdraw_epoch
-    reward_ratio snapshotted_reward_ratio is_active is_deleted
+    address_hash
+    is_active
+    is_deleted
+    max_ordered_withdraw_allowed
+    max_withdraw_allowed
+    ordered_withdraw
+    ordered_withdraw_epoch
+    reward_ratio
+    snapshotted_reward_ratio
+    snapshotted_stake_amount
+    stake_amount
+    staking_address_hash
   )a
 
   @req_attrs ~w(
-    staking_address_hash address_hash max_ordered_withdraw_allowed
-    max_withdraw_allowed ordered_withdraw stake_amount ordered_withdraw_epoch
+    address_hash
+    max_ordered_withdraw_allowed
+    max_withdraw_allowed
+    ordered_withdraw
+    ordered_withdraw_epoch
+    stake_amount
+    staking_address_hash
   )a
 
   schema "staking_pools_delegators" do
+    field(:is_active, :boolean, default: true)
+    field(:is_deleted, :boolean, default: false)
     field(:max_ordered_withdraw_allowed, :decimal)
     field(:max_withdraw_allowed, :decimal)
     field(:ordered_withdraw, :decimal)
     field(:ordered_withdraw_epoch, :integer)
-    field(:stake_amount, :decimal)
-    field(:snapshotted_stake_amount, :decimal)
     field(:reward_ratio, :decimal)
     field(:snapshotted_reward_ratio, :decimal)
-    field(:is_active, :boolean, default: true)
-    field(:is_deleted, :boolean, default: false)
+    field(:snapshotted_stake_amount, :decimal)
+    field(:stake_amount, :decimal)
 
     belongs_to(
       :staking_pool,

@@ -13,65 +13,92 @@ defmodule Explorer.Chain.StakingPool do
   }
 
   @type t :: %__MODULE__{
-          staking_address_hash: Hash.Address.t(),
-          mining_address_hash: Hash.Address.t(),
-          banned_until: integer,
+          are_delegators_banned: boolean,
           banned_delegators_until: integer,
+          banned_until: integer,
+          ban_reason: String.t(),
           delegators_count: integer,
           is_active: boolean,
           is_banned: boolean,
-          is_validator: boolean,
+          is_deleted: boolean,
           is_unremovable: boolean,
-          are_delegators_banned: boolean,
+          is_validator: boolean,
           likelihood: Decimal.t(),
-          validator_reward_percent: Decimal.t(),
-          stakes_ratio: Decimal.t(),
-          validator_reward_ratio: Decimal.t(),
-          snapshotted_validator_reward_ratio: Decimal.t(),
+          mining_address_hash: Hash.Address.t(),
           self_staked_amount: Decimal.t(),
-          total_staked_amount: Decimal.t(),
           snapshotted_self_staked_amount: Decimal.t(),
           snapshotted_total_staked_amount: Decimal.t(),
-          ban_reason: String.t(),
+          snapshotted_validator_reward_ratio: Decimal.t(),
+          stakes_ratio: Decimal.t(),
+          staking_address_hash: Hash.Address.t(),
+          total_staked_amount: Decimal.t(),
+          validator_reward_percent: Decimal.t(),
+          validator_reward_ratio: Decimal.t(),
           was_banned_count: integer,
-          was_validator_count: integer,
-          is_deleted: boolean
+          was_validator_count: integer
         }
 
   @attrs ~w(
-    is_active delegators_count total_staked_amount self_staked_amount snapshotted_total_staked_amount snapshotted_self_staked_amount is_validator
-    was_validator_count is_banned are_delegators_banned ban_reason was_banned_count banned_until banned_delegators_until likelihood
-    stakes_ratio validator_reward_ratio snapshotted_validator_reward_ratio staking_address_hash mining_address_hash validator_reward_percent
+    are_delegators_banned
+    banned_delegators_until
+    banned_until
+    ban_reason
+    delegators_count
+    is_active
+    is_banned
     is_unremovable
+    is_validator
+    likelihood
+    mining_address_hash
+    self_staked_amount
+    snapshotted_self_staked_amount
+    snapshotted_total_staked_amount
+    snapshotted_validator_reward_ratio
+    stakes_ratio
+    staking_address_hash
+    total_staked_amount
+    validator_reward_percent
+    validator_reward_ratio
+    was_banned_count
+    was_validator_count
   )a
   @req_attrs ~w(
-    is_active delegators_count total_staked_amount self_staked_amount is_validator
-    was_validator_count is_banned was_banned_count banned_until
-    staking_address_hash mining_address_hash is_unremovable
+    banned_until
+    delegators_count
+    is_active
+    is_banned
+    is_unremovable
+    is_validator
+    mining_address_hash
+    self_staked_amount
+    staking_address_hash
+    total_staked_amount
+    was_banned_count
+    was_validator_count
   )a
 
   schema "staking_pools" do
-    field(:banned_until, :integer)
+    field(:are_delegators_banned, :boolean, default: false)
     field(:banned_delegators_until, :integer)
+    field(:banned_until, :integer)
+    field(:ban_reason, :string)
     field(:delegators_count, :integer)
     field(:is_active, :boolean, default: false)
     field(:is_banned, :boolean, default: false)
-    field(:is_validator, :boolean, default: false)
+    field(:is_deleted, :boolean, default: false)
     field(:is_unremovable, :boolean, default: false)
-    field(:are_delegators_banned, :boolean, default: false)
+    field(:is_validator, :boolean, default: false)
     field(:likelihood, :decimal)
-    field(:validator_reward_percent, :decimal)
-    field(:stakes_ratio, :decimal)
-    field(:validator_reward_ratio, :decimal)
-    field(:snapshotted_validator_reward_ratio, :decimal)
     field(:self_staked_amount, :decimal)
-    field(:total_staked_amount, :decimal)
+    field(:stakes_ratio, :decimal)
     field(:snapshotted_self_staked_amount, :decimal)
     field(:snapshotted_total_staked_amount, :decimal)
-    field(:ban_reason, :string)
+    field(:snapshotted_validator_reward_ratio, :decimal)
+    field(:total_staked_amount, :decimal)
+    field(:validator_reward_percent, :decimal)
+    field(:validator_reward_ratio, :decimal)
     field(:was_banned_count, :integer)
     field(:was_validator_count, :integer)
-    field(:is_deleted, :boolean, default: false)
     has_many(:delegators, StakingPoolsDelegator, foreign_key: :staking_address_hash)
 
     belongs_to(
