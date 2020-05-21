@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.TransactionView do
   import BlockScoutWeb.Gettext
   import BlockScoutWeb.Tokens.Helpers
 
-  @tabs ["token_transfers", "internal_transactions", "logs", "raw_trace"]
+  @tabs ["token_transfers", "internal_transactions", "logs", "raw_trace", "pretty_trace"]
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash

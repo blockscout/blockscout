@@ -1213,6 +1213,13 @@ msgid "Raw Trace"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:29
+#: lib/block_scout_web/templates/transaction_pretty_trace/index.html.eex:8
+#: lib/block_scout_web/views/transaction_view.ex:318
+msgid "Pretty Trace"
+msgstr ""
+
+#, elixir-format
 #:
 #: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:11
 msgid "Records"
