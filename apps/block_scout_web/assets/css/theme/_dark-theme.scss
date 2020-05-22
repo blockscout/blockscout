@@ -302,7 +302,6 @@ $labels-dark: #8a8dba; // header nav, labels
 	}
 	.table textarea {
 		background-color: $dark-light;
-		color: $labels-dark;
 	}
 	hr {
 		border-top-color: darken($labels-dark, 30);

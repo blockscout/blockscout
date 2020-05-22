@@ -24,7 +24,7 @@
                 to: address_path(@conn, :show, value)
                 ) %>
             <% key == "init" or key == "code" or key == "input" -> %>
-              <textarea readonly class="text-dark">
+              <textarea readonly class="text-dark w-100">
                 <%= value %>
               </textarea>
             <% true -> %>
