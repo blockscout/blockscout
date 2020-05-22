@@ -235,6 +235,49 @@ defmodule EthereumJSONRPC.Block do
     }
   end
 
+  # Geth: a response from eth_getblockbyhash for uncle blocks is without `totalDifficulty` param
+  def elixir_to_params(
+        %{
+          "difficulty" => difficulty,
+          "extraData" => extra_data,
+          "gasLimit" => gas_limit,
+          "gasUsed" => gas_used,
+          "hash" => hash,
+          "logsBloom" => logs_bloom,
+          "miner" => miner_hash,
+          "number" => number,
+          "parentHash" => parent_hash,
+          "receiptsRoot" => receipts_root,
+          "sha3Uncles" => sha3_uncles,
+          "size" => size,
+          "stateRoot" => state_root,
+          "timestamp" => timestamp,
+          "transactionsRoot" => transactions_root,
+          "uncles" => uncles
+        } = elixir
+      ) do
+    %{
+      difficulty: difficulty,
+      extra_data: extra_data,
+      gas_limit: gas_limit,
+      gas_used: gas_used,
+      hash: hash,
+      logs_bloom: logs_bloom,
+      miner_hash: miner_hash,
+      mix_hash: Map.get(elixir, "mixHash", "0x0"),
+      nonce: Map.get(elixir, "nonce", 0),
+      number: number,
+      parent_hash: parent_hash,
+      receipts_root: receipts_root,
+      sha3_uncles: sha3_uncles,
+      size: size,
+      state_root: state_root,
+      timestamp: timestamp,
+      transactions_root: transactions_root,
+      uncles: uncles
+    }
+  end
+
   @doc """
   Get `t:EthereumJSONRPC.Transactions.elixir/0` from `t:elixir/0`
 

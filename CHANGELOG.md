@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3121](https://github.com/poanetwork/blockscout/pull/3121) - Geth: handle response from eth_getblockbyhash JSON RPC method without totalDifficulty (uncle blocks)
 - [#3073](https://github.com/poanetwork/blockscout/issues/3073) - Fix performance of Inventory tab loading for ERC-721 tokens
 - [#3114](https://github.com/poanetwork/blockscout/pull/3114) - Fix performance of "Blocks validated" page
 - [#3112](https://github.com/poanetwork/blockscout/pull/3112) - Fix verification of contracts, compiled with nightly builds of solc compiler
