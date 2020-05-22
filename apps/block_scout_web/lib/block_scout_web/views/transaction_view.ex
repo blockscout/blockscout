@@ -143,8 +143,9 @@ defmodule BlockScoutWeb.TransactionView do
     :pending
   end
 
-  def processing_time_duration(%Transaction{earliest_processing_start: nil}) do
-    :unknown
+  def processing_time_duration(%Transaction{earliest_processing_start: nil} = tx) do
+    avg_time = Timex.Duration.to_seconds(Explorer.Counters.AverageBlockTime.average_block_time())
+    {:ok, "<= #{avg_time} seconds"}
   end
 
   def processing_time_duration(%Transaction{
