@@ -116,6 +116,17 @@ defmodule BlockScoutWeb.AddressView do
 
   def balance_percentage(_, nil), do: ""
 
+  def balance_percentage(
+        %Address{
+          hash: %Explorer.Chain.Hash{
+            byte_count: 20,
+            bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+          }
+        },
+        _
+      ),
+      do: ""
+
   def balance_percentage(%Address{fetched_coin_balance: balance}, total_supply) do
     if total_supply > 0 do
       balance
