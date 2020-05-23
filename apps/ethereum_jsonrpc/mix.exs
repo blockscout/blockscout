@@ -84,7 +84,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.6"},
       # Encode/decode function names and arguments
-      {:ex_abi, [git: "https://github.com/poanetwork/ex_abi.git", branch: "master"]},
+      {:ex_abi, git: "https://github.com/ayrat555/ex_abi-1", branch: "ayrat555/re-write-encoder"},
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`
