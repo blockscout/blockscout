@@ -145,11 +145,17 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def processing_time_duration(%Transaction{earliest_processing_start: nil}) do
-    avg_time =
-      AverageBlockTime.average_block_time()
-      |> Duration.to_seconds()
+    avg_time = AverageBlockTime.average_block_time()
 
-    {:ok, "<= #{avg_time} seconds"}
+    if avg_time == {:error, :disabled} do
+      :unknown
+    else
+      avg_time_in_secs =
+        avg_time
+        |> Duration.to_seconds()
+
+      {:ok, "<= #{avg_time_in_secs} seconds"}
+    end
   end
 
   def processing_time_duration(%Transaction{
