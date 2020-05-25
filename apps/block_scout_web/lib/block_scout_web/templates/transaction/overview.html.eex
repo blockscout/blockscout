@@ -94,8 +94,6 @@
           <%= case processing_time_duration(@transaction) do %>
             <% :pending -> %>
               <% nil %>
-            <% :unknown -> %>
-              <% nil %>
             <% {:ok, interval_string} -> %>
               <dl class="row">
                 <dt class="col-sm-3 text-muted"> <%= gettext "Transaction Speed" %> </dt>

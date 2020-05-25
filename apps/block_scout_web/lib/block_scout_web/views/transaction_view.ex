@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Timex.Duration
 
@@ -144,7 +145,10 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def processing_time_duration(%Transaction{earliest_processing_start: nil}) do
-    avg_time = Timex.Duration.to_seconds(Explorer.Counters.AverageBlockTime.average_block_time())
+    avg_time =
+      AverageBlockTime.average_block_time()
+      |> Duration.to_seconds()
+
     {:ok, "<= #{avg_time} seconds"}
   end
 
