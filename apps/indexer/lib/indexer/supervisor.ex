@@ -11,6 +11,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.{
     BlockReward,
     CoinBalance,
+    CoinBalanceDaily,
     CoinBalanceOnDemand,
     ContractCode,
     InternalTransaction,
@@ -108,6 +109,8 @@ defmodule Indexer.Supervisor do
         {InternalTransaction.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {CoinBalance.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {CoinBalanceDaily.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {TokenInstance.Supervisor,

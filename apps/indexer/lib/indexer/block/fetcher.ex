@@ -20,6 +20,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.{
     BlockReward,
     CoinBalance,
+    CoinBalanceDaily,
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
@@ -55,6 +56,7 @@ defmodule Indexer.Block.Fetcher do
                 address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
                 addresses: Import.Runner.options(),
                 address_coin_balances: Import.Runner.options(),
+                address_coin_balances_daily: Import.Runner.options(),
                 address_token_balances: Import.Runner.options(),
                 blocks: Import.Runner.options(),
                 block_second_degree_relations: Import.Runner.options(),
@@ -164,6 +166,7 @@ defmodule Indexer.Block.Fetcher do
              %{
                addresses: %{params: addresses},
                address_coin_balances: %{params: coin_balances_params_set},
+               address_coin_balances_daily: %{params: coin_balances_params_set},
                address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations_params},
@@ -245,12 +248,18 @@ defmodule Indexer.Block.Fetcher do
   def async_import_coin_balances(%{addresses: addresses}, %{
         address_hash_to_fetched_balance_block_number: address_hash_to_block_number
       }) do
-    addresses
-    |> Enum.map(fn %Address{hash: address_hash} ->
-      block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
-      %{address_hash: address_hash, block_number: block_number}
-    end)
+    coin_balances_import_params =
+      addresses
+      |> Enum.map(fn %Address{hash: address_hash} ->
+        block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
+        %{address_hash: address_hash, block_number: block_number}
+      end)
+
+    coin_balances_import_params
     |> CoinBalance.async_fetch_balances()
+
+    coin_balances_import_params
+    |> CoinBalanceDaily.async_fetch_balances()
   end
 
   def async_import_coin_balances(_, _), do: :ok

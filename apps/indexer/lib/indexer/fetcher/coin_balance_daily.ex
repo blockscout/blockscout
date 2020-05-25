@@ -1,7 +1,6 @@
-defmodule Indexer.Fetcher.CoinBalance do
+defmodule Indexer.Fetcher.CoinBalanceDaily do
   @moduledoc """
-  Fetches `t:Explorer.Chain.Address.CoinBalance.t/0` and updates `t:Explorer.Chain.Address.t/0` `fetched_coin_balance` and
-  `fetched_coin_balance_block_number` to value at max `t:Explorer.Chain.Address.CoinBalance.t/0` `block_number` for the given `t:Explorer.Chain.Address.t/` `hash`.
+  Fetches `t:Explorer.Chain.Address.CoinBalanceDaily.t/0`.
   """
 
   use Indexer.Fetcher
@@ -11,10 +10,10 @@ defmodule Indexer.Fetcher.CoinBalance do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
-  alias EthereumJSONRPC.FetchedBalances
+  alias EthereumJSONRPC.{Blocks, FetchedBalances}
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Cache.Accounts
+  alias Explorer.Chain.Hash
   alias Indexer.{BufferedTask, Tracer}
 
   @behaviour BufferedTask
@@ -23,15 +22,15 @@ defmodule Indexer.Fetcher.CoinBalance do
     flush_interval: :timer.seconds(3),
     max_batch_size: 500,
     max_concurrency: 4,
-    task_supervisor: Indexer.Fetcher.CoinBalance.TaskSupervisor,
-    metadata: [fetcher: :coin_balance]
+    task_supervisor: Indexer.Fetcher.CoinBalanceDaily.TaskSupervisor,
+    metadata: [fetcher: :coin_balance_daily]
   ]
 
   @doc """
-  Asynchronously fetches balances for each address `hash` at the `block_number`.
+  Asynchronously fetches balances for each address `hash` at the `day`.
   """
   @spec async_fetch_balances([
-          %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
+          %{required(:address_hash) => Hash.Address.t(), required(:day) => Date.t()}
         ]) :: :ok
   def async_fetch_balances(balance_fields) when is_list(balance_fields) do
     entries = Enum.map(balance_fields, &entry/1)
@@ -71,7 +70,7 @@ defmodule Indexer.Fetcher.CoinBalance do
   end
 
   @impl BufferedTask
-  @decorate trace(name: "fetch", resource: "Indexer.Fetcher.CoinBalance.run/2", service: :indexer, tracer: Tracer)
+  @decorate trace(name: "fetch", resource: "Indexer.Fetcher.CoinBalanceDaily.run/2", service: :indexer, tracer: Tracer)
   def run(entries, json_rpc_named_arguments) do
     # the same address may be used more than once in the same block, but we only want one `Balance` for a given
     # `{address, block}`, so take unique params only
@@ -124,28 +123,47 @@ defmodule Indexer.Fetcher.CoinBalance do
     {address_hash_bytes, block_number}
   end
 
-  # We want to record all historical balances for an address, but have the address itself have balance from the
-  # `Balance` with the greatest block_number for that address.
   def balances_params_to_address_params(balances_params) do
     balances_params
     |> Enum.group_by(fn %{address_hash: address_hash} -> address_hash end)
     |> Map.values()
     |> Stream.map(&Enum.max_by(&1, fn %{block_number: block_number} -> block_number end))
     |> Enum.map(fn %{address_hash: address_hash, block_number: block_number, value: value} ->
-      %{hash: address_hash, fetched_coin_balance_block_number: block_number, fetched_coin_balance: value}
+      %{
+        hash: address_hash,
+        fetched_coin_balance_block_number: block_number,
+        fetched_coin_balance: value
+      }
     end)
   end
 
   def import_fetched_balances(%FetchedBalances{params_list: params_list}, broadcast_type \\ false) do
-    value_fetched_at = DateTime.utc_now()
+    day =
+      if Enum.empty?(params_list) do
+        nil
+      else
+        json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+        block_number = Enum.at(params_list, 0)[:block_number]
 
-    importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
+        {:ok, %Blocks{blocks_params: blocks_params}} =
+          EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
 
-    addresses_params = balances_params_to_address_params(importable_balances_params)
+        block_timestamp = Enum.at(blocks_params, 0).timestamp
+
+        DateTime.to_date(block_timestamp)
+      end
+
+    importable_balances_daily_params =
+      Enum.map(params_list, fn param ->
+        param
+        |> Map.put(:day, day)
+      end)
+
+    addresses_params = balances_params_to_address_params(importable_balances_daily_params)
 
     Chain.import(%{
       addresses: %{params: addresses_params, with: :balance_changeset},
-      address_coin_balances: %{params: importable_balances_params},
+      address_coin_balances_daily: %{params: importable_balances_daily_params},
       broadcast: broadcast_type
     })
   end
@@ -180,11 +198,11 @@ defmodule Indexer.Fetcher.CoinBalance do
     Enum.map(errors, &fetched_balance_error_to_entry/1)
   end
 
-  defp fetched_balance_error_to_entry(%{data: %{block_quantity: block_quantity, hash_data: hash_data}})
+  defp fetched_balance_error_to_entry(%{data: %{block_quantity: block_quantity, day: day, hash_data: hash_data}})
        when is_binary(block_quantity) and is_binary(hash_data) do
     {:ok, %Hash{bytes: address_hash_bytes}} = Hash.Address.cast(hash_data)
     block_number = quantity_to_integer(block_quantity)
-    {address_hash_bytes, block_number}
+    {address_hash_bytes, block_number, day}
   end
 
   defp fetched_balance_errors_to_iodata(errors) when is_list(errors) do
@@ -200,9 +218,9 @@ defmodule Indexer.Fetcher.CoinBalance do
   defp fetched_balance_error_to_iodata(%{
          code: code,
          message: message,
-         data: %{block_quantity: block_quantity, hash_data: hash_data}
+         data: %{day: day, hash_data: hash_data}
        })
-       when is_integer(code) and is_binary(message) and is_binary(block_quantity) and is_binary(hash_data) do
-    [hash_data, "@", quantity_to_integer(block_quantity), ": (", to_string(code), ") ", message, ?\n]
+       when is_integer(code) and is_binary(message) and is_binary(day) and is_binary(hash_data) do
+    [hash_data, "@", day, ": (", to_string(code), ") ", message, ?\n]
   end
 end

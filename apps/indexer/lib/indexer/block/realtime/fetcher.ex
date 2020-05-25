@@ -26,7 +26,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     ]
 
   alias Ecto.Changeset
-  alias EthereumJSONRPC.{FetchedBalances, Subscription}
+  alias EthereumJSONRPC.{Blocks, FetchedBalances, Subscription}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Counters.AverageBlockTime
@@ -172,6 +172,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         block_fetcher,
         %{
           address_coin_balances: %{params: address_coin_balances_params},
+          address_coin_balances_daily: %{params: address_coin_balances_daily_params},
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           addresses: %{params: addresses_params},
           block_rewards: block_rewards
@@ -182,7 +183,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
             balances(block_fetcher, %{
               address_hash_to_block_number: address_hash_to_block_number,
               addresses_params: addresses_params,
-              balances_params: address_coin_balances_params
+              balances_params: address_coin_balances_params,
+              balances_daily_params: address_coin_balances_daily_params
             })},
          {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors),
          chain_import_options =
@@ -381,7 +383,22 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
         importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
 
-        {:ok, %{addresses_params: merged_addresses_params, balances_params: importable_balances_params}}
+        block_number = Enum.at(params_list, 0)[:block_number]
+
+        {:ok, %Blocks{blocks_params: blocks_params}} =
+          EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
+
+        block_timestamp = Enum.at(blocks_params, 0).timestamp
+        day = DateTime.to_date(block_timestamp)
+
+        importable_balances_daily_params = Enum.map(params_list, &Map.put(&1, :day, day))
+
+        {:ok,
+         %{
+           addresses_params: merged_addresses_params,
+           balances_params: importable_balances_params,
+           balances_daily_params: importable_balances_daily_params
+         }}
 
       {:error, _} = error ->
         error
