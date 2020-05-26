@@ -16,9 +16,15 @@
             </span>
           </p>
           <p class="form-p"><%= gettext("Your Balance:") %>
-            <span class="text-dark">
-              <%= format_token_amount(@balance, @token) %>
-            </span>
+            <%= if @balance >= @min_candidate_stake do %>
+              <span class="text-dark link-dotted" data-available-amount="<%= from_wei(@balance, @token) %>">
+                <%= format_token_amount(@balance, @token) %>
+              </span>
+            <% else %>
+              <span class="text-dark">
+                <%= format_token_amount(@balance, @token) %>
+              </span>
+            <% end %>
           </p>
           <div class="form-buttons"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become a Candidate"), extra_class: "full-width" %></div>
         </form>

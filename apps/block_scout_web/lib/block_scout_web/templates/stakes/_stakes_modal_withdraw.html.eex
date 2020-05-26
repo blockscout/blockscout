@@ -36,11 +36,12 @@
               %>
             <% end %>
             <%= if Decimal.positive?(@delegator.max_withdraw_allowed) do %>
-              <p class="form-p m-b-0-7"><%= gettext("Available Now:") %>
+              <div class="form-p m-b-0-7"><%= gettext("Available Now:") %>
                 <span class="text-dark link-dotted" data-available-amount="<%= from_wei(@delegator.max_withdraw_allowed, @token) %>">
                   <%= format_token_amount(@delegator.max_withdraw_allowed, @token) %>
                 </span>
-              </p>
+                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip.html", text: gettext("You can withdraw this amount right now.") %>
+              </div>
               <%=
                 render BlockScoutWeb.StakesView,
                 "_stakes_btn_withdraw.html",
