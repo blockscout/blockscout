@@ -1881,7 +1881,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:53
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:54
 msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
 msgstr ""
 
@@ -1923,7 +1923,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_empty_content.html.eex:13
 #: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:5
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:23
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:29
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:25
 msgid "Become a Candidate"
 msgstr ""
@@ -2194,7 +2194,7 @@ msgid "Withdraw"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:47
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:48
 msgid "Withdraw Now"
 msgstr ""
 
@@ -2316,24 +2316,24 @@ msgid "Searching for pools you have ever staked into. Please, wait..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:679
+#: lib/block_scout_web/channels/stakes_channel.ex:682
 msgid "Pools searching is already in progress for this address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:682
-#: lib/block_scout_web/channels/stakes_channel.ex:729
+#: lib/block_scout_web/channels/stakes_channel.ex:685
+#: lib/block_scout_web/channels/stakes_channel.ex:732
 msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:629
+#: lib/block_scout_web/channels/stakes_channel.ex:632
 msgid "JSON RPC error"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:686
-#: lib/block_scout_web/channels/stakes_channel.ex:733
+#: lib/block_scout_web/channels/stakes_channel.ex:689
+#: lib/block_scout_web/channels/stakes_channel.ex:736
 msgid "Unknown address of Staking contract. Please, contact support"
 msgstr ""
 
@@ -2403,17 +2403,17 @@ msgid "The staking epochs for which the reward could be claimed:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:723
+#: lib/block_scout_web/channels/stakes_channel.ex:726
 msgid "Staking epochs are not specified or not in the allowed range"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:726
+#: lib/block_scout_web/channels/stakes_channel.ex:729
 msgid "Unknown pool staking address. Please, contact support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:720
+#: lib/block_scout_web/channels/stakes_channel.ex:723
 msgid "Reward calculating is already in progress for this address"
 msgstr ""
 
@@ -2430,7 +2430,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:26
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:32
 msgid "<p>To become a candidate, your staking address must be funded with %{symbol} tokens <strong>and</strong> xDai coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
 msgstr ""
 
@@ -2515,4 +2515,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_stake.html.eex:16
 msgid "Your Current Stake:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:43
+msgid "You can withdraw this amount right now."
 msgstr ""
