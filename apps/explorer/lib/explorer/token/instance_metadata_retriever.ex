@@ -100,7 +100,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     case HTTPoison.get(token_uri) do
       {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
         if Enum.member?(headers, {"Content-Type", "image/png"}) do
-          json = %{"image" => %{"type" => "image", "description" => token_uri}}
+          json = %{"image" => token_uri}
 
           check_type(json)
         else
