@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3126](https://github.com/poanetwork/blockscout/pull/3126) - Fetch balance only for blocks which are greater or equal block with FIRST_BLOCK number
 - [#3122](https://github.com/poanetwork/blockscout/pull/3122) - Exclude balance percentage calculation for burn address on accounts page
 - [#3121](https://github.com/poanetwork/blockscout/pull/3121) - Geth: handle response from eth_getblockbyhash JSON RPC method without totalDifficulty (uncle blocks)
 - [#3119](https://github.com/poanetwork/blockscout/pull/3119), [#3120](https://github.com/poanetwork/blockscout/pull/3120) - Fix performance of Inventory tab loading for ERC-721 tokens
