@@ -10,12 +10,12 @@
           <form>
             <%= render BlockScoutWeb.CommonComponentsView, "_input_group.html", id: "delegator-stake", classes: "form-group", input_classes: "form-control n-b-r", attributes: "delegator-stake", type: "text", placeholder: gettext("Amount"), prepend: @token.symbol %>
 
-            <% has_stake = @delegator && Decimal.positive?(@delegator.stake_amount) %>
+            <% has_stake = Decimal.positive?(@delegator_staked) %>
 
             <%= if has_stake do %>
               <p class="form-p m-b-0"><%= gettext("Your Current Stake:") %>
                 <span class="text-dark">
-                  <%= format_token_amount(@delegator.stake_amount, @token) %>
+                  <%= format_token_amount(@delegator_staked, @token) %>
                 </span>
               </p>
             <% else %>
@@ -26,7 +26,7 @@
               </p>
             <% end %>
             <p class="form-p"><%= gettext("Your Balance:") %>
-              <%= if Decimal.positive?(@balance) do %>
+              <%= if Decimal.add(@delegator_staked, @balance) >= @min_stake do %>
                 <span class="text-dark link-dotted" data-available-amount="<%= from_wei(@balance, @token) %>">
                   <%= format_token_amount(@balance, @token) %>
                 </span>
