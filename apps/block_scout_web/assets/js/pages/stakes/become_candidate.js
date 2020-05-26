@@ -16,9 +16,10 @@ export function openBecomeCandidateModal (store) {
     .push('render_become_candidate')
     .receive('ok', msg => {
       const $modal = $(msg.html)
+      const $form = $modal.find('form')
 
       setupValidation(
-        $modal.find('form'),
+        $form,
         {
           'candidate-stake': value => isCandidateStakeValid(value, store, msg),
           'mining-address': value => isMiningAddressValid(value, store)
@@ -26,7 +27,14 @@ export function openBecomeCandidateModal (store) {
         $modal.find('form button')
       )
 
-      $modal.find('form').submit(() => {
+      $modal.find('[data-available-amount]').click(e => {
+        const amount = $(e.currentTarget).data('available-amount')
+        $('[candidate-stake]', $form).val(amount).trigger('input')
+        $('.tooltip').tooltip('hide')
+        return false
+      })
+
+      $form.submit(() => {
         becomeCandidate($modal, store, msg)
         return false
       })
