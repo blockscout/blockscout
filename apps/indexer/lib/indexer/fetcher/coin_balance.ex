@@ -115,15 +115,6 @@ defmodule Indexer.Fetcher.CoinBalance do
     end
   end
 
-  defp first_block_to_index do
-    string_value = Application.get_env(:indexer, :first_block)
-
-    case Integer.parse(string_value) do
-      {integer, ""} -> integer
-      _ -> 0
-    end
-  end
-
   defp entry_to_params({address_hash_bytes, block_number}) when is_integer(block_number) do
     {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
     %{block_quantity: integer_to_quantity(block_number), hash_data: to_string(address_hash)}
