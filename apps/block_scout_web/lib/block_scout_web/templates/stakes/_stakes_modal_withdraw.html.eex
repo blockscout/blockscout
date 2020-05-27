@@ -14,41 +14,63 @@
                 <%= format_token_amount(@delegator.stake_amount, @token) %>
               </span>
             </p>
-            <%= if Decimal.positive?(@delegator.ordered_withdraw) do %>
+
+            <%
+              withdraw_now_allowed = Decimal.positive?(@delegator.max_withdraw_allowed)
+              order_allowed = Decimal.positive?(@delegator.max_ordered_withdraw_allowed)
+              has_already_ordered = Decimal.positive?(@delegator.ordered_withdraw)
+              show_order_withdrawal = order_allowed or has_already_ordered
+            %>
+
+            <% # display available amounts %>
+            <%= if has_already_ordered do %>
               <p class="form-p m-b-0"><%= gettext("Already Ordered:") %>
                 <span class="text-dark">
                   <%= format_token_amount(@delegator.ordered_withdraw, @token) %>
                 </span>
               </p>
             <% end %>
-            <%= if Decimal.positive?(@delegator.max_ordered_withdraw_allowed) or Decimal.positive?(@delegator.ordered_withdraw) do %>
-              <div class="form-p m-b-0-7"><%= gettext("You Can Order:") %>
-                <span class="text-dark link-dotted" data-available-amount="<%= from_wei(@delegator.max_ordered_withdraw_allowed, @token) %>">
-                  <%= format_token_amount(@delegator.max_ordered_withdraw_allowed, @token) %>
-                </span>
-                <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip.html", text: gettext("The amount can be claimed after the current epoch finishes.") %>
+            <%= if show_order_withdrawal do %>
+              <div class="form-p m-b-0<%= if not withdraw_now_allowed, do: "-7" %>"><%= gettext("You Can Order:") %>
+                <%= if order_allowed do %>
+                  <span class="text-dark link-dotted" data-available-amount="<%= from_wei(@delegator.max_ordered_withdraw_allowed, @token) %>">
+                    <%= format_token_amount(@delegator.max_ordered_withdraw_allowed, @token) %>
+                  </span>
+                  <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip.html", text: gettext("The amount can be claimed after the current epoch finishes.") %>
+                <% else %>
+                  <span class="text-dark">
+                    <%= format_token_amount(@delegator.max_ordered_withdraw_allowed, @token) %>
+                  </span>
+                <% end %>
               </div>
-              <%=
-                render BlockScoutWeb.StakesView,
-                "_stakes_btn_withdraw.html",
-                text: gettext("Order Withdrawal"),
-                extra_class: "full-width btn-add-full order-withdraw"
-              %>
             <% end %>
-            <%= if Decimal.positive?(@delegator.max_withdraw_allowed) do %>
+            <%= if withdraw_now_allowed do %>
               <div class="form-p m-b-0-7"><%= gettext("Available Now:") %>
                 <span class="text-dark link-dotted" data-available-amount="<%= from_wei(@delegator.max_withdraw_allowed, @token) %>">
                   <%= format_token_amount(@delegator.max_withdraw_allowed, @token) %>
                 </span>
                 <%= render BlockScoutWeb.CommonComponentsView, "_i_tooltip.html", text: gettext("You can withdraw this amount right now.") %>
               </div>
-              <%=
-                render BlockScoutWeb.StakesView,
-                "_stakes_btn_withdraw.html",
-                text: gettext("Withdraw Now"),
-                extra_class: "full-width btn-add-full withdraw"
-              %>
             <% end %>
+
+            <% # display buttons %>
+            <%=
+              if show_order_withdrawal do
+                bottom_margin = if withdraw_now_allowed, do: " m-b-0-7", else: ""
+                render BlockScoutWeb.StakesView,
+                  "_stakes_btn_withdraw.html",
+                  text: gettext("Order Withdrawal"),
+                  extra_class: "full-width btn-add-full order-withdraw" <> bottom_margin
+              end
+            %>
+            <%=
+              if withdraw_now_allowed do
+                render BlockScoutWeb.StakesView,
+                  "_stakes_btn_withdraw.html",
+                  text: gettext("Withdraw Now"),
+                  extra_class: "full-width btn-add-full withdraw"
+              end
+            %>
           </form>
         </div>
         <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>
