@@ -138,9 +138,7 @@ defmodule Explorer.SmartContract.Reader do
 
     impl_abi =
       with {:ok, implementation_address} <- Chain.get_proxied_address(contract_address_hash),
-           IO.inspect(implementation_address),
            implementation_contract <- Chain.address_hash_to_smart_contract(implementation_address) do
-        IO.inspect(implementation_contract)
         implementation_contract.abi
       else
         _ -> nil
