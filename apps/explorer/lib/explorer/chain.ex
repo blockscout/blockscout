@@ -1517,7 +1517,8 @@ defmodule Explorer.Chain do
       from(
         a0 in Address,
         select: fragment("SUM(a0.fetched_coin_balance)"),
-        where: a0.hash != ^burn_address_hash
+        where: a0.hash != ^burn_address_hash,
+        where: a0.fetched_coin_balance > ^0
       )
 
     Repo.one!(query) || 0
@@ -1528,7 +1529,8 @@ defmodule Explorer.Chain do
     query =
       from(
         a0 in Address,
-        select: fragment("SUM(a0.fetched_coin_balance)")
+        select: fragment("SUM(a0.fetched_coin_balance)"),
+        where: a0.fetched_coin_balance > ^0
       )
 
     Repo.one!(query) || 0
