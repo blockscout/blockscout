@@ -4748,7 +4748,10 @@ defmodule Explorer.Chain do
     Repo.all(filtered_query)
   end
 
-  defp staking_pools_paging_query(base_query, :all), do: base_query
+  defp staking_pools_paging_query(base_query, :all) do
+    base_query
+    |> order_by(asc: :staking_address_hash)
+  end
 
   defp staking_pools_paging_query(base_query, paging_options) do
     paging_query =
