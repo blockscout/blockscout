@@ -94,7 +94,7 @@ function isAmountValid (value, store, msg) {
   const currentStake = new BigNumber(msg.delegator_staked)
   const amount = new BigNumber(value.replace(',', '.').trim()).shiftedBy(decimals).integerValue()
 
-  if (!amount.isPositive() && !amount.isNegative()) {
+  if ((!amount.isPositive() && !amount.isNegative()) || amount.isZero()) {
     return 'Invalid amount'
   } else if (amount.isLessThan(currentStake) && currentStake.minus(amount).isLessThan(minStake)) {
     return `A minimum of ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol} is required to remain in the pool, or withdraw the entire amount to leave this pool`
@@ -114,7 +114,7 @@ function isWithdrawAmountValid (value, store, msg) {
     return null
   } else if (amount.isLessThan(currentStake) && currentStake.minus(amount).isLessThan(minStake)) {
     return null
-  } else if (!amount.isPositive() || amount.isGreaterThan(maxAllowed)) {
+  } else if (amount.isGreaterThan(maxAllowed)) {
     return null
   }
 

@@ -119,6 +119,10 @@
       opacity: 0.5;
     }
   }
+
+  &.m-b-0-7 {
+    margin-bottom: 0.7rem;
+  }
 }
 
 @mixin btn-line($bg-color: #fff, $text-color: $secondary) {

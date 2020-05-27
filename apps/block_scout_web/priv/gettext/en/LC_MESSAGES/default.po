@@ -1881,7 +1881,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:54
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:76
 msgid "<p>Pending stake (stake placed on a candidate pool or placed during the current staking epoch) may be withdrawn now.</p>\n        <p>Active stake (stake available after the current epoch) can be ordered for withdrawal from the pool, and will be available to claim after the current staking epoch is complete.</p>\n        <p>If you have already ordered (and the staking window is still open), you may increase your current order by entering a positive value, or decrease your current order by entering a negative value in the box and clicking 'Order Withdrawal'. You must either keep the minimum stake amount in the pool, or order your entire stake for withdrawal.</p>\n"
 msgstr ""
 
@@ -1892,7 +1892,7 @@ msgid "Active Pools"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:18
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:27
 msgid "Already Ordered:"
 msgstr ""
 
@@ -1906,7 +1906,7 @@ msgid "Amount"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:39
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:48
 msgid "Available Now:"
 msgstr ""
 
@@ -2050,7 +2050,7 @@ msgid "No Information"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:34
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:62
 msgid "Order Withdrawal"
 msgstr ""
 
@@ -2194,7 +2194,7 @@ msgid "Withdraw"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:48
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:70
 msgid "Withdraw Now"
 msgstr ""
 
@@ -2316,24 +2316,24 @@ msgid "Searching for pools you have ever staked into. Please, wait..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:682
+#: lib/block_scout_web/channels/stakes_channel.ex:683
 msgid "Pools searching is already in progress for this address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:685
-#: lib/block_scout_web/channels/stakes_channel.ex:732
+#: lib/block_scout_web/channels/stakes_channel.ex:686
+#: lib/block_scout_web/channels/stakes_channel.ex:733
 msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:632
+#: lib/block_scout_web/channels/stakes_channel.ex:633
 msgid "JSON RPC error"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:689
-#: lib/block_scout_web/channels/stakes_channel.ex:736
+#: lib/block_scout_web/channels/stakes_channel.ex:690
+#: lib/block_scout_web/channels/stakes_channel.ex:737
 msgid "Unknown address of Staking contract. Please, contact support"
 msgstr ""
 
@@ -2403,17 +2403,17 @@ msgid "The staking epochs for which the reward could be claimed:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:726
+#: lib/block_scout_web/channels/stakes_channel.ex:727
 msgid "Staking epochs are not specified or not in the allowed range"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:729
+#: lib/block_scout_web/channels/stakes_channel.ex:730
 msgid "Unknown pool staking address. Please, contact support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:723
+#: lib/block_scout_web/channels/stakes_channel.ex:724
 msgid "Reward calculating is already in progress for this address"
 msgstr ""
 
@@ -2491,7 +2491,7 @@ msgid "Minimum Stake Allowed:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:29
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:39
 msgid "The amount can be claimed after the current epoch finishes."
 msgstr ""
 
@@ -2508,7 +2508,7 @@ msgid "This is a %{pool_type}."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:25
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:34
 msgid "You Can Order:"
 msgstr ""
 
@@ -2518,6 +2518,6 @@ msgid "Your Current Stake:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:43
+#: lib/block_scout_web/templates/stakes/_stakes_modal_withdraw.html.eex:52
 msgid "You can withdraw this amount right now."
 msgstr ""
