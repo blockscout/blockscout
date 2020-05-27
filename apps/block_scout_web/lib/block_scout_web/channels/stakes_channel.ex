@@ -173,20 +173,6 @@ defmodule BlockScoutWeb.StakesChannel do
     delegator_to = to_address && Chain.staking_pool_delegator(to_address, socket.assigns.account)
     token = ContractState.get(:token)
 
-    min_from_stake =
-      if delegator_from.address_hash == delegator_from.staking_address_hash do
-        ContractState.get(:min_candidate_stake)
-      else
-        ContractState.get(:min_delegator_stake)
-      end
-
-    min_to_stake =
-      if to_address == socket.assigns.account do
-        ContractState.get(:min_candidate_stake)
-      else
-        ContractState.get(:min_delegator_stake)
-      end
-
     html =
       View.render_to_string(StakesView, "_stakes_modal_move.html",
         token: token,
@@ -196,6 +182,15 @@ defmodule BlockScoutWeb.StakesChannel do
         delegator_from: delegator_from,
         delegator_to: delegator_to,
         amount: amount
+      )
+
+    min_from_stake =
+      Decimal.new(
+        if delegator_from.address_hash == delegator_from.staking_address_hash do
+          ContractState.get(:min_candidate_stake)
+        else
+          ContractState.get(:min_delegator_stake)
+        end
       )
 
     result = %{
@@ -209,8 +204,19 @@ defmodule BlockScoutWeb.StakesChannel do
       },
       to:
         if pool_to do
+          stake_amount = Decimal.new((delegator_to && delegator_to.stake_amount) || 0)
+
+          min_to_stake =
+            Decimal.new(
+              if to_address == socket.assigns.account do
+                ContractState.get(:min_candidate_stake)
+              else
+                ContractState.get(:min_delegator_stake)
+              end
+            )
+
           %{
-            stake_amount: (delegator_to && delegator_to.stake_amount) || 0,
+            stake_amount: stake_amount,
             min_stake: min_to_stake,
             self_staked_amount: pool_to.self_staked_amount,
             total_staked_amount: pool_to.total_staked_amount

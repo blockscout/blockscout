@@ -11,12 +11,11 @@
             <div class="col-1"></div>
             <div class="col-4">
               <%=
-                pool_type =
-                  if @pool.is_validator do
-                    gettext("validator")
-                  else
-                    gettext("candidate")
-                  end
+                pool_type = cond do
+                  @pool.is_validator -> gettext("validator")
+                  @pool.is_active -> gettext("candidate")
+                  true -> gettext("pool owner")
+                end
 
                 render(
                   BlockScoutWeb.StakesView,
@@ -28,29 +27,45 @@
             </div>
             <div class="col-4">
               <%=
-                amount_col_title =
+                title =
                   if @show_snapshotted_data do
-                    gettext("Current Stake Amount") <> "<br />(" <> gettext("Accounted Stake Amount")  <> ")"
+                    gettext("Current Stake Amount") <> "<br />(" <> gettext("Working Stake Amount")  <> ")"
                   else
                     gettext("Current Stake Amount")
                   end
 
-                render BlockScoutWeb.StakesView, "_stakes_th.html", title: amount_col_title, tooltip: gettext("Amount of %{symbol} placed by an address.", symbol: @token.symbol)
+                tooltip =
+                  gettext("Amount of %{symbol} placed by an address.", symbol: @token.symbol) <>
+                    if @show_snapshotted_data do
+                      gettext(" Working Stake Amount is an amount which is accounted and working at the current staking epoch.")
+                    else
+                      ""
+                    end
+
+                render BlockScoutWeb.StakesView, "_stakes_th.html", title: title, tooltip: tooltip
               %>
             </div>
             <div class="col-3">
               <%=
-                reward_col_title =
+                title =
                   if @show_snapshotted_data do
                     gettext("Potential Reward Percent") <> "<br />(" <> gettext("Current Reward Percent")  <> ")"
                   else
                     gettext("Potential Reward Percent")
                   end
 
+                tooltip =
+                  gettext("Reward distribution is based on stake amount. Validator receives a minimum of %{min}%.", min: @validator_min_reward_percent) <>
+                    if @show_snapshotted_data do
+                      " " <> gettext("Current Reward Percent is calculated based on the Working Stake Amount.")
+                    else
+                      ""
+                    end
+
                 render BlockScoutWeb.StakesView,
                   "_stakes_th.html",
-                  title: reward_col_title,
-                  tooltip: gettext("Reward distribution is based on stake amount. Validator receives a minimum of %{min}%.", min: @validator_min_reward_percent)
+                  title: title,
+                  tooltip: tooltip
               %>
             </div>
           </div>
