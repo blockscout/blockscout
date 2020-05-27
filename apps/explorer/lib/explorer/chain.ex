@@ -2182,7 +2182,7 @@ defmodule Explorer.Chain do
         select: last_fetched_counter.value
       )
 
-    Repo.one!(query)
+    Repo.one!(query) || 0
   end
 
   defp block_status({number, timestamp}) do
