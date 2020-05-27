@@ -4994,6 +4994,25 @@ defmodule Explorer.ChainTest do
       assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
     end
 
+    test "all active staking pools ordered by staking_address" do
+      address1 = Factory.address_hash()
+      address2 = Factory.address_hash()
+      address3 = Factory.address_hash()
+
+      assert address1 < address2 and address2 < address3
+
+      # insert pools in descending order
+      insert(:staking_pool, is_active: true, staking_address_hash: address3)
+      insert(:staking_pool, is_active: true, staking_address_hash: address2)
+      insert(:staking_pool, is_active: true, staking_address_hash: address1)
+
+      # get all active pools in ascending order
+      assert [%{pool: pool1}, %{pool: pool2}, %{pool: pool3}] = Chain.staking_pools(:active, :all)
+      assert pool1.staking_address_hash == address1
+      assert pool2.staking_address_hash == address2
+      assert pool3.staking_address_hash == address3
+    end
+
     test "inactive staking pools" do
       insert(:staking_pool, is_active: true)
       inserted_pool = insert(:staking_pool, is_active: false)

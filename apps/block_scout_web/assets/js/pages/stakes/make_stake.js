@@ -68,7 +68,7 @@ function isDelegatorStakeValid (value, store, msg, address) {
   if (!stake.isPositive() || stake.isZero()) {
     return 'Invalid amount'
   } else if (stake.plus(currentStake).isLessThan(minStake)) {
-    const staker = (account === address) ? 'candidate' : 'delegate'
+    const staker = (account.toLowerCase() === address.toLowerCase()) ? 'candidate' : 'delegate'
     return `Minimum ${staker} stake is ${minStake.shiftedBy(-decimals)} ${store.getState().tokenSymbol}`
   } else if (stake.isGreaterThan(balance)) {
     return 'Insufficient funds'

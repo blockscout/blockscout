@@ -19,12 +19,14 @@ export function openMoveStakeModal (event, store) {
 }
 
 function setupModal ($modal, fromAddress, store, msg) {
+  const $form = $modal.find('form')
+
   setupChart($modal.find('.js-pool-from-progress'), msg.from.self_staked_amount, msg.from.total_staked_amount)
   if (msg.to) {
     setupChart($modal.find('.js-pool-to-progress'), msg.to.self_staked_amount, msg.to.total_staked_amount)
 
     setupValidation(
-      $modal.find('form'),
+      $form,
       {
         'move-amount': value => isMoveAmountValid(value, store, msg)
       },
@@ -32,7 +34,7 @@ function setupModal ($modal, fromAddress, store, msg) {
     )
   }
 
-  $modal.find('form').submit(() => {
+  $form.submit(() => {
     moveStake($modal, fromAddress, store, msg)
     return false
   })
@@ -44,9 +46,15 @@ function setupModal ($modal, fromAddress, store, msg) {
       .push('render_move_stake', { from: fromAddress, to: toAddress, amount })
       .receive('ok', msg => {
         $modal.html($(msg.html).html())
-        $modal.addClass('show').css('padding-right: 12px; display: block;')
+        $modal.modal('show')
         setupModal($modal, fromAddress, store, msg)
       })
+  })
+  $modal.find('[data-available-amount]').click(e => {
+    const amount = $(e.currentTarget).data('available-amount')
+    $('[move-amount]', $form).val(amount).trigger('input')
+    $('.tooltip').tooltip('hide')
+    return false
   })
 }
 

@@ -16,7 +16,7 @@
   </div>
   <div class="stakes-progress-infos">
     <div class="stakes-progress-info">
-      <h2 class="stakes-progress-info-title"><%= gettext("Pool") %></h2>
+      <h2 class="stakes-progress-info-title"><%= (if assigns[:pool_label], do: @pool_label) || gettext("Pool") %></h2>
       <p class="stakes-progress-info-value stakes-progress-info-link js-pool-info" data-address="<%= to_string(@pool.staking_address_hash) %>">
         <%= BlockScoutWeb.AddressView.trimmed_hash(@pool.staking_address_hash) %>
       </p>
