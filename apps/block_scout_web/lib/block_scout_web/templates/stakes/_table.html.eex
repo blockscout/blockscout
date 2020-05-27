@@ -2,10 +2,30 @@
   <div class="stakes-table-head">
     <div class="col-1"></div>
     <div class="col-2">
-      <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Pool"), tooltip: gettext("Candidate and Validator Pool Addresses. Current validator pools are specified by a checkmark.") %>
+      <%
+        tooltip = cond do
+          @pools_type == :validator ->
+            gettext("Validator Pool Addresses.")
+          @pools_type == :active ->
+            gettext("Candidate and Validator Pool Addresses. Current validator pools are specified by a checkmark.")
+          @pools_type == :inactive ->
+            gettext("Inactive Pool Addresses. Current validator pools are specified by a checkmark.")
+        end
+      %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Pool"), tooltip: tooltip %>
     </div>
     <div class="col-2">
-      <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Staked Amount"), tooltip: gettext("The first amount is the validator’s own stake, the second is the total amount staked into the pool by the validator and all delegators.") %>
+      <%
+        tooltip = cond do
+          @pools_type == :validator ->
+            gettext("The first amount is the validator’s own stake, the second is the total amount staked into the pool by the validator and all delegators.")
+          @pools_type == :active ->
+            gettext("The first amount is the candidate’s own stake, the second is the total amount staked into the pool by the candidate and all delegators.")
+          @pools_type == :inactive ->
+            gettext("The first amount is the pool owner’s stake, the second is the total amount staked into the pool by the pool owner and all delegators.")
+        end
+      %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Staked Amount"), tooltip: tooltip %>
     </div>
     <div class="col-2">
       <%= if @pools_type == :inactive do %>
@@ -15,7 +35,7 @@
       <% end %>
     </div>
     <div class="col-2">
-      <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Delegators"), tooltip: gettext("The number of delegators providing stake to the current pool. Click on the number to see more details.") %>
+      <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Delegators"), tooltip: gettext("The number of delegators providing stake to the pool. Click on the number to see more details.") %>
     </div>
     <div class="col-3"></div>
   </div>

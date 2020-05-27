@@ -26,7 +26,7 @@
               </p>
             <% end %>
             <p class="form-p"><%= gettext("Your Balance:") %>
-              <%= if Decimal.add(@delegator_staked, @balance) >= @min_stake do %>
+              <%= if Decimal.add(@delegator_staked, @balance) >= @min_stake && Decimal.positive?(@balance) do %>
                 <span class="text-dark link-dotted" data-available-amount="<%= from_wei(@balance, @token) %>">
                   <%= format_token_amount(@balance, @token) %>
                 </span>

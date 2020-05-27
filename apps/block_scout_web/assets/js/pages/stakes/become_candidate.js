@@ -84,7 +84,7 @@ function isMiningAddressValid (value, store) {
   const web3 = store.getState().web3
   const miningAddress = value.trim().toLowerCase()
 
-  if (miningAddress === store.getState().account || !web3.utils.isAddress(miningAddress)) {
+  if (miningAddress === store.getState().account.toLowerCase() || !web3.utils.isAddress(miningAddress)) {
     return 'Invalid mining address'
   }
 

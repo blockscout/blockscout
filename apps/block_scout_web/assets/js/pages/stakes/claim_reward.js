@@ -112,7 +112,7 @@ function onPoolsFound ($modal, $modalBody, channel, store) {
   $poolsDropdown.on('change', () => {
     if (status === 'recalculation' || status === 'claiming') return false
 
-    const data = $('option:selected', this).data()
+    const data = $('option:selected', $poolsDropdown).data()
     const tokenRewardSum = data.tokenRewardSum ? data.tokenRewardSum : '0'
     const nativeRewardSum = data.nativeRewardSum ? data.nativeRewardSum : '0'
     const gasLimit = data.gasLimit ? data.gasLimit : '0'
