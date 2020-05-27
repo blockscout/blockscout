@@ -3059,6 +3059,8 @@ defmodule Explorer.Chain do
         where: smart_contract.address_hash == ^address_hash
       )
 
+    IO.inspect(%{get_contract: address_hash})
+
     Repo.one(query)
   end
 

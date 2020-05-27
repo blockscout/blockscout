@@ -131,6 +131,38 @@ defmodule Explorer.SmartContract.Reader do
     EthereumJSONRPC.execute_contract_functions(requests, abi, json_rpc_named_arguments)
   end
 
+  def get_contract_abi(contract_address_hash) do
+    contract =
+      contract_address_hash
+      |> Chain.address_hash_to_smart_contract()
+
+    impl_abi =
+      with {:ok, implementation_address} <- Chain.get_proxied_address(contract_address_hash),
+           IO.inspect(implementation_address),
+           implementation_contract <- Chain.address_hash_to_smart_contract(implementation_address) do
+        IO.inspect(implementation_contract)
+        implementation_contract.abi
+      else
+        _ -> nil
+      end
+
+    abi = contract.abi
+
+    case {abi, impl_abi} do
+      {nil, nil} ->
+        []
+
+      {a, nil} ->
+        a
+
+      {nil, a} ->
+        a
+
+      {b, a} ->
+        b ++ a
+    end
+  end
+
   @doc """
   List all the smart contract functions with its current value from the
   blockchain, following the ABI order.
@@ -164,20 +196,11 @@ defmodule Explorer.SmartContract.Reader do
   """
   @spec read_only_functions(Hash.t()) :: [%{}]
   def read_only_functions(contract_address_hash) do
-    abi =
-      contract_address_hash
-      |> Chain.address_hash_to_smart_contract()
-      |> Map.get(:abi)
+    abi = get_contract_abi(contract_address_hash)
 
-    case abi do
-      nil ->
-        []
-
-      _ ->
-        abi
-        |> Enum.filter(& &1["constant"])
-        |> Enum.map(&fetch_current_value_from_blockchain(&1, abi, contract_address_hash))
-    end
+    abi
+    |> Enum.filter(& &1["constant"])
+    |> Enum.map(&fetch_current_value_from_blockchain(&1, abi, contract_address_hash))
   end
 
   defp fetch_current_value_from_blockchain(function, abi, contract_address_hash) do
@@ -209,10 +232,7 @@ defmodule Explorer.SmartContract.Reader do
 
   @spec query_function(Hash.t(), %{name: String.t(), args: [term()]}) :: [%{}]
   def query_function(contract_address_hash, %{name: name, args: args}) do
-    abi =
-      contract_address_hash
-      |> Chain.address_hash_to_smart_contract()
-      |> Map.get(:abi)
+    abi = get_contract_abi(contract_address_hash)
 
     outputs =
       case abi do

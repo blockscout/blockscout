@@ -34,8 +34,9 @@ defmodule BlockScoutWeb.AddressContractController do
         render(
           conn,
           "index.html",
-          address: implementation_contract,
+          address: address,
           proxy: address,
+          implementation: implementation_contract,
           is_proxy: true,
           coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
           exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
