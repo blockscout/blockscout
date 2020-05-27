@@ -215,7 +215,18 @@ defmodule EthereumJSONRPC do
   @spec fetch_beneficiaries([block_number], json_rpc_named_arguments) ::
           {:ok, FetchedBeneficiaries.t()} | {:error, reason :: term} | :ignore
   def fetch_beneficiaries(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
-    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(block_numbers, json_rpc_named_arguments)
+    min_block = first_block_to_fetch()
+
+    filtered_block_numbers =
+      block_numbers
+      |> Enum.filter(fn block_number ->
+        block_number >= min_block
+      end)
+
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(
+      filtered_block_numbers,
+      json_rpc_named_arguments
+    )
   end
 
   @doc """
@@ -462,6 +473,15 @@ defmodule EthereumJSONRPC do
            |> Blocks.requests(request)
            |> json_rpc(json_rpc_named_arguments) do
       {:ok, Blocks.from_responses(responses, id_to_params)}
+    end
+  end
+
+  defp first_block_to_fetch do
+    string_value = Application.get_env(:indexer, :first_block)
+
+    case Integer.parse(string_value) do
+      {integer, ""} -> integer
+      _ -> 0
     end
   end
 end
