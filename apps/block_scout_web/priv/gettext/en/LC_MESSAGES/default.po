@@ -904,7 +904,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
 #: lib/block_scout_web/views/address_view.ex:325
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:90
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:98
 #: lib/block_scout_web/views/tokens/overview_view.ex:35
 #: lib/block_scout_web/views/transaction_view.ex:390
 msgid "Token Transfers"
@@ -1779,7 +1779,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/metadata/index.html.eex:18
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:91
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:99
 msgid "Metadata"
 msgstr ""
 

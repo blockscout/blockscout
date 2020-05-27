@@ -98,10 +98,16 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
 
   defp fetch_metadata(token_uri) do
     case HTTPoison.get(token_uri) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        {:ok, json} = decode_json(body)
+      {:ok, %Response{body: body, status_code: 200, headers: headers}} ->
+        if Enum.member?(headers, {"Content-Type", "image/png"}) do
+          json = %{"image" => token_uri}
 
-        check_type(json)
+          check_type(json)
+        else
+          {:ok, json} = decode_json(body)
+
+          check_type(json)
+        end
 
       {:ok, %Response{body: body}} ->
         {:error, body}
