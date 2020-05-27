@@ -134,13 +134,14 @@ defmodule BlockScoutWeb.StakesChannel do
     balance = Chain.fetch_last_token_balance(socket.assigns.account, token.contract_address_hash)
 
     min_stake =
-      if staking_address == socket.assigns.account do
-        ContractState.get(:min_candidate_stake)
-      else
-        ContractState.get(:min_delegator_stake)
-      end
+      Decimal.new(
+        if staking_address == socket.assigns.account do
+          ContractState.get(:min_candidate_stake)
+        else
+          ContractState.get(:min_delegator_stake)
+        end
+      )
 
-    min_stake = Decimal.new(min_stake)
     delegator_staked = Decimal.new((delegator && delegator.stake_amount) || 0)
 
     html =
