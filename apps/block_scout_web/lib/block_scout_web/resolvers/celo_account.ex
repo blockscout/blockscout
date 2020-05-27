@@ -1,8 +1,9 @@
 defmodule BlockScoutWeb.Resolvers.CeloAccount do
   @moduledoc false
 
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, CeloClaims, CeloValidator, CeloValidatorGroup}
+  alias Absinthe.Relay.Connection
+  alias Explorer.{Chain, GraphQL, Repo}
+  alias Explorer.Chain.{Address, CeloAccount, CeloClaims, CeloValidator, CeloValidatorGroup}
 
   def get_by(_, %{hash: hash}, _) do
     case Chain.get_celo_account(hash) do
@@ -45,5 +46,11 @@ defmodule BlockScoutWeb.Resolvers.CeloAccount do
 
   def get_claims(%{address: hash}, _, _) do
     {:ok, Chain.get_celo_claims(hash)}
+  end
+
+  def get_voted(%CeloAccount{address: hash}, args, _) do
+    hash
+    |> GraphQL.account_voted_query()
+    |> Connection.from_query(&Repo.all/1, args, [])
   end
 end

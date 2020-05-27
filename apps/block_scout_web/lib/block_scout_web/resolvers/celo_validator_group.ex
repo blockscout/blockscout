@@ -1,8 +1,9 @@
 defmodule BlockScoutWeb.Resolvers.CeloValidatorGroup do
   @moduledoc false
 
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, CeloAccount, CeloValidator}
+  alias Absinthe.Relay.Connection
+  alias Explorer.{Chain, GraphQL, Repo}
+  alias Explorer.Chain.{Address, CeloAccount, CeloValidator, CeloValidatorGroup}
 
   def get_by(_, %{hash: hash}, _) do
     case Chain.get_celo_validator_group(hash) do
@@ -37,5 +38,11 @@ defmodule BlockScoutWeb.Resolvers.CeloValidatorGroup do
       {:error, :not_found} -> {:error, "Celo validator group query failed."}
       {:ok, _} = result -> result
     end
+  end
+
+  def get_voters(%CeloValidatorGroup{address: hash}, args, _) do
+    hash
+    |> GraphQL.group_voters_query()
+    |> Connection.from_query(&Repo.all/1, args, [])
   end
 end

@@ -118,6 +118,12 @@ defmodule BlockScoutWeb.Schema do
       resolve(&CeloValidatorGroup.get_by/3)
     end
 
+    @desc "Gets all elected validator signers."
+    field :celo_elected_validators, list_of(:address) do
+      arg(:block_number, non_null(:integer))
+      resolve(&Address.get_by/3)
+    end
+
     @desc "Gets Celo network parameters"
     field :celo_parameters, :celo_parameters do
       resolve(&CeloParameters.get_by/3)

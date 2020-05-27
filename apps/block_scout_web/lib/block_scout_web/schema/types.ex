@@ -42,6 +42,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:fetched_coin_balance, :wei)
     field(:fetched_coin_balance_block_number, :integer)
     field(:contract_code, :data)
+    field(:online, :boolean)
 
     field :smart_contract, :smart_contract do
       resolve(dataloader(:db, :smart_contract))
@@ -81,6 +82,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:account_type, :string)
     field(:nonvoting_locked_gold, :wei)
     field(:locked_gold, :wei)
+    field(:votes, :wei)
 
     field(:usd, :wei)
 
@@ -103,6 +105,10 @@ defmodule BlockScoutWeb.Schema.Types do
 
     connection field(:claims, node_type: :celo_claims) do
       resolve(&CeloClaim.get_by/3)
+    end
+
+    connection field(:voted, node_type: :celo_account) do
+      resolve(&CeloAccount.get_voted/3)
     end
   end
 
@@ -172,6 +178,10 @@ defmodule BlockScoutWeb.Schema.Types do
 
     connection field(:affiliates, node_type: :celo_validator) do
       resolve(&CeloValidator.get_by/3)
+    end
+
+    connection field(:voters, node_type: :celo_account) do
+      resolve(&CeloValidatorGroup.get_voters/3)
     end
   end
 
