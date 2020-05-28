@@ -35,9 +35,31 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("set_account", account, socket) do
+    # fetch mining address by staking address to show `Make stake` modal
+    # instead of `Become a candidate` for the staking address which
+    # has ever been a pool
+    pool_mining_address =
+      try do
+        validator_set_contract = ContractState.get(:validator_set_contract)
+
+        ContractReader.perform_requests(
+          ContractReader.mining_by_staking_request(account),
+          %{validator_set: validator_set_contract.address},
+          validator_set_contract.abi
+        ).mining_address
+      after
+      end
+
+    # convert zero address to nil
+    mining_address =
+      if pool_mining_address != "0x0000000000000000000000000000000000000000" do
+        pool_mining_address
+      end
+
     socket =
       socket
       |> assign(:account, account)
+      |> assign(:mining_address, mining_address)
       |> push_contracts()
 
     handle_out(
@@ -128,7 +150,7 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("render_make_stake", %{"address" => staking_address}, socket) do
-    pool = Chain.staking_pool(staking_address)
+    staking_pool = Chain.staking_pool(staking_address)
     delegator = Chain.staking_pool_delegator(staking_address, socket.assigns.account)
     token = ContractState.get(:token)
     balance = Chain.fetch_last_token_balance(socket.assigns.account, token.contract_address_hash)
@@ -143,6 +165,19 @@ defmodule BlockScoutWeb.StakesChannel do
       )
 
     delegator_staked = Decimal.new((delegator && delegator.stake_amount) || 0)
+
+    # if pool doesn't exist, fill it with empty values
+    # to be able to display _stakes_progress.html.eex template
+    pool =
+      staking_pool ||
+        %{
+          delegators_count: 0,
+          is_active: false,
+          is_deleted: true,
+          self_staked_amount: 0,
+          staking_address_hash: staking_address,
+          total_staked_amount: 0
+        }
 
     html =
       View.render_to_string(StakesView, "_stakes_modal_stake.html",
