@@ -3,6 +3,10 @@
 ### Features
 
 ### Fixes
+- [#3133](https://github.com/poanetwork/blockscout/pull/3133) - Take into account FIRST_BLOCK in trace_ReplayBlockTransactions requests
+- [#3132](https://github.com/poanetwork/blockscout/pull/3132) - Fix performance of coin supply API endpoints
+- [#3130](https://github.com/poanetwork/blockscout/pull/3130) - Take into account FIRST_BLOCK for block rewards fetching
+- [#3128](https://github.com/poanetwork/blockscout/pull/3128) - Token instance metadata retriever refinement: add processing of token metadata if only image URL is passed to token URI
 - [#3126](https://github.com/poanetwork/blockscout/pull/3126) - Fetch balance only for blocks which are greater or equal block with FIRST_BLOCK number
 - [#3125](https://github.com/poanetwork/blockscout/pull/3125) - Fix performance of coin balance history chart
 - [#3122](https://github.com/poanetwork/blockscout/pull/3122) - Exclude balance percentage calculation for burn address on accounts page
@@ -15,6 +19,7 @@
 - [#3106](https://github.com/poanetwork/blockscout/pull/3106), [#3115](https://github.com/poanetwork/blockscout/pull/3115) - Fix verification of contracts, created from factory (from internal transaction)
 
 ### Chore
+- [#3134](https://github.com/poanetwork/blockscout/pull/3134) - Get last value of fetched coinsupply API endpoint from DB if cache is empty
 - [#3124](https://github.com/poanetwork/blockscout/pull/3124) - Display upper border for tx speed if the value cannot be calculated
 
 
