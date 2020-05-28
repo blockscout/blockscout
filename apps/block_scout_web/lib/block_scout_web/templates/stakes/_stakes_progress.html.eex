@@ -17,7 +17,7 @@
   <div class="stakes-progress-infos">
     <div class="stakes-progress-info">
       <h2 class="stakes-progress-info-title"><%= (if assigns[:pool_label], do: @pool_label) || gettext("Pool") %></h2>
-      <p class="stakes-progress-info-value stakes-progress-info-link js-pool-info" data-address="<%= to_string(@pool.staking_address_hash) %>">
+      <p class="stakes-progress-info-value<%= unless @pool.is_deleted do %> stakes-progress-info-link js-pool-info<% end %>" data-address="<%= to_string(@pool.staking_address_hash) %>">
         <%= BlockScoutWeb.AddressView.trimmed_hash(@pool.staking_address_hash) %>
       </p>
     </div>
@@ -29,7 +29,7 @@
     </div>
     <div class="stakes-progress-info">
       <h2 class="stakes-progress-info-title"><%= gettext("Delegators") %></h2>
-      <p class="stakes-progress-info-value stakes-progress-info-link js-delegators-list" data-address="<%= to_string(@pool.staking_address_hash) %>">
+      <p class="stakes-progress-info-value<%= unless @pool.is_deleted do %> stakes-progress-info-link js-delegators-list<% end %>" data-address="<%= to_string(@pool.staking_address_hash) %>">
         <%= @pool.delegators_count %>
       </p>
     </div>

@@ -32,7 +32,8 @@ defmodule BlockScoutWeb.StakesController do
         |> Map.merge(%{
           address: account_address,
           balance: Chain.fetch_last_token_balance(account_address, token.contract_address_hash),
-          pool: Chain.staking_pool(account_address)
+          pool: Chain.staking_pool(account_address),
+          pool_mining_address: conn.assigns[:mining_address]
         })
       end
 

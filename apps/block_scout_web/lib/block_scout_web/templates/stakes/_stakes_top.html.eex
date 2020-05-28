@@ -15,7 +15,7 @@
           <% else %>
             <%=
               button_class = "full-width " <>
-                if @account[:pool] do
+                if !is_nil(@account[:pool]) or !is_nil(@account[:pool_mining_address]) do
                   "js-make-stake"
                 else
                   "js-become-candidate"

@@ -206,12 +206,18 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  def mining_by_staking_request(staking_address) do
+    [
+      mining_address: {:validator_set, "miningByStakingAddress", [staking_address]}
+    ]
+  end
+
   def pool_staking_requests(staking_address, block_number) do
     [
       active_delegators: active_delegators_request(staking_address, block_number)[:active_delegators],
       inactive_delegators: {:staking, "poolDelegatorsInactive", [staking_address]},
       is_active: {:staking, "isPoolActive", [staking_address]},
-      mining_address_hash: {:validator_set, "miningByStakingAddress", [staking_address]},
+      mining_address_hash: mining_by_staking_request(staking_address)[:mining_address],
       self_staked_amount: {:staking, "stakeAmount", [staking_address, staking_address]},
       total_staked_amount: {:staking, "stakeAmountTotal", [staking_address]},
       validator_reward_percent: {:block_reward, "validatorRewardPercent", [staking_address]}
