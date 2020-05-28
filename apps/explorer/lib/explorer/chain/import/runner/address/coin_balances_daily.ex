@@ -120,12 +120,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
           value:
             fragment(
               """
-              CASE WHEN EXCLUDED.value IS NOT NULL THEN
+              CASE WHEN EXCLUDED.value IS NOT NULL AND EXCLUDED.value > ? THEN
                      EXCLUDED.value
                    ELSE
                      ?
               END
               """,
+              balance.value,
               balance.value
             ),
           inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", balance.inserted_at),

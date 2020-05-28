@@ -178,7 +178,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
           block_rewards: block_rewards
         } = options
       ) do
-    with {:balances, {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}}} <-
+    with {:balances,
+          {:ok,
+           %{
+             addresses_params: balances_addresses_params,
+             balances_params: balances_params,
+             balances_daily_params: balances_daily_params
+           }}} <-
            {:balances,
             balances(block_fetcher, %{
               address_hash_to_block_number: address_hash_to_block_number,
@@ -193,7 +199,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
            |> put_in([:block_rewards], chain_import_block_rewards)
-           |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params),
+           |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
+           |> put_in([Access.key(:address_coin_balances_daily, %{}), :params], balances_daily_params),
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(
         imported,
@@ -383,15 +390,26 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
         importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
 
-        block_number = Enum.at(params_list, 0)[:block_number]
+        block_numbers =
+          params_list
+          |> Enum.map(&Map.get(&1, :block_number))
+          |> Enum.sort()
+          |> Enum.dedup()
 
-        {:ok, %Blocks{blocks_params: blocks_params}} =
-          EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
+        block_timestamp_map =
+          Enum.reduce(block_numbers, %{}, fn block_number, map ->
+            {:ok, %Blocks{blocks_params: [%{timestamp: timestamp}]}} =
+              EthereumJSONRPC.fetch_blocks_by_range(block_number..block_number, json_rpc_named_arguments)
 
-        block_timestamp = Enum.at(blocks_params, 0).timestamp
-        day = DateTime.to_date(block_timestamp)
+            day = DateTime.to_date(timestamp)
+            Map.put(map, "#{block_number}", day)
+          end)
 
-        importable_balances_daily_params = Enum.map(params_list, &Map.put(&1, :day, day))
+        importable_balances_daily_params =
+          Enum.map(params_list, fn param ->
+            day = Map.get(block_timestamp_map, "#{param.block_number}")
+            Map.put(param, :day, day)
+          end)
 
         {:ok,
          %{

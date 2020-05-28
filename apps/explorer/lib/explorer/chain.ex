@@ -3514,11 +3514,24 @@ defmodule Explorer.Chain do
 
   @spec address_to_balances_by_day(Hash.Address.t()) :: [balance_by_day]
   def address_to_balances_by_day(address_hash) do
+    latest_block_timestamp =
+      address_hash
+      |> CoinBalance.last_coin_balance_timestamp()
+      |> Repo.one()
+
     address_hash
     |> CoinBalanceDaily.balances_by_day()
     |> Repo.all()
+    |> replace_last_value(latest_block_timestamp)
     |> normalize_balances_by_day()
   end
+
+  # https://github.com/poanetwork/blockscout/issues/2658
+  defp replace_last_value(items, %{value: value, timestamp: timestamp}) do
+    List.replace_at(items, -1, %{date: Date.convert!(timestamp, Calendar.ISO), value: value})
+  end
+
+  defp replace_last_value(items, _), do: items
 
   defp normalize_balances_by_day(balances_by_day) do
     result =

@@ -20,7 +20,6 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.{
     BlockReward,
     CoinBalance,
-    CoinBalanceDaily,
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
@@ -35,6 +34,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.{
     AddressCoinBalances,
+    AddressCoinBalancesDaily,
     Addresses,
     AddressTokenBalances,
     MintTransfers,
@@ -155,6 +155,14 @@ defmodule Indexer.Block.Fetcher do
              transactions_params: transactions_with_receipts
            }
            |> AddressCoinBalances.params_set(),
+         coin_balances_params_daily_set =
+           %{
+             beneficiary_params: MapSet.to_list(beneficiary_params_set),
+             blocks_params: blocks,
+             logs_params: logs,
+             transactions_params: transactions_with_receipts
+           }
+           |> AddressCoinBalancesDaily.params_set(),
          beneficiaries_with_gas_payment <-
            beneficiary_params_set
            |> add_gas_payments(transactions_with_receipts, blocks)
@@ -166,7 +174,7 @@ defmodule Indexer.Block.Fetcher do
              %{
                addresses: %{params: addresses},
                address_coin_balances: %{params: coin_balances_params_set},
-               address_coin_balances_daily: %{params: coin_balances_params_set},
+               address_coin_balances_daily: %{params: coin_balances_params_daily_set},
                address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations_params},
@@ -248,18 +256,12 @@ defmodule Indexer.Block.Fetcher do
   def async_import_coin_balances(%{addresses: addresses}, %{
         address_hash_to_fetched_balance_block_number: address_hash_to_block_number
       }) do
-    coin_balances_import_params =
-      addresses
-      |> Enum.map(fn %Address{hash: address_hash} ->
-        block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
-        %{address_hash: address_hash, block_number: block_number}
-      end)
-
-    coin_balances_import_params
+    addresses
+    |> Enum.map(fn %Address{hash: address_hash} ->
+      block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
+      %{address_hash: address_hash, block_number: block_number}
+    end)
     |> CoinBalance.async_fetch_balances()
-
-    coin_balances_import_params
-    |> CoinBalanceDaily.async_fetch_balances()
   end
 
   def async_import_coin_balances(_, _), do: :ok

@@ -42,18 +42,27 @@ defmodule Explorer.Chain.Address.CoinBalanceDaily do
 
   @doc """
   Builds an `Ecto.Query` to fetch a series of balances by day for the given account. Each element in the series
-  corresponds to the maximum balance in that day. Only the last 90 days of data are used.
+  corresponds to the maximum balance in that day. Only the last `n` days of data are used.
+  `n` is configurable via COIN_BALANCE_HISTORY_DAYS ENV var.
   """
   def balances_by_day(address_hash) do
+    {days_to_consider, _} =
+      Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
+      |> Integer.parse()
+
     CoinBalanceDaily
     |> where([cbd], cbd.address_hash == ^address_hash)
-    |> limit_time_interval()
+    |> limit_time_interval(days_to_consider)
     |> order_by([cbd], cbd.day)
     |> select([cbd], %{date: cbd.day, value: cbd.value})
   end
 
-  def limit_time_interval(query) do
-    query |> where([cbd], cbd.day >= fragment("date_trunc('day', now()) - interval '90 days'"))
+  def limit_time_interval(query, days_to_consider) do
+    query
+    |> where(
+      [cbd],
+      cbd.day >= fragment("date_trunc('day', now() - CAST(? AS INTERVAL))", ^%Postgrex.Interval{days: days_to_consider})
+    )
   end
 
   def changeset(%__MODULE__{} = balance, params) do
