@@ -2304,24 +2304,24 @@ msgid "Searching for pools you have ever staked into. Please, wait..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:689
+#: lib/block_scout_web/channels/stakes_channel.ex:724
 msgid "Pools searching is already in progress for this address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:692
-#: lib/block_scout_web/channels/stakes_channel.ex:739
+#: lib/block_scout_web/channels/stakes_channel.ex:727
+#: lib/block_scout_web/channels/stakes_channel.ex:774
 msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:639
+#: lib/block_scout_web/channels/stakes_channel.ex:674
 msgid "JSON RPC error"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:696
-#: lib/block_scout_web/channels/stakes_channel.ex:743
+#: lib/block_scout_web/channels/stakes_channel.ex:731
+#: lib/block_scout_web/channels/stakes_channel.ex:778
 msgid "Unknown address of Staking contract. Please, contact support"
 msgstr ""
 
@@ -2379,17 +2379,17 @@ msgid "Recalculate"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:733
+#: lib/block_scout_web/channels/stakes_channel.ex:768
 msgid "Staking epochs are not specified or not in the allowed range"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:736
+#: lib/block_scout_web/channels/stakes_channel.ex:771
 msgid "Unknown pool staking address. Please, contact support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:730
+#: lib/block_scout_web/channels/stakes_channel.ex:765
 msgid "Reward calculating is already in progress for this address"
 msgstr ""
 
@@ -2504,7 +2504,7 @@ msgstr ""
 msgid " Working Stake Amount is an amount which is accounted and working at the current staking epoch."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_move.html.eex:22
 msgid "Choose Target Pool"
 msgstr ""
@@ -2515,7 +2515,7 @@ msgstr ""
 msgid "Current Reward Percent is calculated based on the Working Stake Amount."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:39
 msgid "Epochs range(s) or enum, e.g.:   5-9,23-27,47,50"
@@ -2536,22 +2536,22 @@ msgstr ""
 msgid "Target Pool"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:23
 msgid "The first amount is the candidate’s own stake, the second is the total amount staked into the pool by the candidate and all delegators."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:25
 msgid "The first amount is the pool owner’s stake, the second is the total amount staked into the pool by the pool owner and all delegators."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:38
 msgid "The number of delegators providing stake to the pool. Click on the number to see more details."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:29
 msgid "The staking epochs for which the reward could be claimed (read-only field):"
