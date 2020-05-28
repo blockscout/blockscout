@@ -48,6 +48,7 @@ defmodule Explorer.Chain.CeloAccount do
   @validator_deaffiliated "0x71815121f0622b31a3e7270eb28acb9fd10825ff418c9a18591f617bb8a31a6c"
 
   @validator_signer_authorized "0x16e382723fb40543364faf68863212ba253a099607bf6d3a5b47e50a8bf94943"
+  @validator_score_updated "0xedf9f87e50e10c533bf3ae7f5a7894ae66c23e6cbbe8773d7765d20ad6f995e9"
 
   # Account events
   @account_created "0x805996f252884581e2f74cf3d2b03564d5ec26ccc90850ae12653dc1b72d1fa2"
@@ -102,6 +103,7 @@ defmodule Explorer.Chain.CeloAccount do
       @validator_registered,
       @validator_affiliated,
       @validator_deaffiliated,
+      @validator_score_updated,
       @validator_signer_authorized,
       @validator_epoch_payment_distributed
     ]

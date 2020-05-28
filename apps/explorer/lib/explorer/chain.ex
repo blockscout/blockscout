@@ -492,7 +492,11 @@ defmodule Explorer.Chain do
       from(
         log in subquery(base_query),
         inner_join: transaction in Transaction,
-        preload: [:transaction, transaction: [to_address: :smart_contract]],
+        preload: [
+          :transaction,
+          transaction: [to_address: :smart_contract],
+          transaction: [to_address: [implementation_contract: :smart_contract]]
+        ],
         where:
           log.block_hash == transaction.block_hash and
             log.block_number == transaction.block_number and
@@ -4065,7 +4069,7 @@ defmodule Explorer.Chain do
         accumulated_rewards: b.reward,
         rewards_ratio: b.ratio,
         active_gold: %{value: data.result},
-        receivable_votes: (g.num_members + 1) * total_locked_gold.number_value / denom.value
+        receivable_votes: (g.num_members + 1) * total_locked_gold.number_value / fragment("nullif(?,0)", denom.value)
       }
     )
   end
