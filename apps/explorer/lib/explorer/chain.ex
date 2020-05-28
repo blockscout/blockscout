@@ -28,6 +28,8 @@ defmodule Explorer.Chain do
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
+  alias Explorer.Counters.LastFetchedCounter
+
   alias Explorer.Chain
 
   alias Explorer.Chain.{
@@ -1517,7 +1519,8 @@ defmodule Explorer.Chain do
       from(
         a0 in Address,
         select: fragment("SUM(a0.fetched_coin_balance)"),
-        where: a0.hash != ^burn_address_hash
+        where: a0.hash != ^burn_address_hash,
+        where: a0.fetched_coin_balance > ^0
       )
 
     Repo.one!(query) || 0
@@ -1528,7 +1531,8 @@ defmodule Explorer.Chain do
     query =
       from(
         a0 in Address,
-        select: fragment("SUM(a0.fetched_coin_balance)")
+        select: fragment("SUM(a0.fetched_coin_balance)"),
+        where: a0.fetched_coin_balance > ^0
       )
 
     Repo.one!(query) || 0
@@ -2160,6 +2164,27 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec upsert_last_fetched_counter(map()) :: {:ok, LastFetchedCounter.t()} | {:error, Ecto.Changeset.t()}
+  def upsert_last_fetched_counter(params) do
+    changeset = LastFetchedCounter.changeset(%LastFetchedCounter{}, params)
+
+    Repo.insert(changeset,
+      on_conflict: :replace_all,
+      conflict_target: [:counter_type]
+    )
+  end
+
+  def get_last_fetched_counter(type) do
+    query =
+      from(
+        last_fetched_counter in LastFetchedCounter,
+        where: last_fetched_counter.counter_type == ^type,
+        select: last_fetched_counter.value
+      )
+
+    Repo.one!(query) || 0
+  end
+
   defp block_status({number, timestamp}) do
     now = DateTime.utc_now()
     last_block_period = DateTime.diff(now, timestamp, :millisecond)
@@ -2734,7 +2759,9 @@ defmodule Explorer.Chain do
       creation_int_tx_query =
         from(
           itx in InternalTransaction,
+          join: t in assoc(itx, :transaction),
           where: itx.created_contract_address_hash == ^address_hash,
+          where: t.status == ^1,
           select: itx.init
         )
 
