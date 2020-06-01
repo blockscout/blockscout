@@ -8,12 +8,12 @@ import { createAsyncLoadStore, refreshPage } from '../lib/async_listing_load'
 import Web3 from 'web3'
 import { openPoolInfoModal } from './stakes/validator_info'
 import { openDelegatorsListModal } from './stakes/delegators_list'
-import { openBecomeCandidateModal } from './stakes/become_candidate'
+import { openBecomeCandidateModal, becomeCandidateConnectionLost } from './stakes/become_candidate'
 import { openRemovePoolModal } from './stakes/remove_pool'
 import { openMakeStakeModal } from './stakes/make_stake'
 import { openMoveStakeModal } from './stakes/move_stake'
 import { openWithdrawStakeModal } from './stakes/withdraw_stake'
-import { openClaimRewardModal, connectionLost } from './stakes/claim_reward'
+import { openClaimRewardModal, claimRewardConnectionLost } from './stakes/claim_reward'
 import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
 import { checkForTokenDefinition } from './stakes/utils'
 import { currentModal, openWarningModal, openErrorModal } from '../lib/modals'
@@ -35,6 +35,7 @@ export const initialState = {
   tokenDecimals: 0,
   tokenSymbol: '',
   validatorSetApplyBlock: 0,
+  validatorSetContract: null,
   web3: null
 }
 
@@ -99,6 +100,7 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, {
         stakingContract: action.stakingContract,
         blockRewardContract: action.blockRewardContract,
+        validatorSetContract: action.validatorSetContract,
         tokenDecimals: action.tokenDecimals,
         tokenSymbol: action.tokenSymbol
       })
@@ -191,23 +193,27 @@ if ($stakesPage.length) {
     })
   })
 
-  channel.on('contracts', msg => {
+  channel.on('contracts', async (msg) => {
     const web3 = store.getState().web3
     const stakingContract =
       new web3.eth.Contract(msg.staking_contract.abi, msg.staking_contract.address)
     const blockRewardContract =
       new web3.eth.Contract(msg.block_reward_contract.abi, msg.block_reward_contract.address)
+    const validatorSetContract =
+      new web3.eth.Contract(msg.validator_set_contract.abi, msg.validator_set_contract.address)
 
     store.dispatch({
       type: 'RECEIVED_CONTRACTS',
       stakingContract,
       blockRewardContract,
+      validatorSetContract,
       tokenDecimals: parseInt(msg.token_decimals, 10),
       tokenSymbol: msg.token_symbol
     })
   })
 
-  channel.onError(connectionLost)
+  channel.onError(becomeCandidateConnectionLost)
+  channel.onError(claimRewardConnectionLost)
 
   $(document.body)
     .on('click', '.js-pool-info', event => {
@@ -218,9 +224,9 @@ if ($stakesPage.length) {
     .on('click', '.js-delegators-list', event => {
       openDelegatorsListModal(event, store)
     })
-    .on('click', '.js-become-candidate', () => {
+    .on('click', '.js-become-candidate', event => {
       if (checkForTokenDefinition(store)) {
-        openBecomeCandidateModal(store)
+        openBecomeCandidateModal(event, store)
       }
     })
     .on('click', '.js-remove-pool', () => {

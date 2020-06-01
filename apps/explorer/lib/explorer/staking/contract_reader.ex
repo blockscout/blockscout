@@ -12,6 +12,7 @@ defmodule Explorer.Staking.ContractReader do
       epoch_number: {:staking, "stakingEpoch", []},
       epoch_start_block: {:staking, "stakingEpochStartBlock", []},
       inactive_pools: {:staking, "getPoolsInactive", []},
+      max_candidates: {:staking, "MAX_CANDIDATES", []},
       min_candidate_stake: {:staking, "candidateMinStake", []},
       min_delegator_stake: {:staking, "delegatorMinStake", []},
       pools_likelihood: {:staking, "getPoolsLikelihood", []},

@@ -91,6 +91,14 @@ export function checkForTokenDefinition (store) {
   return false
 }
 
+export function isStakingAllowed (state) {
+  if (!state.stakingAllowed) {
+    openErrorModal('Actions temporarily disallowed', 'The current staking epoch is ending, and staking actions are temporarily restricted. Please try again after the new epoch starts.')
+    return false
+  }
+  return true
+}
+
 export function isSupportedNetwork (store) {
   const state = store.getState()
   if (state.network && state.network.authorized) {
