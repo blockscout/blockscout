@@ -3522,7 +3522,7 @@ defmodule Explorer.Chain do
     address_hash
     |> CoinBalanceDaily.balances_by_day()
     |> Repo.all()
-    |> Enum.sort(&(&1.date <= &2.date))
+    |> Enum.sort_by(fn %{date: d} -> {d.year, d.month, d.day} end)
     |> replace_last_value(latest_block_timestamp)
     |> normalize_balances_by_day()
   end
@@ -3537,7 +3537,6 @@ defmodule Explorer.Chain do
   defp normalize_balances_by_day(balances_by_day) do
     result =
       balances_by_day
-      |> Enum.map(fn day -> Map.take(day, [:date, :value]) end)
       |> Enum.filter(fn day -> day.value end)
       |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
       |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
