@@ -2,19 +2,27 @@ import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
 import { openModal, openErrorModal, openWarningModal, lockModal } from '../../lib/modals'
 import { setupValidation } from '../../lib/validation'
-import { makeContractCall, isSupportedNetwork } from './utils'
+import { makeContractCall, isSupportedNetwork, isStakingAllowed } from './utils'
 
-export function openBecomeCandidateModal (store) {
-  if (!store.getState().account) {
-    openWarningModal('Unauthorized', 'Please login with MetaMask')
+let status = 'modalClosed'
+
+export async function openBecomeCandidateModal (event, store) {
+  const state = store.getState()
+
+  if (!state.account) {
+    openWarningModal('Unauthorized', 'You haven\'t approved the reading of account list from your MetaMask or MetaMask is not installed.')
     return
   }
 
   if (!isSupportedNetwork(store)) return
+  if (!isStakingAllowed(state)) return
 
-  store.getState().channel
+  $(event.currentTarget).prop('disabled', true)
+  state.channel
     .push('render_become_candidate')
     .receive('ok', msg => {
+      $(event.currentTarget).prop('disabled', false)
+
       const $modal = $(msg.html)
       const $form = $modal.find('form')
 
@@ -39,23 +47,42 @@ export function openBecomeCandidateModal (store) {
         return false
       })
 
+      $modal.on('shown.bs.modal', () => {
+        status = 'modalOpened'
+      })
+      $modal.on('hidden.bs.modal', () => {
+        status = 'modalClosed'
+        $modal.remove()
+      })
+
       openModal($modal)
+    })
+    .receive('timeout', () => {
+      $(event.currentTarget).prop('disabled', false)
+      openErrorModal('Become a Candidate', 'Connection timeout')
     })
 }
 
-async function becomeCandidate ($modal, store, msg) {
+export function becomeCandidateConnectionLost () {
+  const errorMsg = 'Connection with server is lost. Please, reload the page.'
+  if (status === 'modalOpened') {
+    status = 'modalClosed'
+    openErrorModal('Become a Candidate', errorMsg, true)
+  }
+}
+
+function becomeCandidate ($modal, store, msg) {
   lockModal($modal)
 
-  const stakingContract = store.getState().stakingContract
-  const decimals = store.getState().tokenDecimals
+  const state = store.getState()
+  const stakingContract = state.stakingContract
+  const decimals = state.tokenDecimals
   const stake = new BigNumber($modal.find('[candidate-stake]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
   const miningAddress = $modal.find('[mining-address]').val().trim().toLowerCase()
 
   try {
-    if (!await stakingContract.methods.areStakeAndWithdrawAllowed().call()) {
-      openErrorModal('Error', 'The current staking epoch is ending, and staking actions are temporarily restricted. Please try again when the new epoch starts.')
-      return false
-    }
+    if (!isSupportedNetwork(store)) return false
+    if (!isStakingAllowed(state)) return false
 
     makeContractCall(stakingContract.methods.addPool(stake.toString(), miningAddress), store)
   } catch (err) {
@@ -84,8 +111,10 @@ function isMiningAddressValid (value, store) {
   const web3 = store.getState().web3
   const miningAddress = value.trim().toLowerCase()
 
-  if (miningAddress === store.getState().account.toLowerCase() || !web3.utils.isAddress(miningAddress)) {
+  if (!web3.utils.isAddress(miningAddress)) {
     return 'Invalid mining address'
+  } else if (miningAddress === store.getState().account.toLowerCase()) {
+    return 'The mining address cannot match the staking address'
   }
 
   return true

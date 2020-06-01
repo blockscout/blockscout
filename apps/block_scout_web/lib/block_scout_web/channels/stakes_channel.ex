@@ -47,7 +47,8 @@ defmodule BlockScoutWeb.StakesChannel do
           %{validator_set: validator_set_contract.address},
           validator_set_contract.abi
         ).mining_address
-      after
+      rescue
+        _ -> nil
       end
 
     # convert zero address to nil
@@ -175,6 +176,7 @@ defmodule BlockScoutWeb.StakesChannel do
           is_active: false,
           is_deleted: true,
           self_staked_amount: 0,
+          mining_address_hash: nil,
           staking_address_hash: staking_address,
           total_staked_amount: 0
         }
@@ -192,6 +194,7 @@ defmodule BlockScoutWeb.StakesChannel do
       html: html,
       balance: balance,
       delegator_staked: delegator_staked,
+      mining_address: nil,
       min_stake: min_stake,
       self_staked_amount: pool.self_staked_amount,
       total_staked_amount: pool.total_staked_amount
@@ -301,7 +304,8 @@ defmodule BlockScoutWeb.StakesChannel do
     staking_contract_address =
       try do
         ContractState.get(:staking_contract).address
-      after
+      rescue
+        _ -> nil
       end
 
     empty_staker = staker == nil || staker == "" || staker == "0x0000000000000000000000000000000000000000"
@@ -328,7 +332,8 @@ defmodule BlockScoutWeb.StakesChannel do
     staking_contract_address =
       try do
         ContractState.get(:staking_contract).address
-      after
+      rescue
+        _ -> nil
       end
 
     empty_pool_staking_address =
@@ -698,6 +703,7 @@ defmodule BlockScoutWeb.StakesChannel do
       push(socket, "contracts", %{
         staking_contract: ContractState.get(:staking_contract),
         block_reward_contract: ContractState.get(:block_reward_contract),
+        validator_set_contract: ContractState.get(:validator_set_contract),
         token_decimals: to_string(token.decimals),
         token_symbol: token.symbol
       })

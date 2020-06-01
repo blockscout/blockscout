@@ -90,7 +90,7 @@ export function openClaimRewardModal (event, store) {
   })
 }
 
-export function connectionLost () {
+export function claimRewardConnectionLost () {
   const errorMsg = 'Connection with server is lost. Please, reload the page.'
   if (status === 'modalOpened') {
     status = 'modalClosed'
