@@ -4719,6 +4719,8 @@ defmodule Explorer.ChainTest do
       block_one_day_ago = insert(:block, timestamp: yesterday, number: 49)
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
       insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_one_day_ago.number)
+      insert(:fetched_balance_daily, address_hash: address.hash, value: 1000, day: noon)
+      insert(:fetched_balance_daily, address_hash: address.hash, value: 2000, day: yesterday)
 
       balances = Chain.address_to_balances_by_day(address.hash)
 
@@ -4735,6 +4737,7 @@ defmodule Explorer.ChainTest do
       yesterday = Timex.shift(noon, days: -1)
       block_one_day_ago = insert(:block, timestamp: yesterday)
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block_one_day_ago.number)
+      insert(:fetched_balance_daily, address_hash: address.hash, value: 1000, day: yesterday)
 
       balances = Chain.address_to_balances_by_day(address.hash)
 
@@ -4754,6 +4757,7 @@ defmodule Explorer.ChainTest do
 
       block_past = insert(:block, timestamp: past, number: 2)
       insert(:fetched_balance, address_hash: address.hash, value: 0, block_number: block_past.number)
+      insert(:fetched_balance_daily, address_hash: address.hash, value: 0, day: today)
 
       [balance] = Chain.address_to_balances_by_day(address.hash)
 

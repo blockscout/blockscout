@@ -12,7 +12,8 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
   def runners,
     do: [
       Runner.Address.CoinBalances,
-      Runner.Blocks
+      Runner.Blocks,
+      Runner.Address.CoinBalancesDaily
     ]
 
   @impl Stage
