@@ -193,7 +193,7 @@ if ($stakesPage.length) {
     })
   })
 
-  channel.on('contracts', async (msg) => {
+  channel.on('contracts', msg => {
     const web3 = store.getState().web3
     const stakingContract =
       new web3.eth.Contract(msg.staking_contract.abi, msg.staking_contract.address)
