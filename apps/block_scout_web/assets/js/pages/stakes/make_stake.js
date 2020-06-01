@@ -1,12 +1,12 @@
 import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
-import { openModal, openWarningModal, lockModal } from '../../lib/modals'
+import { openErrorModal, openModal, openWarningModal, lockModal } from '../../lib/modals'
 import { setupValidation } from '../../lib/validation'
 import { makeContractCall, setupChart, isSupportedNetwork } from './utils'
 
 export function openMakeStakeModal (event, store) {
   if (!store.getState().account) {
-    openWarningModal('Unauthorized', 'Please login with MetaMask')
+    openWarningModal('Unauthorized', 'You haven\'t approved the reading of account list from your MetaMask or MetaMask is not installed.')
     return
   }
 
@@ -46,13 +46,26 @@ export function openMakeStakeModal (event, store) {
     })
 }
 
-function makeStake ($modal, address, store, msg) {
+async function makeStake ($modal, address, store, msg) {
   lockModal($modal)
 
-  const stakingContract = store.getState().stakingContract
-  const decimals = store.getState().tokenDecimals
+  const state = store.getState()
+  const stakingContract = state.stakingContract
+  const validatorSetContract = state.validatorSetContract
+  const decimals = state.tokenDecimals
 
   const stake = new BigNumber($modal.find('[delegator-stake]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
+
+  let miningAddress = msg.mining_address
+  if (!miningAddress || miningAddress === '0x0000000000000000000000000000000000000000') {
+    miningAddress = await validatorSetContract.methods.miningByStakingAddress(address).call()
+  }
+
+  const isBanned = await validatorSetContract.methods.isValidatorBanned(miningAddress).call()
+  if (isBanned) {
+    openErrorModal('This pool is banned', 'You cannot stake into a banned pool.')
+    return
+  }
 
   makeContractCall(stakingContract.methods.stake(address, stake.toString()), store)
 }

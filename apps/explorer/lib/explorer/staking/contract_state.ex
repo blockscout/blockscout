@@ -17,11 +17,13 @@ defmodule Explorer.Staking.ContractState do
 
   @table_name __MODULE__
   @table_keys [
+    :active_pools_length,
     :block_reward_contract,
     :epoch_end_block,
     :epoch_number,
     :epoch_start_block,
     :is_snapshotting,
+    :max_candidates,
     :min_candidate_stake,
     :min_delegator_stake,
     :snapshotted_epoch_number,
@@ -139,7 +141,10 @@ defmodule Explorer.Staking.ContractState do
         not get(:is_snapshotting)
 
     # save the general info to ETS (excluding pool list and validator list)
-    settings = get_settings(global_responses, validator_min_reward_percent, block_number)
+    settings =
+      global_responses
+      |> get_settings(validator_min_reward_percent, block_number)
+      |> Enum.concat(active_pools_length: Enum.count(global_responses.active_pools))
 
     :ets.insert(@table_name, settings)
 
@@ -384,6 +389,7 @@ defmodule Explorer.Staking.ContractState do
     global_responses
     |> Map.take([
       :token_contract_address,
+      :max_candidates,
       :min_candidate_stake,
       :min_delegator_stake,
       :epoch_number,
