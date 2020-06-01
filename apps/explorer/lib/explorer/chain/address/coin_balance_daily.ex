@@ -53,7 +53,6 @@ defmodule Explorer.Chain.Address.CoinBalanceDaily do
     CoinBalanceDaily
     |> where([cbd], cbd.address_hash == ^address_hash)
     |> limit_time_interval(days_to_consider)
-    |> order_by([cbd], cbd.day)
     |> select([cbd], %{date: cbd.day, value: cbd.value})
   end
 
