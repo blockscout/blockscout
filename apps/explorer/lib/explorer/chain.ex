@@ -3522,6 +3522,7 @@ defmodule Explorer.Chain do
     address_hash
     |> CoinBalanceDaily.balances_by_day()
     |> Repo.all()
+    |> Enum.sort(&(&1.date <= &2.date))
     |> replace_last_value(latest_block_timestamp)
     |> normalize_balances_by_day()
   end
