@@ -19,11 +19,12 @@ defmodule BlockScoutWeb.StakesController do
   # when a new block appears (see `staking_update` event handled in `StakesChannel`),
   # or when the page is loaded for the first time or reloaded by a user (i.e. it is called by the `render_template(filter, conn, _)`)
   def render_top(conn) do
-    epoch_number = ContractState.get(:epoch_number, 0)
-    epoch_end_block = ContractState.get(:epoch_end_block, 0)
+    active_pools_length = ContractState.get(:active_pools_length, 0)
     block_number = BlockNumber.get_max()
+    epoch_end_block = ContractState.get(:epoch_end_block, 0)
+    epoch_number = ContractState.get(:epoch_number, 0)
+    max_candidates = ContractState.get(:max_candidates, 0)
     token = ContractState.get(:token, %Token{})
-    staking_allowed = ContractState.get(:staking_allowed, false)
 
     account =
       if account_address = conn.assigns[:account] do
@@ -38,11 +39,11 @@ defmodule BlockScoutWeb.StakesController do
       end
 
     View.render_to_string(StakesView, "_stakes_top.html",
-      epoch_number: epoch_number,
-      epoch_end_in: epoch_end_block - block_number,
-      staking_allowed: staking_allowed,
-      block_number: block_number,
       account: account,
+      block_number: block_number,
+      candidates_limit_reached: active_pools_length >= max_candidates,
+      epoch_end_in: epoch_end_block - block_number,
+      epoch_number: epoch_number,
       token: token
     )
   end
