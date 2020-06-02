@@ -58,6 +58,21 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
                                 _options ->
           {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
         end)
+
+        res = eth_block_number_fake_response(block_quantity)
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [
+                                  %{
+                                    id: 0,
+                                    jsonrpc: "2.0",
+                                    method: "eth_getBlockByNumber",
+                                    params: [^block_quantity, true]
+                                  }
+                                ],
+                                _ ->
+          {:ok, [res]}
+        end)
       end
 
       {:ok, miner_hash} = Hash.Address.cast(miner_hash_data)
@@ -113,6 +128,21 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
         |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^miner_hash_data, ^block_quantity]}],
                                 _options ->
           {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
+        end)
+
+        res = eth_block_number_fake_response(block_quantity)
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [
+                                  %{
+                                    id: 0,
+                                    jsonrpc: "2.0",
+                                    method: "eth_getBlockByNumber",
+                                    params: [^block_quantity, true]
+                                  }
+                                ],
+                                _ ->
+          {:ok, [res]}
         end)
       end
 
@@ -177,6 +207,21 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
         |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^hash_data, ^block_quantity]}],
                                 _options ->
           {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
+        end)
+
+        res = eth_block_number_fake_response(block_quantity)
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [
+                                  %{
+                                    id: 0,
+                                    jsonrpc: "2.0",
+                                    method: "eth_getBlockByNumber",
+                                    params: [^block_quantity, true]
+                                  }
+                                ],
+                                _ ->
+          {:ok, [res]}
         end)
       end
 
@@ -254,6 +299,25 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
       {:ok, %Hash{bytes: address_hash_bytes}} = Hash.Address.cast(hash_data)
       entries = Enum.map(block_quantities, &{address_hash_bytes, quantity_to_integer(&1)})
 
+      res1 = eth_block_number_fake_response("0x1")
+      res2 = eth_block_number_fake_response("0x2")
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{id: 0, jsonrpc: "2.0", method: "eth_getBlockByNumber", params: ["0x1", true]}
+                              ],
+                              _ ->
+        {:ok, [res1]}
+      end)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{id: 0, jsonrpc: "2.0", method: "eth_getBlockByNumber", params: ["0x2", true]}
+                              ],
+                              _ ->
+        {:ok, [res2]}
+      end)
+
       case CoinBalance.run(entries, json_rpc_named_arguments) do
         :ok ->
           balances = Repo.all(from(balance in Address.CoinBalance, where: balance.address_hash == ^hash_data))
@@ -314,16 +378,33 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
 
     test "retries none if all imported and no fetch errors", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       %Hash{bytes: address_hash_bytes} = address_hash()
-      entries = [{address_hash_bytes, block_number()}]
+      block_number = block_number()
+      entries = [{address_hash_bytes, block_number}]
 
       expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_getBalance", params: [_, _]}], _ ->
         {:ok, [%{id: id, result: "0x1"}]}
       end)
 
+      block_quantity = integer_to_quantity(block_number)
+      res = eth_block_number_fake_response(block_quantity)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_getBlockByNumber",
+                                  params: [^block_quantity, true]
+                                }
+                              ],
+                              _ ->
+        {:ok, [res]}
+      end)
+
       assert :ok = CoinBalance.run(entries, json_rpc_named_arguments)
     end
 
-    test "retries retries fetch errors if all imported", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+    test "retries fetch errors if all imported", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       %Hash{bytes: address_hash_bytes} = address_hash()
       bad_block_number = block_number()
       good_block_number = block_number()
@@ -359,6 +440,22 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
         {:ok, responses}
       end)
 
+      bad_block_quantity = integer_to_quantity(bad_block_number)
+      res_bad = eth_block_number_fake_response(bad_block_quantity)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: 0,
+                                  jsonrpc: "2.0",
+                                  method: "eth_getBlockByNumber",
+                                  params: [bad_block_quantity, true]
+                                }
+                              ],
+                              [] ->
+        {:ok, [res_bad]}
+      end)
+
       assert {:retry, [{^address_hash_bytes, ^bad_block_number}]} =
                CoinBalance.run(
                  [{address_hash_bytes, good_block_number}, {address_hash_bytes, bad_block_number}],
@@ -373,5 +470,41 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
     Ecto.NoResultsError ->
       Process.sleep(100)
       wait(producer)
+  end
+
+  defp eth_block_number_fake_response(block_quantity) do
+    %{
+      id: 0,
+      jsonrpc: "2.0",
+      result: %{
+        "author" => "0x0000000000000000000000000000000000000000",
+        "difficulty" => "0x20000",
+        "extraData" => "0x",
+        "gasLimit" => "0x663be0",
+        "gasUsed" => "0x0",
+        "hash" => "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
+        "logsBloom" =>
+          "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "miner" => "0x0000000000000000000000000000000000000000",
+        "number" => block_quantity,
+        "parentHash" => "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+        "sealFields" => [
+          "0x80",
+          "0xb8410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        ],
+        "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        "signature" =>
+          "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "size" => "0x215",
+        "stateRoot" => "0xfad4af258fd11939fae0c6c6eec9d340b1caac0b0196fd9a1bc3f489c5bf00b3",
+        "step" => "0",
+        "timestamp" => "0x0",
+        "totalDifficulty" => "0x20000",
+        "transactions" => [],
+        "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+        "uncles" => []
+      }
+    }
   end
 end
