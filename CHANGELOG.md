@@ -1,8 +1,10 @@
 ## Current
 
 ### Features
+- [#3125](https://github.com/poanetwork/blockscout/pull/3125)  - Availability to configure a number of days to consider at coin balance history chart via environment variable
 
 ### Fixes
+- [#3140](https://github.com/poanetwork/blockscout/pull/3140) - Fix performance of the balance changing history list loading
 - [#3133](https://github.com/poanetwork/blockscout/pull/3133) - Take into account FIRST_BLOCK in trace_ReplayBlockTransactions requests
 - [#3132](https://github.com/poanetwork/blockscout/pull/3132) - Fix performance of coin supply API endpoints
 - [#3130](https://github.com/poanetwork/blockscout/pull/3130) - Take into account FIRST_BLOCK for block rewards fetching
