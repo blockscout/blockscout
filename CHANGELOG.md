@@ -21,6 +21,7 @@
 - [#3106](https://github.com/poanetwork/blockscout/pull/3106), [#3115](https://github.com/poanetwork/blockscout/pull/3115) - Fix verification of contracts, created from factory (from internal transaction)
 
 ### Chore
+- [#3137](https://github.com/poanetwork/blockscout/pull/3137) - RSK Papyrus Release v2.0.1 hardfork: cumulativeDifficulty
 - [#3134](https://github.com/poanetwork/blockscout/pull/3134) - Get last value of fetched coinsupply API endpoint from DB if cache is empty
 - [#3124](https://github.com/poanetwork/blockscout/pull/3124) - Display upper border for tx speed if the value cannot be calculated
 
