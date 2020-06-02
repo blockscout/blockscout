@@ -77,17 +77,22 @@ defmodule Indexer.Fetcher.CoinBalance do
     # `{address, block}`, so take unique params only
     unique_entries = Enum.uniq(entries)
 
-    unique_entry_count = Enum.count(unique_entries)
+    unique_filtered_entries =
+      Enum.filter(unique_entries, fn {_hash, block_number} ->
+        block_number >= first_block_to_index()
+      end)
+
+    unique_entry_count = Enum.count(unique_filtered_entries)
     Logger.metadata(count: unique_entry_count)
 
     Logger.debug(fn -> "fetching" end)
 
-    unique_entries
+    unique_filtered_entries
     |> Enum.map(&entry_to_params/1)
     |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments)
     |> case do
       {:ok, fetched_balances} ->
-        run_fetched_balances(fetched_balances, unique_entries)
+        run_fetched_balances(fetched_balances, unique_filtered_entries)
 
       {:error, reason} ->
         Logger.error(
@@ -97,7 +102,16 @@ defmodule Indexer.Fetcher.CoinBalance do
           error_count: unique_entry_count
         )
 
-        {:retry, unique_entries}
+        {:retry, unique_filtered_entries}
+    end
+  end
+
+  defp first_block_to_index do
+    string_value = Application.get_env(:indexer, :first_block)
+
+    case Integer.parse(string_value) do
+      {integer, ""} -> integer
+      _ -> 0
     end
   end
 
