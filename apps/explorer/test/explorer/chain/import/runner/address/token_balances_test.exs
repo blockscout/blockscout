@@ -93,7 +93,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
         value_fetched_at: DateTime.utc_now()
       }
 
-      run_changes(new_changes, options) |> IO.inspect()
+      run_changes(new_changes, options)
     end
   end
 
