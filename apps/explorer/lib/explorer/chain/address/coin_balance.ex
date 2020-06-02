@@ -105,11 +105,18 @@ defmodule Explorer.Chain.Address.CoinBalance do
   end
 
   def last_coin_balance_timestamp(address_hash) do
-    CoinBalance
-    |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
-    |> where([cb], cb.address_hash == ^address_hash)
-    |> last(:block_number)
-    |> select([cb, b], %{timestamp: b.timestamp, value: cb.value})
+    coin_balance_query =
+      CoinBalance
+      |> where([cb], cb.address_hash == ^address_hash)
+      |> last(:block_number)
+      |> select([cb, b], %{block_number: cb.block_number, value: cb.value})
+
+    from(
+      cb in subquery(coin_balance_query),
+      inner_join: b in Block,
+      on: cb.block_number == b.number,
+      select: %{timestamp: b.timestamp, value: cb.value}
+    )
   end
 
   def changeset(%__MODULE__{} = balance, params) do
