@@ -5025,32 +5025,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_coin_balances/2" do
-    test "deduplicates records by zero delta" do
-      address = insert(:address)
-
-      1..5
-      |> Enum.each(fn block_number ->
-        insert(:block, number: block_number)
-        insert(:fetched_balance, value: 1, block_number: block_number, address_hash: address.hash)
-      end)
-
-      insert(:block, number: 6)
-      insert(:fetched_balance, value: 2, block_number: 6, address_hash: address.hash)
-
-      assert [first, second, third] = Chain.address_to_coin_balances(address.hash, [])
-
-      assert first.block_number == 6
-      assert first.delta == Decimal.new(1)
-
-      assert second.block_number == 5
-      assert second.delta == Decimal.new(0)
-
-      assert third.block_number == 1
-      assert third.delta == Decimal.new(1)
-    end
-  end
-
   describe "extract_db_name/1" do
     test "extracts correct db name" do
       db_url = "postgresql://viktor:@localhost:5432/blockscout-dev-1"

@@ -76,12 +76,9 @@ defmodule Explorer.Chain.Address.CoinBalance do
       cb in CoinBalance,
       where: cb.address_hash == ^address_hash,
       where: not is_nil(cb.value),
-      inner_join: b in Block,
-      on: cb.block_number == b.number,
       order_by: [desc: :block_number],
       limit: ^page_size,
-      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
-      select_merge: %{block_timestamp: b.timestamp}
+      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")}
     )
   end
 
