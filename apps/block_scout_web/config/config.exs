@@ -84,6 +84,10 @@ config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
   # days
   history_size: 30
 
+config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
+  # days
+  coin_balance_history_days: System.get_env("COIN_BALANCE_HISTORY_DAYS", "10")
+
 config :ex_cldr,
   default_locale: "en",
   default_backend: BlockScoutWeb.Cldr
