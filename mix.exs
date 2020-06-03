@@ -72,6 +72,13 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
+      {:phoenix, "~> 1.5"},
+      {:absinthe, "~> 1.5"},
+      {:absinthe_plug, "~> 1.5"},
+      {:absinthe_phoenix, "~> 2.0"},
+      {:absinthe_relay, "~> 1.5"},
+      {:phoenix_pubsub, "~> 2.0"},
+      {:phoenix_ecto, "~> 4.1"},
       # Documentation
       {:ex_doc, "~> 0.19.0", only: [:dev]},
       # Code coverage

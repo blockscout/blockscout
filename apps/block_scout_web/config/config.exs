@@ -46,7 +46,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     api_path: System.get_env("API_PATH") || "/"
   ],
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: BlockScoutWeb.PubSub]
+  pubsub: [name: BlockScoutWeb.PubSub, adapter: Phoenix.PubSub.PG2]
 
 config :block_scout_web, BlockScoutWeb.Tracer,
   service: :block_scout_web,

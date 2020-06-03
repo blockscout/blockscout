@@ -60,13 +60,13 @@ defmodule BlockScoutWeb.Mixfile do
   defp deps do
     [
       # GraphQL toolkit
-      {:absinthe, "~> 1.5.0-rc.2"},
+      {:absinthe, "~> 1.5.0"},
       # Integrates Absinthe subscriptions with Phoenix
-      {:absinthe_phoenix, "~> 1.5.0-rc.0"},
+      {:absinthe_phoenix, "~> 2.0.0"},
       # Plug support for Absinthe
-      {:absinthe_plug, "~> 1.5.0-rc.1"},
+      {:absinthe_plug, "~> 1.5.0"},
       # Absinthe support for the Relay framework
-      {:absinthe_relay, "~> 1.5.0-rc.0"},
+      {:absinthe_relay, "~> 1.5.0"},
       {:bypass, "~> 1.0", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 2.0"},
@@ -99,13 +99,13 @@ defmodule BlockScoutWeb.Mixfile do
       {:logger_file_backend, "~> 0.0.10"},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:phoenix, "== 1.4.0"},
+      {:phoenix, "== 1.5.0"},
       {:phoenix_ecto, "~> 4.0"},
       {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
-      {:phoenix_pubsub, "~> 1.0"},
+      {:phoenix_pubsub, "~> 2.0"},
       # use `:cowboy` for WebServer with `:plug`
-      {:plug_cowboy, "~> 2.0"},
+      {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
       {:poison, "~> 3.1"},
