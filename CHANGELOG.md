@@ -3,6 +3,13 @@
 ### Features
 
 ### Fixes
+- [#3122](https://github.com/poanetwork/blockscout/pull/3122) - Exclude balance percentage calculation for burn address on accounts page
+- [#3119](https://github.com/poanetwork/blockscout/pull/3119), [#3120](https://github.com/poanetwork/blockscout/pull/3120) - Fix performance of Inventory tab loading for ERC-721 tokens
+- [#3114](https://github.com/poanetwork/blockscout/pull/3114) - Fix performance of "Blocks validated" page
+- [#3112](https://github.com/poanetwork/blockscout/pull/3112) - Fix verification of contracts, compiled with nightly builds of solc compiler
+- [#3112](https://github.com/poanetwork/blockscout/pull/3112) - Check compiler version at contract verification
+- [#3106](https://github.com/poanetwork/blockscout/pull/3106) - Fix verification of contracts with `immutable` declaration
+- [#3106](https://github.com/poanetwork/blockscout/pull/3106), [#3115](https://github.com/poanetwork/blockscout/pull/3115) - Fix verification of contracts, created from factory (from internal transaction)
 
 ### Chore
 
@@ -29,6 +36,7 @@
 - [#2756](https://github.com/poanetwork/blockscout/pull/2756) - Improve subquery joins
 
 ### Chore
+- [#3100](https://github.com/poanetwork/blockscout/pull/3100) - Update npm packages
 - [#3099](https://github.com/poanetwork/blockscout/pull/3099) - Remove pending txs cache
 - [#3093](https://github.com/poanetwork/blockscout/pull/3093) - Extend list of env vars for Docker setup
 - [#3084](https://github.com/poanetwork/blockscout/pull/3084) - Bump Elixir version 1.10.2
