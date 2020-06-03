@@ -15,8 +15,36 @@ defmodule Indexer.Transform.TokenTransfers do
     initial_acc = %{tokens: [], token_transfers: []}
 
     logs
-    |> Enum.filter(&(&1.first_topic == unquote(TokenTransfer.constant())))
+    |> Enum.filter(&(&1.first_topic == unquote(TokenTransfer.constant()) or &1.first_topic == unquote(TokenTransfer.comment_event())))
+    |> combine_comments()
     |> Enum.reduce(initial_acc, &do_parse/2)
+  end
+
+  defp combine_comments([a | [b | tl]]) do
+    if a.first_topic == unquote(TokenTransfer.constant()) and
+       b.first_topic == unquote(TokenTransfer.comment_event()) do
+
+      [comment] = decode_data(b.data, [:string])
+      [Map.put(a, :comment, comment) | combine_comments(tl)]
+       else 
+        if a.first_topic == unquote(TokenTransfer.constant()) do
+          [a | combine_comments([b|tl])]
+        else
+          combine_comments([b|tl])
+        end
+      end
+  end
+
+  defp combine_comments([a | tl]) do
+    if a.first_topic == unquote(TokenTransfer.constant()) do
+      [a | combine_comments(tl)]
+    else
+      combine_comments(tl)
+    end
+  end
+
+  defp combine_comments([]) do
+    []
   end
 
   def parse_fees(txs) do
@@ -76,6 +104,7 @@ defmodule Indexer.Transform.TokenTransfers do
       block_number: log.block_number,
       block_hash: log.block_hash,
       log_index: log.index,
+      comment: Map.get(log, :comment),
       from_address_hash: truncate_address_hash(log.second_topic),
       to_address_hash: truncate_address_hash(log.third_topic),
       token_contract_address_hash: log.address_hash,

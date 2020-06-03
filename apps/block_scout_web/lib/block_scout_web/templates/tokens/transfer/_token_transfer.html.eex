@@ -38,6 +38,7 @@
           <% end %>
           <%= " "%>
           <%= @token_transfer.token.symbol %>
+          <%= if @token_transfer.comment != nil do " Comment: " <> @token_transfer.comment else "" end %>
         </span>
       </span>
     </div>
