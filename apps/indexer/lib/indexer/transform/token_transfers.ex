@@ -15,24 +15,25 @@ defmodule Indexer.Transform.TokenTransfers do
     initial_acc = %{tokens: [], token_transfers: []}
 
     logs
-    |> Enum.filter(&(&1.first_topic == unquote(TokenTransfer.constant()) or &1.first_topic == unquote(TokenTransfer.comment_event())))
+    |> Enum.filter(
+      &(&1.first_topic == unquote(TokenTransfer.constant()) or &1.first_topic == unquote(TokenTransfer.comment_event()))
+    )
     |> combine_comments()
     |> Enum.reduce(initial_acc, &do_parse/2)
   end
 
   defp combine_comments([a | [b | tl]]) do
     if a.first_topic == unquote(TokenTransfer.constant()) and
-       b.first_topic == unquote(TokenTransfer.comment_event()) do
-
+         b.first_topic == unquote(TokenTransfer.comment_event()) do
       [comment] = decode_data(b.data, [:string])
       [Map.put(a, :comment, comment) | combine_comments(tl)]
-       else 
-        if a.first_topic == unquote(TokenTransfer.constant()) do
-          [a | combine_comments([b|tl])]
-        else
-          combine_comments([b|tl])
-        end
+    else
+      if a.first_topic == unquote(TokenTransfer.constant()) do
+        [a | combine_comments([b | tl])]
+      else
+        combine_comments([b | tl])
       end
+    end
   end
 
   defp combine_comments([a | tl]) do
