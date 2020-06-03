@@ -85,25 +85,25 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
     end
   end
 
-  defp gettoken_schema do
-    ExJsonSchema.Schema.resolve(%{
-      "type" => "object",
-      "properties" => %{
-        "message" => %{"type" => "string"},
-        "status" => %{"type" => "string"},
-        "result" => %{
-          "type" => "object",
-          "properties" => %{
-            "name" => %{"type" => "string"},
-            "symbol" => %{"type" => "string"},
-            "totalSupply" => %{"type" => "string"},
-            "decimals" => %{"type" => "string"},
-            "type" => %{"type" => "string"},
-            "cataloged" => %{"type" => "string"},
-            "contractAddress" => %{"type" => "string"}
-          }
-        }
-      }
-    })
-  end
+  # defp gettoken_schema do
+  #   ExJsonSchema.Schema.resolve(%{
+  #     "type" => "object",
+  #     "properties" => %{
+  #       "message" => %{"type" => "string"},
+  #       "status" => %{"type" => "string"},
+  #       "result" => %{
+  #         "type" => "object",
+  #         "properties" => %{
+  #           "name" => %{"type" => "string"},
+  #           "symbol" => %{"type" => "string"},
+  #           "totalSupply" => %{"type" => "string"},
+  #           "decimals" => %{"type" => "string"},
+  #           "type" => %{"type" => "string"},
+  #           "cataloged" => %{"type" => "string"},
+  #           "contractAddress" => %{"type" => "string"}
+  #         }
+  #       }
+  #     }
+  #   })
+  # end
 end

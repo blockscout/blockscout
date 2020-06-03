@@ -38,7 +38,6 @@ config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: t
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
-  instrumenters: [BlockScoutWeb.Prometheus.Instrumenter, SpandexPhoenix.Instrumenter],
   url: [
     scheme: System.get_env("BLOCKSCOUT_PROTOCOL") || "http",
     host: System.get_env("BLOCKSCOUT_HOST") || "localhost",
@@ -46,7 +45,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     api_path: System.get_env("API_PATH") || "/"
   ],
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: BlockScoutWeb.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub_server: BlockScoutWeb.PubSub
 
 config :block_scout_web, BlockScoutWeb.Tracer,
   service: :block_scout_web,
