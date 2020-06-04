@@ -1,7 +1,8 @@
 ## Current
 
 ### Features
-- [#3125](https://github.com/poanetwork/blockscout/pull/3125)  - Availability to configure a number of days to consider at coin balance history chart via environment variable
+- [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
+- [#3125](https://github.com/poanetwork/blockscout/pull/3125) - Availability to configure a number of days to consider at coin balance history chart via environment variable
 
 ### Fixes
 - [#3142](https://github.com/poanetwork/blockscout/pull/3142) - Speed-up last coin balance timestamp query (coin balance history page performance improvement)

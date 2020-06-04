@@ -2446,7 +2446,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  defp pending_transactions_query(query) do
+  def pending_transactions_query(query) do
     from(transaction in query,
       where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
     )
