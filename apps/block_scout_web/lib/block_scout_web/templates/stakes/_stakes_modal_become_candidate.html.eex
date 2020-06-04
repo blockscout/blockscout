@@ -29,8 +29,8 @@
           <div class="form-buttons"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become a Candidate"), extra_class: "full-width" %></div>
         </form>
       </div>
-      <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("<p>To become a candidate, your staking address must be funded with %{symbol} tokens <strong>and</strong> xDai coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>
-      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>", symbol: @token.symbol) |> raw() %>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: gettext("<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>
+      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>", tokenSymbol: @token.symbol, coinSymbol: @coin.symbol) |> raw() %>
     </div>
   </div>
 </div>

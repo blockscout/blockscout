@@ -1,7 +1,7 @@
 import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
 import { openModal, openErrorModal, openWarningModal, lockModal } from '../../lib/modals'
-import { setupValidation } from '../../lib/validation'
+import { setupValidation, displayInputError } from '../../lib/validation'
 import { makeContractCall, isSupportedNetwork, isStakingAllowed } from './utils'
 
 let status = 'modalClosed'
@@ -71,23 +71,36 @@ export function becomeCandidateConnectionLost () {
   }
 }
 
-function becomeCandidate ($modal, store, msg) {
-  lockModal($modal)
-
+async function becomeCandidate ($modal, store, msg) {
   const state = store.getState()
   const stakingContract = state.stakingContract
   const decimals = state.tokenDecimals
   const stake = new BigNumber($modal.find('[candidate-stake]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
-  const miningAddress = $modal.find('[mining-address]').val().trim().toLowerCase()
+  const $miningAddressInput = $modal.find('[mining-address]')
+  const miningAddress = $miningAddressInput.val().trim().toLowerCase()
 
   try {
     if (!isSupportedNetwork(store)) return false
     if (!isStakingAllowed(state)) return false
 
+    const validatorSetContract = state.validatorSetContract
+    const stakingAddress = await validatorSetContract.methods.stakingByMiningAddress(miningAddress).call()
+
+    if (stakingAddress !== '0x0000000000000000000000000000000000000000') {
+      displayInputError($miningAddressInput, `This mining address is already bound to another staking address (<span title="${stakingAddress}">${shortenAddress(stakingAddress)}</span>). Please use another mining address.`)
+      $modal.find('form button').blur()
+      return false
+    }
+
+    lockModal($modal)
     makeContractCall(stakingContract.methods.addPool(stake.toString(), miningAddress), store)
   } catch (err) {
     openErrorModal('Error', err.message)
   }
+}
+
+function shortenAddress (address) {
+  return address.substring(0, 6) + '–' + address.substring(address.length - 6)
 }
 
 function isCandidateStakeValid (value, store, msg) {
