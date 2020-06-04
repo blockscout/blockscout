@@ -70,6 +70,13 @@ $modal-status-graph-question: #329ae9 !default;
   &.m-b-0 {
     margin-bottom: 0;
   }
+
+  .link-helptip {
+    border-bottom-width: 1px;
+    border-bottom-style: dotted;
+    cursor: help;
+    text-decoration: none;
+  }
 }
 
 .modal-status-button-wrapper {

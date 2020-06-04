@@ -2304,24 +2304,24 @@ msgid "Searching for pools you have ever staked into. Please, wait..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:730
+#: lib/block_scout_web/channels/stakes_channel.ex:735
 msgid "Pools searching is already in progress for this address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:733
-#: lib/block_scout_web/channels/stakes_channel.ex:780
+#: lib/block_scout_web/channels/stakes_channel.ex:738
+#: lib/block_scout_web/channels/stakes_channel.ex:785
 msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:679
+#: lib/block_scout_web/channels/stakes_channel.ex:680
 msgid "JSON RPC error"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:737
-#: lib/block_scout_web/channels/stakes_channel.ex:784
+#: lib/block_scout_web/channels/stakes_channel.ex:742
+#: lib/block_scout_web/channels/stakes_channel.ex:789
 msgid "Unknown address of Staking contract. Please, contact support"
 msgstr ""
 
@@ -2379,17 +2379,17 @@ msgid "Recalculate"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:774
+#: lib/block_scout_web/channels/stakes_channel.ex:779
 msgid "Staking epochs are not specified or not in the allowed range"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:777
+#: lib/block_scout_web/channels/stakes_channel.ex:782
 msgid "Unknown pool staking address. Please, contact support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:771
+#: lib/block_scout_web/channels/stakes_channel.ex:776
 msgid "Reward calculating is already in progress for this address"
 msgstr ""
 
@@ -2402,12 +2402,6 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:38
 msgid "Amount of %{symbol} placed by an address."
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:32
-msgid "<p>To become a candidate, your staking address must be funded with %{symbol} tokens <strong>and</strong> xDai coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
 msgstr ""
 
 #, elixir-format
@@ -2572,4 +2566,10 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:17
 msgid "pool owner"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_become_candidate.html.eex:32
+msgid "<p>To become a candidate, your staking address must be funded with %{tokenSymbol} tokens <strong>and</strong> %{coinSymbol} coins, and your OpenEthereum node must be active and configured with the mining address you specify here.</p>\n      <p>To become a delegator, close this window and select an address from the list of pools you would like to place stake on. Click the <strong>Stake</strong> button next to the address to begin the process.</p>"
 msgstr ""
