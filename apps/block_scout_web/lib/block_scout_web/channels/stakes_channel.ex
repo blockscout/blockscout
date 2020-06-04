@@ -138,6 +138,7 @@ defmodule BlockScoutWeb.StakesChannel do
       View.render_to_string(StakesView, "_stakes_modal_become_candidate.html",
         min_candidate_stake: min_candidate_stake,
         balance: balance,
+        coin: get_coin(),
         token: token
       )
 
@@ -479,7 +480,7 @@ defmodule BlockScoutWeb.StakesChannel do
         View.render_to_string(
           StakesView,
           "_stakes_modal_claim_reward_content.html",
-          coin: %Token{symbol: Explorer.coin(), decimals: Decimal.new(18)},
+          coin: get_coin(),
           error: error,
           pools: pools,
           token: ContractState.get(:token)
@@ -612,7 +613,7 @@ defmodule BlockScoutWeb.StakesChannel do
         end
 
       token = ContractState.get(:token)
-      coin = %Token{symbol: Explorer.coin(), decimals: Decimal.new(18)}
+      coin = get_coin()
 
       push(socket, "claim_reward_recalculations", %{
         token_reward_sum:
@@ -715,6 +716,10 @@ defmodule BlockScoutWeb.StakesChannel do
   defp claim_reward_long_op_key(staker) do
     staker = if staker == nil, do: "", else: staker
     Atom.to_string(@claim_reward_long_op) <> "_" <> staker
+  end
+
+  defp get_coin do
+    %Token{symbol: Explorer.coin(), decimals: Decimal.new(18)}
   end
 
   defp handle_in_render_claim_reward_result(
