@@ -45,7 +45,7 @@ export async function makeContractCall (call, store) {
     if (err.message) {
       const detailsMessage = err.message.replace(/["]/g, '&quot;')
       console.log(detailsMessage)
-      const detailsHTML = ` <a href data-boundary="window" data-container="body" data-html="false" data-placement="top" data-toggle="tooltip" title="${detailsMessage}" data-original-title="${detailsMessage}">Details</a>`
+      const detailsHTML = ` <a href="javascript:void(0);" data-boundary="window" data-container="body" data-html="false" data-placement="top" data-toggle="tooltip" title="${detailsMessage}" data-original-title="${detailsMessage}" class="link-helptip">Details</a>`
       errorMessage = errorMessage + detailsHTML
     }
     openErrorModal('Error', errorMessage)
@@ -93,7 +93,7 @@ export function checkForTokenDefinition (store) {
 
 export function isStakingAllowed (state) {
   if (!state.stakingAllowed) {
-    openErrorModal('Actions temporarily disallowed', 'The current staking epoch is ending, and staking actions are temporarily restricted. Please try again after the new epoch starts.')
+    openWarningModal('Actions temporarily disallowed', 'The current staking epoch is ending, and staking actions are temporarily restricted. Please try again after the new epoch starts. If the epoch has just started, try again in a few blocks.')
     return false
   }
   return true
