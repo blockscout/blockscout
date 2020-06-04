@@ -1,8 +1,12 @@
 ## Current
 
 ### Features
+- [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
+- [#3125](https://github.com/poanetwork/blockscout/pull/3125) - Availability to configure a number of days to consider at coin balance history chart via environment variable
 
 ### Fixes
+- [#3142](https://github.com/poanetwork/blockscout/pull/3142) - Speed-up last coin balance timestamp query (coin balance history page performance improvement)
+- [#3140](https://github.com/poanetwork/blockscout/pull/3140) - Fix performance of the balance changing history list loading
 - [#3133](https://github.com/poanetwork/blockscout/pull/3133) - Take into account FIRST_BLOCK in trace_ReplayBlockTransactions requests
 - [#3132](https://github.com/poanetwork/blockscout/pull/3132) - Fix performance of coin supply API endpoints
 - [#3130](https://github.com/poanetwork/blockscout/pull/3130) - Take into account FIRST_BLOCK for block rewards fetching
@@ -19,6 +23,7 @@
 - [#3106](https://github.com/poanetwork/blockscout/pull/3106), [#3115](https://github.com/poanetwork/blockscout/pull/3115) - Fix verification of contracts, created from factory (from internal transaction)
 
 ### Chore
+- [#3137](https://github.com/poanetwork/blockscout/pull/3137) - RSK Papyrus Release v2.0.1 hardfork: cumulativeDifficulty
 - [#3134](https://github.com/poanetwork/blockscout/pull/3134) - Get last value of fetched coinsupply API endpoint from DB if cache is empty
 - [#3124](https://github.com/poanetwork/blockscout/pull/3124) - Display upper border for tx speed if the value cannot be calculated
 

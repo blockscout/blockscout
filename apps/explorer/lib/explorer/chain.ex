@@ -2461,7 +2461,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  defp pending_transactions_query(query) do
+  def pending_transactions_query(query) do
     from(transaction in query,
       where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
     )
@@ -3508,17 +3508,62 @@ defmodule Explorer.Chain do
   def address_to_coin_balances(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    address_hash
-    |> CoinBalance.fetch_coin_balances(paging_options)
-    |> page_coin_balances(paging_options)
-    |> Repo.all()
-    |> Enum.dedup_by(fn record ->
-      if record.delta == Decimal.new(0) do
-        :dup
+    balances_raw =
+      address_hash
+      |> CoinBalance.fetch_coin_balances(paging_options)
+      |> page_coin_balances(paging_options)
+      |> Repo.all()
+
+    min_block_number =
+      balances_raw
+      |> Enum.min_by(fn balance -> balance.block_number end)
+      |> Map.get(:block_number)
+
+    max_block_number =
+      balances_raw
+      |> Enum.max_by(fn balance -> balance.block_number end)
+      |> Map.get(:block_number)
+
+    min_block_timestamp = find_block_timestamp(min_block_number)
+    max_block_timestamp = find_block_timestamp(max_block_number)
+
+    min_block_unix_timestamp =
+      min_block_timestamp
+      |> Timex.to_unix()
+
+    max_block_unix_timestamp =
+      max_block_timestamp
+      |> Timex.to_unix()
+
+    blocks_delta = max_block_number - min_block_number
+
+    balances_with_dates =
+      if blocks_delta > 0 do
+        balances_raw
+        |> Enum.map(fn balance ->
+          date =
+            trunc(
+              min_block_unix_timestamp +
+                (balance.block_number - min_block_number) * (max_block_unix_timestamp - min_block_unix_timestamp) /
+                  blocks_delta
+            )
+
+          formatted_date = Timex.from_unix(date)
+          %{balance | block_timestamp: formatted_date}
+        end)
       else
-        System.unique_integer()
+        balances_raw
+        |> Enum.map(fn balance ->
+          date = min_block_unix_timestamp
+
+          formatted_date = Timex.from_unix(date)
+          %{balance | block_timestamp: formatted_date}
+        end)
       end
-    end)
+
+    balances_with_dates
+    |> Enum.filter(fn balance -> balance.value end)
+    |> Enum.sort(fn balance1, balance2 -> balance1.block_timestamp >= balance2.block_timestamp end)
   end
 
   def get_coin_balance(address_hash, block_number) do
@@ -3537,6 +3582,7 @@ defmodule Explorer.Chain do
     address_hash
     |> CoinBalanceDaily.balances_by_day()
     |> Repo.all()
+    |> Enum.sort_by(fn %{date: d} -> {d.year, d.month, d.day} end)
     |> replace_last_value(latest_block_timestamp)
     |> normalize_balances_by_day()
   end
@@ -3551,7 +3597,6 @@ defmodule Explorer.Chain do
   defp normalize_balances_by_day(balances_by_day) do
     result =
       balances_by_day
-      |> Enum.map(fn day -> Map.take(day, [:date, :value]) end)
       |> Enum.filter(fn day -> day.value end)
       |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
       |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
@@ -4348,5 +4393,12 @@ defmodule Explorer.Chain do
 
       block_index
     end
+  end
+
+  defp find_block_timestamp(number) do
+    Block
+    |> where([b], b.number == ^number)
+    |> select([b], b.timestamp)
+    |> Repo.one()
   end
 end
