@@ -15,7 +15,7 @@ import { openMoveStakeModal } from './stakes/move_stake'
 import { openWithdrawStakeModal } from './stakes/withdraw_stake'
 import { openClaimRewardModal, claimRewardConnectionLost } from './stakes/claim_reward'
 import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
-import { checkForTokenDefinition } from './stakes/utils'
+import { checkForTokenDefinition, isSupportedNetwork } from './stakes/utils'
 import { currentModal, openWarningModal, openErrorModal } from '../lib/modals'
 
 const stakesPageSelector = '[data-page="stakes"]'
@@ -273,6 +273,7 @@ function hideCurrentModal () {
 function initialize (store) {
   if (window.ethereum) {
     const web3 = new Web3(window.ethereum)
+    window.ethereum.autoRefreshOnNetworkChange = false
     store.dispatch({ type: 'WEB3_DETECTED', web3 })
 
     checkNetworkAndAccount(store, web3)
@@ -382,11 +383,11 @@ function setNetwork (networkId, store) {
 
   if (allowedNetworkIds.includes(networkId)) {
     network.authorized = true
-  } else {
-    openWarningModal('Unauthorized', 'Please, connect to the xDai Chain.<br /><a href="https://xdaichain.com" target="_blank">Instructions</a>')
   }
 
   store.dispatch({ type: 'NETWORK_UPDATED', network })
+
+  isSupportedNetwork(store)
 }
 
 function updateFilters (store, filterType) {
