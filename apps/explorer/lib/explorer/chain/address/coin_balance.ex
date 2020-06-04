@@ -87,21 +87,40 @@ defmodule Explorer.Chain.Address.CoinBalance do
   corresponds to the maximum balance in that day. Only the last 90 days of data are used.
   """
   def balances_by_day(address_hash, block_timestamp \\ nil) do
+    {days_to_consider, _} =
+      Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
+      |> Integer.parse()
+
     CoinBalance
     |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
     |> where([cb], cb.address_hash == ^address_hash)
-    |> limit_time_interval(block_timestamp)
+    |> limit_time_interval(days_to_consider, block_timestamp)
     |> group_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
     |> order_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
     |> select([cb, b], %{date: type(fragment("date_trunc('day', ?)", b.timestamp), :date), value: max(cb.value)})
   end
 
-  def limit_time_interval(query, nil) do
-    query |> where([cb, b], b.timestamp >= fragment("date_trunc('day', now()) - interval '90 days'"))
+  def limit_time_interval(query, days_to_consider, nil) do
+    query
+    |> where(
+      [cb, b],
+      b.timestamp >=
+        fragment("date_trunc('day', now() - CAST(? AS INTERVAL))", ^%Postgrex.Interval{days: days_to_consider})
+    )
   end
 
-  def limit_time_interval(query, %{timestamp: timestamp}) do
-    query |> where([cb, b], b.timestamp >= fragment("(? AT TIME ZONE ?) - interval '90 days'", ^timestamp, ^"Etc/UTC"))
+  def limit_time_interval(query, days_to_consider, %{timestamp: timestamp}) do
+    query
+    |> where(
+      [cb, b],
+      b.timestamp >=
+        fragment(
+          "(? AT TIME ZONE ?) - CAST(? AS INTERVAL)",
+          ^timestamp,
+          ^"Etc/UTC",
+          ^%Postgrex.Interval{days: days_to_consider}
+        )
+    )
   end
 
   def last_coin_balance_timestamp(address_hash) do
