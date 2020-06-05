@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
       {coin_balances, next_page} = split_list_by_page(coin_balances_plus_one)
 
       next_page_url =
-        case next_page_params(next_page, deduplicated_coin_balances, params) do
+        case next_page_params(next_page, coin_balances, params) do
           nil ->
             nil
 
