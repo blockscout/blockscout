@@ -4,6 +4,7 @@
 - [#3125](https://github.com/poanetwork/blockscout/pull/3125)  - Availability to configure a number of days to consider at coin balance history chart via environment variable
 
 ### Fixes
+- [#3146](https://github.com/poanetwork/blockscout/pull/3146) - Fix coin balance history page: order of items, fix if no balance changes
 - [#3142](https://github.com/poanetwork/blockscout/pull/3142) - Speed-up last coin balance timestamp query (coin balance history page performance improvement)
 - [#3140](https://github.com/poanetwork/blockscout/pull/3140) - Fix performance of the balance changing history list loading
 - [#3133](https://github.com/poanetwork/blockscout/pull/3133) - Take into account FIRST_BLOCK in trace_ReplayBlockTransactions requests

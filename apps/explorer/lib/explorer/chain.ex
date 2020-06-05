@@ -3499,56 +3499,63 @@ defmodule Explorer.Chain do
       |> page_coin_balances(paging_options)
       |> Repo.all()
 
-    min_block_number =
+    if Enum.empty?(balances_raw) do
       balances_raw
-      |> Enum.min_by(fn balance -> balance.block_number end)
-      |> Map.get(:block_number)
-
-    max_block_number =
-      balances_raw
-      |> Enum.max_by(fn balance -> balance.block_number end)
-      |> Map.get(:block_number)
-
-    min_block_timestamp = find_block_timestamp(min_block_number)
-    max_block_timestamp = find_block_timestamp(max_block_number)
-
-    min_block_unix_timestamp =
-      min_block_timestamp
-      |> Timex.to_unix()
-
-    max_block_unix_timestamp =
-      max_block_timestamp
-      |> Timex.to_unix()
-
-    blocks_delta = max_block_number - min_block_number
-
-    balances_with_dates =
-      if blocks_delta > 0 do
+    else
+      balances_raw_filtered =
         balances_raw
-        |> Enum.map(fn balance ->
-          date =
-            trunc(
-              min_block_unix_timestamp +
-                (balance.block_number - min_block_number) * (max_block_unix_timestamp - min_block_unix_timestamp) /
-                  blocks_delta
-            )
+        |> Enum.filter(fn balance -> balance.value end)
 
-          formatted_date = Timex.from_unix(date)
-          %{balance | block_timestamp: formatted_date}
-        end)
-      else
-        balances_raw
-        |> Enum.map(fn balance ->
-          date = min_block_unix_timestamp
+      min_block_number =
+        balances_raw_filtered
+        |> Enum.min_by(fn balance -> balance.block_number end, fn -> %{} end)
+        |> Map.get(:block_number)
 
-          formatted_date = Timex.from_unix(date)
-          %{balance | block_timestamp: formatted_date}
-        end)
-      end
+      max_block_number =
+        balances_raw_filtered
+        |> Enum.max_by(fn balance -> balance.block_number end, fn -> %{} end)
+        |> Map.get(:block_number)
 
-    balances_with_dates
-    |> Enum.filter(fn balance -> balance.value end)
-    |> Enum.sort(fn balance1, balance2 -> balance1.block_timestamp >= balance2.block_timestamp end)
+      min_block_timestamp = find_block_timestamp(min_block_number)
+      max_block_timestamp = find_block_timestamp(max_block_number)
+
+      min_block_unix_timestamp =
+        min_block_timestamp
+        |> Timex.to_unix()
+
+      max_block_unix_timestamp =
+        max_block_timestamp
+        |> Timex.to_unix()
+
+      blocks_delta = max_block_number - min_block_number
+
+      balances_with_dates =
+        if blocks_delta > 0 do
+          balances_raw_filtered
+          |> Enum.map(fn balance ->
+            date =
+              trunc(
+                min_block_unix_timestamp +
+                  (balance.block_number - min_block_number) * (max_block_unix_timestamp - min_block_unix_timestamp) /
+                    blocks_delta
+              )
+
+            formatted_date = Timex.from_unix(date)
+            %{balance | block_timestamp: formatted_date}
+          end)
+        else
+          balances_raw_filtered
+          |> Enum.map(fn balance ->
+            date = min_block_unix_timestamp
+
+            formatted_date = Timex.from_unix(date)
+            %{balance | block_timestamp: formatted_date}
+          end)
+        end
+
+      balances_with_dates
+      |> Enum.sort(fn balance1, balance2 -> balance1.block_number >= balance2.block_number end)
+    end
   end
 
   def get_coin_balance(address_hash, block_number) do
