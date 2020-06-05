@@ -3551,7 +3551,7 @@ defmodule Explorer.Chain do
 
       balances_with_dates
       |> Enum.filter(fn balance -> balance.value end)
-      |> Enum.sort(fn balance1, balance2 -> balance1.block_timestamp >= balance2.block_timestamp end)
+      |> Enum.sort(fn balance1, balance2 -> balance1.block_number >= balance2.block_number end)
     end
   end
 
