@@ -3502,13 +3502,17 @@ defmodule Explorer.Chain do
     if Enum.empty?(balances_raw) do
       balances_raw
     else
-      min_block_number =
+      balances_raw_filtered =
         balances_raw
+        |> Enum.filter(fn balance -> balance.value end)
+
+      min_block_number =
+        balances_raw_filtered
         |> Enum.min_by(fn balance -> balance.block_number end, fn -> %{} end)
         |> Map.get(:block_number)
 
       max_block_number =
-        balances_raw
+        balances_raw_filtered
         |> Enum.max_by(fn balance -> balance.block_number end, fn -> %{} end)
         |> Map.get(:block_number)
 
@@ -3527,7 +3531,7 @@ defmodule Explorer.Chain do
 
       balances_with_dates =
         if blocks_delta > 0 do
-          balances_raw
+          balances_raw_filtered
           |> Enum.map(fn balance ->
             date =
               trunc(
@@ -3540,7 +3544,7 @@ defmodule Explorer.Chain do
             %{balance | block_timestamp: formatted_date}
           end)
         else
-          balances_raw
+          balances_raw_filtered
           |> Enum.map(fn balance ->
             date = min_block_unix_timestamp
 
@@ -3550,7 +3554,6 @@ defmodule Explorer.Chain do
         end
 
       balances_with_dates
-      |> Enum.filter(fn balance -> balance.value end)
       |> Enum.sort(fn balance1, balance2 -> balance1.block_number >= balance2.block_number end)
     end
   end

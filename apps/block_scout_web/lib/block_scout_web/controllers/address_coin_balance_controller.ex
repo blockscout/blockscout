@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
         |> Enum.sort(fn balance1, balance2 -> balance1.block_timestamp >= balance2.block_timestamp end)
 
       next_page_url =
-        case next_page_params(next_page, coin_balances, params) do
+        case next_page_params(next_page, deduplicated_coin_balances, params) do
           nil ->
             nil
 
