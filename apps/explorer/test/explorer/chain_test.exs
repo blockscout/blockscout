@@ -4719,6 +4719,8 @@ defmodule Explorer.ChainTest do
       block_one_day_ago = insert(:block, timestamp: yesterday, number: 49)
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
       insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_one_day_ago.number)
+      insert(:fetched_balance_daily, address_hash: address.hash, value: 1000, day: noon)
+      insert(:fetched_balance_daily, address_hash: address.hash, value: 2000, day: yesterday)
 
       balances = Chain.address_to_balances_by_day(address.hash)
 
@@ -4735,6 +4737,7 @@ defmodule Explorer.ChainTest do
       yesterday = Timex.shift(noon, days: -1)
       block_one_day_ago = insert(:block, timestamp: yesterday)
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block_one_day_ago.number)
+      insert(:fetched_balance_daily, address_hash: address.hash, value: 1000, day: yesterday)
 
       balances = Chain.address_to_balances_by_day(address.hash)
 
@@ -4754,6 +4757,7 @@ defmodule Explorer.ChainTest do
 
       block_past = insert(:block, timestamp: past, number: 2)
       insert(:fetched_balance, address_hash: address.hash, value: 0, block_number: block_past.number)
+      insert(:fetched_balance_daily, address_hash: address.hash, value: 0, day: today)
 
       [balance] = Chain.address_to_balances_by_day(address.hash)
 
@@ -5018,32 +5022,6 @@ defmodule Explorer.ChainTest do
       insert(:staking_pool, is_active: false)
 
       assert Chain.staking_pools_count(:inactive) == 1
-    end
-  end
-
-  describe "address_to_coin_balances/2" do
-    test "deduplicates records by zero delta" do
-      address = insert(:address)
-
-      1..5
-      |> Enum.each(fn block_number ->
-        insert(:block, number: block_number)
-        insert(:fetched_balance, value: 1, block_number: block_number, address_hash: address.hash)
-      end)
-
-      insert(:block, number: 6)
-      insert(:fetched_balance, value: 2, block_number: 6, address_hash: address.hash)
-
-      assert [first, second, third] = Chain.address_to_coin_balances(address.hash, [])
-
-      assert first.block_number == 6
-      assert first.delta == Decimal.new(1)
-
-      assert second.block_number == 5
-      assert second.delta == Decimal.new(0)
-
-      assert third.block_number == 1
-      assert third.delta == Decimal.new(1)
     end
   end
 

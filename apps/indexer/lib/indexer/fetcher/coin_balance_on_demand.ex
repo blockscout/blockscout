@@ -15,10 +15,10 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   import Ecto.Query, only: [from: 2]
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
-  alias EthereumJSONRPC.FetchedBalances
+  alias EthereumJSONRPC.{FetchedBalances}
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address
-  alias Explorer.Chain.Address.CoinBalance
+  alias Explorer.Chain.Address.{CoinBalance, CoinBalanceDaily}
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.Fetcher.CoinBalance, as: CoinBalanceFetcher
@@ -86,6 +86,12 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
     {:noreply, state}
   end
 
+  def handle_cast({:fetch_and_import_daily_balances, block_number, address}, state) do
+    fetch_and_import_daily_balances(block_number, address, state.json_rpc_named_arguments)
+
+    {:noreply, state}
+  end
+
   ## Implementation
 
   defp do_trigger_fetch(%Address{fetched_coin_balance_block_number: nil} = address, latest_block_number, _) do
@@ -95,6 +101,14 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   end
 
   defp do_trigger_fetch(address, latest_block_number, stale_balance_window) do
+    latest_by_day =
+      from(
+        cbd in CoinBalanceDaily,
+        where: cbd.address_hash == ^address.hash,
+        order_by: [desc: :day],
+        limit: 1
+      )
+
     latest =
       from(
         cb in CoinBalance,
@@ -105,15 +119,28 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
         limit: 1
       )
 
+    do_trigger_balance_fetch_query(address, latest_block_number, stale_balance_window, latest, latest_by_day)
+  end
+
+  defp do_trigger_balance_fetch_query(
+         address,
+         latest_block_number,
+         stale_balance_window,
+         query_balances,
+         query_balances_daily
+       ) do
     if address.fetched_coin_balance_block_number < stale_balance_window do
+      do_trigger_balance_daily_fetch_query(address, latest_block_number, query_balances_daily)
       GenServer.cast(__MODULE__, {:fetch_and_update, latest_block_number, address})
 
       {:stale, latest_block_number}
     else
-      case Repo.one(latest) do
+      case Repo.one(query_balances) do
         nil ->
           # There is no recent coin balance to fetch, so we check to see how old the
           # balance is on the address. If it is too old, we check again, just to be safe.
+          do_trigger_balance_daily_fetch_query(address, latest_block_number, query_balances_daily)
+
           :current
 
         %CoinBalance{value_fetched_at: nil, block_number: block_number} ->
@@ -122,14 +149,29 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
           {:pending, block_number}
 
         %CoinBalance{} ->
+          do_trigger_balance_daily_fetch_query(address, latest_block_number, query_balances_daily)
+
           :current
       end
+    end
+  end
+
+  defp do_trigger_balance_daily_fetch_query(address, latest_block_number, query) do
+    if Repo.one(query) == nil do
+      GenServer.cast(__MODULE__, {:fetch_and_import_daily_balances, latest_block_number, address})
     end
   end
 
   defp fetch_and_import(block_number, address, json_rpc_named_arguments) do
     case fetch_balances(block_number, address, json_rpc_named_arguments) do
       {:ok, fetched_balances} -> do_import(fetched_balances)
+      _ -> :ok
+    end
+  end
+
+  defp fetch_and_import_daily_balances(block_number, address, json_rpc_named_arguments) do
+    case fetch_balances(block_number, address, json_rpc_named_arguments) do
+      {:ok, fetched_balances} -> do_import_daily_balances(fetched_balances)
       _ -> :ok
     end
   end
@@ -160,6 +202,13 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
 
   defp do_import(%FetchedBalances{} = fetched_balances) do
     case CoinBalanceFetcher.import_fetched_balances(fetched_balances, :on_demand) do
+      {:ok, %{addresses: [address]}} -> {:ok, address}
+      _ -> :error
+    end
+  end
+
+  defp do_import_daily_balances(%FetchedBalances{} = fetched_balances) do
+    case CoinBalanceFetcher.import_fetched_daily_balances(fetched_balances, :on_demand) do
       {:ok, %{addresses: [address]}} -> {:ok, address}
       _ -> :error
     end

@@ -16,6 +16,7 @@ defmodule Explorer.Factory do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Address.CoinBalance,
+    Address.CoinBalanceDaily,
     Block,
     ContractMethod,
     Data,
@@ -56,6 +57,13 @@ defmodule Explorer.Factory do
     }
   end
 
+  def unfetched_balance_daily_factory do
+    %CoinBalanceDaily{
+      address_hash: address_hash(),
+      day: Timex.shift(Timex.now(), days: Enum.random(0..100) * -1)
+    }
+  end
+
   def update_balance_value(%CoinBalance{address_hash: address_hash, block_number: block_number}, value) do
     Repo.update_all(
       from(
@@ -68,6 +76,11 @@ defmodule Explorer.Factory do
 
   def fetched_balance_factory do
     unfetched_balance_factory()
+    |> struct!(value: Enum.random(1..100_000))
+  end
+
+  def fetched_balance_daily_factory do
+    unfetched_balance_daily_factory()
     |> struct!(value: Enum.random(1..100_000))
   end
 
