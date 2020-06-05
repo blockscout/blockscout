@@ -157,6 +157,12 @@ defmodule Explorer.Chain.TokenTransferTest do
         |> with_block(insert(:block, number: 1))
 
       insert(
+        :token_instance,
+        token_id: 42,
+        token_contract_address_hash: token_contract_address.hash
+      )
+
+      insert(
         :token_transfer,
         to_address: build(:address),
         transaction: transaction,
@@ -168,7 +174,7 @@ defmodule Explorer.Chain.TokenTransferTest do
       another_transaction =
         :transaction
         |> insert()
-        |> with_block(insert(:block, number: 2))
+        |> with_block(insert(:block, number: 3))
 
       last_owner =
         insert(
