@@ -90,6 +90,7 @@ defmodule Explorer.Chain.Address do
     field(:verified, :boolean, default: false)
     field(:has_decompiled_code?, :boolean, virtual: true)
     field(:stale?, :boolean, virtual: true)
+    field(:online, :boolean, virtual: true)
 
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)

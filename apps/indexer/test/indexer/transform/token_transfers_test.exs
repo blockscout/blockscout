@@ -85,6 +85,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
             token_contract_address_hash: log_1.address_hash,
             transaction_hash: log_1.transaction_hash,
             token_type: "ERC-20",
+            comment: nil,
             block_hash: log_1.block_hash
           }
         ]

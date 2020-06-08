@@ -190,7 +190,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/_link.html.eex:2
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:28
-#: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:48
+#: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:49
 msgid "Block #%{number}"
 msgstr ""
 
@@ -1170,11 +1170,6 @@ msgid "Proxy Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:40
-msgid "Proxy Name:"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:33
 #: lib/block_scout_web/templates/address/overview.html.eex:131
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:51
@@ -1961,4 +1956,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/_metatags.html.eex:2
 msgid "%{network} Explorer"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:40
+msgid "Implementation Name:"
 msgstr ""

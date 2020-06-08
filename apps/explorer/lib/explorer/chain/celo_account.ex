@@ -173,6 +173,8 @@ defmodule Explorer.Chain.CeloAccount do
     field(:active_gold, Wei, virtual: true)
     field(:usd, Wei)
 
+    field(:votes, Wei, virtual: true)
+
     field(:attestations_requested, :integer)
     field(:attestations_fulfilled, :integer)
 

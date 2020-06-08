@@ -19,6 +19,7 @@ defmodule Explorer.GraphQL do
     CeloAccount,
     CeloClaims,
     CeloParams,
+    CeloVoters,
     Hash,
     InternalTransaction,
     Token,
@@ -138,6 +139,36 @@ defmodule Explorer.GraphQL do
     )
   end
 
+  def group_voters_query(group_address) do
+    query =
+      from(addr in CeloAccount,
+        join: account in CeloVoters,
+        on: account.group_address_hash == addr.address,
+        where: account.group_address_hash == ^group_address,
+        where: account.total > ^0,
+        select_merge: %{
+          votes: account.total
+        }
+      )
+
+    query
+  end
+
+  def account_voted_query(account_address) do
+    query =
+      from(addr in CeloAccount,
+        join: account in CeloVoters,
+        on: account.voter_address_hash == addr.address,
+        where: account.voter_address_hash == ^account_address,
+        where: account.total > ^0,
+        select_merge: %{
+          votes: account.total
+        }
+      )
+
+    query
+  end
+
   def list_gold_transfers_query do
     tt_query =
       from(
@@ -150,9 +181,10 @@ defmodule Explorer.GraphQL do
           from_address_hash: tt.from_address_hash,
           to_address_hash: tt.to_address_hash,
           log_index: tt.log_index,
-          tx_index: -1,
-          index: -1,
+          tx_index: 0 - tt.log_index,
+          index: 0 - tt.log_index,
           value: tt.amount,
+          comment: tt.comment,
           block_number: tt.block_number
         }
       )
@@ -169,6 +201,7 @@ defmodule Explorer.GraphQL do
           tx_index: tx.index,
           index: 0 - tx.index,
           value: tx.value,
+          comment: fragment("encode(?::bytea, 'hex')", tx.hash),
           block_number: tx.block_number
         }
       )
@@ -187,6 +220,7 @@ defmodule Explorer.GraphQL do
           tx_index: 0 - tx.index,
           index: tx.index,
           value: tx.value,
+          comment: fragment("encode(?::bytea, 'hex')", tx.transaction_hash),
           block_number: tx.block_number
         }
       )
@@ -205,6 +239,7 @@ defmodule Explorer.GraphQL do
         tx_index: tt.tx_index,
         index: tt.index,
         value: tt.value,
+        comment: tt.comment,
         block_number: tt.block_number
       },
       order_by: [desc: tt.block_number, desc: tt.tx_index, desc: tt.log_index, desc: tt.index]
@@ -374,6 +409,7 @@ defmodule Explorer.GraphQL do
           index: -1,
           value: tt.amount,
           usd_value: 0,
+          comment: tt.comment,
           block_number: tt.block_number
         }
       )
@@ -393,6 +429,7 @@ defmodule Explorer.GraphQL do
           index: 0 - tt.log_index,
           value: 0 - tt.amount,
           usd_value: tt.amount,
+          comment: tt.comment,
           block_number: 0 - tt.block_number
         }
       )
@@ -410,6 +447,7 @@ defmodule Explorer.GraphQL do
           index: 0 - tx.index,
           value: tx.value,
           usd_value: 0 - tx.value,
+          comment: fragment("encode(?::bytea, 'hex')", tx.hash),
           block_number: tx.block_number
         }
       )
@@ -429,6 +467,7 @@ defmodule Explorer.GraphQL do
           index: tx.index,
           value: tx.value,
           usd_value: 0 - tx.value,
+          comment: fragment("encode(?::bytea, 'hex')", tx.transaction_hash),
           block_number: tx.block_number
         }
       )
@@ -456,6 +495,7 @@ defmodule Explorer.GraphQL do
           log_index: tt.log_index,
           tx_index: tt.tx_index,
           index: tt.index,
+          comment: tt.comment,
           value: fragment("greatest(?, ?)", tt.value, tt.usd_value),
           token: fragment("(case when ? < 0 then 'cUSD' else 'cGLD' end)", tt.block_number),
           block_number: fragment("abs(?)", tt.block_number)
