@@ -1,6 +1,16 @@
 ## Current
 
 ### Features
+- [#3149](https://github.com/poanetwork/blockscout/pull/3149) - Display and store revert reason of tx on demand at transaction details page and at gettxinfo API endpoint.
+
+### Fixes
+
+### Chore
+
+
+## 3.1.3-beta
+
+### Features
 - [#3125](https://github.com/poanetwork/blockscout/pull/3125)  - Availability to configure a number of days to consider at coin balance history chart via environment variable
 
 ### Fixes
