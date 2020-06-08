@@ -121,7 +121,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
         errored =
           reason
-          |> Enum.map(fn %{data: %{block_number: num}} -> num end)
+          |> Enum.map(fn
+            %{data: %{block_number: num}} -> num
+            %{data: %{"blockNumber" => num}} -> num
+          end)
 
         result = Chain.bump_pending_blocks(errored)
 
