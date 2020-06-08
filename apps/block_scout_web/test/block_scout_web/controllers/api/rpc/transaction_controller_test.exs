@@ -520,7 +520,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
             "index" => "#{log.index}"
           }
         ],
-        "next_page_params" => nil
+        "next_page_params" => nil,
+        "revertReason" => ""
       }
 
       schema =
