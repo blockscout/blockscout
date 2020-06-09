@@ -23,16 +23,6 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
       {coin_balances, next_page} = split_list_by_page(coin_balances_plus_one)
 
-      deduplicated_coin_balances =
-        coin_balances
-        |> Enum.dedup_by(fn record ->
-          if record.delta == Decimal.new(0) do
-            :dup
-          else
-            System.unique_integer()
-          end
-        end)
-
       next_page_url =
         case next_page_params(next_page, coin_balances, params) do
           nil ->
@@ -48,7 +38,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
         end
 
       coin_balances_json =
-        Enum.map(deduplicated_coin_balances, fn coin_balance ->
+        Enum.map(coin_balances, fn coin_balance ->
           View.render_to_string(
             AddressCoinBalanceView,
             "_coin_balances.html",
