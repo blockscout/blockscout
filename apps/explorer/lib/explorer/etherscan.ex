@@ -363,6 +363,7 @@ defmodule Explorer.Etherscan do
     nonce
     to_address_hash
     value
+    inserted_at
   )a
 
   defp list_pending_transactions_query(address_hash, options) do
