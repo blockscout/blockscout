@@ -1949,7 +1949,7 @@ defmodule Explorer.Chain do
         join: pending_ops in assoc(b, :pending_operations),
         where: pending_ops.fetch_internal_transactions,
         where: b.consensus,
-        where: b.update_count < 100,
+        where: b.update_count < 20,
         select: b.number
       )
 
