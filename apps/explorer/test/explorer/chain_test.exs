@@ -5165,4 +5165,32 @@ defmodule Explorer.ChainTest do
              }
     end
   end
+
+  describe "transaction_to_revert_reason/1" do
+    test "returns correct revert_reason from DB" do
+      transaction = insert(:transaction, revert_reason: "No credit of that type")
+      assert Chain.transaction_to_revert_reason(transaction) == "No credit of that type"
+    end
+
+    test "returns correct revert_reason from the archive node" do
+      transaction =
+        insert(:transaction,
+          gas: 27319,
+          gas_price: "0x1b31d2900",
+          value: "0x86b3",
+          input: %Explorer.Chain.Data{bytes: <<1>>}
+        )
+        |> with_block(insert(:block, number: 1))
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn _json, [] ->
+          {:error, %{code: -32015, message: "VM execution error.", data: "revert: No credit of that type"}}
+        end
+      )
+
+      assert Chain.transaction_to_revert_reason(transaction) == "No credit of that type"
+    end
+  end
 end

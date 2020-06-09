@@ -18,9 +18,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
 
       transaction_updated =
         if error == "Reverted" do
-          if String.strip(revert_reason) == "" do
-            revert_reason_from_node = Chain.fetch_tx_revert_reason(transaction)
-            %Transaction{transaction | revert_reason: revert_reason_from_node}
+          if revert_reason == nil do
+            %Transaction{transaction | revert_reason: Chain.fetch_tx_revert_reason(transaction)}
           else
             transaction
           end
