@@ -1133,6 +1133,21 @@ defmodule Explorer.Chain do
     Repo.all(query)
   end
 
+  def get_elected_validators(num) do
+    query =
+      from(
+        address in Address,
+        join: sel in CeloValidatorHistory,
+        on: sel.address == address.hash,
+        where: sel.block_number == ^num,
+        select_merge: %{
+          online: sel.online
+        }
+      )
+
+    Repo.all(query)
+  end
+
   @doc """
   Returns the balance of the given address and block combination.
 
