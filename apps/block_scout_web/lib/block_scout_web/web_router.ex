@@ -56,19 +56,8 @@ defmodule BlockScoutWeb.WebRouter do
         as: :internal_transaction
       )
 
-      resources(
-        "/raw_trace",
-        TransactionRawTraceController,
-        only: [:index],
-        as: :raw_trace
-      )
-
-      resources(
-        "/pretty_trace",
-        TransactionPrettyTraceController,
-        only: [:index],
-        as: :pretty_trace
-      )
+      get("/raw_trace", TransactionTraceController, :raw, as: :raw_trace)
+      get("/pretty_trace", TransactionTraceController, :pretty, as: :pretty_trace)
 
       resources("/logs", TransactionLogController, only: [:index], as: :log)
 

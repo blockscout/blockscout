@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.TransactionPrettyTraceController do
+defmodule BlockScoutWeb.TransactionTraceController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.TransactionView
@@ -8,7 +8,21 @@ defmodule BlockScoutWeb.TransactionPrettyTraceController do
   alias Explorer.Chain.Import.Runner.InternalTransactions
   alias Explorer.ExchangeRates.Token
 
-  def index(conn, %{"transaction_id" => hash_string}) do
+  def raw(conn, %{"transaction_id" => hash_string}) do
+    case collect_data(hash_string) do
+      {:ok, data} -> render(conn, "raw.html", data)
+      {:error, reason} -> render_error(reason, conn, hash_string)
+    end
+  end
+
+  def pretty(conn, %{"transaction_id" => hash_string}) do
+    case collect_data(hash_string) do
+      {:ok, data} -> render(conn, "pretty.html", data)
+      {:error, reason} -> render_error(reason, conn, hash_string)
+    end
+  end
+
+  defp collect_data(hash_string) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
          {:ok, transaction} <-
            Chain.hash_to_transaction(
@@ -66,27 +80,31 @@ defmodule BlockScoutWeb.TransactionPrettyTraceController do
           end
         end
 
-      render(
-        conn,
-        "index.html",
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        internal_transactions: internal_transactions,
-        block_height: Chain.block_height(),
-        show_token_transfers: Chain.transaction_has_token_transfers?(hash),
-        transaction: transaction
-      )
+      {:ok,
+       %{
+         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+         internal_transactions: internal_transactions,
+         block_height: Chain.block_height(),
+         show_token_transfers: Chain.transaction_has_token_transfers?(hash),
+         transaction: transaction
+       }}
     else
-      :error ->
-        conn
-        |> put_status(422)
-        |> put_view(TransactionView)
-        |> render("invalid.html", transaction_hash: hash_string)
-
-      {:error, :not_found} ->
-        conn
-        |> put_status(404)
-        |> put_view(TransactionView)
-        |> render("not_found.html", transaction_hash: hash_string)
+      {:error, :not_found} -> {:error, :not_found}
+      :error -> {:error, nil}
     end
+  end
+
+  defp render_error(:not_found, conn, hash_string) do
+    conn
+    |> put_status(404)
+    |> put_view(TransactionView)
+    |> render("not_found.html", transaction_hash: hash_string)
+  end
+
+  defp render_error(_reason, conn, hash_string) do
+    conn
+    |> put_status(422)
+    |> put_view(TransactionView)
+    |> render("invalid.html", transaction_hash: hash_string)
   end
 end

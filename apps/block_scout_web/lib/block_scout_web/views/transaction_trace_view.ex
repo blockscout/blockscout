@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.TransactionPrettyTraceView do
+defmodule BlockScoutWeb.TransactionTraceView do
   use BlockScoutWeb, :view
   @dialyzer :no_match
 
@@ -6,6 +6,14 @@ defmodule BlockScoutWeb.TransactionPrettyTraceView do
 
   def render("scripts.html", %{conn: conn}) do
     render_scripts(conn, "raw_trace/code_highlighting.js")
+  end
+
+  def raw_traces_with_lines(internal_transactions) do
+    internal_transactions
+    |> InternalTransaction.internal_transactions_to_raw()
+    |> Jason.encode!(pretty: true)
+    |> String.split("\n")
+    |> Enum.with_index(1)
   end
 
   def raw_traces(internal_transactions) do
