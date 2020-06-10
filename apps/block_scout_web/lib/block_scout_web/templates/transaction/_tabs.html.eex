@@ -1,33 +1,34 @@
+<a name="tabs">
 <div class="card-tabs js-card-tabs">
   <%= if @show_token_transfers do %>
     <%= link(
           gettext("Token Transfers"),
           class: "card-tab #{tab_status("token_transfers", @conn.request_path)}",
-          to: transaction_token_transfer_path(@conn, :index, @transaction)
+          to: transaction_token_transfer_path(@conn, :index, @transaction) <> "#tabs"
         )
       %>
   <% end %>
   <%= link(
         gettext("Internal Transactions"),
         class: "card-tab #{tab_status("internal_transactions", @conn.request_path)}",
-        to: transaction_internal_transaction_path(@conn, :index, @transaction)
+        to: transaction_internal_transaction_path(@conn, :index, @transaction) <> "#tabs"
       )
     %>
   <%= link(
         gettext("Logs"),
         class: "card-tab #{tab_status("logs", @conn.request_path)}",
-        to: transaction_log_path(@conn, :index, @transaction),
+        to: transaction_log_path(@conn, :index, @transaction) <> "#tabs",
         "data-test": "transaction_logs_link"
       )
     %>
   <%= link(
       gettext("Raw Trace"),
       class: "card-tab #{tab_status("raw_trace", @conn.request_path)}",
-      to: transaction_raw_trace_path(@conn, :index, @transaction)
+      to: transaction_raw_trace_path(@conn, :index, @transaction) <> "#tabs"
       ) %>
   <%= link(
       gettext("Pretty Trace"),
       class: "card-tab #{tab_status("pretty_trace", @conn.request_path)}",
-      to: transaction_pretty_trace_path(@conn, :index, @transaction)
+      to: transaction_pretty_trace_path(@conn, :index, @transaction) <> "#tabs"
       ) %>
 </div>

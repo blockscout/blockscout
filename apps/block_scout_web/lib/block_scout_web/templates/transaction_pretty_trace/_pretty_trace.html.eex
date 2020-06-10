@@ -3,35 +3,35 @@
   <div data-test="transaction_pretty_trace" class="tile tile-muted">
     <dl class="row">
 
-      <dt class="col-lg-2"><%= gettext "Type" %></dt>
+      <dt class="col-lg-2 text-lg-right"><%= gettext "Type" %></dt>
       <dd class="col-lg-10 text-dark"><%= internal_transaction["type"] %></dd>
 
-      <dt class="col-lg-2"><%= gettext "Trace Address" %></dt>
+      <dt class="col-lg-2 text-lg-right"><%= gettext "Trace Address" %></dt>
       <dd class="col-lg-10">
         <code>
           [<%= if Enum.count(internal_transaction["traceAddress"]) != 0 do Enum.join(internal_transaction["traceAddress"], ", ") end %>]
         </code>
       </dd>
 
-      <dt class="col-lg-2"><%= gettext "Action" %></dt>
+      <dt class="col-lg-2 text-lg-right"><%= gettext "Action" %></dt>
       <dd class="col-lg-10">
         <%= render "_table_pretty_trace.html", assigns |> Map.put(:data, internal_transaction["action"]) |> Map.put(:summary, "Transaction Action Info") |> Map.put(:class, table_class) %>
       </dd>
 
       <%= if Map.has_key?(internal_transaction, "result") do %>
-        <dt class="col-lg-2"><%= gettext "Result" %></dt>
+        <dt class="col-lg-2 text-lg-right"><%= gettext "Result" %></dt>
         <dd class="col-lg-10">
           <%= render "_table_pretty_trace.html", assigns |> Map.put(:data, internal_transaction["result"]) |> Map.put(:summary, "Result Info") |> Map.put(:class, table_class) %>
         </dd>
       <% end %>
 
       <%= if Map.has_key?(internal_transaction, "subtraces") do %>
-        <dt class="col-lg-2"><%= gettext "Subtraces" %></dt>
+        <dt class="col-lg-2 text-lg-right"><%= gettext "Subtraces" %></dt>
         <dd class="col-lg-10 text-dark"><%= internal_transaction["subtraces"] %></dt>
       <% end %>
 
       <%= if Map.has_key?(internal_transaction, "error") do %>
-        <dt class="col-lg-2"><%= gettext "Error" %></dt>
+        <dt class="col-lg-2 text-lg-right"><%= gettext "Error" %></dt>
         <dd class="col-lg-10 text-dark"><%= internal_transaction["error"] %></dt>
       <% end %>
 
