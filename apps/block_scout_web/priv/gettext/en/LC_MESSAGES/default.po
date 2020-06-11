@@ -118,6 +118,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:69
+#: lib/block_scout_web/templates/transaction_trace/_pretty_trace.html.eex:16
 msgid "Action"
 msgstr ""
 
@@ -453,6 +454,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:31
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:69
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:122
+#: lib/block_scout_web/templates/transaction_trace/_table_pretty_trace.html.eex:18
 msgid "Copy Value"
 msgstr ""
 
@@ -901,7 +903,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:16
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:3
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:14
-#: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:5
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
 #: lib/block_scout_web/views/address_view.ex:325
 #: lib/block_scout_web/views/tokens/instance/overview_view.ex:98
@@ -1206,16 +1208,16 @@ msgid "Raw Input"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tabs.html.eex:24
-#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:7
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:25
+#: lib/block_scout_web/templates/transaction_trace/raw.html.eex:7
 #: lib/block_scout_web/views/transaction_view.ex:397
 msgid "Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_tabs.html.eex:29
-#: lib/block_scout_web/templates/transaction_pretty_trace/index.html.eex:8
-#: lib/block_scout_web/views/transaction_view.ex:318
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:30
+#: lib/block_scout_web/templates/transaction_trace/pretty.html.eex:8
+#: lib/block_scout_web/views/transaction_view.ex:398
 msgid "Pretty Trace"
 msgstr ""
 
@@ -1521,6 +1523,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:20
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:57
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:110
+#: lib/block_scout_web/templates/transaction_trace/_pretty_trace.html.eex:6
 msgid "Type"
 msgstr ""
 
@@ -1842,7 +1845,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:20
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:19
-#: lib/block_scout_web/templates/transaction/_tabs.html.eex:11
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:12
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6
 #: lib/block_scout_web/views/address_view.ex:324
 #: lib/block_scout_web/views/transaction_view.ex:395
@@ -1852,7 +1855,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:32
 #: lib/block_scout_web/templates/address_logs/index.html.eex:8
-#: lib/block_scout_web/templates/transaction/_tabs.html.eex:17
+#: lib/block_scout_web/templates/transaction/_tabs.html.eex:18
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:8
 #: lib/block_scout_web/views/address_view.ex:331
 #: lib/block_scout_web/views/transaction_view.ex:396
@@ -1919,4 +1922,24 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:58
 msgid "Revert reason"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction_trace/_pretty_trace.html.eex:34
+msgid "Error"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction_trace/_pretty_trace.html.eex:22
+msgid "Result"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction_trace/_pretty_trace.html.eex:29
+msgid "Subtraces"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction_trace/_pretty_trace.html.eex:9
+msgid "Trace Address"
 msgstr ""
