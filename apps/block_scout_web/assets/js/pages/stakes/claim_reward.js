@@ -9,7 +9,7 @@ import {
   unlockModal
 } from '../../lib/modals'
 import { displayInputError, hideInputError } from '../../lib/validation'
-import { isSupportedNetwork } from './utils'
+import { isSupportedNetwork, makeContractCall } from './utils'
 
 let status = 'modalClosed'
 
@@ -230,53 +230,20 @@ function onPoolsFound ($modal, $modalBody, channel, store) {
       const gasLimit = parseInt($('#tx-gas-limit', $modalBody).text().replace(/~/g, '').trim(), 10)
       const state = store.getState()
       const stakingContract = state.stakingContract
-      const from = state.account
-      const web3 = state.web3
 
       if (isNaN(gasLimit)) {
         claimFinished('Invalid gas limit. Please, contact support.')
       } else if (!stakingContract) {
         claimFinished('Staking contract is undefined. Please, contact support.')
-      } else if (!from) {
-        claimFinished('Your MetaMask account is undefined. Please, contact support.')
-      } else if (!web3) {
-        claimFinished('Web3 is undefined. Please, contact support.')
       } else if (!poolStakingAddress) {
         claimFinished('Pool staking address is undefined. Please, contact support.')
       } else {
-        stakingContract.methods.claimReward(epochs, poolStakingAddress).send({
-          from,
-          gasPrice: web3.utils.toWei('1', 'gwei'),
-          gas: Math.ceil(gasLimit * 1.2) // +20% reserve to ensure enough gas
-        }, async function (error, txHash) {
-          if (error) {
-            claimFinished(error.message)
-          } else {
-            try {
-              let tx
-              let currentBlockNumber
-              const maxWaitBlocks = 6
-              const startBlockNumber = (await web3.eth.getBlockNumber()) - 0
-              const finishBlockNumber = startBlockNumber + maxWaitBlocks
-              do {
-                await sleep(5) // seconds
-                tx = await web3.eth.getTransactionReceipt(txHash)
-                currentBlockNumber = await web3.eth.getBlockNumber()
-              } while (tx === null && currentBlockNumber <= finishBlockNumber)
-              if (tx) {
-                if (tx.status === true || tx.status === '0x1') {
-                  claimFinished()
-                } else {
-                  claimFinished('Transaction reverted')
-                }
-              } else {
-                claimFinished(`Your transaction was not mined in ${maxWaitBlocks} blocks. Please, try again with the increased gas price or fixed nonce (use Reset Account feature of MetaMask).`)
-              }
-            } catch (e) {
-              claimFinished(e.message)
-            }
-          }
-        })
+        makeContractCall(
+          stakingContract.methods.claimReward(epochs, poolStakingAddress),
+          store,
+          gasLimit,
+          claimFinished
+        )
       }
     }
     function claimFinished (error) {
@@ -301,10 +268,6 @@ function lockUI (lock, $modal, $button, $poolsDropdown, $epochChoiceRadio, $spec
   $poolsDropdown.prop('disabled', lock)
   $epochChoiceRadio.prop('disabled', lock)
   $specifiedEpochsText.prop('disabled', lock)
-}
-
-function sleep (seconds) {
-  return new Promise(resolve => setTimeout(resolve, seconds * 1000))
 }
 
 function showButton (type, $modalBody, calculations) {
