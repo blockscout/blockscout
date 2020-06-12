@@ -8,6 +8,8 @@
 
 ### Chore
 
+- [#3152](https://github.com/poanetwork/blockscout/pull/3152) - Fix contract compilation tests for old versions of compiler
+
 
 ## 3.1.3-beta
 
