@@ -33,6 +33,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.{
     AddressCoinBalances,
+    AddressCoinBalancesDaily,
     Addresses,
     AddressTokenBalances,
     MintTransfers,
@@ -54,6 +55,7 @@ defmodule Indexer.Block.Fetcher do
                 address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
                 addresses: Import.Runner.options(),
                 address_coin_balances: Import.Runner.options(),
+                address_coin_balances_daily: Import.Runner.options(),
                 address_token_balances: Import.Runner.options(),
                 blocks: Import.Runner.options(),
                 block_second_degree_relations: Import.Runner.options(),
@@ -152,6 +154,14 @@ defmodule Indexer.Block.Fetcher do
              transactions_params: transactions_with_receipts
            }
            |> AddressCoinBalances.params_set(),
+         coin_balances_params_daily_set =
+           %{
+             beneficiary_params: MapSet.to_list(beneficiary_params_set),
+             blocks_params: blocks,
+             logs_params: logs,
+             transactions_params: transactions_with_receipts
+           }
+           |> AddressCoinBalancesDaily.params_set(),
          beneficiaries_with_gas_payment <-
            beneficiary_params_set
            |> add_gas_payments(transactions_with_receipts, blocks)
@@ -163,6 +173,7 @@ defmodule Indexer.Block.Fetcher do
              %{
                addresses: %{params: addresses},
                address_coin_balances: %{params: coin_balances_params_set},
+               address_coin_balances_daily: %{params: coin_balances_params_daily_set},
                address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations_params},

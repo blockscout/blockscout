@@ -70,7 +70,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Code coverage
       {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       # JSONRPC HTTP Post calls
-      {:httpoison, "~> 1.0"},
+      {:httpoison, "~> 1.6"},
       # Decode/Encode JSON for JSONRPC
       {:jason, "~> 1.0"},
       # Log errors and application output to separate files
@@ -84,7 +84,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.6"},
       # Encode/decode function names and arguments
-      {:ex_abi, [git: "https://github.com/poanetwork/ex_abi.git", branch: "master"]},
+      {:ex_abi, "~> 0.4"},
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`

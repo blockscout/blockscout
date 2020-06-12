@@ -15,3 +15,5 @@ lib/phoenix/router.ex:324
 lib/block_scout_web/views/layout_view.ex:143
 lib/explorer/staking/stake_snapshotting.ex:14: Function do_snapshotting/6 has no local return
 lib/explorer/staking/stake_snapshotting.ex:179
+lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:21
+lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:22
