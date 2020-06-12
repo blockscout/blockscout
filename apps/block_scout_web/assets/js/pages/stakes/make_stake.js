@@ -2,19 +2,22 @@ import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
 import { openErrorModal, openModal, openWarningModal, lockModal } from '../../lib/modals'
 import { setupValidation } from '../../lib/validation'
-import { makeContractCall, setupChart, isSupportedNetwork } from './utils'
+import { makeContractCall, setupChart, isSupportedNetwork, isStakingAllowed } from './utils'
 
 export function openMakeStakeModal (event, store) {
-  if (!store.getState().account) {
+  const state = store.getState()
+
+  if (!state.account) {
     openWarningModal('Unauthorized', 'You haven\'t approved the reading of account list from your MetaMask or MetaMask is not installed.')
     return
   }
 
   if (!isSupportedNetwork(store)) return
+  if (!isStakingAllowed(state)) return
 
   const address = $(event.target).closest('[data-address]').data('address') || store.getState().account
 
-  store.getState().channel
+  state.channel
     .push('render_make_stake', { address })
     .receive('ok', msg => {
       const $modal = $(msg.html)
@@ -47,14 +50,16 @@ export function openMakeStakeModal (event, store) {
 }
 
 async function makeStake ($modal, address, store, msg) {
-  lockModal($modal)
-
   const state = store.getState()
   const stakingContract = state.stakingContract
   const validatorSetContract = state.validatorSetContract
   const decimals = state.tokenDecimals
 
   const stake = new BigNumber($modal.find('[delegator-stake]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
+
+  if (!isSupportedNetwork(store)) return
+  if (!isStakingAllowed(state)) return
+  lockModal($modal)
 
   let miningAddress = msg.mining_address
   if (!miningAddress || miningAddress === '0x0000000000000000000000000000000000000000') {

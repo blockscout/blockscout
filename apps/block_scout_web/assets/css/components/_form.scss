@@ -92,6 +92,14 @@ $form-control-border-color-active: $primary !default;
     color: white;
     background: #FF7884;
     border-radius: 0 0 2px 2px;
+
+    .link-helptip {
+      border-bottom-width: 1px;
+      border-bottom-style: dotted;
+      color: inherit;
+      cursor: help;
+      text-decoration: none;
+    }
   }
 }
 

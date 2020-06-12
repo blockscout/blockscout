@@ -105,6 +105,15 @@ $dark-tertiary: #5a77ff;
     background-color: transparent!important;
     border-color: $dark-tertiary!important;
     color: $dark-tertiary!important;
+
+    &[disabled] {
+        &,
+        &:hover {
+            background-color: transparent!important;
+            border-color: $dark-tertiary!important;
+            color: $dark-tertiary!important;
+        }
+    }
 }
 
 .dark-theme-applied .btn-line:hover {
