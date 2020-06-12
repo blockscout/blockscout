@@ -172,8 +172,9 @@
   &[disabled] {
     &,
     &:hover {
-      background-color: $bg-color;
-      border-color: $text-color;
+      background-color: $bg-color!important;
+      border-color: $primary!important;
+      color: $primary!important;
       cursor: default;
       opacity: 0.5;
     }

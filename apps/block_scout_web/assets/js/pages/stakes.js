@@ -29,6 +29,7 @@ export const initialState = {
   network: null,
   refreshBlockNumber: 0, // last page refresh block number
   refreshInterval: null,
+  refreshPageFunc: refreshPageWrapper,
   stakingAllowed: false,
   stakingTokenDefined: false,
   stakingContract: null,
