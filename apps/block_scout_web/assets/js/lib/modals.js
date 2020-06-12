@@ -120,6 +120,9 @@ export function openSuccessModal (title, text) {
 
 export function openQuestionModal (title, text, acceptCallback = null, exceptCallback = null, acceptText = 'Yes', exceptText = 'No') {
   const $modal = $('#questionStatusModal')
+  const $closeButton = $modal.find('.close-modal')
+
+  $closeButton.attr('disabled', false)
 
   $modal.find('.modal-status-title').text(title)
   $modal.find('.modal-status-text').text(text)
@@ -129,22 +132,28 @@ export function openQuestionModal (title, text, acceptCallback = null, exceptCal
 
   $accept
     .removeAttr('data-dismiss')
+    .removeAttr('disabled')
     .unbind('click')
     .find('.btn-line-text').text(acceptText)
 
-  $except.removeAttr('data-dismiss')
+  $except
     .removeAttr('data-dismiss')
+    .removeAttr('disabled')
     .unbind('click')
     .find('.btn-line-text').text(exceptText)
 
   if (acceptCallback) {
     $accept.on('click', event => {
+      $closeButton.attr('disabled', true)
+
       $accept
         .unbind('click')
+        .attr('disabled', true)
         .find('.btn-line-text').html(spinner)
       $except
         .unbind('click')
         .removeAttr('data-dismiss')
+        .attr('disabled', true)
 
       modalLocked = true
       acceptCallback($modal, event)
@@ -155,13 +164,15 @@ export function openQuestionModal (title, text, acceptCallback = null, exceptCal
 
   if (exceptCallback) {
     $except.on('click', event => {
-      $modal.find('.close-modal').attr('disabled', true)
+      $closeButton.attr('disabled', true)
 
       $except
         .unbind('click')
+        .attr('disabled', true)
         .find('.btn-line-text').html(spinner)
       $accept
         .unbind('click')
+        .attr('disabled', true)
         .removeAttr('data-dismiss')
 
       modalLocked = true

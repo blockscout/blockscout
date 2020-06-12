@@ -296,6 +296,14 @@ $dark-stakes-banned-background: #3e314c;
 		color: $labels-dark;
 	}
 
+	.stakes-table-body {
+		.refresh-informer {
+			a {
+				color: inherit;
+			}
+		}
+	}
+
 	.stakes-td {
 		border-bottom-color: darken($labels-dark, 30);
 	}
@@ -553,6 +561,10 @@ $dark-stakes-banned-background: #3e314c;
 		border-color: $dark-light;
 		color: #fff;
 		transition: border-color 0.15s ease-in-out;
+
+		&[readonly] {
+			background-color: $dark-light!important;
+		}
 
 		&::placeholder {
 			color: $labels-dark;
