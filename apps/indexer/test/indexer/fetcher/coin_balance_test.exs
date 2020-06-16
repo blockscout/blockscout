@@ -440,8 +440,8 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
         {:ok, responses}
       end)
 
-      bad_block_quantity = integer_to_quantity(bad_block_number)
-      res_bad = eth_block_number_fake_response(bad_block_quantity)
+      good_block_quantity = integer_to_quantity(good_block_number)
+      res_good = eth_block_number_fake_response(good_block_quantity)
 
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn [
@@ -449,11 +449,11 @@ defmodule Indexer.Fetcher.CoinBalanceTest do
                                   id: 0,
                                   jsonrpc: "2.0",
                                   method: "eth_getBlockByNumber",
-                                  params: [bad_block_quantity, true]
+                                  params: [^good_block_quantity, true]
                                 }
                               ],
                               [] ->
-        {:ok, [res_bad]}
+        {:ok, [res_good]}
       end)
 
       assert {:retry, [{^address_hash_bytes, ^bad_block_number}]} =
