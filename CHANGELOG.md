@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3153](https://github.com/poanetwork/blockscout/pull/3153) - Proxy contracts: methods decoding using implementation ABI
 - [#3149](https://github.com/poanetwork/blockscout/pull/3149) - Display and store revert reason of tx on demand at transaction details page and at gettxinfo API endpoint.
 
 ### Fixes
