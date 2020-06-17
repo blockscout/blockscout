@@ -332,6 +332,7 @@ defmodule Explorer.Etherscan do
     status
     to_address_hash
     value
+    revert_reason
   )a
 
   defp list_transactions(address_hash, max_block_number, options) do
