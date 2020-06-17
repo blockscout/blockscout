@@ -28,7 +28,6 @@ defmodule Explorer.Chain.Transaction do
   }
 
   alias Explorer.Chain.Transaction.{Fork, Status}
-  alias Explorer.SmartContract.Reader
 
   @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_used index created_contract_code_indexed_at status
@@ -447,49 +446,7 @@ defmodule Explorer.Chain.Transaction do
   end
 
   defp do_decoded_input_data(data, abi, address_hash, hash) do
-    implementation_method_abi =
-      abi
-      |> Enum.find(fn method ->
-        Map.get(method, "name") == "implementation"
-      end)
-
-    implementation_abi =
-      if implementation_method_abi do
-        implementation_address =
-          case Reader.query_contract(address_hash, abi, %{
-                 "implementation" => []
-               }) do
-            %{"implementation" => {:ok, [result]}} -> result
-            _ -> nil
-          end
-
-        if implementation_address do
-          implementation_address_hash_string = "0x" <> Base.encode16(implementation_address, case: :lower)
-
-          case Chain.string_to_address_hash(implementation_address_hash_string) do
-            {:ok, implementation_address_hash} ->
-              implementation_smart_contract =
-                implementation_address_hash
-                |> Chain.address_hash_to_smart_contract()
-
-              if implementation_smart_contract do
-                implementation_smart_contract
-                |> Map.get(:abi)
-              else
-                []
-              end
-
-            _ ->
-              []
-          end
-        else
-          []
-        end
-      else
-        []
-      end
-
-    full_abi = if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
+    full_abi = Chain.combine_proxy_implementation_abi(address_hash, abi)
 
     with {:ok, {selector, values}} <- find_and_decode(full_abi, data, hash),
          {:ok, mapping} <- selector_mapping(selector, values, hash),
