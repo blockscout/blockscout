@@ -2717,15 +2717,14 @@ defmodule Explorer.Chain do
 
   def transaction_to_status(%Transaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
 
-  def transaction_to_revert_reason(%Transaction{revert_reason: revert_reason} = transaction) do
-    revert_reason =
-      if revert_reason == nil do
-        fetch_tx_revert_reason(transaction)
-      else
-        revert_reason
-      end
+  def transaction_to_revert_reason(transaction) do
+    %Transaction{revert_reason: revert_reason} = transaction
 
-    revert_reason
+    if revert_reason == nil do
+      fetch_tx_revert_reason(transaction)
+    else
+      revert_reason
+    end
   end
 
   def fetch_tx_revert_reason(
@@ -2748,7 +2747,7 @@ defmodule Explorer.Chain do
         data,
         to_address_hash,
         from_address_hash,
-        gas,
+        Decimal.to_integer(gas),
         Wei.hex_format(gas_price),
         Wei.hex_format(value)
       )
@@ -2759,27 +2758,25 @@ defmodule Explorer.Chain do
           data
 
         _ ->
-          nil
+          ""
       end
 
-    if data == nil do
-      nil
-    else
-      revert_reason_parts = String.split(data, "revert: ")
+    revert_reason_parts = String.split(data, "revert: ")
 
-      formatted_revert_reason =
-        if Enum.count(revert_reason_parts) > 1 do
-          Enum.at(revert_reason_parts, 1)
-        else
-          data
-        end
+    formatted_revert_reason =
+      if Enum.count(revert_reason_parts) > 1 do
+        Enum.at(revert_reason_parts, 1)
+      else
+        data
+      end
 
+    if byte_size(formatted_revert_reason) > 0 do
       transaction
       |> Changeset.change(%{revert_reason: formatted_revert_reason})
       |> Repo.update()
-
-      formatted_revert_reason
     end
+
+    formatted_revert_reason
   end
 
   @doc """

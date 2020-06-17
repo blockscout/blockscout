@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
+  import Mox
+
   @moduletag capture_log: true
 
   describe "gettxreceiptstatus" do
@@ -577,6 +579,184 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
+
+    test "with a txhash with revert reason from DB", %{conn: conn} do
+      block = insert(:block, number: 100)
+
+      transaction =
+        :transaction
+        |> insert(revert_reason: "No credit of that type")
+        |> with_block(block)
+
+      insert(:address)
+
+      params = %{
+        "module" => "transaction",
+        "action" => "gettxinfo",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"]["revertReason"] == "No credit of that type"
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with a txhash with empty revert reason from DB", %{conn: conn} do
+      block = insert(:block, number: 100)
+
+      transaction =
+        :transaction
+        |> insert(revert_reason: "")
+        |> with_block(block)
+
+      insert(:address)
+
+      params = %{
+        "module" => "transaction",
+        "action" => "gettxinfo",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"]["revertReason"] == ""
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with a txhash with revert reason from the archive node", %{conn: conn} do
+      block = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+
+      transaction =
+        :transaction
+        |> insert(
+          error: "Reverted",
+          status: :error,
+          block_hash: block.hash,
+          block_number: block.number,
+          cumulative_gas_used: 884_322,
+          gas_used: 106_025,
+          index: 0,
+          hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+        )
+
+      insert(:address)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn _json, [] ->
+          {:error, %{code: -32015, message: "VM execution error.", data: "revert: No credit of that type"}}
+        end
+      )
+
+      params = %{
+        "module" => "transaction",
+        "action" => "gettxinfo",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"]["revertReason"] == "No credit of that type"
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+  end
+
+  test "with a txhash with empty revert reason from the archive node", %{conn: conn} do
+    block = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+
+    transaction =
+      :transaction
+      |> insert(
+        error: "Reverted",
+        status: :error,
+        block_hash: block.hash,
+        block_number: block.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+    insert(:address)
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn _json, [] ->
+        {:error, %{code: -32015, message: "VM execution error.", data: ""}}
+      end
+    )
+
+    params = %{
+      "module" => "transaction",
+      "action" => "gettxinfo",
+      "txhash" => "#{transaction.hash}"
+    }
+
+    assert response =
+             conn
+             |> get("/api", params)
+             |> json_response(200)
+
+    assert response["result"]["revertReason"] == ""
+    assert response["status"] == "1"
+    assert response["message"] == "OK"
+  end
+
+  test "with a txhash with empty revert reason from DB if eth_call doesn't return an error", %{conn: conn} do
+    block = insert(:block, number: 100, hash: "0x3e51328bccedee581e8ba35190216a61a5d67fd91ca528f3553142c0c7d18391")
+
+    transaction =
+      :transaction
+      |> insert(
+        error: "Reverted",
+        status: :error,
+        block_hash: block.hash,
+        block_number: block.number,
+        cumulative_gas_used: 884_322,
+        gas_used: 106_025,
+        index: 0,
+        hash: "0xac2a7dab94d965893199e7ee01649e2d66f0787a4c558b3118c09e80d4df8269"
+      )
+
+    insert(:address)
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn _json, [] ->
+        {:ok}
+      end
+    )
+
+    params = %{
+      "module" => "transaction",
+      "action" => "gettxinfo",
+      "txhash" => "#{transaction.hash}"
+    }
+
+    assert response =
+             conn
+             |> get("/api", params)
+             |> json_response(200)
+
+    assert response["result"]["revertReason"] == ""
+    assert response["status"] == "1"
+    assert response["message"] == "OK"
   end
 
   defp resolve_schema(result \\ %{}) do
