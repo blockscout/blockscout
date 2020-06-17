@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Log do
   require Logger
 
   alias ABI.{Event, FunctionSelector}
-  alias Explorer{Chain, Repo}
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Transaction}
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a

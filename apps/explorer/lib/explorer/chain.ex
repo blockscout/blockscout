@@ -4338,7 +4338,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  def combine_proxy_implementation_abi(address_hash, abi) do
+  def combine_proxy_implementation_abi(address_hash, abi) when not is_nil(abi) do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
@@ -4382,6 +4382,10 @@ defmodule Explorer.Chain do
       end
 
     if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
+  end
+
+  def combine_proxy_implementation_abi(_, abi) when is_nil(abi) do
+    []
   end
 
   defp format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments) do
