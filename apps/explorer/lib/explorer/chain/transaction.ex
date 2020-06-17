@@ -30,7 +30,7 @@ defmodule Explorer.Chain.Transaction do
 
   @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_used index created_contract_code_indexed_at status
-                     to_address_hash)a
+                     to_address_hash revert_reason)a
 
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
@@ -106,6 +106,7 @@ defmodule Explorer.Chain.Transaction do
    * `internal_transactions` - transactions (value transfers) created while executing contract used for this
      transaction
    * `created_contract_code_indexed_at` - when created `address` code was fetched by `Indexer`
+   * `revert_reason` - revert reason of transaction
 
      | `status` | `contract_creation_address_hash` | `input`    | Token Transfer? | `internal_transactions_indexed_at`        | `internal_transactions` | Description                                                                                         |
      |----------|----------------------------------|------------|-----------------|-------------------------------------------|-------------------------|-----------------------------------------------------------------------------------------------------|
@@ -129,6 +130,7 @@ defmodule Explorer.Chain.Transaction do
    * `uncles` - uncle blocks where `forks` were collated
    * `v` - The V field of the signature.
    * `value` - wei transferred from `from_address` to `to_address`
+   * `revert_reason` - revert reason of transaction
   """
   @type t :: %__MODULE__{
           block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
@@ -159,7 +161,8 @@ defmodule Explorer.Chain.Transaction do
           to_address_hash: Hash.Address.t() | nil,
           uncles: %Ecto.Association.NotLoaded{} | [Block.t()],
           v: v(),
-          value: Wei.t()
+          value: Wei.t(),
+          revert_reason: String.t()
         }
 
   @derive {Poison.Encoder,
@@ -199,6 +202,7 @@ defmodule Explorer.Chain.Transaction do
     field(:status, Status)
     field(:v, :decimal)
     field(:value, Wei)
+    field(:revert_reason, :string)
 
     # A transient field for deriving old block hash during transaction upserts.
     # Used to force refetch of a block in case a transaction is re-collated

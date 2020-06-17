@@ -28,6 +28,8 @@ defmodule Explorer.Chain do
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
+  alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
+
   alias Explorer.Counters.LastFetchedCounter
 
   alias Explorer.Chain
@@ -2714,6 +2716,68 @@ defmodule Explorer.Chain do
     do: {:error, :awaiting_internal_transactions}
 
   def transaction_to_status(%Transaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
+
+  def transaction_to_revert_reason(transaction) do
+    %Transaction{revert_reason: revert_reason} = transaction
+
+    if revert_reason == nil do
+      fetch_tx_revert_reason(transaction)
+    else
+      revert_reason
+    end
+  end
+
+  def fetch_tx_revert_reason(
+        %Transaction{
+          block_number: block_number,
+          to_address_hash: to_address_hash,
+          from_address_hash: from_address_hash,
+          input: data,
+          gas: gas,
+          gas_price: gas_price,
+          value: value
+        } = transaction
+      ) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    req =
+      EthereumJSONRPCTransaction.eth_call_request(
+        0,
+        block_number,
+        data,
+        to_address_hash,
+        from_address_hash,
+        Decimal.to_integer(gas),
+        Wei.hex_format(gas_price),
+        Wei.hex_format(value)
+      )
+
+    data =
+      case EthereumJSONRPC.json_rpc(req, json_rpc_named_arguments) do
+        {:error, %{data: data}} ->
+          data
+
+        _ ->
+          ""
+      end
+
+    revert_reason_parts = String.split(data, "revert: ")
+
+    formatted_revert_reason =
+      if Enum.count(revert_reason_parts) > 1 do
+        Enum.at(revert_reason_parts, 1)
+      else
+        data
+      end
+
+    if byte_size(formatted_revert_reason) > 0 do
+      transaction
+      |> Changeset.change(%{revert_reason: formatted_revert_reason})
+      |> Repo.update()
+    end
+
+    formatted_revert_reason
+  end
 
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
