@@ -2,6 +2,8 @@
 
 ### Features
 - [#3154](https://github.com/poanetwork/blockscout/pull/3154) - Support of Hyperledger Besu client
+- [#3153](https://github.com/poanetwork/blockscout/pull/3153) - Proxy contracts: logs decoding using implementation ABI
+- [#3153](https://github.com/poanetwork/blockscout/pull/3153) - Proxy contracts: methods decoding using implementation ABI
 - [#3149](https://github.com/poanetwork/blockscout/pull/3149) - Display and store revert reason of tx on demand at transaction details page and at gettxinfo API endpoint.
 
 ### Fixes
