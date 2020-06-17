@@ -468,9 +468,16 @@ defmodule Explorer.Chain.Transaction do
 
           case Chain.string_to_address_hash(implementation_address_hash_string) do
             {:ok, implementation_address_hash} ->
-              implementation_address_hash
-              |> Chain.address_hash_to_smart_contract()
-              |> Map.get(:abi)
+              implementation_smart_contract =
+                implementation_address_hash
+                |> Chain.address_hash_to_smart_contract()
+
+              if implementation_smart_contract do
+                implementation_smart_contract
+                |> Map.get(:abi)
+              else
+                []
+              end
 
             _ ->
               []
