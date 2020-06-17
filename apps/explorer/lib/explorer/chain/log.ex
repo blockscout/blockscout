@@ -6,8 +6,8 @@ defmodule Explorer.Chain.Log do
   require Logger
 
   alias ABI.{Event, FunctionSelector}
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Block, ContractMethod, Data, Hash, Transaction}
-  alias Explorer.Repo
 
   @required_attrs ~w(address_hash data block_hash index transaction_hash)a
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type block_number)a
@@ -121,8 +121,11 @@ defmodule Explorer.Chain.Log do
   """
   def decode(_log, %Transaction{to_address: nil}), do: {:error, :no_to_address}
 
-  def decode(log, transaction = %Transaction{to_address: %{smart_contract: %{abi: abi}}}) when not is_nil(abi) do
-    with {:ok, selector, mapping} <- find_and_decode(abi, log, transaction),
+  def decode(log, transaction = %Transaction{to_address: %{smart_contract: %{abi: abi, address_hash: address_hash}}})
+      when not is_nil(abi) do
+    full_abi = Chain.combine_proxy_implementation_abi(address_hash, abi)
+
+    with {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping),
          do: {:ok, identifier, text, mapping}

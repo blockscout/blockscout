@@ -491,7 +491,8 @@ defmodule BlockScoutWeb.Etherscan do
       "success" => true,
       "timeStamp" => "1541018182",
       "to" => "0x000000000000000000000000000000000000000d",
-      "value" => "67612"
+      "value" => "67612",
+      revertReason: "No credit of that type"
     }
   }
 
@@ -628,6 +629,12 @@ defmodule BlockScoutWeb.Etherscan do
     type: "integer",
     definition: "Number of decimal places the token can be subdivided to.",
     example: ~s("18")
+  }
+
+  @revert_reason_type %{
+    type: "revert_reason",
+    definition: "Revert reason of transaction.",
+    example: ~s("No credit of that type")
   }
 
   @logs_details %{
@@ -1031,7 +1038,8 @@ defmodule BlockScoutWeb.Etherscan do
       logs: %{
         type: "array",
         array_type: @logs_details
-      }
+      },
+      revertReason: @revert_reason_type
     }
   }
 
