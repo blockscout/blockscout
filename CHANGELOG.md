@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3154](https://github.com/poanetwork/blockscout/pull/3154) - Support of Hyperledger Besu client
 - [#3149](https://github.com/poanetwork/blockscout/pull/3149) - Display and store revert reason of tx on demand at transaction details page and at gettxinfo API endpoint.
 
 ### Fixes
