@@ -13,3 +13,5 @@ apps/explorer/lib/explorer/smart_contract/publisher_worker.ex:6: The test 5 == '
 lib/block_scout_web/router.ex:1
 lib/phoenix/router.ex:324
 lib/block_scout_web/views/layout_view.ex:143
+lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:21
+lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:22
