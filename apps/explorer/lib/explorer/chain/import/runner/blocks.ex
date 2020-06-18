@@ -87,14 +87,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         transactions: transactions
       })
     end)
-    # It was introduced in 810dc48a2c7f236c7a4ab48e317b4ac26946a2bc (Enforce DB transaction's order between tables to prevent deadlocks)
-    # |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
-    #   Logger.debug(fn -> [
-    #     "#blocks_importer#: acquire_contract_address_tokens 1",
-    #     inspect(repo)
-    #   ] end)
-    #   acquire_contract_address_tokens(repo, consensus_block_numbers)
-    # end)
+    |> Multi.run(:acquire_contract_address_tokens, fn repo, _ ->
+      acquire_contract_address_tokens(repo, consensus_block_numbers)
+    end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
       delete_address_token_balances(repo, consensus_block_numbers, insert_options)
     end)
@@ -121,19 +116,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   @impl Runner
   def timeout, do: @timeout
 
-  # It was introduced in 810dc48a2c7f236c7a4ab48e317b4ac26946a2bc (Enforce DB transaction's order between tables to prevent deadlocks)
-  # defp acquire_contract_address_tokens(repo, consensus_block_numbers) do
-  #   query =
-  #     from(address_current_token_balance in Address.CurrentTokenBalance,
-  #       where: address_current_token_balance.block_number in ^consensus_block_numbers,
-  #       select: address_current_token_balance.token_contract_address_hash,
-  #       distinct: address_current_token_balance.token_contract_address_hash
-  #     )
+  defp acquire_contract_address_tokens(repo, consensus_block_numbers) do
+    query =
+      from(address_current_token_balance in Address.CurrentTokenBalance,
+        where: address_current_token_balance.block_number in ^consensus_block_numbers,
+        select: address_current_token_balance.token_contract_address_hash,
+        distinct: address_current_token_balance.token_contract_address_hash
+      )
 
-  #   contract_address_hashes = repo.all(query)
+    contract_address_hashes = repo.all(query)
 
-  #   Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
-  # end
+    Tokens.acquire_contract_address_tokens(repo, contract_address_hashes)
+  end
 
   defp fork_transactions(%{
          repo: repo,
