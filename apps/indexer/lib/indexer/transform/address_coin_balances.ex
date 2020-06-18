@@ -34,21 +34,17 @@ defmodule Indexer.Transform.AddressCoinBalances do
 
   defp reducer({:logs_params, logs_params}, acc) when is_list(logs_params) do
     # a log MUST have address_hash and block_number
-    logs_params_reduced =
-      logs_params
-      |> Enum.into(acc, fn
+    logs_params
+    |> Enum.into(acc, fn
+      %{address_hash: address_hash, block_number: block_number}
+      when is_binary(address_hash) and is_integer(block_number) ->
         %{address_hash: address_hash, block_number: block_number}
-        when is_binary(address_hash) and is_integer(block_number) ->
-          %{address_hash: address_hash, block_number: block_number}
 
-        %{type: "pending"} ->
-          nil
-      end)
-      |> Enum.reject(fn val -> is_nil(val) end)
-      |> MapSet.new()
-
-    Logger.debug("#blocks_importer#: Address coin balances reduced 3")
-    logs_params_reduced
+      %{type: "pending"} ->
+        nil
+    end)
+    |> Enum.reject(fn val -> is_nil(val) end)
+    |> MapSet.new()
   end
 
   defp reducer({:transactions_params, transactions_params}, initial) when is_list(transactions_params) do

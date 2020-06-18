@@ -102,7 +102,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       tb in __MODULE__,
       where: tb.address_hash == ^address_hash,
       where: tb.value > 0,
-      where: not is_nil(tb.value),
       preload: :token
     )
   end
@@ -117,8 +116,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       tb in __MODULE__,
       where: tb.token_contract_address_hash == ^token_contract_address_hash,
       where: tb.address_hash != ^@burn_address_hash,
-      where: tb.value > 0,
-      where: not is_nil(tb.value)
+      where: tb.value > 0
     )
   end
 

@@ -24,13 +24,9 @@ defmodule Indexer.Transform.AddressTokenBalances do
                                acc
                                when is_integer(block_number) and is_binary(from_address_hash) and
                                       is_binary(to_address_hash) and is_binary(token_contract_address_hash) ->
-      acc_with_token_balance =
-        acc
-        |> add_token_balance_address(from_address_hash, token_contract_address_hash, block_number)
-        |> add_token_balance_address(to_address_hash, token_contract_address_hash, block_number)
-
-      Logger.debug("#blocks_importer#: Address token balances reduced")
-      acc_with_token_balance
+      acc
+      |> add_token_balance_address(from_address_hash, token_contract_address_hash, block_number)
+      |> add_token_balance_address(to_address_hash, token_contract_address_hash, block_number)
     end)
   end
 

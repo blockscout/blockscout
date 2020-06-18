@@ -28,15 +28,15 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias EthereumJSONRPC.{Blocks, FetchedBalances, Subscription}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
-  # alias Explorer.Counters.AverageBlockTime
+  alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
   alias Indexer.Transform.Addresses
-  # alias Timex.Duration
+  alias Timex.Duration
 
   @behaviour Block.Fetcher
 
-  @minimum_safe_polling_period :timer.seconds(1)
+  @minimum_safe_polling_period :timer.seconds(5)
 
   @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
@@ -153,11 +153,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp new_max_number(number, max_number_seen), do: max(number, max_number_seen)
 
   defp schedule_polling do
-    polling_period = 1_000
-    # case AverageBlockTime.average_block_time() do
-    #   {:error, :disabled} -> 2_000
-    #   block_time -> round(Duration.to_milliseconds(block_time) * 2)
-    # end
+    polling_period =
+      case AverageBlockTime.average_block_time() do
+        {:error, :disabled} -> 2_000
+        block_time -> round(Duration.to_milliseconds(block_time) / 2)
+      end
 
     safe_polling_period = max(polling_period, @minimum_safe_polling_period)
 
@@ -417,6 +417,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           end)
 
         Logger.debug("#blocks_importer#: Balances finished")
+
         {:ok,
          %{
            addresses_params: merged_addresses_params,

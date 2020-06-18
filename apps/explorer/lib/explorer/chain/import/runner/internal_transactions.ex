@@ -267,20 +267,23 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   defp invalid_block_numbers(transactions, internal_transactions_params) do
     # Finds all mistmatches between transactions and internal transactions
     # for a block number:
+    # - there are no internal txs for some transactions
     # - there are no transactions for some internal transactions
     # - there are internal txs with a different block number than their transactions
     # Returns block numbers where any of these issues is found
 
-    transaction_tuples = MapSet.new(transactions, &{&1.hash, &1.block_number})
+    required_tuples = MapSet.new(transactions, &{&1.hash, &1.block_number})
 
     Logger.info(fn ->
       [
         "consensus removing transaction_tuples: ",
-        inspect(transaction_tuples)
+        inspect(required_tuples)
       ]
     end)
 
     candidate_tuples = MapSet.new(internal_transactions_params, &{&1.transaction_hash, &1.block_number})
+
+    all_tuples = MapSet.union(required_tuples, candidate_tuples)
 
     Logger.info(fn ->
       [
@@ -289,10 +292,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       ]
     end)
 
-    common_tuples = MapSet.intersection(candidate_tuples, transaction_tuples)
+    common_tuples = MapSet.intersection(required_tuples, candidate_tuples)
 
     invalid_numbers =
-      candidate_tuples
+      all_tuples
       |> MapSet.difference(common_tuples)
       |> MapSet.new(fn {_hash, block_number} -> block_number end)
       |> MapSet.to_list()

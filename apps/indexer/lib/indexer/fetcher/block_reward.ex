@@ -210,41 +210,35 @@ defmodule Indexer.Fetcher.BlockReward do
   end
 
   def reduce_uncle_rewards(beneficiaries_params) do
-    Logger.debug("#blocks_importer#: Reducing uncles rewards")
+    beneficiaries_params
+    |> Enum.reduce([], fn %{address_type: address_type} = beneficiary, acc ->
+      current =
+        if address_type == :uncle do
+          reward =
+            Enum.reduce(beneficiaries_params, %Wei{value: 0}, fn %{
+                                                                   address_type: address_type,
+                                                                   address_hash: address_hash,
+                                                                   block_hash: block_hash
+                                                                 } = current_beneficiary,
+                                                                 reward_acc ->
+              if address_type == beneficiary.address_type && address_hash == beneficiary.address_hash &&
+                   block_hash == beneficiary.block_hash do
+                {:ok, minted} = Wei.cast(current_beneficiary.reward)
 
-    reduced_beneficiares =
-      beneficiaries_params
-      |> Enum.reduce([], fn %{address_type: address_type} = beneficiary, acc ->
-        current =
-          if address_type == :uncle do
-            reward =
-              Enum.reduce(beneficiaries_params, %Wei{value: 0}, fn %{
-                                                                     address_type: address_type,
-                                                                     address_hash: address_hash,
-                                                                     block_hash: block_hash
-                                                                   } = current_beneficiary,
-                                                                   reward_acc ->
-                if address_type == beneficiary.address_type && address_hash == beneficiary.address_hash &&
-                     block_hash == beneficiary.block_hash do
-                  {:ok, minted} = Wei.cast(current_beneficiary.reward)
+                Wei.sum(reward_acc, minted)
+              else
+                reward_acc
+              end
+            end)
 
-                  Wei.sum(reward_acc, minted)
-                else
-                  reward_acc
-                end
-              end)
+          %{beneficiary | reward: reward}
+        else
+          beneficiary
+        end
 
-            %{beneficiary | reward: reward}
-          else
-            beneficiary
-          end
-
-        [current | acc]
-      end)
-      |> Enum.uniq()
-
-    Logger.debug("#blocks_importer#: Uncles rewards reduced")
-    reduced_beneficiares
+      [current | acc]
+    end)
+    |> Enum.uniq()
   end
 
   defp import_block_reward_params(block_rewards_params) when is_list(block_rewards_params) do

@@ -20,9 +20,7 @@ defmodule Indexer.Transform.Blocks do
 
     transformer = Application.get_env(:indexer, :block_transformer)
 
-    transformed_blocks = Enum.map(blocks, &transformer.transform/1)
-    Logger.debug("#blocks_importer#: Blocks transformed")
-    transformed_blocks
+    Enum.map(blocks, &transformer.transform/1)
   end
 
   @doc """
