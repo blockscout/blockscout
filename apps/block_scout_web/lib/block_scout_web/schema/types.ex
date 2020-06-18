@@ -107,7 +107,7 @@ defmodule BlockScoutWeb.Schema.Types do
       resolve(&CeloClaim.get_by/3)
     end
 
-    connection field(:voted, node_type: :celo_account) do
+    connection field(:voted, node_type: :celo_validator_group) do
       resolve(&CeloAccount.get_voted/3)
     end
   end
