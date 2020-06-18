@@ -53,6 +53,14 @@
           <!-- Verify in other explorers -->
           <%= render BlockScoutWeb.AddressView, "_verify_other_explorers.html", hash: hash(@transaction), type: "tx" %>
           <hr>
+          <%= if status == {:error, "Reverted"} do %>
+          <dl class="row">
+          <dt class="col-sm-3 text-muted"><%= gettext "Revert reason" %> </dt>
+          <dd class="col-sm-9" data-selector="block-number">
+            <%= BlockScoutWeb.TransactionView.transaction_revert_reason(@transaction) %>
+          </dd>
+          </dl>
+          <% end %>
           <!-- Block Hash -->
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Block Number" %> </dt>

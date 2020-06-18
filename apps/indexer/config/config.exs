@@ -39,6 +39,8 @@ config :indexer,
   last_block: System.get_env("LAST_BLOCK") || ""
 
 config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
+config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
+  disabled?: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu"
 # config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
 config :indexer, Indexer.Fetcher.StakingPools.Supervisor, disabled?: true
 

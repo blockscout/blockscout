@@ -348,6 +348,7 @@ defmodule Explorer.Etherscan do
     status
     to_address_hash
     value
+    revert_reason
   )a
 
   @pending_transaction_fields ~w(
