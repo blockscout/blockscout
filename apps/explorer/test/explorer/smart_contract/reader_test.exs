@@ -169,6 +169,99 @@ defmodule Explorer.SmartContract.ReaderTest do
     end
   end
 
+  describe "read_only_functions_proxy/1" do
+    test "fetches the smart contract proxy read only functions with the blockchain value" do
+      proxy_smart_contract =
+        insert(:smart_contract,
+          abi: [
+            %{
+              "type" => "function",
+              "stateMutability" => "view",
+              "payable" => false,
+              "outputs" => [
+                %{
+                  "type" => "address",
+                  "name" => ""
+                }
+              ],
+              "name" => "implementation",
+              "inputs" => [],
+              "constant" => true
+            }
+          ]
+        )
+
+      implementation_contract_address = insert(:contract_address)
+
+      insert(:smart_contract,
+        address_hash: implementation_contract_address.hash,
+        abi: [
+          %{
+            "constant" => true,
+            "inputs" => [],
+            "name" => "get",
+            "outputs" => [%{"name" => "", "type" => "uint256"}],
+            "payable" => false,
+            "stateMutability" => "view",
+            "type" => "function"
+          },
+          %{
+            "constant" => true,
+            "inputs" => [%{"name" => "x", "type" => "uint256"}],
+            "name" => "with_arguments",
+            "outputs" => [%{"name" => "", "type" => "bool"}],
+            "payable" => false,
+            "stateMutability" => "view",
+            "type" => "function"
+          }
+        ]
+      )
+
+      implementation_contract_address_hash_string =
+        Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
+             }
+           ]}
+        end
+      )
+
+      blockchain_get_function_mock()
+
+      response = Reader.read_only_functions_proxy(proxy_smart_contract.address_hash)
+
+      assert [
+               %{
+                 "constant" => true,
+                 "inputs" => [],
+                 "name" => "get",
+                 "outputs" => [%{"name" => "", "type" => "uint256", "value" => 0}],
+                 "payable" => _,
+                 "stateMutability" => _,
+                 "type" => _
+               },
+               %{
+                 "constant" => true,
+                 "inputs" => [%{"name" => "x", "type" => "uint256"}],
+                 "name" => "with_arguments",
+                 "outputs" => [%{"name" => "", "type" => "bool", "value" => ""}],
+                 "payable" => _,
+                 "stateMutability" => _,
+                 "type" => _
+               }
+             ] = response
+    end
+  end
+
   describe "query_function/2" do
     test "given the arguments, fetches the function value from the blockchain" do
       smart_contract = insert(:smart_contract)

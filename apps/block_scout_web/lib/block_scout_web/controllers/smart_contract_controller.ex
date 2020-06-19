@@ -4,11 +4,16 @@ defmodule BlockScoutWeb.SmartContractController do
   alias Explorer.Chain
   alias Explorer.SmartContract.Reader
 
-  def index(conn, %{"hash" => address_hash_string}) do
+  def index(conn, %{"hash" => address_hash_string, "type" => contract_type}) do
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash) do
-      read_only_functions = Reader.read_only_functions(address_hash)
+      read_only_functions =
+        if contract_type == "proxy" do
+          Reader.read_only_functions_proxy(address_hash)
+        else
+          Reader.read_only_functions(address_hash)
+        end
 
       conn
       |> put_status(200)

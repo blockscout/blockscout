@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
     end
 
     test "error for invalid address" do
-      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: "0x00")
+      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: "0x00", type: "regular")
 
       conn =
         build_conn()
@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
       blockchain_get_function_mock()
 
-      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: token_contract_address.hash)
+      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: token_contract_address.hash, type: "regular")
 
       conn =
         build_conn()
@@ -58,6 +58,22 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
       assert conn.status == 200
       refute conn.assigns.read_only_functions == []
+    end
+
+    test "lists [] proxy read only functions if no verified implementation" do
+      token_contract_address = insert(:contract_address)
+
+      insert(:smart_contract, address_hash: token_contract_address.hash)
+
+      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: token_contract_address.hash, type: "proxy")
+
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get(path)
+
+      assert conn.status == 200
+      assert conn.assigns.read_only_functions == []
     end
   end
 

@@ -4338,53 +4338,96 @@ defmodule Explorer.Chain do
     end
   end
 
-  def combine_proxy_implementation_abi(address_hash, abi) when not is_nil(abi) do
+  def combine_proxy_implementation_abi(proxy_address_hash, abi) when not is_nil(abi) do
+    implementation_abi = get_implementation_abi_from_proxy(proxy_address_hash, abi)
+
+    if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
+  end
+
+  def combine_proxy_implementation_abi(_, abi) when is_nil(abi) do
+    []
+  end
+
+  def is_proxy_contract?(abi) when not is_nil(abi) do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
         Map.get(method, "name") == "implementation"
       end)
 
-    implementation_abi =
-      if implementation_method_abi do
-        implementation_address =
-          case Reader.query_contract(address_hash, abi, %{
-                 "implementation" => []
-               }) do
-            %{"implementation" => {:ok, [result]}} -> result
-            _ -> nil
-          end
+    if implementation_method_abi, do: true, else: false
+  end
 
-        if implementation_address do
-          implementation_address_hash_string = "0x" <> Base.encode16(implementation_address, case: :lower)
+  def is_proxy_contract?(abi) when is_nil(abi) do
+    false
+  end
 
-          case Chain.string_to_address_hash(implementation_address_hash_string) do
-            {:ok, implementation_address_hash} ->
-              implementation_smart_contract =
-                implementation_address_hash
-                |> Chain.address_hash_to_smart_contract()
+  def get_implementation_address_hash(proxy_address_hash, abi)
+      when not is_nil(proxy_address_hash) and not is_nil(abi) do
+    implementation_address =
+      case Reader.query_contract(proxy_address_hash, abi, %{
+             "implementation" => []
+           }) do
+        %{"implementation" => {:ok, [result]}} -> result
+        _ -> nil
+      end
 
-              if implementation_smart_contract do
-                implementation_smart_contract
-                |> Map.get(:abi)
-              else
-                []
-              end
+    if implementation_address do
+      "0x" <> Base.encode16(implementation_address, case: :lower)
+    else
+      nil
+    end
+  end
 
-            _ ->
-              []
-          end
+  def get_implementation_address_hash(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
+    nil
+  end
+
+  defp get_implementation_abi(implementation_address_hash_string) when not is_nil(implementation_address_hash_string) do
+    case Chain.string_to_address_hash(implementation_address_hash_string) do
+      {:ok, implementation_address_hash} ->
+        implementation_smart_contract =
+          implementation_address_hash
+          |> Chain.address_hash_to_smart_contract()
+
+        if implementation_smart_contract do
+          implementation_smart_contract
+          |> Map.get(:abi)
         else
           []
         end
+
+      _ ->
+        []
+    end
+  end
+
+  defp get_implementation_abi(implementation_address_hash_string) when is_nil(implementation_address_hash_string) do
+    []
+  end
+
+  def get_implementation_abi_from_proxy(proxy_address_hash, abi)
+      when not is_nil(proxy_address_hash) and not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation"
+      end)
+
+    if implementation_method_abi do
+      implementation_address_hash_string = get_implementation_address_hash(proxy_address_hash, abi)
+
+      if implementation_address_hash_string do
+        get_implementation_abi(implementation_address_hash_string)
       else
         []
       end
-
-    if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
+    else
+      []
+    end
   end
 
-  def combine_proxy_implementation_abi(_, abi) when is_nil(abi) do
+  def get_implementation_abi_from_proxy(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
     []
   end
 
