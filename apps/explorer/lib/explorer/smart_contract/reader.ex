@@ -221,26 +221,33 @@ defmodule Explorer.SmartContract.Reader do
   @doc """
   Fetches the blockchain value of a function that requires arguments.
   """
-  @spec query_function(String.t(), %{name: String.t(), args: nil}) :: [%{}]
-  def query_function(contract_address_hash, %{name: name, args: nil}) do
-    query_function(contract_address_hash, %{name: name, args: []})
+  @spec query_function(String.t(), %{name: String.t(), args: nil}, atom()) :: [%{}]
+  def query_function(contract_address_hash, %{name: name, args: nil}, type) do
+    query_function(contract_address_hash, %{name: name, args: []}, type)
   end
 
-  @spec query_function(Hash.t(), %{name: String.t(), args: [term()]}) :: [%{}]
-  def query_function(contract_address_hash, %{name: name, args: args}) do
+  @spec query_function(Hash.t(), %{name: String.t(), args: [term()]}, atom()) :: [%{}]
+  def query_function(contract_address_hash, %{name: name, args: args}, type) do
     abi =
       contract_address_hash
       |> Chain.address_hash_to_smart_contract()
       |> Map.get(:abi)
 
+    final_abi =
+      if type == :proxy do
+        Chain.get_implementation_abi_from_proxy(contract_address_hash, abi)
+      else
+        abi
+      end
+
     outputs =
-      case abi do
+      case final_abi do
         nil ->
           nil
 
         _ ->
           function =
-            abi
+            final_abi
             |> Enum.filter(fn function -> function["name"] == name end)
             |> List.first()
 
@@ -248,7 +255,7 @@ defmodule Explorer.SmartContract.Reader do
       end
 
     contract_address_hash
-    |> query_verified_contract(%{name => normalize_args(args)}, abi)
+    |> query_verified_contract(%{name => normalize_args(args)}, final_abi)
     |> link_outputs_and_values(outputs, name)
   end
 
