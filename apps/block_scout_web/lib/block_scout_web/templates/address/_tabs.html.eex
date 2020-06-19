@@ -64,4 +64,11 @@
         class: "card-tab #{tab_status("read_contract", @conn.request_path)}")
         %>
   <% end %>
+  <%= if smart_contract_is_proxy?(@address) do %>
+    <%= link(
+        gettext("Read Proxy"),
+        to: address_read_proxy_path(@conn, :index, @address.hash),
+        class: "card-tab #{tab_status("read_proxy", @conn.request_path)}")
+        %>
+  <% end %>
 </div>

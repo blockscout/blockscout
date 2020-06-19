@@ -180,6 +180,25 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
+  def read_only_functions_proxy(contract_address_hash) do
+    abi =
+      contract_address_hash
+      |> Chain.address_hash_to_smart_contract()
+      |> Map.get(:abi)
+
+    implementation_abi = Chain.get_implementation_abi_from_proxy(contract_address_hash, abi)
+
+    case implementation_abi do
+      nil ->
+        []
+
+      _ ->
+        implementation_abi
+        |> Enum.filter(&(&1["constant"] || &1["stateMutability"] == "view"))
+        |> Enum.map(&fetch_current_value_from_blockchain(&1, implementation_abi, contract_address_hash))
+    end
+  end
+
   defp fetch_current_value_from_blockchain(function, abi, contract_address_hash) do
     values =
       case function do

@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3157](https://github.com/poanetwork/blockscout/pull/3157) - Read methods of implementation on proxy contract
 
 ### Fixes
 
