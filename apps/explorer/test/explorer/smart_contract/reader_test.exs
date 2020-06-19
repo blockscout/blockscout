@@ -262,7 +262,7 @@ defmodule Explorer.SmartContract.ReaderTest do
     end
   end
 
-  describe "query_function/2" do
+  describe "query_function/3" do
     test "given the arguments, fetches the function value from the blockchain" do
       smart_contract = insert(:smart_contract)
 
@@ -274,7 +274,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "type" => "uint256",
                  "value" => 0
                }
-             ] = Reader.query_function(smart_contract.address_hash, %{name: "get", args: []})
+             ] = Reader.query_function(smart_contract.address_hash, %{name: "get", args: []}, :regular)
     end
 
     test "nil arguments is treated as []" do
@@ -288,7 +288,7 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "type" => "uint256",
                  "value" => 0
                }
-             ] = Reader.query_function(smart_contract.address_hash, %{name: "get", args: nil})
+             ] = Reader.query_function(smart_contract.address_hash, %{name: "get", args: nil}, :regular)
     end
   end
 

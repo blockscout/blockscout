@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
     end
 
     test "error for invalid address" do
-      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: "0x00", type: "regular")
+      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: "0x00", type: :regular)
 
       conn =
         build_conn()
@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
       blockchain_get_function_mock()
 
-      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: token_contract_address.hash, type: "regular")
+      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: token_contract_address.hash, type: :regular)
 
       conn =
         build_conn()
@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
       insert(:smart_contract, address_hash: token_contract_address.hash)
 
-      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: token_contract_address.hash, type: "proxy")
+      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: token_contract_address.hash, type: :proxy)
 
       conn =
         build_conn()
