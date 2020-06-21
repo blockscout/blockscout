@@ -1,11 +1,5 @@
 # credo:disable-for-this-file
-#
-# When moving the calls to ajax, this controller became very similar to the
-# `address_contract_controller`, but both are necessary until we are able to
-# address a better way to organize the controllers.
-#
-# So, for now, I'm adding this comment to disable the credo check for this file.
-defmodule BlockScoutWeb.AddressReadContractController do
+defmodule BlockScoutWeb.AddressReadProxyController do
   use BlockScoutWeb, :controller
 
   alias Explorer.{Chain, Market}
@@ -31,7 +25,7 @@ defmodule BlockScoutWeb.AddressReadContractController do
         conn,
         "index.html",
         address: address,
-        type: :regular,
+        type: :proxy,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
