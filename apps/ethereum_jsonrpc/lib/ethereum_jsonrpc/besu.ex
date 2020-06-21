@@ -1,7 +1,7 @@
 # credo:disable-for-this-file
-defmodule EthereumJSONRPC.Parity do
+defmodule EthereumJSONRPC.Besu do
   @moduledoc """
-  Ethereum JSONRPC methods that are only supported by [Parity](https://wiki.parity.io/).
+  Ethereum JSONRPC methods that are only supported by [Besu](https://besu.hyperledger.org/en/stable/Reference/API-Methods).
   """
   require Logger
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
@@ -27,16 +27,11 @@ defmodule EthereumJSONRPC.Parity do
     end
   end
 
-  @doc """
-  Internal transaction fetching for individual transactions is no longer supported for Parity.
-
-  To signal to the caller that fetching is not supported, `:ignore` is returned.
-  """
   @impl EthereumJSONRPC.Variant
   def fetch_internal_transactions(_transactions_params, _json_rpc_named_arguments), do: :ignore
 
   @doc """
-  Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Parity trace URL.
+  Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Besu trace URL.
   """
   @impl EthereumJSONRPC.Variant
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
@@ -85,7 +80,7 @@ defmodule EthereumJSONRPC.Parity do
   end
 
   @doc """
-  Fetches the pending transactions from the Parity node.
+  Fetches the pending transactions from the Besu node.
 
   *NOTE*: The pending transactions are local to the node that is contacted and may not be consistent across nodes based
   on the transactions that each node has seen and how each node prioritizes collating transactions into the next block.
@@ -95,7 +90,7 @@ defmodule EthereumJSONRPC.Parity do
           {:ok, [Transaction.params()]} | {:error, reason :: term}
   def fetch_pending_transactions(json_rpc_named_arguments) do
     with {:ok, transactions} <-
-           %{id: 1, method: "parity_pendingTransactions", params: []}
+           %{id: 1, method: "txpool_besuTransactions", params: []}
            |> request()
            |> json_rpc(json_rpc_named_arguments) do
       transactions_params =

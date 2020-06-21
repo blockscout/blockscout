@@ -1,6 +1,17 @@
 ## Current
 
 ### Features
+- [#3157](https://github.com/poanetwork/blockscout/pull/3157) - Read methods of implementation on proxy contract
+
+### Fixes
+
+### Chore
+
+
+## 3.2.0-beta
+
+### Features
+- [#3154](https://github.com/poanetwork/blockscout/pull/3154) - Support of Hyperledger Besu client
 - [#3153](https://github.com/poanetwork/blockscout/pull/3153) - Proxy contracts: logs decoding using implementation ABI
 - [#3153](https://github.com/poanetwork/blockscout/pull/3153) - Proxy contracts: methods decoding using implementation ABI
 - [#3149](https://github.com/poanetwork/blockscout/pull/3149) - Display and store revert reason of tx on demand at transaction details page and at gettxinfo API endpoint.
@@ -8,7 +19,6 @@
 ### Fixes
 
 ### Chore
-
 - [#3152](https://github.com/poanetwork/blockscout/pull/3152) - Fix contract compilation tests for old versions of compiler
 
 

@@ -5194,7 +5194,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "combine_proxy_implementation_abi/2" do
+  describe "proxy contracts features" do
     @proxy_abi [
       %{
         "type" => "function",
@@ -5316,23 +5316,23 @@ defmodule Explorer.ChainTest do
       }
     ]
 
-    test "returns empty [] abi if proxy abi is null" do
+    test "combine_proxy_implementation_abi/2 returns empty [] abi if proxy abi is null" do
       proxy_contract_address = insert(:contract_address)
       assert Chain.combine_proxy_implementation_abi(proxy_contract_address, nil) == []
     end
 
-    test "returns [] abi for unverified proxy" do
+    test "combine_proxy_implementation_abi/2 returns [] abi for unverified proxy" do
       proxy_contract_address = insert(:contract_address)
       assert Chain.combine_proxy_implementation_abi(proxy_contract_address, []) == []
     end
 
-    test "returns proxy abi if implementation is not verified" do
+    test "combine_proxy_implementation_abi/2 returns proxy abi if implementation is not verified" do
       proxy_contract_address = insert(:contract_address)
       insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
       assert Chain.combine_proxy_implementation_abi(proxy_contract_address, @proxy_abi) == @proxy_abi
     end
 
-    test "returns proxy + implementation abi if implementation is verified" do
+    test "combine_proxy_implementation_abi/2 returns proxy + implementation abi if implementation is verified" do
       proxy_contract_address = insert(:contract_address)
       insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
 
@@ -5363,6 +5363,52 @@ defmodule Explorer.ChainTest do
       assert Enum.any?(@proxy_abi, fn el -> el == Enum.at(@implementation_abi, 1) end) == false
       assert Enum.any?(combined_abi, fn el -> el == Enum.at(@implementation_abi, 0) end) == true
       assert Enum.any?(combined_abi, fn el -> el == Enum.at(@implementation_abi, 1) end) == true
+    end
+
+    test "get_implementation_abi_from_proxy/2 returns empty [] abi if proxy abi is null" do
+      proxy_contract_address = insert(:contract_address)
+      assert Chain.get_implementation_abi_from_proxy(proxy_contract_address, nil) == []
+    end
+
+    test "get_implementation_abi_from_proxy/2 returns [] abi for unverified proxy" do
+      proxy_contract_address = insert(:contract_address)
+      assert Chain.combine_proxy_implementation_abi(proxy_contract_address, []) == []
+    end
+
+    test "get_implementation_abi_from_proxy/2 returns [] if implementation is not verified" do
+      proxy_contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      assert Chain.get_implementation_abi_from_proxy(proxy_contract_address, @proxy_abi) == []
+    end
+
+    test "get_implementation_abi_from_proxy/2 returns implementation abi if implementation is verified" do
+      proxy_contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+
+      implementation_contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: implementation_contract_address.hash, abi: @implementation_abi)
+
+      implementation_contract_address_hash_string =
+        Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
+             }
+           ]}
+        end
+      )
+
+      implementation_abi = Chain.get_implementation_abi_from_proxy(proxy_contract_address.hash, @proxy_abi)
+
+      assert implementation_abi == @implementation_abi
     end
   end
 end

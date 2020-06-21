@@ -126,6 +126,13 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/read_proxy",
+        AddressReadProxyController,
+        only: [:index, :show],
+        as: :read_proxy
+      )
+
+      resources(
         "/token_transfers",
         AddressTokenTransferController,
         only: [:index],
