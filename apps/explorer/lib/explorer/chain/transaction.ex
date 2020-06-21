@@ -11,6 +11,8 @@ defmodule Explorer.Chain.Transaction do
 
   alias Ecto.Changeset
 
+  alias Explorer.{Chain, Repo}
+
   alias Explorer.Chain.{
     Address,
     Block,
@@ -26,7 +28,6 @@ defmodule Explorer.Chain.Transaction do
   }
 
   alias Explorer.Chain.Transaction.{Fork, Status}
-  alias Explorer.Repo
 
   @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_used index created_contract_code_indexed_at status
@@ -423,7 +424,7 @@ defmodule Explorer.Chain.Transaction do
       candidates_query
       |> Repo.all()
       |> Enum.flat_map(fn candidate ->
-        case do_decoded_input_data(data, [candidate.abi], hash) do
+        case do_decoded_input_data(data, [candidate.abi], nil, hash) do
           {:ok, _, _, _} = decoded -> [decoded]
           _ -> []
         end
@@ -436,12 +437,18 @@ defmodule Explorer.Chain.Transaction do
     {:error, :contract_not_verified, []}
   end
 
-  def decoded_input_data(%__MODULE__{input: %{bytes: data}, to_address: %{smart_contract: %{abi: abi}}, hash: hash}) do
-    do_decoded_input_data(data, abi, hash)
+  def decoded_input_data(%__MODULE__{
+        input: %{bytes: data},
+        to_address: %{smart_contract: %{abi: abi, address_hash: address_hash}},
+        hash: hash
+      }) do
+    do_decoded_input_data(data, abi, address_hash, hash)
   end
 
-  defp do_decoded_input_data(data, abi, hash) do
-    with {:ok, {selector, values}} <- find_and_decode(abi, data, hash),
+  defp do_decoded_input_data(data, abi, address_hash, hash) do
+    full_abi = Chain.combine_proxy_implementation_abi(address_hash, abi)
+
+    with {:ok, {selector, values}} <- find_and_decode(full_abi, data, hash),
          {:ok, mapping} <- selector_mapping(selector, values, hash),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping),

@@ -74,6 +74,7 @@ defmodule Explorer.Chain do
   alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
+  alias Explorer.SmartContract.Reader
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
@@ -2717,15 +2718,14 @@ defmodule Explorer.Chain do
 
   def transaction_to_status(%Transaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
 
-  def transaction_to_revert_reason(%Transaction{revert_reason: revert_reason} = transaction) do
-    revert_reason =
-      if revert_reason == nil do
-        fetch_tx_revert_reason(transaction)
-      else
-        revert_reason
-      end
+  def transaction_to_revert_reason(transaction) do
+    %Transaction{revert_reason: revert_reason} = transaction
 
-    revert_reason
+    if revert_reason == nil do
+      fetch_tx_revert_reason(transaction)
+    else
+      revert_reason
+    end
   end
 
   def fetch_tx_revert_reason(
@@ -2748,7 +2748,7 @@ defmodule Explorer.Chain do
         data,
         to_address_hash,
         from_address_hash,
-        gas,
+        Decimal.to_integer(gas),
         Wei.hex_format(gas_price),
         Wei.hex_format(value)
       )
@@ -2759,27 +2759,25 @@ defmodule Explorer.Chain do
           data
 
         _ ->
-          nil
+          ""
       end
 
-    if data == nil do
-      nil
-    else
-      revert_reason_parts = String.split(data, "revert: ")
+    revert_reason_parts = String.split(data, "revert: ")
 
-      formatted_revert_reason =
-        if Enum.count(revert_reason_parts) > 1 do
-          Enum.at(revert_reason_parts, 1)
-        else
-          data
-        end
+    formatted_revert_reason =
+      if Enum.count(revert_reason_parts) > 1 do
+        Enum.at(revert_reason_parts, 1)
+      else
+        data
+      end
 
+    if byte_size(formatted_revert_reason) > 0 do
       transaction
       |> Changeset.change(%{revert_reason: formatted_revert_reason})
       |> Repo.update()
-
-      formatted_revert_reason
     end
+
+    formatted_revert_reason
   end
 
   @doc """
@@ -4338,6 +4336,56 @@ defmodule Explorer.Chain do
       :ignore ->
         :ignore
     end
+  end
+
+  def combine_proxy_implementation_abi(address_hash, abi) when not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation"
+      end)
+
+    implementation_abi =
+      if implementation_method_abi do
+        implementation_address =
+          case Reader.query_contract(address_hash, abi, %{
+                 "implementation" => []
+               }) do
+            %{"implementation" => {:ok, [result]}} -> result
+            _ -> nil
+          end
+
+        if implementation_address do
+          implementation_address_hash_string = "0x" <> Base.encode16(implementation_address, case: :lower)
+
+          case Chain.string_to_address_hash(implementation_address_hash_string) do
+            {:ok, implementation_address_hash} ->
+              implementation_smart_contract =
+                implementation_address_hash
+                |> Chain.address_hash_to_smart_contract()
+
+              if implementation_smart_contract do
+                implementation_smart_contract
+                |> Map.get(:abi)
+              else
+                []
+              end
+
+            _ ->
+              []
+          end
+        else
+          []
+        end
+      else
+        []
+      end
+
+    if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
+  end
+
+  def combine_proxy_implementation_abi(_, abi) when is_nil(abi) do
+    []
   end
 
   defp format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments) do
