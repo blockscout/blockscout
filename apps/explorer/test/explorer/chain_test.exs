@@ -5193,4 +5193,176 @@ defmodule Explorer.ChainTest do
       assert Chain.transaction_to_revert_reason(transaction) == "No credit of that type"
     end
   end
+
+  describe "combine_proxy_implementation_abi/2" do
+    @proxy_abi [
+      %{
+        "type" => "function",
+        "stateMutability" => "nonpayable",
+        "payable" => false,
+        "outputs" => [%{"type" => "bool", "name" => ""}],
+        "name" => "upgradeTo",
+        "inputs" => [%{"type" => "address", "name" => "newImplementation"}],
+        "constant" => false
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "payable" => false,
+        "outputs" => [%{"type" => "uint256", "name" => ""}],
+        "name" => "version",
+        "inputs" => [],
+        "constant" => true
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "payable" => false,
+        "outputs" => [%{"type" => "address", "name" => ""}],
+        "name" => "implementation",
+        "inputs" => [],
+        "constant" => true
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "nonpayable",
+        "payable" => false,
+        "outputs" => [],
+        "name" => "renounceOwnership",
+        "inputs" => [],
+        "constant" => false
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "payable" => false,
+        "outputs" => [%{"type" => "address", "name" => ""}],
+        "name" => "getOwner",
+        "inputs" => [],
+        "constant" => true
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "payable" => false,
+        "outputs" => [%{"type" => "address", "name" => ""}],
+        "name" => "getProxyStorage",
+        "inputs" => [],
+        "constant" => true
+      },
+      %{
+        "type" => "function",
+        "stateMutability" => "nonpayable",
+        "payable" => false,
+        "outputs" => [],
+        "name" => "transferOwnership",
+        "inputs" => [%{"type" => "address", "name" => "_newOwner"}],
+        "constant" => false
+      },
+      %{
+        "type" => "constructor",
+        "stateMutability" => "nonpayable",
+        "payable" => false,
+        "inputs" => [
+          %{"type" => "address", "name" => "_proxyStorage"},
+          %{"type" => "address", "name" => "_implementationAddress"}
+        ]
+      },
+      %{"type" => "fallback", "stateMutability" => "nonpayable", "payable" => false},
+      %{
+        "type" => "event",
+        "name" => "Upgraded",
+        "inputs" => [
+          %{"type" => "uint256", "name" => "version", "indexed" => false},
+          %{"type" => "address", "name" => "implementation", "indexed" => true}
+        ],
+        "anonymous" => false
+      },
+      %{
+        "type" => "event",
+        "name" => "OwnershipRenounced",
+        "inputs" => [%{"type" => "address", "name" => "previousOwner", "indexed" => true}],
+        "anonymous" => false
+      },
+      %{
+        "type" => "event",
+        "name" => "OwnershipTransferred",
+        "inputs" => [
+          %{"type" => "address", "name" => "previousOwner", "indexed" => true},
+          %{"type" => "address", "name" => "newOwner", "indexed" => true}
+        ],
+        "anonymous" => false
+      }
+    ]
+
+    @implementation_abi [
+      %{
+        "constant" => false,
+        "inputs" => [%{"name" => "x", "type" => "uint256"}],
+        "name" => "set",
+        "outputs" => [],
+        "payable" => false,
+        "stateMutability" => "nonpayable",
+        "type" => "function"
+      },
+      %{
+        "constant" => true,
+        "inputs" => [],
+        "name" => "get",
+        "outputs" => [%{"name" => "", "type" => "uint256"}],
+        "payable" => false,
+        "stateMutability" => "view",
+        "type" => "function"
+      }
+    ]
+
+    test "returns empty [] abi if proxy abi is null" do
+      proxy_contract_address = insert(:contract_address)
+      assert Chain.combine_proxy_implementation_abi(proxy_contract_address, nil) == []
+    end
+
+    test "returns [] abi for unverified proxy" do
+      proxy_contract_address = insert(:contract_address)
+      assert Chain.combine_proxy_implementation_abi(proxy_contract_address, []) == []
+    end
+
+    test "returns proxy abi if implementation is not verified" do
+      proxy_contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+      assert Chain.combine_proxy_implementation_abi(proxy_contract_address, @proxy_abi) == @proxy_abi
+    end
+
+    test "returns proxy + implementation abi if implementation is verified" do
+      proxy_contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+
+      implementation_contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: implementation_contract_address.hash, abi: @implementation_abi)
+
+      implementation_contract_address_hash_string =
+        Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
+             }
+           ]}
+        end
+      )
+
+      combined_abi = Chain.combine_proxy_implementation_abi(proxy_contract_address.hash, @proxy_abi)
+
+      assert Enum.any?(@proxy_abi, fn el -> el == Enum.at(@implementation_abi, 0) end) == false
+      assert Enum.any?(@proxy_abi, fn el -> el == Enum.at(@implementation_abi, 1) end) == false
+      assert Enum.any?(combined_abi, fn el -> el == Enum.at(@implementation_abi, 0) end) == true
+      assert Enum.any?(combined_abi, fn el -> el == Enum.at(@implementation_abi, 1) end) == true
+    end
+  end
 end
