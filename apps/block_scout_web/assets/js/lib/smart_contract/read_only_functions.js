@@ -4,10 +4,11 @@ const loadFunctions = (element) => {
   const $element = $(element)
   const url = $element.data('url')
   const hash = $element.data('hash')
+  const type = $element.data('type')
 
   $.get(
     url,
-    { hash: hash },
+    { hash: hash, type: type },
     response => $element.html(response)
   )
     .done(function () {
