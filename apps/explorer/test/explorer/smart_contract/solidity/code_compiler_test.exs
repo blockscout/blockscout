@@ -166,7 +166,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
       }
       """
 
-      version = "v0.1.3-nightly.2015.9.25+commit.4457170"
+      version = "v0.1.3+commit.028f561d"
 
       response = CodeCompiler.run(name: name, compiler_version: version, code: code, optimize: optimize)
 
