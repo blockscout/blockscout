@@ -492,7 +492,11 @@ defmodule Explorer.Chain do
       from(
         log in subquery(base_query),
         inner_join: transaction in Transaction,
-        preload: [:transaction, transaction: [to_address: :smart_contract]],
+        preload: [
+          :transaction,
+          transaction: [to_address: :smart_contract],
+          transaction: [to_address: [implementation_contract: :smart_contract]]
+        ],
         where:
           log.block_hash == transaction.block_hash and
             log.block_number == transaction.block_number and
@@ -1124,6 +1128,21 @@ defmodule Explorer.Chain do
         where: address.hash in ^hashes,
         # https://stackoverflow.com/a/29598910/470451
         order_by: fragment("array_position(?, ?)", type(^hashes, {:array, Hash.Address}), address.hash)
+      )
+
+    Repo.all(query)
+  end
+
+  def get_elected_validators(num) do
+    query =
+      from(
+        address in Address,
+        join: sel in CeloValidatorHistory,
+        on: sel.address == address.hash,
+        where: sel.block_number == ^num,
+        select_merge: %{
+          online: sel.online
+        }
       )
 
     Repo.all(query)
@@ -4011,7 +4030,7 @@ defmodule Explorer.Chain do
         accumulated_active: b.active,
         accumulated_rewards: b.reward,
         rewards_ratio: b.ratio,
-        receivable_votes: (g.num_members + 1) * total_locked_gold.number_value / denom.value
+        receivable_votes: (g.num_members + 1) * total_locked_gold.number_value / fragment("nullif(?,0)", denom.value)
       }
     )
   end

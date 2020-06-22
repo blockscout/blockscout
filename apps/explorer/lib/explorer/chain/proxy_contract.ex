@@ -9,7 +9,10 @@ defmodule Explorer.Chain.ProxyContract do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash}
+  alias Explorer.Chain.{
+    Hash,
+    SmartContract
+  }
 
   @typedoc """
   * `proxy_address` - address of the proxy contract.
@@ -24,6 +27,8 @@ defmodule Explorer.Chain.ProxyContract do
   schema "proxy_contract" do
     field(:proxy_address, Hash.Address)
     field(:implementation_address, Hash.Address)
+
+    has_one(:smart_contract, SmartContract, foreign_key: :address_hash, references: :implementation_address)
   end
 
   def changeset(%__MODULE__{} = proxy_contract, attrs) do
