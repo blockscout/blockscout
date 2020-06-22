@@ -2,17 +2,27 @@ defmodule BlockScoutWeb.SmartContractController do
   use BlockScoutWeb, :controller
 
   alias Explorer.Chain
-  alias Explorer.SmartContract.Reader
+  alias Explorer.SmartContract.{Reader, Writer}
 
-  def index(conn, %{"hash" => address_hash_string, "type" => contract_type}) do
+  def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action}) do
+    address_options = [
+      necessity_by_association: %{
+        :smart_contract => :optional
+      }
+    ]
+
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash) do
-      read_only_functions =
-        if contract_type == "proxy" do
-          Reader.read_only_functions_proxy(address_hash)
+         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
+      functions =
+        if action == "write" do
+          Writer.write_functions(address_hash)
         else
-          Reader.read_only_functions(address_hash)
+          if contract_type == "proxy" do
+            Reader.read_only_functions_proxy(address_hash)
+          else
+            Reader.read_only_functions(address_hash)
+          end
         end
 
       conn
@@ -20,7 +30,7 @@ defmodule BlockScoutWeb.SmartContractController do
       |> put_layout(false)
       |> render(
         "_functions.html",
-        read_only_functions: read_only_functions,
+        read_only_functions: functions,
         address: address
       )
     else

@@ -133,6 +133,13 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/write_contract",
+        AddressWriteContractController,
+        only: [:index, :show],
+        as: :write_contract
+      )
+
+      resources(
         "/token_transfers",
         AddressTokenTransferController,
         only: [:index],

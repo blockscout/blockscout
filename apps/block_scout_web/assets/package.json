@@ -39,7 +39,8 @@
     "popper.js": "^1.14.7",
     "reduce-reducers": "^0.4.3",
     "redux": "^4.0.5",
-    "urijs": "^1.19.2"
+    "urijs": "^1.19.2",
+    "web3": "^1.2.9"
   },
   "devDependencies": {
     "@babel/core": "^7.7.2",
