@@ -215,6 +215,12 @@ $container-max-widths: (
 
 @include _assert-ascending($container-max-widths, "$container-max-widths");
 
+@media (min-width: 1200px) { 
+  .container {
+    max-width: 1180px !important;
+  }
+ }
+
 // Grid columns
 //
 // Set the number of columns and specify the width of the gutters.

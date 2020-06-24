@@ -15,7 +15,7 @@
             render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status
           end
         %>
-        <form class="form-inline" data-function-form data-action="<%= if writeable?(function), do: :write, else: :read %>" data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= Poison.encode!(@address.smart_contract.abi) %>">
+        <form class="form-inline" data-function-form data-action="<%= if writeable?(function), do: :write, else: :read %>" data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= Poison.encode!(@address.smart_contract.abi) %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
 
           <%= if queryable?(function["inputs"]) do %>

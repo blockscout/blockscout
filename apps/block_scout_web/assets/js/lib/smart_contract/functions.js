@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import ethNetProps from 'eth-net-props'
 import { walletEnabled, getCurrentAccount } from './write.js'
 import { openErrorModal, openWarningModal, openSuccessModal } from '../modals.js'
 
@@ -49,7 +50,8 @@ const readWriteFunction = (element) => {
       }
 
       $.get(url, data, response => $responseContainer.html(response))
-    } else {
+    } else if (action === 'write') {
+      const chainId = $form.data('chainId')
       walletEnabled()
         .then((isWalletEnabled) => {
           if (isWalletEnabled) {
@@ -63,13 +65,22 @@ const readWriteFunction = (element) => {
             const contractAddress = $form.data('contract-address')
             const contractAbi = $form.data('contract-abi')
 
-            getCurrentAccount()
+            window.web3.eth.getChainId()
+              .then(chainIdFromWallet => {
+                if (chainId !== chainIdFromWallet) {
+                  const networkDisplayNameFromWallet = ethNetProps.props.getNetworkDisplayName(chainIdFromWallet)
+                  const networkDisplayName = ethNetProps.props.getNetworkDisplayName(chainId)
+                  return Promise.reject(new Error(`You connected to ${networkDisplayNameFromWallet} chain in the wallet, but the current instance of Blockscout is for ${networkDisplayName} chain`))
+                } else {
+                  return getCurrentAccount()
+                }
+              })
               .then(currentAccount => {
                 const TargetContract = new window.web3.eth.Contract(contractAbi, contractAddress)
 
                 TargetContract.methods[functionName](...args).send({ from: currentAccount })
                   .on('error', function (error) {
-                    openErrorModal(`Error in sending transaction for method "${functionName}"`, error, false)
+                    openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
                   })
                   .on('transactionHash', function (txHash) {
                     const getTxReceipt = (txHash) => {
@@ -84,12 +95,21 @@ const readWriteFunction = (element) => {
                     const txReceiptPollingIntervalId = setInterval(() => { getTxReceipt(txHash) }, 5 * 1000)
                   })
               })
+              .catch(error => {
+                openWarningModal('Unauthorized', formatError(error))
+              })
           } else {
-            openWarningModal('Unauthorized', 'You haven\'t approved the reading of account list from your MetaMask/Nifty wallet or MetaMask/Nifty wallet is not installed.')
+            openWarningModal('Unauthorized', 'You haven\'t approved the reading of account list from your MetaMask or MetaMask/Nifty wallet is locked or is not installed.')
           }
         })
     }
   })
+}
+
+const formatError = (error) => {
+  let { message } = error
+  message = message && message.split('Error: ').length > 1 ? message.split('Error: ')[1] : message
+  return message
 }
 
 const container = $('[data-smart-contract-functions]')
