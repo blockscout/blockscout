@@ -33,7 +33,7 @@
             </div>
           <% end %>
 
-          <input type="submit" value='<%= gettext("Query")%>' class="button btn-line button-xs py-0 mt-2" style="padding: 6px 8px!important;height: 26px;font-size: 11px;" />
+          <input type="submit" value='<%= if writeable?(function), do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 mt-2" style="padding: 6px 8px!important;height: 26px;font-size: 11px;" />
         </form>
 
         <%= if outputs?(function["outputs"]) do %>

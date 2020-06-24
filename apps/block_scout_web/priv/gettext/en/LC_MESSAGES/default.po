@@ -1934,3 +1934,8 @@ msgstr ""
 #: lib/block_scout_web/templates/smart_contract/_pending_contract_write.html.eex:12
 msgid "Waiting for transaction's confirmation..."
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:36
+msgid "Write"
+msgstr ""
