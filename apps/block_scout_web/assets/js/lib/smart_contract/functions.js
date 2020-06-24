@@ -1,7 +1,7 @@
 import $ from 'jquery'
 import ethNetProps from 'eth-net-props'
 import { walletEnabled, getCurrentAccount } from './write.js'
-import { openErrorModal, openWarningModal, openSuccessModal } from '../modals.js'
+import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals.js'
 
 const loadFunctions = (element) => {
   const $element = $(element)
@@ -83,6 +83,7 @@ const readWriteFunction = (element) => {
                     openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
                   })
                   .on('transactionHash', function (txHash) {
+                    openModalWithMessage($element.find('#pending-contract-write'), true, txHash)
                     const getTxReceipt = (txHash) => {
                       window.web3.eth.getTransactionReceipt(txHash)
                         .then(txReceipt => {

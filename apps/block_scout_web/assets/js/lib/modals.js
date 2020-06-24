@@ -56,6 +56,11 @@ export function openModal ($modal, unclosable) {
   }
 }
 
+export function openModalWithMessage ($modal, unclosable, message) {
+  $modal.find('.modal-message').text(message)
+  openModal($modal, unclosable)
+}
+
 export function lockModal ($modal, $submitButton = null, spinnerText = '') {
   $modal.find('.close-modal').attr('disabled', true)
 
