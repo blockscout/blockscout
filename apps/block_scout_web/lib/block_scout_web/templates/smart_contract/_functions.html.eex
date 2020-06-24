@@ -3,7 +3,7 @@
     <div class="py-2 pr-2 text-nowrap">
       <%= counter %>.
 
-      <%= function["name"] || (if fallback?(function), do: "fallback", else: "") %>
+      <%= function["name"] %>
 
       &#8594;
     </div>
@@ -29,7 +29,7 @@
 
           <%= if payable?(function) do %>
             <div class="form-group pr-2">
-              <input type="text" name="function_input" class="form-control form-control-sm address-input-sm mt-2" placeholder='value(<%= gettext("ETH")%>)'  />
+              <input type="text" name="function_input" tx-value class="form-control form-control-sm address-input-sm mt-2" placeholder='value(<%= gettext("ETH")%>)'  />
             </div>
           <% end %>
 

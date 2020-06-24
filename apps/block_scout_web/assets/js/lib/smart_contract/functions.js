@@ -3,6 +3,8 @@ import ethNetProps from 'eth-net-props'
 import { walletEnabled, getCurrentAccount } from './write.js'
 import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals.js'
 
+const WEI_MULTIPLIER = 10 ** 18
+
 const loadFunctions = (element) => {
   const $element = $(element)
   const url = $element.data('url')
@@ -58,9 +60,12 @@ const readWriteFunction = (element) => {
             const functionName = $form.find('input[name=function_name]').val()
 
             const $functionInputs = $form.find('input[name=function_input]')
-            const args = $.map($functionInputs, element => {
-              return $(element).val()
-            })
+            const $functionInputsExceptTxValue = $functionInputs.filter(':not([tx-value])')
+            const args = $.map($functionInputsExceptTxValue, element => $(element).val())
+
+            const $txValue = $functionInputs.filter('[tx-value]:first')
+
+            const txValue = $txValue && $txValue.val() && parseFloat($txValue.val()) * WEI_MULTIPLIER
 
             const contractAddress = $form.data('contract-address')
             const contractAbi = $form.data('contract-abi')
@@ -76,9 +81,21 @@ const readWriteFunction = (element) => {
                 }
               })
               .then(currentAccount => {
-                const TargetContract = new window.web3.eth.Contract(contractAbi, contractAddress)
+                let methodToCall
 
-                TargetContract.methods[functionName](...args).send({ from: currentAccount })
+                if (functionName) {
+                  const TargetContract = new window.web3.eth.Contract(contractAbi, contractAddress)
+                  methodToCall = TargetContract.methods[functionName](...args).send({ from: currentAccount, value: txValue })
+                } else {
+                  const txParams = {
+                    from: currentAccount,
+                    to: contractAddress,
+                    value: txValue
+                  }
+                  methodToCall = window.web3.eth.sendTransaction(txParams)
+                }
+
+                methodToCall
                   .on('error', function (error) {
                     openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
                   })
