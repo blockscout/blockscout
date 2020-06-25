@@ -2,26 +2,56 @@ defmodule BlockScoutWeb.SmartContractController do
   use BlockScoutWeb, :controller
 
   alias Explorer.Chain
-  alias Explorer.SmartContract.Reader
+  alias Explorer.SmartContract.{Reader, Writer}
 
-  def index(conn, %{"hash" => address_hash_string, "type" => contract_type}) do
+  def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action}) do
+    address_options = [
+      necessity_by_association: %{
+        :smart_contract => :optional
+      }
+    ]
+
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash) do
-      read_only_functions =
-        if contract_type == "proxy" do
-          Reader.read_only_functions_proxy(address_hash)
+         {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
+      functions =
+        if action == "write" do
+          if contract_type == "proxy" do
+            Writer.write_functions_proxy(address_hash)
+          else
+            Writer.write_functions(address_hash)
+          end
         else
-          Reader.read_only_functions(address_hash)
+          if contract_type == "proxy" do
+            Reader.read_only_functions_proxy(address_hash)
+          else
+            Reader.read_only_functions(address_hash)
+          end
         end
+
+      contract_abi = Poison.encode!(address.smart_contract.abi)
+
+      implementation_abi =
+        if contract_type == "proxy" do
+          address.hash
+          |> Chain.get_implementation_abi_from_proxy(address.smart_contract.abi)
+          |> Poison.encode!()
+        else
+          []
+        end
+
+      contract_type = if Chain.is_proxy_contract?(address.smart_contract.abi), do: :proxy, else: :regular
 
       conn
       |> put_status(200)
       |> put_layout(false)
       |> render(
         "_functions.html",
-        read_only_functions: read_only_functions,
-        address: address
+        read_only_functions: functions,
+        address: address,
+        contract_abi: contract_abi,
+        implementation_abi: implementation_abi,
+        contract_type: contract_type
       )
     else
       :error ->

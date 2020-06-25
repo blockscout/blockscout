@@ -1,7 +1,22 @@
 defmodule BlockScoutWeb.SmartContractView do
   use BlockScoutWeb, :view
 
-  def queryable?(inputs), do: Enum.any?(inputs)
+  def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
+
+  def queryable?(inputs) when is_nil(inputs), do: false
+
+  def writeable?(function),
+    do: payable?(function) || nonpayable?(function) || fallback?(function) || function["constant"] == false
+
+  def outputs?(outputs) when not is_nil(outputs), do: Enum.any?(outputs)
+
+  def outputs?(outputs) when is_nil(outputs), do: false
+
+  def fallback?(function), do: function["type"] == "fallback"
+
+  def payable?(function), do: function["stateMutability"] == "payable" || function["payable"]
+
+  def nonpayable?(function), do: function["stateMutability"] == "nonpayable"
 
   def address?(type), do: type in ["address", "address payable"]
 
