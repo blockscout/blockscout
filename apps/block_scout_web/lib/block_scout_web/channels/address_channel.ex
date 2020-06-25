@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.AddressChannel do
     with {:ok, casted_address_hash} <- AddressHash.cast(socket.assigns.address_hash),
          {:ok, address = %{fetched_coin_balance: balance}} when not is_nil(balance) <-
            Chain.hash_to_address(casted_address_hash),
-         exchange_rate <- Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+         exchange_rate <- Market.get_exchange_rate("cGLD") || Token.null(),
          {:ok, rendered} <- render_balance_card(address, exchange_rate, socket.assigns.locale) do
       reply =
         {:ok,

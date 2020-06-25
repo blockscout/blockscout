@@ -1837,7 +1837,7 @@ msgstr ""
 #: lib/block_scout_web/views/transaction_view.ex:303
 #: lib/block_scout_web/views/transaction_view.ex:303
 #: lib/block_scout_web/views/wei_helpers.ex:78
-msgid "cGLD"
+msgid "CELO"
 msgstr ""
 
 #, elixir-format
@@ -1894,7 +1894,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:16
-msgid "cGLD Price"
+msgid "CELO Price"
 msgstr ""
 
 #, elixir-format

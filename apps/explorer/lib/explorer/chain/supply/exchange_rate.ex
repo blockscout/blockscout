@@ -17,6 +17,6 @@ defmodule Explorer.Chain.Supply.ExchangeRate do
   end
 
   def exchange_rate do
-    Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    Market.get_exchange_rate("cGLD") || Token.null()
   end
 end

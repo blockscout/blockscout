@@ -16,7 +16,7 @@ defmodule Explorer.ExchangeRates.Source.OneCoinSource do
       last_updated: Timex.now(),
       name: "",
       market_cap_usd: Decimal.new(10_000_000),
-      symbol: Explorer.coin(),
+      symbol: "cGLD",
       usd_value: Decimal.new(1),
       volume_24h_usd: Decimal.new(1)
     }

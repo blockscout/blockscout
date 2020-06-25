@@ -293,7 +293,7 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   @desc """
-  Represents a gold token transfer between addresses.
+  Represents a CELO token transfer between addresses.
   """
   node object(:gold_transfer, id_fetcher: &gold_transfer_id_fetcher/2) do
     field(:value, :decimal)
@@ -304,7 +304,7 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   @desc """
-  Represents a gold or usd token transfer between addresses.
+  Represents a CELO or usd token transfer between addresses.
   """
   node object(:celo_transfer, id_fetcher: &celo_transfer_id_fetcher/2) do
     field(:value, :decimal)
@@ -323,7 +323,7 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   @desc """
-  Represents a gold token transfer between addresses.
+  Represents a CELO token transfer between addresses.
   """
   node object(:transfer_tx, id_fetcher: &transfer_tx_id_fetcher/2) do
     field(:gateway_fee_recipient, :address_hash)

@@ -300,7 +300,7 @@ defmodule BlockScoutWeb.TransactionView do
 
     case token do
       {:ok, address} -> address
-      {:error, :not_found} -> %{name: "", symbol: " #{gettext("cGLD")}"}
+      {:error, :not_found} -> %{name: "", symbol: " #{gettext("CELO")}"}
     end
   end
 

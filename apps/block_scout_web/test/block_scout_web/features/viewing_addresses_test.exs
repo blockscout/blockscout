@@ -73,7 +73,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
     session
     |> AddressPage.visit_page(address)
-    |> assert_text(AddressPage.balance(), "0.0000000000000005 cGLD")
+    |> assert_text(AddressPage.balance(), "0.0000000000000005 CELO")
   end
 
   describe "viewing contract creator" do

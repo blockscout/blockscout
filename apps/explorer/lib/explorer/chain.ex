@@ -4217,7 +4217,7 @@ defmodule Explorer.Chain do
 
   def query_leaderboard do
     # Computes the leaderboard score
-    # For each account, the following is computed: cGLD balance + cUSD balance * exchange rate
+    # For each account, the following is computed: CELO balance + cUSD balance * exchange rate
     # Each competitor can have several claimed accounts.
     # Final final score is the sum of account scores modified with the multiplier that is read from Google sheets
     result =

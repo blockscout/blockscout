@@ -7,7 +7,7 @@ export function formatUsdValue (value) {
 }
 
 export function formatCGValue (value) {
-  return `${formatCurrencyValue(value, '')} cGLD`
+  return `${formatCurrencyValue(value, '')} CELO`
 }
 
 function formatTokenUsdValue (value) {

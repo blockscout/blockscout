@@ -17,7 +17,7 @@ defmodule Explorer.ExchangeRates.Source.TokenBridge do
 
     token_data =
       data
-      |> Enum.find(fn token -> token.symbol == Explorer.coin() end)
+      |> Enum.find(fn token -> token.symbol == "cGLD" end)
       |> build_struct
 
     [token_data]
