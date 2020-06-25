@@ -35,7 +35,6 @@ const readWriteFunction = (element) => {
 
   $form.on('submit', (event) => {
     const action = $form.data('action')
-    const contractType = $form.data('contract-type')
     event.preventDefault()
 
     if (action === 'read') {
@@ -71,6 +70,8 @@ const readWriteFunction = (element) => {
             const contractAddress = $form.data('contract-address')
             const implementationAbi = $form.data('implementation-abi')
             const parentAbi = $form.data('contract-abi')
+            const $parent = $('[data-smart-contract-functions]')
+            const contractType = $parent.data('type')
             const contractAbi = contractType === 'proxy' ? implementationAbi : parentAbi
 
             window.web3.eth.getChainId()
