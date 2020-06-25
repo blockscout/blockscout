@@ -35,6 +35,7 @@ const readWriteFunction = (element) => {
 
   $form.on('submit', (event) => {
     const action = $form.data('action')
+    const contractType = $form.data('contract-type')
     event.preventDefault()
 
     if (action === 'read') {
@@ -68,7 +69,9 @@ const readWriteFunction = (element) => {
             const txValue = $txValue && $txValue.val() && parseFloat($txValue.val()) * WEI_MULTIPLIER
 
             const contractAddress = $form.data('contract-address')
-            const contractAbi = $form.data('contract-abi')
+            const implementationAbi = $form.data('implementation-abi')
+            const parentAbi = $form.data('contract-abi')
+            const contractAbi = contractType === 'proxy' ? implementationAbi : parentAbi
 
             window.web3.eth.getChainId()
               .then(chainIdFromWallet => {
@@ -85,12 +88,12 @@ const readWriteFunction = (element) => {
 
                 if (functionName) {
                   const TargetContract = new window.web3.eth.Contract(contractAbi, contractAddress)
-                  methodToCall = TargetContract.methods[functionName](...args).send({ from: currentAccount, value: txValue })
+                  methodToCall = TargetContract.methods[functionName](...args).send({ from: currentAccount, value: txValue || 0 })
                 } else {
                   const txParams = {
                     from: currentAccount,
                     to: contractAddress,
-                    value: txValue
+                    value: txValue || 0
                   }
                   methodToCall = window.web3.eth.sendTransaction(txParams)
                 }

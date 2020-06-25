@@ -16,7 +16,11 @@ defmodule BlockScoutWeb.SmartContractController do
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
       functions =
         if action == "write" do
-          Writer.write_functions(address_hash)
+          if contract_type == "proxy" do
+            Writer.write_functions_proxy(address_hash)
+          else
+            Writer.write_functions(address_hash)
+          end
         else
           if contract_type == "proxy" do
             Reader.read_only_functions_proxy(address_hash)
@@ -25,13 +29,29 @@ defmodule BlockScoutWeb.SmartContractController do
           end
         end
 
+      contract_abi = Poison.encode!(address.smart_contract.abi)
+
+      implementation_abi =
+        if contract_type == "proxy" do
+          address.hash
+          |> Chain.get_implementation_abi_from_proxy(address.smart_contract.abi)
+          |> Poison.encode!()
+        else
+          []
+        end
+
+      contract_type = if Chain.is_proxy_contract?(address.smart_contract.abi), do: :proxy, else: :regular
+
       conn
       |> put_status(200)
       |> put_layout(false)
       |> render(
         "_functions.html",
         read_only_functions: functions,
-        address: address
+        address: address,
+        contract_abi: contract_abi,
+        implementation_abi: implementation_abi,
+        contract_type: contract_type
       )
     else
       :error ->

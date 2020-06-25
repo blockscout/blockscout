@@ -140,6 +140,13 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/write_proxy",
+        AddressWriteProxyController,
+        only: [:index, :show],
+        as: :write_proxy
+      )
+
+      resources(
         "/token_transfers",
         AddressTokenTransferController,
         only: [:index],
