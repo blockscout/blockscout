@@ -38,7 +38,7 @@ defmodule EthereumJSONRPC.Geth do
   end
 
   @doc """
-  Fetches the first trace from the Parity trace URL.
+  Fetches the first trace from the trace URL.
   """
   @impl EthereumJSONRPC.Variant
   def fetch_first_trace(_transactions_params, _json_rpc_named_arguments), do: :ignore
