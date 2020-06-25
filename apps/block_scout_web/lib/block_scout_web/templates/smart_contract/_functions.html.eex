@@ -16,7 +16,7 @@
           end
         %>
         <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
-        <form class="form-inline" data-function-form data-action="<%= if writeable?(function), do: :write, else: :read %>" data-contract-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
+        <form class="form-inline" data-function-form data-action="<%= if writeable?(function), do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
 
           <%= if queryable?(function["inputs"]) do %>
