@@ -199,7 +199,7 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
-  defp fetch_current_value_from_blockchain(function, abi, contract_address_hash) do
+  def fetch_current_value_from_blockchain(function, abi, contract_address_hash) do
     values =
       case function do
         %{"inputs" => []} ->

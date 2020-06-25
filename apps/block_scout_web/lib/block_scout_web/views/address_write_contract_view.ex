@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.AddressReadProxyView do
+defmodule BlockScoutWeb.AddressWriteContractView do
   use BlockScoutWeb, :view
 
   def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
