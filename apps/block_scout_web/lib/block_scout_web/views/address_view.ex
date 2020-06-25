@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.AddressView do
     "read_contract",
     "read_proxy",
     "write_contract",
+    "write_proxy",
     "tokens",
     "transactions",
     "validations"
@@ -347,6 +348,7 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["read_contract"]), do: gettext("Read Contract")
   defp tab_name(["read_proxy"]), do: gettext("Read Proxy")
   defp tab_name(["write_contract"]), do: gettext("Write Contract")
+  defp tab_name(["write_proxy"]), do: gettext("Write Proxy")
   defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
   defp tab_name(["logs"]), do: gettext("Logs")
