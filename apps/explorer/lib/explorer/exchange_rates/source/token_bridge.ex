@@ -14,7 +14,6 @@ defmodule Explorer.ExchangeRates.Source.TokenBridge do
   @impl Source
   def format_data(data) do
     data = secondary_source().format_data(data)
-    IO.inspect(data)
 
     token_data =
       data
