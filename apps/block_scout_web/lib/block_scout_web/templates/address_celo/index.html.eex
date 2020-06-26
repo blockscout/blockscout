@@ -75,7 +75,7 @@
        </dd>
       </dl>
       <dl class="row">
-      <dt class="col-sm-3 text-muted">Locked Gold</dt>
+      <dt class="col-sm-3 text-muted">Locked CELO</dt>
        <dd class="col-sm-9">
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How much CELO has the account deposited"><%= format_according_to_decimals(@address.celo_account.locked_gold.value, Decimal.new(18)) %> CELO (<%= format_according_to_decimals(@address.celo_account.nonvoting_locked_gold.value, Decimal.new(18)) %> non-voting CELO)</span>
        </dd>

@@ -164,7 +164,7 @@ defmodule BlockScoutWeb.Schema do
       end)
     end
 
-    @desc "Gets Gold token transfers."
+    @desc "Gets CELO token transfers."
     connection field(:gold_transfers, node_type: :gold_transfer) do
       arg(:address_hash, :address_hash)
       arg(:count, :integer)
@@ -180,7 +180,7 @@ defmodule BlockScoutWeb.Schema do
       end)
     end
 
-    @desc "Gets Gold and stable token transfer transactions."
+    @desc "Gets CELO and stable token transfer transactions."
     connection field(:transfer_txs, node_type: :transfer_tx) do
       arg(:address_hash, :address_hash)
       arg(:count, :integer)
@@ -196,7 +196,7 @@ defmodule BlockScoutWeb.Schema do
       end)
     end
 
-    @desc "Gets Gold and stable token transfers."
+    @desc "Gets CELO and stable token transfers."
     connection field(:celo_transfers, node_type: :celo_transfer) do
       arg(:address_hash, :address_hash)
       arg(:count, :integer)
