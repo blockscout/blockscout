@@ -56,7 +56,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   def coin_id do
     url = "#{base_url()}/coins/list"
 
-    symbol = String.downcase("cGLD")
+    symbol = String.downcase(Explorer.coin())
 
     case HTTPoison.get(url, headers()) do
       {:ok, %Response{body: body, status_code: 200}} ->
