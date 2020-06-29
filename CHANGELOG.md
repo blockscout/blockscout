@@ -4,6 +4,7 @@
 - [#3157](https://github.com/poanetwork/blockscout/pull/3157) - Read methods of implementation on proxy contract
 
 ### Fixes
+- [#3169](https://github.com/poanetwork/blockscout/pull/3169) - Fix for verification of contracts from genesis block
 
 ### Chore
 
