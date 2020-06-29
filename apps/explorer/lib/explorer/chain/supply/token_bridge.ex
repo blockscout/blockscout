@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   alias Explorer.Chain.Wei
   alias Explorer.SmartContract.Reader
 
-  @token_bridge_contract_address "0x7301CFA0e1756B71869E93d4e4Dca5c7d0eb0AA6"
+  @token_bridge_contract_address "0x000000000000000000000000000000000000FFff"
   @total_burned_coins_abi %{
     "type" => "function",
     "stateMutability" => "view",
