@@ -40,8 +40,6 @@ defmodule BlockScoutWeb.SmartContractController do
           []
         end
 
-      contract_type = if Chain.is_proxy_contract?(address.smart_contract.abi), do: :proxy, else: :regular
-
       conn
       |> put_status(200)
       |> put_layout(false)
