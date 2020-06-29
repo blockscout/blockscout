@@ -90,9 +90,15 @@ defmodule Explorer.SmartContract.Verifier do
       "compiler_version" => generated_compiler_version
     } = extract_bytecode_and_metadata_hash(bytecode)
 
-    "0x" <> blockchain_created_tx_input =
-      address_hash
-      |> Chain.smart_contract_creation_tx_bytecode()
+    blockchain_created_tx_input =
+      case Chain.smart_contract_creation_tx_bytecode(address_hash) do
+        nil ->
+          bytecode
+
+        blockchain_created_tx_input_with_0x ->
+          "0x" <> blockchain_created_tx_input = blockchain_created_tx_input_with_0x
+          blockchain_created_tx_input
+      end
 
     %{
       "metadata_hash" => _metadata_hash,

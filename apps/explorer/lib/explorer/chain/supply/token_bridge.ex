@@ -85,18 +85,25 @@ defmodule Explorer.Chain.Supply.TokenBridge do
       |> Enum.map(fn {key, _value} -> key end)
       |> List.first()
 
-    value =
-      case Reader.query_contract(address, abi, params) do
-        %{^method_name => {:ok, [result]}} -> result
-        _ -> 0
-      end
-
     type =
       abi
       |> Enum.at(0)
       |> Map.get("outputs", [])
       |> Enum.at(0)
       |> Map.get("type", "")
+
+    value =
+      case Reader.query_contract(address, abi, params) do
+        %{^method_name => {:ok, [result]}} ->
+          result
+
+        _ ->
+          case type do
+            "address" -> "0x0000000000000000000000000000000000000000"
+            "uint256" -> 0
+            _ -> 0
+          end
+      end
 
     case type do
       "address" ->
