@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3171](https://github.com/poanetwork/blockscout/pull/3171) - Import accounts/contracts/balances from Geth genesis.json
 - [#3157](https://github.com/poanetwork/blockscout/pull/3157) - Read methods of implementation on proxy contract
 
 ### Fixes
