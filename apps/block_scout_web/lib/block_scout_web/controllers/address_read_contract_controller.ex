@@ -32,6 +32,7 @@ defmodule BlockScoutWeb.AddressReadContractController do
         "index.html",
         address: address,
         type: :regular,
+        action: :read,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
