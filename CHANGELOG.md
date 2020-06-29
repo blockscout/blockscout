@@ -4,6 +4,7 @@
 - [#3157](https://github.com/poanetwork/blockscout/pull/3157) - Read methods of implementation on proxy contract
 
 ### Fixes
+- [#3168](https://github.com/poanetwork/blockscout/pull/3168) - Eliminate internal server error at /accounts page with token-bridge type of supply and inexistent bridge contracts
 - [#3169](https://github.com/poanetwork/blockscout/pull/3169) - Fix for verification of contracts defined in genesis block
 
 ### Chore
