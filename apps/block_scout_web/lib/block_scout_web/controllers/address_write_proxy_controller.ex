@@ -1,5 +1,5 @@
 # credo:disable-for-this-file
-defmodule BlockScoutWeb.AddressReadProxyController do
+defmodule BlockScoutWeb.AddressWriteProxyController do
   use BlockScoutWeb, :controller
 
   alias Explorer.{Chain, Market}
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.AddressReadProxyController do
         "index.html",
         address: address,
         type: :proxy,
-        action: :read,
+        action: :write,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})

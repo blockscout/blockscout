@@ -19,6 +19,8 @@ defmodule BlockScoutWeb.AddressView do
     "token_transfers",
     "read_contract",
     "read_proxy",
+    "write_contract",
+    "write_proxy",
     "tokens",
     "transactions",
     "validations"
@@ -235,6 +237,17 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_is_proxy?(%Address{smart_contract: nil}), do: false
 
+  def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
+    Enum.any?(
+      address.smart_contract.abi,
+      &(&1["type"] !== "event" &&
+          (&1["stateMutability"] == "nonpayable" || &1["stateMutability"] == "payable" || &1["payable"] ||
+             (!&1["payable"] && !&1["constant"] && !&1["stateMutability"])))
+    )
+  end
+
+  def smart_contract_with_write_functions?(%Address{smart_contract: nil}), do: false
+
   def has_decompiled_code?(address) do
     address.has_decompiled_code? ||
       (Ecto.assoc_loaded?(address.decompiled_smart_contracts) && Enum.count(address.decompiled_smart_contracts) > 0)
@@ -334,6 +347,8 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["decompiled_contracts"]), do: gettext("Decompiled Code")
   defp tab_name(["read_contract"]), do: gettext("Read Contract")
   defp tab_name(["read_proxy"]), do: gettext("Read Proxy")
+  defp tab_name(["write_contract"]), do: gettext("Write Contract")
+  defp tab_name(["write_proxy"]), do: gettext("Write Proxy")
   defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
   defp tab_name(["logs"]), do: gettext("Logs")
