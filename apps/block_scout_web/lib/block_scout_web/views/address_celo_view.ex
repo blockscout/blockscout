@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.AddressCeloView do
   def format_pending_votes(member) do
     format_according_to_decimals(member.pending.value, Decimal.new(18))
   end
-  
+
   def format_votes(member) do
     pending =
       if Decimal.eq?(member.pending.value, Decimal.new(0)) do
@@ -16,12 +16,14 @@ defmodule BlockScoutWeb.AddressCeloView do
       else
         format_pending_votes(member) <> " pending"
       end
+
     active =
       if member.units != nil and Decimal.eq?(member.units.value, Decimal.new(0)) do
         ""
       else
         format_active_votes(member) <> " active"
       end
+
     pending <> " " <> active
   end
 
