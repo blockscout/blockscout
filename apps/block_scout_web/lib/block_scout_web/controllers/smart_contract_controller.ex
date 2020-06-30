@@ -40,7 +40,9 @@ defmodule BlockScoutWeb.SmartContractController do
           []
         end
 
-      contract_type = if Chain.is_proxy_contract?(address.smart_contract.abi), do: :proxy, else: :regular
+      implementation_address_hash_string =
+        Chain.get_implementation_address_hash(address.hash, address.smart_contract.abi) ||
+          "0x0000000000000000000000000000000000000000"
 
       conn
       |> put_status(200)
@@ -50,6 +52,7 @@ defmodule BlockScoutWeb.SmartContractController do
         read_only_functions: functions,
         address: address,
         contract_abi: contract_abi,
+        implementation_address: implementation_address_hash_string,
         implementation_abi: implementation_abi,
         contract_type: contract_type
       )
