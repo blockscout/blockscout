@@ -19,6 +19,7 @@ defmodule Explorer.GraphQL do
     CeloAccount,
     CeloClaims,
     CeloParams,
+    CeloVoters,
     Hash,
     InternalTransaction,
     Token,
@@ -136,6 +137,38 @@ defmodule Explorer.GraphQL do
       order_by: [desc: tt.block_number, desc: t.index, asc: tt.log_index],
       select: tt
     )
+  end
+
+  def group_voters_query(group_address) do
+    query =
+      from(addr in CeloAccount,
+        join: account in CeloVoters,
+        on: account.voter_address_hash == addr.address,
+        where: account.group_address_hash == ^group_address,
+        where: account.total > ^0,
+        select_merge: %{
+          votes: account.total
+        }
+      )
+
+    query
+  end
+
+  def account_voted_query(account_address) do
+    group = Chain.celo_validator_group_query()
+
+    query =
+      from(addr in subquery(group),
+        join: account in CeloVoters,
+        on: account.group_address_hash == addr.address,
+        where: account.voter_address_hash == ^account_address,
+        where: account.total > ^0,
+        select_merge: %{
+          votes: account.total
+        }
+      )
+
+    query
   end
 
   def list_gold_transfers_query do

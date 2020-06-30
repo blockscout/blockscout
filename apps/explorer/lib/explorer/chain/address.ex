@@ -23,6 +23,7 @@ defmodule Explorer.Chain.Address do
     DecompiledSmartContract,
     Hash,
     InternalTransaction,
+    ProxyContract,
     SmartContract,
     Token,
     Transaction,
@@ -89,6 +90,7 @@ defmodule Explorer.Chain.Address do
     field(:verified, :boolean, default: false)
     field(:has_decompiled_code?, :boolean, virtual: true)
     field(:stale?, :boolean, virtual: true)
+    field(:online, :boolean, virtual: true)
 
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)
@@ -103,6 +105,8 @@ defmodule Explorer.Chain.Address do
     has_many(:celo_voters, CeloVoters, foreign_key: :group_address_hash)
     has_many(:celo_voted, CeloVoters, foreign_key: :voter_address_hash)
     has_many(:celo_claims, CeloClaims, foreign_key: :address)
+
+    has_one(:implementation_contract, ProxyContract, foreign_key: :proxy_address)
 
     has_one(
       :contracts_creation_internal_transaction,

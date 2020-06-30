@@ -58,9 +58,9 @@ defmodule Explorer.Celo.AccountReader do
   def validator_group_reward_data(address, bn) do
     data =
       call_methods([
-        {:election, "getActiveVotesForGroup", [address], bn},
-        {:epochrewards, "calculateTargetEpochRewards", [], bn},
-        {:election, "getActiveVotes", [], bn}
+        {:election, "getActiveVotesForGroup", [address], bn - 1},
+        {:epochrewards, "calculateTargetEpochRewards", [], bn - 1},
+        {:election, "getActiveVotes", [], bn - 1}
       ])
 
     with {:ok, [active_votes]} <- data["getActiveVotesForGroup"],

@@ -14,7 +14,8 @@ jobs:
     working_directory: ~/app
 
     steps:
-      - run: sudo apt-get update; sudo apt-get -y install autoconf build-essential libgmp3-dev libtool
+      - run: sudo apt-get update || sudo apt-get update || echo "hmm"
+      - run: sudo apt-get -y install autoconf build-essential libgmp3-dev libtool
 
       - checkout
       - run:
