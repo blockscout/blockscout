@@ -937,6 +937,8 @@ defmodule Explorer.Chain do
             [{:celo_members, :validator_address}] => :optional,
             [{:celo_voters, :voter_address}] => :optional,
             [{:celo_voted, :group_address}] => :optional,
+            [{:celo_voters, :group}] => :optional,
+            [{:celo_voted, :group}] => :optional,
             :celo_validator => :optional,
             [{:celo_validator, :group_address}] => :optional,
             [{:celo_validator, :signer}] => :optional,
@@ -3933,6 +3935,18 @@ defmodule Explorer.Chain do
 
   defp staking_pool_filter(query, _), do: query
 
+  defp compute_votes do
+    from(p in CeloVoters,
+      inner_join: g in assoc(p, :group),
+      group_by: p.voter_address_hash,
+      select: %{
+        result:
+          fragment("sum(? + coalesce(? * ? / nullif(?,0), 0))", p.pending, p.units, g.active_votes, g.total_units),
+        address: p.voter_address_hash
+      }
+    )
+  end
+
   @spec get_celo_account(Hash.Address.t()) :: {:ok, CeloAccount.t()} | {:error, :not_found}
   def get_celo_account(address_hash) do
     get_signer_account(address_hash)
@@ -3941,7 +3955,12 @@ defmodule Explorer.Chain do
   defp do_get_celo_account(address_hash) do
     query =
       from(account in CeloAccount,
-        where: account.address == ^address_hash
+        left_join: data in subquery(compute_votes()),
+        on: data.address == account.address,
+        where: account.address == ^address_hash,
+        select_merge: %{
+          active_gold: %{value: data.result}
+        }
       )
 
     query
@@ -3978,6 +3997,8 @@ defmodule Explorer.Chain do
       left_join: t in assoc(v, :status),
       inner_join: a in assoc(v, :celo_account),
       inner_join: stat in assoc(v, :celo_attestation_stats),
+      left_join: data in subquery(compute_votes()),
+      on: v.address == data.address,
       select_merge: %{
         last_online: t.last_online,
         last_elected: t.last_elected,
@@ -3987,6 +4008,7 @@ defmodule Explorer.Chain do
         nonvoting_locked_gold: a.nonvoting_locked_gold,
         attestations_requested: stat.requested,
         attestations_fulfilled: stat.fulfilled,
+        active_gold: %{value: data.result},
         usd: a.usd
       }
     )
@@ -4021,6 +4043,8 @@ defmodule Explorer.Chain do
       inner_join: total_locked_gold in CeloParams,
       where: total_locked_gold.name == "totalLockedGold",
       inner_join: denom in subquery(denominator),
+      left_join: data in subquery(compute_votes()),
+      on: g.address == data.address,
       select_merge: %{
         name: a.name,
         url: a.url,
@@ -4030,6 +4054,7 @@ defmodule Explorer.Chain do
         accumulated_active: b.active,
         accumulated_rewards: b.reward,
         rewards_ratio: b.ratio,
+        active_gold: %{value: data.result},
         receivable_votes: (g.num_members + 1) * total_locked_gold.number_value / fragment("nullif(?,0)", denom.value)
       }
     )
