@@ -98,7 +98,7 @@ config :wobserver,
   mode: :plug
 
 config :block_scout_web, BlockScoutWeb.ApiRouter,
-  max_complexity: String.to_integer(System.get_env("GRAPHQL_COMPLEXITY") || "200"),
+  max_complexity: String.to_integer(System.get_env("GRAPHQL_COMPLEXITY") || "10000"),
   writing_enabled: System.get_env("DISABLE_WRITE_API") != "true",
   reading_enabled: System.get_env("DISABLE_READ_API") != "true"
 

@@ -143,7 +143,7 @@ defmodule Explorer.GraphQL do
     query =
       from(addr in CeloAccount,
         join: account in CeloVoters,
-        on: account.group_address_hash == addr.address,
+        on: account.voter_address_hash == addr.address,
         where: account.group_address_hash == ^group_address,
         where: account.total > ^0,
         select_merge: %{
@@ -155,10 +155,12 @@ defmodule Explorer.GraphQL do
   end
 
   def account_voted_query(account_address) do
+    group = Chain.celo_validator_group_query()
+
     query =
-      from(addr in CeloAccount,
+      from(addr in subquery(group),
         join: account in CeloVoters,
-        on: account.voter_address_hash == addr.address,
+        on: account.group_address_hash == addr.address,
         where: account.voter_address_hash == ^account_address,
         where: account.total > ^0,
         select_merge: %{
