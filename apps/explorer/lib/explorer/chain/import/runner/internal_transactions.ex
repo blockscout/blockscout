@@ -190,7 +190,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     query =
       from(
         b in Block,
-        where: b.number in ^block_numbers and b.consensus,
+        where: b.number in ^block_numbers,
         select: b.hash,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: b.hash],
@@ -376,7 +376,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         where: b.number in ^invalid_block_numbers and b.consensus,
         select: b.hash,
         # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
-        update: [set: [consensus: false]]
+        update: [set: [consensus: false, update_count: b.update_count + 1]]
       )
 
     try do

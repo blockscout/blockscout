@@ -170,7 +170,7 @@
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All voters of this group">
        <ul>
        <%= for member <- sort_voters(@address.celo_voters) do %>
-         <li><%= format_pending_votes(member) %> pending, <%= format_active_votes(member) %> active cGLD:
+         <li><%= format_votes(member) %> cGLD:
          <%= if member.group_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:voters, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
             end %></li>
@@ -187,7 +187,7 @@
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Groups voted by this account">
        <ul>
        <%= for member <- sort_voters(@address.celo_voted) do %>
-         <li><%= format_pending_votes(member) %> pending, <%= format_active_votes(member) %> active cGLD:
+         <li><%= format_votes(member) %> cGLD:
          <%= if member.group_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:voted, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
             end %></li>

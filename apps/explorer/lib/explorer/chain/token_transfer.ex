@@ -61,14 +61,14 @@ defmodule Explorer.Chain.TokenTransfer do
           token_id: non_neg_integer() | nil,
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
-          # block: %Ecto.Association.NotLoaded{} | Block.t(),
-          # block_hash: Hash.Full.t(),
+          comment: String.t(),
           log_index: non_neg_integer()
         }
 
   @typep paging_options :: {:paging_options, PagingOptions.t()}
 
   @constant "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+  @comment_event "0xe5d4e30fb8364e57bc4d662a07d0cf36f4c34552004c4c3624620a2c1d1c03dc"
 
   @transfer_function_signature "0xa9059cbb"
 
@@ -78,6 +78,7 @@ defmodule Explorer.Chain.TokenTransfer do
     field(:block_number, :integer)
     field(:log_index, :integer, primary_key: true)
     field(:token_id, :decimal)
+    field(:comment, :string)
 
     belongs_to(:from_address, Address, foreign_key: :from_address_hash, references: :hash, type: Hash.Address)
     belongs_to(:to_address, Address, foreign_key: :to_address_hash, references: :hash, type: Hash.Address)
@@ -117,9 +118,7 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash block_hash)a
-  @optional_attrs ~w(amount token_id transaction_hash )a
-  # @required_attrs ~w(block_number log_index from_address_hash to_address_hash block_hash token_contract_address_hash)a
-  # @optional_attrs ~w(amount token_id transaction_hash)a
+  @optional_attrs ~w(amount token_id transaction_hash comment )a
 
   @doc false
   def changeset(%TokenTransfer{} = struct, params \\ %{}) do
@@ -139,6 +138,8 @@ defmodule Explorer.Chain.TokenTransfer do
   `first_topic` field.
   """
   def constant, do: @constant
+
+  def comment_event, do: @comment_event
 
   @doc """
   ERC 20's transfer(address,uint256) function signature
