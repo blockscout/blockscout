@@ -22,7 +22,8 @@ defmodule Indexer.Transform.CeloAccounts do
       # Adding a group to updated validators means to update all members of the group
       validators:
         get_addresses(logs, CeloAccount.validator_events()) ++
-          get_addresses(logs, CeloAccount.membership_events()),
+          get_addresses(logs, CeloAccount.membership_events()) ++
+          get_addresses(logs, CeloAccount.membership_events(), fn a -> a.third_topic end),
       account_names: get_names(logs),
       validator_groups:
         get_addresses(logs, CeloAccount.validator_group_events()) ++
