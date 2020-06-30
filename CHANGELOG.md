@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3173](https://github.com/poanetwork/blockscout/pull/3173) - Display implementation address at read/write proxy tabs
 - [#3171](https://github.com/poanetwork/blockscout/pull/3171) - Import accounts/contracts/balances from Geth genesis.json
 - [#3161](https://github.com/poanetwork/blockscout/pull/3161) - Write proxy contracts feature
 - [#3160](https://github.com/poanetwork/blockscout/pull/3160) - Write contracts feature
