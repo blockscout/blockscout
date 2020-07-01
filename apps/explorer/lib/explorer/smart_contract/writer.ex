@@ -18,11 +18,7 @@ defmodule Explorer.SmartContract.Writer do
 
       _ ->
         abi
-        |> Enum.filter(
-          &(&1["type"] !== "event" &&
-              (&1["stateMutability"] == "nonpayable" || &1["stateMutability"] == "payable" || &1["payable"] ||
-                 (!&1["payable"] && !&1["constant"] && !&1["stateMutability"])))
-        )
+        |> filter_write_functions()
     end
   end
 
@@ -41,11 +37,26 @@ defmodule Explorer.SmartContract.Writer do
 
       _ ->
         implementation_abi
-        |> Enum.filter(
-          &(&1["type"] !== "event" &&
-              (&1["stateMutability"] == "nonpayable" || &1["stateMutability"] == "payable" || &1["payable"] ||
-                 (!&1["payable"] && !&1["constant"] && !&1["stateMutability"])))
-        )
+        |> filter_write_functions()
     end
   end
+
+  def write_function?(function) do
+    !event?(function) && !constructor?(function) &&
+      (payable?(function) || nonpayable?(function))
+  end
+
+  defp filter_write_functions(abi) do
+    abi
+    |> Enum.filter(&write_function?(&1))
+  end
+
+  defp event?(function), do: function["type"] == "event"
+  defp constructor?(function), do: function["type"] == "constructor"
+  defp payable?(function), do: function["stateMutability"] == "payable" || function["payable"]
+
+  defp nonpayable?(function),
+    do:
+      function["stateMutability"] == "nonpayable" ||
+        (!function["payable"] && !function["constant"] && !function["stateMutability"])
 end
