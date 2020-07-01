@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
+  alias Explorer.SmartContract.Writer
 
   @dialyzer :no_match
 
@@ -240,9 +241,7 @@ defmodule BlockScoutWeb.AddressView do
   def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
     Enum.any?(
       address.smart_contract.abi,
-      &(&1["type"] !== "event" &&
-          (&1["stateMutability"] == "nonpayable" || &1["stateMutability"] == "payable" || &1["payable"] ||
-             (!&1["payable"] && !&1["constant"] && !&1["stateMutability"])))
+      &Writer.write_function?(&1)
     )
   end
 

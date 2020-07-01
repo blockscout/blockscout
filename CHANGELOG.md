@@ -1,11 +1,15 @@
 ## Current
 
 ### Features
+- [#3173](https://github.com/poanetwork/blockscout/pull/3173) - Display implementation address at read/write proxy tabs
+- [#3171](https://github.com/poanetwork/blockscout/pull/3171) - Import accounts/contracts/balances from Geth genesis.json
 - [#3161](https://github.com/poanetwork/blockscout/pull/3161) - Write proxy contracts feature
 - [#3160](https://github.com/poanetwork/blockscout/pull/3160) - Write contracts feature
 - [#3157](https://github.com/poanetwork/blockscout/pull/3157) - Read methods of implementation on proxy contract
 
 ### Fixes
+- [#3168](https://github.com/poanetwork/blockscout/pull/3168) - Eliminate internal server error at /accounts page with token-bridge type of supply and inexistent bridge contracts
+- [#3169](https://github.com/poanetwork/blockscout/pull/3169) - Fix for verification of contracts defined in genesis block
 
 ### Chore
 
