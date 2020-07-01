@@ -1,3 +1,11 @@
+<%= if @contract_type == "proxy" do %>
+<div>
+    <h2 class="implementation-title">Implementation address: </h2><h3  class="implementation-value"><%= link(
+                  @implementation_address,
+                  to: address_path(@conn, :show, @implementation_address)
+                ) %></h3>
+</div>
+<% end %>
 <%= for {function, counter} <- Enum.with_index(@read_only_functions, 1) do %>
   <div class="d-flex py-2 border-bottom" data-function>
     <div class="py-2 pr-2 text-nowrap">
