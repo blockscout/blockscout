@@ -107,16 +107,16 @@ function setDataToLocalStorage (key, data) {
 
 function getPriceData (marketHistoryData) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('priceDataXDAI')
+    return getDataFromLocalStorage('priceDataQDAI')
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => ({ x: date, y: closingPrice }))
-  setDataToLocalStorage('priceDataXDAI', data)
+  setDataToLocalStorage('priceDataQDAI', data)
   return data
 }
 
 function getTxHistoryData (transactionHistory) {
   if (transactionHistory.length === 0) {
-    return getDataFromLocalStorage('txHistoryDataXDAI')
+    return getDataFromLocalStorage('txHistoryDataQDAI')
   }
   const data = transactionHistory.map(dataPoint => ({ x: dataPoint.date, y: dataPoint.number_of_transactions }))
 
@@ -127,13 +127,13 @@ function getTxHistoryData (transactionHistory) {
   curDay = curDay.format('YYYY-MM-DD')
   data.unshift({ x: curDay, y: null })
 
-  setDataToLocalStorage('txHistoryDataXDAI', data)
+  setDataToLocalStorage('txHistoryDataQDAI', data)
   return data
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (marketHistoryData.length === 0) {
-    return getDataFromLocalStorage('marketCapDataXDAI')
+    return getDataFromLocalStorage('marketCapDataQDAI')
   }
   const data = marketHistoryData.map(({ date, closingPrice }) => {
     const supply = (availableSupply !== null && typeof availableSupply === 'object')
@@ -141,7 +141,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
       : availableSupply
     return { x: date, y: closingPrice * supply }
   })
-  setDataToLocalStorage('marketCapDataXDAI', data)
+  setDataToLocalStorage('marketCapDataQDAI', data)
   return data
 }
 
