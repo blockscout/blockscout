@@ -32,7 +32,9 @@ config :block_scout_web,
   },
   other_networks: System.get_env("SUPPORTED_CHAINS"),
   webapp_url: System.get_env("WEBAPP_URL"),
-  api_url: System.get_env("API_URL")
+  api_url: System.get_env("API_URL"),
+  moon_token_addresses: System.get_env("MOON_TOKEN_ADDRESSES"),
+  bricks_token_addresses: System.get_env("BRICKS_TOKEN_ADDRESSES")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
