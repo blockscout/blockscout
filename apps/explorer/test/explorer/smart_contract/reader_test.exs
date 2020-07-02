@@ -220,24 +220,13 @@ defmodule Explorer.SmartContract.ReaderTest do
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
 
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
-             }
-           ]}
-        end
-      )
-
       blockchain_get_function_mock()
 
-      response = Reader.read_only_functions_proxy(proxy_smart_contract.address_hash)
+      response =
+        Reader.read_only_functions_proxy(
+          proxy_smart_contract.address_hash,
+          "0x" <> implementation_contract_address_hash_string
+        )
 
       assert [
                %{
