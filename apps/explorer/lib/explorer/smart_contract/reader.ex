@@ -112,6 +112,32 @@ defmodule Explorer.SmartContract.Reader do
     end)
   end
 
+  @spec query_contract(
+          String.t(),
+          String.t(),
+          term(),
+          functions()
+        ) :: functions_results()
+  def query_contract(contract_address, from, abi, functions) do
+    requests =
+      functions
+      |> Enum.map(fn {function_name, args} ->
+        %{
+          contract_address: contract_address,
+          from: from,
+          function_name: function_name,
+          args: args
+        }
+      end)
+
+    requests
+    |> query_contracts(abi)
+    |> Enum.zip(requests)
+    |> Enum.into(%{}, fn {response, request} ->
+      {request.function_name, response}
+    end)
+  end
+
   @doc """
   Runs batch of contract functions on given addresses for smart contract with an expected ABI and functions.
 
@@ -180,13 +206,8 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
-  def read_only_functions_proxy(contract_address_hash) do
-    abi =
-      contract_address_hash
-      |> Chain.address_hash_to_smart_contract()
-      |> Map.get(:abi)
-
-    implementation_abi = Chain.get_implementation_abi_from_proxy(contract_address_hash, abi)
+  def read_only_functions_proxy(contract_address_hash, implementation_address_hash_string) do
+    implementation_abi = Chain.get_implementation_abi(implementation_address_hash_string)
 
     case implementation_abi do
       nil ->

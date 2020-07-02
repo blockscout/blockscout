@@ -296,22 +296,7 @@ defmodule Explorer.SmartContract.WriterTest do
       implementation_contract_address_hash_string =
         Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
 
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
-          {:ok,
-           [
-             %{
-               id: id,
-               jsonrpc: "2.0",
-               result: "0x000000000000000000000000" <> implementation_contract_address_hash_string
-             }
-           ]}
-        end
-      )
-
-      response = Writer.write_functions_proxy(proxy_smart_contract.address_hash)
+      response = Writer.write_functions_proxy("0x" <> implementation_contract_address_hash_string)
 
       assert [
                %{

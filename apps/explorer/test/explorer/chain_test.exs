@@ -5507,5 +5507,33 @@ defmodule Explorer.ChainTest do
 
       assert implementation_abi == @implementation_abi
     end
+
+    test "get_implementation_abi/1 returns empty [] abi if implmentation address is null" do
+      assert Chain.get_implementation_abi(nil) == []
+    end
+
+    test "get_implementation_abi/1 returns [] if implementation is not verified" do
+      implementation_contract_address = insert(:contract_address)
+
+      implementation_contract_address_hash_string =
+        Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
+
+      assert Chain.get_implementation_abi("0x" <> implementation_contract_address_hash_string) == []
+    end
+
+    test "get_implementation_abi/1 returns implementation abi if implementation is verified" do
+      proxy_contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: proxy_contract_address.hash, abi: @proxy_abi)
+
+      implementation_contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: implementation_contract_address.hash, abi: @implementation_abi)
+
+      implementation_contract_address_hash_string =
+        Base.encode16(implementation_contract_address.hash.bytes, case: :lower)
+
+      implementation_abi = Chain.get_implementation_abi("0x" <> implementation_contract_address_hash_string)
+
+      assert implementation_abi == @implementation_abi
+    end
   end
 end
