@@ -134,6 +134,42 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       assert conn.status == 200
       assert conn.assigns.read_only_functions == []
     end
+
+    test "lists [] proxy read only functions if no verified eip-1967 implementation and eth_getStorageAt returns not nnormalized address hash" do
+      token_contract_address = insert(:contract_address)
+
+      insert(:smart_contract,
+        address_hash: token_contract_address.hash,
+        abi: [
+          %{
+            "type" => "function",
+            "stateMutability" => "nonpayable",
+            "payable" => false,
+            "outputs" => [%{"type" => "address", "name" => "", "internalType" => "address"}],
+            "name" => "implementation",
+            "inputs" => [],
+            "constant" => false
+          }
+        ]
+      )
+
+      blockchain_get_implementation_mock_2()
+
+      path =
+        smart_contract_path(BlockScoutWeb.Endpoint, :index,
+          hash: token_contract_address.hash,
+          type: :proxy,
+          action: :read
+        )
+
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get(path)
+
+      assert conn.status == 200
+      assert conn.assigns.read_only_functions == []
+    end
   end
 
   describe "GET show/3" do
@@ -238,6 +274,16 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       :json_rpc,
       fn %{id: _, method: _, params: [_, _, _]}, _options ->
         {:ok, "0xcebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"}
+      end
+    )
+  end
+
+  defp blockchain_get_implementation_mock_2 do
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn %{id: _, method: _, params: [_, _, _]}, _options ->
+        {:ok, "0x000000000000000000000000cebb2CCCFe291F0c442841cBE9C1D06EED61Ca02"}
       end
     )
   end
