@@ -28,6 +28,7 @@ defmodule Explorer.Chain do
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
+  alias EthereumJSONRPC.Contract
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
 
   alias Explorer.Counters.LastFetchedCounter
@@ -4364,18 +4365,44 @@ defmodule Explorer.Chain do
 
   def get_implementation_address_hash(proxy_address_hash, abi)
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
-    implementation_address =
-      case Reader.query_contract(proxy_address_hash, abi, %{
-             "implementation" => []
-           }) do
-        %{"implementation" => {:ok, [result]}} -> result
-        _ -> nil
-      end
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation"
+      end)
 
-    if implementation_address do
-      "0x" <> Base.encode16(implementation_address, case: :lower)
+    implementation_method_abi_state_mutability = Map.get(implementation_method_abi, "stateMutability")
+    is_eip1967 = if implementation_method_abi_state_mutability == "nonpayable", do: true, else: false
+
+    if is_eip1967 do
+      json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+      # https://eips.ethereum.org/EIPS/eip-1967
+      eip_1967_implementation_storage_pointer = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+
+      {:ok, implementation_address} =
+        Contract.eth_get_storage_at_request(
+          proxy_address_hash,
+          eip_1967_implementation_storage_pointer,
+          nil,
+          json_rpc_named_arguments
+        )
+
+      implementation_address
     else
-      nil
+      implementation_address =
+        case Reader.query_contract(proxy_address_hash, abi, %{
+               "implementation" => []
+             }) do
+          %{"implementation" => {:ok, [result]}} -> result
+          _ -> nil
+        end
+
+      if implementation_address do
+        "0x" <> Base.encode16(implementation_address, case: :lower)
+      else
+        nil
+      end
     end
   end
 
@@ -4383,7 +4410,7 @@ defmodule Explorer.Chain do
     nil
   end
 
-  defp get_implementation_abi(implementation_address_hash_string) when not is_nil(implementation_address_hash_string) do
+  def get_implementation_abi(implementation_address_hash_string) when not is_nil(implementation_address_hash_string) do
     case Chain.string_to_address_hash(implementation_address_hash_string) do
       {:ok, implementation_address_hash} ->
         implementation_smart_contract =
@@ -4402,7 +4429,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp get_implementation_abi(implementation_address_hash_string) when is_nil(implementation_address_hash_string) do
+  def get_implementation_abi(implementation_address_hash_string) when is_nil(implementation_address_hash_string) do
     []
   end
 
