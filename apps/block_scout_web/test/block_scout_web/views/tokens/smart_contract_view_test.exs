@@ -17,6 +17,183 @@ defmodule BlockScoutWeb.SmartContractViewTest do
     end
   end
 
+  describe "writeable?" do
+    test "returns true when there is write function" do
+      function = %{
+        "type" => "function",
+        "stateMutability" => "nonpayable",
+        "payable" => false,
+        "outputs" => [],
+        "name" => "upgradeTo",
+        "inputs" => [%{"type" => "uint256", "name" => "version"}, %{"type" => "address", "name" => "implementation"}],
+        "constant" => false
+      }
+
+      assert SmartContractView.writeable?(function)
+    end
+
+    test "returns false when it is not a write function" do
+      function = %{
+        "type" => "function",
+        "stateMutability" => "view",
+        "payable" => false,
+        "outputs" => [%{"type" => "uint256", "name" => ""}],
+        "name" => "version",
+        "inputs" => [],
+        "constant" => true
+      }
+
+      refute SmartContractView.writeable?(function)
+    end
+
+    test "returns false when there is no function" do
+      function = %{}
+
+      refute SmartContractView.writeable?(function)
+    end
+
+    test "returns false when there function is nil" do
+      function = nil
+
+      refute SmartContractView.writeable?(function)
+    end
+  end
+
+  describe "outputs?" do
+    test "returns true when there are outputs" do
+      outputs = [%{"name" => "_narcoId", "type" => "uint256"}]
+
+      assert SmartContractView.outputs?(outputs)
+    end
+
+    test "returns false when there are no outputs" do
+      outputs = []
+
+      refute SmartContractView.outputs?(outputs)
+    end
+  end
+
+  describe "payable?" do
+    test "returns true when there is payable function" do
+      function = %{
+        "type" => "function",
+        "stateMutability" => "payable",
+        "payable" => true,
+        "outputs" => [],
+        "name" => "upgradeToAndCall",
+        "inputs" => [
+          %{"type" => "uint256", "name" => "version"},
+          %{"type" => "address", "name" => "implementation"},
+          %{"type" => "bytes", "name" => "data"}
+        ],
+        "constant" => false
+      }
+
+      assert SmartContractView.payable?(function)
+    end
+
+    test "returns true when there is old-style payable function" do
+      function = %{
+        "type" => "function",
+        "payable" => true,
+        "outputs" => [],
+        "name" => "upgradeToAndCall",
+        "inputs" => [
+          %{"type" => "uint256", "name" => "version"},
+          %{"type" => "address", "name" => "implementation"},
+          %{"type" => "bytes", "name" => "data"}
+        ],
+        "constant" => false
+      }
+
+      assert SmartContractView.payable?(function)
+    end
+
+    test "returns false when it is nonpayable function" do
+      function = %{
+        "type" => "function",
+        "stateMutability" => "nonpayable",
+        "payable" => false,
+        "outputs" => [],
+        "name" => "transferProxyOwnership",
+        "inputs" => [%{"type" => "address", "name" => "newOwner"}],
+        "constant" => false
+      }
+
+      refute SmartContractView.payable?(function)
+    end
+
+    test "returns false when there is no function" do
+      function = %{}
+
+      refute SmartContractView.payable?(function)
+    end
+
+    test "returns false when function is nil" do
+      function = nil
+
+      refute SmartContractView.payable?(function)
+    end
+  end
+
+  describe "nonpayable?" do
+    test "returns true when there is nonpayable function" do
+      function = %{
+        "type" => "function",
+        "stateMutability" => "nonpayable",
+        "payable" => false,
+        "outputs" => [],
+        "name" => "transferProxyOwnership",
+        "inputs" => [%{"type" => "address", "name" => "newOwner"}],
+        "constant" => false
+      }
+
+      assert SmartContractView.nonpayable?(function)
+    end
+
+    test "returns true when there is old-style nonpayable function" do
+      function = %{
+        "type" => "function",
+        "outputs" => [],
+        "name" => "test",
+        "inputs" => [%{"type" => "address", "name" => "newOwner"}],
+        "constant" => false
+      }
+
+      assert SmartContractView.nonpayable?(function)
+    end
+
+    test "returns false when it is payable function" do
+      function = %{
+        "type" => "function",
+        "stateMutability" => "payable",
+        "payable" => true,
+        "outputs" => [],
+        "name" => "upgradeToAndCall",
+        "inputs" => [
+          %{"type" => "uint256", "name" => "version"},
+          %{"type" => "address", "name" => "implementation"},
+          %{"type" => "bytes", "name" => "data"}
+        ],
+        "constant" => false
+      }
+
+      refute SmartContractView.nonpayable?(function)
+    end
+
+    test "returns true when there is no function" do
+      function = %{}
+
+      refute SmartContractView.nonpayable?(function)
+    end
+
+    test "returns false when function is nil" do
+      function = nil
+
+      refute SmartContractView.nonpayable?(function)
+    end
+  end
+
   describe "address?" do
     test "returns true when the type is equal to the string 'address'" do
       type = "address"
