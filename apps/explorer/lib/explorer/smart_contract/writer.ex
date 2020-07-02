@@ -23,13 +23,8 @@ defmodule Explorer.SmartContract.Writer do
   end
 
   @spec write_functions_proxy(Hash.t()) :: [%{}]
-  def write_functions_proxy(contract_address_hash) do
-    abi =
-      contract_address_hash
-      |> Chain.address_hash_to_smart_contract()
-      |> Map.get(:abi)
-
-    implementation_abi = Chain.get_implementation_abi_from_proxy(contract_address_hash, abi)
+  def write_functions_proxy(implementation_address_hash_string) do
+    implementation_abi = Chain.get_implementation_abi(implementation_address_hash_string)
 
     case implementation_abi do
       nil ->
