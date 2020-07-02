@@ -4388,7 +4388,11 @@ defmodule Explorer.Chain do
           json_rpc_named_arguments
         )
 
-      implementation_address
+      if String.length(implementation_address) > 42 do
+        "0x" <> String.slice(implementation_address, -40, 40)
+      else
+        implementation_address
+      end
     else
       implementation_address =
         case Reader.query_contract(proxy_address_hash, abi, %{
