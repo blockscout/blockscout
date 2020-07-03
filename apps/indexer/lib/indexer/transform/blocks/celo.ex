@@ -20,7 +20,7 @@ defmodule Indexer.Transform.Blocks.Celo do
     extra_data
     |> ExRLP.decode(encoding: :hex)
     |> Enum.at(10)
-    |> Enum.at(5)
+    |> Enum.at(4)
     |> Enum.at(2)
     |> :binary.decode_unsigned()
   rescue
