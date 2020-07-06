@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3182](https://github.com/poanetwork/blockscout/pull/3182) - Besu: support revertReason key in eth_getTransactionReceipt endpoint
 - [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix permanent fetching tokens...  when read/write proxy tab is active
 - [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
 
