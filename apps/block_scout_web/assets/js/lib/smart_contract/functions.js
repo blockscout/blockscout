@@ -2,6 +2,7 @@ import $ from 'jquery'
 import ethNetProps from 'eth-net-props'
 import { walletEnabled, getCurrentAccount } from './write.js'
 import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals.js'
+import '../../pages/address'
 
 const WEI_MULTIPLIER = 10 ** 18
 
