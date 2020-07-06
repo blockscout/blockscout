@@ -28,6 +28,9 @@ defmodule Explorer.Chain do
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
+  alias EthereumJSONRPC.Contract
+  alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
+
   alias Explorer.Counters.LastFetchedCounter
 
   alias Explorer.Chain
@@ -72,6 +75,7 @@ defmodule Explorer.Chain do
   alias Explorer.Counters.{AddressesCounter, AddressesWithBalanceCounter}
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
+  alias Explorer.SmartContract.Reader
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
@@ -2715,6 +2719,68 @@ defmodule Explorer.Chain do
 
   def transaction_to_status(%Transaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
 
+  def transaction_to_revert_reason(transaction) do
+    %Transaction{revert_reason: revert_reason} = transaction
+
+    if revert_reason == nil do
+      fetch_tx_revert_reason(transaction)
+    else
+      revert_reason
+    end
+  end
+
+  def fetch_tx_revert_reason(
+        %Transaction{
+          block_number: block_number,
+          to_address_hash: to_address_hash,
+          from_address_hash: from_address_hash,
+          input: data,
+          gas: gas,
+          gas_price: gas_price,
+          value: value
+        } = transaction
+      ) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    req =
+      EthereumJSONRPCTransaction.eth_call_request(
+        0,
+        block_number,
+        data,
+        to_address_hash,
+        from_address_hash,
+        Decimal.to_integer(gas),
+        Wei.hex_format(gas_price),
+        Wei.hex_format(value)
+      )
+
+    data =
+      case EthereumJSONRPC.json_rpc(req, json_rpc_named_arguments) do
+        {:error, %{data: data}} ->
+          data
+
+        _ ->
+          ""
+      end
+
+    revert_reason_parts = String.split(data, "revert: ")
+
+    formatted_revert_reason =
+      if Enum.count(revert_reason_parts) > 1 do
+        Enum.at(revert_reason_parts, 1)
+      else
+        data
+      end
+
+    if byte_size(formatted_revert_reason) > 0 do
+      transaction
+      |> Changeset.change(%{revert_reason: formatted_revert_reason})
+      |> Repo.update()
+    end
+
+    formatted_revert_reason
+  end
+
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
   `unit`.
@@ -4271,6 +4337,129 @@ defmodule Explorer.Chain do
       :ignore ->
         :ignore
     end
+  end
+
+  def combine_proxy_implementation_abi(proxy_address_hash, abi) when not is_nil(abi) do
+    implementation_abi = get_implementation_abi_from_proxy(proxy_address_hash, abi)
+
+    if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
+  end
+
+  def combine_proxy_implementation_abi(_, abi) when is_nil(abi) do
+    []
+  end
+
+  def is_proxy_contract?(abi) when not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation"
+      end)
+
+    if implementation_method_abi, do: true, else: false
+  end
+
+  def is_proxy_contract?(abi) when is_nil(abi) do
+    false
+  end
+
+  def get_implementation_address_hash(proxy_address_hash, abi)
+      when not is_nil(proxy_address_hash) and not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation"
+      end)
+
+    implementation_method_abi_state_mutability = Map.get(implementation_method_abi, "stateMutability")
+    is_eip1967 = if implementation_method_abi_state_mutability == "nonpayable", do: true, else: false
+
+    if is_eip1967 do
+      json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+      # https://eips.ethereum.org/EIPS/eip-1967
+      eip_1967_implementation_storage_pointer = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+
+      {:ok, implementation_address} =
+        Contract.eth_get_storage_at_request(
+          proxy_address_hash,
+          eip_1967_implementation_storage_pointer,
+          nil,
+          json_rpc_named_arguments
+        )
+
+      if String.length(implementation_address) > 42 do
+        "0x" <> String.slice(implementation_address, -40, 40)
+      else
+        implementation_address
+      end
+    else
+      implementation_address =
+        case Reader.query_contract(proxy_address_hash, abi, %{
+               "implementation" => []
+             }) do
+          %{"implementation" => {:ok, [result]}} -> result
+          _ -> nil
+        end
+
+      if implementation_address do
+        "0x" <> Base.encode16(implementation_address, case: :lower)
+      else
+        nil
+      end
+    end
+  end
+
+  def get_implementation_address_hash(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
+    nil
+  end
+
+  def get_implementation_abi(implementation_address_hash_string) when not is_nil(implementation_address_hash_string) do
+    case Chain.string_to_address_hash(implementation_address_hash_string) do
+      {:ok, implementation_address_hash} ->
+        implementation_smart_contract =
+          implementation_address_hash
+          |> Chain.address_hash_to_smart_contract()
+
+        if implementation_smart_contract do
+          implementation_smart_contract
+          |> Map.get(:abi)
+        else
+          []
+        end
+
+      _ ->
+        []
+    end
+  end
+
+  def get_implementation_abi(implementation_address_hash_string) when is_nil(implementation_address_hash_string) do
+    []
+  end
+
+  def get_implementation_abi_from_proxy(proxy_address_hash, abi)
+      when not is_nil(proxy_address_hash) and not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation"
+      end)
+
+    if implementation_method_abi do
+      implementation_address_hash_string = get_implementation_address_hash(proxy_address_hash, abi)
+
+      if implementation_address_hash_string do
+        get_implementation_abi(implementation_address_hash_string)
+      else
+        []
+      end
+    else
+      []
+    end
+  end
+
+  def get_implementation_abi_from_proxy(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
+    []
   end
 
   defp format_tx_first_trace(first_trace, block_hash, json_rpc_named_arguments) do

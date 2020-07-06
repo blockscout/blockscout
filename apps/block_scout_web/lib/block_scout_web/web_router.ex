@@ -126,6 +126,27 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
+        "/read_proxy",
+        AddressReadProxyController,
+        only: [:index, :show],
+        as: :read_proxy
+      )
+
+      resources(
+        "/write_contract",
+        AddressWriteContractController,
+        only: [:index, :show],
+        as: :write_contract
+      )
+
+      resources(
+        "/write_proxy",
+        AddressWriteProxyController,
+        only: [:index, :show],
+        as: :write_proxy
+      )
+
+      resources(
         "/token_transfers",
         AddressTokenTransferController,
         only: [:index],
