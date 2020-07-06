@@ -1229,14 +1229,14 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:145
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:162
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:164
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:181
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:139
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:143
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:158
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:162
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
