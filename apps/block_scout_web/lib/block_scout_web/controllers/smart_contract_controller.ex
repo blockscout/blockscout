@@ -14,16 +14,24 @@ defmodule BlockScoutWeb.SmartContractController do
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true) do
+      implementation_address_hash_string =
+        if contract_type == "proxy" do
+          Chain.get_implementation_address_hash(address.hash, address.smart_contract.abi) ||
+            "0x0000000000000000000000000000000000000000"
+        else
+          "0x0000000000000000000000000000000000000000"
+        end
+
       functions =
         if action == "write" do
           if contract_type == "proxy" do
-            Writer.write_functions_proxy(address_hash)
+            Writer.write_functions_proxy(implementation_address_hash_string)
           else
             Writer.write_functions(address_hash)
           end
         else
           if contract_type == "proxy" do
-            Reader.read_only_functions_proxy(address_hash)
+            Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string)
           else
             Reader.read_only_functions(address_hash)
           end
@@ -33,16 +41,12 @@ defmodule BlockScoutWeb.SmartContractController do
 
       implementation_abi =
         if contract_type == "proxy" do
-          address.hash
-          |> Chain.get_implementation_abi_from_proxy(address.smart_contract.abi)
+          implementation_address_hash_string
+          |> Chain.get_implementation_abi()
           |> Poison.encode!()
         else
           []
         end
-
-      implementation_address_hash_string =
-        Chain.get_implementation_address_hash(address.hash, address.smart_contract.abi) ||
-          "0x0000000000000000000000000000000000000000"
 
       conn
       |> put_status(200)
