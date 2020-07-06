@@ -95,6 +95,9 @@
       @view_module != Elixir.BlockScoutWeb.AddressContractView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView &&
       @view_module != Elixir.BlockScoutWeb.AddressReadContractView &&
+      @view_module != Elixir.BlockScoutWeb.AddressReadProxyView &&
+      @view_module != Elixir.BlockScoutWeb.AddressWriteContractView &&
+      @view_module != Elixir.BlockScoutWeb.AddressWriteProxyView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.TransferView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.ReadContractView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.HolderView &&
