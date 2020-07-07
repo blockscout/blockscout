@@ -17,12 +17,7 @@ defmodule BlockScoutWeb.LayoutView do
     },
     %{
       title: "xDai Chain",
-      url: "https://blockscout.com/poa/dai"
-    },
-    %{
-      title: "Kovan Testnet",
-      url: "https://blockscout.com/eth/kovan",
-      test_net?: true
+      url: "https://blockscout.com/poa/xdai"
     },
     %{
       title: "Ethereum Classic",
