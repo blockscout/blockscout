@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   @tabs ["token_transfers", "token_holders", "read_contract", "inventory"]
 
+  @honey_token "0x71850b7e9ee3f13ab46d67167341e4bdc905eef9"
+
   def decimals?(%Token{decimals: nil}), do: false
   def decimals?(%Token{decimals: _}), do: true
 
@@ -63,6 +65,32 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   def bricks_token?(contract_address) do
     reddit_token?(contract_address, :bricks_token_addresses)
+  end
+
+  def custom_token?(contract_address) do
+    contract_address_lower = "0x" <> Base.encode16(contract_address.bytes, case: :lower)
+
+    case contract_address_lower do
+      @honey_token -> true
+      _ -> false
+    end
+  end
+
+  def honey_token?(contract_address) do
+    contract_address_lower = "0x" <> Base.encode16(contract_address.bytes, case: :lower)
+
+    case contract_address_lower do
+      @honey_token -> true
+      _ -> false
+    end
+  end
+
+  def custom_token_icon(contract_address) do
+    contract_address_lower = "0x" <> Base.encode16(contract_address.bytes, case: :lower)
+
+    case contract_address_lower do
+      _ -> ""
+    end
   end
 
   defp reddit_token?(contract_address, env_var) do
