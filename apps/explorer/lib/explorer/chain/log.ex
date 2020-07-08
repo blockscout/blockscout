@@ -148,6 +148,25 @@ defmodule Explorer.Chain.Log do
     end
   end
 
+  def decode(log, transaction, %Address{hash: address_hash}) do
+    address_options = [
+      necessity_by_association: %{
+        :smart_contract => :optional
+      }
+    ]
+
+    with {:ok, %{smart_contract: %{abi: abi}}} <- Chain.find_contract_address(address_hash, address_options, true) do
+      full_abi = Chain.combine_proxy_implementation_abi(address_hash, abi)
+
+      with {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction),
+           identifier <- Base.encode16(selector.method_id, case: :lower),
+           text <- function_call(selector.function, mapping),
+           do: {:ok, identifier, text, mapping}
+    end
+  end
+
+  def decode(_log, _transaction, nil), do: {:error, :no_to_address}
+
   defp find_candidates(method_id, log, transaction) do
     candidates_query =
       from(
