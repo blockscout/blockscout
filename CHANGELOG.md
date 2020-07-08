@@ -4,6 +4,7 @@
 - [#3184](https://github.com/poanetwork/blockscout/pull/3184) - Apps navbar menu item
 
 ### Fixes
+- [#3185](https://github.com/poanetwork/blockscout/pull/3185) - Transaction page: decoding logs from nested contracts calls
 - [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix permanent fetching tokens...  when read/write proxy tab is active
 - [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
 
