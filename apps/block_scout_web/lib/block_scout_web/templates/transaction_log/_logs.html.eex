@@ -1,5 +1,5 @@
 <div data-test="transaction_log" class="tile tile-muted">
-  <% decoded_result = decode(@log, @transaction) %>
+  <% decoded_result = decode(@log, @transaction, @log.address) %>
   <%= case decoded_result do %>
     <%= {:error, :contract_not_verified, _cadidates} -> %>
       <div class="alert alert-info">
