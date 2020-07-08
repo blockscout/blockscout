@@ -10,6 +10,9 @@
             <%= if bricks_token?(@token.contract_address_hash) do %>
               <img src="/images/icons/bricks.png" height="18px"  width="18px" class="reddit-token" />
             <% end %>
+            <%= if honey_token?(@token.contract_address_hash) do %>
+              <span role="img">🐝</span>
+            <% end %>
             <%= if token_name?(@token) do %>
               <%= @token.name %>
             <% else %>
