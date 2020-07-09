@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.TransactionLogView do
 
   alias Explorer.Chain.Log
 
-  def decode(log, transaction, address) do
-    Log.decode(log, transaction, address)
+  def decode(log, transaction) do
+    Log.decode(log, transaction)
   end
 end
