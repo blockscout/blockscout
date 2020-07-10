@@ -50,17 +50,19 @@
             </tr>
           </table>
           <div class="table-responsive text-center">
-            <table style="color: black;" summary="<%= gettext "Log Data" %>" class="table thead-light table-bordered">
+            <table style="color: black;width: 100%;table-layout: fixed;" summary="<%= gettext "Log Data" %>" class="table thead-light table-bordered">
               <tr>
-                <th scope="col"></th>
-                <th scope="col"><%= gettext "Name" %></th>
-                <th scope="col"><%= gettext "Type" %></th>
-                <th scope="col"><%= gettext "Indexed?" %></th>
+                <th scope="col" style="width: 100px;"><%= gettext "Name" %></th>
+                <th scope="col" style="width: 100px;"><%= gettext "Type" %></th>
+                <th scope="col" style="width: 75px;"><%= gettext "Indexed?" %></th>
                 <th scope="col"><%= gettext "Data" %></th>
               <tr>
             <%= for {name, type, indexed?, value} <- mapping do %>
                 <tr>
-                  <th scope="row">
+                  <td><%= name %></td>
+                  <td><%= type %></td>
+                  <td><%= indexed? %></td>
+                  <td align=left>
                     <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
                       <% :error -> %>
                         <%= nil %>
@@ -71,18 +73,14 @@
                           data-clipboard-text="<%= copy_text %>"
                           data-placement="top"
                           data-toggle="tooltip"
+                          style="float: left;height:20px"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="25" height="25">
                             <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
                           </svg>
                         </span>
                     <% end %>
-                  </th>
-                  <td><%= name %></td>
-                  <td><%= type %></td>
-                  <td><%= indexed? %></td>
-                  <td>
-                    <pre class="transaction-input-text tile"><code><%= BlockScoutWeb.ABIEncodedValueView.value_html(type, value) %></code></pre>
+                    <pre class="transaction-input-text pre-wrap" style="display: inline"><code><%= BlockScoutWeb.ABIEncodedValueView.value_html(type, value) %></code></pre>
                   </td>
                 </tr>
             <% end %>
@@ -194,4 +192,5 @@
       </div>
     </dd>
   </dl>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/decoded-view-data-toggle.js") %>"></script>
 </div>
