@@ -39,7 +39,12 @@ defmodule BlockScoutWeb.AddressCeloView do
     units = member.units.value
     total_units = member.group.total_units.value
     total_active = member.group.active_votes.value
-    Decimal.div_int(Decimal.mult(units, total_active), total_units)
+
+    if Decimal.eq?(0, total_units) do
+      Decimal.new(0)
+    else
+      Decimal.div_int(Decimal.mult(units, total_active), total_units)
+    end
   end
 
   def format_active_votes(member) do
