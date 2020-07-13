@@ -256,7 +256,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           round: fragment("EXCLUDED.round"),
           # Don't update `hash` as it is used for the conflict target
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", block.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", block.updated_at)
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", block.updated_at),
+          update_count: block.update_count + 1
         ]
       ],
       where:

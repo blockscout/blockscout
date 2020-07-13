@@ -59,6 +59,7 @@ defmodule Explorer.Chain.Block do
           number: block_number(),
           parent_hash: Hash.t(),
           size: non_neg_integer(),
+          update_count: non_neg_integer(),
           timestamp: DateTime.t(),
           total_difficulty: difficulty(),
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
@@ -79,6 +80,7 @@ defmodule Explorer.Chain.Block do
     field(:nonce, Hash.Nonce)
     field(:number, :integer)
     field(:size, :integer)
+    field(:update_count, :integer)
     field(:timestamp, :utc_datetime_usec)
     field(:total_difficulty, :decimal)
     field(:refetch_needed, :boolean)

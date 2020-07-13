@@ -75,9 +75,15 @@
        </dd>
       </dl>
       <dl class="row">
+      <dt class="col-sm-3 text-muted">Nonvoting Locked Gold</dt>
+       <dd class="col-sm-9">
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How much cGLD has the account deposited"><%= format_according_to_decimals(@address.celo_account.nonvoting_locked_gold.value, Decimal.new(18)) %> cGLD</span>
+       </dd>
+      </dl>
+      <dl class="row">
       <dt class="col-sm-3 text-muted">Locked Gold</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How much cGLD has the account deposited"><%= format_according_to_decimals(@address.celo_account.locked_gold.value, Decimal.new(18)) %> cGLD (<%= format_according_to_decimals(@address.celo_account.nonvoting_locked_gold.value, Decimal.new(18)) %> non-voting cGLD)</span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How much cGLD has the account deposited"><%= compute_locked_gold(@address) %> cGLD</span>
        </dd>
       </dl>
       <%= if @address.celo_validator != nil do %>
@@ -164,7 +170,7 @@
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All voters of this group">
        <ul>
        <%= for member <- sort_voters(@address.celo_voters) do %>
-         <li><%= format_according_to_decimals(member.total.value, Decimal.new(18)) %> cGLD:
+         <li><%= format_votes(member) %> cGLD:
          <%= if member.group_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:voters, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
             end %></li>
@@ -181,7 +187,7 @@
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Groups voted by this account">
        <ul>
        <%= for member <- sort_voters(@address.celo_voted) do %>
-         <li><%= format_according_to_decimals(member.total.value, Decimal.new(18)) %> cGLD:
+         <li><%= format_votes(member) %> cGLD:
          <%= if member.group_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:voted, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
             end %></li>

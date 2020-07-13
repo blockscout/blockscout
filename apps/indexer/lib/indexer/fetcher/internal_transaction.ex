@@ -119,8 +119,19 @@ defmodule Indexer.Fetcher.InternalTransaction do
           error_count: unique_numbers_count
         )
 
+        errored =
+          reason
+          |> Enum.map(fn
+            %{data: %{block_number: num}} -> num
+            %{data: %{"blockNumber" => num}} -> num
+          end)
+
+        result = Chain.bump_pending_blocks(errored)
+
+        Logger.error(fn -> ["Bumping", inspect(result)] end)
         # re-queue the de-duped entries
-        {:retry, unique_numbers}
+        # {:retry, unique_numbers}
+        :ok
 
       :ignore ->
         :ok

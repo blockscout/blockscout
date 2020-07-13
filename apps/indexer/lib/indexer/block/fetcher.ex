@@ -457,7 +457,7 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_celo_validator_groups(_), do: :ok
 
-  defp async_import_celo_voter_rewards(%{celo_voter_rewards: accounts}) do
+  def async_import_celo_voter_rewards(%{celo_voter_rewards: accounts}) do
     CeloVoterRewards.async_fetch(accounts)
   end
 
