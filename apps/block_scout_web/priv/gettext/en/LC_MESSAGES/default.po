@@ -1933,3 +1933,8 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:112
 msgid "Apps"
 msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:15
+msgid "Copy Raw Trace"
+msgstr ""

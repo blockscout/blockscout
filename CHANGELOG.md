@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3193](https://github.com/poanetwork/blockscout/pull/3193) - Raw trace copy button
 - [#3184](https://github.com/poanetwork/blockscout/pull/3184) - Apps navbar menu item
 - [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
 
