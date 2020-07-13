@@ -4,8 +4,8 @@ defmodule Indexer.Transform.Blocks.Celo do
   """
 
   alias Explorer.Celo.AccountReader
-  alias Indexer.Transform.Blocks
   alias ExRLP
+  alias Indexer.Transform.Blocks
 
   @behaviour Blocks
 
