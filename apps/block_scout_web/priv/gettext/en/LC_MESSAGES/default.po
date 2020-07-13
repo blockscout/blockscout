@@ -232,7 +232,7 @@ msgid "Block Pending"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:146
+#: lib/block_scout_web/templates/block/overview.html.eex:157
 msgid "Block Rewards"
 msgstr ""
 
@@ -602,7 +602,7 @@ msgid "Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:58
+#: lib/block_scout_web/templates/block/overview.html.eex:66
 msgid "Difficulty"
 msgstr ""
 
@@ -654,7 +654,7 @@ msgid "Emission Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:81
+#: lib/block_scout_web/views/block_view.ex:89
 msgid "Emission Reward"
 msgstr ""
 
@@ -773,15 +773,15 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:68
-#: lib/block_scout_web/templates/block/overview.html.eex:108
-#: lib/block_scout_web/templates/block/overview.html.eex:161
+#: lib/block_scout_web/templates/block/overview.html.eex:119
+#: lib/block_scout_web/templates/block/overview.html.eex:172
 msgid "Gas Limit"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:73
-#: lib/block_scout_web/templates/block/overview.html.eex:101
-#: lib/block_scout_web/templates/block/overview.html.eex:153
+#: lib/block_scout_web/templates/block/overview.html.eex:112
+#: lib/block_scout_web/templates/block/overview.html.eex:164
 msgid "Gas Used"
 msgstr ""
 
@@ -1021,13 +1021,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:39
-#: lib/block_scout_web/templates/block/overview.html.eex:124
+#: lib/block_scout_web/templates/block/overview.html.eex:135
 #: lib/block_scout_web/templates/chain/_block.html.eex:15
 msgid "Miner"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:77
+#: lib/block_scout_web/views/block_view.ex:85
 msgid "Miner Reward"
 msgstr ""
 
@@ -1082,7 +1082,7 @@ msgid "No"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:73
+#: lib/block_scout_web/templates/block/overview.html.eex:83
 #: lib/block_scout_web/templates/transaction/overview.html.eex:80
 msgid "Nonce"
 msgstr ""
@@ -1150,7 +1150,7 @@ msgid "Pending Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:84
+#: lib/block_scout_web/templates/block/overview.html.eex:95
 msgid "Position %{index}"
 msgstr ""
 
@@ -1580,7 +1580,7 @@ msgid "Topics"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:67
+#: lib/block_scout_web/templates/block/overview.html.eex:76
 msgid "Total Difficulty"
 msgstr ""
 
@@ -1680,12 +1680,12 @@ msgid "UTF-8"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:85
+#: lib/block_scout_web/views/block_view.ex:93
 msgid "Uncle Reward"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:80
+#: lib/block_scout_web/templates/block/overview.html.eex:91
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:38
 msgid "Uncles"
 msgstr ""
@@ -1962,4 +1962,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:40
 msgid "Implementation Name:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/overview.html.eex:58
+msgid "Round number"
 msgstr ""

@@ -195,7 +195,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                "difficulty" => "0x0",
                "gasLimit" => "0x0",
                "gasUsed" => "0x0",
-               "extraData" => "0x0",
+               "extraData" => "0x",
                "logsBloom" => "0x0",
                "miner" => miner_hash_data,
                "parentHash" =>
@@ -305,7 +305,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                "difficulty" => "0x0",
                "gasLimit" => "0x0",
                "gasUsed" => "0x0",
-               "extraData" => "0x0",
+               "extraData" => "0x",
                "logsBloom" => "0x0",
                "miner" => miner_hash_data,
                "parentHash" =>
@@ -412,7 +412,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                "difficulty" => "0x0",
                "gasLimit" => "0x0",
                "gasUsed" => "0x0",
-               "extraData" => "0x0",
+               "extraData" => "0x",
                "logsBloom" => "0x0",
                "miner" => miner_hash_data,
                "parentHash" =>
