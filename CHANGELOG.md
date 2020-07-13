@@ -1,9 +1,33 @@
 ## Current
 
 ### Features
+- [#3184](https://github.com/poanetwork/blockscout/pull/3184) - Apps navbar menu item
 - [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
 
 ### Fixes
+- [#3190](https://github.com/poanetwork/blockscout/pull/3190) - Contract log/method decoded view improvements: eliminate horizontal scroll, remove excess borders, whitespaces
+- [#3185](https://github.com/poanetwork/blockscout/pull/3185) - Transaction page: decoding logs from nested contracts calls
+- [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix permanent fetching tokens...  when read/write proxy tab is active
+- [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
+
+### Chore
+- [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Return correct status in verify API endpoint if contract verified
+- [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Remove Kovan from the list of default chains
+
+
+## 3.3.0-beta
+
+### Features
+- [#3174](https://github.com/poanetwork/blockscout/pull/3174) - EIP-1967 support: transparent proxy pattern
+- [#3173](https://github.com/poanetwork/blockscout/pull/3173) - Display implementation address at read/write proxy tabs
+- [#3171](https://github.com/poanetwork/blockscout/pull/3171) - Import accounts/contracts/balances from Geth genesis.json
+- [#3161](https://github.com/poanetwork/blockscout/pull/3161) - Write proxy contracts feature
+- [#3160](https://github.com/poanetwork/blockscout/pull/3160) - Write contracts feature
+- [#3157](https://github.com/poanetwork/blockscout/pull/3157) - Read methods of implementation on proxy contract
+
+### Fixes
+- [#3168](https://github.com/poanetwork/blockscout/pull/3168) - Eliminate internal server error at /accounts page with token-bridge type of supply and inexistent bridge contracts
+- [#3169](https://github.com/poanetwork/blockscout/pull/3169) - Fix for verification of contracts defined in genesis block
 
 ### Chore
 

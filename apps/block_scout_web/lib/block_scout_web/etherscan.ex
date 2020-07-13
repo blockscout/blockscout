@@ -2100,9 +2100,9 @@ defmodule BlockScoutWeb.Etherscan do
     <div class='tab-pane fade show active'>
     <div class="tile tile-muted p-1">
     <div class="m-2">
-    curl -d '{"addressHash":"0xd6984e092b51337032cf0300c7291e4839be37e1","compilerVersion":"v0.5.4+commit.9549d8ff",
-    "contractSourceCode":"pragma solidity ^0.5.4;\n","name":"Test","optimization":false}'
-    -H "Content-Type: application/json" -X POST  "https://blockscout.com/eth/kovan/api?module=contract&action=verify"
+    curl -d '{"addressHash":"0xc63BB6555C90846afACaC08A0F0Aa5caFCB382a1","compilerVersion":"v0.5.4+commit.9549d8ff",
+    "contractSourceCode":"pragma solidity ^0.5.4; \ncontract Test {\n}","name":"Test","optimization":false}'
+    -H "Content-Type: application/json" -X POST  "https://blockscout.com/poa/sokol/api?module=contract&action=verify"
     </pre>
     </div>
     </div>

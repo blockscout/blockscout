@@ -7,6 +7,7 @@ defmodule Explorer.ChainSpec.GenesisData do
 
   require Logger
 
+  alias Explorer.ChainSpec.Geth.Importer, as: GethImporter
   alias Explorer.ChainSpec.Parity.Importer
   alias HTTPoison.Response
 
@@ -58,11 +59,24 @@ defmodule Explorer.ChainSpec.GenesisData do
     path = Application.get_env(:explorer, __MODULE__)[:chain_spec_path]
 
     if path do
+      json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+      variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
+
       Task.Supervisor.async_nolink(Explorer.GenesisDataTaskSupervisor, fn ->
         case fetch_spec(path) do
           {:ok, chain_spec} ->
-            Importer.import_emission_rewards(chain_spec)
-            {:ok, _} = Importer.import_genesis_accounts(chain_spec)
+            case variant do
+              EthereumJSONRPC.Parity ->
+                Importer.import_emission_rewards(chain_spec)
+                {:ok, _} = Importer.import_genesis_accounts(chain_spec)
+
+              EthereumJSONRPC.Geth ->
+                {:ok, _} = GethImporter.import_genesis_accounts(chain_spec)
+
+              _ ->
+                Importer.import_emission_rewards(chain_spec)
+                {:ok, _} = Importer.import_genesis_accounts(chain_spec)
+            end
 
           {:error, reason} ->
             Logger.warn(fn -> "Failed to fetch genesis data. #{inspect(reason)}" end)
