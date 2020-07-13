@@ -2,6 +2,7 @@
 
 ### Features
 - [#3184](https://github.com/poanetwork/blockscout/pull/3184) - Apps navbar menu item
+- [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
 
 ### Fixes
 - [#3190](https://github.com/poanetwork/blockscout/pull/3190) - Contract log/method decoded view improvements: eliminate horizontal scroll, remove excess borders, whitespaces
