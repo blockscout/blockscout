@@ -119,25 +119,35 @@ defmodule Explorer.Chain.Log do
   @doc """
   Decode transaction log data.
   """
-  def decode(_log, %Transaction{to_address: nil}), do: {:error, :no_to_address}
-
-  def decode(log, transaction = %Transaction{to_address: %{smart_contract: %{abi: abi, address_hash: address_hash}}})
-      when not is_nil(abi) do
-    full_abi = Chain.combine_proxy_implementation_abi(address_hash, abi)
-
-    with {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction),
-         identifier <- Base.encode16(selector.method_id, case: :lower),
-         text <- function_call(selector.function, mapping),
-         do: {:ok, identifier, text, mapping}
-  end
 
   def decode(log, transaction) do
+    address_options = [
+      necessity_by_association: %{
+        :smart_contract => :optional
+      }
+    ]
+
+    case Chain.find_contract_address(log.address_hash, address_options, true) do
+      {:ok, %{smart_contract: %{abi: abi}}} ->
+        full_abi = Chain.combine_proxy_implementation_abi(log.address_hash, abi)
+
+        with {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction),
+             identifier <- Base.encode16(selector.method_id, case: :lower),
+             text <- function_call(selector.function, mapping),
+             do: {:ok, identifier, text, mapping}
+
+      _ ->
+        find_candidates(log, transaction)
+    end
+  end
+
+  defp find_candidates(log, transaction) do
     case log.first_topic do
       "0x" <> hex_part ->
         case Integer.parse(hex_part, 16) do
           {number, ""} ->
             <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
-            find_candidates(method_id, log, transaction)
+            find_candidates_query(method_id, log, transaction)
 
           _ ->
             {:error, :could_not_decode}
@@ -148,26 +158,7 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  def decode(log, transaction, %Address{hash: address_hash}) do
-    address_options = [
-      necessity_by_association: %{
-        :smart_contract => :optional
-      }
-    ]
-
-    with {:ok, %{smart_contract: %{abi: abi}}} <- Chain.find_contract_address(address_hash, address_options, true) do
-      full_abi = Chain.combine_proxy_implementation_abi(address_hash, abi)
-
-      with {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction),
-           identifier <- Base.encode16(selector.method_id, case: :lower),
-           text <- function_call(selector.function, mapping),
-           do: {:ok, identifier, text, mapping}
-    end
-  end
-
-  def decode(_log, _transaction, nil), do: {:error, :no_to_address}
-
-  defp find_candidates(method_id, log, transaction) do
+  defp find_candidates_query(method_id, log, transaction) do
     candidates_query =
       from(
         contract_method in ContractMethod,
