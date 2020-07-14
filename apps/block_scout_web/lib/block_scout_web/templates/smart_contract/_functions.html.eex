@@ -1,3 +1,11 @@
+<%= if @contract_type == "proxy" do %>
+<div>
+    <h2 class="implementation-title">Implementation address: </h2><h3  class="implementation-value"><%= link(
+                  @implementation_address,
+                  to: address_path(@conn, :show, @implementation_address)
+                ) %></h3>
+</div>
+<% end %>
 <%= for {function, counter} <- Enum.with_index(@read_only_functions, 1) do %>
   <div class="d-flex py-2 border-bottom" data-function>
     <div class="py-2 pr-2 text-nowrap">
@@ -8,51 +16,69 @@
       &#8594;
     </div>
 
-    <%= if queryable?(function["inputs"]) do %>
+    <%= if queryable?(function["inputs"]) || writeable?(function) do %>
       <div style="width: 100%; overflow: hidden;">
-        <form class="form-inline" data-function-form data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>">
+        <%=
+          for status <- ["error", "warning", "success", "question"] do
+            render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status
+          end
+        %>
+        <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
+        <form class="form-inline" data-function-form data-action="<%= if writeable?(function), do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
 
-          <%= for input <- function["inputs"] do %>
+          <%= if queryable?(function["inputs"]) do %>
+            <%= for input <- function["inputs"] do %>
+              <div class="form-group pr-2">
+                <input type="text" name="function_input" class="form-control form-control-sm address-input-sm mt-2" placeholder='<%= input["name"] %>(<%= input["type"] %>)'  />
+              </div>
+            <% end %>
+          <% end %>
+
+          <%= if payable?(function) do %>
             <div class="form-group pr-2">
-              <input type="text" name="function_input" class="form-control form-control-sm address-input-sm mt-2" placeholder='<%= input["name"] %>(<%= input["type"] %>)'  />
+              <input type="text" name="function_input" tx-value class="form-control form-control-sm address-input-sm mt-2" placeholder='value(<%= gettext("ETH")%>)'  />
             </div>
           <% end %>
 
-          <input type="submit" value='<%= gettext("Query")%>' class="button btn-line button-xs py-0 mt-2" style="padding: 6px 8px!important;height: 26px;font-size: 11px;" />
+          <input type="submit" value='<%= if writeable?(function), do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 mt-2" style="padding: 6px 8px!important;height: 26px;font-size: 11px;" />
         </form>
 
-        <div class='p-2 text-muted <%= if (queryable?(function["inputs"]) == true), do: "w-100" %>'>
-          <%= if (queryable?(function["inputs"])), do: raw "&#8627;" %>
+        <%= if outputs?(function["outputs"]) do %>
+          <div class='p-2 text-muted <%= if (queryable?(function["inputs"]) == true), do: "w-100" %>'>
+            <%= if (queryable?(function["inputs"])), do: raw "&#8627;" %>
 
-          <%= for output <- function["outputs"] do %>
-            <%= output["type"] %>
-          <% end %>
-        </div>
+            <%= for output <- function["outputs"] do %>
+              <%= output["type"] %>
+            <% end %>
+          </div>
+        <% end %>
 
         <div data-function-response></div>
       </div>
     <% else %>
       <span class="py-2">
-        <%= for output <- function["outputs"] do %>
-          <%= if address?(output["type"]) do %>
-            <%= link(
-               output["value"],
-               to: address_path(@conn, :show, output["value"])
-             ) %>
-          <% else %>
-              <%= if output["type"] == "uint256" do %>
-                <div data-wei-ether-converter>
-                  <span data-conversion-unit><%= output["value"] %></span>
-                  <span class="py-2 px-2">
-                    <input class="wei-ether" type="checkbox" autocomplete="off">
-                    <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
-                    <span class="d-none" data-conversion-text-eth><%= gettext("ETH")%></span>
-                  </span>
-                </div>
-              <% else %>
-                <%= values(output["value"], output["type"]) %>
-              <% end %>
+        <%= if outputs?(function["outputs"]) do %>
+          <%= for output <- function["outputs"] do %>
+            <%= if address?(output["type"]) do %>
+              <%= link(
+                output["value"],
+                to: address_path(@conn, :show, output["value"])
+              ) %>
+            <% else %>
+                <%= if output["type"] == "uint256" do %>
+                  <div data-wei-ether-converter>
+                    <span data-conversion-unit><%= output["value"] %></span>
+                    <span class="py-2 px-2">
+                      <input class="wei-ether" type="checkbox" autocomplete="off">
+                      <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
+                      <span class="d-none" data-conversion-text-eth><%= gettext("ETH")%></span>
+                    </span>
+                  </div>
+                <% else %>
+                  <%= values(output["value"], output["type"]) %>
+                <% end %>
+            <% end %>
           <% end %>
         <% end %>
       </span>

@@ -17,6 +17,20 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       render(conn, :verify, %{contract: address})
     else
+      {:publish,
+       {:error,
+        %Ecto.Changeset{
+          errors: [
+            address_hash:
+              {"has already been taken",
+               [
+                 constraint: :unique,
+                 constraint_name: "smart_contracts_address_hash_index"
+               ]}
+          ]
+        }}} ->
+        render(conn, :error, error: "Smart-contract already verified.")
+
       {:publish, _} ->
         render(conn, :error, error: "Something went wrong while publishing the contract.")
 

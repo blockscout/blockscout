@@ -19,17 +19,18 @@
     "eslint": "eslint js/**"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^5.1.0-4",
+    "@fortawesome/fontawesome-free": "5.1.0-4",
     "awesomplete": "^1.1.5",
     "bignumber.js": "^9.0.0",
     "bootstrap": "^4.3.1",
     "chart.js": "^2.9.3",
     "clipboard": "^2.0.4",
+    "eth-net-props": "^1.0.33",
     "highlight.js": "^9.16.2",
     "highlightjs-solidity": "^1.0.8",
     "humps": "^2.0.1",
     "jquery": "^3.4.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "moment": "^2.24.0",
     "nanomorph": "^5.4.0",
     "numeral": "^2.0.6",
@@ -39,7 +40,8 @@
     "popper.js": "^1.14.7",
     "reduce-reducers": "^0.4.3",
     "redux": "^4.0.5",
-    "urijs": "^1.19.2"
+    "urijs": "^1.19.2",
+    "web3": "^1.2.9"
   },
   "devDependencies": {
     "@babel/core": "^7.7.2",

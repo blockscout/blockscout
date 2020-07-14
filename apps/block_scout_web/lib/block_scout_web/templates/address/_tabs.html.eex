@@ -64,4 +64,25 @@
         class: "card-tab #{tab_status("read_contract", @conn.request_path)}")
         %>
   <% end %>
+  <%= if smart_contract_is_proxy?(@address) do %>
+    <%= link(
+        gettext("Read Proxy"),
+        to: address_read_proxy_path(@conn, :index, @address.hash),
+        class: "card-tab #{tab_status("read_proxy", @conn.request_path)}")
+        %>
+  <% end %>
+  <%= if smart_contract_with_write_functions?(@address) do %>
+    <%= link(
+        gettext("Write Contract"),
+        to: address_write_contract_path(@conn, :index, @address.hash),
+        class: "card-tab #{tab_status("write_contract", @conn.request_path)}")
+        %>
+  <% end %>
+  <%= if smart_contract_with_write_functions?(@address) && smart_contract_is_proxy?(@address)  do %>
+    <%= link(
+        gettext("Write Proxy"),
+        to: address_write_proxy_path(@conn, :index, @address.hash),
+        class: "card-tab #{tab_status("write_proxy", @conn.request_path)}")
+        %>
+  <% end %>
 </div>

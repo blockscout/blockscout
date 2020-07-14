@@ -71,6 +71,29 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     balance(conn, params, :balancemulti)
   end
 
+  def pendingtxlist(conn, params) do
+    options = optional_params(params)
+
+    with {:address_param, {:ok, address_param}} <- fetch_address(params),
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:ok, transactions} <- list_pending_transactions(address_hash, options) do
+      render(conn, :pendingtxlist, %{transactions: transactions})
+    else
+      {:address_param, :error} ->
+        conn
+        |> put_status(200)
+        |> render(:error, error: "Query parameter 'address' is required")
+
+      {:format, :error} ->
+        conn
+        |> put_status(200)
+        |> render(:error, error: "Invalid address format")
+
+      {:error, :not_found} ->
+        render(conn, :error, error: "No transactions found", data: [])
+    end
+  end
+
   def txlist(conn, params) do
     options = optional_params(params)
 
@@ -454,6 +477,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     case Etherscan.list_transactions(address_hash, options) do
       [] -> {:error, :not_found}
       transactions -> {:ok, transactions}
+    end
+  end
+
+  defp list_pending_transactions(address_hash, options) do
+    case Etherscan.list_pending_transactions(address_hash, options) do
+      [] -> {:error, :not_found}
+      pending_transactions -> {:ok, pending_transactions}
     end
   end
 
