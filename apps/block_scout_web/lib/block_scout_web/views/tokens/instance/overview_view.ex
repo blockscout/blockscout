@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
           instance.metadata["image_url"]
 
         instance.metadata && instance.metadata["image"] ->
-          instance.metadata["image"]
+          retrieve_image(instance.metadata["image"])
 
         instance.metadata && instance.metadata["properties"]["image"]["description"] ->
           instance.metadata["properties"]["image"]["description"]
@@ -85,6 +85,14 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     @tabs
     |> Enum.filter(&tab_active?(&1, request_path))
     |> tab_name()
+  end
+
+  defp retrieve_image(image) when is_map(image) do
+    image["description"]
+  end
+
+  defp retrieve_image(image) do
+    image
   end
 
   defp tab_name(["token_transfers"]), do: gettext("Token Transfers")

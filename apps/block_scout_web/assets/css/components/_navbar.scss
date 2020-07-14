@@ -260,3 +260,18 @@ $navbar-logo-width: auto !default;
     transition: none !important;
   }
 }
+
+.external-link-icon {
+  float: right;
+  margin-top: -1px;
+
+  & {
+    &.active,
+    &:hover,
+    &:focus {
+      path {
+        fill: $header-icon-color-hover;
+      }
+    }
+  }
+}

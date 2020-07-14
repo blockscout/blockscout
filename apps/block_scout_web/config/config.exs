@@ -32,7 +32,9 @@ config :block_scout_web,
   },
   other_networks: System.get_env("SUPPORTED_CHAINS"),
   webapp_url: System.get_env("WEBAPP_URL"),
-  api_url: System.get_env("API_URL")
+  api_url: System.get_env("API_URL"),
+  apps_menu: if(System.get_env("APPS_MENU", "false") == "true", do: true, else: false),
+  external_apps: System.get_env("EXTERNAL_APPS")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
@@ -83,6 +85,10 @@ config :block_scout_web,
 config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
   # days
   history_size: 30
+
+config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
+  # days
+  coin_balance_history_days: System.get_env("COIN_BALANCE_HISTORY_DAYS", "10")
 
 config :ex_cldr,
   default_locale: "en",

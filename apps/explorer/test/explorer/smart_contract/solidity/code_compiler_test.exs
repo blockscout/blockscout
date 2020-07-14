@@ -92,9 +92,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
           )
 
         clean_result = remove_init_data_and_whisper_data(result["bytecode"])
-        expected_result = remove_init_data_and_whisper_data(compiler_test["expected_bytecode"])
+        expected_result = remove_init_data_and_whisper_data(compiler_test["tx_input"])
 
-        assert clean_result == expected_result
+        assert expected_result == clean_result
       end)
     end
 
@@ -166,7 +166,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
       }
       """
 
-      version = "v0.1.3-nightly.2015.9.25+commit.4457170"
+      version = "v0.1.3+commit.028f561d"
 
       response = CodeCompiler.run(name: name, compiler_version: version, code: code, optimize: optimize)
 
