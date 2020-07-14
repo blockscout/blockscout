@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Mixfile do
         plt_add_deps: :transitive,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.9",
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -90,7 +90,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:floki, "~> 0.20.1", only: :test},
       {:flow, "~> 0.12"},
       {:gettext, "~> 0.16.1"},
-      {:httpoison, "~> 1.0"},
+      {:httpoison, "~> 1.6"},
       {:indexer, in_umbrella: true, runtime: false},
       # JSON parser and generator
       {:jason, "~> 1.0"},

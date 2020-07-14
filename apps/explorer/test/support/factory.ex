@@ -16,6 +16,7 @@ defmodule Explorer.Factory do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Address.CoinBalance,
+    Address.CoinBalanceDaily,
     Block,
     ContractMethod,
     Data,
@@ -56,6 +57,13 @@ defmodule Explorer.Factory do
     }
   end
 
+  def unfetched_balance_daily_factory do
+    %CoinBalanceDaily{
+      address_hash: address_hash(),
+      day: Timex.shift(Timex.now(), days: Enum.random(0..100) * -1)
+    }
+  end
+
   def update_balance_value(%CoinBalance{address_hash: address_hash, block_number: block_number}, value) do
     Repo.update_all(
       from(
@@ -71,6 +79,11 @@ defmodule Explorer.Factory do
     |> struct!(value: Enum.random(1..100_000))
   end
 
+  def fetched_balance_daily_factory do
+    unfetched_balance_daily_factory()
+    |> struct!(value: Enum.random(1..100_000))
+  end
+
   def contract_address_factory do
     %Address{
       hash: address_hash(),
@@ -82,6 +95,8 @@ defmodule Explorer.Factory do
     %{
       bytecode:
         "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a72305820f65a3adc1cfb055013d1dc37d0fe98676e2a5963677fa7541a10386d163446680029",
+      tx_input:
+        "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a72305820853a985d0a4b20246785fc2f0357c202faa3db289980a48737180f358f9ddc3c0029",
       name: "SimpleStorage",
       source_code: """
       pragma solidity ^0.4.24;

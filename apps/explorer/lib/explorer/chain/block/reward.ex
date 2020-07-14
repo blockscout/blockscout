@@ -5,11 +5,35 @@ defmodule Explorer.Chain.Block.Reward do
 
   use Explorer.Schema
 
+  alias Explorer.Chain
   alias Explorer.Chain.Block.Reward.AddressType
   alias Explorer.Chain.{Address, Block, Hash, Wei}
   alias Explorer.{PagingOptions, Repo}
+  alias Explorer.SmartContract.Reader
 
   @required_attrs ~w(address_hash address_type block_hash reward)a
+
+  @get_payout_by_mining_abi %{
+    "type" => "function",
+    "stateMutability" => "view",
+    "payable" => false,
+    "outputs" => [%{"type" => "address", "name" => ""}],
+    "name" => "getPayoutByMining",
+    "inputs" => [%{"type" => "address", "name" => ""}],
+    "constant" => true
+  }
+
+  @is_validator_abi %{
+    "type" => "function",
+    "stateMutability" => "view",
+    "payable" => false,
+    "outputs" => [%{"type" => "bool", "name" => ""}],
+    "name" => "isValidator",
+    "inputs" => [%{"type" => "address", "name" => ""}],
+    "constant" => true
+  }
+
+  @empty_address "0x0000000000000000000000000000000000000000"
 
   @typedoc """
   The validation reward given related to a block.
@@ -111,6 +135,83 @@ defmodule Explorer.Chain.Block.Reward do
         else
           Enum.zip(address_rewards, other_rewards)
         end
+    end
+  end
+
+  defp is_validator(mining_key) do
+    validators_contract_address =
+      Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:validators_contract_address]
+
+    if validators_contract_address do
+      is_validator_params = %{"isValidator" => [mining_key.bytes]}
+
+      call_contract(validators_contract_address, @is_validator_abi, is_validator_params)
+    else
+      nil
+    end
+  end
+
+  def get_validator_payout_key_by_mining(mining_key) do
+    is_validator = is_validator(mining_key)
+
+    if is_validator do
+      keys_manager_contract_address =
+        Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:keys_manager_contract_address]
+
+      if keys_manager_contract_address do
+        payout_key =
+          if keys_manager_contract_address do
+            get_payout_by_mining_params = %{"getPayoutByMining" => [mining_key.bytes]}
+
+            payout_key_hash =
+              call_contract(keys_manager_contract_address, @get_payout_by_mining_abi, get_payout_by_mining_params)
+
+            if payout_key_hash == @empty_address do
+              mining_key
+            else
+              {:ok, payout_key} = Chain.string_to_address_hash(payout_key_hash)
+              payout_key
+            end
+          else
+            mining_key
+          end
+
+        %{is_validator: is_validator, payout_key: payout_key}
+      else
+        %{is_validator: is_validator, payout_key: mining_key}
+      end
+    else
+      %{is_validator: is_validator, payout_key: mining_key}
+    end
+  end
+
+  defp call_contract(address, abi, params) do
+    abi = [abi]
+
+    method_name =
+      params
+      |> Enum.map(fn {key, _value} -> key end)
+      |> List.first()
+
+    value =
+      case Reader.query_contract(address, abi, params) do
+        %{^method_name => {:ok, [result]}} -> result
+        _ -> @empty_address
+      end
+
+    type =
+      abi
+      |> Enum.at(0)
+      |> Map.get("outputs", [])
+      |> Enum.at(0)
+      |> Map.get("type", "")
+
+    case type do
+      "address" ->
+        "0x" <> Base.encode16(value, case: :lower)
+
+      _ ->
+        value
     end
   end
 

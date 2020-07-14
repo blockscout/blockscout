@@ -55,12 +55,16 @@
                     class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
                     to: transaction_path(@conn, :index)
                   ) %>
-              <%= link(
-                    gettext("Pending"),
-                    class: "dropdown-item #{tab_status("pending_transactions", @conn.request_path)}",
-                    "data-test": "pending_transactions_link",
-                    to: pending_transaction_path(@conn, :index)
-                  ) %>
+              <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
+              <% variant = Keyword.fetch!(json_rpc_named_arguments, :variant) %>
+              <%= if variant !== EthereumJSONRPC.Besu do %>
+                <%= link(
+                      gettext("Pending"),
+                      class: "dropdown-item #{tab_status("pending_transactions", @conn.request_path)}",
+                      "data-test": "pending_transactions_link",
+                      to: pending_transaction_path(@conn, :index)
+                    ) %>
+              <% end %>
             </div>
           </li>
           <li class="nav-item">
@@ -96,6 +100,25 @@
                     class: "dropdown-item #{tab_status("eth_rpc_api_docs", @conn.request_path)}",
                     to: api_url() <> api_docs_path(@conn, :eth_rpc)
                   ) %>
+            </div>
+          </li>
+        <% end %>
+        <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
+          <li class="nav-item dropdown">
+            <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
+              </span>
+              <%= gettext("Apps") %>
+            </a>
+            <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown"> 
+              <%= for %{url: url, title: title} <- external_apps_list() do %> 
+                  <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %>
+                    <span class="external-link-icon">
+                      <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
+                    </span>
+                  </a>
+              <% end %>
             </div>
           </li>
         <% end %>

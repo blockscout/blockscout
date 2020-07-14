@@ -1,3 +1,4 @@
+# credo:disable-for-this-file
 defmodule EthereumJSONRPC.Parity do
   @moduledoc """
   Ethereum JSONRPC methods that are only supported by [Parity](https://wiki.parity.io/).

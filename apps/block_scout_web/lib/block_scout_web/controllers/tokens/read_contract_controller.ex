@@ -13,6 +13,8 @@ defmodule BlockScoutWeb.Tokens.ReadContractController do
       render(
         conn,
         "index.html",
+        type: :regular,
+        action: :read,
         token: Market.add_price(token),
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)})
       )
