@@ -84,7 +84,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     Import.insert_changes_list(
       repo,
       ordered_changes_list,
-      conflict_target: :hash,
+      conflict_target: [:hash, :inserted_at],
       on_conflict: on_conflict,
       for: Transaction,
       returning: true,
