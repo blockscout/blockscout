@@ -1,12 +1,20 @@
 ## Current
 
 ### Features
+- [#3193](https://github.com/poanetwork/blockscout/pull/3193) - Raw trace copy button
+- [#3184](https://github.com/poanetwork/blockscout/pull/3184) - Apps navbar menu item
+- [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
 
 ### Fixes
--[#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix permanent fetching tokens...  when read/write proxy tab is active
--[#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
+- [#3192](https://github.com/poanetwork/blockscout/pull/3192) - Dropdown menu doesn't open at "not found" page
+- [#3190](https://github.com/poanetwork/blockscout/pull/3190) - Contract log/method decoded view improvements: eliminate horizontal scroll, remove excess borders, whitespaces
+- [#3185](https://github.com/poanetwork/blockscout/pull/3185) - Transaction page: decoding logs from nested contracts calls
+- [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix permanent fetching tokens...  when read/write proxy tab is active
+- [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
 
 ### Chore
+- [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Return correct status in verify API endpoint if contract verified
+- [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Remove Kovan from the list of default chains
 
 
 ## 3.3.0-beta
