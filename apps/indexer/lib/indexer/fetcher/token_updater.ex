@@ -16,10 +16,12 @@ defmodule Indexer.Fetcher.TokenUpdater do
   @max_batch_size 10
   @max_concurrency 4
   @defaults [
+    poll_interval: :timer.seconds(3600),
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
     task_supervisor: Indexer.Fetcher.TokenUpdater.TaskSupervisor,
+    poll: true,
     metadata: [fetcher: :token_updater]
   ]
 
@@ -44,10 +46,8 @@ defmodule Indexer.Fetcher.TokenUpdater do
   @impl BufferedTask
   def init(initial, reducer, _) do
     metadata_updater_inverval = Application.get_env(:indexer, :metadata_updater_seconds_interval)
-    hour_interval = Kernel.round(metadata_updater_inverval / (60 * 60))
 
-    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes(initial, reducer, hour_interval)
-
+    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes(initial, reducer, metadata_updater_inverval)
     tokens
   end
 
