@@ -1,9 +1,13 @@
 ## Current
 
 ### Features
+- [#3199](https://github.com/poanetwork/blockscout/pull/3199) - Show compilation error at contract verification
+- [#3193](https://github.com/poanetwork/blockscout/pull/3193) - Raw trace copy button
 - [#3184](https://github.com/poanetwork/blockscout/pull/3184) - Apps navbar menu item
+- [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
 
 ### Fixes
+- [#3192](https://github.com/poanetwork/blockscout/pull/3192) - Dropdown menu doesn't open at "not found" page
 - [#3190](https://github.com/poanetwork/blockscout/pull/3190) - Contract log/method decoded view improvements: eliminate horizontal scroll, remove excess borders, whitespaces
 - [#3185](https://github.com/poanetwork/blockscout/pull/3185) - Transaction page: decoding logs from nested contracts calls
 - [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix permanent fetching tokens...  when read/write proxy tab is active

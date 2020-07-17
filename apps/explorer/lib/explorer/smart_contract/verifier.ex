@@ -28,7 +28,11 @@ defmodule Explorer.SmartContract.Verifier do
     latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
     evm_version = Map.get(params, "evm_version", latest_evm_version)
 
-    Enum.reduce([evm_version | previous_evm_versions(evm_version)], false, fn version, acc ->
+    all_versions = [evm_version | previous_evm_versions(evm_version)]
+
+    all_versions_extra = all_versions ++ [evm_version]
+
+    Enum.reduce(all_versions_extra, false, fn version, acc ->
       case acc do
         {:ok, _} = result ->
           result
@@ -74,6 +78,10 @@ defmodule Explorer.SmartContract.Verifier do
 
   defp compare_bytecodes({:error, :name}, _, _, _, _, _), do: {:error, :name}
   defp compare_bytecodes({:error, _}, _, _, _, _, _), do: {:error, :compilation}
+
+  defp compare_bytecodes({:error, _, error_message}, _, _, _, _, _) do
+    {:error, :compilation, error_message}
+  end
 
   # credo:disable-for-next-line /Complexity/
   defp compare_bytecodes(
