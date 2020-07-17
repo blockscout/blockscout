@@ -58,7 +58,8 @@ defmodule BlockScoutWeb.SmartContractController do
         contract_abi: contract_abi,
         implementation_address: implementation_address_hash_string,
         implementation_abi: implementation_abi,
-        contract_type: contract_type
+        contract_type: contract_type,
+        action: action
       )
     else
       :error ->
