@@ -4,7 +4,22 @@
   <div class="card">
     <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
     <div class="card-body">
-      <h2 class="card-title"><%= gettext "Raw Trace" %></h2>
+      <h2 class="card-title"><%= gettext "Raw Trace" %>
+        <span
+          aria-label="Copy Value"
+          class="btn-copy-icon tx-raw-input transaction-input"
+          id="tx-raw-input"
+          data-clipboard-text="<%= for {line, _} <- raw_traces_with_lines(@internal_transactions), do: line %>"
+          data-placement="top"
+          data-toggle="tooltip"
+          title='<%= gettext("Copy Raw Trace") %>'
+          style="float: right;"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32">
+            <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+          </svg>
+        </span>
+      </h2>
       <%= if Enum.count(@internal_transactions) > 0 do %>
         <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="json "><%= for {line, number} <- raw_traces_with_lines(@internal_transactions) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
       <% else %>

@@ -30,7 +30,7 @@
     "highlightjs-solidity": "^1.0.8",
     "humps": "^2.0.1",
     "jquery": "^3.4.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "moment": "^2.24.0",
     "nanomorph": "^5.4.0",
     "numeral": "^2.0.6",
