@@ -1,5 +1,8 @@
+<%= if @action== "write" do %>
+  <button connect-metamask class="button btn-line">Connect to Metamask</button>
+<% end %>
 <%= if @contract_type == "proxy" do %>
-<div>
+<div class="implementation-container">
     <h2 class="implementation-title">Implementation address: </h2><h3  class="implementation-value"><%= link(
                   @implementation_address,
                   to: address_path(@conn, :show, @implementation_address)
