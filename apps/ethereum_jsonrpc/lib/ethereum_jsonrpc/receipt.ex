@@ -253,7 +253,7 @@ defmodule EthereumJSONRPC.Receipt do
   # hash format
   # gas is passed in from the `t:EthereumJSONRPC.Transaction.params/0` to allow pre-Byzantium status to be derived
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash),
+       when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash revertReason),
        do: {:ok, entry}
 
   defp entry_to_elixir({key, quantity})
