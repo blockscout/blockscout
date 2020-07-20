@@ -15,8 +15,10 @@ defmodule Explorer.SmartContract.Verifier do
   @metadata_hash_prefix_0_4_23 "a165627a7a72305820"
   @metadata_hash_prefix_0_5_10 "a265627a7a72305820"
   @metadata_hash_prefix_0_5_11 "a265627a7a72315820"
+  @metadata_hash_prefix_0_5_16 "a365627a7a72315820"
   @metadata_hash_prefix_0_6_0 "a264697066735822"
 
+  @experimental "6c6578706572696d656e74616cf5"
   @metadata_hash_common_suffix "64736f6c63"
 
   def evaluate_authenticity(_, %{"name" => ""}), do: {:error, :name}
@@ -28,7 +30,11 @@ defmodule Explorer.SmartContract.Verifier do
     latest_evm_version = List.last(CodeCompiler.allowed_evm_versions())
     evm_version = Map.get(params, "evm_version", latest_evm_version)
 
-    Enum.reduce([evm_version | previous_evm_versions(evm_version)], false, fn version, acc ->
+    all_versions = [evm_version | previous_evm_versions(evm_version)]
+
+    all_versions_extra = all_versions ++ [evm_version]
+
+    Enum.reduce(all_versions_extra, false, fn version, acc ->
       case acc do
         {:ok, _} = result ->
           result
@@ -74,6 +80,10 @@ defmodule Explorer.SmartContract.Verifier do
 
   defp compare_bytecodes({:error, :name}, _, _, _, _, _), do: {:error, :name}
   defp compare_bytecodes({:error, _}, _, _, _, _, _), do: {:error, :compilation}
+
+  defp compare_bytecodes({:error, _, error_message}, _, _, _, _, _) do
+    {:error, :compilation, error_message}
+  end
 
   # credo:disable-for-next-line /Complexity/
   defp compare_bytecodes(
@@ -222,6 +232,20 @@ defmodule Explorer.SmartContract.Verifier do
 
       @metadata_hash_prefix_0_5_11 <>
           <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
+          @metadata_hash_common_suffix <>
+          "43" <> <<compiler_version::binary-size(6)>> <> "0032" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_11 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "7826" <> <<compiler_version::binary-size(76)>> <> "0057" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_11 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
           @metadata_hash_common_suffix <>
           "7826" <> <<compiler_version::binary-size(76)>> <> "0057" <> _constructor_arguments ->
         do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
@@ -234,12 +258,98 @@ defmodule Explorer.SmartContract.Verifier do
 
       @metadata_hash_prefix_0_5_11 <>
           <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
+          @metadata_hash_common_suffix <>
+          "7827" <> <<compiler_version::binary-size(78)>> <> "0057" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_11 <>
+          <<metadata_hash::binary-size(64)>> <>
           @metadata_hash_common_suffix <>
           "7828" <> <<compiler_version::binary-size(80)>> <> "0058" <> _constructor_arguments ->
         do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
 
       @metadata_hash_prefix_0_5_11 <>
           <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
+          @metadata_hash_common_suffix <>
+          "7828" <> <<compiler_version::binary-size(80)>> <> "0058" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_11 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "7829" <> <<compiler_version::binary-size(82)>> <> "0059" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_11 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
+          @metadata_hash_common_suffix <>
+          "7829" <> <<compiler_version::binary-size(82)>> <> "0059" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_16 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "43" <> <<compiler_version::binary-size(6)>> <> "0032" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_16 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
+          @metadata_hash_common_suffix <>
+          "43" <> <<compiler_version::binary-size(6)>> <> "0040" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_16 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "7826" <> <<compiler_version::binary-size(76)>> <> "0057" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_16 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
+          @metadata_hash_common_suffix <>
+          "7826" <> <<compiler_version::binary-size(76)>> <> "0057" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_16 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "7827" <> <<compiler_version::binary-size(78)>> <> "0057" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_16 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
+          @metadata_hash_common_suffix <>
+          "7827" <> <<compiler_version::binary-size(78)>> <> "0057" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_16 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "7828" <> <<compiler_version::binary-size(80)>> <> "0058" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_16 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
+          @metadata_hash_common_suffix <>
+          "7828" <> <<compiler_version::binary-size(80)>> <> "0058" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_16 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @metadata_hash_common_suffix <>
+          "7829" <> <<compiler_version::binary-size(82)>> <> "0059" <> _constructor_arguments ->
+        do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
+
+      @metadata_hash_prefix_0_5_16 <>
+          <<metadata_hash::binary-size(64)>> <>
+          @experimental <>
           @metadata_hash_common_suffix <>
           "7829" <> <<compiler_version::binary-size(82)>> <> "0059" <> _constructor_arguments ->
         do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)

@@ -562,8 +562,8 @@ msgid "ERC-721 "
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:40
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:75
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:43
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:78
 msgid "ETH"
 msgstr ""
 
@@ -1180,7 +1180,7 @@ msgid "QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:44
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:47
 msgid "Query"
 msgstr ""
 
@@ -1631,7 +1631,7 @@ msgid "View transaction %{transaction} on %{subnetwork}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:74
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:77
 msgid "WEI"
 msgstr ""
 
@@ -1919,7 +1919,7 @@ msgid "Waiting for transaction's confirmation..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:44
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:47
 msgid "Write"
 msgstr ""
 
