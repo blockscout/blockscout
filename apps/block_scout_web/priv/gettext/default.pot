@@ -480,23 +480,20 @@ msgid "Ether"
 msgstr "POA"
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:56
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:109
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:175
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:59
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:112
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:179
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:100
+#: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:7
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:20
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:103
 msgid "Data"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:31
 #: lib/block_scout_web/templates/address_logs/_logs.html.eex:37
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:90
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:52
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:32
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:40
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:93
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:55
 msgid "Decoded"
 msgstr ""
 
@@ -912,10 +909,7 @@ msgid "If you have just submitted this transaction please wait for at least 30 s
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:55
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:108
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:58
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:111
+#: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:6
 msgid "Indexed?"
 msgstr ""
 
@@ -1004,10 +998,7 @@ msgid "Loading...."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:50
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:103
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:53
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:106
+#: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:2
 msgid "Log Data"
 msgstr ""
 
@@ -1062,13 +1053,10 @@ msgid "Must be set to:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:53
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:106
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:19
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:56
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:109
+#: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:4
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:18
 msgid "Name"
 msgstr ""
 
@@ -1426,8 +1414,8 @@ msgid "Topic"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:145
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:149
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:70
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:73
 msgid "Topics"
 msgstr ""
 
@@ -1484,11 +1472,8 @@ msgid "Twitter"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:54
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:107
-#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:20
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:57
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:110
+#: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:5
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:19
 msgid "Type"
 msgstr ""
 
@@ -1763,7 +1748,7 @@ msgid "Loading chart"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:189
+#: lib/block_scout_web/templates/transaction_log/_logs.html.eex:113
 msgid "Log Index"
 msgstr ""
 
