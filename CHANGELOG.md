@@ -18,6 +18,7 @@
 - [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
 
 ### Chore
+- [#3204](https://github.com/poanetwork/blockscout/pull/3204) - GraphQL Absinthe related packages update up to stable versions
 - [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Return correct status in verify API endpoint if contract verified
 - [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Remove Kovan from the list of default chains
 
