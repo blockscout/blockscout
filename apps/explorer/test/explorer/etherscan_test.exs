@@ -463,6 +463,156 @@ defmodule Explorer.EtherscanTest do
     end
   end
 
+  describe "list_pending_transactions/2" do
+    test "with empty db" do
+      address = build(:address)
+
+      assert Etherscan.list_pending_transactions(address.hash) == []
+    end
+
+    test "with from address" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+
+      [found_transaction] = Etherscan.list_pending_transactions(address.hash)
+
+      assert transaction.hash == found_transaction.hash
+    end
+
+    test "with to address" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+
+      [found_transaction] = Etherscan.list_pending_transactions(address.hash)
+
+      assert transaction.hash == found_transaction.hash
+    end
+
+    test "with same to and from address" do
+      address = insert(:address)
+
+      _transaction =
+        :transaction
+        |> insert(from_address: address, to_address: address)
+
+      found_transactions = Etherscan.list_pending_transactions(address.hash)
+
+      assert length(found_transactions) == 1
+    end
+
+    test "with address with 0 transactions" do
+      address1 = insert(:address)
+      address2 = insert(:address)
+
+      :transaction
+      |> insert(from_address: address2)
+
+      assert Etherscan.list_pending_transactions(address1.hash) == []
+    end
+
+    test "with address with multiple transactions" do
+      address1 = insert(:address)
+      address2 = insert(:address)
+
+      3
+      |> insert_list(:transaction, from_address: address1)
+
+      :transaction
+      |> insert(from_address: address2)
+
+      found_transactions = Etherscan.list_pending_transactions(address1.hash)
+
+      assert length(found_transactions) == 3
+
+      for found_transaction <- found_transactions do
+        assert found_transaction.from_address_hash == address1.hash
+      end
+    end
+
+    test "orders transactions by inserted_at, in descending order" do
+      address = insert(:address)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+
+      options = %{order_by_direction: :desc}
+
+      found_transactions = Etherscan.list_pending_transactions(address.hash, options)
+
+      inserted_at_order = Enum.map(found_transactions, & &1.inserted_at)
+
+      assert inserted_at_order == Enum.sort(inserted_at_order, &(&1 >= &2))
+    end
+
+    test "with page_size and page_number options" do
+      address = insert(:address)
+
+      transactions_1 =
+        2
+        |> insert_list(:transaction, from_address: address)
+
+      transactions_2 =
+        2
+        |> insert_list(:transaction, from_address: address)
+
+      transactions_3 =
+        2
+        |> insert_list(:transaction, from_address: address)
+
+      options = %{page_number: 1, page_size: 2}
+
+      page1_transactions = Etherscan.list_pending_transactions(address.hash, options)
+
+      page1_hashes = Enum.map(page1_transactions, & &1.hash)
+
+      assert length(page1_transactions) == 2
+
+      for transaction <- transactions_3 do
+        assert transaction.hash in page1_hashes
+      end
+
+      options = %{page_number: 2, page_size: 2}
+
+      page2_transactions = Etherscan.list_pending_transactions(address.hash, options)
+
+      page2_hashes = Enum.map(page2_transactions, & &1.hash)
+
+      assert length(page2_transactions) == 2
+
+      for transaction <- transactions_2 do
+        assert transaction.hash in page2_hashes
+      end
+
+      options = %{page_number: 3, page_size: 2}
+
+      page3_transactions = Etherscan.list_pending_transactions(address.hash, options)
+
+      page3_hashes = Enum.map(page3_transactions, & &1.hash)
+
+      assert length(page3_transactions) == 2
+
+      for transaction <- transactions_1 do
+        assert transaction.hash in page3_hashes
+      end
+
+      options = %{page_number: 4, page_size: 2}
+
+      assert Etherscan.list_pending_transactions(address.hash, options) == []
+    end
+  end
+
   describe "list_internal_transactions/1 with transaction hash" do
     test "with empty db" do
       transaction = build(:transaction)
