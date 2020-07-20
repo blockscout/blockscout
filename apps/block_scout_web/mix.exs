@@ -60,13 +60,13 @@ defmodule BlockScoutWeb.Mixfile do
   defp deps do
     [
       # GraphQL toolkit
-      {:absinthe, "~> 1.5.0-rc.2"},
+      {:absinthe, "~> 1.5.2"},
       # Integrates Absinthe subscriptions with Phoenix
-      {:absinthe_phoenix, "~> 1.5.0-rc.0"},
+      {:absinthe_phoenix, "~> 1.5.0"},
       # Plug support for Absinthe
-      {:absinthe_plug, "~> 1.5.0-rc.1"},
+      {:absinthe_plug, "~> 1.5.0"},
       # Absinthe support for the Relay framework
-      {:absinthe_relay, "~> 1.5.0-rc.0"},
+      {:absinthe_relay, "~> 1.5"},
       {:bypass, "~> 1.0", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 2.0"},
