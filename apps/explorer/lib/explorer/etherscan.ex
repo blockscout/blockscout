@@ -271,8 +271,6 @@ defmodule Explorer.Etherscan do
         b in Block,
         where: b.miner_hash == ^address_hash,
         order_by: [desc: b.number],
-        group_by: b.number,
-        group_by: b.timestamp,
         limit: ^merged_options.page_size,
         offset: ^offset(merged_options),
         select: %{

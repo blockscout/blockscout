@@ -7,6 +7,7 @@
 - [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
 
 ### Fixes
+- [#3203](https://github.com/poanetwork/blockscout/pull/3203) - Improve "get mined blocks" query performance
 - [#3202](https://github.com/poanetwork/blockscout/pull/3202) - Fix contracts verification with experimental features enabled
 - [#3201](https://github.com/poanetwork/blockscout/pull/3201) - Connect to Metamask button
 - [#3192](https://github.com/poanetwork/blockscout/pull/3192) - Dropdown menu doesn't open at "not found" page
