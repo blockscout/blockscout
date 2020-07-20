@@ -5,8 +5,6 @@ defmodule Explorer.Repo.Migrations.TransactionnsPartitioning do
 
     rename table(:transactions), to: table(:transactions_old)
 
-    execute("ALTER TABLE internal_transactions DROP CONSTRAINT internal_transactions_transaction_hash_fkey;")
-
     drop(index(:transactions, :inserted_at))
     drop(index(:transactions, :updated_at))
 
@@ -121,12 +119,12 @@ defmodule Explorer.Repo.Migrations.TransactionnsPartitioning do
       CONSTRAINT pending_gas_used CHECK (((block_hash IS NOT NULL) OR (gas_used IS NULL))),
       CONSTRAINT pending_index CHECK (((block_hash IS NOT NULL) OR (index IS NULL))),
       CONSTRAINT status CHECK ((((block_hash IS NULL) AND (status IS NULL)) OR (block_hash IS NOT NULL) OR ((status = 0) AND ((error)::text = 'dropped/replaced'::text))))
-  ) PARTITION BY RANGE (block_number);")
+  ) PARTITION BY RANGE (inserted_at);")
 
   execute("ALTER TABLE transactions
-  ADD CONSTRAINT transactions_new_pkey PRIMARY KEY (hash);")
+  ADD CONSTRAINT transactions_new_pkey PRIMARY KEY (hash, inserted_at);")
 
-  execute("ALTER TABLE transactions ADD UNIQUE (block_hash, index);")
+  execute("ALTER TABLE transactions ADD UNIQUE (block_hash, index, inserted_at);")
 
   execute("CREATE TABLE archive_transactions PARTITION OF transactions
   FOR VALUES FROM ('2008-01-01') TO ('2020-07-15 09:06:12')
@@ -136,8 +134,34 @@ defmodule Explorer.Repo.Migrations.TransactionnsPartitioning do
   FOR VALUES FROM ('2020-07-15 09:06:12') TO ('2100-07-15')
   TABLESPACE operationalspace;")
 
-  execute("ALTER TABLE internal_transactions ADD CONSTRAINT internal_transactions_transaction_hash_fkey FOREIGN KEY (transaction_hash) REFERENCES transactions(hash) ON DELETE CASCADE")
+  execute("ALTER TABLE internal_transactions DROP CONSTRAINT internal_transactions_transaction_hash_fkey;")
+  execute("ALTER TABLE internal_transactions ADD COLUMN transaction_inserted_at TIMESTAMP WITHOUT TIME ZONE;")
+  execute("ALTER TABLE internal_transactions ADD CONSTRAINT internal_transactions_transaction_hash_fkey FOREIGN KEY (transaction_hash, transaction_inserted_at) REFERENCES transactions(hash, inserted_at) ON DELETE CASCADE")
 
+  execute("ALTER TABLE logs DROP CONSTRAINT logs_transaction_hash_fkey;")
+  execute("ALTER TABLE logs ADD COLUMN transaction_inserted_at TIMESTAMP WITHOUT TIME ZONE;")
+  execute("ALTER TABLE logs ADD CONSTRAINT logs_transaction_hash_fkey FOREIGN KEY (transaction_hash, transaction_inserted_at) REFERENCES transactions(hash, inserted_at) ON DELETE CASCADE")
+
+  execute("ALTER TABLE token_transfers DROP CONSTRAINT token_transfers_transaction_hash_fkey;")
+  execute("ALTER TABLE token_transfers ADD COLUMN transaction_inserted_at TIMESTAMP WITHOUT TIME ZONE;")
+  execute("ALTER TABLE token_transfers ADD CONSTRAINT token_transfers_transaction_hash_fkey FOREIGN KEY (transaction_hash, transaction_inserted_at) REFERENCES transactions(hash, inserted_at) ON DELETE CASCADE")
+
+  execute("ALTER TABLE transaction_forks DROP CONSTRAINT transaction_forks_hash_fkey;")
+  execute("ALTER TABLE transaction_forks ADD COLUMN transaction_inserted_at TIMESTAMP WITHOUT TIME ZONE;")
+  execute("ALTER TABLE transaction_forks ADD CONSTRAINT token_transfers_hash_fkey FOREIGN KEY (hash, transaction_inserted_at) REFERENCES transactions(hash, inserted_at) ON DELETE CASCADE")
+
+
+  execute("ALTER TABLE transactions_old DROP CONSTRAINT transactions_block_hash_fkey;")
+  execute("ALTER TABLE transactions ADD CONSTRAINT transactions_block_hash_fkey FOREIGN KEY (block_hash) REFERENCES blocks(hash) ON DELETE CASCADE")
+
+  execute("ALTER TABLE transactions_old DROP CONSTRAINT transactions_created_contract_address_hash_fkey;")
+  execute("ALTER TABLE transactions ADD CONSTRAINT transactions_created_contract_address_hash_fkey FOREIGN KEY (created_contract_address_hash) REFERENCES addresses(hash) ON DELETE CASCADE")
+
+  execute("ALTER TABLE transactions_old DROP CONSTRAINT transactions_from_address_hash_fkey;")
+  execute("ALTER TABLE transactions ADD CONSTRAINT transactions_from_address_hash_fkey FOREIGN KEY (from_address_hash) REFERENCES addresses(hash) ON DELETE CASCADE")
+
+  execute("ALTER TABLE transactions_old DROP CONSTRAINT transactions_to_address_hash_fkey;")
+  execute("ALTER TABLE transactions ADD CONSTRAINT transactions_to_address_hash_fkey FOREIGN KEY (to_address_hash) REFERENCES addresses(hash) ON DELETE CASCADE")
 
   create(index(:archive_transactions, :inserted_at))
     create(index(:archive_transactions, :updated_at))
