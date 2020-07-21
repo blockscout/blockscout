@@ -154,7 +154,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        conflict_target: [:block_hash, :block_index],
+        conflict_target: [:block_hash, :block_index, :inserted_at],
         for: InternalTransaction,
         on_conflict: on_conflict,
         returning: true,
