@@ -4,7 +4,7 @@ defmodule Explorer.Repo.Migrations.AddressCoinBalancesPartitioning do
   def change do
     rename(table(:address_coin_balances), to: table(:address_coin_balances_old))
 
-    execute("CREATE TABLE public.address_coin_balances (
+    execute("CREATE TABLE address_coin_balances (
       address_hash bytea NOT NULL,
       block_number bigint NOT NULL,
       value numeric(100,0) DEFAULT NULL::numeric,
@@ -13,21 +13,23 @@ defmodule Explorer.Repo.Migrations.AddressCoinBalancesPartitioning do
       updated_at timestamp without time zone NOT NULL
   ) PARTITION BY RANGE (block_number);")
 
-    execute("DROP INDEX address_coin_balances_address_hash_block_number_index;")
-    execute("DROP INDEX unfetched_balances;")
-    execute("DROP INDEX address_coin_balances_value_fetched_at_index;")
+    execute(
+      "INSERT INTO address_coin_balances (address_hash, block_number, value, value_fetched_at, inserted_at, updated_at) SELECT * FROM address_coin_balances_old;"
+    )
 
-    execute("CREATE INDEX address_coin_balances_value_fetched_at_index on address_coin_balances(value_fetched_at);")
+    drop(table(:address_coin_balances_old))
 
     execute(
       "CREATE UNIQUE INDEX unfetched_balances on address_coin_balances(address_hash, block_number) WHERE value_fetched_at IS NULL;"
     )
 
-    execute(
-      "CREATE UNIQUE INDEX address_coin_balances_address_hash_block_number_index on address_coin_balances(address_hash, block_number);"
+    create(
+      unique_index(:address_coin_balances, [:address_hash, :block_number],
+        name: "address_coin_balances_address_hash_block_number_index"
+      )
     )
 
-    execute("ALTER TABLE address_coin_balances_old DROP CONSTRAINT address_coin_balances_address_hash_fkey;")
+    create(index(:address_coin_balances, [:value_fetched_at], name: "address_coin_balances_value_fetched_at_index"))
 
     execute(
       "ALTER TABLE address_coin_balances ADD CONSTRAINT address_coin_balances_address_hash_fkey FOREIGN KEY (address_hash) REFERENCES addresses(hash)"

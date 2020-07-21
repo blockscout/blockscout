@@ -35,16 +35,82 @@ defmodule Explorer.Repo.Migrations.InternalTransactionsPartitioning do
     execute("ALTER TABLE internal_transactions_old
     DROP CONSTRAINT internal_transactions_pkey;")
 
-    # execute("DROP INDEX internal_transactions_block_number_DESC__transaction_index_DESC;")
-    execute("DROP INDEX internal_transactions_created_contract_address_hash_index;")
-    execute("DROP INDEX internal_transactions_created_contract_address_hash_partial_ind;")
-    execute("DROP INDEX internal_transactions_from_address_hash_index;")
-    execute("DROP INDEX internal_transactions_from_address_hash_partial_index;")
-    execute("DROP INDEX internal_transactions_to_address_hash_partial_index;")
-    execute("DROP INDEX internal_transactions_transaction_hash_index_index;")
+    drop(
+      index(:internal_transactions_old, [:block_number, :transaction_index, :index],
+        name: "internal_transactions_block_number_DESC__transaction_index_DESC"
+      )
+    )
+
+    drop(
+      index(:internal_transactions_old, [:created_contract_address_hash],
+        name: "internal_transactions_created_contract_address_hash_index"
+      )
+    )
+
+    drop(index(:internal_transactions_old, [:from_address_hash], name: "internal_transactions_from_address_hash_index"))
+
+    drop(
+      index(:internal_transactions_old, [:transaction_hash, :index],
+        name: "internal_transactions_transaction_hash_index_index"
+      )
+    )
+
+    drop(
+      index(
+        :internal_transactions_old,
+        [:created_contract_address_hash, "block_number DESC", "transaction_index DESC", "index DESC"],
+        name: "internal_transactions_created_contract_address_hash_partial_ind"
+      )
+    )
+
+    drop(
+      index(
+        :internal_transactions_old,
+        [:from_address_hash, "block_number DESC", "transaction_index DESC", "index DESC"],
+        name: "internal_transactions_from_address_hash_partial_index"
+      )
+    )
+
+    drop(
+      index(:internal_transactions_old, [:to_address_hash, "block_number DESC", "transaction_index DESC", "index DESC"],
+        name: "internal_transactions_to_address_hash_partial_index"
+      )
+    )
 
     execute("ALTER TABLE internal_transactions
     ADD CONSTRAINT internal_transactions_pkey PRIMARY KEY (block_hash, block_index, inserted_at);")
+
+    create(
+      index(:internal_transactions, [:block_number, :transaction_index, :index],
+        name: "internal_transactions_block_number_DESC__transaction_index_DESC"
+      )
+    )
+
+    create(
+      index(:internal_transactions, [:created_contract_address_hash],
+        name: "internal_transactions_created_contract_address_hash_index"
+      )
+    )
+
+    create(index(:internal_transactions, [:from_address_hash], name: "internal_transactions_from_address_hash_index"))
+
+    create(
+      index(:internal_transactions, [:transaction_hash, :index],
+        name: "internal_transactions_transaction_hash_index_index"
+      )
+    )
+
+    execute(
+      "CREATE INDEX internal_transactions_created_contract_address_hash_partial_ind on internal_transactions (created_contract_address_hash, block_number DESC, transaction_index DESC, index DESC) WHERE type::text = 'call'::text AND index > 0 OR type::text <> 'call'::text"
+    )
+
+    execute(
+      "CREATE INDEX internal_transactions_from_address_hash_partial_index on internal_transactions (from_address_hash, block_number DESC, transaction_index DESC, index DESC) WHERE type::text = 'call'::text AND index > 0 OR type::text <> 'call'::text"
+    )
+
+    execute(
+      "CREATE INDEX internal_transactions_to_address_hash_partial_index ON internal_transactions (to_address_hash, block_number DESC, transaction_index DESC, index DESC) WHERE type::text = 'call'::text AND index > 0 OR type::text <> 'call'::text"
+    )
 
     execute("ALTER TABLE internal_transactions_old DROP CONSTRAINT internal_transactions_block_hash_fkey;")
 
