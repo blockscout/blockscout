@@ -13,6 +13,14 @@ defmodule Explorer.Repo.Migrations.AddressCoinBalancesPartitioning do
       updated_at timestamp without time zone NOT NULL
   ) PARTITION BY RANGE (block_number);")
 
+    execute("CREATE TABLE archive_address_coin_balances PARTITION OF address_coin_balances
+  FOR VALUES FROM (0) TO (15841750)
+  TABLESPACE archivespace;")
+
+    execute("CREATE TABLE operational_address_coin_balances PARTITION OF address_coin_balances
+  FOR VALUES FROM (15841750) TO (600000000)
+  TABLESPACE operationalspace;")
+
     execute(
       "INSERT INTO address_coin_balances (address_hash, block_number, value, value_fetched_at, inserted_at, updated_at) SELECT * FROM address_coin_balances_old;"
     )
@@ -34,13 +42,5 @@ defmodule Explorer.Repo.Migrations.AddressCoinBalancesPartitioning do
     execute(
       "ALTER TABLE address_coin_balances ADD CONSTRAINT address_coin_balances_address_hash_fkey FOREIGN KEY (address_hash) REFERENCES addresses(hash)"
     )
-
-    execute("CREATE TABLE archive_address_coin_balances PARTITION OF address_coin_balances
-    FOR VALUES FROM (0) TO (15841750)
-    TABLESPACE archivespace;")
-
-    execute("CREATE TABLE operational_address_coin_balances PARTITION OF address_coin_balances
-    FOR VALUES FROM (15841750) TO (600000000)
-    TABLESPACE operationalspace;")
   end
 end
