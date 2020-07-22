@@ -20,6 +20,7 @@
 - [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
 
 ### Chore
+- [#3210](https://github.com/poanetwork/blockscout/pull/3210) - Update Phoenix up to 1.4.17
 - [#3206](https://github.com/poanetwork/blockscout/pull/3206) - Update Elixir version: 1.10.2 -> 1.10.3
 - [#3204](https://github.com/poanetwork/blockscout/pull/3204) - GraphQL Absinthe related packages update up to stable versions
 - [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Return correct status in verify API endpoint if contract verified
