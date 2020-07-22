@@ -330,9 +330,7 @@ defmodule Explorer.SmartContract.Reader do
           bytes_to_string(value)
         end)
 
-      values_array_formatted_3 = values_array_formatted ++ values_array_formatted ++ values_array_formatted
-
-      Map.put_new(output, "value", values_array_formatted_3)
+      Map.put_new(output, "value", values_array_formatted)
     else
       Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
     end
