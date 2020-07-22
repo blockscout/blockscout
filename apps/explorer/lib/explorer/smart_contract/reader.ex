@@ -321,8 +321,21 @@ defmodule Explorer.SmartContract.Reader do
     Map.put_new(output, "value", bytes_to_string(value))
   end
 
-  defp new_value(%{"type" => "bytes" <> _number} = output, values, index) do
-    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+  defp new_value(%{"type" => "bytes" <> number_rest} = output, values, index) do
+    if String.contains?(number_rest, "[]") do
+      values_array = Enum.at(values, index)
+
+      values_array_formatted =
+        Enum.map(values_array, fn value ->
+          bytes_to_string(value)
+        end)
+
+        values_array_formatted_3 = values_array_formatted ++ values_array_formatted ++ values_array_formatted
+
+      Map.put_new(output, "value", values_array_formatted_3)
+    else
+      Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+    end
   end
 
   defp new_value(%{"type" => "bytes"} = output, values, index) do
