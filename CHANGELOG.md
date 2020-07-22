@@ -7,6 +7,7 @@
 - [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
 
 ### Fixes
+- [#3209](https://github.com/poanetwork/blockscout/pull/3209) - GraphQL: fix internal server error at request of internal transactions at address
 - [#3207](https://github.com/poanetwork/blockscout/pull/3207) - Fix read contract bytes array type output
 - [#3203](https://github.com/poanetwork/blockscout/pull/3203) - Improve "get mined blocks" query performance
 - [#3202](https://github.com/poanetwork/blockscout/pull/3202) - Fix contracts verification with experimental features enabled
@@ -19,6 +20,7 @@
 - [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
 
 ### Chore
+- [#3210](https://github.com/poanetwork/blockscout/pull/3210) - Update Phoenix up to 1.4.17
 - [#3206](https://github.com/poanetwork/blockscout/pull/3206) - Update Elixir version: 1.10.2 -> 1.10.3
 - [#3204](https://github.com/poanetwork/blockscout/pull/3204) - GraphQL Absinthe related packages update up to stable versions
 - [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Return correct status in verify API endpoint if contract verified
