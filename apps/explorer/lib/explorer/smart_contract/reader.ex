@@ -112,6 +112,32 @@ defmodule Explorer.SmartContract.Reader do
     end)
   end
 
+  @spec query_contract(
+          String.t(),
+          String.t(),
+          term(),
+          functions()
+        ) :: functions_results()
+  def query_contract(contract_address, from, abi, functions) do
+    requests =
+      functions
+      |> Enum.map(fn {function_name, args} ->
+        %{
+          contract_address: contract_address,
+          from: from,
+          function_name: function_name,
+          args: args
+        }
+      end)
+
+    requests
+    |> query_contracts(abi)
+    |> Enum.zip(requests)
+    |> Enum.into(%{}, fn {response, request} ->
+      {request.function_name, response}
+    end)
+  end
+
   @doc """
   Runs batch of contract functions on given addresses for smart contract with an expected ABI and functions.
 
@@ -180,7 +206,21 @@ defmodule Explorer.SmartContract.Reader do
     end
   end
 
-  defp fetch_current_value_from_blockchain(function, abi, contract_address_hash) do
+  def read_only_functions_proxy(contract_address_hash, implementation_address_hash_string) do
+    implementation_abi = Chain.get_implementation_abi(implementation_address_hash_string)
+
+    case implementation_abi do
+      nil ->
+        []
+
+      _ ->
+        implementation_abi
+        |> Enum.filter(&(&1["constant"] || &1["stateMutability"] == "view"))
+        |> Enum.map(&fetch_current_value_from_blockchain(&1, implementation_abi, contract_address_hash))
+    end
+  end
+
+  def fetch_current_value_from_blockchain(function, abi, contract_address_hash) do
     values =
       case function do
         %{"inputs" => []} ->
@@ -202,26 +242,33 @@ defmodule Explorer.SmartContract.Reader do
   @doc """
   Fetches the blockchain value of a function that requires arguments.
   """
-  @spec query_function(String.t(), %{name: String.t(), args: nil}) :: [%{}]
-  def query_function(contract_address_hash, %{name: name, args: nil}) do
-    query_function(contract_address_hash, %{name: name, args: []})
+  @spec query_function(String.t(), %{name: String.t(), args: nil}, atom()) :: [%{}]
+  def query_function(contract_address_hash, %{name: name, args: nil}, type) do
+    query_function(contract_address_hash, %{name: name, args: []}, type)
   end
 
-  @spec query_function(Hash.t(), %{name: String.t(), args: [term()]}) :: [%{}]
-  def query_function(contract_address_hash, %{name: name, args: args}) do
+  @spec query_function(Hash.t(), %{name: String.t(), args: [term()]}, atom()) :: [%{}]
+  def query_function(contract_address_hash, %{name: name, args: args}, type) do
     abi =
       contract_address_hash
       |> Chain.address_hash_to_smart_contract()
       |> Map.get(:abi)
 
+    final_abi =
+      if type == :proxy do
+        Chain.get_implementation_abi_from_proxy(contract_address_hash, abi)
+      else
+        abi
+      end
+
     outputs =
-      case abi do
+      case final_abi do
         nil ->
           nil
 
         _ ->
           function =
-            abi
+            final_abi
             |> Enum.filter(fn function -> function["name"] == name end)
             |> List.first()
 
@@ -229,7 +276,7 @@ defmodule Explorer.SmartContract.Reader do
       end
 
     contract_address_hash
-    |> query_verified_contract(%{name => normalize_args(args)}, abi)
+    |> query_verified_contract(%{name => normalize_args(args)}, final_abi)
     |> link_outputs_and_values(outputs, name)
   end
 
@@ -274,8 +321,21 @@ defmodule Explorer.SmartContract.Reader do
     Map.put_new(output, "value", bytes_to_string(value))
   end
 
-  defp new_value(%{"type" => "bytes" <> _number} = output, values, index) do
-    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+  defp new_value(%{"type" => "bytes" <> number_rest} = output, values, index) do
+    if String.contains?(number_rest, "[]") do
+      values_array = Enum.at(values, index)
+
+      values_array_formatted =
+        Enum.map(values_array, fn value ->
+          bytes_to_string(value)
+        end)
+
+      values_array_formatted_3 = values_array_formatted ++ values_array_formatted ++ values_array_formatted
+
+      Map.put_new(output, "value", values_array_formatted_3)
+    else
+      Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+    end
   end
 
   defp new_value(%{"type" => "bytes"} = output, values, index) do
