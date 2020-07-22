@@ -72,6 +72,12 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
+      {:db_connection, "~> 2.2.2"},
+      {:phoenix, "~> 1.4"},
+      {:ecto, "~> 3.3.4"},
+      {:phoenix_ecto, "~> 4.1"},
+      {:phoenix_live_reload, "~> 1.2"},
+      {:ecto_sql, "~> 3.3"},
       # Documentation
       {:ex_doc, "~> 0.19.0", only: [:dev]},
       # Code coverage
