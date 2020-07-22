@@ -7,13 +7,20 @@
 - [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
 
 ### Fixes
+- [#3207](https://github.com/poanetwork/blockscout/pull/3207) - Fix read contract bytes array type output
+- [#3203](https://github.com/poanetwork/blockscout/pull/3203) - Improve "get mined blocks" query performance
+- [#3202](https://github.com/poanetwork/blockscout/pull/3202) - Fix contracts verification with experimental features enabled
+- [#3201](https://github.com/poanetwork/blockscout/pull/3201) - Connect to Metamask button
 - [#3192](https://github.com/poanetwork/blockscout/pull/3192) - Dropdown menu doesn't open at "not found" page
 - [#3190](https://github.com/poanetwork/blockscout/pull/3190) - Contract log/method decoded view improvements: eliminate horizontal scroll, remove excess borders, whitespaces
 - [#3185](https://github.com/poanetwork/blockscout/pull/3185) - Transaction page: decoding logs from nested contracts calls
+- [#3182](https://github.com/poanetwork/blockscout/pull/3182) - Besu: support revertReason key in eth_getTransactionReceipt endpoint
 - [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix permanent fetching tokens...  when read/write proxy tab is active
 - [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
 
 ### Chore
+- [#3206](https://github.com/poanetwork/blockscout/pull/3206) - Update Elixir version: 1.10.2 -> 1.10.3
+- [#3204](https://github.com/poanetwork/blockscout/pull/3204) - GraphQL Absinthe related packages update up to stable versions
 - [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Return correct status in verify API endpoint if contract verified
 - [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Remove Kovan from the list of default chains
 
