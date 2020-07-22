@@ -1,10 +1,68 @@
 ## Current
 
 ### Features
+- [#3199](https://github.com/poanetwork/blockscout/pull/3199) - Show compilation error at contract verification
+- [#3193](https://github.com/poanetwork/blockscout/pull/3193) - Raw trace copy button
+- [#3184](https://github.com/poanetwork/blockscout/pull/3184) - Apps navbar menu item
+- [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
+
+### Fixes
+- [#3143](https://github.com/poanetwork/blockscout/pull/3143) - Update Phoenix 1.4 -> 1.5
+- [#3203](https://github.com/poanetwork/blockscout/pull/3203) - Improve "get mined blocks" query performance
+- [#3202](https://github.com/poanetwork/blockscout/pull/3202) - Fix contracts verification with experimental features enabled
+- [#3201](https://github.com/poanetwork/blockscout/pull/3201) - Connect to Metamask button
+- [#3192](https://github.com/poanetwork/blockscout/pull/3192) - Dropdown menu doesn't open at "not found" page
+- [#3190](https://github.com/poanetwork/blockscout/pull/3190) - Contract log/method decoded view improvements: eliminate horizontal scroll, remove excess borders, whitespaces
+- [#3185](https://github.com/poanetwork/blockscout/pull/3185) - Transaction page: decoding logs from nested contracts calls
+- [#3182](https://github.com/poanetwork/blockscout/pull/3182) - Besu: support revertReason key in eth_getTransactionReceipt endpoint
+- [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix permanent fetching tokens...  when read/write proxy tab is active
+- [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
+
+### Chore
+- [#3206](https://github.com/poanetwork/blockscout/pull/3206) - Update Elixir version: 1.10.2 -> 1.10.3
+- [#3204](https://github.com/poanetwork/blockscout/pull/3204) - GraphQL Absinthe related packages update up to stable versions
+- [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Return correct status in verify API endpoint if contract verified
+- [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Remove Kovan from the list of default chains
+
+
+## 3.3.0-beta
+
+### Features
+- [#3174](https://github.com/poanetwork/blockscout/pull/3174) - EIP-1967 support: transparent proxy pattern
+- [#3173](https://github.com/poanetwork/blockscout/pull/3173) - Display implementation address at read/write proxy tabs
+- [#3171](https://github.com/poanetwork/blockscout/pull/3171) - Import accounts/contracts/balances from Geth genesis.json
+- [#3161](https://github.com/poanetwork/blockscout/pull/3161) - Write proxy contracts feature
+- [#3160](https://github.com/poanetwork/blockscout/pull/3160) - Write contracts feature
+- [#3157](https://github.com/poanetwork/blockscout/pull/3157) - Read methods of implementation on proxy contract
+
+### Fixes
+- [#3168](https://github.com/poanetwork/blockscout/pull/3168) - Eliminate internal server error at /accounts page with token-bridge type of supply and inexistent bridge contracts
+- [#3169](https://github.com/poanetwork/blockscout/pull/3169) - Fix for verification of contracts defined in genesis block
+
+### Chore
+
+
+## 3.2.0-beta
+
+### Features
+- [#3154](https://github.com/poanetwork/blockscout/pull/3154) - Support of Hyperledger Besu client
+- [#3153](https://github.com/poanetwork/blockscout/pull/3153) - Proxy contracts: logs decoding using implementation ABI
+- [#3153](https://github.com/poanetwork/blockscout/pull/3153) - Proxy contracts: methods decoding using implementation ABI
+- [#3149](https://github.com/poanetwork/blockscout/pull/3149) - Display and store revert reason of tx on demand at transaction details page and at gettxinfo API endpoint.
+
+### Fixes
+
+### Chore
+- [#3152](https://github.com/poanetwork/blockscout/pull/3152) - Fix contract compilation tests for old versions of compiler
+
+
+## 3.1.3-beta
+
+### Features
 - [#3125](https://github.com/poanetwork/blockscout/pull/3125)  - Availability to configure a number of days to consider at coin balance history chart via environment variable
 
 ### Fixes
-- [#3143](https://github.com/poanetwork/blockscout/pull/3143) - Update Phoenix 1.4 -> 1.5, Elixir 1.10.2 -> 1.10.3
+- [#3146](https://github.com/poanetwork/blockscout/pull/3146) - Fix coin balance history page: order of items, fix if no balance changes
 - [#3142](https://github.com/poanetwork/blockscout/pull/3142) - Speed-up last coin balance timestamp query (coin balance history page performance improvement)
 - [#3140](https://github.com/poanetwork/blockscout/pull/3140) - Fix performance of the balance changing history list loading
 - [#3133](https://github.com/poanetwork/blockscout/pull/3133) - Take into account FIRST_BLOCK in trace_ReplayBlockTransactions requests
