@@ -26,6 +26,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   @max_concurrency 4
   @defaults [
     flush_interval: :timer.seconds(3),
+    poll_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
     poll: true,
