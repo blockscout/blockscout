@@ -7,7 +7,6 @@
 - [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
 
 ### Fixes
-- [#3143](https://github.com/poanetwork/blockscout/pull/3143) - Update Phoenix 1.4 -> 1.5
 - [#3209](https://github.com/poanetwork/blockscout/pull/3209) - GraphQL: fix internal server error at request of internal transactions at address
 - [#3207](https://github.com/poanetwork/blockscout/pull/3207) - Fix read contract bytes array type output
 - [#3203](https://github.com/poanetwork/blockscout/pull/3203) - Improve "get mined blocks" query performance
