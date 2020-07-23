@@ -100,7 +100,7 @@ defmodule Explorer.Mixfile do
       # Prometheus metrics for query duration
       {:prometheus_ecto, "~> 1.4.3"},
       # bypass optional dependency
-      {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
+      {:plug_cowboy, "~> 2.2", only: [:dev, :test]},
       {:que, "~> 0.10.1"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       # Tracing

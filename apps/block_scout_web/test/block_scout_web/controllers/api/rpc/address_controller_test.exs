@@ -2269,7 +2269,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["message"] =~ "Invalid contractaddress format"
+      assert response["message"] =~ "Invalid contract address format"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
@@ -2342,7 +2342,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(tokenbalance_schema(), response)
     end
 
-    test "with contractaddress but without address", %{conn: conn} do
+    test "with contract address but without address", %{conn: conn} do
       params = %{
         "module" => "account",
         "action" => "tokenbalance",
@@ -2361,7 +2361,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(tokenbalance_schema(), response)
     end
 
-    test "with address but without contractaddress", %{conn: conn} do
+    test "with address but without contract address", %{conn: conn} do
       params = %{
         "module" => "account",
         "action" => "tokenbalance",
@@ -2380,7 +2380,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(tokenbalance_schema(), response)
     end
 
-    test "with an invalid contractaddress hash", %{conn: conn} do
+    test "with an invalid contract address hash", %{conn: conn} do
       params = %{
         "module" => "account",
         "action" => "tokenbalance",
@@ -2420,7 +2420,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(tokenbalance_schema(), response)
     end
 
-    test "with a contractaddress and address that doesn't exist", %{conn: conn} do
+    test "with a contract address and address that doesn't exist", %{conn: conn} do
       params = %{
         "module" => "account",
         "action" => "tokenbalance",
@@ -2439,7 +2439,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(tokenbalance_schema(), response)
     end
 
-    test "with contractaddress and address without row in token_balances table", %{conn: conn} do
+    test "with contract address and address without row in token_balances table", %{conn: conn} do
       token = insert(:token)
       address = insert(:address)
 
@@ -2461,7 +2461,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(tokenbalance_schema(), response)
     end
 
-    test "with contractaddress and address with existing balance in token_balances table", %{conn: conn} do
+    test "with contract address and address with existing balance in token_balances table", %{conn: conn} do
       token_balance = insert(:token_balance)
 
       params = %{

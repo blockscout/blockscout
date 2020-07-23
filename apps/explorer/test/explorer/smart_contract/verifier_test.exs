@@ -288,7 +288,7 @@ defmodule Explorer.SmartContract.VerifierTest do
       params = %{
         "contract_source_code" => different_code,
         "compiler_version" => contract_code_info.version,
-        "evm_version" => "istanbul",
+        "evm_version" => "default",
         "name" => contract_code_info.name,
         "optimization" => contract_code_info.optimized
       }
@@ -338,7 +338,8 @@ defmodule Explorer.SmartContract.VerifierTest do
         "optimization" => contract_code_info.optimized
       }
 
-      assert {:error, :compilation} = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert {:error, :compilation, "Function, variable, struct or modifier declaration expected."} =
+               Verifier.evaluate_authenticity(contract_address.hash, params)
     end
   end
 
