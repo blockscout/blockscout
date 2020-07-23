@@ -122,35 +122,55 @@ defmodule Explorer.Chain.Log do
   @doc """
   Decode transaction log data.
   """
-  def decode(_log, %Transaction{to_address: nil}), do: {:error, :no_to_address}
+  def decode(%__MODULE__{address: nil}, %Transaction{to_address: nil}), do: {:error, :no_to_address}
 
   def decode(
         log,
-        transaction = %Transaction{
+        %Transaction{
           to_address: %{implementation_contract: %{smart_contract: %{abi: impl_abi}}, smart_contract: %{abi: abi}}
         }
       )
       when not is_nil(abi) do
-    with {:ok, selector, mapping} <- find_and_decode(abi ++ impl_abi, log, transaction),
+    with {:ok, selector, mapping} <- find_and_decode(abi ++ impl_abi, log),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping),
          do: {:ok, identifier, text, mapping}
   end
 
-  def decode(log, transaction = %Transaction{to_address: %{smart_contract: %{abi: abi}}}) when not is_nil(abi) do
-    with {:ok, selector, mapping} <- find_and_decode(abi, log, transaction),
+  def decode(log, %Transaction{to_address: %{smart_contract: %{abi: abi}}}) when not is_nil(abi) do
+    with {:ok, selector, mapping} <- find_and_decode(abi, log),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping),
          do: {:ok, identifier, text, mapping}
   end
 
-  def decode(log, transaction) do
+  def decode(
+        log = %__MODULE__{
+          address: %{implementation_contract: %{smart_contract: %{abi: impl_abi}}, smart_contract: %{abi: abi}}
+        },
+        _
+      )
+      when not is_nil(abi) do
+    with {:ok, selector, mapping} <- find_and_decode(abi ++ impl_abi, log),
+         identifier <- Base.encode16(selector.method_id, case: :lower),
+         text <- function_call(selector.function, mapping),
+         do: {:ok, identifier, text, mapping}
+  end
+
+  def decode(log = %__MODULE__{address: %{smart_contract: %{abi: abi}}}, _) when not is_nil(abi) do
+    with {:ok, selector, mapping} <- find_and_decode(abi, log),
+         identifier <- Base.encode16(selector.method_id, case: :lower),
+         text <- function_call(selector.function, mapping),
+         do: {:ok, identifier, text, mapping}
+  end
+
+  def decode(log, _tx) do
     case log.first_topic do
       "0x" <> hex_part ->
         case Integer.parse(hex_part, 16) do
           {number, ""} ->
             <<method_id::binary-size(4), _rest::binary>> = :binary.encode_unsigned(number)
-            find_candidates(method_id, log, transaction)
+            find_candidates(method_id, log)
 
           _ ->
             {:error, :could_not_decode}
@@ -161,7 +181,7 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  defp find_candidates(method_id, log, transaction) do
+  defp find_candidates(method_id, log) do
     candidates_query =
       from(
         contract_method in ContractMethod,
@@ -173,7 +193,7 @@ defmodule Explorer.Chain.Log do
       candidates_query
       |> Repo.all()
       |> Enum.flat_map(fn contract_method ->
-        case find_and_decode([contract_method.abi], log, transaction) do
+        case find_and_decode([contract_method.abi], log) do
           {:ok, selector, mapping} ->
             identifier = Base.encode16(selector.method_id, case: :lower)
             text = function_call(selector.function, mapping)
@@ -189,7 +209,7 @@ defmodule Explorer.Chain.Log do
     {:error, :contract_not_verified, candidates}
   end
 
-  defp find_and_decode(abi, log, transaction) do
+  defp find_and_decode(abi, log) do
     with {%FunctionSelector{} = selector, mapping} <-
            abi
            |> ABI.parse_specification(include_events?: true)
@@ -204,7 +224,9 @@ defmodule Explorer.Chain.Log do
     end
   rescue
     _ ->
-      Logger.warn(fn -> ["Could not decode input data for log from transaction: ", Hash.to_iodata(transaction.hash)] end)
+      Logger.warn(fn ->
+        ["Could not decode input data for log from transaction: ", Hash.to_iodata(log.transaction_hash)]
+      end)
 
       {:error, :could_not_decode}
   end

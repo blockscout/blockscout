@@ -471,18 +471,13 @@ defmodule Explorer.Chain do
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
-    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
+    {block_number, _transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
     base_query =
       from(log in Log,
-        inner_join: transaction in Transaction,
-        on: transaction.hash == log.transaction_hash,
         order_by: [desc: log.block_number, desc: log.index],
-        where: transaction.block_number < ^block_number,
-        or_where: transaction.block_number == ^block_number and transaction.index > ^transaction_index,
-        or_where:
-          transaction.block_number == ^block_number and transaction.index == ^transaction_index and
-            log.index > ^log_index,
+        where: log.block_number < ^block_number,
+        or_where: log.block_number == ^block_number and log.index > ^log_index,
         where: log.address_hash == ^address_hash,
         limit: ^paging_options.page_size,
         select: log
@@ -491,16 +486,15 @@ defmodule Explorer.Chain do
     wrapped_query =
       from(
         log in subquery(base_query),
-        inner_join: transaction in Transaction,
+        left_join: transaction in Transaction,
+        on: log.transaction_hash == transaction.hash,
         preload: [
           :transaction,
-          transaction: [to_address: :smart_contract],
-          transaction: [to_address: [implementation_contract: :smart_contract]]
+          #          transaction: [to_address: :smart_contract],
+          #          transaction: [to_address: [implementation_contract: :smart_contract]]
+          address: :smart_contract,
+          address: [implementation_contract: :smart_contract]
         ],
-        where:
-          log.block_hash == transaction.block_hash and
-            log.block_number == transaction.block_number and
-            log.transaction_hash == transaction.hash,
         select: log
       )
 
