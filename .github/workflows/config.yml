@@ -603,135 +603,545 @@ jobs:
         working-directory: "apps/block_scout_web/assets"
       - run: ./node_modules/.bin/jest
         working-directory: apps/block_scout_web/assets
-  # test_parity_mox:
-  #   runs-on: ubuntu-latest
-  #   services:
-  #     postgres:
-  #       image: postgres
-  #       env:
-  #         # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
-  #         POSTGRES_DB: explorer_test
-  #         # match PGPASSWORD for elixir image above
-  #         POSTGRES_PASSWORD: postgres
-  #         # match PGUSER for elixir image above
-  #         POSTGRES_USER: postgres
-  #       # Set health checks to wait until postgres has started
-  #       options: >-
-  #         --health-cmd pg_isready
-  #         --health-interval 10s
-  #         --health-timeout 5s
-  #         --health-retries 5
-  #       ports:
-  #         # Maps tcp port 5432 on service container to the host
-  #         - 5432:5432
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-elixir@v1
-  #       with:
-  #         otp-version: '22.2'
-  #         elixir-version: '1.10.3'
-  #     - run: mix local.hex --force
-  #     - run: mix local.rebar --force
-  #     - name: Cache mix.exs
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: ~/
-  #         key: |
-  #           v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-  #           v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-  #           v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-  #         restore-keys: v8-mix-compile-
-  #     - run: mix deps.get
-  #     - name: Cache node modules
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: ~/.npm
-  #         key: |
-  #           v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-  #           'v7-npm-install-{{ .Branch }}'
-  #           v7-npm-install
-  #         restore-keys: v7-npm-install-
-  #     - run: npm install
-  #       working-directory: apps/explorer
-  #     - name: Cache dependencies
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: apps/explorer/node_modules
-  #         key: >-
-  #           v3-npm-install-{{ .Branch }}-{{ checksum
-  #           "apps/explorer/package-lock.json" }}
-  #     - name: Cache dependencies
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: apps/explorer/node_modules
-  #         key: 'v3-npm-install-{{ .Branch }}'
-  #     - name: Cache dependencies
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: apps/explorer/node_modules
-  #         key: v3-npm-install
-  #     - run: npm install
-  #       working-directory: apps/block_scout_web/assets
-  #     - run: npm rebuild node-sass
-  #       working-directory: apps/block_scout_web/assets
-  #     - name: Cache dependencies
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: apps/block_scout_web/assets/node_modules
-  #         key: >-
-  #           v7-npm-install-{{ .Branch }}-{{ checksum
-  #           "apps/block_scout_web/assets/package-lock.json" }}
-  #     - name: Cache dependencies
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: apps/block_scout_web/assets/node_modules
-  #         key: 'v7-npm-install-{{ .Branch }}'
-  #     - name: Cache dependencies
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: apps/block_scout_web/assets/node_modules
-  #         key: v7-npm-install
-  #     - run: mix compile
-  #     - run: make
-  #       working-directory: "deps/libsecp256k1"
-  #     - name: Cache dependencies
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: |
-  #             deps
-  #             _build
-  #         key: >-
-  #           v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-  #           "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-  #     - name: Cache dependencies
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: |
-  #             deps
-  #             _build
-  #         key: >-
-  #           v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-  #           "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-  #     - name: Cache dependencies
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: |
-  #             deps
-  #             _build
-  #         key: >-
-  #           v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-  #           "ELIXIR_VERSION.lock" }}
-  #     - name: Build assets
-  #       run: node node_modules/webpack/bin/webpack.js --mode development
-  #       working-directory: "apps/block_scout_web/assets"
-  #     - run: ./bin/install_chrome_headless.sh
-  #     - name: mix test --exclude no_parity
-  #       run: mix coveralls.html --exclude no_parity --parallel --umbrella
-  #       env:
-  #         MIX_ENV: test
-  #         # match POSTGRES_PASSWORD for postgres image below
-  #         PGPASSWORD: postgres
-  #         # match POSTGRES_USER for postgres image below
-  #         PGUSER: postgres
-  #         ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
-  #         ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+  test_parity_mox_ethereum_jsonrpc:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+          POSTGRES_DB: explorer_test
+          # match PGPASSWORD for elixir image above
+          POSTGRES_PASSWORD: postgres
+          # match PGUSER for elixir image above
+          POSTGRES_USER: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - name: Cache mix.exs
+        uses: actions/cache@v2
+        with:
+          path: ~/
+          key: |
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          restore-keys: v8-mix-compile-
+      - run: mix deps.get
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install
+          restore-keys: v7-npm-install-
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: >-
+            v3-npm-install-{{ .Branch }}-{{ checksum
+            "apps/explorer/package-lock.json" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: 'v3-npm-install-{{ .Branch }}'
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: >-
+            v7-npm-install-{{ .Branch }}-{{ checksum
+            "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: 'v7-npm-install-{{ .Branch }}'
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+      - run: ./bin/install_chrome_headless.sh
+      - name: mix test --exclude no_parity
+        run: |
+          cd apps/ethereum_jsonrpc
+          mix test --no-start --exclude no_parity
+        env:
+          MIX_ENV: test
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+  test_parity_mox_explorer:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+          POSTGRES_DB: explorer_test
+          # match PGPASSWORD for elixir image above
+          POSTGRES_PASSWORD: postgres
+          # match PGUSER for elixir image above
+          POSTGRES_USER: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - name: Cache mix.exs
+        uses: actions/cache@v2
+        with:
+          path: ~/
+          key: |
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          restore-keys: v8-mix-compile-
+      - run: mix deps.get
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install
+          restore-keys: v7-npm-install-
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: >-
+            v3-npm-install-{{ .Branch }}-{{ checksum
+            "apps/explorer/package-lock.json" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: 'v3-npm-install-{{ .Branch }}'
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: >-
+            v7-npm-install-{{ .Branch }}-{{ checksum
+            "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: 'v7-npm-install-{{ .Branch }}'
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+      - run: ./bin/install_chrome_headless.sh
+      - name: mix test --exclude no_parity
+        run: |
+          cd apps/explorer
+          mix ecto.create --quiet
+          mix ecto.migrate
+          mix test --no-start --exclude no_parity
+        env:
+          MIX_ENV: test
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+  test_parity_mox_indexer:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+          POSTGRES_DB: explorer_test
+          # match PGPASSWORD for elixir image above
+          POSTGRES_PASSWORD: postgres
+          # match PGUSER for elixir image above
+          POSTGRES_USER: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - name: Cache mix.exs
+        uses: actions/cache@v2
+        with:
+          path: ~/
+          key: |
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          restore-keys: v8-mix-compile-
+      - run: mix deps.get
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install
+          restore-keys: v7-npm-install-
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: >-
+            v3-npm-install-{{ .Branch }}-{{ checksum
+            "apps/explorer/package-lock.json" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: 'v3-npm-install-{{ .Branch }}'
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: >-
+            v7-npm-install-{{ .Branch }}-{{ checksum
+            "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: 'v7-npm-install-{{ .Branch }}'
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+      - run: ./bin/install_chrome_headless.sh
+      - name: mix test --exclude no_parity
+        run: |
+          cd apps/indexer
+          mix ecto.create --quiet
+          mix ecto.migrate
+          mix test --no-start --exclude no_parity
+        env:
+          MIX_ENV: test
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+  test_parity_mox_block_scout_web:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+          POSTGRES_DB: explorer_test
+          # match PGPASSWORD for elixir image above
+          POSTGRES_PASSWORD: postgres
+          # match PGUSER for elixir image above
+          POSTGRES_USER: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - name: Cache mix.exs
+        uses: actions/cache@v2
+        with:
+          path: ~/
+          key: |
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          restore-keys: v8-mix-compile-
+      - run: mix deps.get
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install
+          restore-keys: v7-npm-install-
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: >-
+            v3-npm-install-{{ .Branch }}-{{ checksum
+            "apps/explorer/package-lock.json" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: 'v3-npm-install-{{ .Branch }}'
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: >-
+            v7-npm-install-{{ .Branch }}-{{ checksum
+            "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: 'v7-npm-install-{{ .Branch }}'
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: |
+              deps
+              _build
+          key: >-
+            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
+            "ELIXIR_VERSION.lock" }}
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+      - run: ./bin/install_chrome_headless.sh
+      - name: mix test --exclude no_parity
+        run: |
+          cd apps/block_scout_web
+          mix ecto.create --quiet
+          mix ecto.migrate
+          mix test --no-start --exclude no_parity
+        env:
+          MIX_ENV: test
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
