@@ -122,6 +122,10 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def paging_options(%{"block_number" => block_number, "index" => index}) when is_integer(block_number) and is_integer(index) do
+    [paging_options: %{@default_paging_options | key: {block_number, index}}]
+  end
+
   def paging_options(%{"block_number" => block_number_string, "index" => index_string}) do
     with {block_number, ""} <- Integer.parse(block_number_string),
          {index, ""} <- Integer.parse(index_string) do

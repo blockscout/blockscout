@@ -3166,7 +3166,7 @@ defmodule Explorer.Chain do
 
   defp page_logs(query, %PagingOptions{key: nil}), do: query
 
-  defp page_logs(query, %PagingOptions{key: {index}}) do
+  defp page_logs(query, %PagingOptions{key: {_, index}}) do
     where(query, [log], log.index > ^index)
   end
 
