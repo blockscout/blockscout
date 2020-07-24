@@ -108,6 +108,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
       conn =
         get(conn, transaction_log_path(conn, :index, transaction), %{
           "index" => Integer.to_string(log.index),
+          "block_number" => Integer.to_string(transaction.block_number),
           "type" => "JSON"
         })
 

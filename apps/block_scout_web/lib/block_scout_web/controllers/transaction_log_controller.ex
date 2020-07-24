@@ -26,7 +26,6 @@ defmodule BlockScoutWeb.TransactionLogController do
           ],
           paging_options(params)
         )
-
       logs_plus_one = Chain.transaction_to_logs(transaction_hash, full_options)
 
       {logs, next_page} = split_list_by_page(logs_plus_one)
