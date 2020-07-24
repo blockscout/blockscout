@@ -504,8 +504,8 @@ msgid "Copy Txn Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:66
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:119
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:69
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:122
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:31
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:69
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:122
@@ -534,9 +534,9 @@ msgid "Curl"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:56
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:109
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:175
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:59
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:112
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:178
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:21
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:59
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:112
@@ -551,9 +551,9 @@ msgid "Decimals"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:31
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:37
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:90
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:34
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:40
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:93
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:32
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:40
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:93
@@ -715,7 +715,7 @@ msgid "Failed to decode input data."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:34
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:37
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:35
 msgid "Failed to decode log data."
 msgstr ""
@@ -843,8 +843,8 @@ msgid "If you have just submitted this transaction please wait for at least 30 s
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:55
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:108
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:58
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:111
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:58
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:111
 msgid "Indexed?"
@@ -959,8 +959,8 @@ msgid "Loading...."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:50
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:103
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:53
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:106
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:53
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:106
 msgid "Log Data"
@@ -1059,8 +1059,8 @@ msgid "Must be set to:"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:53
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:106
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:56
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:109
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:52
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:59
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:19
@@ -1573,7 +1573,7 @@ msgid "Topic"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:145
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:148
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:149
 msgid "Topics"
 msgstr ""
@@ -1665,8 +1665,8 @@ msgid "Twitter"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:54
-#: lib/block_scout_web/templates/address_logs/_logs.html.eex:107
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:57
+#: lib/block_scout_web/templates/address_logs/_logs.html.eex:110
 #: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:20
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:57
 #: lib/block_scout_web/templates/transaction_log/_logs.html.eex:110
