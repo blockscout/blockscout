@@ -471,7 +471,7 @@ defmodule Explorer.Chain do
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
-    {block_number, _transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
+    {block_number, log_index} = paging_options.key || {BlockNumber.get_max(), 0}
 
     base_query =
       from(log in Log,

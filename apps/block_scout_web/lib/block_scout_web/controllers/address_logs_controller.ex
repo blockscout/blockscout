@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.AddressLogsController do
   use BlockScoutWeb, :controller
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
+    IO.inspect(params)
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          :ok <- Chain.check_address_exists(address_hash) do
       logs_plus_one = Chain.address_to_logs(address_hash, paging_options(params))
