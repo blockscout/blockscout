@@ -305,7 +305,7 @@ defmodule Explorer.ChainTest do
 
       [_log] = Chain.address_to_logs(address_hash, paging_options: paging_options1)
 
-      paging_options2 = %PagingOptions{page_size: 60, key: {transaction.block_number, transaction.index, log1.index}}
+      paging_options2 = %PagingOptions{page_size: 60, key: {transaction.block_number, log1.index}}
 
       assert Enum.count(Chain.address_to_logs(address_hash, paging_options: paging_options2)) == 50
     end
@@ -2853,7 +2853,7 @@ defmodule Explorer.ChainTest do
 
       assert second_page_indexes ==
                transaction.hash
-               |> Chain.transaction_to_logs(paging_options: %PagingOptions{key: {log.index}, page_size: 50})
+               |> Chain.transaction_to_logs(paging_options: %PagingOptions{key: {log.block_number, log.index}, page_size: 50})
                |> Enum.map(& &1.index)
     end
 

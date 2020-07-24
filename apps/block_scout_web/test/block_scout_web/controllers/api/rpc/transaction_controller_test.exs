@@ -462,8 +462,6 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
       params2 = response1["result"]["next_page_params"]
 
-      IO.inspect(%{params: params2})
-
       assert response2 =
                conn
                |> get("/api", params2)
