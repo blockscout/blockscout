@@ -97,6 +97,14 @@ defmodule BlockScoutWeb.Chain do
     Map.merge(params, paging_params(List.last(list)))
   end
 
+  defp parseInt(a) when is_integer(a) do
+    {a, ""}
+  end
+
+  defp parseInt(a) do
+    Integer.parse(a)
+  end
+
   def paging_options(%{"hash" => hash, "fetched_coin_balance" => fetched_coin_balance}) do
     with {coin_balance, ""} <- Integer.parse(fetched_coin_balance),
          {:ok, address_hash} <- string_to_address_hash(hash) do
@@ -218,8 +226,12 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number, "transaction_index" => transaction_index, "index" => index}
   end
 
-  defp paging_params(%Log{index: index, block_number: block_number}) do
-    %{"block_number" => block_number, "transaction_index" => index, "index" => index}
+  defp paging_params(%Log{index: index, block_number: block_number} = log) do
+    if Ecto.assoc_loaded?(log.transaction) do
+      %{"block_number" => log.transaction.block_number, "transaction_index" => log.transaction.index, "index" => index}
+    else
+      %{"index" => index}
+    end
   end
 
   defp paging_params(%Transaction{block_number: nil, inserted_at: inserted_at, hash: hash}) do

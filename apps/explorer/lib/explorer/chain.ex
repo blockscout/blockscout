@@ -2696,6 +2696,7 @@ defmodule Explorer.Chain do
   def transaction_to_logs(transaction_hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    IO.inspect(%{paging_options: paging_options})
 
     log_with_transactions =
       from(log in Log,
