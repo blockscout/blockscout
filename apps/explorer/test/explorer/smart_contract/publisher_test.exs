@@ -5,6 +5,8 @@ defmodule Explorer.SmartContract.PublisherTest do
 
   doctest Explorer.SmartContract.Publisher
 
+  @moduletag timeout: :infinity
+
   alias Explorer.Chain.{ContractMethod, SmartContract}
   alias Explorer.{Factory, Repo}
   alias Explorer.SmartContract.Publisher

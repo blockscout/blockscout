@@ -1135,7 +1135,7 @@ jobs:
         run: |
           mix ecto.create --quiet
           mix ecto.migrate
-          cd apps/block_scout_webcd apps/block_scout_web
+          cd apps/block_scout_web
           mix test --no-start --exclude no_parity
         env:
           MIX_ENV: test
