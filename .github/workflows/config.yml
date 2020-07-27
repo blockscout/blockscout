@@ -1278,15 +1278,7 @@ jobs:
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
       - name: coveralls
-        run: |
-          # Don't submit coverage report for forks, but let the build succeed
-          if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-            mix coveralls.html --exclude no_parity --parallel --umbrella
-          else
-            mix coveralls.circle --exclude no_parity --parallel --umbrella ||
-              # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
-              (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
-          fi
+        run: mix coveralls.html --exclude no_parity --parallel --umbrella
         env:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
