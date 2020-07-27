@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
   doctest Explorer.SmartContract.Solidity.CodeCompiler
 
+  @moduletag timeout: :infinity
+
   alias Explorer.Factory
   alias Explorer.SmartContract.Solidity.CodeCompiler
 
