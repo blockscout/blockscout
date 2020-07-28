@@ -7,6 +7,7 @@
 - [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
 
 ### Fixes
+- [#3214](https://github.com/poanetwork/blockscout/pull/3214) - Fix current token balances fetcher
 - [#3143](https://github.com/poanetwork/blockscout/pull/3143) - Fix "Connection lost..." error at address page
 - [#3209](https://github.com/poanetwork/blockscout/pull/3209) - GraphQL: fix internal server error at request of internal transactions at address
 - [#3207](https://github.com/poanetwork/blockscout/pull/3207) - Fix read contract bytes array type output
