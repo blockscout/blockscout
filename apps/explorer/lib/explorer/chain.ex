@@ -1834,19 +1834,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of all current token balances that weren't fetched values.
-  """
-  @spec stream_unfetched_current_token_balances(
-          initial :: accumulator,
-          reducer :: (entry :: CurrentTokenBalance.t(), accumulator -> accumulator)
-        ) :: {:ok, accumulator}
-        when accumulator: term()
-  def stream_unfetched_current_token_balances(initial, reducer) when is_function(reducer, 2) do
-    CurrentTokenBalance.unfetched_current_token_balances()
-    |> Repo.stream_reduce(initial, reducer)
-  end
-
-  @doc """
   Returns a stream of all blocks with unfetched internal transactions, using
   the `pending_block_operation` table.
 
