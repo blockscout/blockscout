@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
 
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Block, Hash, Token}
+  alias Explorer.Chain.Address.CurrentTokenBalance
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -117,6 +118,16 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       where: tb.token_contract_address_hash == ^token_contract_address_hash,
       where: tb.address_hash != ^@burn_address_hash,
       where: tb.value > 0
+    )
+  end
+
+  def unfetched_current_token_balances do
+    from(
+      ctb in CurrentTokenBalance,
+      join: t in Token,
+      on: ctb.token_contract_address_hash == t.contract_address_hash,
+      where: is_nil(ctb.value_fetched_at) or is_nil(ctb.value),
+      where: (ctb.address_hash != ^@burn_address_hash and t.type != "ERC-721") or t.type == "ERC-20"
     )
   end
 
