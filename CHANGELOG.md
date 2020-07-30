@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3216](https://github.com/poanetwork/blockscout/pull/3216) - Display new token transfers at token page without refreshing the page
 - [#3199](https://github.com/poanetwork/blockscout/pull/3199) - Show compilation error at contract verification
 - [#3193](https://github.com/poanetwork/blockscout/pull/3193) - Raw trace copy button
 - [#3184](https://github.com/poanetwork/blockscout/pull/3184) - Apps navbar menu item
