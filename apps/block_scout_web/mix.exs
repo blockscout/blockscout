@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.Mixfile do
       # GraphQL toolkit
       {:absinthe, "~> 1.5.2"},
       # Integrates Absinthe subscriptions with Phoenix
-      {:absinthe_phoenix, "~> 1.5.0"},
+      {:absinthe_phoenix, "~> 2.0.0"},
       # Plug support for Absinthe
       {:absinthe_plug, "~> 1.5.0"},
       # Absinthe support for the Relay framework
@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:cldr_utils, "~> 2.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
-      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
+      {:excoveralls, "~> 0.13.1"},
       {:explorer, in_umbrella: true},
       {:exvcr, "~> 0.10", only: :test},
       # HTML CSS selectors for Phoenix controller tests
@@ -99,13 +99,13 @@ defmodule BlockScoutWeb.Mixfile do
       {:logger_file_backend, "~> 0.0.10"},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:phoenix, "== 1.4.17"},
+      {:phoenix, "== 1.5.4"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.2", only: [:dev]},
-      {:phoenix_pubsub, "~> 1.0"},
+      {:phoenix_pubsub, "~> 2.0"},
       # use `:cowboy` for WebServer with `:plug`
-      {:plug_cowboy, "~> 2.0"},
+      {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
       {:poison, "~> 3.1"},
@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:timex, "~> 3.6"},
       {:wallaby, "~> 0.22", only: [:test], runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
-      {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
+      {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https-updated-deps"},
       {:phoenix_form_awesomplete, "~> 0.1.4"},
       {:ex_json_schema, "~> 0.6.2"}
     ]
