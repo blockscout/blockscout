@@ -7,7 +7,6 @@ defmodule BlockScoutWeb.Endpoint do
   end
 
   socket("/socket", BlockScoutWeb.UserSocket, websocket: [timeout: 45_000])
-  socket("/wobserver", Wobserver.Web.PhoenixSocket)
 
   # Serve at "/" the static files from "priv/static" directory.
   #

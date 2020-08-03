@@ -18,9 +18,9 @@ defmodule BlockScoutWeb.Application do
     # Define workers and child supervisors to be supervised
     children = [
       # Start the endpoint when the application starts
-      {Phoenix.PubSub.PG2, name: BlockScoutWeb.PubSub, fastlane: Phoenix.Channel.Server},
+      {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
       supervisor(Endpoint, []),
-      supervisor(Absinthe.Subscription, [Endpoint]),
+      {Absinthe.Subscription, Endpoint},
       {RealtimeEventHandler, name: RealtimeEventHandler},
       {BlocksIndexedCounter, name: BlocksIndexedCounter}
     ]
