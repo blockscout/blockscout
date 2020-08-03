@@ -193,7 +193,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
         "first" => 1
       }
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = post(conn, "/graphql", query: query, variables: variables)
 
       assert json_response(conn, 200) == %{
                "data" => %{
@@ -251,7 +251,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
         "first" => 1
       }
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = post(conn, "/graphql", query: query, variables: variables)
 
       assert json_response(conn, 200) == %{
                "data" => %{
@@ -304,7 +304,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
         "first" => 3
       }
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = post(conn, "/graphql", query: query, variables: variables)
 
       %{
         "data" => %{
@@ -348,7 +348,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
         "first" => 67
       }
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = post(conn, "/graphql", query: query, variables: variables)
 
       assert %{"errors" => [error1, error2, error3]} = json_response(conn, 200)
       assert error1["message"] =~ ~s(Field transactions is too complex)
@@ -403,7 +403,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
         "count" => 9
       }
 
-      conn = get(conn, "/graphql", query: query, variables: variables)
+      conn = post(conn, "/graphql", query: query, variables: variables)
 
       %{
         "data" => %{
@@ -463,7 +463,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
         "first" => 3
       }
 
-      conn = get(conn, "/graphql", query: query1, variables: variables1)
+      conn = post(conn, "/graphql", query: query1, variables: variables1)
 
       %{"data" => %{"address" => %{"transactions" => page1}}} = json_response(conn, 200)
 
@@ -477,7 +477,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
         |> Map.get("cursor")
 
       query2 = """
-      query ($hash: AddressHash!, $first: Int!, $after: Int!) {
+      query ($hash: AddressHash!, $first: Int!, $after: String!) {
         address(hash: $hash) {
           transactions(first: $first, after: $after) {
             page_info {
@@ -502,7 +502,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
         "after" => last_cursor_page1
       }
 
-      conn = get(conn, "/graphql", query: query2, variables: variables2)
+      conn = post(conn, "/graphql", query: query2, variables: variables2)
 
       %{"data" => %{"address" => %{"transactions" => page2}}} = json_response(conn, 200)
 
@@ -521,7 +521,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
         "after" => last_cursor_page2
       }
 
-      conn = get(conn, "/graphql", query: query2, variables: variables3)
+      conn = post(conn, "/graphql", query: query2, variables: variables3)
 
       %{"data" => %{"address" => %{"transactions" => page3}}} = json_response(conn, 200)
 

@@ -323,7 +323,7 @@ defmodule EthereumJSONRPC.Transaction do
     request(%{
       id: id,
       method: "eth_call",
-      params: [%{to: to, from: from, data: data, gas: gas, gas_price: gas_price, value: value}, block]
+      params: [%{to: to, from: from, data: data, gas: gas, gasPrice: gas_price, value: value}, block]
     })
   end
 

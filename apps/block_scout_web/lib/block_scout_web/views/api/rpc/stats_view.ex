@@ -3,8 +3,8 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
 
   alias BlockScoutWeb.API.RPC.RPCView
 
-  def render("tokensupply.json", token_supply) do
-    RPCView.render("show.json", data: Decimal.to_string(token_supply))
+  def render("tokensupply.json", %{total_supply: token_supply}) do
+    RPCView.render("show.json", data: token_supply)
   end
 
   def render("ethsupplyexchange.json", %{total_supply: total_supply}) do
