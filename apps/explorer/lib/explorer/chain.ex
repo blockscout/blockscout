@@ -2106,40 +2106,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  @doc """
-  The height of the chain.
-
-      iex> insert(:block, number: 0)
-      iex> Explorer.Chain.block_height()
-      0
-      iex> insert(:block, number: 1)
-      iex> Explorer.Chain.block_height()
-      1
-
-  If there are no blocks, then the `t:block_height/0` is `0`, unlike `max_consensus_block_chain/0` where it is not found.
-
-      iex> Explorer.Chain.block_height()
-      0
-      iex> Explorer.Chain.max_consensus_block_number()
-      {:error, :not_found}
-
-  It is not possible to differentiate only the genesis block (`number` `0`) and no blocks.  Use
-  `max_consensus_block_chain/0` if you need to differentiate those two scenarios.
-
-      iex> Explorer.Chain.block_height()
-      0
-      iex> insert(:block, number: 0)
-      iex> Explorer.Chain.block_height()
-      0
-
-  Non-consensus blocks are ignored.
-
-      iex> insert(:block, number: 2, consensus: false)
-      iex> insert(:block, number: 1, consensus: true)
-      iex> Explorer.Chain.block_height()
-      1
-
-  """
   @spec block_height() :: block_height()
   def block_height do
     query = from(block in Block, select: coalesce(max(block.number), 0), where: block.consensus == true)
