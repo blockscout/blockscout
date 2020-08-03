@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.TokenTransferChannel do
+defmodule BlockScoutWeb.TokenChannel do
   @moduledoc """
   Establishes pub/sub channel for live updates of token transfer events.
   """
@@ -14,11 +14,11 @@ defmodule BlockScoutWeb.TokenTransferChannel do
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
 
-  def join("token_transfers:new_token_transfer", _params, socket) do
+  def join("tokens:new_token_transfer", _params, socket) do
     {:ok, %{}, socket}
   end
 
-  def join("token_transfers:" <> _transaction_hash, _params, socket) do
+  def join("tokens:" <> _transaction_hash, _params, socket) do
     {:ok, %{}, socket}
   end
 

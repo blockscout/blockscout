@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.UserSocket do
   channel("exchange_rate:*", BlockScoutWeb.ExchangeRateChannel)
   channel("rewards:*", BlockScoutWeb.RewardChannel)
   channel("transactions:*", BlockScoutWeb.TransactionChannel)
-  channel("token_transfers:*", BlockScoutWeb.TokenTransferChannel)
+  channel("tokens:*", BlockScoutWeb.TokenChannel)
 
   def connect(%{"locale" => locale}, socket) do
     {:ok, assign(socket, :locale, locale)}

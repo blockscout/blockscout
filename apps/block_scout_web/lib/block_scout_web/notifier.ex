@@ -282,6 +282,11 @@ defmodule BlockScoutWeb.Notifier do
       token_transfer: token_transfer
     })
 
+    Endpoint.broadcast("tokens:#{token_transfer.token_contract_address_hash}", event, %{
+      address: token_transfer.token_contract_address_hash,
+      token_transfer: token_transfer
+    })
+
     if token_transfer.to_address_hash != token_transfer.from_address_hash do
       Endpoint.broadcast("addresses:#{token_transfer.to_address_hash}", event, %{
         address: token_transfer.to_address,
