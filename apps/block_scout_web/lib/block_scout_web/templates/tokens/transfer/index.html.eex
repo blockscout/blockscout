@@ -7,7 +7,7 @@
     conn: @conn
   ) %>
 
-  <section>
+  <section data-page="token-transfer-list">
     <div class="card">
       <%= render OverviewView, "_tabs.html", assigns %>
       <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
@@ -33,6 +33,6 @@
 
       </div>
     </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-transfers.js") %>"></script>
   </section>
-  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-counters.js") %>"></script>
 </section>
