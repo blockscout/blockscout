@@ -8,6 +8,9 @@ on:
     branches:
       - master
 
+env:
+  MIX_ENV: test
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,7 +22,11 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
+      - name: Restore cache mix.exs
         uses: actions/cache@v2
         with:
           path: ~/
@@ -27,32 +34,28 @@ jobs:
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
       - run: mix deps.get
-      - name: Cache node modules
+      - name: Restore cache node modules
         uses: actions/cache@v2
         with:
           path: ~/.npm
           key: |
             v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install-{{ .Branch }}
             v7-npm-install
-          restore-keys: v7-npm-install-
       - run: npm install
         working-directory: apps/explorer
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
-          key: >-
-            v3-npm-install-{{ .Branch }}-{{ checksum
-            "apps/explorer/package-lock.json" }}
-      - name: Cache dependencies
+          key: v3-npm-install-{{ .Branch }}-{{ checksum "apps/explorer/package-lock.json" }}
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
-          key: 'v3-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+          key: v3-npm-install-{{ .Branch }}
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
@@ -61,19 +64,17 @@ jobs:
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
-          key: >-
-            v7-npm-install-{{ .Branch }}-{{ checksum
-            "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Cache dependencies
+          key: v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
-          key: 'v7-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+          key: v7-npm-install-{{ .Branch }}
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -81,33 +82,27 @@ jobs:
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
              deps
              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
+          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
              deps
              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
+          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
              deps
              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
+          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
@@ -121,51 +116,11 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
       - run: mix deps.get
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
-      - run: |
-          mix local.hex --force
-          mix credo
-        env:
-          MIX_ENV: test
+      - run: mix credo
   check_formatted:
     runs-on: ubuntu-latest
     steps:
@@ -176,7 +131,11 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
+      - name: Restore cache mix.exs
         uses: actions/cache@v2
         with:
           path: ~/
@@ -184,41 +143,32 @@ jobs:
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
       - run: mix deps.get
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
+             deps
+             _build
+          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
+             deps
+             _build
+          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
+             deps
+             _build
+          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
       - run: mix format --check-formatted
-        env:
-          MIX_ENV: test
   dialyzer:
     runs-on: ubuntu-latest
     steps:
@@ -229,56 +179,23 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
       - run: mix deps.get
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
-      - run: |
+      - name: Unpack PLT cache
+        run: |
           mkdir -p _build/test
           cp plts/dialyxir*.plt _build/test/ || true
           mkdir -p ~/.mix
           cp plts/dialyxir*.plt ~/.mix/ || true
-          mix dialyzer --plt
+      - run: mix dialyzer --plt
+      - name: Pack PLT cache
+        run: |
           mkdir -p plts
           cp _build/test/dialyxir*.plt plts/
           cp ~/.mix/dialyxir*.plt plts/
-          mix dialyzer --halt-exit-status
+      - run: mix dialyzer --halt-exit-status
   gettext:
     runs-on: ubuntu-latest
     steps:
@@ -289,7 +206,11 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
+      - name: Restore cache mix.exs
         uses: actions/cache@v2
         with:
           path: ~/
@@ -297,12 +218,11 @@ jobs:
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
       - run: mix deps.get
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
@@ -311,7 +231,7 @@ jobs:
           key: >-
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
             "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
@@ -320,7 +240,7 @@ jobs:
           key: >-
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
             "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
@@ -333,8 +253,6 @@ jobs:
           mix gettext.extract --merge | tee stdout.txt
           ! grep "Wrote " stdout.txt
         working-directory: "apps/block_scout_web"
-        env:
-          MIX_ENV: test
   sobelow:
     runs-on: ubuntu-latest
     steps:
@@ -345,56 +263,17 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
       - run: mix deps.get
+      - run: mix deps.compile
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
       - name: Scan explorer for vulnerabilities
         run: mix sobelow --config
         working-directory: "apps/explorer"
-        env:
-          MIX_ENV: test
       - name: Scan block_scout_web for vulnerabilities
         run: mix sobelow --config
         working-directory: "apps/block_scout_web"
-        env:
-          MIX_ENV: test
   eslint:
     runs-on: ubuntu-latest
     steps:
@@ -405,7 +284,11 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
+      - name: Restore cache mix.exs
         uses: actions/cache@v2
         with:
           path: ~/
@@ -413,9 +296,8 @@ jobs:
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
       - run: mix deps.get
-      - name: Cache node modules
+      - name: Restore cache node modules
         uses: actions/cache@v2
         with:
           path: ~/.npm
@@ -423,22 +305,21 @@ jobs:
             v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
             'v7-npm-install-{{ .Branch }}'
             v7-npm-install
-          restore-keys: v7-npm-install-
       - run: npm install
         working-directory: apps/explorer
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: >-
             v3-npm-install-{{ .Branch }}-{{ checksum
             "apps/explorer/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: 'v3-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
@@ -447,19 +328,19 @@ jobs:
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: >-
             v7-npm-install-{{ .Branch }}-{{ checksum
             "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: 'v7-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -467,7 +348,7 @@ jobs:
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
@@ -476,7 +357,7 @@ jobs:
           key: >-
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
             "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
@@ -485,7 +366,7 @@ jobs:
           key: >-
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
             "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
@@ -509,7 +390,11 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
+      - name: Restore cache mix.exs
         uses: actions/cache@v2
         with:
           path: ~/
@@ -517,9 +402,8 @@ jobs:
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
       - run: mix deps.get
-      - name: Cache node modules
+      - name: Restore cache node modules
         uses: actions/cache@v2
         with:
           path: ~/.npm
@@ -527,22 +411,21 @@ jobs:
             v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
             'v7-npm-install-{{ .Branch }}'
             v7-npm-install
-          restore-keys: v7-npm-install-
       - run: npm install
         working-directory: apps/explorer
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: >-
             v3-npm-install-{{ .Branch }}-{{ checksum
             "apps/explorer/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: 'v3-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
@@ -551,19 +434,19 @@ jobs:
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: >-
             v7-npm-install-{{ .Branch }}-{{ checksum
             "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: 'v7-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -571,7 +454,7 @@ jobs:
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
@@ -580,7 +463,7 @@ jobs:
           key: >-
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
             "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
@@ -589,7 +472,7 @@ jobs:
           key: >-
             v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
             "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: |
@@ -632,40 +515,34 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
       - run: mix deps.get
-      - name: Cache node modules
+      - name: Restore cache node modules
         uses: actions/cache@v2
         with:
           path: ~/.npm
           key: |
             v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install-{{ .Branch }}
             v7-npm-install
-          restore-keys: v7-npm-install-
       - run: npm install
         working-directory: apps/explorer
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: >-
             v3-npm-install-{{ .Branch }}-{{ checksum
             "apps/explorer/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: 'v3-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
@@ -674,19 +551,19 @@ jobs:
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: >-
             v7-npm-install-{{ .Branch }}-{{ checksum
             "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: 'v7-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -694,33 +571,6 @@ jobs:
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
@@ -730,7 +580,6 @@ jobs:
           cd apps/ethereum_jsonrpc
           mix test --no-start --exclude no_parity
         env:
-          MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
@@ -766,40 +615,34 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
       - run: mix deps.get
-      - name: Cache node modules
+      - name: Restore cache node modules
         uses: actions/cache@v2
         with:
           path: ~/.npm
           key: |
             v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install-{{ .Branch }}
             v7-npm-install
-          restore-keys: v7-npm-install-
       - run: npm install
         working-directory: apps/explorer
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: >-
             v3-npm-install-{{ .Branch }}-{{ checksum
             "apps/explorer/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: 'v3-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
@@ -808,19 +651,19 @@ jobs:
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: >-
             v7-npm-install-{{ .Branch }}-{{ checksum
             "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: 'v7-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -828,33 +671,6 @@ jobs:
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
@@ -866,7 +682,6 @@ jobs:
           cd apps/explorer
           mix test --no-start --exclude no_parity
         env:
-          MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
@@ -902,40 +717,34 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
       - run: mix deps.get
-      - name: Cache node modules
+      - name: Restore cache node modules
         uses: actions/cache@v2
         with:
           path: ~/.npm
           key: |
             v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install-{{ .Branch }}
             v7-npm-install
-          restore-keys: v7-npm-install-
       - run: npm install
         working-directory: apps/explorer
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: >-
             v3-npm-install-{{ .Branch }}-{{ checksum
             "apps/explorer/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: 'v3-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
@@ -944,19 +753,19 @@ jobs:
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: >-
             v7-npm-install-{{ .Branch }}-{{ checksum
             "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
-          key: 'v7-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+          key: v7-npm-install-{{ .Branch }}
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -964,33 +773,6 @@ jobs:
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
@@ -1002,7 +784,6 @@ jobs:
           cd apps/indexer
           mix test --no-start --exclude no_parity
         env:
-          MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
@@ -1038,17 +819,12 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
       - run: mix deps.get
-      - name: Cache node modules
+      - name: Restore cache node modules
         uses: actions/cache@v2
         with:
           path: ~/.npm
@@ -1056,22 +832,21 @@ jobs:
             v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
             'v7-npm-install-{{ .Branch }}'
             v7-npm-install
-          restore-keys: v7-npm-install-
       - run: npm install
         working-directory: apps/explorer
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: >-
             v3-npm-install-{{ .Branch }}-{{ checksum
             "apps/explorer/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: 'v3-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
@@ -1080,19 +855,19 @@ jobs:
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: >-
             v7-npm-install-{{ .Branch }}-{{ checksum
             "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: 'v7-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -1100,33 +875,6 @@ jobs:
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
@@ -1138,7 +886,6 @@ jobs:
           cd apps/block_scout_web
           mix test --no-start --exclude no_parity
         env:
-          MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
@@ -1174,40 +921,34 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: Cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
-          restore-keys: v8-mix-compile-
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
       - run: mix deps.get
-      - name: Cache node modules
+      - name: Restore cache node modules
         uses: actions/cache@v2
         with:
           path: ~/.npm
           key: |
             v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install-{{ .Branch }}
             v7-npm-install
-          restore-keys: v7-npm-install-
       - run: npm install
         working-directory: apps/explorer
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: >-
             v3-npm-install-{{ .Branch }}-{{ checksum
             "apps/explorer/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
           key: 'v3-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/explorer/node_modules
@@ -1216,19 +957,19 @@ jobs:
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
           key: >-
             v7-npm-install-{{ .Branch }}-{{ checksum
             "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Cache dependencies
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
-          key: 'v7-npm-install-{{ .Branch }}'
-      - name: Cache dependencies
+          key: v7-npm-install-{{ .Branch }}
+      - name: Save cache dependencies
         uses: actions/cache@v2
         with:
           path: apps/block_scout_web/assets/node_modules
@@ -1236,33 +977,6 @@ jobs:
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
@@ -1272,15 +986,14 @@ jobs:
           mix ecto.create --quiet
           mix ecto.migrate
         env:
-          MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
           PGUSER: postgres
       - name: coveralls
-        run: mix coveralls.html --exclude no_parity --parallel --umbrella
+        run: mix coveralls.github
         env:
-          MIX_ENV: test
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # match POSTGRES_PASSWORD for postgres image below
           PGPASSWORD: postgres
           # match POSTGRES_USER for postgres image below
