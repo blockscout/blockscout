@@ -62,7 +62,7 @@ const elements = {
     }
   },
   '[data-selector="channel-batching-count"]': {
-    render ($el, state, oldState) {
+    render ($el, state, _oldState) {
       const $channelBatching = $('[data-selector="channel-batching-message"]')
       if (!state.transactionsBatch.length) return $channelBatching.hide()
       $channelBatching.show()
