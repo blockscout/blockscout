@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 3.3.1-beta
+
+### Features
 - [#3216](https://github.com/poanetwork/blockscout/pull/3216) - Display new token transfers at token page and address page without refreshing the page
 - [#3199](https://github.com/poanetwork/blockscout/pull/3199) - Show compilation error at contract verification
 - [#3193](https://github.com/poanetwork/blockscout/pull/3193) - Raw trace copy button
