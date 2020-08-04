@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3220](https://github.com/poanetwork/blockscout/pull/3220) - Allow interaction with navbar menu at block-not-found page
 
 ### Chore
 
