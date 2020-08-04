@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "5.1.0-4",
+    "@tarekraafat/autocomplete.js": "^7.2.0",
     "awesomplete": "^1.1.5",
     "bignumber.js": "^9.0.0",
     "bootstrap": "^4.3.1",

@@ -97,6 +97,7 @@ const appJs =
       'try-api': './js/lib/try_api.js',
       'try-eth-api': './js/lib/try_eth_api.js',
       'async-listing-load': './js/lib/async_listing_load',
+      'autocomplete': './js/lib/autocomplete',
       'non-critical': './css/non-critical.scss'
     },
     output: {

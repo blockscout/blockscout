@@ -1,7 +1,3 @@
-<link rel="preload" href="<%= static_path(@conn, "/css/awesomplete.css") %>" as="style" onload="this.rel='stylesheet'">
-<link rel="stylesheet" href="<%= static_path(@conn, "/css/awesomplete.css") %>">
-<script src="<%= static_path(@conn, "/js/awesomplete.min.js") %>"></script>
-<script src="<%= static_path(@conn, "/js/awesomplete-util.min.js") %>"></script>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <script>
     if (localStorage.getItem("current-color-mode") === "dark") {
@@ -156,22 +152,7 @@
         <div class="search-form d-lg-flex d-inline-block">
           <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
           <div class="input-group" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
-                <%= awesomplete(f, :q,
-                    [
-                    class: "form-control me auto",
-                    placeholder: gettext("Search by address, token symbol name, transaction hash, or block number"),
-                    "aria-describedby": "search-icon",
-                    "aria-label": gettext("Search"),
-                    "data-test": "search_input"
-                    ],
-                    [ url: "#{chain_path(@conn, :token_autocomplete)}?q=",
-                    limit: 0,
-                    minChars: 2,
-                    value: "contract_address_hash",
-                    label: "contract_address_hash",
-                    descrSearch: true,
-                    descr: "symbol"
-                    ]) %>
+                <input id="autoComplete" class="form-control me auto"></input>
                 <div class="input-group-append">
                   <button class="input-group-text" id="search-icon">
                     <%= render BlockScoutWeb.IconsView, "_search_icon.html" %>
@@ -191,6 +172,7 @@
     </div>
   </div>
 </nav>
+<script src="<%= static_path(@conn, "/js/autocomplete.js") %>"></script>
 <script>
   if (localStorage.getItem("current-color-mode") === "dark") {
     var modeChanger = document.getElementById("dark-mode-changer");
