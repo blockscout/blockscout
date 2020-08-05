@@ -1735,7 +1735,6 @@ defmodule Explorer.Chain do
 
     base_query
     |> page_tokens(paging_options)
-    |> join_associations(necessity_by_association)
     |> limit(^paging_options.page_size)
     |> Repo.all()
   end
@@ -3165,9 +3164,11 @@ defmodule Explorer.Chain do
 
   defp page_tokens(query, %PagingOptions{key: nil}), do: query
 
-  defp page_tokens(query, %PagingOptions{key: {contract_address_hash}}) do
+  defp page_tokens(query, %PagingOptions{key: {holder_count, contract_address_hash}}) do
     from(token in query,
-      where: token.contract_address_hash > ^contract_address_hash
+      where:
+        (token.holder_count == ^holder_count and token.contract_address_hash > ^contract_address_hash) or
+          token.holder_count < ^holder_count
     )
   end
 

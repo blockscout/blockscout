@@ -8,18 +8,8 @@ defmodule BlockScoutWeb.TokensController do
   alias Phoenix.View
 
   def index(conn, %{"type" => "JSON"} = params) do
-    full_options =
-      Keyword.merge(
-        [
-          necessity_by_association: %{
-            [contract_address: :contract_address] => :optional
-          }
-        ],
-        paging_options(params)
-      )
-
     tokens =
-      full_options
+      params
       |> paging_options()
       |> Chain.list_top_tokens()
 
@@ -31,7 +21,7 @@ defmodule BlockScoutWeb.TokensController do
           nil
 
         next_page_params ->
-          address_path(
+          tokens_path(
             conn,
             :index,
             Map.delete(next_page_params, "type")
@@ -64,7 +54,6 @@ defmodule BlockScoutWeb.TokensController do
 
     render(conn, "index.html",
       current_path: current_path(conn),
-      address_count: Chain.address_estimated_count(),
       total_supply: total_supply
     )
   end
