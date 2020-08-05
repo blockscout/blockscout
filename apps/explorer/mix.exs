@@ -82,7 +82,7 @@ defmodule Explorer.Mixfile do
       # Data factory for testing
       {:ex_machina, "~> 2.3", only: [:test]},
       # Code coverage
-      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
+      {:excoveralls, "~> 0.13.1"},
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.0"},
@@ -100,7 +100,7 @@ defmodule Explorer.Mixfile do
       # Prometheus metrics for query duration
       {:prometheus_ecto, "~> 1.4.3"},
       # bypass optional dependency
-      {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
+      {:plug_cowboy, "~> 2.2", only: [:dev, :test]},
       {:que, "~> 0.10.1"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       # Tracing

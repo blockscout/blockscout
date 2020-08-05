@@ -272,7 +272,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @token_gettoken_example_value_error %{
     "status" => "0",
-    "message" => "Invalid contractaddress format",
+    "message" => "Invalid contract address format",
     "result" => nil
   }
 

@@ -1,12 +1,19 @@
 ## Current
 
 ### Features
+- [#3216](https://github.com/poanetwork/blockscout/pull/3216) - Display new token transfers at token page and address page without refreshing the page
 - [#3199](https://github.com/poanetwork/blockscout/pull/3199) - Show compilation error at contract verification
 - [#3193](https://github.com/poanetwork/blockscout/pull/3193) - Raw trace copy button
 - [#3184](https://github.com/poanetwork/blockscout/pull/3184) - Apps navbar menu item
 - [#3145](https://github.com/poanetwork/blockscout/pull/3145) - Pending txs per address API endpoint
 
 ### Fixes
+- [#3219](https://github.com/poanetwork/blockscout/pull/3219) - Fix revert reason message detection
+- [#3215](https://github.com/poanetwork/blockscout/pull/3215) - Coveralls in CI through Github Actions
+- [#3214](https://github.com/poanetwork/blockscout/pull/3214) - Fix current token balances fetcher
+- [#3143](https://github.com/poanetwork/blockscout/pull/3143) - Fix "Connection lost..." error at address page
+- [#3209](https://github.com/poanetwork/blockscout/pull/3209) - GraphQL: fix internal server error at request of internal transactions at address
+- [#3207](https://github.com/poanetwork/blockscout/pull/3207) - Fix read contract bytes array type output
 - [#3203](https://github.com/poanetwork/blockscout/pull/3203) - Improve "get mined blocks" query performance
 - [#3202](https://github.com/poanetwork/blockscout/pull/3202) - Fix contracts verification with experimental features enabled
 - [#3201](https://github.com/poanetwork/blockscout/pull/3201) - Connect to Metamask button
@@ -18,6 +25,9 @@
 - [#3178](https://github.com/poanetwork/blockscout/pull/3178) - Fix unavailable navbar menu when read/write proxy tab is active
 
 ### Chore
+- [#3212](https://github.com/poanetwork/blockscout/pull/3212) - GitHub actions CI config
+- [#3210](https://github.com/poanetwork/blockscout/pull/3210) - Update Phoenix up to 1.4.17
+- [#3206](https://github.com/poanetwork/blockscout/pull/3206) - Update Elixir version: 1.10.2 -> 1.10.3
 - [#3204](https://github.com/poanetwork/blockscout/pull/3204) - GraphQL Absinthe related packages update up to stable versions
 - [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Return correct status in verify API endpoint if contract verified
 - [#3180](https://github.com/poanetwork/blockscout/pull/3180) - Remove Kovan from the list of default chains
