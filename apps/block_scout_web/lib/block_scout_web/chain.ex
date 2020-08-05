@@ -24,6 +24,7 @@ defmodule BlockScoutWeb.Chain do
     Block,
     InternalTransaction,
     Log,
+    Token,
     TokenTransfer,
     Transaction,
     Wei
@@ -203,6 +204,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params({%Address{hash: hash, fetched_coin_balance: fetched_coin_balance}, _}) do
     %{"hash" => hash, "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)}
+  end
+
+  defp paging_params({%Token{contract_address_hash: contract_address_hash}, _}) do
+    %{"contract_address_hash" => contract_address_hash}
   end
 
   defp paging_params({%Reward{block: %{number: number}}, _}) do
