@@ -81,6 +81,7 @@
       @view_module != Elixir.BlockScoutWeb.BlockView &&
       @view_module != Elixir.BlockScoutWeb.BlockTransactionView &&
       @view_module != Elixir.BlockScoutWeb.AddressView &&
+      @view_module != Elixir.BlockScoutWeb.TokensView &&
       @view_module != Elixir.BlockScoutWeb.TransactionView &&
       @view_module != Elixir.BlockScoutWeb.PendingTransactionView &&
       @view_module != Elixir.BlockScoutWeb.TransactionInternalTransactionView &&
