@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @page_size 50
+  @page_size 10
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @address_hash_len 40
   @tx_block_hash_len 64
@@ -102,6 +102,16 @@ defmodule BlockScoutWeb.Chain do
     with {coin_balance, ""} <- Integer.parse(fetched_coin_balance),
          {:ok, address_hash} <- string_to_address_hash(hash) do
       [paging_options: %{@default_paging_options | key: {%Wei{value: Decimal.new(coin_balance)}, address_hash}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"contract_address_hash" => contract_address_hash, "holder_count" => holder_count}) do
+    with {holder_count, ""} <- Integer.parse(holder_count),
+         {:ok, contract_address_hash} <- string_to_address_hash(contract_address_hash) do
+      [paging_options: %{@default_paging_options | key: {holder_count, contract_address_hash}}]
     else
       _ ->
         [paging_options: @default_paging_options]
@@ -206,8 +216,8 @@ defmodule BlockScoutWeb.Chain do
     %{"hash" => hash, "fetched_coin_balance" => Decimal.to_string(fetched_coin_balance.value)}
   end
 
-  defp paging_params({%Token{contract_address_hash: contract_address_hash}, _}) do
-    %{"contract_address_hash" => contract_address_hash}
+  defp paging_params(%Token{contract_address_hash: contract_address_hash, holder_count: holder_count}) do
+    %{"contract_address_hash" => contract_address_hash, "holder_count" => holder_count}
   end
 
   defp paging_params({%Reward{block: %{number: number}}, _}) do
