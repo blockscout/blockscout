@@ -29,6 +29,11 @@
 			Holders Count
 			</div>
 	      </th>
+		  <th class="stakes-table-th">
+			<div class="stakes-table-th-content">
+			Txs Count
+			</div>
+	      </th>
 	    </tr>
 	  </thead>
 	  <tbody data-items data-selector="top-tokens-list">

@@ -29,8 +29,14 @@
   </td>
   <td class="stakes-td">
     <span class="mr-4">
-      <span data-test="transaction_count">
+      <span data-test="holder_count">
         <%= @token.holder_count %>
     </span>
   </td>
+  <td class="stakes-td">
+    <span class="mr-4">
+      <span data-test="transaction_count">
+        <%= @token.txs_count %>
+    </span>
+  </td>v
 </tr>

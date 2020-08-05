@@ -1729,11 +1729,49 @@ defmodule Explorer.Chain do
     base_query =
       from(t in Token,
         where: t.total_supply > ^0,
-        order_by: [desc: t.holder_count],
-        preload: [:contract_address]
+        order_by: [desc: t.holder_count]
       )
 
-    base_query
+    query_with_tx_count =
+      from(t in subquery(base_query),
+        left_join: t_t in TokenTransfer,
+        where: t.contract_address_hash == t_t.token_contract_address_hash,
+        where: t.total_supply > ^0,
+        group_by: [t.contract_address_hash, t.decimals, t.name, t.symbol, t.total_supply, t.type, t.holder_count],
+        order_by: [desc: t.holder_count],
+        select_merge: %{
+          contract_address_hash: t.contract_address_hash,
+          decimals: t.decimals,
+          name: t.name,
+          symbol: t.symbol,
+          total_supply: t.total_supply,
+          type: t.type,
+          holder_count: t.holder_count,
+          txs_count: count(t_t.transaction_hash)
+        }
+      )
+
+    query_with_tx_count_and_preload =
+      from(t in Token,
+        inner_join: t2 in subquery(query_with_tx_count),
+        where: t.contract_address_hash == t2.contract_address_hash,
+        preload: [:contract_address],
+        # select: [t2, t]
+        select: %{
+          contract_address: t.contract_address,
+          contract_address_hash: t.contract_address_hash,
+          decimals: t.decimals,
+          name: t.name,
+          symbol: t.symbol,
+          total_supply: t.total_supply,
+          type: t.type,
+          holder_count: t.holder_count,
+          # txs_count: t2.txs_count
+        }
+        # select: %{t | txs_count: t2.txs_count}
+      )
+
+    query_with_tx_count_and_preload
     |> page_tokens(paging_options)
     |> join_associations(necessity_by_association)
     |> limit(^paging_options.page_size)
