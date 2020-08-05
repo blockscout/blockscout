@@ -1719,13 +1719,12 @@ defmodule Explorer.Chain do
   """
   @spec list_top_tokens :: [{Token.t(), non_neg_integer()}]
   def list_top_tokens(options \\ []) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    fetch_top_tokens(paging_options, necessity_by_association)
+    fetch_top_tokens(paging_options)
   end
 
-  defp fetch_top_tokens(paging_options, necessity_by_association) do
+  defp fetch_top_tokens(paging_options) do
     base_query =
       from(t in Token,
         where: t.total_supply > ^0,
