@@ -119,7 +119,8 @@ defmodule BlockScoutWeb.Notifier do
           &(TokenTransfer
             |> Repo.get_by(
               transaction_hash: &1.transaction_hash,
-              token_contract_address_hash: &1.token_contract_address_hash
+              token_contract_address_hash: &1.token_contract_address_hash,
+              log_index: &1.log_index
             )
             |> Repo.preload([:from_address, :to_address, :token, transaction: :block]))
         )
