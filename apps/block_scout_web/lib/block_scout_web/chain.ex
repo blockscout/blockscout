@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @page_size 10
+  @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @address_hash_len 40
   @tx_block_hash_len 64
