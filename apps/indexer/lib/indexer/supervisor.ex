@@ -5,7 +5,7 @@ defmodule Indexer.Supervisor do
 
   use Supervisor
 
-  alias Indexer.{Block, PendingOpsCleaner}
+  alias Indexer.{Block, PendingOpsCleaner, SetBridgedStatusForTokens}
   alias Indexer.Block.{Catchup, Realtime}
 
   alias Indexer.Fetcher.{
@@ -123,6 +123,7 @@ defmodule Indexer.Supervisor do
 
         # Out-of-band fetchers
         {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
+        {SetBridgedStatusForTokens, [[], []]},
 
         # Temporary workers
         {UncatalogedTokenTransfers.Supervisor, [[]]},

@@ -107,7 +107,7 @@ msgid "API for the %{subnetwork} - BlockScout"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:85
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:93
 msgid "APIs"
 msgstr ""
 
@@ -631,7 +631,7 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:99
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:107
 msgid "Eth RPC"
 msgstr ""
 
@@ -732,7 +732,7 @@ msgid "Github"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:89
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:97
 msgid "GraphQL"
 msgstr ""
 
@@ -1175,7 +1175,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:51
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:94
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:105
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:115
 msgid "QR Code"
 msgstr ""
 
@@ -1185,7 +1185,7 @@ msgid "Query"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:94
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:102
 msgid "RPC"
 msgstr ""
 
@@ -1243,14 +1243,14 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:164
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:181
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:172
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:189
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:158
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:162
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:166
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:170
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1446,7 +1446,7 @@ msgid "Topics"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:75
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:85
 msgid "Total Supply"
 msgstr ""
 
@@ -1601,7 +1601,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:16
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:20
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:55
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:65
 msgid "View Contract"
 msgstr ""
 
@@ -1715,8 +1715,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:142
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:95
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:103
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:106
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:114
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:116
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:124
 msgid "Close"
 msgstr ""
 
@@ -1733,7 +1733,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:69
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:63
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:73
 msgid "Decimals"
 msgstr ""
 
@@ -1850,6 +1850,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:14
 #: lib/block_scout_web/templates/address_token/index.html.eex:8
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:11
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:83
+#: lib/block_scout_web/templates/tokens/index.html.eex:4
 #: lib/block_scout_web/views/address_view.ex:341
 msgid "Tokens"
 msgstr ""
@@ -1930,7 +1932,7 @@ msgid "Write Proxy"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:112
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:120
 msgid "Apps"
 msgstr ""
 
