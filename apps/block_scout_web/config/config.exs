@@ -37,6 +37,7 @@ config :block_scout_web,
   external_apps: System.get_env("EXTERNAL_APPS"),
   moon_token_addresses: System.get_env("MOON_TOKEN_ADDRESSES"),
   bricks_token_addresses: System.get_env("BRICKS_TOKEN_ADDRESSES")
+  multi_token_bridge_mediator: System.get_env("MULTI_TOKEN_BRIDGE_MEDIATOR")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 

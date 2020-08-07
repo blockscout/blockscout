@@ -116,4 +116,48 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
       false
     end
   end
+
+  def foreign_bridged_token_explorer_link(token) do
+    chain_id = Map.get(token, :foreign_chain_id)
+
+    base_token_explorer_link = get_base_token_explorer_link(chain_id)
+
+    foreign_token_contract_address_hash_string_no_prefix =
+      token.foreign_token_contract_address_hash.bytes
+      |> Base.encode16(case: :lower)
+
+    foreign_token_contract_address_hash_string = "0x" <> foreign_token_contract_address_hash_string_no_prefix
+
+    base_token_explorer_link <> foreign_token_contract_address_hash_string
+  end
+
+  defp get_base_token_explorer_link(chain_id) when not is_nil(chain_id) do
+    case Decimal.to_integer(chain_id) do
+      100 ->
+        "https://blockscout.com/poa/xdai/tokens/"
+
+      99 ->
+        "https://blockscout.com/poa/core/tokens/"
+
+      77 ->
+        "https://blockscout.com/poa/sokol/tokens/"
+
+      42 ->
+        "https://kovan.etherscan.io/token/"
+
+      3 ->
+        "https://ropsten.etherscan.io/token/"
+
+      4 ->
+        "https://rinkeby.etherscan.io/token/"
+
+      5 ->
+        "https://goerli.etherscan.io/token/"
+
+      1 ->
+        "https://etherscan.io/token/"
+    end
+  end
+
+  defp get_base_token_explorer_link(_), do: "https://etherscan.io/"
 end
