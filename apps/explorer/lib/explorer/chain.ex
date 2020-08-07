@@ -3564,6 +3564,9 @@ defmodule Explorer.Chain do
           |> Map.put(:foreign_chain_id, foreign_chain_id)
 
         {:ok, extended_token}
+
+      [%Token{} = token, nil] ->
+        {:ok, token}
     end
   end
 
