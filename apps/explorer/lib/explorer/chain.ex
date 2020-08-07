@@ -3398,7 +3398,9 @@ defmodule Explorer.Chain do
       created_from_factory_query =
         from(
           it in InternalTransaction,
-          where: it.created_contract_address_hash == ^token_address_hash
+          inner_join: t in assoc(it, :transaction),
+          where: it.created_contract_address_hash == ^token_address_hash,
+          where: t.status == ^1
         )
 
       created_from_factory =
