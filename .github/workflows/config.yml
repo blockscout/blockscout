@@ -26,14 +26,6 @@ jobs:
         run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
       - name: "OTP_VERSION.lock"
         run: echo "${OTP_VERSION}" > OTP_VERSION.lock
-      - name: Restore cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
       - run: mix deps.get
       - name: Restore cache node modules
         uses: actions/cache@v2
@@ -82,27 +74,6 @@ jobs:
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-             deps
-             _build
-          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-             deps
-             _build
-          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-             deps
-             _build
-          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
@@ -131,43 +102,10 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: "ELIXIR_VERSION.lock"
-        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
-      - name: "OTP_VERSION.lock"
-        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
-      - name: Restore cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
       - run: mix deps.get
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-             deps
-             _build
-          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-             deps
-             _build
-          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-             deps
-             _build
-          key: v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
       - run: mix format --check-formatted
   dialyzer:
     runs-on: ubuntu-latest
@@ -206,49 +144,10 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: "ELIXIR_VERSION.lock"
-        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
-      - name: "OTP_VERSION.lock"
-        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
-      - name: Restore cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
       - run: mix deps.get
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
       - run: |
           mix gettext.extract --merge | tee stdout.txt
           ! grep "Wrote " stdout.txt
@@ -284,18 +183,6 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: "ELIXIR_VERSION.lock"
-        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
-      - name: "OTP_VERSION.lock"
-        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
-      - name: Restore cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
       - run: mix deps.get
       - name: Restore cache node modules
         uses: actions/cache@v2
@@ -348,33 +235,6 @@ jobs:
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
@@ -390,18 +250,6 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: "ELIXIR_VERSION.lock"
-        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
-      - name: "OTP_VERSION.lock"
-        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
-      - name: Restore cache mix.exs
-        uses: actions/cache@v2
-        with:
-          path: ~/
-          key: |
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
       - run: mix deps.get
       - name: Restore cache node modules
         uses: actions/cache@v2
@@ -454,33 +302,6 @@ jobs:
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: |
-              deps
-              _build
-          key: >-
-            v8-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum
-            "ELIXIR_VERSION.lock" }}
       - name: Build assets
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
@@ -515,10 +336,6 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: "ELIXIR_VERSION.lock"
-        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
-      - name: "OTP_VERSION.lock"
-        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
       - run: mix deps.get
       - name: Restore cache node modules
         uses: actions/cache@v2
@@ -615,10 +432,6 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: "ELIXIR_VERSION.lock"
-        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
-      - name: "OTP_VERSION.lock"
-        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
       - run: mix deps.get
       - name: Restore cache node modules
         uses: actions/cache@v2
@@ -717,10 +530,6 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: "ELIXIR_VERSION.lock"
-        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
-      - name: "OTP_VERSION.lock"
-        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
       - run: mix deps.get
       - name: Restore cache node modules
         uses: actions/cache@v2
@@ -819,10 +628,6 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: "ELIXIR_VERSION.lock"
-        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
-      - name: "OTP_VERSION.lock"
-        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
       - run: mix deps.get
       - name: Restore cache node modules
         uses: actions/cache@v2
@@ -921,10 +726,6 @@ jobs:
           elixir-version: '1.10.3'
       - run: mix local.hex --force
       - run: mix local.rebar --force
-      - name: "ELIXIR_VERSION.lock"
-        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
-      - name: "OTP_VERSION.lock"
-        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
       - run: mix deps.get
       - name: Restore cache node modules
         uses: actions/cache@v2
