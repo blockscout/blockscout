@@ -102,5 +102,5 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
     end
   end
 
-  defp get_base_token_explorer_link(_), do: "https://etherscan.io/"
+  defp get_base_token_explorer_link(_), do: "https://etherscan.io/token/"
 end
