@@ -96,6 +96,9 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
       1 ->
         "https://etherscan.io/token/"
+
+      _ ->
+        "https://etherscan.io/token/"
     end
   end
 
