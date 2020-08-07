@@ -3480,7 +3480,7 @@ defmodule Explorer.Chain do
                 |> json_rpc(json_rpc_named_arguments)
 
               "0x" <> foreign_chain_id_abi_encoded_no_prefix = foreign_chain_id_abi_encoded
-              {foreign_chain_id, _} = Integer.parse(foreign_chain_id_abi_encoded_no_prefix)
+              {foreign_chain_id, _} = Integer.parse(foreign_chain_id_abi_encoded_no_prefix, 16)
 
               set_bridged_token_metadata(token_address_hash, %{
                 foreign_chain_id: foreign_chain_id,
