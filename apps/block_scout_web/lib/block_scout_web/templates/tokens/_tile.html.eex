@@ -1,0 +1,36 @@
+<tr>
+  <td class="stakes-td">
+      <!-- incremented number by order in the list -->
+      <span class="color-lighten">
+        <%= @index %>
+      </span>
+  </td>
+  <td class="stakes-td">
+    <% token = "#{@token.name} (#{@token.symbol})" %>
+    <%= link(token,
+      to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
+      "data-test": "token_link",
+      class: "text-truncate") %>
+  </td>
+  <td class="stakes-td">
+    <%= render BlockScoutWeb.AddressView,
+      "_link.html",
+      address: @token.contract_address,
+      contract: true,
+      use_custom_tooltip: false
+    %>
+  </td>
+  <td class="stakes-td">
+    <%= if decimals?(@token) do %>
+      <span data-test="token_supply"><%= format_according_to_decimals(@token.total_supply, @token.decimals) %></span>
+    <% else %>
+      <span data-test="token_supply"><%= format_integer_to_currency(@token.total_supply) %></span>
+    <% end %> <%= @token.symbol %>
+  </td>
+  <td class="stakes-td">
+    <span class="mr-4">
+      <span data-test="transaction_count">
+        <%= @token.holder_count %>
+    </span>
+  </td>
+</tr>
