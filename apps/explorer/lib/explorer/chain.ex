@@ -83,6 +83,13 @@ defmodule Explorer.Chain do
 
   @max_incoming_transactions_count 10_000
 
+  @revert_msg_prefix_1 "Revert: "
+  @revert_msg_prefix_2 "revert: "
+  @revert_msg_prefix_3 "reverted "
+  @revert_msg_prefix_4 "Reverted "
+  # keccak256("Error(string)")
+  @revert_error_method_id "08c379a0"
+
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -1707,6 +1714,31 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Lists the top `t:Explorer.Chain.Token.t/0`'s'.
+
+  """
+  @spec list_top_tokens :: [{Token.t(), non_neg_integer()}]
+  def list_top_tokens(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    fetch_top_tokens(paging_options)
+  end
+
+  defp fetch_top_tokens(paging_options) do
+    base_query =
+      from(t in Token,
+        where: t.total_supply > ^0,
+        order_by: [desc: t.holder_count],
+        preload: [:contract_address]
+      )
+
+    base_query
+    |> page_tokens(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
+  @doc """
   Calls `reducer` on a stream of `t:Explorer.Chain.Block.t/0` without `t:Explorer.Chain.Block.Reward.t/0`.
   """
   def stream_blocks_without_rewards(initial, reducer) when is_function(reducer, 2) do
@@ -2099,40 +2131,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  @doc """
-  The height of the chain.
-
-      iex> insert(:block, number: 0)
-      iex> Explorer.Chain.block_height()
-      0
-      iex> insert(:block, number: 1)
-      iex> Explorer.Chain.block_height()
-      1
-
-  If there are no blocks, then the `t:block_height/0` is `0`, unlike `max_consensus_block_chain/0` where it is not found.
-
-      iex> Explorer.Chain.block_height()
-      0
-      iex> Explorer.Chain.max_consensus_block_number()
-      {:error, :not_found}
-
-  It is not possible to differentiate only the genesis block (`number` `0`) and no blocks.  Use
-  `max_consensus_block_chain/0` if you need to differentiate those two scenarios.
-
-      iex> Explorer.Chain.block_height()
-      0
-      iex> insert(:block, number: 0)
-      iex> Explorer.Chain.block_height()
-      0
-
-  Non-consensus blocks are ignored.
-
-      iex> insert(:block, number: 2, consensus: false)
-      iex> insert(:block, number: 1, consensus: true)
-      iex> Explorer.Chain.block_height()
-      1
-
-  """
   @spec block_height() :: block_height()
   def block_height do
     query = from(block in Block, select: coalesce(max(block.number), 0), where: block.consensus == true)
@@ -2450,7 +2448,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  defp pending_transactions_query(query) do
+  def pending_transactions_query(query) do
     from(transaction in query,
       where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
     )
@@ -2742,6 +2740,19 @@ defmodule Explorer.Chain do
       ) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
+    gas_hex =
+      if gas do
+        gas_hex_without_prefix =
+          gas
+          |> Decimal.to_integer()
+          |> Integer.to_string(16)
+          |> String.downcase()
+
+        "0x" <> gas_hex_without_prefix
+      else
+        "0x0"
+      end
+
     req =
       EthereumJSONRPCTransaction.eth_call_request(
         0,
@@ -2749,7 +2760,7 @@ defmodule Explorer.Chain do
         data,
         to_address_hash,
         from_address_hash,
-        Decimal.to_integer(gas),
+        gas_hex,
         Wei.hex_format(gas_price),
         Wei.hex_format(value)
       )
@@ -2763,14 +2774,7 @@ defmodule Explorer.Chain do
           ""
       end
 
-    revert_reason_parts = String.split(data, "revert: ")
-
-    formatted_revert_reason =
-      if Enum.count(revert_reason_parts) > 1 do
-        Enum.at(revert_reason_parts, 1)
-      else
-        data
-      end
+    formatted_revert_reason = format_revert_reason_message(data)
 
     if byte_size(formatted_revert_reason) > 0 do
       transaction
@@ -2779,6 +2783,50 @@ defmodule Explorer.Chain do
     end
 
     formatted_revert_reason
+  end
+
+  defp format_revert_reason_message(revert_reason) do
+    case revert_reason do
+      @revert_msg_prefix_1 <> rest ->
+        rest
+
+      @revert_msg_prefix_2 <> rest ->
+        rest
+
+      @revert_msg_prefix_3 <> rest ->
+        extract_revert_reason_message_wrapper(rest)
+
+      @revert_msg_prefix_4 <> rest ->
+        extract_revert_reason_message_wrapper(rest)
+
+      revert_reason_full ->
+        revert_reason_full
+    end
+  end
+
+  defp extract_revert_reason_message_wrapper(revert_reason_message) do
+    case revert_reason_message do
+      "0x" <> hex ->
+        extract_revert_reason_message(hex)
+
+      _ ->
+        revert_reason_message
+    end
+  end
+
+  defp extract_revert_reason_message(hex) do
+    case hex do
+      @revert_error_method_id <> msg_with_offset ->
+        [msg] =
+          msg_with_offset
+          |> Base.decode16!(case: :mixed)
+          |> TypeDecoder.decode_raw([:string])
+
+        msg
+
+      _ ->
+        hex
+    end
   end
 
   @doc """
@@ -3110,6 +3158,16 @@ defmodule Explorer.Chain do
       where:
         (address.fetched_coin_balance == ^coin_balance and address.hash > ^hash) or
           address.fetched_coin_balance < ^coin_balance
+    )
+  end
+
+  defp page_tokens(query, %PagingOptions{key: nil}), do: query
+
+  defp page_tokens(query, %PagingOptions{key: {holder_count, contract_address_hash}}) do
+    from(token in query,
+      where:
+        (token.holder_count == ^holder_count and token.contract_address_hash > ^contract_address_hash) or
+          token.holder_count < ^holder_count
     )
   end
 

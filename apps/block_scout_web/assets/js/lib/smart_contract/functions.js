@@ -1,6 +1,6 @@
 import $ from 'jquery'
 import ethNetProps from 'eth-net-props'
-import { walletEnabled, getCurrentAccount } from './write.js'
+import { walletEnabled, connectToWallet, getCurrentAccount, hideConnectButton } from './write.js'
 import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals.js'
 import '../../pages/address'
 
@@ -19,6 +19,18 @@ const loadFunctions = (element) => {
     response => $element.html(response)
   )
     .done(function () {
+      const $connect = $('[connect-metamask]')
+
+      if (hideConnectButton()) {
+        $connect.addClass('hidden')
+      } else {
+        $connect.removeClass('hidden')
+      }
+
+      $connect.on('click', () => {
+        connectToWallet()
+      })
+
       $('[data-function]').each((_, element) => {
         readWriteFunction(element)
       })

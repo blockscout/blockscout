@@ -75,6 +75,14 @@
               <%= gettext("Accounts") %>
             <% end %>
           </li>
+          <li class="nav-item">
+            <%= link to: tokens_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("tokens", @conn.request_path)}" do %>
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+              </span>
+              <%= gettext("Tokens") %>
+            <% end %>
+          </li>
         <% end %>
         <%= if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:reading_enabled] || Application.get_env(:block_scout_web, :api_url) do %>
           <li class="nav-item dropdown">
@@ -100,6 +108,25 @@
                     class: "dropdown-item #{tab_status("eth_rpc_api_docs", @conn.request_path)}",
                     to: api_url() <> api_docs_path(@conn, :eth_rpc)
                   ) %>
+            </div>
+          </li>
+        <% end %>
+        <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
+          <li class="nav-item dropdown">
+            <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
+              </span>
+              <%= gettext("Apps") %>
+            </a>
+            <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown"> 
+              <%= for %{url: url, title: title} <- external_apps_list() do %> 
+                  <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %>
+                    <span class="external-link-icon">
+                      <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
+                    </span>
+                  </a>
+              <% end %>
             </div>
           </li>
         <% end %>

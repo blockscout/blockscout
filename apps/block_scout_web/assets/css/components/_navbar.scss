@@ -155,7 +155,7 @@ $navbar-logo-width: auto !default;
       width: 340px;
     }
     @media (min-width: 1366px) {
-      width: 500px;
+      width: 380px;
     }
     @media (min-width: 1440px) {
       width: 580px;
@@ -258,5 +258,20 @@ $navbar-logo-width: auto !default;
 .nav-item-networks {
   .topnav-nav-link {
     transition: none !important;
+  }
+}
+
+.external-link-icon {
+  float: right;
+  margin-top: -1px;
+
+  & {
+    &.active,
+    &:hover,
+    &:focus {
+      path {
+        fill: $header-icon-color-hover;
+      }
+    }
   }
 }

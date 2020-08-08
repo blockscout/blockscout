@@ -51,7 +51,7 @@ defmodule Indexer.MixProject do
       # RLP encoding
       {:ex_rlp, "~> 0.5.2"},
       # Code coverage
-      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
+      {:excoveralls, "~> 0.13.1"},
       # Importing to database
       {:explorer, in_umbrella: true},
       # libsecp2561k1 crypto functions
