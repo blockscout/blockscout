@@ -1244,7 +1244,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:172
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:189
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:190
 msgid "Search"
 msgstr ""
 

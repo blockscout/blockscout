@@ -5,6 +5,7 @@
 - [#3224](https://github.com/poanetwork/blockscout/pull/3224) - Top tokens page
 
 ### Fixes
+- [#3231](https://github.com/poanetwork/blockscout/pull/3231) - Improve search: unlimited number of searching results
 - [#3231](https://github.com/poanetwork/blockscout/pull/3231) - Improve search: allow search with space
 - [#3231](https://github.com/poanetwork/blockscout/pull/3231) - Improve search: order by token holders in descendant order
 - [#3226](https://github.com/poanetwork/blockscout/pull/3226) - Fix notifier query for live update of token transfers
