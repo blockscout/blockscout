@@ -1250,7 +1250,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:166
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:170
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1939,4 +1938,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction_raw_trace/index.html.eex:15
 msgid "Copy Raw Trace"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:170
+msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
