@@ -359,21 +359,26 @@ defmodule Indexer.BufferedTask do
       Task.Supervisor.async(task_supervisor, fn ->
         Logger.metadata(metadata)
 
-        {0, []}
-        |> callback_module.init(
-          fn
-            entry, {len, acc} when len + 1 >= max_batch_size ->
-              entries = Enum.reverse([entry | acc])
-              push_back(parent, entries)
+        try do
+          {0, []}
+          |> callback_module.init(
+            fn
+              entry, {len, acc} when len + 1 >= max_batch_size ->
+                entries = Enum.reverse([entry | acc])
+                push_back(parent, entries)
 
-              {0, []}
+                {0, []}
 
-            entry, {len, acc} ->
-              {len + 1, [entry | acc]}
-          end,
-          callback_module_state
-        )
-        |> catchup_remaining(max_batch_size, parent)
+              entry, {len, acc} ->
+                {len + 1, [entry | acc]}
+            end,
+            callback_module_state
+          )
+          |> catchup_remaining(max_batch_size, parent)
+        rescue
+          _ ->
+            :ok
+        end
       end)
 
     schedule_next_buffer_flush(%BufferedTask{state | init_task: task.ref})
