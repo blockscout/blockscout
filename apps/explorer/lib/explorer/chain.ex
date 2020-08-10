@@ -1034,13 +1034,22 @@ defmodule Explorer.Chain do
 
   @spec search_token(String.t()) :: [Token.t()]
   def search_token(word) do
-    term = String.replace(word, ~r/\W/u, "") <> ":*"
+    term =
+      word
+      |> String.replace(~r/ +/, " & ")
+
+    term_final = term <> ":*"
 
     query =
       from(token in Token,
-        where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
+        where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term_final),
         limit: 5,
-        select: %{contract_address_hash: token.contract_address_hash, symbol: token.symbol, name: token.name}
+        select: %{
+          contract_address_hash: token.contract_address_hash,
+          symbol: token.symbol,
+          name: fragment("coalesce(?, '') || ' (' || coalesce(?, '') || ')'", token.name, token.symbol)
+        },
+        order_by: [desc: token.holder_count]
       )
 
     Repo.all(query)
@@ -1048,13 +1057,17 @@ defmodule Explorer.Chain do
 
   @spec search_contract(String.t()) :: [SmartContract.t()]
   def search_contract(word) do
-    term = String.replace(word, ~r/\W/u, "") <> ":*"
+    term =
+      word
+      |> String.replace(~r/ +/, " & ")
+
+    term_final = term <> ":*"
 
     query =
       from(smart_contract in SmartContract,
-        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term),
+        where: fragment("to_tsvector('english', name ) @@ to_tsquery(?)", ^term_final),
         limit: 5,
-        select: %{contract_address_hash: smart_contract.address_hash, symbol: smart_contract.name}
+        select: %{contract_address_hash: smart_contract.address_hash, name: smart_contract.name}
       )
 
     Repo.all(query)
@@ -3480,7 +3493,7 @@ defmodule Explorer.Chain do
                 |> json_rpc(json_rpc_named_arguments)
 
               "0x" <> foreign_chain_id_abi_encoded_no_prefix = foreign_chain_id_abi_encoded
-              {foreign_chain_id, _} = Integer.parse(foreign_chain_id_abi_encoded_no_prefix)
+              {foreign_chain_id, _} = Integer.parse(foreign_chain_id_abi_encoded_no_prefix, 16)
 
               set_bridged_token_metadata(token_address_hash, %{
                 foreign_chain_id: foreign_chain_id,
