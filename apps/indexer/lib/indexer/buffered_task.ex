@@ -376,7 +376,8 @@ defmodule Indexer.BufferedTask do
           )
           |> catchup_remaining(max_batch_size, parent)
         rescue
-          _ ->
+          err ->
+            Logger.warn(fn -> "Failed to initialize buffered task '#{err}'." end)
             :ok
         end
       end)
