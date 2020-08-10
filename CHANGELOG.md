@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3227](https://github.com/poanetwork/blockscout/pull/3227) - Distinguishing of bridged tokens
 - [#3224](https://github.com/poanetwork/blockscout/pull/3224) - Top tokens page
 
 ### Fixes

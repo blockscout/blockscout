@@ -70,7 +70,7 @@ defmodule EthereumJSONRPC.Contract do
       Enum.map(requests, fn _ -> format_error(error) end)
   end
 
-  defp eth_call_request(data, contract_address, id, block_number, from) do
+  def eth_call_request(data, contract_address, id, block_number, from) do
     block =
       case block_number do
         nil -> "latest"
