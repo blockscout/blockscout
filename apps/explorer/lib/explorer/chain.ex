@@ -22,9 +22,9 @@ defmodule Explorer.Chain do
       select: 3
     ]
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, fetch_block_internal_transactions: 2]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, fetch_block_internal_transactions: 2]
 
-  alias ABI.TypeDecoder
+  alias ABI.{TypeDecoder, TypeEncoder}
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
@@ -42,6 +42,7 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
+    BridgedToken,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -1714,6 +1715,31 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Lists the top `t:Explorer.Chain.Token.t/0`'s'.
+
+  """
+  @spec list_top_tokens :: [{Token.t(), non_neg_integer()}]
+  def list_top_tokens(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    fetch_top_tokens(paging_options)
+  end
+
+  defp fetch_top_tokens(paging_options) do
+    base_query =
+      from(t in Token,
+        where: t.total_supply > ^0,
+        order_by: [desc: t.holder_count, asc: t.name],
+        preload: [:contract_address]
+      )
+
+    base_query
+    |> page_tokens(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
+  @doc """
   Calls `reducer` on a stream of `t:Explorer.Chain.Block.t/0` without `t:Explorer.Chain.Block.Reward.t/0`.
   """
   def stream_blocks_without_rewards(initial, reducer) when is_function(reducer, 2) do
@@ -3136,6 +3162,16 @@ defmodule Explorer.Chain do
     )
   end
 
+  defp page_tokens(query, %PagingOptions{key: nil}), do: query
+
+  defp page_tokens(query, %PagingOptions{key: {holder_count, contract_address_hash}}) do
+    from(token in query,
+      where:
+        (token.holder_count == ^holder_count and token.contract_address_hash > ^contract_address_hash) or
+          token.holder_count < ^holder_count
+    )
+  end
+
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
 
   defp page_blocks(query, %PagingOptions{key: {block_number}}) do
@@ -3341,6 +3377,153 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Returns a list of token addresses `t:Address.t/0`s that don't have an
+  bridged property revealed.
+  """
+  def unprocessed_token_addresses_to_reveal_bridged_tokens do
+    query =
+      from(t in Token,
+        where: is_nil(t.bridged),
+        select: t.contract_address_hash
+      )
+
+    Repo.stream_reduce(query, [], &[&1 | &2])
+  end
+
+  @doc """
+  Fetches bridges status for tokens.
+  """
+  def fetch_tokens_bridged_status(token_addresses) do
+    Enum.each(token_addresses, fn token_address_hash ->
+      created_from_factory_query =
+        from(
+          it in InternalTransaction,
+          inner_join: t in assoc(it, :transaction),
+          where: it.created_contract_address_hash == ^token_address_hash,
+          where: t.status == ^1
+        )
+
+      created_from_factory =
+        created_from_factory_query
+        |> Repo.one()
+
+      if created_from_factory do
+        multi_token_bridge_mediator = Application.get_env(:block_scout_web, :multi_token_bridge_mediator)
+        %{transaction_hash: transaction_hash} = created_from_factory
+
+        if multi_token_bridge_mediator && multi_token_bridge_mediator !== "" do
+          {:ok, multi_token_bridge_mediator_hash} = Chain.string_to_address_hash(multi_token_bridge_mediator)
+
+          created_by_amb_mediator_query =
+            from(
+              it in InternalTransaction,
+              where: it.transaction_hash == ^transaction_hash,
+              where: it.to_address_hash == ^multi_token_bridge_mediator_hash
+            )
+
+          created_by_amb_mediator =
+            created_by_amb_mediator_query
+            |> Repo.all()
+
+          if Enum.count(created_by_amb_mediator) > 0 do
+            json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+            # keccak 256 from getTokenInterfacesVersion()
+            get_token_interfaces_version_signature = "0x859ba28c"
+            # keccak 256 from foreignTokenAddress(address)
+            foreign_token_address_signature = "0x47ac7d6a"
+            # keccak 256 from bridgeContract()
+            bridge_contract_signature = "0xcd596583"
+            # keccak 256 from destinationChainId()
+            destination_chain_id_signature = "0xb0750611"
+
+            token_address_hash_abi_encoded =
+              [token_address_hash.bytes]
+              |> TypeEncoder.encode([:address])
+              |> Base.encode16()
+
+            foreign_token_address_method = foreign_token_address_signature <> token_address_hash_abi_encoded
+
+            with {:ok, _} <-
+                   get_token_interfaces_version_signature
+                   |> Contract.eth_call_request(token_address_hash, 1, nil, nil)
+                   |> json_rpc(json_rpc_named_arguments),
+                 {:ok, foreign_token_address_abi_encoded} <-
+                   foreign_token_address_method
+                   |> Contract.eth_call_request(
+                     multi_token_bridge_mediator,
+                     1,
+                     nil,
+                     nil
+                   )
+                   |> json_rpc(json_rpc_named_arguments),
+                 {:ok, bridge_contract} <-
+                   bridge_contract_signature
+                   |> Contract.eth_call_request(multi_token_bridge_mediator_hash, 1, nil, nil)
+                   |> json_rpc(json_rpc_named_arguments) do
+              "0x" <> foreign_token_address_no_prefix = foreign_token_address_abi_encoded
+
+              <<_prefix::binary-size(24), foreign_token_address_hash_string_raw::binary()>> =
+                foreign_token_address_no_prefix
+
+              foreign_token_address_hash_string = "0x" <> foreign_token_address_hash_string_raw
+
+              {:ok, foreign_token_address_hash} = Chain.string_to_address_hash(foreign_token_address_hash_string)
+
+              "0x" <> bridge_contract_no_prefix = bridge_contract
+              <<_prefix::binary-size(24), multi_token_bridge_hash_string_raw::binary()>> = bridge_contract_no_prefix
+
+              multi_token_bridge_hash_string = "0x" <> multi_token_bridge_hash_string_raw
+
+              {:ok, foreign_chain_id_abi_encoded} =
+                destination_chain_id_signature
+                |> Contract.eth_call_request(multi_token_bridge_hash_string, 1, nil, nil)
+                |> json_rpc(json_rpc_named_arguments)
+
+              "0x" <> foreign_chain_id_abi_encoded_no_prefix = foreign_chain_id_abi_encoded
+              {foreign_chain_id, _} = Integer.parse(foreign_chain_id_abi_encoded_no_prefix)
+
+              set_bridged_token_metadata(token_address_hash, %{
+                foreign_chain_id: foreign_chain_id,
+                foreign_token_address_hash: foreign_token_address_hash
+              })
+
+              set_token_bridged_status(token_address_hash, true)
+            end
+          else
+            set_token_bridged_status(token_address_hash, false)
+          end
+        end
+      else
+        set_token_bridged_status(token_address_hash, false)
+      end
+    end)
+
+    :ok
+  end
+
+  defp set_token_bridged_status(token_address_hash, status) do
+    target_token = Repo.get!(Token, token_address_hash)
+    token = Changeset.change(target_token, bridged: status)
+
+    Repo.update(token)
+  end
+
+  defp set_bridged_token_metadata(token_address_hash, %{
+         foreign_chain_id: foreign_chain_id,
+         foreign_token_address_hash: foreign_token_address_hash
+       }) do
+    {:ok, _} =
+      Repo.insert(
+        %BridgedToken{
+          home_token_contract_address_hash: token_address_hash,
+          foreign_chain_id: foreign_chain_id,
+          foreign_token_contract_address_hash: foreign_token_address_hash
+        },
+        on_conflict: :nothing
+      )
+  end
+
+  @doc """
   Fetches a `t:Token.t/0` by an address hash.
 
   ## Options
@@ -3359,8 +3542,11 @@ defmodule Explorer.Chain do
 
     query =
       from(
-        token in Token,
-        where: token.contract_address_hash == ^hash
+        t in Token,
+        left_join: bt in BridgedToken,
+        on: t.contract_address_hash == bt.home_token_contract_address_hash,
+        where: t.contract_address_hash == ^hash,
+        select: [t, bt]
       )
 
     query
@@ -3370,7 +3556,18 @@ defmodule Explorer.Chain do
       nil ->
         {:error, :not_found}
 
-      %Token{} = token ->
+      [%Token{} = token, %BridgedToken{} = bridged_token] ->
+        foreign_token_contract_address_hash = Map.get(bridged_token, :foreign_token_contract_address_hash)
+        foreign_chain_id = Map.get(bridged_token, :foreign_chain_id)
+
+        extended_token =
+          token
+          |> Map.put(:foreign_token_contract_address_hash, foreign_token_contract_address_hash)
+          |> Map.put(:foreign_chain_id, foreign_chain_id)
+
+        {:ok, extended_token}
+
+      [%Token{} = token, nil] ->
         {:ok, token}
     end
   end

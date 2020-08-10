@@ -45,7 +45,8 @@ defmodule Explorer.Chain.Token do
           cataloged: boolean(),
           contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
           contract_address_hash: Hash.Address.t(),
-          holder_count: non_neg_integer() | nil
+          holder_count: non_neg_integer() | nil,
+          bridged: boolean()
         }
 
   @derive {Poison.Encoder,
@@ -65,6 +66,7 @@ defmodule Explorer.Chain.Token do
     field(:type, :string)
     field(:cataloged, :boolean)
     field(:holder_count, :integer)
+    field(:bridged, :boolean)
 
     belongs_to(
       :contract_address,

@@ -36,7 +36,8 @@ config :block_scout_web,
   apps_menu: if(System.get_env("APPS_MENU", "false") == "true", do: true, else: false),
   external_apps: System.get_env("EXTERNAL_APPS"),
   moon_token_addresses: System.get_env("MOON_TOKEN_ADDRESSES"),
-  bricks_token_addresses: System.get_env("BRICKS_TOKEN_ADDRESSES")
+  bricks_token_addresses: System.get_env("BRICKS_TOKEN_ADDRESSES"),
+  multi_token_bridge_mediator: System.get_env("MULTI_TOKEN_BRIDGE_MEDIATOR")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
@@ -122,7 +123,8 @@ config :wobserver,
 
 config :block_scout_web, BlockScoutWeb.ApiRouter,
   writing_enabled: System.get_env("DISABLE_WRITE_API") != "true",
-  reading_enabled: System.get_env("DISABLE_READ_API") != "true"
+  reading_enabled: System.get_env("DISABLE_READ_API") != "true",
+  wobserver_enabled: System.get_env("WOBSERVER_ENABLED") == "true"
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
 

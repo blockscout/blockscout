@@ -2,6 +2,7 @@
 :0: Unknown function 'Elixir.ExUnit.CaseTemplate':'__proxy__'/2
 :0: Unknown type 'Elixir.Map':t/0
 :0: Unknown type 'Elixir.Hash':t/0
+:0: Unknown type 'Elixir.Address':t/0
 apps/ethereum_jsonrpc/lib/ethereum_jsonrpc.ex:400: Function timestamp_to_datetime/1 has no local return
 lib/explorer/repo/prometheus_logger.ex:8
 lib/block_scout_web/views/layout_view.ex:175
