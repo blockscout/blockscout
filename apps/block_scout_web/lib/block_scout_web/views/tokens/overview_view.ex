@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   alias BlockScoutWeb.{CurrencyHelpers, LayoutView}
 
   @tabs ["token_transfers", "token_holders", "read_contract", "inventory"]
+  @etherscan_token_link "https://etherscan.io/token/"
+  @blockscout_base_link "https://blockscout.com/"
 
   @honey_token "0x71850b7e9ee3f13ab46d67167341e4bdc905eef9"
 
@@ -131,16 +133,20 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
     base_token_explorer_link <> foreign_token_contract_address_hash_string
   end
 
+  # credo:disable-for-next-line /Complexity/
   defp get_base_token_explorer_link(chain_id) when not is_nil(chain_id) do
     case Decimal.to_integer(chain_id) do
+      181 ->
+        @blockscout_base_link <> "poa/qdai/tokens/"
+
       100 ->
-        "https://blockscout.com/poa/xdai/tokens/"
+        @blockscout_base_link <> "poa/xdai/tokens/"
 
       99 ->
-        "https://blockscout.com/poa/core/tokens/"
+        @blockscout_base_link <> "poa/core/tokens/"
 
       77 ->
-        "https://blockscout.com/poa/sokol/tokens/"
+        @blockscout_base_link <> "poa/sokol/tokens/"
 
       42 ->
         "https://kovan.etherscan.io/token/"
@@ -155,9 +161,12 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
         "https://goerli.etherscan.io/token/"
 
       1 ->
-        "https://etherscan.io/token/"
+        @etherscan_token_link
+
+      _ ->
+        @etherscan_token_link
     end
   end
 
-  defp get_base_token_explorer_link(_), do: "https://etherscan.io/"
+  defp get_base_token_explorer_link(_), do: @etherscan_token_link
 end
