@@ -1218,7 +1218,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:172
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:189
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:203
 msgid "Search"
 msgstr ""
 
@@ -1930,7 +1930,7 @@ msgstr ""
 msgid "Copy Raw Trace"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:170
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""

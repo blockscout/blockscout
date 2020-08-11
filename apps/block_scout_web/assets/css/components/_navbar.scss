@@ -186,6 +186,14 @@ $navbar-logo-width: auto !default;
   }
 }
 
+.input-group {
+
+  .awesomplete > ul {
+      overflow-y: auto !important;
+      max-height: 300px !important;
+  }
+}
+
 .navbar-collapse.collapsing,
 .navbar-collapse.collapse.show {
   display: flex;
