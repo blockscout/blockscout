@@ -5,6 +5,7 @@
 - [#3224](https://github.com/poanetwork/blockscout/pull/3224) - Top tokens page
 
 ### Fixes
+- [#3233](https://github.com/poanetwork/blockscout/pull/3233) - Fix for the contract verifiaction for solc 0.5 family with experimental features enabled
 - [#3226](https://github.com/poanetwork/blockscout/pull/3226) - Fix notifier query for live update of token transfers
 - [#3220](https://github.com/poanetwork/blockscout/pull/3220) - Allow interaction with navbar menu at block-not-found page
 
