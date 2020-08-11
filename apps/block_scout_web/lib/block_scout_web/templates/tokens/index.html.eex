@@ -19,9 +19,11 @@
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">Address</div>
 	      </th>
-		  <th class="stakes-table-th">
-			<div class="stakes-table-th-content">Bridged?</div>
-	      </th>
+		  <%= if bridged_tokens_enabled?() do%>
+			<th class="stakes-table-th">
+				<div class="stakes-table-th-content">Bridged?</div>
+			</th>
+		  <% end %>
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">
 			Total Supply

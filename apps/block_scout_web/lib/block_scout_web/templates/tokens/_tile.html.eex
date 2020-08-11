@@ -20,15 +20,17 @@
       use_custom_tooltip: false
     %>
   </td>
-  <td class="stakes-td">
-    <%= case @token.bridged do %>
-    <% nil -> %>
-      <i style="color: #f7b32b; font-size: 20px;" class="far fa-question-circle"></i>
-    <% true -> %>
-      <i style="color: #20b760; font-size: 20px;" class="far fa-check-circle"></i>
-    <% false -> %>
-    <% end %>
-  </td>
+  <%= if bridged_tokens_enabled?() do %>
+    <td class="stakes-td">
+      <%= case @token.bridged do %>
+      <% nil -> %>
+        <i style="color: #f7b32b; font-size: 20px;" class="far fa-question-circle"></i>
+      <% true -> %>
+        <i style="color: #20b760; font-size: 20px;" class="far fa-check-circle"></i>
+      <% false -> %>
+      <% end %>
+    </td>
+  <% end %>
   <td class="stakes-td">
     <%= if decimals?(@token) do %>
       <span data-test="token_supply"><%= format_according_to_decimals(@token.total_supply, @token.decimals) %></span>

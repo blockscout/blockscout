@@ -862,7 +862,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:15
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:9
-#: lib/block_scout_web/views/tokens/overview_view.ex:36
+#: lib/block_scout_web/views/tokens/overview_view.ex:38
 msgid "Token Holders"
 msgstr ""
 
@@ -888,7 +888,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
 #: lib/block_scout_web/views/address_view.ex:344
 #: lib/block_scout_web/views/tokens/instance/overview_view.ex:98
-#: lib/block_scout_web/views/tokens/overview_view.ex:35
+#: lib/block_scout_web/views/tokens/overview_view.ex:37
 #: lib/block_scout_web/views/transaction_view.ex:394
 msgid "Token Transfers"
 msgstr ""
@@ -937,7 +937,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:15
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:17
-#: lib/block_scout_web/views/tokens/overview_view.ex:38
+#: lib/block_scout_web/views/tokens/overview_view.ex:40
 msgid "Inventory"
 msgstr ""
 
@@ -1226,13 +1226,12 @@ msgstr "Validator Reward"
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:172
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:189
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:190
 msgid "Search"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:166
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:170
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1824,7 +1823,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:62
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:25
 #: lib/block_scout_web/views/address_view.ex:347
-#: lib/block_scout_web/views/tokens/overview_view.ex:37
+#: lib/block_scout_web/views/tokens/overview_view.ex:39
 msgid "Read Contract"
 msgstr ""
 
