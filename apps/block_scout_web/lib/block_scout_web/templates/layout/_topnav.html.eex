@@ -179,7 +179,20 @@
                     value: "contract_address_hash",
                     label: "contract_address_hash",
                     descrSearch: true,
-                    descr: "name"
+                    descr: "name",
+                    sort: "function(x1, x2){
+                      const tokenName1 = x1.split('<b>').length > 1 ? x1.split('<b>')[1].split('</b>')[0].toLowerCase() : ''
+                      const tokenName2 = x2.split('<b>').length > 1 ? x2.split('<b>')[1].split('</b>')[0].toLowerCase() : ''
+                      const holdersCount1 = x1.split('<i>').length > 1 ? parseInt(x1.split('<i>')[1].split('</i>')[0].split('holder')[0], 10) : null
+                      const holdersCount2 = x2.split('<i>').length > 1 ? parseInt(x2.split('<i>')[1].split('</i>')[0].split('holder')[0], 10) : null
+                      if (holdersCount1 && holdersCount2 && holdersCount1 !== holdersCount2 || (holdersCount1 && !holdersCount2) || (!holdersCount1 && holdersCount2)) {
+                        holdersCount1 > holdersCount2
+                      } else {
+                        if (tokenName1 < tokenName2) { return -1 }
+                        if (tokenName1 > tokenName2) { return 1 }
+                        return 0
+                      }
+                    }"
                     ]) %>
                 <div class="input-group-append">
                   <button class="input-group-text" id="search-icon">
