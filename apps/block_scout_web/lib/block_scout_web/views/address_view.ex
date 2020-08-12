@@ -222,6 +222,8 @@ defmodule BlockScoutWeb.AddressView do
     |> Base.encode64()
   end
 
+  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
+
   def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
 
   def smart_contract_verified?(%Address{smart_contract: nil}), do: false
