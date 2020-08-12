@@ -565,7 +565,7 @@ msgstr ""
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:43
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:78
 msgid "ETH"
-msgstr ""
+msgstr "MATIC"
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:4
