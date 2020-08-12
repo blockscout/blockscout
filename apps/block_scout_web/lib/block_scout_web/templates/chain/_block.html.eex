@@ -11,14 +11,7 @@
         <span class="mr-2"><%= gettext("%{count} Transactions", count: Enum.count(@block.transactions)) %></span>
         <span class="text-nowrap" data-from-now="<%= @block.timestamp %>"> </span>
       </div>
-      <div class="text-truncate">
-        <%= gettext "Miner" %>
-        <%= render BlockScoutWeb.AddressView,
-          "_link.html",
-          address: @block.miner,
-          contract: false,
-          use_custom_tooltip: false %>
-      </div>
+
       <%= if BlockScoutWeb.BlockView.show_reward?(@block.rewards) do %>
         <div class="text-truncate">
           <%= gettext "Reward" %> <%= BlockScoutWeb.BlockView.combined_rewards_value(@block) %>
