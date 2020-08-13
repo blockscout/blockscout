@@ -999,22 +999,28 @@ defmodule Explorer.Chain do
       |> Repo.one()
 
     address_updated_result =
-      if address_result.smart_contract do
-        address_result
-      else
-        address_verified_twin_contract = Chain.address_verified_twin_contract(hash)
+      case address_result do
+        %{smart_contract: smart_contract} ->
+          if smart_contract do
+            address_result
+          else
+            address_verified_twin_contract = Chain.address_verified_twin_contract(hash)
 
-        if address_verified_twin_contract do
-          address_verified_twin_contract_updated =
-            address_verified_twin_contract
-            |> Map.put(:address_hash, hash)
-            |> Map.put_new(:metadata_from_verified_twin, true)
+            if address_verified_twin_contract do
+              address_verified_twin_contract_updated =
+                address_verified_twin_contract
+                |> Map.put(:address_hash, hash)
+                |> Map.put_new(:metadata_from_verified_twin, true)
 
+              address_result
+              |> Map.put(:smart_contract, address_verified_twin_contract_updated)
+            else
+              address_result
+            end
+          end
+
+        _ ->
           address_result
-          |> Map.put(:smart_contract, address_verified_twin_contract_updated)
-        else
-          address_result
-        end
       end
 
     address_updated_result
