@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.Router do
   if Application.get_env(:block_scout_web, ApiRouter)[:wobserver_enabled] do
     forward("/wobserver", Wobserver.Web.Router)
   end
+
   forward("/admin", BlockScoutWeb.AdminRouter)
 
   pipeline :browser do
