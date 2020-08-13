@@ -3221,7 +3221,12 @@ defmodule Explorer.Chain do
       current_smart_contract
     else
       address_verified_twin_contract = Chain.address_verified_twin_contract(address_hash)
-      Map.put(address_verified_twin_contract, :address_hash, address_hash)
+
+      if address_verified_twin_contract do
+        Map.put(address_verified_twin_contract, :address_hash, address_hash)
+      else
+        current_smart_contract
+      end
     end
   end
 
