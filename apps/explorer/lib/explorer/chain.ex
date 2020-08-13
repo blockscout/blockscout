@@ -992,10 +992,32 @@ defmodule Explorer.Chain do
         where: address.hash == ^hash
       )
 
-    query
-    |> join_associations(necessity_by_association)
-    |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
-    |> Repo.one()
+    address_result =
+      query
+      |> join_associations(necessity_by_association)
+      |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
+      |> Repo.one()
+
+    address_updated_result =
+      if address_result.smart_contract do
+        address_result
+      else
+        address_verified_twin_contract = Chain.address_verified_twin_contract(hash)
+
+        if address_verified_twin_contract do
+          address_verified_twin_contract_updated =
+            address_verified_twin_contract
+            |> Map.put(:address_hash, hash)
+            |> Map.put_new(:metadata_from_verified_twin, true)
+
+          address_result
+          |> Map.put(:smart_contract, address_verified_twin_contract_updated)
+        else
+          address_result
+        end
+      end
+
+    address_updated_result
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
@@ -1272,10 +1294,38 @@ defmodule Explorer.Chain do
         where: address.hash == ^hash and not is_nil(address.contract_code)
       )
 
-    query
-    |> join_associations(necessity_by_association)
-    |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
-    |> Repo.one()
+    address_result =
+      query
+      |> join_associations(necessity_by_association)
+      |> with_decompiled_code_flag(hash, query_decompiled_code_flag)
+      |> Repo.one()
+
+    address_updated_result =
+      case address_result do
+        %{smart_contract: smart_contract} ->
+          if smart_contract do
+            address_result
+          else
+            address_verified_twin_contract = Chain.address_verified_twin_contract(hash)
+
+            if address_verified_twin_contract do
+              address_verified_twin_contract_updated =
+                address_verified_twin_contract
+                |> Map.put(:address_hash, hash)
+                |> Map.put_new(:metadata_from_verified_twin, true)
+
+              address_result
+              |> Map.put(:smart_contract, address_verified_twin_contract_updated)
+            else
+              address_result
+            end
+          end
+
+        _ ->
+          address_result
+      end
+
+    address_updated_result
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
@@ -3105,6 +3155,52 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Finds metadata for verification of a contract from verified twins: contracts with the same bytecode
+  which were verified previously, returns a single t:SmartContract.t/0
+  """
+  def address_verified_twin_contract(address_hash) do
+    address_verified_twins =
+      case Repo.get(Address, address_hash) do
+        nil ->
+          []
+
+        target_address ->
+          target_address_hash = target_address.hash
+          contract_code = target_address.contract_code
+
+          case contract_code do
+            %Chain.Data{bytes: contract_code_bytes} ->
+              contract_code_md5 =
+                Base.encode16(:crypto.hash(:md5, "\\x" <> Base.encode16(contract_code_bytes, case: :lower)),
+                  case: :lower
+                )
+
+              query =
+                from(
+                  address in Address,
+                  left_join: smart_contract in SmartContract,
+                  on: address.hash == smart_contract.address_hash,
+                  where: fragment("md5(contract_code::text)") == ^contract_code_md5,
+                  where: address.hash != ^target_address_hash,
+                  select: smart_contract
+                )
+
+              query
+              |> Repo.all()
+
+            _ ->
+              []
+          end
+      end
+
+    if Enum.count(address_verified_twins) > 0 do
+      Enum.at(address_verified_twins, 0)
+    else
+      nil
+    end
+  end
+
   @spec address_hash_to_smart_contract(Hash.Address.t()) :: SmartContract.t() | nil
   def address_hash_to_smart_contract(address_hash) do
     query =
@@ -3113,7 +3209,14 @@ defmodule Explorer.Chain do
         where: smart_contract.address_hash == ^address_hash
       )
 
-    Repo.one(query)
+    current_smart_contract = Repo.one(query)
+
+    if current_smart_contract do
+      current_smart_contract
+    else
+      address_verified_twin_contract = Chain.address_verified_twin_contract(address_hash)
+      Map.put(address_verified_twin_contract, :address_hash, address_hash)
+    end
   end
 
   defp fetch_transactions(paging_options \\ nil) do
