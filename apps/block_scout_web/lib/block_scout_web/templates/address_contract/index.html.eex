@@ -1,4 +1,5 @@
 <% contract_creation_code = contract_creation_code(@address) %>
+<% metadata_for_verification = Chain.address_verified_twin_contract(@address.hash) %>
 
 <section class="container">
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
@@ -20,40 +21,50 @@
               ) %>
         <% end %>
       <% end %>
-      <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
+      <%= unless BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
+        <%= if metadata_for_verification do %>
+          <div class="mb-4">
+            <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in our DB") %> <%= link(
+      metadata_for_verification.address_hash,
+      to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%=  gettext("All metadata displayed below is from that contract. In order to verify current contract, click") %> <i><%= gettext("Verify & Publish") %></i> <%= gettext("button") %></span>
+          </div>
+        <% end %>
+      <% end %>
+      <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) || (!BlockScoutWeb.AddressView.smart_contract_verified?(@address) && metadata_for_verification) do %>
+        <% target_contract = if BlockScoutWeb.AddressView.smart_contract_verified?(@address), do: @address.smart_contract, else: metadata_for_verification %>
         <div class="mb-4">
           <dl class="row">
             <dt class="col-md-2 text-muted"><%= gettext "Contract name:" %></dt>
-            <dd class="col-md-4"><%= @address.smart_contract.name %></dd>
+            <dd class="col-md-4"><%= target_contract.name %></dd>
             <div class="d-none d-sm-block d-md-none"></br></br></div>
             <div class="d-block d-sm-none"></br></br></div>
             <dt class="col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
-            <dd class="col-md-4"><%= format_optimization_text(@address.smart_contract.optimization) %></dd>
+            <dd class="col-md-4"><%= format_optimization_text(target_contract.optimization) %></dd>
           </dl>
           <dl class="row">
             <dt class="col-md-2 text-muted"><%= gettext "Compiler version" %></dt>
-            <dd class="col-md-4"><%= @address.smart_contract.compiler_version %></dd>
+            <dd class="col-md-4"><%= target_contract.compiler_version %></dd>
             <div class="d-none d-sm-block d-md-none"></br></br></div>
             <div class="d-block d-sm-none"></br></br></div>
-            <%= if @address.smart_contract.optimization && @address.smart_contract.optimization_runs do %>
+            <%= if target_contract.optimization && target_contract.optimization_runs do %>
               <dt class="col-md-2 text-muted"><%= gettext "Optimization runs" %></dt>
-              <dd class="col-md-4"><%= @address.smart_contract.optimization_runs %></dd>
+              <dd class="col-md-4"><%= target_contract.optimization_runs %></dd>
             <% end %>
           </dl>
-          <%= if @address.smart_contract.evm_version do %>
+          <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) && target_contract.evm_version do %>
             <dl class="row">
               <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "EVM Version" %></dt>
-              <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.evm_version %></dd>
+              <dd class="col-sm-8 col-md-10"><%= target_contract.evm_version %></dd>
             </dl>
           <% end %>
         <hr/>
-        <%= if @address.smart_contract.constructor_arguments do %>
+        <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) && target_contract.constructor_arguments do %>
           <section>
             <div class="d-flex justify-content-between align-items-baseline">
               <h3><%= gettext "Constructor Arguments" %></h3>
             </div>
             <div class="tile tile-muted mb-4">
-              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_constructor_arguments(@address.smart_contract, @conn)) %></code>
+              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_constructor_arguments(target_contract, @conn)) %></code>
               </pre>
             </div>
           </section>
@@ -61,24 +72,24 @@
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= gettext "Contract source code" %></h3>
-            <button type="button" class="btn-line" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= @address.smart_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
+            <button type="button" class="btn-line" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= target_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
               <%= gettext "Copy Source Code" %>
             </button>
           </div>
           <div class="tile tile-muted mb-4">
-            <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(@address.smart_contract.contract_source_code, @address.smart_contract.inserted_at) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
+            <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(target_contract.contract_source_code, target_contract.inserted_at) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
           </div>
         </section>
 
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= gettext "Contract ABI" %></h3>
-            <button type="button" class="btn-line" id="button" data-clipboard-text="<%= format_smart_contract_abi(@address.smart_contract.abi) %>" aria-label="Copy Contract ABI">
+            <button type="button" class="btn-line" id="button" data-clipboard-text="<%= format_smart_contract_abi(target_contract.abi) %>" aria-label="Copy Contract ABI">
               <%= gettext "Copy ABI" %>
             </button>
           </div>
           <div class="tile tile-muted mb-4">
-            <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= format_smart_contract_abi(@address.smart_contract.abi) %></code>
+            <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= format_smart_contract_abi(target_contract.abi) %></code>
             </pre>
           </div>
         </section>
@@ -113,14 +124,15 @@
         <% end %>
       </section>
 
-      <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
-        <%= if @address.smart_contract.external_libraries && @address.smart_contract.external_libraries != [] do %>
+      <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) || (!BlockScoutWeb.AddressView.smart_contract_verified?(@address) && metadata_for_verification) do %>
+        <% target_contract = if BlockScoutWeb.AddressView.smart_contract_verified?(@address), do: @address.smart_contract, else: metadata_for_verification %>
+        <%= if target_contract.external_libraries && target_contract.external_libraries != [] do %>
           <section>
             <div class="d-flex justify-content-between align-items-baseline">
               <h3><%= gettext "External libraries" %></h3>
             </div>
             <div class="tile tile-muted mb-4">
-              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_external_libraries(@address.smart_contract.external_libraries)) %></code>
+              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_external_libraries(target_contract.external_libraries)) %></code>
               </pre>
             </div>
           </section>
