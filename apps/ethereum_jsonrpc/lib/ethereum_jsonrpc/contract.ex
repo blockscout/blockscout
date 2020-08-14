@@ -32,14 +32,19 @@ defmodule EthereumJSONRPC.Contract do
       abi
       |> ABI.parse_specification()
 
-    functions = Enum.into(parsed_abi, %{}, &{&1.function, &1})
+    functions = Enum.into(parsed_abi, %{}, &{&1.method_id, &1})
 
     requests_with_index = Enum.with_index(requests)
 
     indexed_responses =
       requests_with_index
       |> Enum.map(fn {%{contract_address: contract_address, function_name: function_name, args: args} = request, index} ->
-        functions[function_name]
+        {_, function} =
+          Enum.find(functions, fn {_method_id, func} ->
+            func.function == function_name && Enum.count(func.input_names) == Enum.count(args)
+          end)
+
+        function
         |> Encoder.encode_function_call(args)
         |> eth_call_request(contract_address, index, Map.get(request, :block_number), Map.get(request, :from))
       end)
@@ -70,7 +75,7 @@ defmodule EthereumJSONRPC.Contract do
       Enum.map(requests, fn _ -> format_error(error) end)
   end
 
-  defp eth_call_request(data, contract_address, id, block_number, from) do
+  def eth_call_request(data, contract_address, id, block_number, from) do
     block =
       case block_number do
         nil -> "latest"
