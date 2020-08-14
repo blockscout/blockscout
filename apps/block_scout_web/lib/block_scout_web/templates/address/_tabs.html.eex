@@ -4,41 +4,51 @@
         class: "card-tab #{tab_status("transactions", @conn.request_path)}",
         to: address_transaction_path(@conn, :index, @address.hash)
       ) %>
-  <%= link(
-      gettext("Token Transfers"),
-      class: "card-tab #{tab_status("token_transfers", @conn.request_path)}",
-      "data-test": "token_transfers_tab_link",
-      to: address_token_transfers_path(@conn, :index, @address.hash)
-      ) %>
+  <%= if Chain.check_if_token_transfers_at_address(@address.hash) do %>
+    <%= link(
+        gettext("Token Transfers"),
+        class: "card-tab #{tab_status("token_transfers", @conn.request_path)}",
+        "data-test": "token_transfers_tab_link",
+        to: address_token_transfers_path(@conn, :index, @address.hash)
+        ) %>
+  <% end %>
+  <%= if Chain.check_if_tokens_at_address(@address.hash) do %>
   <%= link(
         gettext("Tokens"),
         class: "card-tab #{tab_status("tokens", @conn.request_path)}",
         to: address_token_path(@conn, :index, @address.hash),
         "data-test": "tokens_tab_link"
       ) %>
-  <%= link(
-        gettext("Internal Transactions"),
-        class: "card-tab #{tab_status("internal_transactions", @conn.request_path)}",
-        "data-test": "internal_transactions_tab_link",
-        to: address_internal_transaction_path(@conn, :index, @address.hash)
-      ) %>
+  <% end %>
+  <%= if Chain.check_if_internal_transactions_at_address(@address.hash) do %>
+    <%= link(
+          gettext("Internal Transactions"),
+          class: "card-tab #{tab_status("internal_transactions", @conn.request_path)}",
+          "data-test": "internal_transactions_tab_link",
+          to: address_internal_transaction_path(@conn, :index, @address.hash)
+        ) %>
+  <% end %>
   <%= link(
         gettext("Coin Balance History"),
         class: "card-tab #{tab_status("coin_balances", @conn.request_path)}",
         "data-test": "coin_balance_tab_link",
         to: address_coin_balance_path(@conn, :index, @address.hash)
       ) %>
-  <%= link(
-      gettext("Logs"),
-      class: "card-tab #{tab_status("logs", @conn.request_path)}",
-      to: address_logs_path(@conn, :index, @address.hash)
-      ) %>
-  <%= link(
-    gettext("Blocks Validated"),
-    class: "card-tab #{tab_status("validations", @conn.request_path)}",
-    "data-test": "validations_tab_link",
-    to: address_validation_path(@conn, :index, @address.hash)
-  ) %>
+  <%= if Chain.check_if_logs_at_address(@address.hash) do %>
+    <%= link(
+        gettext("Logs"),
+        class: "card-tab #{tab_status("logs", @conn.request_path)}",
+        to: address_logs_path(@conn, :index, @address.hash)
+        ) %>
+  <% end %>
+  <%= if Chain.check_if_validated_blocks_at_address(@address.hash) do %>
+    <%= link(
+      gettext("Blocks Validated"),
+      class: "card-tab #{tab_status("validations", @conn.request_path)}",
+      "data-test": "validations_tab_link",
+      to: address_validation_path(@conn, :index, @address.hash)
+    ) %>
+  <% end %>
   <%= if contract?(@address) do %>
     <%= link(
         to: address_contract_path(@conn, :index, @address.hash),
