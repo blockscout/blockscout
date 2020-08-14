@@ -1859,6 +1859,43 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  def check_if_validated_blocks_at_address(address_hash) do
+    Repo.exists?(from(b in Block, where: b.miner_hash == ^address_hash))
+  end
+
+  def check_if_logs_at_address(address_hash) do
+    Repo.exists?(from(l in Log, where: l.address_hash == ^address_hash))
+  end
+
+  def check_if_internal_transactions_at_address(address_hash) do
+    internal_transactions_exists_by_created_contract_address_hash =
+      Repo.exists?(from(it in InternalTransaction, where: it.created_contract_address_hash == ^address_hash))
+
+    internal_transactions_exists_by_from_address_hash =
+      Repo.exists?(from(it in InternalTransaction, where: it.from_address_hash == ^address_hash))
+
+    internal_transactions_exists_by_to_address_hash =
+      Repo.exists?(from(it in InternalTransaction, where: it.to_address_hash == ^address_hash))
+
+    internal_transactions_exists_by_created_contract_address_hash || internal_transactions_exists_by_from_address_hash ||
+      internal_transactions_exists_by_to_address_hash
+  end
+
+  def check_if_token_transfers_at_address(address_hash) do
+    token_transfers_exists_by_from_address_hash =
+      Repo.exists?(from(tt in TokenTransfer, where: tt.from_address_hash == ^address_hash))
+
+    token_transfers_exists_by_to_address_hash =
+      Repo.exists?(from(tt in TokenTransfer, where: tt.to_address_hash == ^address_hash))
+
+    token_transfers_exists_by_from_address_hash ||
+      token_transfers_exists_by_to_address_hash
+  end
+
+  def check_if_tokens_at_address(address_hash) do
+    Repo.exists?(from(tb in CurrentTokenBalance, where: tb.address_hash == ^address_hash))
+  end
+
   @doc """
   Counts all of the block validations and groups by the `miner_hash`.
   """
