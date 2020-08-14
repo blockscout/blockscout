@@ -36,13 +36,11 @@ defmodule EthereumJSONRPC.Contract do
 
     requests_with_index = Enum.with_index(requests)
 
-    [{%{function_name: function_name}, _}] = requests_with_index
-
     indexed_responses =
       requests_with_index
       |> Enum.map(fn {%{contract_address: contract_address, function_name: function_name, args: args} = request, index} ->
         {_, function} =
-          Enum.find(functions, fn {method_id, func} ->
+          Enum.find(functions, fn {_method_id, func} ->
             func.function == function_name && Enum.count(func.input_names) == Enum.count(args)
           end)
 
