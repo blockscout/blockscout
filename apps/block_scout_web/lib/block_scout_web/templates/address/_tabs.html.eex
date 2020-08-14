@@ -20,14 +20,12 @@
         "data-test": "tokens_tab_link"
       ) %>
   <% end %>
-  <%= if Chain.check_if_internal_transactions_at_address(@address.hash) do %>
-    <%= link(
-          gettext("Internal Transactions"),
-          class: "card-tab #{tab_status("internal_transactions", @conn.request_path)}",
-          "data-test": "internal_transactions_tab_link",
-          to: address_internal_transaction_path(@conn, :index, @address.hash)
-        ) %>
-  <% end %>
+  <%= link(
+        gettext("Internal Transactions"),
+        class: "card-tab #{tab_status("internal_transactions", @conn.request_path)}",
+        "data-test": "internal_transactions_tab_link",
+        to: address_internal_transaction_path(@conn, :index, @address.hash)
+      ) %>
   <%= link(
         gettext("Coin Balance History"),
         class: "card-tab #{tab_status("coin_balances", @conn.request_path)}",
