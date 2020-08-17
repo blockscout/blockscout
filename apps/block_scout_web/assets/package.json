@@ -20,10 +20,10 @@
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.1.0-4",
-    "awesomplete": "1.1.2",
+    "awesomplete": "^1.1.5",
     "bignumber.js": "^9.0.0",
     "bootstrap": "^4.3.1",
-    "chart.js": "^2.9.2",
+    "chart.js": "^2.9.3",
     "clipboard": "^2.0.4",
     "highlight.js": "^9.16.2",
     "highlightjs-solidity": "^1.0.8",
@@ -38,7 +38,7 @@
     "phoenix_html": "file:../../../deps/phoenix_html",
     "popper.js": "^1.14.7",
     "reduce-reducers": "^0.4.3",
-    "redux": "^4.0.0",
+    "redux": "^4.0.5",
     "urijs": "^1.19.2"
   },
   "devDependencies": {
@@ -56,9 +56,9 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
     "file-loader": "^4.2.0",
-    "jest": "^24.9.0",
+    "jest": "^25.1.0",
     "mini-css-extract-plugin": "^0.8.0",
-    "node-sass": "^4.12.0",
+    "node-sass": "^4.13.1",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "postcss-loader": "^3.0.0",
     "sass-loader": "^8.0.0",

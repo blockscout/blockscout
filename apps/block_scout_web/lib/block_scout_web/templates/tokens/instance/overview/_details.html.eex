@@ -5,7 +5,7 @@
         <div class="card-body">
           <h1 class="card-title">
             <%= if token_name?(@token) do %>
-              <%= @token.name %>
+              <%= link(@token.name, to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash)) %>
             <% else %>
               <%= gettext("Token Details") %>
             <% end %>
@@ -18,7 +18,7 @@
                   data-placement="top"
                   data-toggle="tooltip"
                   title='<%= gettext("View Contract") %>'
-                  onclick='<%= "location='#{address_path(@conn, :show, @token.contract_address_hash)}'" %>'
+                  onclick='<%= "location='#{address_path(@conn, :show, Address.checksum(@token.contract_address_hash))}'" %>'
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="32" height="32"  transform="translate(8,8)">
                     <path fill-rule="evenodd" d="M15 16H1a1 1 0 0 1-1-1V1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1zM14 2H2v12h12V2z"/>
@@ -84,6 +84,7 @@
       </div>
     </div>
   </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/token-counters.js") %>"></script>
 </section>
 <!-- Modal -->
 <div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel" aria-hidden="true">

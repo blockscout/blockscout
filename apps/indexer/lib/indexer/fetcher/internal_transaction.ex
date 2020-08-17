@@ -125,6 +125,27 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
   end
 
+  def import_first_trace(internal_transactions_params) do
+    imports =
+      Chain.import(%{
+        internal_transactions: %{params: internal_transactions_params, with: :blockless_changeset},
+        timeout: :infinity
+      })
+
+    case imports do
+      {:error, step, reason, _changes_so_far} ->
+        Logger.error(
+          fn ->
+            [
+              "failed to import first trace for tx: ",
+              inspect(reason)
+            ]
+          end,
+          step: step
+        )
+    end
+  end
+
   defp fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments) do
     Enum.reduce(unique_numbers, {:ok, []}, fn
       block_number, {:ok, acc_list} ->

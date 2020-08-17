@@ -28,11 +28,6 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
   setup :verify_on_exit!
 
-  # run the tests without the skipping window
-  setup do
-    Application.put_env(:indexer, :max_skipping_distance, 0)
-  end
-
   describe "start_link/1" do
     # See https://github.com/poanetwork/blockscout/issues/597
     @tag :no_geth

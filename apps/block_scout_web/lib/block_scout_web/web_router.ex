@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.WebRouter do
     plug(:fetch_flash)
     plug(:protect_from_forgery)
     plug(BlockScoutWeb.CSPHeader)
+    plug(BlockScoutWeb.ChecksumAddress)
   end
 
   # Disallows Iframes (write routes)
@@ -24,6 +25,11 @@ defmodule BlockScoutWeb.WebRouter do
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
 
     resources("/market_history_chart", Chain.MarketHistoryChartController,
+      only: [:show],
+      singleton: true
+    )
+
+    resources("/transaction_history_chart", Chain.TransactionHistoryChartController,
       only: [:show],
       singleton: true
     )
