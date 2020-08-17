@@ -18,7 +18,8 @@ defmodule BlockScoutWeb.ConnCase do
   using do
     quote do
       # Import conveniences for testing with connections
-      use Phoenix.ConnTest
+      import Plug.Conn
+      import Phoenix.ConnTest
       import BlockScoutWeb.Router.Helpers
       import BlockScoutWeb.WebRouter.Helpers, except: [static_path: 2]
 
@@ -44,8 +45,6 @@ defmodule BlockScoutWeb.ConnCase do
     Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Accounts.child_id())
     Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Accounts.child_id())
-    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.PendingTransactions.child_id())
-    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.PendingTransactions.child_id())
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end

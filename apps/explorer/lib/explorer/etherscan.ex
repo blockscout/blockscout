@@ -3,7 +3,7 @@ defmodule Explorer.Etherscan do
   The etherscan context.
   """
 
-  import Ecto.Query, only: [from: 2, where: 3, or_where: 3, union: 2, subquery: 1]
+  import Ecto.Query, only: [from: 2, where: 3, or_where: 3, union: 2, subquery: 1, order_by: 3]
 
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
@@ -50,6 +50,22 @@ defmodule Explorer.Etherscan do
       _ ->
         []
     end
+  end
+
+  @doc """
+  Gets a list of pending transactions for a given `t:Explorer.Chain.Hash.Address.t/0`.
+
+  If `filter_by: `to_address_hash`,
+  `from_address_hash`, and `created_contract_address_hash`.
+
+  """
+  @spec list_pending_transactions(Hash.Address.t()) :: [map()]
+  def list_pending_transactions(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
+        options \\ @default_options
+      ) do
+    merged_options = Map.merge(@default_options, options)
+    list_pending_transactions_query(address_hash, merged_options)
   end
 
   @internal_transaction_fields ~w(
@@ -255,8 +271,6 @@ defmodule Explorer.Etherscan do
         b in Block,
         where: b.miner_hash == ^address_hash,
         order_by: [desc: b.number],
-        group_by: b.number,
-        group_by: b.timestamp,
         limit: ^merged_options.page_size,
         offset: ^offset(merged_options),
         select: %{
@@ -332,7 +346,40 @@ defmodule Explorer.Etherscan do
     status
     to_address_hash
     value
+    revert_reason
   )a
+
+  @pending_transaction_fields ~w(
+    created_contract_address_hash
+    cumulative_gas_used
+    from_address_hash
+    gas
+    gas_price
+    gas_used
+    hash
+    index
+    input
+    nonce
+    to_address_hash
+    value
+    inserted_at
+  )a
+
+  defp list_pending_transactions_query(address_hash, options) do
+    query =
+      from(
+        t in Transaction,
+        limit: ^options.page_size,
+        offset: ^offset(options),
+        select: map(t, ^@pending_transaction_fields)
+      )
+
+    query
+    |> where_address_match(address_hash, options)
+    |> Chain.pending_transactions_query()
+    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
+    |> Repo.all()
+  end
 
   defp list_transactions(address_hash, max_block_number, options) do
     query =

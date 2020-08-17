@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 
 var sourceCodePath = process.argv[2];
-var version = process.argv[3];
+var compilerVersionPath = process.argv[3];
 var optimize = process.argv[4];
 var optimizationRuns = parseInt(process.argv[5], 10);
 var newContractName = process.argv[6];
 var externalLibraries = JSON.parse(process.argv[7])
 var evmVersion = process.argv[8];
-var compilerVersionPath = process.argv[9];
 
 var solc = require('solc')
 var compilerSnapshot = require(compilerVersionPath);

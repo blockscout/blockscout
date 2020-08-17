@@ -1,0 +1,803 @@
+name: Blockscout
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  MIX_ENV: test
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - name: "ELIXIR_VERSION.lock"
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - name: "OTP_VERSION.lock"
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
+      - run: mix deps.get
+      - name: Restore cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            v7-npm-install-{{ .Branch }}
+            v7-npm-install
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install-{{ .Branch }}-{{ checksum "apps/explorer/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install-{{ .Branch }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install-{{ .Branch }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+  credo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - run: mix credo
+  check_formatted:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - run: mix format --check-formatted
+  dialyzer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Unpack PLT cache
+        run: |
+          mkdir -p _build/test
+          cp plts/dialyxir*.plt _build/test/ || true
+          mkdir -p ~/.mix
+          cp plts/dialyxir*.plt ~/.mix/ || true
+      - run: mix dialyzer --plt
+      - name: Pack PLT cache
+        run: |
+          mkdir -p plts
+          cp _build/test/dialyxir*.plt plts/
+          cp ~/.mix/dialyxir*.plt plts/
+      - run: mix dialyzer --halt-exit-status
+  gettext:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - run: |
+          mix gettext.extract --merge | tee stdout.txt
+          ! grep "Wrote " stdout.txt
+        working-directory: "apps/block_scout_web"
+  sobelow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - run: mix deps.compile
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Scan explorer for vulnerabilities
+        run: mix sobelow --config
+        working-directory: "apps/explorer"
+      - name: Scan block_scout_web for vulnerabilities
+        run: mix sobelow --config
+        working-directory: "apps/block_scout_web"
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - name: Restore cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: >-
+            v3-npm-install-{{ .Branch }}-{{ checksum
+            "apps/explorer/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: 'v3-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: >-
+            v7-npm-install-{{ .Branch }}-{{ checksum
+            "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: 'v7-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+      - run: ./node_modules/.bin/eslint --format=junit --output-file="test/eslint/junit.xml" js/**
+        working-directory: apps/block_scout_web/assets
+  jest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - name: Restore cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: >-
+            v3-npm-install-{{ .Branch }}-{{ checksum
+            "apps/explorer/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: 'v3-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: >-
+            v7-npm-install-{{ .Branch }}-{{ checksum
+            "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: 'v7-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+      - run: ./node_modules/.bin/jest
+        working-directory: apps/block_scout_web/assets
+  test_parity_mox_ethereum_jsonrpc:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+          POSTGRES_DB: explorer_test
+          # match PGPASSWORD for elixir image above
+          POSTGRES_PASSWORD: postgres
+          # match PGUSER for elixir image above
+          POSTGRES_USER: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - name: Restore cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            v7-npm-install-{{ .Branch }}
+            v7-npm-install
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: >-
+            v3-npm-install-{{ .Branch }}-{{ checksum
+            "apps/explorer/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: 'v3-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: >-
+            v7-npm-install-{{ .Branch }}-{{ checksum
+            "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: 'v7-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+      - run: ./bin/install_chrome_headless.sh
+      - name: mix test --exclude no_parity
+        run: |
+          cd apps/ethereum_jsonrpc
+          mix test --no-start --exclude no_parity
+        env:
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+  test_parity_mox_explorer:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+          POSTGRES_DB: explorer_test
+          # match PGPASSWORD for elixir image above
+          POSTGRES_PASSWORD: postgres
+          # match PGUSER for elixir image above
+          POSTGRES_USER: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - name: Restore cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            v7-npm-install-{{ .Branch }}
+            v7-npm-install
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: >-
+            v3-npm-install-{{ .Branch }}-{{ checksum
+            "apps/explorer/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: 'v3-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: >-
+            v7-npm-install-{{ .Branch }}-{{ checksum
+            "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: 'v7-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+      - run: ./bin/install_chrome_headless.sh
+      - name: mix test --exclude no_parity
+        run: |
+          mix ecto.create --quiet
+          mix ecto.migrate
+          cd apps/explorer
+          mix test --no-start --exclude no_parity
+        env:
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+  test_parity_mox_indexer:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+          POSTGRES_DB: explorer_test
+          # match PGPASSWORD for elixir image above
+          POSTGRES_PASSWORD: postgres
+          # match PGUSER for elixir image above
+          POSTGRES_USER: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - name: Restore cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            v7-npm-install-{{ .Branch }}
+            v7-npm-install
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: >-
+            v3-npm-install-{{ .Branch }}-{{ checksum
+            "apps/explorer/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: 'v3-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: >-
+            v7-npm-install-{{ .Branch }}-{{ checksum
+            "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install-{{ .Branch }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+      - run: ./bin/install_chrome_headless.sh
+      - name: mix test --exclude no_parity
+        run: |
+          mix ecto.create --quiet
+          mix ecto.migrate
+          cd apps/indexer
+          mix test --no-start --exclude no_parity
+        env:
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+  test_parity_mox_block_scout_web:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+          POSTGRES_DB: explorer_test
+          # match PGPASSWORD for elixir image above
+          POSTGRES_PASSWORD: postgres
+          # match PGUSER for elixir image above
+          POSTGRES_USER: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - name: Restore cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            'v7-npm-install-{{ .Branch }}'
+            v7-npm-install
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: >-
+            v3-npm-install-{{ .Branch }}-{{ checksum
+            "apps/explorer/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: 'v3-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: >-
+            v7-npm-install-{{ .Branch }}-{{ checksum
+            "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: 'v7-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+      - run: ./bin/install_chrome_headless.sh
+      - name: mix test --exclude no_parity
+        run: |
+          mix ecto.create --quiet
+          mix ecto.migrate
+          cd apps/block_scout_web
+          mix test --no-start --exclude no_parity
+        env:
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"
+  coveralls:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
+          POSTGRES_DB: explorer_test
+          # match PGPASSWORD for elixir image above
+          POSTGRES_PASSWORD: postgres
+          # match PGUSER for elixir image above
+          POSTGRES_USER: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1
+        with:
+          otp-version: '22.2'
+          elixir-version: '1.10.3'
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix deps.get
+      - name: Restore cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: |
+            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+            v7-npm-install-{{ .Branch }}
+            v7-npm-install
+      - run: npm install
+        working-directory: apps/explorer
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: >-
+            v3-npm-install-{{ .Branch }}-{{ checksum
+            "apps/explorer/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: 'v3-npm-install-{{ .Branch }}'
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/explorer/node_modules
+          key: v3-npm-install
+      - run: npm install
+        working-directory: apps/block_scout_web/assets
+      - run: npm rebuild node-sass
+        working-directory: apps/block_scout_web/assets
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: >-
+            v7-npm-install-{{ .Branch }}-{{ checksum
+            "apps/block_scout_web/assets/package-lock.json" }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install-{{ .Branch }}
+      - name: Save cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: apps/block_scout_web/assets/node_modules
+          key: v7-npm-install
+      - run: mix compile
+      - run: make
+        working-directory: "deps/libsecp256k1"
+      - name: Build assets
+        run: node node_modules/webpack/bin/webpack.js --mode development
+        working-directory: "apps/block_scout_web/assets"
+      - run: ./bin/install_chrome_headless.sh
+      - name: prepare DB
+        run: |
+          mix ecto.create --quiet
+          mix ecto.migrate
+        env:
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+      - name: coveralls
+        run: mix coveralls.github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+          ETHEREUM_JSONRPC_CASE: "EthereumJSONRPC.Case.Parity.Mox"
+          ETHEREUM_JSONRPC_WEB_SOCKET_CASE: "EthereumJSONRPC.WebSocket.Case.Mox"

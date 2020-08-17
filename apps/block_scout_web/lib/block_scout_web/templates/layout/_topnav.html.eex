@@ -55,12 +55,16 @@
                     class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
                     to: transaction_path(@conn, :index)
                   ) %>
-              <%= link(
-                    gettext("Pending"),
-                    class: "dropdown-item #{tab_status("pending_transactions", @conn.request_path)}",
-                    "data-test": "pending_transactions_link",
-                    to: pending_transaction_path(@conn, :index)
-                  ) %>
+              <% json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)%>
+              <% variant = Keyword.fetch!(json_rpc_named_arguments, :variant) %>
+              <%= if variant !== EthereumJSONRPC.Besu do %>
+                <%= link(
+                      gettext("Pending"),
+                      class: "dropdown-item #{tab_status("pending_transactions", @conn.request_path)}",
+                      "data-test": "pending_transactions_link",
+                      to: pending_transaction_path(@conn, :index)
+                    ) %>
+              <% end %>
             </div>
           </li>
           <li class="nav-item">
@@ -69,6 +73,14 @@
                 <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
               </span>
               <%= gettext("Accounts") %>
+            <% end %>
+          </li>
+          <li class="nav-item">
+            <%= link to: tokens_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("tokens", @conn.request_path)}" do %>
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+              </span>
+              <%= gettext("Tokens") %>
             <% end %>
           </li>
         <% end %>
@@ -96,6 +108,25 @@
                     class: "dropdown-item #{tab_status("eth_rpc_api_docs", @conn.request_path)}",
                     to: api_url() <> api_docs_path(@conn, :eth_rpc)
                   ) %>
+            </div>
+          </li>
+        <% end %>
+        <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
+          <li class="nav-item dropdown">
+            <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <span class="nav-link-icon">
+                <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
+              </span>
+              <%= gettext("Apps") %>
+            </a>
+            <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown"> 
+              <%= for %{url: url, title: title} <- external_apps_list() do %> 
+                  <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %>
+                    <span class="external-link-icon">
+                      <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
+                    </span>
+                  </a>
+              <% end %>
             </div>
           </li>
         <% end %>
@@ -136,18 +167,32 @@
                 <%= awesomplete(f, :q,
                     [
                     class: "form-control me auto",
-                    placeholder: gettext("Search by address, token symbol name, transaction hash, or block number"),
+                    placeholder: gettext("Search by address, token symbol, name, transaction hash, or block number"),
                     "aria-describedby": "search-icon",
                     "aria-label": gettext("Search"),
                     "data-test": "search_input"
                     ],
                     [ url: "#{chain_path(@conn, :token_autocomplete)}?q=",
                     limit: 0,
+                    maxItems: 1000,
                     minChars: 2,
                     value: "contract_address_hash",
                     label: "contract_address_hash",
                     descrSearch: true,
-                    descr: "symbol"
+                    descr: "name",
+                    sort: "function(x1, x2){
+                      const tokenName1 = x1.split('<b>').length > 1 ? x1.split('<b>')[1].split('</b>')[0].toLowerCase() : ''
+                      const tokenName2 = x2.split('<b>').length > 1 ? x2.split('<b>')[1].split('</b>')[0].toLowerCase() : ''
+                      const holdersCount1 = x1.split('<i>').length > 1 ? parseInt(x1.split('<i>')[1].split('</i>')[0].split('holder')[0], 10) : null
+                      const holdersCount2 = x2.split('<i>').length > 1 ? parseInt(x2.split('<i>')[1].split('</i>')[0].split('holder')[0], 10) : null
+                      if (holdersCount1 && holdersCount2 && holdersCount1 !== holdersCount2 || (holdersCount1 && !holdersCount2) || (!holdersCount1 && holdersCount2)) {
+                        holdersCount1 > holdersCount2
+                      } else {
+                        if (tokenName1 < tokenName2) { return -1 }
+                        if (tokenName1 > tokenName2) { return 1 }
+                        return 0
+                      }
+                    }"
                     ]) %>
                 <div class="input-group-append">
                   <button class="input-group-text" id="search-icon">

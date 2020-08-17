@@ -255,20 +255,26 @@ defmodule Explorer.Chain.SmartContract do
     |> prepare_changes(&upsert_contract_methods/1)
   end
 
-  def invalid_contract_changeset(%__MODULE__{} = smart_contract, attrs, error) do
-    smart_contract
-    |> cast(attrs, [
-      :name,
-      :compiler_version,
-      :optimization,
-      :contract_source_code,
-      :address_hash,
-      :evm_version,
-      :optimization_runs,
-      :constructor_arguments
-    ])
-    |> validate_required([:name, :compiler_version, :optimization, :address_hash])
-    |> add_error(:contract_source_code, error_message(error))
+  def invalid_contract_changeset(%__MODULE__{} = smart_contract, attrs, error, error_message) do
+    validated =
+      smart_contract
+      |> cast(attrs, [
+        :name,
+        :compiler_version,
+        :optimization,
+        :contract_source_code,
+        :address_hash,
+        :evm_version,
+        :optimization_runs,
+        :constructor_arguments
+      ])
+      |> validate_required([:name, :compiler_version, :optimization, :address_hash])
+
+    if error_message do
+      add_error(validated, :contract_source_code, error_message(error, error_message))
+    else
+      add_error(validated, :contract_source_code, error_message(error))
+    end
   end
 
   def add_submitted_comment(code, inserted_at) when is_binary(code) do
@@ -326,8 +332,10 @@ defmodule Explorer.Chain.SmartContract do
   defp upsert_contract_methods(changeset), do: changeset
 
   defp error_message(:compilation), do: "There was an error compiling your contract."
+  defp error_message(:compiler_version), do: "Compiler version does not match, please try again."
   defp error_message(:generated_bytecode), do: "Bytecode does not match, please try again."
   defp error_message(:constructor_arguments), do: "Constructor arguments do not match, please try again."
   defp error_message(:name), do: "Wrong contract name, please try again."
   defp error_message(_), do: "There was an error validating your contract, please try again."
+  defp error_message(:compilation, error_message), do: "There was an error compiling your contract: #{error_message}"
 end

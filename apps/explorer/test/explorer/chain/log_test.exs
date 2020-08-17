@@ -58,28 +58,28 @@ defmodule Explorer.Chain.LogTest do
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
-      smart_contract =
-        insert(:smart_contract,
-          abi: [
-            %{
-              "anonymous" => false,
-              "inputs" => [
-                %{"indexed" => true, "name" => "_from_human", "type" => "string"},
-                %{"indexed" => false, "name" => "_number", "type" => "uint256"},
-                %{"indexed" => true, "name" => "_belly", "type" => "bool"}
-              ],
-              "name" => "WantsPets",
-              "type" => "event"
-            }
-          ]
-        )
+      to_address = insert(:address, contract_code: "0x")
+
+      insert(:smart_contract,
+        abi: [
+          %{
+            "anonymous" => false,
+            "inputs" => [
+              %{"indexed" => true, "name" => "_from_human", "type" => "string"},
+              %{"indexed" => false, "name" => "_number", "type" => "uint256"},
+              %{"indexed" => true, "name" => "_belly", "type" => "bool"}
+            ],
+            "name" => "WantsPets",
+            "type" => "event"
+          }
+        ],
+        address_hash: to_address.hash
+      )
 
       topic1 = "0x" <> Base.encode16(:keccakf1600.hash(:sha3_256, "WantsPets(string,uint256,bool)"), case: :lower)
       topic2 = "0x" <> Base.encode16(:keccakf1600.hash(:sha3_256, "bob"), case: :lower)
       topic3 = "0x0000000000000000000000000000000000000000000000000000000000000001"
       data = "0x0000000000000000000000000000000000000000000000000000000000000000"
-
-      to_address = insert(:address, smart_contract: smart_contract)
 
       transaction =
         :transaction_to_verified_contract
@@ -88,6 +88,7 @@ defmodule Explorer.Chain.LogTest do
 
       log =
         insert(:log,
+          address: to_address,
           transaction: transaction,
           first_topic: topic1,
           second_topic: topic2,

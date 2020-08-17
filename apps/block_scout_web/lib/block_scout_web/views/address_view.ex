@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
+  alias Explorer.SmartContract.Writer
 
   @dialyzer :no_match
 
@@ -18,6 +19,9 @@ defmodule BlockScoutWeb.AddressView do
     "internal_transactions",
     "token_transfers",
     "read_contract",
+    "read_proxy",
+    "write_contract",
+    "write_proxy",
     "tokens",
     "transactions",
     "validations"
@@ -116,6 +120,17 @@ defmodule BlockScoutWeb.AddressView do
 
   def balance_percentage(_, nil), do: ""
 
+  def balance_percentage(
+        %Address{
+          hash: %Explorer.Chain.Hash{
+            byte_count: 20,
+            bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+          }
+        },
+        _
+      ),
+      do: ""
+
   def balance_percentage(%Address{fetched_coin_balance: balance}, total_supply) do
     if total_supply > 0 do
       balance
@@ -207,6 +222,8 @@ defmodule BlockScoutWeb.AddressView do
     |> Base.encode64()
   end
 
+  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
+
   def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
 
   def smart_contract_verified?(%Address{smart_contract: nil}), do: false
@@ -216,6 +233,21 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
+
+  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
+    Chain.is_proxy_contract?(address.smart_contract.abi)
+  end
+
+  def smart_contract_is_proxy?(%Address{smart_contract: nil}), do: false
+
+  def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
+    Enum.any?(
+      address.smart_contract.abi,
+      &Writer.write_function?(&1)
+    )
+  end
+
+  def smart_contract_with_write_functions?(%Address{smart_contract: nil}), do: false
 
   def has_decompiled_code?(address) do
     address.has_decompiled_code? ||
@@ -315,6 +347,9 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["contracts"]), do: gettext("Code")
   defp tab_name(["decompiled_contracts"]), do: gettext("Decompiled Code")
   defp tab_name(["read_contract"]), do: gettext("Read Contract")
+  defp tab_name(["read_proxy"]), do: gettext("Read Proxy")
+  defp tab_name(["write_contract"]), do: gettext("Write Contract")
+  defp tab_name(["write_proxy"]), do: gettext("Write Proxy")
   defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
   defp tab_name(["logs"]), do: gettext("Logs")

@@ -228,7 +228,11 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at)
         ]
       ],
-      where: fragment("? < EXCLUDED.block_number", current_token_balance.block_number)
+      where:
+        fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
+          (fragment("EXCLUDED.value IS NOT NULL") and
+             is_nil(current_token_balance.value_fetched_at) and
+             fragment("? = EXCLUDED.block_number", current_token_balance.block_number))
     )
   end
 

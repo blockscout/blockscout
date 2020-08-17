@@ -14,7 +14,7 @@ defmodule BlockScout.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: ".dialyzer-ignore"
       ],
-      elixir: "~> 1.9",
+      elixir: "~> 1.10",
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.detail": :test,
@@ -75,7 +75,7 @@ defmodule BlockScout.Mixfile do
       # Documentation
       {:ex_doc, "~> 0.19.0", only: [:dev]},
       # Code coverage
-      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"}
+      {:excoveralls, "~> 0.13.1"}
     ]
   end
 end

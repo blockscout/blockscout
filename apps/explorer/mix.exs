@@ -15,7 +15,7 @@ defmodule Explorer.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.9",
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -82,9 +82,9 @@ defmodule Explorer.Mixfile do
       # Data factory for testing
       {:ex_machina, "~> 2.3", only: [:test]},
       # Code coverage
-      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
+      {:excoveralls, "~> 0.13.1"},
       {:exvcr, "~> 0.10", only: :test},
-      {:httpoison, "~> 1.0"},
+      {:httpoison, "~> 1.6"},
       {:jason, "~> 1.0"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files
@@ -100,7 +100,7 @@ defmodule Explorer.Mixfile do
       # Prometheus metrics for query duration
       {:prometheus_ecto, "~> 1.4.3"},
       # bypass optional dependency
-      {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
+      {:plug_cowboy, "~> 2.2", only: [:dev, :test]},
       {:que, "~> 0.10.1"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       # Tracing
