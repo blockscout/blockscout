@@ -25,6 +25,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   defstruct bound_interval: nil,
             fetcher: %Catchup.Fetcher{},
             memory_monitor: nil,
+            elapsed: nil,
             task: nil
 
   @spec child_spec([named_arguments | GenServer.options(), ...]) :: Supervisor.child_spec()
@@ -72,7 +73,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
     %__MODULE__{
       fetcher: %Catchup.Fetcher{block_fetcher: block_fetcher, memory_monitor: Map.get(named_arguments, :memory_monitor)},
-      bound_interval: bound_interval
+      bound_interval: bound_interval,
+      elapsed: 0
     }
   end
 
@@ -230,12 +232,18 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
       ["Checking if index needs to catch up in ", to_string(interval), "ms."]
     end)
 
-    Repo.query!("refresh materialized view celo_accumulated_rewards;")
-    Repo.query!("refresh materialized view celo_attestation_stats;")
+    if rem(state.elapsed, 10) == 0 do
+      Repo.query!("refresh materialized view celo_accumulated_rewards;")
+      Repo.query!("refresh materialized view celo_attestation_stats;")
+
+      Logger.info(fn ->
+        ["Refreshed material views."]
+      end)
+    end
 
     Process.send_after(self(), :catchup_index, interval)
 
-    {:noreply, %__MODULE__{state | bound_interval: new_bound_interval, task: nil}}
+    {:noreply, %__MODULE__{state | bound_interval: new_bound_interval, task: nil, elapsed: state.elapsed + 1}}
   end
 
   def handle_info(
