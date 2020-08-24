@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3252](https://github.com/poanetwork/blockscout/pull/3252) - Gas price at the main page
 - [#3239](https://github.com/poanetwork/blockscout/pull/3239) - Hide address page tabs if no items
 - [#3236](https://github.com/poanetwork/blockscout/pull/3236) - Easy verification of contracts which hash verified twins (the same bytecode)
 - [#3227](https://github.com/poanetwork/blockscout/pull/3227) - Distinguishing of bridged tokens
