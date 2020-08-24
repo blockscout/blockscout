@@ -42,8 +42,19 @@
                     <span class="dashboard-banner-chart-legend-label">
                     <%= gettext "Price" %>
                     </span>
-                    <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
-                    </span>
+                    <div class="dashboard-banner-chart-legend-value-container">
+                      <span class="dashboard-banner-chart-legend-value inline" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+                      </span>
+                      <%= if @gas_price do%>
+                        <span class="dashboard-banner-chart-legend-value inline ml-2">
+                          <span class="gas-price-icon">
+                            <%= render BlockScoutWeb.IconsView, "_gas_price_icon.html" %>
+                          </span>
+                          <%= @gas_price <> " " %>
+                          <%= gettext "Gwei" %>
+                        </span>
+                      <% end %>
+                    </div>
                 </div>
             <% end %>
             <%= if Enum.member?(@chart_config.market, :market_cap) do %>
