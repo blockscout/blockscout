@@ -6,7 +6,7 @@
       </span>
   </td>
   <td class="stakes-td">
-    <% token = "#{@token.name} (#{@token.symbol})" %>
+    <% token = token_display_name(@token) %>
     <%= link(token,
       to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
       "data-test": "token_link",

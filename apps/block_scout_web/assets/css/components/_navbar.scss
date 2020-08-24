@@ -192,6 +192,14 @@ $navbar-logo-width: auto !default;
       overflow-y: auto !important;
       max-height: 300px !important;
   }
+
+  .awesomplete mark {
+    background: #feff54 !important;
+  }
+  
+  .awesomplete li:hover mark {
+    background: #feff54 !important;
+  }
 }
 
 .navbar-collapse.collapsing,

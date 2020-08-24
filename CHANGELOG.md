@@ -7,6 +7,7 @@
 - [#3224](https://github.com/poanetwork/blockscout/pull/3224) - Top tokens page
 
 ### Fixes
+- [#3249](https://github.com/poanetwork/blockscout/pull/3249) - Fix incorrect ABI decoding of address in tuple output
 - [#3237](https://github.com/poanetwork/blockscout/pull/3237) - Refine contract method signature detection for read/write feature
 - [#3235](https://github.com/poanetwork/blockscout/pull/3235) - Fix coin supply api edpoint
 - [#3233](https://github.com/poanetwork/blockscout/pull/3233) - Fix for the contract verifiaction for solc 0.5 family with experimental features enabled
@@ -17,6 +18,8 @@
 - [#3220](https://github.com/poanetwork/blockscout/pull/3220) - Allow interaction with navbar menu at block-not-found page
 
 ### Chore
+- [#3250](https://github.com/poanetwork/blockscout/pull/3250) - Eliminate occurrences of obsolete env variable ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT
+- [#3240](https://github.com/poanetwork/blockscout/pull/3240), [#3251](https://github.com/poanetwork/blockscout/pull/3251) - various CSS imroving 
 
 
 ## 3.3.1-beta
