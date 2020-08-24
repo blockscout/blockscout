@@ -163,7 +163,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     position: relative;
     top: -2px;
     path {
-      fill: $tertiary;
+      fill: $dashboard-line-color-price;
     }
   }
 }
