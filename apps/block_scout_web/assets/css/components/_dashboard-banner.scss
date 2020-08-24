@@ -162,6 +162,9 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   .gas-price-icon {
     position: relative;
     top: -2px;
+    path {
+      fill: $tertiary;
+    }
   }
 }
 
