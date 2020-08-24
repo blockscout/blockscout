@@ -18,7 +18,7 @@
 
 ### Chore
 - [#3250](https://github.com/poanetwork/blockscout/pull/3250) - Eliminate occurrences of obsolete env variable ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT
-- [#3240](https://github.com/poanetwork/blockscout/pull/3240) - various CSS imroving 
+- [#3240](https://github.com/poanetwork/blockscout/pull/3240), [#3251](https://github.com/poanetwork/blockscout/pull/3251) - various CSS imroving 
 
 
 ## 3.3.1-beta
