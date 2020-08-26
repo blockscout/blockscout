@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
 
 ### Chore
 
