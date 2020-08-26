@@ -38,13 +38,18 @@ defmodule EthereumJSONRPC.Contract do
 
     indexed_responses =
       requests_with_index
-      |> Enum.map(fn {%{contract_address: contract_address, function_name: function_name, args: args} = request, index} ->
+      |> Enum.map(fn {%{contract_address: contract_address, method_id: target_method_id, args: args} = request, index} ->
         {_, function} =
-          Enum.find(functions, fn {_method_id, func} ->
-            func.function == function_name && Enum.count(func.input_names) == Enum.count(args)
+          Enum.find(functions, fn {method_id, _func} ->
+            if method_id do
+              Base.encode16(method_id, case: :lower) == target_method_id || method_id == target_method_id
+            else
+              method_id == target_method_id
+            end
           end)
 
         function
+        |> Map.drop([:method_id])
         |> Encoder.encode_function_call(args)
         |> eth_call_request(contract_address, index, Map.get(request, :block_number), Map.get(request, :from))
       end)
@@ -57,15 +62,22 @@ defmodule EthereumJSONRPC.Contract do
       end
       |> Enum.into(%{}, &{&1.id, &1})
 
-    Enum.map(requests_with_index, fn {%{function_name: function_name}, index} ->
-      selectors = Enum.filter(parsed_abi, fn p_abi -> p_abi.function == function_name end)
-
+    Enum.map(requests_with_index, fn {%{method_id: method_id}, index} ->
       indexed_responses[index]
       |> case do
         nil ->
           {:error, "No result"}
 
         response ->
+          selectors =
+            Enum.filter(parsed_abi, fn p_abi ->
+              if method_id && p_abi.method_id do
+                Base.encode16(p_abi.method_id, case: :lower) == method_id || p_abi.method_id == method_id
+              else
+                p_abi.method_id == method_id
+              end
+            end)
+
           {^index, result} = Encoder.decode_result(response, selectors)
           result
       end
