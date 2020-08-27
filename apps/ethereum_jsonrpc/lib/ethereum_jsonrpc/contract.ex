@@ -16,7 +16,7 @@ defmodule EthereumJSONRPC.Contract do
   """
   @type call :: %{
           required(:contract_address) => String.t(),
-          required(:function_name) => String.t(),
+          required(:method_id) => String.t(),
           required(:args) => [term()],
           optional(:block_number) => EthereumJSONRPC.block_number()
         }
@@ -39,16 +39,8 @@ defmodule EthereumJSONRPC.Contract do
     indexed_responses =
       requests_with_index
       |> Enum.map(fn {%{contract_address: contract_address, method_id: target_method_id, args: args} = request, index} ->
-        {_, function} =
-          Enum.find(functions, fn {method_id, _func} ->
-            if method_id do
-              Base.encode16(method_id, case: :lower) == target_method_id || method_id == target_method_id
-            else
-              method_id == target_method_id
-            end
-          end)
-
-        function
+        functions
+        |> define_function(target_method_id)
         |> Map.drop([:method_id])
         |> Encoder.encode_function_call(args)
         |> eth_call_request(contract_address, index, Map.get(request, :block_number), Map.get(request, :from))
@@ -69,14 +61,7 @@ defmodule EthereumJSONRPC.Contract do
           {:error, "No result"}
 
         response ->
-          selectors =
-            Enum.filter(parsed_abi, fn p_abi ->
-              if method_id && p_abi.method_id do
-                Base.encode16(p_abi.method_id, case: :lower) == method_id || p_abi.method_id == method_id
-              else
-                p_abi.method_id == method_id
-              end
-            end)
+          selectors = define_selectors(parsed_abi, method_id)
 
           {^index, result} = Encoder.decode_result(response, selectors)
           result
@@ -85,6 +70,29 @@ defmodule EthereumJSONRPC.Contract do
   rescue
     error ->
       Enum.map(requests, fn _ -> format_error(error) end)
+  end
+
+  defp define_function(functions, target_method_id) do
+    {_, function} =
+      Enum.find(functions, fn {method_id, _func} ->
+        if method_id do
+          Base.encode16(method_id, case: :lower) == target_method_id || method_id == target_method_id
+        else
+          method_id == target_method_id
+        end
+      end)
+
+    function
+  end
+
+  defp define_selectors(parsed_abi, method_id) do
+    Enum.filter(parsed_abi, fn p_abi ->
+      if p_abi.method_id do
+        Base.encode16(p_abi.method_id, case: :lower) == method_id || p_abi.method_id == method_id
+      else
+        p_abi.method_id == method_id
+      end
+    end)
   end
 
   def eth_call_request(data, contract_address, id, block_number, from) do

@@ -82,9 +82,11 @@ defmodule Explorer.Staking.EpochCounter do
   end
 
   defp fetch_epoch_info do
+    # 794c0c68 = keccak256(stakingEpoch())
+    # 8c2243ae = keccak256(stakingEpochEndBlock())
     with data <- get_epoch_info(),
-         {:ok, [epoch_num]} <- data["stakingEpoch"],
-         {:ok, [epoch_end_block]} <- data["stakingEpochEndBlock"] do
+         {:ok, [epoch_num]} <- data["794c0c68"],
+         {:ok, [epoch_end_block]} <- data["8c2243ae"] do
       :ets.insert(@table_name, {@epoch_key, epoch_num})
       :ets.insert(@table_name, {@epoch_end_key, epoch_end_block})
     end
@@ -93,20 +95,20 @@ defmodule Explorer.Staking.EpochCounter do
   defp get_epoch_info do
     contract_abi = abi("staking.json")
 
-    functions = ["stakingEpoch", "stakingEpochEndBlock"]
+    method_ids = ["794c0c68", "8c2243ae"]
 
-    functions
-    |> Enum.map(fn function ->
+    method_ids
+    |> Enum.map(fn method_id ->
       %{
         contract_address: staking_address(),
-        function_name: function,
+        method_id: method_id,
         args: []
       }
     end)
     |> Reader.query_contracts(contract_abi)
-    |> Enum.zip(functions)
-    |> Enum.into(%{}, fn {response, function} ->
-      {function, response}
+    |> Enum.zip(method_ids)
+    |> Enum.into(%{}, fn {response, method_id} ->
+      {method_id, response}
     end)
   end
 

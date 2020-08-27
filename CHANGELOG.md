@@ -3,6 +3,7 @@
 ### Features
 
 ### Fixes
+- [#3257](https://github.com/poanetwork/blockscout/pull/3257) - Contracts read/write: method_id instead function_name as a key
 
 ### Chore
 
