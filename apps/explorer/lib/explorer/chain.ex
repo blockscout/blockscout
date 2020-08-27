@@ -4782,11 +4782,12 @@ defmodule Explorer.Chain do
         implementation_address
       end
     else
+      # 5c60da1b = keccak256(implementation())
       implementation_address =
         case Reader.query_contract(proxy_address_hash, abi, %{
-               "implementation" => []
+               "5c60da1b" => []
              }) do
-          %{"implementation" => {:ok, [result]}} -> result
+          %{"5c60da1b" => {:ok, [result]}} -> result
           _ -> nil
         end
 

@@ -1,6 +1,18 @@
 ## Current
 
 ### Features
+
+### Fixes
+- [#3257](https://github.com/poanetwork/blockscout/pull/3257) - Contracts read/write: method_id instead function_name as a key
+- [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
+
+### Chore
+- [#3258](https://github.com/poanetwork/blockscout/pull/3258) - Token transfer: check that block exists before retrieving timestamp
+
+
+## 3.3.2-beta
+
+### Features
 - [#3252](https://github.com/poanetwork/blockscout/pull/3252) - Gas price at the main page
 - [#3239](https://github.com/poanetwork/blockscout/pull/3239) - Hide address page tabs if no items
 - [#3236](https://github.com/poanetwork/blockscout/pull/3236) - Easy verification of contracts which hash verified twins (the same bytecode)
@@ -20,7 +32,8 @@
 
 ### Chore
 - [#3250](https://github.com/poanetwork/blockscout/pull/3250) - Eliminate occurrences of obsolete env variable ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT
-- [#3240](https://github.com/poanetwork/blockscout/pull/3240), [#3251](https://github.com/poanetwork/blockscout/pull/3251) - various CSS imroving 
+- [#3240](https://github.com/poanetwork/blockscout/pull/3240), [#3251](https://github.com/poanetwork/blockscout/pull/3251) - various CSS imroving
+- [f3a720](https://github.com/poanetwork/blockscout/commit/2dd909c10a79b0bf4b7541a486be114152f3a720) - Make wobserver optional
 
 
 ## 3.3.1-beta
