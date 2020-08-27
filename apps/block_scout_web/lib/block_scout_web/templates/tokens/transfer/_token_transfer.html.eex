@@ -58,7 +58,7 @@
           to: block_path(BlockScoutWeb.Endpoint, :show, @token_transfer.block_number)
         ) %>
       </span>
-      <span class="mr-2 mr-md-0 order-2" data-from-now="<%= @token_transfer.transaction.block.timestamp %>"></span>
+      <span class="mr-2 mr-md-0 order-2" data-from-now="<%= @token_transfer.transaction.block && @token_transfer.transaction.block.timestamp %>"></span>
     </div>
   </div>
 </div>
