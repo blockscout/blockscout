@@ -4,8 +4,10 @@
 
 ### Fixes
 - [#3257](https://github.com/poanetwork/blockscout/pull/3257) - Contracts read/write: method_id instead function_name as a key
+- [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
 
 ### Chore
+- [#3258](https://github.com/poanetwork/blockscout/pull/3258) - Token transfer: check that block exists before retrieving timestamp
 
 
 ## 3.3.2-beta
