@@ -339,7 +339,11 @@ defmodule Explorer.SmartContract.Reader do
           function_object =
             parsed_final_abi
             |> Enum.filter(fn %ABI.FunctionSelector{method_id: find_method_id} ->
-              Base.encode16(find_method_id, case: :lower) == method_id
+              if find_method_id do
+                Base.encode16(find_method_id, case: :lower) == method_id
+              else
+                find_method_id == method_id
+              end
             end)
             |> List.first()
 
