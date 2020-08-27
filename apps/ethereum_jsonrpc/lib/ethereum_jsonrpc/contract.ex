@@ -44,8 +44,10 @@ defmodule EthereumJSONRPC.Contract do
             func.function == function_name && Enum.count(func.input_names) == Enum.count(args)
           end)
 
+        formatted_args = format_args(function, args)
+
         function
-        |> Encoder.encode_function_call(args)
+        |> Encoder.encode_function_call(formatted_args)
         |> eth_call_request(contract_address, index, Map.get(request, :block_number), Map.get(request, :from))
       end)
       |> json_rpc(json_rpc_named_arguments)
@@ -73,6 +75,37 @@ defmodule EthereumJSONRPC.Contract do
   rescue
     error ->
       Enum.map(requests, fn _ -> format_error(error) end)
+  end
+
+  defp format_args(function, args) do
+    args
+    |> Enum.with_index()
+    |> Enum.map(fn {arg, index} ->
+      types = function.types
+
+      case Enum.at(types, index) do
+        {:array, {:int, _size}} ->
+          convert_string_to_array(arg)
+
+        {:array, {:uint, _size}} ->
+          convert_string_to_array(arg)
+
+        {:array, _} ->
+          String.split(arg, ",")
+
+        _ ->
+          arg
+      end
+    end)
+  end
+
+  defp convert_string_to_array(arg) do
+    arg
+    |> String.split(",")
+    |> Enum.map(fn el ->
+      {int, _} = Integer.parse(el)
+      int
+    end)
   end
 
   def eth_call_request(data, contract_address, id, block_number, from) do
