@@ -43,11 +43,13 @@ defmodule Explorer.Chain.CeloAccount do
 
   @validator_group_registered "0xbf4b45570f1907a94775f8449817051a492a676918e38108bb762e991e6b58dc"
   @validator_group_deregistered "0xae7e034b0748a10a219b46074b20977a9170bf4027b156c797093773619a8669"
+  @validator_group_commission_updated "0x815d292dbc1a08dfb3103aabb6611233dd2393903e57bdf4c5b3db91198a826c"
 
   @validator_affiliated "0x91ef92227057e201e406c3451698dd780fe7672ad74328591c88d281af31581d"
   @validator_deaffiliated "0x71815121f0622b31a3e7270eb28acb9fd10825ff418c9a18591f617bb8a31a6c"
 
   @validator_signer_authorized "0x16e382723fb40543364faf68863212ba253a099607bf6d3a5b47e50a8bf94943"
+  @validator_score_updated "0xedf9f87e50e10c533bf3ae7f5a7894ae66c23e6cbbe8773d7765d20ad6f995e9"
 
   # Account events
   @account_created "0x805996f252884581e2f74cf3d2b03564d5ec26ccc90850ae12653dc1b72d1fa2"
@@ -102,6 +104,7 @@ defmodule Explorer.Chain.CeloAccount do
       @validator_registered,
       @validator_affiliated,
       @validator_deaffiliated,
+      @validator_score_updated,
       @validator_signer_authorized,
       @validator_epoch_payment_distributed
     ]
@@ -117,6 +120,7 @@ defmodule Explorer.Chain.CeloAccount do
   def validator_group_events,
     do: [
       @validator_group_epoch_rewards_distributed,
+      @validator_group_commission_updated,
       @validator_group_registered,
       @validator_group_deregistered
     ]
@@ -168,7 +172,10 @@ defmodule Explorer.Chain.CeloAccount do
     field(:url, :string)
     field(:nonvoting_locked_gold, Wei)
     field(:locked_gold, Wei)
+    field(:active_gold, Wei, virtual: true)
     field(:usd, Wei)
+
+    field(:votes, Wei, virtual: true)
 
     field(:attestations_requested, :integer)
     field(:attestations_fulfilled, :integer)

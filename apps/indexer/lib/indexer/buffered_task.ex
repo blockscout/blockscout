@@ -69,6 +69,7 @@ defmodule Indexer.BufferedTask do
             callback_module_state: nil,
             task_supervisor: nil,
             flush_interval: nil,
+            poll_interval: nil,
             max_batch_size: nil,
             max_concurrency: nil,
             poll: false,
@@ -205,6 +206,7 @@ defmodule Indexer.BufferedTask do
           {callback_module :: module,
            [
              {:flush_interval, timeout()}
+             | {:poll_interval, timeout()}
              | {:max_batch_size, pos_integer()}
              | {:max_concurrency, pos_integer()}
              | {:memory_monitor, GenServer.name()}
@@ -234,6 +236,7 @@ defmodule Indexer.BufferedTask do
       poll: Keyword.get(opts, :poll, false),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       flush_interval: Keyword.fetch!(opts, :flush_interval),
+      poll_interval: Keyword.get(opts, :poll_interval, :timer.seconds(3)),
       max_batch_size: Keyword.fetch!(opts, :max_batch_size),
       max_concurrency: Keyword.fetch!(opts, :max_concurrency),
       metadata: metadata
@@ -356,21 +359,30 @@ defmodule Indexer.BufferedTask do
       Task.Supervisor.async(task_supervisor, fn ->
         Logger.metadata(metadata)
 
-        {0, []}
-        |> callback_module.init(
-          fn
-            entry, {len, acc} when len + 1 >= max_batch_size ->
-              entries = Enum.reverse([entry | acc])
-              push_back(parent, entries)
+        try do
+          {0, []}
+          |> callback_module.init(
+            fn
+              entry, {len, acc} when len + 1 >= max_batch_size ->
+                entries = Enum.reverse([entry | acc])
+                push_back(parent, entries)
 
-              {0, []}
+                {0, []}
 
-            entry, {len, acc} ->
-              {len + 1, [entry | acc]}
-          end,
-          callback_module_state
-        )
-        |> catchup_remaining(max_batch_size, parent)
+              entry, {len, acc} ->
+                {len + 1, [entry | acc]}
+            end,
+            callback_module_state
+          )
+          |> catchup_remaining(max_batch_size, parent)
+        rescue
+          err ->
+            Logger.warn(fn ->
+              "Failed to initialize buffered task '#{Exception.format(:error, err, __STACKTRACE__)}'."
+            end)
+
+            :ok
+        end
       end)
 
     schedule_next_buffer_flush(%BufferedTask{state | init_task: task.ref})
@@ -439,7 +451,7 @@ defmodule Indexer.BufferedTask do
 
   # get more work from `init/2`
   defp schedule_next(%BufferedTask{poll: true, bound_queue: %BoundQueue{size: 0}} = state) do
-    timer = Process.send_after(self(), :initial_stream, state.flush_interval)
+    timer = Process.send_after(self(), :initial_stream, state.poll_interval)
     %{state | flush_timer: timer}
   end
 

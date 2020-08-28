@@ -14,15 +14,12 @@ defmodule Indexer.Transform.CeloAccounts do
   def parse(logs, oracle_address) do
     %{
       # Add special items for voter epoch rewards
-      accounts:
-        get_addresses(logs, CeloAccount.account_events()) ++
-          Enum.map(get_addresses(logs, CeloVoters.distributed_events()), fn %{address: a} ->
-            %{voter: a}
-          end),
+      accounts: get_addresses(logs, CeloAccount.account_events()),
       # Adding a group to updated validators means to update all members of the group
       validators:
         get_addresses(logs, CeloAccount.validator_events()) ++
-          get_addresses(logs, CeloAccount.membership_events()),
+          get_addresses(logs, CeloAccount.membership_events()) ++
+          get_addresses(logs, CeloAccount.membership_events(), fn a -> a.third_topic end),
       account_names: get_names(logs),
       validator_groups:
         get_addresses(logs, CeloAccount.validator_group_events()) ++
@@ -46,7 +43,7 @@ defmodule Indexer.Transform.CeloAccounts do
     |> Enum.reduce([], fn log, rates -> do_parse_rate(log, rates) end)
   end
 
-  defp get_names(logs) do
+  def get_names(logs) do
     logs
     |> Enum.filter(fn log -> log.first_topic == CeloAccount.account_name_event() end)
     |> Enum.reduce([], fn log, names -> do_parse_name(log, names) end)
@@ -72,13 +69,13 @@ defmodule Indexer.Transform.CeloAccounts do
     |> Enum.reduce([], fn log, accounts -> do_parse_signers(log, accounts) end)
   end
 
-  defp get_rewards(logs, topics) do
+  def get_rewards(logs, topics) do
     logs
     |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
     |> Enum.reduce([], fn log, accounts -> do_parse_rewards(log, accounts) end)
   end
 
-  defp get_voters(logs, topics) do
+  def get_voters(logs, topics) do
     logs
     |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
     |> Enum.reduce([], fn log, accounts -> do_parse_voters(log, accounts) end)

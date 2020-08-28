@@ -2,6 +2,7 @@ defmodule Explorer.Chain.Events.Publisher do
   @moduledoc """
   Publishes events related to the Chain context.
   """
+
   #  @sender Application.get_env(:explorer, :realtime_events_sender)
 
   @allowed_events ~w(addresses address_coin_balances blocks block_rewards internal_transactions token_transfers transactions contract_verification_result)a

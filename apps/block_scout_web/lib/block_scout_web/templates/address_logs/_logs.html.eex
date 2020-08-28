@@ -1,4 +1,4 @@
-<div data-test="address_log" class="tile tile-muted" data-identifier-log="<%= "#{to_string(@log.transaction.hash)}#{@log.index}" %>">
+<div data-test="address_log" class="tile tile-muted" data-identifier-log="<%= "#{to_string(@log.transaction_hash)}#{@log.index}" %>">
     <% decoded_result = decode(@log, @log.transaction) %>
     <%= case decoded_result do %>
       <%= {:error, :contract_not_verified, _cadidates} -> %>
@@ -18,12 +18,15 @@
     <dt class="col-md-2"> <%= gettext "Transaction" %> </dt>
     <dd class="col-md-10">
       <h3 class="logs-decoded">
-        <%= link(
+        <%= if @log.transaction == nil do "System log"
+            else
+            link(
             @log.transaction,
             to: transaction_path(@conn, :show, @log.transaction),
             "data-test": "log_address_link",
             "data-address-hash": @log.transaction
-            ) %>
+            )
+            end %>
       </h3>
     </dd>
       <%= case decoded_result do %>

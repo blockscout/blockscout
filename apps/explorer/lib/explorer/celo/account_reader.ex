@@ -4,10 +4,11 @@ defmodule Explorer.Celo.AccountReader do
   """
 
   require Logger
-  alias Explorer.Celo.AbiHandler
-  alias Explorer.SmartContract.Reader
+  alias Explorer.Celo.SignerCache
 
   use Bitwise
+
+  import Explorer.Celo.Util
 
   def account_data(%{address: account_address}) do
     data = fetch_account_data(account_address)
@@ -57,9 +58,9 @@ defmodule Explorer.Celo.AccountReader do
   def validator_group_reward_data(address, bn) do
     data =
       call_methods([
-        {:election, "getActiveVotesForGroup", [address], bn},
-        {:epochrewards, "calculateTargetEpochRewards", [], bn},
-        {:election, "getActiveVotes", [], bn}
+        {:election, "getActiveVotesForGroup", [address], bn - 1},
+        {:epochrewards, "calculateTargetEpochRewards", [], bn - 1},
+        {:election, "getActiveVotes", [], bn - 1}
       ])
 
     with {:ok, [active_votes]} <- data["getActiveVotesForGroup"],
@@ -105,6 +106,7 @@ defmodule Explorer.Celo.AccountReader do
 
     with {:ok, [_ | [commission | _]]} <- data["getValidatorGroup"],
          {:ok, [active_votes]} <- data["getActiveVotesForGroup"],
+         {:ok, [total_units]} <- data["getActiveVoteUnitsForGroup"],
          {:ok, [num_members]} <- data["getGroupNumMembers"],
          {:ok, [votes]} <- data["getTotalVotesForGroup"] do
       {:ok,
@@ -113,6 +115,7 @@ defmodule Explorer.Celo.AccountReader do
          votes: votes,
          active_votes: active_votes,
          num_members: num_members,
+         total_units: total_units,
          commission: commission
        }}
     else
@@ -125,6 +128,7 @@ defmodule Explorer.Celo.AccountReader do
     call_methods([
       {:election, "getTotalVotesForGroup", [address]},
       {:election, "getActiveVotesForGroup", [address]},
+      {:election, "getActiveVoteUnitsForGroup", [address]},
       {:validators, "getGroupNumMembers", [address]},
       {:validators, "getValidatorGroup", [address]}
     ])
@@ -135,16 +139,19 @@ defmodule Explorer.Celo.AccountReader do
       call_methods([
         {:election, "getPendingVotesForGroupByAccount", [group_address, voter_address]},
         {:election, "getTotalVotesForGroupByAccount", [group_address, voter_address]},
+        {:election, "getActiveVoteUnitsForGroupByAccount", [group_address, voter_address]},
         {:election, "getActiveVotesForGroupByAccount", [group_address, voter_address]}
       ])
 
     with {:ok, [pending]} <- data["getPendingVotesForGroupByAccount"],
          {:ok, [total]} <- data["getTotalVotesForGroupByAccount"],
+         {:ok, [units]} <- data["getActiveVoteUnitsForGroupByAccount"],
          {:ok, [active]} <- data["getActiveVotesForGroupByAccount"] do
       {:ok,
        %{
          group_address_hash: group_address,
          voter_address_hash: voter_address,
+         units: units,
          total: total,
          pending: pending,
          active: active
@@ -268,15 +275,17 @@ defmodule Explorer.Celo.AccountReader do
   def validator_history(block_number) do
     data = fetch_validators(block_number)
 
-    with {:ok, [bm]} <- data["getParentSealBitmap"],
-         {:ok, [num_validators]} <- data["getNumRegisteredValidators"],
+    with {:ok, [num_validators]} <- data["getNumRegisteredValidators"],
          {:ok, [min_validators, max_validators]} <- data["getElectableValidators"],
          {:ok, [total_gold]} <- data["getTotalLockedGold"],
+         {:ok, [bm]} <- data["getParentSealBitmap"],
          {:ok, [epoch_size]} <- data["getEpochSize"],
+         {:ok, [epoch]} <- data["getEpochNumberOfBlock"],
          {:ok, gold_address} <- get_address("GoldToken"),
          {:ok, usd_address} <- get_address("StableToken"),
-         {:ok, oracle_address} <- get_address("SortedOracles"),
-         {:ok, [validators]} <- data["getCurrentValidatorSigners"] do
+         {:ok, oracle_address} <- get_address("SortedOracles") do
+      validators = SignerCache.epoch_signers(epoch, epoch_size, block_number)
+
       list =
         validators
         |> Enum.with_index()
@@ -302,9 +311,9 @@ defmodule Explorer.Celo.AccountReader do
 
   defp fetch_validators(bn) do
     call_methods([
-      {:election, "getCurrentValidatorSigners", [], bn - 1},
       {:election, "getParentSealBitmap", [bn], bn},
       {:election, "getEpochSize", []},
+      {:election, "getEpochNumberOfBlock", [bn - 1]},
       {:election, "getElectableValidators", []},
       {:lockedgold, "getTotalLockedGold", []},
       {:validators, "getNumRegisteredValidators", []}
@@ -313,78 +322,5 @@ defmodule Explorer.Celo.AccountReader do
 
   defp fetch_withdrawal_data(address) do
     call_methods([{:lockedgold, "getPendingWithdrawals", [address]}])
-  end
-
-  defp call_methods(methods) do
-    contract_abi = AbiHandler.get_abi()
-
-    methods
-    |> Enum.map(&format_request/1)
-    |> Enum.filter(fn req -> req.contract_address != :error end)
-    |> Enum.map(fn %{contract_address: {:ok, address}} = req -> Map.put(req, :contract_address, address) end)
-    |> Reader.query_contracts(contract_abi)
-    |> Enum.zip(methods)
-    |> Enum.into(%{}, fn
-      {response, {_, function_name, _}} -> {function_name, response}
-      {response, {_, function_name, _, _}} -> {function_name, response}
-    end)
-  end
-
-  defp format_request({contract_name, function_name, params}) do
-    %{
-      contract_address: contract(contract_name),
-      function_name: function_name,
-      args: params
-    }
-  end
-
-  defp format_request({contract_name, function_name, params, bn}) do
-    %{
-      contract_address: contract(contract_name),
-      function_name: function_name,
-      args: params,
-      block_number: bn
-    }
-  end
-
-  defp contract(:blockchainparameters), do: get_address("BlockchainParameters")
-  defp contract(:lockedgold), do: get_address("LockedGold")
-  defp contract(:validators), do: get_address("Validators")
-  defp contract(:election), do: get_address("Election")
-  defp contract(:epochrewards), do: get_address("EpochRewards")
-  defp contract(:accounts), do: get_address("Accounts")
-  defp contract(:gold), do: get_address("GoldToken")
-  defp contract(:usd), do: get_address("StableToken")
-
-  def get_address(name) do
-    case get_address_raw(name) do
-      {:ok, address} -> {:ok, "0x" <> Base.encode16(address, case: :lower)}
-      _ -> :error
-    end
-  end
-
-  def get_address_raw(name) do
-    contract_abi = AbiHandler.get_abi()
-
-    methods = [
-      %{
-        contract_address: "0x000000000000000000000000000000000000ce10",
-        function_name: "getAddressForString",
-        args: [name]
-      }
-    ]
-
-    res =
-      methods
-      |> Reader.query_contracts(contract_abi)
-      |> Enum.zip(methods)
-      |> Enum.into(%{}, fn {response, %{function_name: function_name}} ->
-        {function_name, response}
-      end)
-
-    case res["getAddressForString"] do
-      {:ok, [address]} -> {:ok, address}
-      _ -> :error
-    end
   end
 end

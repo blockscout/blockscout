@@ -66,7 +66,6 @@ defmodule Indexer.Fetcher.CeloAccount do
       accounts
       |> Enum.map(&Map.put(&1, :retries_count, &1.retries_count + 1))
       |> Enum.filter(&(&1.retries_count <= @max_retries))
-      |> voters_to_accounts()
       |> fetch_from_blockchain()
       |> import_accounts()
 
@@ -75,25 +74,6 @@ defmodule Indexer.Fetcher.CeloAccount do
     else
       {:retry, failed_list}
     end
-  end
-
-  defp voters_to_accounts(lst) do
-    Enum.reduce(lst, [], fn
-      %{voter: address}, acc ->
-        voters =
-          address
-          |> Chain.get_celo_voters()
-          |> Enum.map(fn a ->
-            entry(%{address: "0x" <> Base.encode16(a.voter_address_hash.bytes, lower: true)}, [], [])
-          end)
-
-        voters ++ acc
-
-      elem, acc ->
-        [elem | acc]
-    end)
-  rescue
-    _ -> lst
   end
 
   defp fetch_from_blockchain(addresses) do

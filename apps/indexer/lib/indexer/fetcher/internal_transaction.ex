@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
-  alias Explorer.Celo.AccountReader
+  alias Explorer.Celo.Util
   alias Explorer.Chain
   alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.{Accounts, Blocks}
@@ -26,6 +26,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   @max_concurrency 4
   @defaults [
     flush_interval: :timer.seconds(3),
+    poll_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
     poll: true,
@@ -119,8 +120,19 @@ defmodule Indexer.Fetcher.InternalTransaction do
           error_count: unique_numbers_count
         )
 
+        errored =
+          reason
+          |> Enum.map(fn
+            %{data: %{block_number: num}} -> num
+            %{data: %{"blockNumber" => num}} -> num
+          end)
+
+        result = Chain.bump_pending_blocks(errored)
+
+        Logger.error(fn -> ["Bumping", inspect(result)] end)
         # re-queue the de-duped entries
-        {:retry, unique_numbers}
+        # {:retry, unique_numbers}
+        :ok
 
       :ignore ->
         :ok
@@ -171,7 +183,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     # Gold token special updates
     with true <- Application.get_env(:indexer, Indexer.Block.Fetcher, [])[:enable_gold_token],
-         {:ok, gold_token} <- AccountReader.get_address("GoldToken") do
+         {:ok, gold_token} <- Util.get_address("GoldToken") do
       set = add_gold_token_balances(gold_token, addresses_params, MapSet.new())
       TokenBalance.async_fetch(MapSet.to_list(set))
     end

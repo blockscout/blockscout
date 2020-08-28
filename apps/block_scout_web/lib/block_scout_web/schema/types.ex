@@ -42,6 +42,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:fetched_coin_balance, :wei)
     field(:fetched_coin_balance_block_number, :integer)
     field(:contract_code, :data)
+    field(:online, :boolean)
 
     field :smart_contract, :smart_contract do
       resolve(dataloader(:db, :smart_contract))
@@ -81,6 +82,8 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:account_type, :string)
     field(:nonvoting_locked_gold, :wei)
     field(:locked_gold, :wei)
+    field(:active_gold, :wei)
+    field(:votes, :wei)
 
     field(:usd, :wei)
 
@@ -104,6 +107,10 @@ defmodule BlockScoutWeb.Schema.Types do
     connection field(:claims, node_type: :celo_claims) do
       resolve(&CeloClaim.get_by/3)
     end
+
+    connection field(:voted, node_type: :celo_validator_group) do
+      resolve(&CeloAccount.get_voted/3)
+    end
   end
 
   @desc """
@@ -123,8 +130,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:usd, :wei)
     field(:name, :string)
     field(:url, :string)
-    #    field(:domain, :string)
-    #    field(:domain_verified, :boolean)
+    field(:active_gold, :wei)
 
     field(:attestations_requested, :integer)
     field(:attestations_fulfilled, :integer)
@@ -156,6 +162,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:usd, :wei)
     field(:name, :string)
     field(:url, :string)
+    field(:active_gold, :wei)
 
     field(:rewards_ratio, :wei)
     field(:accumulated_rewards, :wei)
@@ -172,6 +179,10 @@ defmodule BlockScoutWeb.Schema.Types do
 
     connection field(:affiliates, node_type: :celo_validator) do
       resolve(&CeloValidator.get_by/3)
+    end
+
+    connection field(:voters, node_type: :celo_account) do
+      resolve(&CeloValidatorGroup.get_voters/3)
     end
   end
 
@@ -280,6 +291,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:token_contract_address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
     field(:block_hash, :full_hash)
+    field(:comment, :string)
   end
 
   @desc """
@@ -291,6 +303,7 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
+    field(:comment, :string)
   end
 
   @desc """
@@ -310,10 +323,11 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:gas_used, :decimal)
     field(:input, :string)
     field(:timestamp, :datetime)
+    field(:comment, :string)
   end
 
   @desc """
-  Represents a gold token transfer between addresses.
+  Represents a tx that contains gold or usd transfer.
   """
   node object(:transfer_tx, id_fetcher: &transfer_tx_id_fetcher/2) do
     field(:gateway_fee_recipient, :address_hash)

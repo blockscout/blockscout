@@ -287,7 +287,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       assert %{block_hash: block_hash} = Repo.get(PendingBlockOperation, block_hash)
 
-      assert {:retry, [block.number]} == InternalTransaction.run([block.number, block.number], json_rpc_named_arguments)
+      assert :ok == InternalTransaction.run([block.number, block.number], json_rpc_named_arguments)
 
       assert %{block_hash: block_hash} = Repo.get(PendingBlockOperation, block_hash)
     end

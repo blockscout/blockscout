@@ -149,6 +149,7 @@ defmodule Indexer.Supervisor do
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]}
       ],
+      max_restarts: 10,
       strategy: :one_for_one
     )
   end
