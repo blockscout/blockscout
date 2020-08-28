@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
 - [#3259](https://github.com/poanetwork/blockscout/pull/3259) - Contract interaction: array input type parsing fix
