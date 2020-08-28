@@ -53,6 +53,7 @@ const readWriteFunction = (element) => {
     if (action === 'read') {
       const url = $form.data('url')
       const $functionName = $form.find('input[name=function_name]')
+      const $methodId = $form.find('input[name=method_id]')
       const $functionInputs = $form.find('input[name=function_input]')
 
       const args = $.map($functionInputs, element => {
@@ -61,6 +62,7 @@ const readWriteFunction = (element) => {
 
       const data = {
         function_name: $functionName.val(),
+        method_id: $methodId.val(),
         args
       }
 
