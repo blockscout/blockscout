@@ -91,7 +91,7 @@
                     ) %>
                 <%= link(
                       gettext("Bridged"),
-                      class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
+                      class: "dropdown-item #{tab_status("bridged_tokens", @conn.request_path)}",
                       to: bridged_tokens_path(@conn, :index)
                     ) %>
               </div>
