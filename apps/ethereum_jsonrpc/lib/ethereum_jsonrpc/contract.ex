@@ -39,10 +39,15 @@ defmodule EthereumJSONRPC.Contract do
     indexed_responses =
       requests_with_index
       |> Enum.map(fn {%{contract_address: contract_address, method_id: target_method_id, args: args} = request, index} ->
+        function =
         functions
         |> define_function(target_method_id)
         |> Map.drop([:method_id])
-        |> Encoder.encode_function_call(args)
+
+        formatted_args = format_args(function, args)
+
+        function
+        |> Encoder.encode_function_call(formatted_args)
         |> eth_call_request(contract_address, index, Map.get(request, :block_number), Map.get(request, :from))
       end)
       |> json_rpc(json_rpc_named_arguments)
@@ -92,6 +97,37 @@ defmodule EthereumJSONRPC.Contract do
       else
         p_abi.method_id == method_id
       end
+    end)
+  end
+
+  defp format_args(function, args) do
+    args
+    |> Enum.with_index()
+    |> Enum.map(fn {arg, index} ->
+      types = function.types
+
+      case Enum.at(types, index) do
+        {:array, {:int, _size}} ->
+          convert_string_to_array(arg)
+
+        {:array, {:uint, _size}} ->
+          convert_string_to_array(arg)
+
+        {:array, _} ->
+          String.split(arg, ",")
+
+        _ ->
+          arg
+      end
+    end)
+  end
+
+  defp convert_string_to_array(arg) do
+    arg
+    |> String.split(",")
+    |> Enum.map(fn el ->
+      {int, _} = Integer.parse(el)
+      int
     end)
   end
 
