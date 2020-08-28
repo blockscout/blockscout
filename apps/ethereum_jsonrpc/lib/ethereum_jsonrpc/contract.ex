@@ -40,12 +40,12 @@ defmodule EthereumJSONRPC.Contract do
       requests_with_index
       |> Enum.map(fn {%{contract_address: contract_address, method_id: target_method_id, args: args} = request, index} ->
         function =
-        functions
-        |> define_function(target_method_id)
-        |> Map.drop([:method_id])
-        
+          functions
+          |> define_function(target_method_id)
+          |> Map.drop([:method_id])
+
         formatted_args = format_args(function, args)
-        
+
         function
         |> Encoder.encode_function_call(formatted_args)
         |> eth_call_request(contract_address, index, Map.get(request, :block_number), Map.get(request, :from))
