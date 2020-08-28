@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.SmartContractController do
       outputs =
         Reader.query_function(
           address_hash,
-          %{name: params["function_name"], args: params["args"]},
+          %{method_id: params["method_id"], args: params["args"]},
           contract_type
         )
 
@@ -104,6 +104,7 @@ defmodule BlockScoutWeb.SmartContractController do
       |> render(
         "_function_response.html",
         function_name: params["function_name"],
+        method_id: params["method_id"],
         outputs: outputs
       )
     else

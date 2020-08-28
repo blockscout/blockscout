@@ -37,7 +37,8 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
   end
 
   def fetch_metadata(contract_address_hash, token_id) do
-    contract_functions = %{"tokenURI" => [token_id]}
+    # c87b56dd =  keccak256(tokenURI(uint256))
+    contract_functions = %{"c87b56dd" => [token_id]}
 
     contract_address_hash
     |> query_contract(contract_functions)
@@ -48,26 +49,26 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
     Reader.query_contract(contract_address_hash, @abi, contract_functions)
   end
 
-  def fetch_json(%{"tokenURI" => {:ok, [""]}}) do
+  def fetch_json(%{"c87b56dd" => {:ok, [""]}}) do
     {:ok, %{error: @no_uri_error}}
   end
 
-  def fetch_json(%{"tokenURI" => {:error, "(-32015) VM execution error."}}) do
+  def fetch_json(%{"c87b56dd" => {:error, "(-32015) VM execution error."}}) do
     {:ok, %{error: @no_uri_error}}
   end
 
-  def fetch_json(%{"tokenURI" => {:ok, ["http://" <> _ = token_uri]}}) do
+  def fetch_json(%{"c87b56dd" => {:ok, ["http://" <> _ = token_uri]}}) do
     fetch_metadata(token_uri)
   end
 
-  def fetch_json(%{"tokenURI" => {:ok, ["https://" <> _ = token_uri]}}) do
+  def fetch_json(%{"c87b56dd" => {:ok, ["https://" <> _ = token_uri]}}) do
     fetch_metadata(token_uri)
   end
 
-  def fetch_json(%{"tokenURI" => {:ok, ["data:application/json," <> json]}}) do
+  def fetch_json(%{"c87b56dd" => {:ok, ["data:application/json," <> json]}}) do
     decoded_json = URI.decode(json)
 
-    fetch_json(%{"tokenURI" => {:ok, [decoded_json]}})
+    fetch_json(%{"c87b56dd" => {:ok, [decoded_json]}})
   rescue
     e ->
       Logger.debug(["Unknown metadata format #{inspect(json)}. error #{inspect(e)}"],
@@ -77,7 +78,7 @@ defmodule Explorer.Token.InstanceMetadataRetriever do
       {:error, json}
   end
 
-  def fetch_json(%{"tokenURI" => {:ok, [json]}}) do
+  def fetch_json(%{"c87b56dd" => {:ok, [json]}}) do
     {:ok, json} = decode_json(json)
 
     check_type(json)
