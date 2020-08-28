@@ -107,14 +107,14 @@ defmodule Explorer.Chain.Token do
 
   These are tokens with cataloged field set to true and updated_at is earlier or equal than an hour ago.
   """
-  def cataloged_tokens(hours \\ 48) do
+  def cataloged_tokens(minutes \\ 2880) do
     date_now = DateTime.utc_now()
-    hours_ago_date = DateTime.add(date_now, -:timer.hours(hours), :millisecond)
+    some_time_ago_date = DateTime.add(date_now, -:timer.minutes(minutes), :millisecond)
 
     from(
       token in __MODULE__,
       select: token.contract_address_hash,
-      where: token.cataloged == true and token.updated_at <= ^hours_ago_date
+      where: token.cataloged == true and token.updated_at <= ^some_time_ago_date
     )
   end
 end
