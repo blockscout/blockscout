@@ -9,7 +9,7 @@ defmodule Indexer.SetBridgedStatusForTokens do
 
   alias Explorer.Chain
 
-  @interval :timer.minutes(1)
+  @interval :timer.minutes(2)
 
   def start_link([init_opts, gen_server_opts]) do
     start_link(init_opts, gen_server_opts)
