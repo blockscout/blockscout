@@ -151,7 +151,7 @@
           <div class="contract-library-form-group js-contract-library-form-group active">
             <div class="smart-contract-form-group">
               <div class="smart-contract-form-group-inner-wrapper">
-                <%= label :external_libraries, :library1, Library Name") %>
+                <%= label :external_libraries, :library1, gettext("Library Name") %>
                 <div class="center-column">
                   <%= text_input :external_libraries, :library1_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
                 </div>
