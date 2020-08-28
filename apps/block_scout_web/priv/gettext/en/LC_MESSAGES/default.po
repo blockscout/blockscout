@@ -218,7 +218,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:27
 #: lib/block_scout_web/templates/layout/app.html.eex:70
-msgid "Block Mined, awaiting import..."
+msgid "Block Proposed, awaiting import..."
 msgstr ""
 
 #, elixir-format
@@ -1023,13 +1023,13 @@ msgstr ""
 #: lib/block_scout_web/templates/block/_tile.html.eex:39
 #: lib/block_scout_web/templates/block/overview.html.eex:135
 #: lib/block_scout_web/templates/chain/_block.html.eex:15
-msgid "Miner"
-msgstr "Validator"
+msgid "Validator"
+msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/views/block_view.ex:85
-msgid "Miner Reward"
-msgstr "Validator Reward"
+msgid "Validator Reward"
+msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:223
@@ -1469,8 +1469,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
-msgid "This API is provided to support some rpc methods in the exact format specified for ethereum nodes, which can be found "
-msgstr "This API is provided to support some rpc methods in the exact format specified for Celo nodes, which can be found "
+msgid "This API is provided to support some rpc methods in the exact format specified for Celo nodes, which can be found "
+msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/views/block_signers_view.ex:34

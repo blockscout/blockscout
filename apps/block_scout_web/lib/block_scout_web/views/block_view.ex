@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.BlockView do
   def show_reward?(_), do: true
 
   def block_reward_text(%Reward{address_type: :validator}) do
-    gettext("Miner Reward")
+    gettext("Validator Reward")
   end
 
   def block_reward_text(%Reward{address_type: :emission_funds}) do
