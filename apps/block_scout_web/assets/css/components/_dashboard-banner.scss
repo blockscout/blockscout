@@ -149,6 +149,22 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
     font-size: 12px;
     font-weight: normal;
     line-height: 1.2;
+
+    &.inline {
+      display: inline-block;
+    }
+  }
+
+  .dashboard-banner-chart-legend-value-container {
+    white-space: nowrap;
+  }
+
+  .gas-price-icon {
+    position: relative;
+    top: -2px;
+    path {
+      fill: $dashboard-line-color-price;
+    }
   }
 }
 

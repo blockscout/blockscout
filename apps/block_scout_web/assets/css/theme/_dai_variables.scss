@@ -47,7 +47,7 @@ $tile-type-block-color: $secondary;
 $tile-type-progress-bar-color: $secondary;
 a.tile-title { color: $secondary !important; }
 .card-body {  
-	a:not(.dropdown-item) {
+	a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link) {
 		color: $secondary;
 
 		&:hover {
