@@ -1798,10 +1798,32 @@ defmodule Explorer.Chain do
     fetch_top_tokens(paging_options)
   end
 
+  @spec list_top_bridged_tokens :: [{Token.t(), non_neg_integer()}]
+  def list_top_bridged_tokens(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    fetch_top_bridged_tokens(paging_options)
+  end
+
   defp fetch_top_tokens(paging_options) do
     base_query =
       from(t in Token,
         where: t.total_supply > ^0,
+        order_by: [desc: t.holder_count, asc: t.name],
+        preload: [:contract_address]
+      )
+
+    base_query
+    |> page_tokens(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
+  defp fetch_top_bridged_tokens(paging_options) do
+    base_query =
+      from(t in Token,
+        where: t.total_supply > ^0,
+        where: t.bridged,
         order_by: [desc: t.holder_count, asc: t.name],
         preload: [:contract_address]
       )
