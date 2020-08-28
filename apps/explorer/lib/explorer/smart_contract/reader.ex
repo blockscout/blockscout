@@ -418,7 +418,15 @@ defmodule Explorer.SmartContract.Reader do
     Map.put_new(output, "value", bytes_to_string(value))
   end
 
+  defp new_value(%{"type" => :address} = output, [value], _index) do
+    Map.put_new(output, "value", bytes_to_string(value))
+  end
+
   defp new_value(%{"type" => "address"} = output, values, index) do
+    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+  end
+
+  defp new_value(%{"type" => :address} = output, values, index) do
     Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
   end
 

@@ -3538,9 +3538,9 @@ defmodule Explorer.Chain do
           reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_cataloged_token_contract_address_hashes(initial, reducer, hours_ago_updated \\ 48)
+  def stream_cataloged_token_contract_address_hashes(initial, reducer, some_time_ago_updated \\ 2880)
       when is_function(reducer, 2) do
-    hours_ago_updated
+    some_time_ago_updated
     |> Token.cataloged_tokens()
     |> order_by(asc: :updated_at)
     |> Repo.stream_reduce(initial, reducer)
