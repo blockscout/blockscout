@@ -45,16 +45,16 @@ defmodule BlockScoutWeb.Router do
   else
     scope "/", BlockScoutWeb do
       pipe_through(:browser)
-      get("/api_docs", PageNotFoundController, :index)
-      get("/eth_rpc_api_docs", PageNotFoundController, :index)
+      get("/api-docs", PageNotFoundController, :index)
+      get("/eth-rpc-api-docs", PageNotFoundController, :index)
     end
   end
 
   scope "/", BlockScoutWeb do
     pipe_through(:browser)
 
-    get("/api_docs", APIDocsController, :index)
-    get("/eth_rpc_api_docs", APIDocsController, :eth_rpc)
+    get("/api-docs", APIDocsController, :index)
+    get("/eth-rpc-api-docs", APIDocsController, :eth_rpc)
   end
 
   url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]
@@ -65,13 +65,13 @@ defmodule BlockScoutWeb.Router do
     scope to_string(api_path) <> "/verify_smart_contract" do
       pipe_through(:api)
 
-      post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+      post("/contract-verifications", BlockScoutWeb.AddressContractVerificationController, :create)
     end
   else
     scope "/verify_smart_contract" do
       pipe_through(:api)
 
-      post("/contract_verifications", BlockScoutWeb.AddressContractVerificationController, :create)
+      post("/contract-verifications", BlockScoutWeb.AddressContractVerificationController, :create)
     end
   end
 

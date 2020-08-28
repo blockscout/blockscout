@@ -7,7 +7,7 @@
   <%= if Chain.check_if_token_transfers_at_address(@address.hash) do %>
     <%= link(
         gettext("Token Transfers"),
-        class: "card-tab #{tab_status("token_transfers", @conn.request_path)}",
+        class: "card-tab #{tab_status("token-transfers", @conn.request_path)}",
         "data-test": "token_transfers_tab_link",
         to: address_token_transfers_path(@conn, :index, @address.hash)
         ) %>
@@ -22,13 +22,13 @@
   <% end %>
   <%= link(
         gettext("Internal Transactions"),
-        class: "card-tab #{tab_status("internal_transactions", @conn.request_path)}",
+        class: "card-tab #{tab_status("internal-transactions", @conn.request_path)}",
         "data-test": "internal_transactions_tab_link",
         to: address_internal_transaction_path(@conn, :index, @address.hash)
       ) %>
   <%= link(
         gettext("Coin Balance History"),
-        class: "card-tab #{tab_status("coin_balances", @conn.request_path)}",
+        class: "card-tab #{tab_status("coin-balances", @conn.request_path)}",
         "data-test": "coin_balance_tab_link",
         to: address_coin_balance_path(@conn, :index, @address.hash)
       ) %>
@@ -60,7 +60,7 @@
   <%= if has_decompiled_code?(@address) do %>
     <%= link(
         to: address_decompiled_contract_path(@conn, :index, @address.hash),
-        class: "card-tab #{tab_status("decompiled_contracts", @conn.request_path)}") do %>
+        class: "card-tab #{tab_status("decompiled-contracts", @conn.request_path)}") do %>
         <%= gettext("Decompiled code") %>
         <i class="far fa-check-circle"></i>
     <% end %>
@@ -69,28 +69,28 @@
     <%= link(
         gettext("Read Contract"),
         to: address_read_contract_path(@conn, :index, @address.hash),
-        class: "card-tab #{tab_status("read_contract", @conn.request_path)}")
+        class: "card-tab #{tab_status("read-contract", @conn.request_path)}")
         %>
   <% end %>
   <%= if smart_contract_is_proxy?(@address) do %>
     <%= link(
         gettext("Read Proxy"),
         to: address_read_proxy_path(@conn, :index, @address.hash),
-        class: "card-tab #{tab_status("read_proxy", @conn.request_path)}")
+        class: "card-tab #{tab_status("read-proxy", @conn.request_path)}")
         %>
   <% end %>
   <%= if smart_contract_with_write_functions?(@address) do %>
     <%= link(
         gettext("Write Contract"),
         to: address_write_contract_path(@conn, :index, @address.hash),
-        class: "card-tab #{tab_status("write_contract", @conn.request_path)}")
+        class: "card-tab #{tab_status("write-contract", @conn.request_path)}")
         %>
   <% end %>
   <%= if smart_contract_with_write_functions?(@address) && smart_contract_is_proxy?(@address)  do %>
     <%= link(
         gettext("Write Proxy"),
         to: address_write_proxy_path(@conn, :index, @address.hash),
-        class: "card-tab #{tab_status("write_proxy", @conn.request_path)}")
+        class: "card-tab #{tab_status("write-proxy", @conn.request_path)}")
         %>
   <% end %>
 </div>

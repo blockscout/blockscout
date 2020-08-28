@@ -1,7 +1,7 @@
 <div class="card-tabs js-card-tabs">
   <%= link(
         gettext("Token Transfers"),
-        class: "card-tab #{tab_status("token_transfers", @conn.request_path)}",
+        class: "card-tab #{tab_status("token-transfers", @conn.request_path)}",
         to: token_instance_path(@conn, :show, @token.contract_address_hash, to_string(@token_instance.token_id))
       )
     %>
