@@ -1798,10 +1798,32 @@ defmodule Explorer.Chain do
     fetch_top_tokens(paging_options)
   end
 
+  @spec list_top_bridged_tokens :: [{Token.t(), non_neg_integer()}]
+  def list_top_bridged_tokens(options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    fetch_top_bridged_tokens(paging_options)
+  end
+
   defp fetch_top_tokens(paging_options) do
     base_query =
       from(t in Token,
         where: t.total_supply > ^0,
+        order_by: [desc: t.holder_count, asc: t.name],
+        preload: [:contract_address]
+      )
+
+    base_query
+    |> page_tokens(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
+  defp fetch_top_bridged_tokens(paging_options) do
+    base_query =
+      from(t in Token,
+        where: t.total_supply > ^0,
+        where: t.bridged,
         order_by: [desc: t.holder_count, asc: t.name],
         preload: [:contract_address]
       )
@@ -3516,9 +3538,9 @@ defmodule Explorer.Chain do
           reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_cataloged_token_contract_address_hashes(initial, reducer, hours_ago_updated \\ 48)
+  def stream_cataloged_token_contract_address_hashes(initial, reducer, some_time_ago_updated \\ 2880)
       when is_function(reducer, 2) do
-    hours_ago_updated
+    some_time_ago_updated
     |> Token.cataloged_tokens()
     |> order_by(asc: :updated_at)
     |> Repo.stream_reduce(initial, reducer)
@@ -4782,11 +4804,12 @@ defmodule Explorer.Chain do
         implementation_address
       end
     else
+      # 5c60da1b = keccak256(implementation())
       implementation_address =
         case Reader.query_contract(proxy_address_hash, abi, %{
-               "implementation" => []
+               "5c60da1b" => []
              }) do
-          %{"implementation" => {:ok, [result]}} -> result
+          %{"5c60da1b" => {:ok, [result]}} -> result
           _ -> nil
         end
 
