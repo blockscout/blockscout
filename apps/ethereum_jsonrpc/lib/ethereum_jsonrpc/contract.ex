@@ -82,28 +82,33 @@ defmodule EthereumJSONRPC.Contract do
     |> Enum.with_index()
     |> Enum.map(fn {arg, index} ->
       types = function.types
+      type = Enum.at(types, index)
 
-      case Enum.at(types, index) do
-        {:array, {:int, _size}} ->
-          convert_string_to_array(arg)
-
-        {:array, {:uint, _size}} ->
-          convert_string_to_array(arg)
-
-        {:array, _} ->
-          if arg && arg !== "" do
-            String.split(arg, ",")
-          else
-            []
-          end
-
-        _ ->
-          arg
-      end
+      convert_string_to_array(type, arg)
     end)
   end
 
-  defp convert_string_to_array(arg) do
+  defp convert_string_to_array(type, arg) do
+    case type do
+      {:array, {:int, _size}} ->
+        convert_int_string_to_array(arg)
+
+      {:array, {:uint, _size}} ->
+        convert_int_string_to_array(arg)
+
+      {:array, _} ->
+        if arg && arg !== "" do
+          String.split(arg, ",")
+        else
+          []
+        end
+
+      _ ->
+        arg
+    end
+  end
+
+  defp convert_int_string_to_array(arg) do
     if arg && arg !== "" do
       arg
       |> String.split(",")
