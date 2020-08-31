@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
 
   ## Callbacks
 
-  def start_link(init_opts, server_opts) do
+  def start_link([init_opts, server_opts]) do
     GenServer.start_link(__MODULE__, init_opts, server_opts)
   end
 
