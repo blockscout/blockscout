@@ -6,7 +6,7 @@
 
 ### Fixes
 - [#3264](https://github.com/poanetwork/blockscout/pull/3264) - Fix encoding of address output if function input exists
-- [#3259](https://github.com/poanetwork/blockscout/pull/3259) - Contract interaction: array input type parsing fix
+- [#3259](https://github.com/poanetwork/blockscout/pull/3259), [#3269](https://github.com/poanetwork/blockscout/pull/3269) - Contract interaction: array input type parsing fix
 - [#3257](https://github.com/poanetwork/blockscout/pull/3257) - Contracts read/write: method_id instead function_name as a key
 - [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
 

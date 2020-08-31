@@ -91,7 +91,11 @@ defmodule EthereumJSONRPC.Contract do
           convert_string_to_array(arg)
 
         {:array, _} ->
-          String.split(arg, ",")
+          if arg && arg !== "" do
+            String.split(arg, ",")
+          else
+            []
+          end
 
         _ ->
           arg
@@ -100,12 +104,16 @@ defmodule EthereumJSONRPC.Contract do
   end
 
   defp convert_string_to_array(arg) do
-    arg
-    |> String.split(",")
-    |> Enum.map(fn el ->
-      {int, _} = Integer.parse(el)
-      int
-    end)
+    if arg && arg !== "" do
+      arg
+      |> String.split(",")
+      |> Enum.map(fn el ->
+        {int, _} = Integer.parse(el)
+        int
+      end)
+    else
+      []
+    end
   end
 
   defp define_function(functions, target_method_id) do
