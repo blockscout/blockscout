@@ -255,8 +255,9 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   defp input_types_matched?(types, target_method) do
-    Enum.all?(types, fn target_type ->
-      index = Enum.find_index(types, fn type -> type == target_type end)
+    types
+    |> Enum.with_index()
+    |> Enum.all?(fn {target_type, index} ->
       type_to_compare = Map.get(Enum.at(Map.get(target_method, "inputs"), index), "type")
       target_type_formatted = format_input_type(target_type)
       target_type_formatted == type_to_compare
@@ -336,16 +337,7 @@ defmodule Explorer.SmartContract.Reader do
           nil
 
         _ ->
-          function_object =
-            parsed_final_abi
-            |> Enum.filter(fn %ABI.FunctionSelector{method_id: find_method_id} ->
-              if find_method_id do
-                Base.encode16(find_method_id, case: :lower) == method_id
-              else
-                find_method_id == method_id
-              end
-            end)
-            |> List.first()
+          function_object = find_function_by_method(parsed_final_abi, method_id)
 
           %ABI.FunctionSelector{returns: returns, method_id: method_id} = function_object
 
@@ -357,6 +349,18 @@ defmodule Explorer.SmartContract.Reader do
     contract_address_hash
     |> query_verified_contract(%{method_id => normalize_args(args)}, final_abi)
     |> link_outputs_and_values(outputs, method_id)
+  end
+
+  defp find_function_by_method(parsed_abi, method_id) do
+    parsed_abi
+    |> Enum.filter(fn %ABI.FunctionSelector{method_id: find_method_id} ->
+      if find_method_id do
+        Base.encode16(find_method_id, case: :lower) == method_id || find_method_id == method_id
+      else
+        find_method_id == method_id
+      end
+    end)
+    |> List.first()
   end
 
   defp extract_outputs(returns) do
@@ -414,7 +418,15 @@ defmodule Explorer.SmartContract.Reader do
     Map.put_new(output, "value", bytes_to_string(value))
   end
 
+  defp new_value(%{"type" => :address} = output, [value], _index) do
+    Map.put_new(output, "value", bytes_to_string(value))
+  end
+
   defp new_value(%{"type" => "address"} = output, values, index) do
+    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+  end
+
+  defp new_value(%{"type" => :address} = output, values, index) do
     Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
   end
 
