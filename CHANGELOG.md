@@ -1,11 +1,12 @@
 ## Current
 
 ### Features
+- [#3268](https://github.com/poanetwork/blockscout/pull/3268) - Token total supply on-demand fetcher
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
 - [#3264](https://github.com/poanetwork/blockscout/pull/3264) - Fix encoding of address output if function input exists
-- [#3259](https://github.com/poanetwork/blockscout/pull/3259) - Contract interaction: array input type parsing fix
+- [#3259](https://github.com/poanetwork/blockscout/pull/3259), [#3269](https://github.com/poanetwork/blockscout/pull/3269) - Contract interaction: array input type parsing fix
 - [#3257](https://github.com/poanetwork/blockscout/pull/3257) - Contracts read/write: method_id instead function_name as a key
 - [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
 
@@ -19,7 +20,7 @@
 ### Features
 - [#3252](https://github.com/poanetwork/blockscout/pull/3252) - Gas price at the main page
 - [#3239](https://github.com/poanetwork/blockscout/pull/3239) - Hide address page tabs if no items
-- [#3236](https://github.com/poanetwork/blockscout/pull/3236) - Easy verification of contracts which hash verified twins (the same bytecode)
+- [#3236](https://github.com/poanetwork/blockscout/pull/3236) - Easy verification of contracts which has verified twins (the same bytecode)
 - [#3227](https://github.com/poanetwork/blockscout/pull/3227) - Distinguishing of bridged tokens
 - [#3224](https://github.com/poanetwork/blockscout/pull/3224) - Top tokens page
 
