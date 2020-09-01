@@ -60,7 +60,7 @@
               <%= if variant !== EthereumJSONRPC.Besu do %>
                 <%= link(
                       gettext("Pending"),
-                      class: "dropdown-item #{tab_status("pending_transactions", @conn.request_path)}",
+                      class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
                       "data-test": "pending_transactions_link",
                       to: pending_transaction_path(@conn, :index)
                     ) %>
@@ -91,7 +91,7 @@
                     ) %>
                 <%= link(
                       gettext("Bridged"),
-                      class: "dropdown-item #{tab_status("bridged_tokens", @conn.request_path)}",
+                      class: "dropdown-item #{tab_status("bridged-tokens", @conn.request_path)}",
                       to: bridged_tokens_path(@conn, :index)
                     ) %>
               </div>
@@ -123,12 +123,12 @@
                   ) %>
               <%= link(
                     gettext("RPC"),
-                    class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
+                    class: "dropdown-item #{tab_status("api-docs", @conn.request_path)}",
                     to: api_url() <> api_docs_path(@conn, :index)
                   ) %>
               <%= link(
                     gettext("Eth RPC"),
-                    class: "dropdown-item #{tab_status("eth_rpc_api_docs", @conn.request_path)}",
+                    class: "dropdown-item #{tab_status("eth-rpc-api-docs", @conn.request_path)}",
                     to: api_url() <> api_docs_path(@conn, :eth_rpc)
                   ) %>
             </div>
