@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.WebRouter do
       )
 
       resources(
-        "/contract-verifications",
+        "/contract_verifications",
         AddressContractVerificationController,
         only: [:new],
         as: :verify_contract
@@ -252,7 +252,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/search-logs", AddressLogsController, :search_logs)
 
-    get("/transactions-csv", AddressTransactionController, :transactions_csv)
+    get("/transactions_csv", AddressTransactionController, :transactions_csv)
 
     get("/token-autocomplete", ChainController, :token_autocomplete)
 
