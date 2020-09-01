@@ -2,14 +2,14 @@
   <%= if @show_token_transfers do %>
     <%= link(
           gettext("Token Transfers"),
-          class: "card-tab #{tab_status("token_transfers", @conn.request_path)}",
+          class: "card-tab #{tab_status("token-transfers", @conn.request_path)}",
           to: transaction_token_transfer_path(@conn, :index, @transaction)
         )
       %>
   <% end %>
   <%= link(
         gettext("Internal Transactions"),
-        class: "card-tab #{tab_status("internal_transactions", @conn.request_path)}",
+        class: "card-tab #{tab_status("internal-transactions", @conn.request_path)}",
         to: transaction_internal_transaction_path(@conn, :index, @transaction)
       )
     %>
@@ -22,7 +22,7 @@
     %>
   <%= link(
       gettext("Raw Trace"),
-      class: "card-tab #{tab_status("raw_trace", @conn.request_path)}",
+      class: "card-tab #{tab_status("raw-trace", @conn.request_path)}",
       to: transaction_raw_trace_path(@conn, :index, @transaction)
       ) %>
 </div>

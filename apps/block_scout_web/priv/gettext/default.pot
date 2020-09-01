@@ -1799,7 +1799,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:19
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:11
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6
-#: lib/block_scout_web/views/address_view.ex:345
+#: lib/block_scout_web/views/address_view.ex:344
 #: lib/block_scout_web/views/transaction_view.ex:395
 msgid "Internal Transactions"
 msgstr ""
@@ -1841,7 +1841,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:18
 #: lib/block_scout_web/templates/chain/show.html.eex:195
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:50
-#: lib/block_scout_web/views/address_view.ex:344
+#: lib/block_scout_web/views/address_view.ex:345
 msgid "Transactions"
 msgstr ""
 
