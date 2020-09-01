@@ -31,6 +31,14 @@ defmodule Explorer.Chain.BridgedToken do
              :updated_at
            ]}
 
+  @derive {Jason.Encoder,
+           except: [
+             :__meta__,
+             :home_token_contract_address,
+             :inserted_at,
+             :updated_at
+           ]}
+
   @primary_key false
   schema "bridged_tokens" do
     field(:foreign_chain_id, :decimal)

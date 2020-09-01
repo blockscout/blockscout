@@ -57,6 +57,14 @@ defmodule Explorer.Chain.Token do
              :updated_at
            ]}
 
+  @derive {Jason.Encoder,
+           except: [
+             :__meta__,
+             :contract_address,
+             :inserted_at,
+             :updated_at
+           ]}
+
   @primary_key false
   schema "tokens" do
     field(:name, :string)
