@@ -1,13 +1,46 @@
 ## Current
 
 ### Features
+- [#3273](https://github.com/poanetwork/blockscout/pull/3273) - Update token metadata at burn/mint events
+- [#3268](https://github.com/poanetwork/blockscout/pull/3268) - Token total supply on-demand fetcher
+- [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
+
+### Fixes
+- [#3264](https://github.com/poanetwork/blockscout/pull/3264) - Fix encoding of address output if function input exists
+- [#3259](https://github.com/poanetwork/blockscout/pull/3259), [#3269](https://github.com/poanetwork/blockscout/pull/3269) - Contract interaction: array input type parsing fix
+- [#3257](https://github.com/poanetwork/blockscout/pull/3257) - Contracts read/write: method_id instead function_name as a key
+- [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
+
+### Chore
+- [#3274](https://github.com/poanetwork/blockscout/pull/3274) - Replace underscore with hyphen in routes in routes
+- [#3260](https://github.com/poanetwork/blockscout/pull/3260) - Update NPM dependencies to fix known vulnerabilities
+- [#3258](https://github.com/poanetwork/blockscout/pull/3258) - Token transfer: check that block exists before retrieving timestamp
+
+
+## 3.3.2-beta
+
+### Features
+- [#3252](https://github.com/poanetwork/blockscout/pull/3252) - Gas price at the main page
+- [#3239](https://github.com/poanetwork/blockscout/pull/3239) - Hide address page tabs if no items
+- [#3236](https://github.com/poanetwork/blockscout/pull/3236) - Easy verification of contracts which has verified twins (the same bytecode)
+- [#3227](https://github.com/poanetwork/blockscout/pull/3227) - Distinguishing of bridged tokens
 - [#3224](https://github.com/poanetwork/blockscout/pull/3224) - Top tokens page
 
 ### Fixes
+- [#3249](https://github.com/poanetwork/blockscout/pull/3249) - Fix incorrect ABI decoding of address in tuple output
+- [#3237](https://github.com/poanetwork/blockscout/pull/3237) - Refine contract method signature detection for read/write feature
+- [#3235](https://github.com/poanetwork/blockscout/pull/3235) - Fix coin supply api edpoint
+- [#3233](https://github.com/poanetwork/blockscout/pull/3233) - Fix for the contract verifiaction for solc 0.5 family with experimental features enabled
+- [#3231](https://github.com/poanetwork/blockscout/pull/3231) - Improve search: unlimited number of searching results
+- [#3231](https://github.com/poanetwork/blockscout/pull/3231) - Improve search: allow search with space
+- [#3231](https://github.com/poanetwork/blockscout/pull/3231) - Improve search: order by token holders in descending order and token/contract name is ascending order
 - [#3226](https://github.com/poanetwork/blockscout/pull/3226) - Fix notifier query for live update of token transfers
 - [#3220](https://github.com/poanetwork/blockscout/pull/3220) - Allow interaction with navbar menu at block-not-found page
 
 ### Chore
+- [#3250](https://github.com/poanetwork/blockscout/pull/3250) - Eliminate occurrences of obsolete env variable ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT
+- [#3240](https://github.com/poanetwork/blockscout/pull/3240), [#3251](https://github.com/poanetwork/blockscout/pull/3251) - various CSS imroving
+- [f3a720](https://github.com/poanetwork/blockscout/commit/2dd909c10a79b0bf4b7541a486be114152f3a720) - Make wobserver optional
 
 
 ## 3.3.1-beta

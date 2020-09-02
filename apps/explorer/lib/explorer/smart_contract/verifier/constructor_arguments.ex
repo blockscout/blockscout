@@ -7,9 +7,8 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
   alias Explorer.Chain
 
   @metadata_hash_prefix_0_4_23 "a165627a7a72305820"
-  @metadata_hash_prefix_0_5_10 "a265627a7a72305820"
-  @metadata_hash_prefix_0_5_11 "a265627a7a72315820"
-  @metadata_hash_prefix_0_5_16 "a365627a7a72315820"
+  @metadata_hash_prefix_0_5_family_1 "65627a7a723"
+  @metadata_hash_prefix_0_5_family_2 "5820"
   @metadata_hash_prefix_0_6_0 "a264697066735822"
 
   @experimental "6c6578706572696d656e74616cf5"
@@ -53,8 +52,42 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
           @metadata_hash_prefix_0_4_23
         )
 
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
+          <<_::binary-size(64)>> <>
+          @experimental <>
+          @metadata_hash_common_suffix <>
+          "43" <> <<_::binary-size(6)>> <> <<_::binary-size(4)>> <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_family_1
+        )
+
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
+          <<_::binary-size(64)>> <>
+          @experimental <>
+          <<_::binary-size(4)>> <> constructor_arguments ->
+        split_constructor_arguments_and_extract_check_func(
+          constructor_arguments,
+          check_func,
+          contract_source_code,
+          contract_name,
+          @metadata_hash_prefix_0_5_family_1
+        )
+
       # Solidity >= 0.5.10 https://solidity.readthedocs.io/en/v0.5.10/metadata.html
-      @metadata_hash_prefix_0_5_10 <>
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
           <<_::binary-size(64)>> <>
           @metadata_hash_common_suffix <> "43" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
         split_constructor_arguments_and_extract_check_func(
@@ -62,10 +95,13 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
           check_func,
           contract_source_code,
           contract_name,
-          @metadata_hash_prefix_0_5_10
+          @metadata_hash_prefix_0_5_family_1
         )
 
-      @metadata_hash_prefix_0_5_10 <>
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
           <<_::binary-size(64)>> <>
           @metadata_hash_common_suffix <> "7826" <> <<_::binary-size(76)>> <> "0057" <> constructor_arguments ->
         split_constructor_arguments_and_extract_check_func(
@@ -73,10 +109,13 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
           check_func,
           contract_source_code,
           contract_name,
-          @metadata_hash_prefix_0_5_10
+          @metadata_hash_prefix_0_5_family_1
         )
 
-      @metadata_hash_prefix_0_5_10 <>
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
           <<_::binary-size(64)>> <>
           @metadata_hash_common_suffix <> "7827" <> <<_::binary-size(78)>> <> "0057" <> constructor_arguments ->
         split_constructor_arguments_and_extract_check_func(
@@ -84,10 +123,13 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
           check_func,
           contract_source_code,
           contract_name,
-          @metadata_hash_prefix_0_5_10
+          @metadata_hash_prefix_0_5_family_1
         )
 
-      @metadata_hash_prefix_0_5_10 <>
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
           <<_::binary-size(64)>> <>
           @metadata_hash_common_suffix <> "7828" <> <<_::binary-size(80)>> <> "0058" <> constructor_arguments ->
         split_constructor_arguments_and_extract_check_func(
@@ -95,10 +137,13 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
           check_func,
           contract_source_code,
           contract_name,
-          @metadata_hash_prefix_0_5_10
+          @metadata_hash_prefix_0_5_family_1
         )
 
-      @metadata_hash_prefix_0_5_10 <>
+      <<_::binary-size(2)>> <>
+          @metadata_hash_prefix_0_5_family_1 <>
+          <<_::binary-size(1)>> <>
+          @metadata_hash_prefix_0_5_family_2 <>
           <<_::binary-size(64)>> <>
           @metadata_hash_common_suffix <> "7829" <> <<_::binary-size(82)>> <> "0059" <> constructor_arguments ->
         split_constructor_arguments_and_extract_check_func(
@@ -106,240 +151,7 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
           check_func,
           contract_source_code,
           contract_name,
-          @metadata_hash_prefix_0_5_10
-        )
-
-      # Solidity >= 0.5.11 https://github.com/ethereum/solidity/blob/develop/Changelog.md#0511-2019-08-12
-      # Metadata: Update the swarm hash to the current specification, changes bzzr0 to bzzr1 and urls to use bzz-raw://
-      @metadata_hash_prefix_0_5_11 <>
-          <<_::binary-size(64)>> <>
-          @metadata_hash_common_suffix <> "43" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @metadata_hash_prefix_0_5_11
-        )
-
-      @metadata_hash_prefix_0_5_11 <>
-          <<_::binary-size(64)>> <>
-          @experimental <>
-          @metadata_hash_common_suffix <> "43" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @experimental <> @metadata_hash_prefix_0_5_11
-        )
-
-      @metadata_hash_prefix_0_5_11 <>
-          <<_::binary-size(64)>> <>
-          @metadata_hash_common_suffix <> "7826" <> <<_::binary-size(76)>> <> "0057" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @metadata_hash_prefix_0_5_11
-        )
-
-      @metadata_hash_prefix_0_5_11 <>
-          <<_::binary-size(64)>> <>
-          @experimental <>
-          @metadata_hash_common_suffix <> "7826" <> <<_::binary-size(76)>> <> "0057" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @experimental <> @metadata_hash_prefix_0_5_11
-        )
-
-      @metadata_hash_prefix_0_5_11 <>
-          <<_::binary-size(64)>> <>
-          @metadata_hash_common_suffix <> "7827" <> <<_::binary-size(78)>> <> "0057" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @metadata_hash_prefix_0_5_11
-        )
-
-      @metadata_hash_prefix_0_5_11 <>
-          <<_::binary-size(64)>> <>
-          @experimental <>
-          @metadata_hash_common_suffix <> "7827" <> <<_::binary-size(78)>> <> "0057" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @experimental <> @metadata_hash_prefix_0_5_11
-        )
-
-      @metadata_hash_prefix_0_5_11 <>
-          <<_::binary-size(64)>> <>
-          @metadata_hash_common_suffix <> "7828" <> <<_::binary-size(80)>> <> "0058" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @metadata_hash_prefix_0_5_11
-        )
-
-      @metadata_hash_prefix_0_5_11 <>
-          <<_::binary-size(64)>> <>
-          @experimental <>
-          @metadata_hash_common_suffix <> "7828" <> <<_::binary-size(80)>> <> "0058" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @experimental <> @metadata_hash_prefix_0_5_11
-        )
-
-      @metadata_hash_prefix_0_5_11 <>
-          <<_::binary-size(64)>> <>
-          @metadata_hash_common_suffix <> "7829" <> <<_::binary-size(82)>> <> "0059" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @metadata_hash_prefix_0_5_11
-        )
-
-      @metadata_hash_prefix_0_5_11 <>
-          <<_::binary-size(64)>> <>
-          @experimental <>
-          @metadata_hash_common_suffix <> "7829" <> <<_::binary-size(82)>> <> "0059" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @experimental <> @metadata_hash_prefix_0_5_11
-        )
-
-      # ABIEncoder V2
-      @metadata_hash_prefix_0_5_16 <>
-          <<_::binary-size(64)>> <>
-          @metadata_hash_common_suffix <> "43" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @metadata_hash_prefix_0_5_16
-        )
-
-      @metadata_hash_prefix_0_5_16 <>
-          <<_::binary-size(64)>> <>
-          @experimental <>
-          @metadata_hash_common_suffix <> "43" <> <<_::binary-size(6)>> <> "0032" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @experimental <> @metadata_hash_prefix_0_5_16
-        )
-
-      @metadata_hash_prefix_0_5_16 <>
-          <<_::binary-size(64)>> <>
-          @metadata_hash_common_suffix <> "7826" <> <<_::binary-size(76)>> <> "0057" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @metadata_hash_prefix_0_5_16
-        )
-
-      @metadata_hash_prefix_0_5_16 <>
-          <<_::binary-size(64)>> <>
-          @experimental <>
-          @metadata_hash_common_suffix <> "7826" <> <<_::binary-size(76)>> <> "0057" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @experimental <> @metadata_hash_prefix_0_5_16
-        )
-
-      @metadata_hash_prefix_0_5_16 <>
-          <<_::binary-size(64)>> <>
-          @metadata_hash_common_suffix <> "7827" <> <<_::binary-size(78)>> <> "0057" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @metadata_hash_prefix_0_5_16
-        )
-
-      @metadata_hash_prefix_0_5_16 <>
-          <<_::binary-size(64)>> <>
-          @experimental <>
-          @metadata_hash_common_suffix <> "7827" <> <<_::binary-size(78)>> <> "0057" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @experimental <> @metadata_hash_prefix_0_5_16
-        )
-
-      @metadata_hash_prefix_0_5_16 <>
-          <<_::binary-size(64)>> <>
-          @metadata_hash_common_suffix <> "7828" <> <<_::binary-size(80)>> <> "0058" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @metadata_hash_prefix_0_5_16
-        )
-
-      @metadata_hash_prefix_0_5_16 <>
-          <<_::binary-size(64)>> <>
-          @experimental <>
-          @metadata_hash_common_suffix <> "7828" <> <<_::binary-size(80)>> <> "0058" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @experimental <> @metadata_hash_prefix_0_5_16
-        )
-
-      @metadata_hash_prefix_0_5_16 <>
-          <<_::binary-size(64)>> <>
-          @metadata_hash_common_suffix <> "7829" <> <<_::binary-size(82)>> <> "0059" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @metadata_hash_prefix_0_5_16
-        )
-
-      @metadata_hash_prefix_0_5_16 <>
-          <<_::binary-size(64)>> <>
-          @experimental <>
-          @metadata_hash_common_suffix <> "7829" <> <<_::binary-size(82)>> <> "0059" <> constructor_arguments ->
-        split_constructor_arguments_and_extract_check_func(
-          constructor_arguments,
-          check_func,
-          contract_source_code,
-          contract_name,
-          @experimental <> @metadata_hash_prefix_0_5_16
+          @metadata_hash_prefix_0_5_family_1
         )
 
       # Solidity >= 0.6.0 https://github.com/ethereum/solidity/blob/develop/Changelog.md#060-2019-12-17

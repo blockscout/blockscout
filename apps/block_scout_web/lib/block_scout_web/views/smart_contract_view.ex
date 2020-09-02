@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.SmartContractView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain
+
   def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
 
   def queryable?(inputs) when is_nil(inputs), do: false

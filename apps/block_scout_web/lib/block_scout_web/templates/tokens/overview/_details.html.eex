@@ -42,6 +42,17 @@
                 </span>
               </span>
             </span>
+            <!-- bridged token -->
+            <%= if @token.bridged do %>
+              <div  style="margin-top: 15px; font-size: 12px;">
+                <span class="mr-4 mb-3 mb-md-0 text-muted" style="margin-right: 30px;">
+                  Token is bridged
+                </span>
+                <%= if Map.has_key?(@token, :foreign_token_contract_address_hash) do %>
+                  <a data-test="original_token_contract_address" href=<%= foreign_bridged_token_explorer_link(@token) %> target="_blank">View Original Token <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span></a>
+                <% end %>
+              </div>
+            <% end %>
           </h1>
 
           <h3><%= Address.checksum(@token.contract_address_hash) %></h3>

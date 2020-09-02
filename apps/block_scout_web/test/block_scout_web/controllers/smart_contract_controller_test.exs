@@ -240,6 +240,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
           :show,
           Address.checksum(smart_contract.address_hash),
           function_name: "get",
+          method_id: "6d4ce63c",
           args: []
         )
 
@@ -253,7 +254,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       assert %{
                function_name: "get",
                layout: false,
-               outputs: [%{"name" => "", "type" => "uint256", "value" => 0}]
+               outputs: [%{"type" => "uint256", "value" => 0}]
              } = conn.assigns
     end
   end
