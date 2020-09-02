@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.TransactionRawTraceView do
   alias Explorer.Chain.InternalTransaction
 
   def render("scripts.html", %{conn: conn}) do
-    render_scripts(conn, "raw_trace/code_highlighting.js")
+    render_scripts(conn, "raw-trace/code_highlighting.js")
   end
 
   def raw_traces_with_lines(internal_transactions) do
