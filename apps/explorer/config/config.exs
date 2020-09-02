@@ -15,7 +15,11 @@ config :explorer,
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,default",
   include_uncles_in_average_block_time:
     if(System.get_env("UNCLES_IN_AVERAGE_BLOCK_TIME") == "true", do: true, else: false),
-  healthy_blocks_period: System.get_env("HEALTHY_BLOCKS_PERIOD") || :timer.minutes(5),
+  healthy_blocks_period:
+    (case Integer.parse(System.get_env("HEALTHY_BLOCKS_PERIOD", "")) do
+       {secs, ""} -> :timer.seconds(secs)
+       _ -> :timer.minutes(5)
+     end),
   realtime_events_sender:
     if(System.get_env("DISABLE_WEBAPP") != "true",
       do: Explorer.Chain.Events.SimpleSender,
