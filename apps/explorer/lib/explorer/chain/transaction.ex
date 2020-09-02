@@ -185,6 +185,25 @@ defmodule Explorer.Chain.Transaction do
              :value
            ]}
 
+  @derive {Jason.Encoder,
+           only: [
+             :block_number,
+             :cumulative_gas_used,
+             :error,
+             :gas,
+             :gas_price,
+             :gas_used,
+             :index,
+             :created_contract_code_indexed_at,
+             :input,
+             :nonce,
+             :r,
+             :s,
+             :v,
+             :status,
+             :value
+           ]}
+
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "transactions" do
     field(:block_number, :integer)
