@@ -1157,7 +1157,7 @@ msgid "QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:61
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:73
 msgid "Query"
 msgstr ""
 
@@ -1607,7 +1607,7 @@ msgid "View transaction %{transaction} on %{subnetwork}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:91
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:103
 msgid "WEI"
 msgstr ""
 
