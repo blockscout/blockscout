@@ -3581,11 +3581,11 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Fetches bridges status for tokens.
+  Fetches bridged status for tokens and metadata.
   """
   def fetch_tokens_bridged_status(token_addresses) do
     Enum.each(token_addresses, fn token_address_hash ->
-      created_from_factory_query =
+      created_from_int_tx_success_query =
         from(
           it in InternalTransaction,
           inner_join: t in assoc(it, :transaction),
@@ -3593,102 +3593,143 @@ defmodule Explorer.Chain do
           where: t.status == ^1
         )
 
-      created_from_factory =
-        created_from_factory_query
+      created_from_int_tx_success =
+        created_from_int_tx_success_query
         |> Repo.one()
 
-      if created_from_factory do
-        multi_token_bridge_mediator = Application.get_env(:block_scout_web, :multi_token_bridge_mediator)
-        %{transaction_hash: transaction_hash} = created_from_factory
+      created_from_tx_query =
+        from(
+          t in Transaction,
+          where: t.created_contract_address_hash == ^token_address_hash
+        )
 
-        if multi_token_bridge_mediator && multi_token_bridge_mediator !== "" do
-          {:ok, multi_token_bridge_mediator_hash} = Chain.string_to_address_hash(multi_token_bridge_mediator)
+      created_from_tx =
+        created_from_tx_query
+        |> Repo.all()
+        |> Enum.count() > 0
 
-          created_by_amb_mediator_query =
-            from(
-              it in InternalTransaction,
-              where: it.transaction_hash == ^transaction_hash,
-              where: it.to_address_hash == ^multi_token_bridge_mediator_hash
-            )
+      created_from_int_tx_query =
+        from(
+          it in InternalTransaction,
+          where: it.created_contract_address_hash == ^token_address_hash
+        )
 
-          created_by_amb_mediator =
-            created_by_amb_mediator_query
-            |> Repo.all()
+      created_from_int_tx =
+        created_from_int_tx_query
+        |> Repo.all()
+        |> Enum.count() > 0
 
-          if Enum.count(created_by_amb_mediator) > 0 do
-            json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-            # keccak 256 from getTokenInterfacesVersion()
-            get_token_interfaces_version_signature = "0x859ba28c"
-            # keccak 256 from foreignTokenAddress(address)
-            foreign_token_address_signature = "0x47ac7d6a"
-            # keccak 256 from bridgeContract()
-            bridge_contract_signature = "0xcd596583"
-            # keccak 256 from destinationChainId()
-            destination_chain_id_signature = "0xb0750611"
+      cond do
+        created_from_tx ->
+          set_token_bridged_status(token_address_hash, false)
 
-            token_address_hash_abi_encoded =
-              [token_address_hash.bytes]
-              |> TypeEncoder.encode([:address])
-              |> Base.encode16()
+        created_from_int_tx && !created_from_int_tx_success ->
+          set_token_bridged_status(token_address_hash, false)
 
-            foreign_token_address_method = foreign_token_address_signature <> token_address_hash_abi_encoded
+        created_from_int_tx && created_from_int_tx_success ->
+          extract_bridged_token_metadata_wrapper(token_address_hash, created_from_int_tx_success)
 
-            with {:ok, _} <-
-                   get_token_interfaces_version_signature
-                   |> Contract.eth_call_request(token_address_hash, 1, nil, nil)
-                   |> json_rpc(json_rpc_named_arguments),
-                 {:ok, foreign_token_address_abi_encoded} <-
-                   foreign_token_address_method
-                   |> Contract.eth_call_request(
-                     multi_token_bridge_mediator,
-                     1,
-                     nil,
-                     nil
-                   )
-                   |> json_rpc(json_rpc_named_arguments),
-                 {:ok, bridge_contract} <-
-                   bridge_contract_signature
-                   |> Contract.eth_call_request(multi_token_bridge_mediator_hash, 1, nil, nil)
-                   |> json_rpc(json_rpc_named_arguments) do
-              "0x" <> foreign_token_address_no_prefix = foreign_token_address_abi_encoded
-
-              <<_prefix::binary-size(24), foreign_token_address_hash_string_raw::binary()>> =
-                foreign_token_address_no_prefix
-
-              foreign_token_address_hash_string = "0x" <> foreign_token_address_hash_string_raw
-
-              {:ok, foreign_token_address_hash} = Chain.string_to_address_hash(foreign_token_address_hash_string)
-
-              "0x" <> bridge_contract_no_prefix = bridge_contract
-              <<_prefix::binary-size(24), multi_token_bridge_hash_string_raw::binary()>> = bridge_contract_no_prefix
-
-              multi_token_bridge_hash_string = "0x" <> multi_token_bridge_hash_string_raw
-
-              {:ok, foreign_chain_id_abi_encoded} =
-                destination_chain_id_signature
-                |> Contract.eth_call_request(multi_token_bridge_hash_string, 1, nil, nil)
-                |> json_rpc(json_rpc_named_arguments)
-
-              "0x" <> foreign_chain_id_abi_encoded_no_prefix = foreign_chain_id_abi_encoded
-              {foreign_chain_id, _} = Integer.parse(foreign_chain_id_abi_encoded_no_prefix, 16)
-
-              set_bridged_token_metadata(token_address_hash, %{
-                foreign_chain_id: foreign_chain_id,
-                foreign_token_address_hash: foreign_token_address_hash
-              })
-
-              set_token_bridged_status(token_address_hash, true)
-            end
-          else
-            set_token_bridged_status(token_address_hash, false)
-          end
-        end
-      else
-        set_token_bridged_status(token_address_hash, false)
+        true ->
+          :ok
       end
     end)
 
     :ok
+  end
+
+  defp extract_bridged_token_metadata_wrapper(token_address_hash, created_from_int_tx_success) do
+    multi_token_bridge_mediator = Application.get_env(:block_scout_web, :multi_token_bridge_mediator)
+    %{transaction_hash: transaction_hash} = created_from_int_tx_success
+
+    if multi_token_bridge_mediator && multi_token_bridge_mediator !== "" do
+      {:ok, multi_token_bridge_mediator_hash} = Chain.string_to_address_hash(multi_token_bridge_mediator)
+
+      created_by_amb_mediator_query =
+        from(
+          it in InternalTransaction,
+          where: it.transaction_hash == ^transaction_hash,
+          where: it.to_address_hash == ^multi_token_bridge_mediator_hash
+        )
+
+      created_by_amb_mediator =
+        created_by_amb_mediator_query
+        |> Repo.all()
+
+      if Enum.count(created_by_amb_mediator) > 0 do
+        extract_bridged_token_metadata(
+          token_address_hash,
+          multi_token_bridge_mediator,
+          multi_token_bridge_mediator_hash
+        )
+      else
+        set_token_bridged_status(token_address_hash, false)
+      end
+    end
+  end
+
+  defp extract_bridged_token_metadata(token_address_hash, multi_token_bridge_mediator, multi_token_bridge_mediator_hash) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    # keccak 256 from getTokenInterfacesVersion()
+    get_token_interfaces_version_signature = "0x859ba28c"
+    # keccak 256 from foreignTokenAddress(address)
+    foreign_token_address_signature = "0x47ac7d6a"
+    # keccak 256 from bridgeContract()
+    bridge_contract_signature = "0xcd596583"
+    # keccak 256 from destinationChainId()
+    destination_chain_id_signature = "0xb0750611"
+
+    token_address_hash_abi_encoded =
+      [token_address_hash.bytes]
+      |> TypeEncoder.encode([:address])
+      |> Base.encode16()
+
+    foreign_token_address_method = foreign_token_address_signature <> token_address_hash_abi_encoded
+
+    with {:ok, _} <-
+           get_token_interfaces_version_signature
+           |> Contract.eth_call_request(token_address_hash, 1, nil, nil)
+           |> json_rpc(json_rpc_named_arguments),
+         {:ok, foreign_token_address_abi_encoded} <-
+           foreign_token_address_method
+           |> Contract.eth_call_request(
+             multi_token_bridge_mediator,
+             1,
+             nil,
+             nil
+           )
+           |> json_rpc(json_rpc_named_arguments),
+         {:ok, bridge_contract} <-
+           bridge_contract_signature
+           |> Contract.eth_call_request(multi_token_bridge_mediator_hash, 1, nil, nil)
+           |> json_rpc(json_rpc_named_arguments) do
+      "0x" <> foreign_token_address_no_prefix = foreign_token_address_abi_encoded
+
+      <<_prefix::binary-size(24), foreign_token_address_hash_string_raw::binary()>> = foreign_token_address_no_prefix
+
+      foreign_token_address_hash_string = "0x" <> foreign_token_address_hash_string_raw
+
+      {:ok, foreign_token_address_hash} = Chain.string_to_address_hash(foreign_token_address_hash_string)
+
+      "0x" <> bridge_contract_no_prefix = bridge_contract
+      <<_prefix::binary-size(24), multi_token_bridge_hash_string_raw::binary()>> = bridge_contract_no_prefix
+
+      multi_token_bridge_hash_string = "0x" <> multi_token_bridge_hash_string_raw
+
+      {:ok, foreign_chain_id_abi_encoded} =
+        destination_chain_id_signature
+        |> Contract.eth_call_request(multi_token_bridge_hash_string, 1, nil, nil)
+        |> json_rpc(json_rpc_named_arguments)
+
+      "0x" <> foreign_chain_id_abi_encoded_no_prefix = foreign_chain_id_abi_encoded
+      {foreign_chain_id, _} = Integer.parse(foreign_chain_id_abi_encoded_no_prefix, 16)
+
+      set_bridged_token_metadata(token_address_hash, %{
+        foreign_chain_id: foreign_chain_id,
+        foreign_token_address_hash: foreign_token_address_hash
+      })
+
+      set_token_bridged_status(token_address_hash, true)
+    end
   end
 
   defp set_token_bridged_status(token_address_hash, status) do

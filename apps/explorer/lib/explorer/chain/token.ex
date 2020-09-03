@@ -35,6 +35,7 @@ defmodule Explorer.Chain.Token do
   * `contract_address_hash` - Address hash foreign key
   * `holder_count` - the number of `t:Explorer.Chain.Address.t/0` (except the burn address) that have a
     `t:Explorer.Chain.CurrentTokenBalance.t/0` `value > 0`.  Can be `nil` when data not migrated.
+  * `bridged` - Flag for bridged tokens from other chain
   """
   @type t :: %Token{
           name: String.t(),

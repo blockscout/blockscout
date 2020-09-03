@@ -2,11 +2,13 @@
 
 ### Features
 - [#3279](https://github.com/poanetwork/blockscout/pull/3279) - NFT instance: link to the app
+- [#3278](https://github.com/poanetwork/blockscout/pull/3278) - Support of fetching of NFT tokens metadata from IPFS
 - [#3273](https://github.com/poanetwork/blockscout/pull/3273) - Update token metadata at burn/mint events
 - [#3268](https://github.com/poanetwork/blockscout/pull/3268) - Token total supply on-demand fetcher
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
+- [#3276](https://github.com/poanetwork/blockscout/pull/3276) - Bridged tokens status/metadata fetcher refactoring
 - [#3264](https://github.com/poanetwork/blockscout/pull/3264) - Fix encoding of address output if function input exists
 - [#3259](https://github.com/poanetwork/blockscout/pull/3259), [#3269](https://github.com/poanetwork/blockscout/pull/3269) - Contract interaction: array input type parsing fix
 - [#3257](https://github.com/poanetwork/blockscout/pull/3257) - Contracts read/write: method_id instead function_name as a key

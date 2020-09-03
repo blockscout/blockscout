@@ -171,8 +171,13 @@ defmodule Explorer.Chain.Block.Reward do
             if payout_key_hash == @empty_address do
               mining_key
             else
-              {:ok, payout_key} = Chain.string_to_address_hash(payout_key_hash)
-              payout_key
+              case Chain.string_to_address_hash(payout_key_hash) do
+                {:ok, payout_key} ->
+                  payout_key
+
+                _ ->
+                  mining_key
+              end
             end
           else
             mining_key
