@@ -882,7 +882,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
 #: lib/block_scout_web/views/address_view.ex:346
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:98
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:111
 #: lib/block_scout_web/views/tokens/overview_view.ex:37
 #: lib/block_scout_web/views/transaction_view.ex:394
 msgid "Token Transfers"
@@ -1150,7 +1150,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:33
 #: lib/block_scout_web/templates/address/overview.html.eex:133
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:51
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:94
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:101
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:116
 msgid "QR Code"
@@ -1689,8 +1689,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
 #: lib/block_scout_web/templates/address/overview.html.eex:134
 #: lib/block_scout_web/templates/address/overview.html.eex:142
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:95
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:103
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:102
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:110
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:117
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:125
 msgid "Close"
@@ -1708,7 +1708,7 @@ msgid "Copy Token ID"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:69
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:76
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:74
 msgid "Decimals"
 msgstr ""
@@ -1741,7 +1741,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/metadata/index.html.eex:18
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:10
-#: lib/block_scout_web/views/tokens/instance/overview_view.ex:99
+#: lib/block_scout_web/views/tokens/instance/overview_view.ex:112
 msgid "Metadata"
 msgstr ""
 
@@ -1756,7 +1756,7 @@ msgid "Total transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:67
+#: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:74
 msgid "Transfers"
 msgstr ""
 

@@ -38,6 +38,19 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     if String.trim(result) == "", do: image_src(nil), else: result
   end
 
+  def external_url(nil), do: nil
+
+  def external_url(instance) do
+    result =
+      if instance.metadata && instance.metadata["external_url"] do
+        instance.metadata["external_url"]
+      else
+        external_url(nil)
+      end
+
+    if String.trim(result) == "", do: external_url(nil), else: result
+  end
+
   def total_supply_usd(token) do
     tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
     price = token.usd_value
