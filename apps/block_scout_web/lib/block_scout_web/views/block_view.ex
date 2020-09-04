@@ -62,6 +62,14 @@ defmodule BlockScoutWeb.BlockView do
     end
   end
 
+  def round_to_string!(nil) do
+    "0"
+  end
+
+  def round_to_string!(num) do
+    BlockScoutWeb.Cldr.Number.to_string!(num)
+  end
+
   def formatted_gas(gas, format \\ []) do
     BlockScoutWeb.Cldr.Number.to_string!(gas, format)
   end

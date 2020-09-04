@@ -91,6 +91,7 @@ defmodule Explorer.Chain.Import.Runner.CeloVoters do
       update: [
         set: [
           total: fragment("EXCLUDED.total"),
+          units: fragment("EXCLUDED.units"),
           pending: fragment("EXCLUDED.pending"),
           active: fragment("EXCLUDED.active"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", account.inserted_at),

@@ -7,10 +7,10 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, CeloSigners, CeloValidatorHistory, Gas, Hash, PendingBlockOperation, Transaction}
+  alias Explorer.Chain.{Address, CeloSigners, CeloValidatorHistory, Data, Gas, Hash, PendingBlockOperation, Transaction}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
-  @optional_attrs ~w(size refetch_needed total_difficulty difficulty)a
+  @optional_attrs ~w(size refetch_needed total_difficulty difficulty extra_data round)a
 
   @required_attrs ~w(consensus gas_limit gas_used hash miner_hash nonce number parent_hash timestamp)a
 
@@ -59,12 +59,15 @@ defmodule Explorer.Chain.Block do
           number: block_number(),
           parent_hash: Hash.t(),
           size: non_neg_integer(),
+          update_count: non_neg_integer(),
           timestamp: DateTime.t(),
           total_difficulty: difficulty(),
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
           refetch_needed: boolean(),
           signers: %Ecto.Association.NotLoaded{} | [Address.t()],
           refetch_needed: boolean(),
+          round: non_neg_integer(),
+          extra_data: Data.t(),
           online: %Ecto.Association.NotLoaded{} | boolean()
         }
 
@@ -77,9 +80,12 @@ defmodule Explorer.Chain.Block do
     field(:nonce, Hash.Nonce)
     field(:number, :integer)
     field(:size, :integer)
+    field(:update_count, :integer)
     field(:timestamp, :utc_datetime_usec)
     field(:total_difficulty, :decimal)
     field(:refetch_needed, :boolean)
+    field(:round, :integer)
+    field(:extra_data, Data)
 
     timestamps()
 

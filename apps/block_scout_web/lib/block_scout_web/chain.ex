@@ -122,6 +122,11 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  def paging_options(%{"block_number" => block_number, "index" => index})
+      when is_integer(block_number) and is_integer(index) do
+    [paging_options: %{@default_paging_options | key: {block_number, index}}]
+  end
+
   def paging_options(%{"block_number" => block_number_string, "index" => index_string}) do
     with {block_number, ""} <- Integer.parse(block_number_string),
          {index, ""} <- Integer.parse(index_string) do
@@ -218,12 +223,12 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number, "transaction_index" => transaction_index, "index" => index}
   end
 
-  defp paging_params(%Log{index: index} = log) do
-    if Ecto.assoc_loaded?(log.transaction) do
-      %{"block_number" => log.transaction.block_number, "transaction_index" => log.transaction.index, "index" => index}
-    else
-      %{"index" => index}
-    end
+  defp paging_params(%Log{index: index, block_number: block_number} = _log) do
+    %{"index" => index, "block_number" => block_number}
+    #    if log.transaction != nil and Ecto.assoc_loaded?(log.transaction) do
+    #      %{"block_number" => block_number, "transaction_index" => log.transaction.index, "index" => index}
+    #    else
+    #    end
   end
 
   defp paging_params(%Transaction{block_number: nil, inserted_at: inserted_at, hash: hash}) do

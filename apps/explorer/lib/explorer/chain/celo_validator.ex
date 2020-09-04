@@ -46,8 +46,7 @@ defmodule Explorer.Chain.CeloValidator do
     field(:usd, Wei, virtual: true)
     field(:attestations_requested, :integer, virtual: true)
     field(:attestations_fulfilled, :integer, virtual: true)
-    #    field(:domain, :string, virtual: true)
-    #    field(:domain_verified, :boolean, virtual: true)
+    field(:active_gold, Wei, virtual: true)
 
     belongs_to(
       :validator_address,

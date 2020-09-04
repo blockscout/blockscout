@@ -53,26 +53,37 @@
               </dl>
           <% end %>
 
-          <!-- Difficulty value -->
+          <!-- Round number -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"><%= gettext "Round number" %></dt>
+            <dd class="col-sm-9">
+              <span data-toggle="tooltip" data-placement="top" title="" data-original-title="On which round was the block finalized"><%= @block.round |> round_to_string! %></span>
+            </dd>
+          </dl>
+
+          <!-- Difficulty value
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Difficulty" %></dt>
             <dd class="col-sm-9">
               <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Block difficulty for miner, used to calibrate block generation time (Note: constant in POA based networks)."><%= @block.difficulty |> BlockScoutWeb.Cldr.Number.to_string! %></span>
             </dd>
           </dl>
+          -->
 
           <%= if block_type(@block) == "Block" do %>
-            <!-- Total Difficulty -->
+            <!-- Total Difficulty
             <dl class="row">
               <dt class="col-sm-3 text-muted"><%= gettext "Total Difficulty" %></dt>
               <dd class="col-sm-9"><span data-toggle="tooltip" data-placement="top" title="" data-original-title="Integer of the total difficulty of the chain until this block."><%= @block.total_difficulty |> BlockScoutWeb.Cldr.Number.to_string! %></span></dd>
             </dl>
+            -->
 
-            <!-- Nonce -->
+            <!-- Nonce
             <dl class="row">
               <dt class="col-sm-3 text-muted"><%= gettext "Nonce" %></dt>
               <dd class="col-sm-9"><span data-toggle="tooltip" data-placement="top" title="" data-original-title="64-bit hash of value verifying proof-of-work (note: null for POA chains)."><%= to_string(@block.nonce) %></span></dd>
             </dl>
+            -->
 
             <%= if length(@block.uncle_relations) > 0 do %>
               <!-- Uncles -->

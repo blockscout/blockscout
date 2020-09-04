@@ -471,18 +471,13 @@ defmodule Explorer.Chain do
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
-    {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
+    {block_number, log_index} = paging_options.key || {BlockNumber.get_max(), 0}
 
     base_query =
       from(log in Log,
-        inner_join: transaction in Transaction,
-        on: transaction.hash == log.transaction_hash,
         order_by: [desc: log.block_number, desc: log.index],
-        where: transaction.block_number < ^block_number,
-        or_where: transaction.block_number == ^block_number and transaction.index > ^transaction_index,
-        or_where:
-          transaction.block_number == ^block_number and transaction.index == ^transaction_index and
-            log.index > ^log_index,
+        where: log.block_number < ^block_number,
+        or_where: log.block_number == ^block_number and log.index > ^log_index,
         where: log.address_hash == ^address_hash,
         limit: ^paging_options.page_size,
         select: log
@@ -491,16 +486,15 @@ defmodule Explorer.Chain do
     wrapped_query =
       from(
         log in subquery(base_query),
-        inner_join: transaction in Transaction,
+        left_join: transaction in Transaction,
+        on: log.transaction_hash == transaction.hash,
         preload: [
           :transaction,
-          transaction: [to_address: :smart_contract],
-          transaction: [to_address: [implementation_contract: :smart_contract]]
+          #          transaction: [to_address: :smart_contract],
+          #          transaction: [to_address: [implementation_contract: :smart_contract]]
+          address: :smart_contract,
+          address: [implementation_contract: :smart_contract]
         ],
-        where:
-          log.block_hash == transaction.block_hash and
-            log.block_number == transaction.block_number and
-            log.transaction_hash == transaction.hash,
         select: log
       )
 
@@ -937,6 +931,8 @@ defmodule Explorer.Chain do
             [{:celo_members, :validator_address}] => :optional,
             [{:celo_voters, :voter_address}] => :optional,
             [{:celo_voted, :group_address}] => :optional,
+            [{:celo_voters, :group}] => :optional,
+            [{:celo_voted, :group}] => :optional,
             :celo_validator => :optional,
             [{:celo_validator, :group_address}] => :optional,
             [{:celo_validator, :signer}] => :optional,
@@ -1947,6 +1943,7 @@ defmodule Explorer.Chain do
         join: pending_ops in assoc(b, :pending_operations),
         where: pending_ops.fetch_internal_transactions,
         where: b.consensus,
+        where: b.update_count < 20,
         select: b.number
       )
 
@@ -3169,7 +3166,7 @@ defmodule Explorer.Chain do
 
   defp page_logs(query, %PagingOptions{key: nil}), do: query
 
-  defp page_logs(query, %PagingOptions{key: {index}}) do
+  defp page_logs(query, %PagingOptions{key: {_, index}}) do
     where(query, [log], log.index > ^index)
   end
 
@@ -3313,9 +3310,9 @@ defmodule Explorer.Chain do
           reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_cataloged_token_contract_address_hashes(initial, reducer, hours_ago_updated \\ 48)
+  def stream_cataloged_token_contract_address_hashes(initial, reducer, seconds_ago_updated \\ 36000)
       when is_function(reducer, 2) do
-    hours_ago_updated
+    seconds_ago_updated
     |> Token.cataloged_tokens()
     |> order_by(asc: :updated_at)
     |> Repo.stream_reduce(initial, reducer)
@@ -3933,6 +3930,46 @@ defmodule Explorer.Chain do
 
   defp staking_pool_filter(query, _), do: query
 
+  def bump_pending_blocks(pending_numbers) do
+    update_query =
+      from(
+        b in Block,
+        where: b.number in ^pending_numbers,
+        select: b.hash,
+        # ShareLocks order already enforced by `acquire_blocks` (see docs: sharelocks.md)
+        update: [set: [update_count: b.update_count + 1]]
+      )
+
+    try do
+      {_num, result} = Repo.update_all(update_query, [])
+
+      Logger.debug(fn ->
+        [
+          "bumping following blocks: ",
+          inspect(pending_numbers),
+          " because of internal transaction issues"
+        ]
+      end)
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, pending_numbers: pending_numbers}}
+    end
+  end
+
+  defp compute_votes do
+    from(p in CeloVoters,
+      inner_join: g in assoc(p, :group),
+      group_by: p.voter_address_hash,
+      select: %{
+        result:
+          fragment("sum(? + coalesce(? * ? / nullif(?,0), 0))", p.pending, p.units, g.active_votes, g.total_units),
+        address: p.voter_address_hash
+      }
+    )
+  end
+
   @spec get_celo_account(Hash.Address.t()) :: {:ok, CeloAccount.t()} | {:error, :not_found}
   def get_celo_account(address_hash) do
     get_signer_account(address_hash)
@@ -3941,7 +3978,12 @@ defmodule Explorer.Chain do
   defp do_get_celo_account(address_hash) do
     query =
       from(account in CeloAccount,
-        where: account.address == ^address_hash
+        left_join: data in subquery(compute_votes()),
+        on: data.address == account.address,
+        where: account.address == ^address_hash,
+        select_merge: %{
+          active_gold: %{value: data.result}
+        }
       )
 
     query
@@ -3978,6 +4020,8 @@ defmodule Explorer.Chain do
       left_join: t in assoc(v, :status),
       inner_join: a in assoc(v, :celo_account),
       inner_join: stat in assoc(v, :celo_attestation_stats),
+      left_join: data in subquery(compute_votes()),
+      on: v.address == data.address,
       select_merge: %{
         last_online: t.last_online,
         last_elected: t.last_elected,
@@ -3987,6 +4031,7 @@ defmodule Explorer.Chain do
         nonvoting_locked_gold: a.nonvoting_locked_gold,
         attestations_requested: stat.requested,
         attestations_fulfilled: stat.fulfilled,
+        active_gold: %{value: data.result},
         usd: a.usd
       }
     )
@@ -4021,6 +4066,8 @@ defmodule Explorer.Chain do
       inner_join: total_locked_gold in CeloParams,
       where: total_locked_gold.name == "totalLockedGold",
       inner_join: denom in subquery(denominator),
+      left_join: data in subquery(compute_votes()),
+      on: g.address == data.address,
       select_merge: %{
         name: a.name,
         url: a.url,
@@ -4030,6 +4077,7 @@ defmodule Explorer.Chain do
         accumulated_active: b.active,
         accumulated_rewards: b.reward,
         rewards_ratio: b.ratio,
+        active_gold: %{value: data.result},
         receivable_votes: (g.num_members + 1) * total_locked_gold.number_value / fragment("nullif(?,0)", denom.value)
       }
     )
