@@ -16,7 +16,7 @@ defmodule Explorer.Chain.CeloAccount do
   * `account_type` - regular, validator or validator group
   * `locked_gold` - total locked gold
   * `nonvoting_locked_gold` - non-voting locked gold
-  * `rewards` - rewards in cGLD
+  * `rewards` - rewards in CELO
   """
 
   @type t :: %__MODULE__{

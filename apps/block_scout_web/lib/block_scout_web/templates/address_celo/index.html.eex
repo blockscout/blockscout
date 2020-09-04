@@ -75,15 +75,15 @@
        </dd>
       </dl>
       <dl class="row">
-      <dt class="col-sm-3 text-muted">Nonvoting Locked Gold</dt>
+      <dt class="col-sm-3 text-muted">Nonvoting Locked CELO</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How much cGLD has the account deposited"><%= format_according_to_decimals(@address.celo_account.nonvoting_locked_gold.value, Decimal.new(18)) %> cGLD</span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How much CELO has the account deposited"><%= format_according_to_decimals(@address.celo_account.nonvoting_locked_gold.value, Decimal.new(18)) %> CELO</span>
        </dd>
       </dl>
       <dl class="row">
-      <dt class="col-sm-3 text-muted">Locked Gold</dt>
+      <dt class="col-sm-3 text-muted">Locked CELO</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How much cGLD has the account deposited"><%= compute_locked_gold(@address) %> cGLD</span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="How much CELO has the account deposited"><%= compute_locked_gold(@address) %> CELO</span>
        </dd>
       </dl>
       <%= if @address.celo_validator != nil do %>
@@ -106,7 +106,7 @@
       <dl class="row">
       <dt class="col-sm-3 text-muted">Votes</dt>
        <dd class="col-sm-9">
-       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Votes received by group"><%= format_according_to_decimals(@address.celo_validator_group.votes.value, Decimal.new(18)) %> cGLD</span>
+       <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Votes received by group"><%= format_according_to_decimals(@address.celo_validator_group.votes.value, Decimal.new(18)) %> CELO</span>
        </dd>
       </dl>
       <% end %>
@@ -170,7 +170,7 @@
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="All voters of this group">
        <ul>
        <%= for member <- sort_voters(@address.celo_voters) do %>
-         <li><%= format_votes(member) %> cGLD:
+         <li><%= format_votes(member) %> CELO:
          <%= if member.group_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:voters, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
             end %></li>
@@ -187,7 +187,7 @@
        <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Groups voted by this account">
        <ul>
        <%= for member <- sort_voters(@address.celo_voted) do %>
-         <li><%= format_votes(member) %> cGLD:
+         <li><%= format_votes(member) %> CELO:
          <%= if member.group_address != nil do
              member |> BlockScoutWeb.AddressView.address_partial_selector(:voted, @address.hash) |> BlockScoutWeb.RenderHelpers.render_partial()
             end %></li>

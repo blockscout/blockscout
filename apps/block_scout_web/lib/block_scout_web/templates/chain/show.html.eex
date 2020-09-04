@@ -3,7 +3,6 @@
     <div class="dashboard-banner">
       <!-- Graph and legend -->
       <div class="dashboard-banner-network-graph">
-        <!--
         <div class="dashboard-banner-chart">
           <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
             <span><%= gettext("There was a problem loading the chart.") %></span>
@@ -13,7 +12,7 @@
         <div class="dashboard-banner-chart-legend">
           <div class="dashboard-banner-chart-legend-item">
             <span class="dashboard-banner-chart-legend-label">
-              <%= gettext "cGLD Price" %>
+              <%= gettext "CELO Price" %>
             </span>
             <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
             </span>
@@ -26,7 +25,6 @@
             </span>
           </div>
         </div>
-        -->
       </div>
       <!-- Stats -->
       <div class="dashboard-banner-network-plain-container">

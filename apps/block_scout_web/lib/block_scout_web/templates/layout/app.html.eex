@@ -72,7 +72,7 @@
         'Less than': '<%= gettext("Less than") %>',
         'Market Cap': '<%= gettext("Market Cap") %>',
         'Price': '<%= gettext("Price") %>',
-        'Ether': '<%= gettext("cGLD") %>'
+        'Ether': '<%= gettext("CELO") %>'
       }
     </script>
     <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
