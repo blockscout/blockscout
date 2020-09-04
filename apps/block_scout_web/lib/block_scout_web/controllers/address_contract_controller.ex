@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.AddressContractController do
           implementation: implementation_contract,
           is_proxy: true,
           coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-          exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+          exchange_rate: Market.get_exchange_rate("cGLD") || Token.null(),
           counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
         )
       else
@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.AddressContractController do
             proxy: nil,
             is_proxy: false,
             coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
-            exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+            exchange_rate: Market.get_exchange_rate("cGLD") || Token.null(),
             counters_path: nil
           )
       end

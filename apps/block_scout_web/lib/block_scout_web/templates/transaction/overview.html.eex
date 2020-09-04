@@ -218,7 +218,7 @@
         <div class="card card-background-1 flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
             <%= if @transaction.value && @transaction.value.value != Decimal.new(0) do %>
-              <h2 class="card-title balance-card-title"><%= gettext "cGLD" %> <%= gettext "Value" %></h2>
+              <h2 class="card-title balance-card-title"><%= gettext "CELO" %> <%= gettext "Value" %></h2>
               <div class="text-right">
                 <h3 class="address-balance-text">
                   <%= value(@transaction) %>
@@ -253,7 +253,7 @@
         <!-- Value -->
         <div class="card card-background-1 flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
-            <h2 class="card-title balance-card-title"><%= gettext "cGLD" %> <%= gettext "Value" %></h2>
+            <h2 class="card-title balance-card-title"><%= gettext "CELO" %> <%= gettext "Value" %></h2>
             <div class="text-right">
               <h3 class="address-balance-text">
                 <%= value(@transaction) %>

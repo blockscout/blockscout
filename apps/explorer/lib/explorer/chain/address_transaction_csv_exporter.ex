@@ -33,7 +33,7 @@ defmodule Explorer.Chain.AddressTransactionCsvExporter do
 
   @spec export(Address.t()) :: Enumerable.t()
   def export(address) do
-    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+    exchange_rate = Market.get_exchange_rate("cGLD") || Token.null()
 
     address.hash
     |> fetch_all_transactions(@paging_options)
