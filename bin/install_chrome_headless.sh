@@ -1,6 +1,6 @@
 export DISPLAY=:99.0
 sh -e /etc/init.d/xvfb start
-export CHROMEDRIVER_VERSION=`curl -s http://chromedriver.storage.googleapis.com/LATEST_RELEASE_83`
+export CHROMEDRIVER_VERSION=`curl -s http://chromedriver.storage.googleapis.com/LATEST_RELEASE_85`
 curl -L -O "http://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
 unzip chromedriver_linux64.zip
 sudo chmod +x chromedriver
