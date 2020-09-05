@@ -49,7 +49,8 @@ defmodule BlockScoutWeb.ChainController do
       transaction_estimated_count: transaction_estimated_count,
       transactions_path: recent_transactions_path(conn, :index),
       transaction_stats: transaction_stats,
-      block_count: block_count
+      block_count: block_count,
+      gas_price: Application.get_env(:block_scout_web, :gas_price)
     )
   end
 

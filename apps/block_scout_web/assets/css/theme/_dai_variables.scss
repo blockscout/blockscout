@@ -46,6 +46,15 @@ $tile-body-a-color: $secondary;
 $tile-type-block-color: $secondary;
 $tile-type-progress-bar-color: $secondary;
 a.tile-title { color: $secondary !important; }
+.card-body {  
+	a:not(.dropdown-item):not(.button) {
+		color: $secondary;
+
+		&:hover {
+			color: $secondary;
+		}
+	}
+}
 
 // card
 $card-background-1: $secondary;
