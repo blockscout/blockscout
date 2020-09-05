@@ -60,7 +60,7 @@
               <%= if variant !== EthereumJSONRPC.Besu do %>
                 <%= link(
                       gettext("Pending"),
-                      class: "dropdown-item #{tab_status("pending_transactions", @conn.request_path)}",
+                      class: "dropdown-item #{tab_status("pending-transactions", @conn.request_path)}",
                       "data-test": "pending_transactions_link",
                       to: pending_transaction_path(@conn, :index)
                     ) %>
@@ -75,14 +75,37 @@
               <%= gettext("Accounts") %>
             <% end %>
           </li>
-          <li class="nav-item">
-            <%= link to: tokens_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("tokens", @conn.request_path)}" do %>
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
-              </span>
-              <%= gettext("Tokens") %>
-            <% end %>
-          </li>
+          <%= if Application.get_env(:block_scout_web, :multi_token_bridge_mediator) && Application.get_env(:block_scout_web, :multi_token_bridge_mediator) != "" do %>
+            <li class="nav-item dropdown">
+              <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="nav-link-icon">
+                  <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+                </span>
+                <%= gettext("Tokens") %>
+              </a>
+              <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
+                <%= link(
+                      gettext("All"),
+                      class: "dropdown-item #{tab_status("tokens", @conn.request_path)}",
+                      to: tokens_path(@conn, :index)
+                    ) %>
+                <%= link(
+                      gettext("Bridged"),
+                      class: "dropdown-item #{tab_status("bridged-tokens", @conn.request_path)}",
+                      to: bridged_tokens_path(@conn, :index)
+                    ) %>
+              </div>
+            </li>
+          <% else %>
+            <li class="nav-item">
+              <%= link to: tokens_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("tokens", @conn.request_path)}" do %>
+                <span class="nav-link-icon">
+                  <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
+                </span>
+                <%= gettext("Tokens") %>
+              <% end %>
+            </li>
+          <% end %>
         <% end %>
         <%= if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:reading_enabled] || Application.get_env(:block_scout_web, :api_url) do %>
           <li class="nav-item dropdown">
@@ -100,12 +123,12 @@
                   ) %>
               <%= link(
                     gettext("RPC"),
-                    class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
+                    class: "dropdown-item #{tab_status("api-docs", @conn.request_path)}",
                     to: api_url() <> api_docs_path(@conn, :index)
                   ) %>
               <%= link(
                     gettext("Eth RPC"),
-                    class: "dropdown-item #{tab_status("eth_rpc_api_docs", @conn.request_path)}",
+                    class: "dropdown-item #{tab_status("eth-rpc-api-docs", @conn.request_path)}",
                     to: api_url() <> api_docs_path(@conn, :eth_rpc)
                   ) %>
             </div>

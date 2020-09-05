@@ -157,7 +157,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
     end
   end
 
-  describe "GET token_transfers_csv/2" do
+  describe "GET token-transfers-csv/2" do
     test "exports token transfers to csv", %{conn: conn} do
       address = insert(:address)
 
@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       insert(:token_transfer, transaction: transaction, from_address: address)
       insert(:token_transfer, transaction: transaction, to_address: address)
 
-      conn = get(conn, "/token_transfers_csv", %{"address_id" => Address.checksum(address.hash)})
+      conn = get(conn, "/token-transfers-csv", %{"address_id" => Address.checksum(address.hash)})
 
       assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
     end

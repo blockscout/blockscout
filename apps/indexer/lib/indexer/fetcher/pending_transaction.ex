@@ -14,7 +14,7 @@ defmodule Indexer.Fetcher.PendingTransaction do
 
   alias Ecto.Changeset
   alias Explorer.Chain
-  alias Explorer.Chain.Cache.{Accounts}
+  alias Explorer.Chain.Cache.Accounts
   alias Indexer.Fetcher.PendingTransaction
   alias Indexer.Transform.Addresses
 

@@ -1,0 +1,45 @@
+<section class="container">
+  <div class="card">
+    <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
+      <h1 class="card-title"><%= gettext "Bridged Tokens" %></h1>
+
+    <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+
+    <div class="addresses-table-container">
+      <div class="stakes-table-container">
+	<table>
+	  <thead>
+	    <tr>
+	      <th class="stakes-table-th">
+			<div class="stakes-table-th-content">&nbsp;</div>
+	      </th>
+	      <th class="stakes-table-th">
+			<div class="stakes-table-th-content">Token</div>
+	      </th>
+	      <th class="stakes-table-th">
+			<div class="stakes-table-th-content">Address</div>
+	      </th>
+	      <th class="stakes-table-th">
+			<div class="stakes-table-th-content">
+			Total Supply
+			</div>
+	      </th>
+	      <th class="stakes-table-th">
+			<div class="stakes-table-th-content">
+			Holders Count
+			</div>
+	      </th>
+	    </tr>
+	  </thead>
+	  <tbody data-items data-selector="top-tokens-list">
+	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", total_supply: @total_supply %>
+	  </tbody>
+	</table>
+      </div>
+    </div>
+
+    <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+    </div>
+  </div>
+	<script defer data-cfasync="false" src="<%= static_path(@conn, "/js/async-listing-load.js") %>"></script>
+</section>

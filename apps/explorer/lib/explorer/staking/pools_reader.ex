@@ -11,31 +11,34 @@ defmodule Explorer.Staking.PoolsReader do
 
   @spec get_active_pools() :: [String.t()]
   def get_active_pools do
-    {:ok, [active_pools]} = call_staking_method("getPools", [])
+    # 673a2a1f = keccak256(getPools())
+    {:ok, [active_pools]} = call_staking_method("673a2a1f", [])
     active_pools
   end
 
   @spec get_inactive_pools() :: [String.t()]
   def get_inactive_pools do
-    {:ok, [inactive_pools]} = call_staking_method("getPoolsInactive", [])
+    # df6f55f5 = keccak256(getPoolsInactive())
+    {:ok, [inactive_pools]} = call_staking_method("df6f55f5", [])
     inactive_pools
   end
 
   @spec pool_data(String.t()) :: {:ok, map()} | :error
   def pool_data(staking_address) do
-    with {:ok, [mining_address]} <- call_validators_method("miningByStakingAddress", [staking_address]),
+    # 00535175 = keccak256(miningByStakingAddress(address))
+    with {:ok, [mining_address]} <- call_validators_method("00535175", [staking_address]),
          data = fetch_pool_data(staking_address, mining_address),
-         {:ok, [is_active]} <- data["isPoolActive"],
-         {:ok, [delegator_addresses]} <- data["poolDelegators"],
+         {:ok, [is_active]} <- data["a711e6a1"],
+         {:ok, [delegator_addresses]} <- data["9ea8082b"],
          delegators_count = Enum.count(delegator_addresses),
          delegators = delegators_data(delegator_addresses, staking_address),
-         {:ok, [staked_amount]} <- data["stakeAmountTotalMinusOrderedWithdraw"],
-         {:ok, [self_staked_amount]} <- data["stakeAmountMinusOrderedWithdraw"],
-         {:ok, [is_validator]} <- data["isValidator"],
-         {:ok, [was_validator_count]} <- data["validatorCounter"],
-         {:ok, [is_banned]} <- data["isValidatorBanned"],
-         {:ok, [banned_until]} <- data["bannedUntil"],
-         {:ok, [was_banned_count]} <- data["banCounter"] do
+         {:ok, [staked_amount]} <- data["234fbf2b"],
+         {:ok, [self_staked_amount]} <- data["58daab6a"],
+         {:ok, [is_validator]} <- data["facd743b"],
+         {:ok, [was_validator_count]} <- data["b41832e4"],
+         {:ok, [is_banned]} <- data["a92252ae"],
+         {:ok, [banned_until]} <- data["5836d08a"],
+         {:ok, [was_banned_count]} <- data["1d0cd4c6"] do
       {
         :ok,
         %{
@@ -61,20 +64,25 @@ defmodule Explorer.Staking.PoolsReader do
 
   defp delegators_data(delegators, pool_address) do
     Enum.map(delegators, fn address ->
+      # a697ecff = keccak256(stakeAmount(address,address))
+      # e9ab0300 = keccak256(orderedWithdrawAmount(address,address))
+      # 6bda1577 = keccak256(maxWithdrawAllowed(address,address))
+      # 950a6513 = keccak256(maxWithdrawOrderAllowed(address,address))
+      # a4205967 = keccak256(orderWithdrawEpoch(address,address))
       data =
         call_methods([
-          {:staking, "stakeAmount", [pool_address, address]},
-          {:staking, "orderedWithdrawAmount", [pool_address, address]},
-          {:staking, "maxWithdrawAllowed", [pool_address, address]},
-          {:staking, "maxWithdrawOrderAllowed", [pool_address, address]},
-          {:staking, "orderWithdrawEpoch", [pool_address, address]}
+          {:staking, "a697ecff", [pool_address, address]},
+          {:staking, "e9ab0300", [pool_address, address]},
+          {:staking, "6bda1577", [pool_address, address]},
+          {:staking, "950a6513", [pool_address, address]},
+          {:staking, "a4205967", [pool_address, address]}
         ])
 
-      {:ok, [stake_amount]} = data["stakeAmount"]
-      {:ok, [ordered_withdraw]} = data["orderedWithdrawAmount"]
-      {:ok, [max_withdraw_allowed]} = data["maxWithdrawAllowed"]
-      {:ok, [max_ordered_withdraw_allowed]} = data["maxWithdrawOrderAllowed"]
-      {:ok, [ordered_withdraw_epoch]} = data["orderWithdrawEpoch"]
+      {:ok, [stake_amount]} = data["a697ecff"]
+      {:ok, [ordered_withdraw]} = data["e9ab0300"]
+      {:ok, [max_withdraw_allowed]} = data["6bda1577"]
+      {:ok, [max_ordered_withdraw_allowed]} = data["950a6513"]
+      {:ok, [ordered_withdraw_epoch]} = data["a4205967"]
 
       %{
         delegator_address_hash: address,
@@ -107,16 +115,25 @@ defmodule Explorer.Staking.PoolsReader do
   end
 
   defp fetch_pool_data(staking_address, mining_address) do
+    # a711e6a1 = keccak256(isPoolActive(address))
+    # 9ea8082b = keccak256(poolDelegators(address))
+    # 234fbf2b = keccak256(stakeAmountTotalMinusOrderedWithdraw(address))
+    # 58daab6a = keccak256(stakeAmountMinusOrderedWithdraw(address,address))
+    # facd743b = keccak256(isValidator(address))
+    # b41832e4 = keccak256(validatorCounter(address))
+    # a92252ae = keccak256(isValidatorBanned(address))
+    # 5836d08a = keccak256(bannedUntil(address))
+    # 1d0cd4c6 = keccak256(banCounter(address))
     call_methods([
-      {:staking, "isPoolActive", [staking_address]},
-      {:staking, "poolDelegators", [staking_address]},
-      {:staking, "stakeAmountTotalMinusOrderedWithdraw", [staking_address]},
-      {:staking, "stakeAmountMinusOrderedWithdraw", [staking_address, staking_address]},
-      {:validators, "isValidator", [mining_address]},
-      {:validators, "validatorCounter", [mining_address]},
-      {:validators, "isValidatorBanned", [mining_address]},
-      {:validators, "bannedUntil", [mining_address]},
-      {:validators, "banCounter", [mining_address]}
+      {:staking, "a711e6a1", [staking_address]},
+      {:staking, "9ea8082b", [staking_address]},
+      {:staking, "234fbf2b", [staking_address]},
+      {:staking, "58daab6a", [staking_address, staking_address]},
+      {:validators, "facd743b", [mining_address]},
+      {:validators, "b41832e4", [mining_address]},
+      {:validators, "a92252ae", [mining_address]},
+      {:validators, "5836d08a", [mining_address]},
+      {:validators, "1d0cd4c6", [mining_address]}
     ])
   end
 
@@ -127,15 +144,15 @@ defmodule Explorer.Staking.PoolsReader do
     |> Enum.map(&format_request/1)
     |> Reader.query_contracts(contract_abi)
     |> Enum.zip(methods)
-    |> Enum.into(%{}, fn {response, {_, function_name, _}} ->
-      {function_name, response}
+    |> Enum.into(%{}, fn {response, {_, method_id, _}} ->
+      {method_id, response}
     end)
   end
 
-  defp format_request({contract_name, function_name, params}) do
+  defp format_request({contract_name, method_id, params}) do
     %{
       contract_address: contract(contract_name),
-      function_name: function_name,
+      method_id: method_id,
       args: params
     }
   end
