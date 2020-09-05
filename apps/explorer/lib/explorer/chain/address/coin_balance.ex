@@ -61,7 +61,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
       on: cb.block_number == b.number,
       limit: ^1,
       order_by: [desc: :block_number],
-      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
+      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number desc), 0)")},
       select_merge: %{block_timestamp: b.timestamp}
     )
   end
