@@ -1,9 +1,32 @@
 ## Current
 
 ### Features
+- [#3281](https://github.com/poanetwork/blockscout/pull/3281) - Write contract: display currently connected address
+- [#3279](https://github.com/poanetwork/blockscout/pull/3279) - NFT instance: link to the app
+- [#3278](https://github.com/poanetwork/blockscout/pull/3278) - Support of fetching of NFT tokens metadata from IPFS
+- [#3273](https://github.com/poanetwork/blockscout/pull/3273) - Update token metadata at burn/mint events
+- [#3268](https://github.com/poanetwork/blockscout/pull/3268) - Token total supply on-demand fetcher
+- [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
+
+### Fixes
+- [#3276](https://github.com/poanetwork/blockscout/pull/3276) - Bridged tokens status/metadata fetcher refactoring
+- [#3264](https://github.com/poanetwork/blockscout/pull/3264) - Fix encoding of address output if function input exists
+- [#3259](https://github.com/poanetwork/blockscout/pull/3259), [#3269](https://github.com/poanetwork/blockscout/pull/3269) - Contract interaction: array input type parsing fix
+- [#3257](https://github.com/poanetwork/blockscout/pull/3257) - Contracts read/write: method_id instead function_name as a key
+- [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
+
+### Chore
+- [#3274](https://github.com/poanetwork/blockscout/pull/3274) - Replace underscore with hyphen in routes in routes
+- [#3260](https://github.com/poanetwork/blockscout/pull/3260) - Update NPM dependencies to fix known vulnerabilities
+- [#3258](https://github.com/poanetwork/blockscout/pull/3258) - Token transfer: check that block exists before retrieving timestamp
+
+
+## 3.3.2-beta
+
+### Features
 - [#3252](https://github.com/poanetwork/blockscout/pull/3252) - Gas price at the main page
 - [#3239](https://github.com/poanetwork/blockscout/pull/3239) - Hide address page tabs if no items
-- [#3236](https://github.com/poanetwork/blockscout/pull/3236) - Easy verification of contracts which hash verified twins (the same bytecode)
+- [#3236](https://github.com/poanetwork/blockscout/pull/3236) - Easy verification of contracts which has verified twins (the same bytecode)
 - [#3227](https://github.com/poanetwork/blockscout/pull/3227) - Distinguishing of bridged tokens
 - [#3224](https://github.com/poanetwork/blockscout/pull/3224) - Top tokens page
 
@@ -20,7 +43,8 @@
 
 ### Chore
 - [#3250](https://github.com/poanetwork/blockscout/pull/3250) - Eliminate occurrences of obsolete env variable ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT
-- [#3240](https://github.com/poanetwork/blockscout/pull/3240), [#3251](https://github.com/poanetwork/blockscout/pull/3251) - various CSS imroving 
+- [#3240](https://github.com/poanetwork/blockscout/pull/3240), [#3251](https://github.com/poanetwork/blockscout/pull/3251) - various CSS imroving
+- [f3a720](https://github.com/poanetwork/blockscout/commit/2dd909c10a79b0bf4b7541a486be114152f3a720) - Make wobserver optional
 
 
 ## 3.3.1-beta
