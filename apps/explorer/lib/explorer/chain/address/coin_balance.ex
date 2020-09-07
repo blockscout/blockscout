@@ -53,16 +53,23 @@ defmodule Explorer.Chain.Address.CoinBalance do
   Builds an `Ecto.Query` to fetch the coin balance of the given address in the given block.
   """
   def fetch_coin_balance(address_hash, block_number) do
+    coin_balance_subquery =
+      from(
+        cb in CoinBalance,
+        where: cb.address_hash == ^address_hash,
+        where: cb.block_number <= ^block_number,
+        inner_join: b in Block,
+        on: cb.block_number == b.number,
+        limit: ^2,
+        order_by: [desc: :block_number],
+        select_merge: %{block_timestamp: b.timestamp}
+      )
+
     from(
-      cb in CoinBalance,
-      where: cb.address_hash == ^address_hash,
-      where: cb.block_number <= ^block_number,
-      inner_join: b in Block,
-      on: cb.block_number == b.number,
+      cb in subquery(coin_balance_subquery),
       limit: ^1,
       order_by: [desc: :block_number],
-      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
-      select_merge: %{block_timestamp: b.timestamp}
+      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")}
     )
   end
 
