@@ -61,6 +61,11 @@
                   <a data-test="original_token_contract_address" href=<%= foreign_bridged_token_explorer_link(@token) %> target="_blank">View Original Token <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span></a>
                 <% end %>
               </div>
+              <div  style="margin-top: 15px; font-size: 12px;">
+                <%= if Map.has_key?(@token, :custom_metadata) do %>
+                  <%= @token.custom_metadata %>
+                <% end %>
+              </div>
             <% end %>
           </h1>
 
