@@ -4,7 +4,7 @@
 - [#3282](https://github.com/poanetwork/blockscout/pull/3282) - Import bridged tokens custom metadata
 - [#3281](https://github.com/poanetwork/blockscout/pull/3281) - Write contract: display currently connected address
 - [#3279](https://github.com/poanetwork/blockscout/pull/3279) - NFT instance: link to the app
-- [#3278](https://github.com/poanetwork/blockscout/pull/3278) - Support of fetching of NFT tokens metadata from IPFS
+- [#3278](https://github.com/poanetwork/blockscout/pull/3278) - Support of fetching of NFT metadata from IPFS
 - [#3273](https://github.com/poanetwork/blockscout/pull/3273) - Update token metadata at burn/mint events
 - [#3268](https://github.com/poanetwork/blockscout/pull/3268) - Token total supply on-demand fetcher
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
@@ -18,7 +18,8 @@
 - [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
 
 ### Chore
-- [#3274](https://github.com/poanetwork/blockscout/pull/3274) - Replace underscore with hyphen in routes in routes
+- [#3285](https://github.com/poanetwork/blockscout/pull/3285) - Switch to RPC endpoint polling if ETHEREUM_JSONRPC_WS_URL is an empty string
+- [#3274](https://github.com/poanetwork/blockscout/pull/3274) - Replace underscore with hyphen in routes
 - [#3260](https://github.com/poanetwork/blockscout/pull/3260) - Update NPM dependencies to fix known vulnerabilities
 - [#3258](https://github.com/poanetwork/blockscout/pull/3258) - Token transfer: check that block exists before retrieving timestamp
 
