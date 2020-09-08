@@ -384,7 +384,7 @@ defmodule Explorer.GraphQL do
         gas_used: tx.gas_used,
         gas_price: tx.gas_price,
         fee_currency: tx.gas_currency_hash,
-        fee_token: fragment("coalesce(?, 'CELO')", token.symbol),
+        fee_token: fragment("coalesce(?, 'cGLD')", token.symbol),
         gateway_fee: tx.gateway_fee,
         gateway_fee_recipient: tx.gas_fee_recipient_hash,
         timestamp: b.timestamp,
@@ -499,7 +499,7 @@ defmodule Explorer.GraphQL do
           index: tt.index,
           comment: tt.comment,
           value: fragment("greatest(?, ?)", tt.value, tt.usd_value),
-          token: fragment("(case when ? < 0 then 'cUSD' else 'CELO' end)", tt.block_number),
+          token: fragment("(case when ? < 0 then 'cUSD' else 'cGLD' end)", tt.block_number),
           block_number: fragment("abs(?)", tt.block_number)
         }
       )
