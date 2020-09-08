@@ -1020,13 +1020,6 @@ msgid "Method Id"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:39
-#: lib/block_scout_web/templates/block/overview.html.eex:135
-#: lib/block_scout_web/templates/chain/_block.html.eex:15
-msgid "Validator"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/views/block_view.ex:85
 msgid "Validator Reward"
 msgstr ""
@@ -1465,11 +1458,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/index.html.eex:6
 msgid "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
-msgid "This API is provided to support some rpc methods in the exact format specified for Celo nodes, which can be found "
 msgstr ""
 
 #, elixir-format
@@ -1967,4 +1955,16 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:58
 msgid "Round number"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/_tile.html.eex:39
+#: lib/block_scout_web/templates/block/overview.html.eex:135
+#: lib/block_scout_web/templates/chain/_block.html.eex:15
+msgid "Miner"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
+msgid "This API is provided to support some rpc methods in the exact format specified for Celo nodes, which can be found "
 msgstr ""
