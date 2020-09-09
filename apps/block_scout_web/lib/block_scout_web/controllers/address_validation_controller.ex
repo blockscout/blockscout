@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.AddressValidationController do
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         current_path: current_path(conn),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
-        exchange_rate: Market.get_exchange_rate("cGLD") || Token.null()
+        exchange_rate: Market.get_exchange_rate("CELO") || Token.null()
       )
     else
       :error ->

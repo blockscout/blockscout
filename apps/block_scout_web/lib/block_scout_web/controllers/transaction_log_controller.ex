@@ -96,7 +96,7 @@ defmodule BlockScoutWeb.TransactionLogController do
         show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
         current_path: current_path(conn),
         transaction: transaction,
-        exchange_rate: Market.get_exchange_rate("cGLD") || Token.null()
+        exchange_rate: Market.get_exchange_rate("CELO") || Token.null()
       )
     else
       :error ->

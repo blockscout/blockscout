@@ -87,7 +87,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
       render(
         conn,
         "index.html",
-        exchange_rate: Market.get_exchange_rate("cGLD") || Token.null(),
+        exchange_rate: Market.get_exchange_rate("CELO") || Token.null(),
         block_height: Chain.block_height(),
         current_path: current_path(conn),
         show_token_transfers: true,

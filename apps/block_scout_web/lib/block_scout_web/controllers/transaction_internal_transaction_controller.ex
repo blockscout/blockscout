@@ -93,7 +93,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
       render(
         conn,
         "index.html",
-        exchange_rate: Market.get_exchange_rate("cGLD") || Token.null(),
+        exchange_rate: Market.get_exchange_rate("CELO") || Token.null(),
         current_path: current_path(conn),
         block_height: Chain.block_height(),
         show_token_transfers: Chain.transaction_has_token_transfers?(hash),

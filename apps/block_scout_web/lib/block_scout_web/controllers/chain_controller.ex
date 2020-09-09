@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.ChainController do
           :standard
       end
 
-    exchange_rate = Market.get_exchange_rate("cGLD") || Token.null()
+    exchange_rate = Market.get_exchange_rate("CELO") || Token.null()
 
     render(
       conn,
