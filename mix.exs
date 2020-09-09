@@ -8,7 +8,6 @@ defmodule BlockScout.Mixfile do
       aliases: aliases(Mix.env()),
       version: "2.0",
       apps_path: "apps",
-      build_embedded: Mix.env == :prod,
       deps: deps(),
       dialyzer: [
         plt_add_deps: :transitive,
