@@ -5113,7 +5113,11 @@ defmodule Explorer.Chain do
         end
 
       if implementation_address do
-        "0x" <> Base.encode16(implementation_address, case: :lower)
+        if String.starts_with?(implementation_address, "0x") do
+          implementation_address
+        else
+          "0x" <> Base.encode16(implementation_address, case: :lower)
+        end
       else
         nil
       end
