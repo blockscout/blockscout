@@ -419,14 +419,16 @@ defmodule Explorer.Staking.ContractState do
          abi
        ) do
     if start_snapshotting do
+      # eebc7a39 = keccak256(getPendingValidators())
+      # 004a8803 = keccak256(validatorsToBeFinalized())
       if global_responses.validator_set_apply_block == 0 do
         %{
-          "getPendingValidators" => {:ok, [validators_pending]},
-          "validatorsToBeFinalized" => {:ok, [validators_to_be_finalized]}
+          "eebc7a39" => {:ok, [validators_pending]},
+          "004a8803" => {:ok, [validators_to_be_finalized]}
         } =
           Reader.query_contract(contracts.validator_set, abi, %{
-            "getPendingValidators" => [],
-            "validatorsToBeFinalized" => []
+            "eebc7a39" => [],
+            "004a8803" => []
           })
 
         validators_pending = Enum.uniq(validators_pending ++ validators_to_be_finalized)
