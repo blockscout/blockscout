@@ -24,10 +24,10 @@ defmodule BlockScoutWeb.Chain do
     Block,
     InternalTransaction,
     Log,
+    StakingPool,
     Token,
     TokenTransfer,
     Transaction,
-    StakingPool,
     Wei
   }
 

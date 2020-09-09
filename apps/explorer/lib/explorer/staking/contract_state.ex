@@ -75,18 +75,28 @@ defmodule Explorer.Staking.ContractState do
     block_reward_abi = abi("BlockRewardAuRa")
 
     staking_contract_address = Application.get_env(:explorer, __MODULE__)[:staking_contract_address]
+    # 2d21d217 = keccak256(erc677TokenContract())
+    erc_677_token_contract_signature = "2d21d217"
+
+    # dfc8bf4e = keccak256(validatorSetContract())
+    validator_set_contract_signature = "dfc8bf4e"
 
     %{
-      "erc677TokenContract" => {:ok, [token_contract_address]},
-      "validatorSetContract" => {:ok, [validator_set_contract_address]}
+      "2d21d217" => {:ok, [token_contract_address]},
+      "dfc8bf4e" => {:ok, [validator_set_contract_address]}
     } =
       Reader.query_contract(staking_contract_address, staking_abi, %{
-        "erc677TokenContract" => [],
-        "validatorSetContract" => []
+        "#{erc_677_token_contract_signature}" => [],
+        "#{validator_set_contract_signature}" => []
       })
 
-    %{"blockRewardContract" => {:ok, [block_reward_contract_address]}} =
-      Reader.query_contract(validator_set_contract_address, validator_set_abi, %{"blockRewardContract" => []})
+    # 56b54bae = keccak256(blockRewardContract())
+    block_reward_contract_signature = "56b54bae"
+
+    %{"56b54bae" => {:ok, [block_reward_contract_address]}} =
+      Reader.query_contract(validator_set_contract_address, validator_set_abi, %{
+        "#{block_reward_contract_signature}" => []
+      })
 
     state = %__MODULE__{
       seen_block: 0,
@@ -409,14 +419,16 @@ defmodule Explorer.Staking.ContractState do
          abi
        ) do
     if start_snapshotting do
+      # eebc7a39 = keccak256(getPendingValidators())
+      # 004a8803 = keccak256(validatorsToBeFinalized())
       if global_responses.validator_set_apply_block == 0 do
         %{
-          "getPendingValidators" => {:ok, [validators_pending]},
-          "validatorsToBeFinalized" => {:ok, [validators_to_be_finalized]}
+          "eebc7a39" => {:ok, [validators_pending]},
+          "004a8803" => {:ok, [validators_to_be_finalized]}
         } =
           Reader.query_contract(contracts.validator_set, abi, %{
-            "getPendingValidators" => [],
-            "validatorsToBeFinalized" => []
+            "eebc7a39" => [],
+            "004a8803" => []
           })
 
         validators_pending = Enum.uniq(validators_pending ++ validators_to_be_finalized)
