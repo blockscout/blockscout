@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.LayoutView do
       test_net?: true
     },
     %{
-      title: "xDai Chain",
+      title: "xDai",
       url: "https://blockscout.com/poa/xdai"
     },
     %{
