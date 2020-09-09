@@ -5,7 +5,7 @@ export function setupValidation ($form, validators, $submit) {
 
   updateSubmit($submit, errors)
 
-  for (let [key, callback] of Object.entries(validators)) {
+  for (const [key, callback] of Object.entries(validators)) {
     const $input = $form.find('[' + key + ']')
     errors[key] = null
 
