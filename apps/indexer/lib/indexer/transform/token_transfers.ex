@@ -6,7 +6,11 @@ defmodule Indexer.Transform.TokenTransfers do
   require Logger
 
   alias ABI.TypeDecoder
-  alias Explorer.Chain.TokenTransfer
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Token, TokenTransfer}
+  alias Explorer.Token.MetadataRetriever
+
+  @burn_address "0x0000000000000000000000000000000000000000"
 
   @doc """
   Returns a list of token transfers given a list of logs.
@@ -54,6 +58,8 @@ defmodule Indexer.Transform.TokenTransfers do
       type: "ERC-20"
     }
 
+    update_token(log.address_hash, token_transfer)
+
     {token, token_transfer}
   end
 
@@ -78,6 +84,8 @@ defmodule Indexer.Transform.TokenTransfers do
       contract_address_hash: log.address_hash,
       type: "ERC-721"
     }
+
+    update_token(log.address_hash, token_transfer)
 
     {token, token_transfer}
   end
@@ -104,7 +112,31 @@ defmodule Indexer.Transform.TokenTransfers do
       type: "ERC-721"
     }
 
+    update_token(log.address_hash, token_transfer)
+
     {token, token_transfer}
+  end
+
+  defp update_token(address_hash_string, token_transfer) do
+    if token_transfer.to_address_hash == @burn_address || token_transfer.from_address_hash == @burn_address do
+      {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
+
+      token_params =
+        address_hash_string
+        |> MetadataRetriever.get_functions_of()
+
+      token = Repo.get_by(Token, contract_address_hash: address_hash)
+
+      if token do
+        token_to_update =
+          token
+          |> Repo.preload([:contract_address])
+
+        {:ok, _} = Chain.update_token(%{token_to_update | updated_at: DateTime.utc_now()}, token_params)
+      end
+    end
+
+    :ok
   end
 
   defp truncate_address_hash(nil), do: "0x0000000000000000000000000000000000000000"

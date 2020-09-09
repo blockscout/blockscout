@@ -203,6 +203,11 @@ config :explorer, Explorer.Chain.Cache.Accounts,
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 
 config :explorer, Explorer.Chain.Cache.PendingTransactions,
+  enabled:
+    if(System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu",
+      do: false,
+      else: true
+    ),
   ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
   global_ttl: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(5))
 

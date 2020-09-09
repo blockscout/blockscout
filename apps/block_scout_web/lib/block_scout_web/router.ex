@@ -4,7 +4,10 @@ defmodule BlockScoutWeb.Router do
   alias BlockScoutWeb.Plug.GraphQL
   alias BlockScoutWeb.{ApiRouter, WebRouter}
 
-  forward("/wobserver", Wobserver.Web.Router)
+  if Application.get_env(:block_scout_web, ApiRouter)[:wobserver_enabled] do
+    forward("/wobserver", Wobserver.Web.Router)
+  end
+
   forward("/admin", BlockScoutWeb.AdminRouter)
 
   pipeline :browser do
@@ -42,16 +45,16 @@ defmodule BlockScoutWeb.Router do
   else
     scope "/", BlockScoutWeb do
       pipe_through(:browser)
-      get("/api_docs", PageNotFoundController, :index)
-      get("/eth_rpc_api_docs", PageNotFoundController, :index)
+      get("/api-docs", PageNotFoundController, :index)
+      get("/eth-rpc-api-docs", PageNotFoundController, :index)
     end
   end
 
   scope "/", BlockScoutWeb do
     pipe_through(:browser)
 
-    get("/api_docs", APIDocsController, :index)
-    get("/eth_rpc_api_docs", APIDocsController, :eth_rpc)
+    get("/api-docs", APIDocsController, :index)
+    get("/eth-rpc-api-docs", APIDocsController, :eth_rpc)
   end
 
   url_params = Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url]

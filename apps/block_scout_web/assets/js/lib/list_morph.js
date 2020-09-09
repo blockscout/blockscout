@@ -45,10 +45,17 @@ export default function (container, newElements, { key, horizontal } = {}) {
   currentList = differenceBy(currentList, removals, 'id')
 
   // update kept items
-  currentList = currentList.map(({ el }, i) => ({
-    id: overlap[i] && overlap[i].id,
-    el: el.outerHTML === overlap[i] && overlap[i].el && overlap[i].el.outerHTML ? el : morph(el, overlap[i].el)
-  }))
+  currentList = currentList.map(({ el }, i) => {
+    if (overlap[i]) {
+      return ({
+        id: overlap[i].id,
+        el: el.outerHTML === overlap[i].el && overlap[i].el.outerHTML ? el : morph(el, overlap[i].el)
+      })
+    } else {
+      return null
+    }
+  })
+    .filter(el => el !== null)
 
   // add new items
   const finalList = newList.map(({ id, el }) => get(find(currentList, { id }), 'el', el)).reverse()

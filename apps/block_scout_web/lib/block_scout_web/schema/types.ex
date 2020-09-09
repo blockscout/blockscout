@@ -41,6 +41,9 @@ defmodule BlockScoutWeb.Schema.Types do
 
         %{last: last}, child_complexity ->
           last * child_complexity
+
+        %{}, _child_complexity ->
+          0
       end)
     end
   end
@@ -153,6 +156,9 @@ defmodule BlockScoutWeb.Schema.Types do
 
         %{last: last}, child_complexity ->
           last * child_complexity
+
+        %{}, _child_complexity ->
+          0
       end)
     end
   end

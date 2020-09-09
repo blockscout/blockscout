@@ -84,7 +84,6 @@ defmodule EthereumJSONRPC.ReceiptsTest do
                  "logs" => [
                    %{
                      "address" => address_hash,
-                     "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
                      "blockNumber" => integer_to_quantity(block_number),
                      "blockHash" => nil,
                      "data" => data,

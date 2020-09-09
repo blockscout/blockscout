@@ -8,16 +8,20 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
+  alias Explorer.SmartContract.Writer
 
   @dialyzer :no_match
 
   @tabs [
-    "coin_balances",
+    "coin-balances",
     "contracts",
-    "decompiled_contracts",
-    "internal_transactions",
-    "token_transfers",
-    "read_contract",
+    "decompiled-contracts",
+    "internal-transactions",
+    "token-transfers",
+    "read-contract",
+    "read-proxy",
+    "write-contract",
+    "write-proxy",
     "tokens",
     "transactions",
     "validations"
@@ -218,6 +222,8 @@ defmodule BlockScoutWeb.AddressView do
     |> Base.encode64()
   end
 
+  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
+
   def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
 
   def smart_contract_verified?(%Address{smart_contract: nil}), do: false
@@ -227,6 +233,21 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
+
+  def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
+    Chain.is_proxy_contract?(address.smart_contract.abi)
+  end
+
+  def smart_contract_is_proxy?(%Address{smart_contract: nil}), do: false
+
+  def smart_contract_with_write_functions?(%Address{smart_contract: %SmartContract{}} = address) do
+    Enum.any?(
+      address.smart_contract.abi,
+      &Writer.write_function?(&1)
+    )
+  end
+
+  def smart_contract_with_write_functions?(%Address{smart_contract: nil}), do: false
 
   def has_decompiled_code?(address) do
     address.has_decompiled_code? ||
@@ -324,13 +345,16 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   defp tab_name(["tokens"]), do: gettext("Tokens")
+  defp tab_name(["internal-transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["transactions"]), do: gettext("Transactions")
-  defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
-  defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
+  defp tab_name(["token-transfers"]), do: gettext("Token Transfers")
   defp tab_name(["contracts"]), do: gettext("Code")
-  defp tab_name(["decompiled_contracts"]), do: gettext("Decompiled Code")
-  defp tab_name(["read_contract"]), do: gettext("Read Contract")
-  defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
+  defp tab_name(["decompiled-contracts"]), do: gettext("Decompiled Code")
+  defp tab_name(["read-contract"]), do: gettext("Read Contract")
+  defp tab_name(["read-proxy"]), do: gettext("Read Proxy")
+  defp tab_name(["write-contract"]), do: gettext("Write Contract")
+  defp tab_name(["write-proxy"]), do: gettext("Write Proxy")
+  defp tab_name(["coin-balances"]), do: gettext("Coin Balance History")
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
   defp tab_name(["logs"]), do: gettext("Logs")
 

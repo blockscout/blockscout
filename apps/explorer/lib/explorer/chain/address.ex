@@ -71,6 +71,17 @@ defmodule Explorer.Chain.Address do
              :names
            ]}
 
+  @derive {Jason.Encoder,
+           except: [
+             :__meta__,
+             :smart_contract,
+             :decompiled_smart_contracts,
+             :token,
+             :contracts_creation_internal_transaction,
+             :contracts_creation_transaction,
+             :names
+           ]}
+
   @primary_key {:hash, Hash.Address, autogenerate: false}
   schema "addresses" do
     field(:fetched_coin_balance, Wei)

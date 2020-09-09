@@ -37,6 +37,27 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @account_pendingtxlist_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "hash" => "0x98beb27135aa0a25650557005ad962919d6a278c4b3dde7f4f6a3a1e65aa746c",
+        "nonce" => "0",
+        "from" => "0x3fb1cd2cd96c6d5c0b5eb3322d807b34482481d4",
+        "to" => "0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae",
+        "value" => "0",
+        "gas" => "122261",
+        "gasPrice" => "50000000000",
+        "input" =>
+          "0xf00d4b5d000000000000000000000000036c8cecce8d8bbf0831d840d7f29c9e3ddefa63000000000000000000000000c5a96db085dda36ffbe390f455315d30d6d3dc52",
+        "contractAddress" => "",
+        "cumulativeGasUsed" => "122207",
+        "gasUsed" => "122207"
+      }
+    ]
+  }
+
   @account_txlist_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -251,7 +272,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @token_gettoken_example_value_error %{
     "status" => "0",
-    "message" => "Invalid contractaddress format",
+    "message" => "Invalid contract address format",
     "result" => nil
   }
 
@@ -1195,6 +1216,56 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @account_pendingtxlist_action %{
+    name: "pendingtxlist",
+    description: "Get pending transactions by address.",
+    required_params: [
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying Accounts."
+      }
+    ],
+    optional_params: [
+      %{
+        key: "page",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction."
+      },
+      %{
+        key: "offset",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_pendingtxlist_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @transaction
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_txlist_example_value_error)
+      }
+    ]
+  }
+
   @account_txlist_action %{
     name: "txlist",
     description:
@@ -2029,9 +2100,9 @@ defmodule BlockScoutWeb.Etherscan do
     <div class='tab-pane fade show active'>
     <div class="tile tile-muted p-1">
     <div class="m-2">
-    curl -d '{"addressHash":"0xd6984e092b51337032cf0300c7291e4839be37e1","compilerVersion":"v0.5.4+commit.9549d8ff",
-    "contractSourceCode":"pragma solidity ^0.5.4;\n","name":"Test","optimization":false}'
-    -H "Content-Type: application/json" -X POST  "https://blockscout.com/eth/kovan/api?module=contract&action=verify"
+    curl -d '{"addressHash":"0xc63BB6555C90846afACaC08A0F0Aa5caFCB382a1","compilerVersion":"v0.5.4+commit.9549d8ff",
+    "contractSourceCode":"pragma solidity ^0.5.4; \ncontract Test {\n}","name":"Test","optimization":false}'
+    -H "Content-Type: application/json" -X POST  "https://blockscout.com/poa/sokol/api?module=contract&action=verify"
     </pre>
     </div>
     </div>
@@ -2351,6 +2422,7 @@ defmodule BlockScoutWeb.Etherscan do
       @account_eth_get_balance_action,
       @account_balance_action,
       @account_balancemulti_action,
+      @account_pendingtxlist_action,
       @account_txlist_action,
       @account_txlistinternal_action,
       @account_tokentx_action,

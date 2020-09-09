@@ -429,7 +429,7 @@ defmodule Indexer.Block.Fetcher do
     {:ok, beneficiary_address} = Chain.string_to_address_hash(beneficiary.address_hash)
 
     "0x" <> minted_hex = beneficiary.reward
-    {minted, _} = Integer.parse(minted_hex, 16)
+    {minted, _} = if minted_hex == "", do: {0, ""}, else: Integer.parse(minted_hex, 16)
 
     if block_miner_payout_address && beneficiary_address.bytes == block_miner_payout_address.bytes do
       gas_payment = gas_payment(beneficiary, transactions_by_block_number)

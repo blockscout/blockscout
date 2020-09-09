@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
   alias BlockScoutWeb.Tokens.TransferView
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
+  alias Indexer.Fetcher.TokenTotalSupplyOnDemand
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
@@ -63,7 +64,8 @@ defmodule BlockScoutWeb.Tokens.TransferController do
         "index.html",
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
         current_path: current_path(conn),
-        token: Market.add_price(token)
+        token: Market.add_price(token),
+        token_total_supply_status: TokenTotalSupplyOnDemand.trigger_fetch(address_hash)
       )
     else
       :error ->

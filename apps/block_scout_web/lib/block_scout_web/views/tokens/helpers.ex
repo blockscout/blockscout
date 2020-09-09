@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   Helper functions for interacting with `t:BlockScoutWeb.Chain.Token` attributes.
   """
 
-  alias BlockScoutWeb.{CurrencyHelpers}
+  alias BlockScoutWeb.CurrencyHelpers
   alias Explorer.Chain.{Address, Token}
 
   @doc """
