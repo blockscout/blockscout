@@ -13,7 +13,7 @@
             </div>
             <div class="card-text">
               <p>
-                <%= gettext("For any existing contracts in the database, insert all ABI entries into the contract_methods table.") %>
+                <%= gettext("For any existing contracts in the database, insert all ABI entries into the contract_methods table. Use this in case you have verified smart contracts before early March 2019 and you want other contracts with the same functions to show those ABI's as candidate matches.") %>
               </p>
             </div>
 
