@@ -19,8 +19,7 @@ defmodule Explorer.Chain do
       union: 2,
       union_all: 2,
       where: 2,
-      where: 3,
-      select: 3
+      where: 3
     ]
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, fetch_block_internal_transactions: 2]

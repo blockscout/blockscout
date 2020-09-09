@@ -24,7 +24,6 @@ defmodule BlockScoutWeb.Chain do
     Block,
     InternalTransaction,
     Log,
-    Token,
     StakingPool,
     Token,
     TokenTransfer,
