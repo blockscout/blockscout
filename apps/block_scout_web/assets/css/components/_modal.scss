@@ -11,6 +11,11 @@
   padding: #{$modal-vertical-padding} #{$modal-horizontal-padding};
 }
 
+.modal-header-group {
+  display: inline-flex;
+  margin: 0 auto;
+}
+
 .close.close-modal{
   left: auto;
   opacity: 1;
@@ -39,6 +44,10 @@
   text-align: left;
   white-space: normal;
   word-break: break-word;
+
+  .centered {
+    margin: 0 auto;
+  }
 }
 
 .modal-content {
@@ -91,5 +100,11 @@
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
     }
+  }
+}
+
+@media (min-width: 576px) {
+  .modal-dialog {
+    max-width: 530px !important;
   }
 }

@@ -61,7 +61,7 @@
       <main class="pt-5">
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
         <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
-        <%= render @view_module, @view_template, assigns %>
+        <%= @inner_content %>
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
@@ -75,6 +75,8 @@
       @view_module != Elixir.BlockScoutWeb.BlockView &&
       @view_module != Elixir.BlockScoutWeb.BlockTransactionView &&
       @view_module != Elixir.BlockScoutWeb.AddressView &&
+      @view_module != Elixir.BlockScoutWeb.BridgedTokensView &&
+      @view_module != Elixir.BlockScoutWeb.TokensView &&
       @view_module != Elixir.BlockScoutWeb.TransactionView &&
       @view_module != Elixir.BlockScoutWeb.PendingTransactionView &&
       @view_module != Elixir.BlockScoutWeb.TransactionInternalTransactionView &&
@@ -91,6 +93,9 @@
       @view_module != Elixir.BlockScoutWeb.AddressContractView &&
       @view_module != Elixir.BlockScoutWeb.AddressContractVerificationView &&
       @view_module != Elixir.BlockScoutWeb.AddressReadContractView &&
+      @view_module != Elixir.BlockScoutWeb.AddressReadProxyView &&
+      @view_module != Elixir.BlockScoutWeb.AddressWriteContractView &&
+      @view_module != Elixir.BlockScoutWeb.AddressWriteProxyView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.TransferView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.ReadContractView &&
       @view_module != Elixir.BlockScoutWeb.Tokens.HolderView &&

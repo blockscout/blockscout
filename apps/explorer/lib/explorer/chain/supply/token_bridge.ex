@@ -18,7 +18,8 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     "inputs" => [],
     "constant" => true
   }
-  @total_burned_coins_params %{"totalBurntCoins" => []}
+  # 0e8162ba=keccak256(totalBurntCoins())
+  @total_burned_coins_params %{"0e8162ba" => []}
 
   @block_reward_contract_abi %{
     "type" => "function",
@@ -30,7 +31,8 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     "constant" => true
   }
 
-  @block_reward_contract_params %{"blockRewardContract" => []}
+  # 56b54bae=keccak256(blockRewardContract())
+  @block_reward_contract_params %{"56b54bae" => []}
 
   @total_minted_coins_abi %{
     "type" => "function",
@@ -42,7 +44,8 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     "constant" => true
   }
 
-  @total_minted_coins_params %{"mintedTotally" => []}
+  # 553a5c85=keccak256(mintedTotallymintedTotally())
+  @total_minted_coins_params %{"553a5c85" => []}
 
   @ets_table :token_bridge_contract_coin_cache
   # 30 minutes
@@ -80,16 +83,10 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   defp call_contract(address, abi, params) do
     abi = [abi]
 
-    method_name =
+    method_id =
       params
       |> Enum.map(fn {key, _value} -> key end)
       |> List.first()
-
-    value =
-      case Reader.query_contract(address, abi, params) do
-        %{^method_name => {:ok, [result]}} -> result
-        _ -> 0
-      end
 
     type =
       abi
@@ -97,6 +94,19 @@ defmodule Explorer.Chain.Supply.TokenBridge do
       |> Map.get("outputs", [])
       |> Enum.at(0)
       |> Map.get("type", "")
+
+    value =
+      case Reader.query_contract(address, abi, params) do
+        %{^method_id => {:ok, [result]}} ->
+          result
+
+        _ ->
+          case type do
+            "address" -> "0x0000000000000000000000000000000000000000"
+            "uint256" -> 0
+            _ -> 0
+          end
+      end
 
     case type do
       "address" ->

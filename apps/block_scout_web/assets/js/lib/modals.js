@@ -56,6 +56,11 @@ export function openModal ($modal, unclosable) {
   }
 }
 
+export function openModalWithMessage ($modal, unclosable, message) {
+  $modal.find('.modal-message').text(message)
+  openModal($modal, unclosable)
+}
+
 export function lockModal ($modal, $submitButton = null, spinnerText = '') {
   $modal.find('.close-modal').attr('disabled', true)
 
@@ -114,7 +119,7 @@ export function openWarningModal (title, text) {
 export function openSuccessModal (title, text) {
   const $modal = $('#successStatusModal')
   $modal.find('.modal-status-title').text(title)
-  $modal.find('.modal-status-text').text(text)
+  $modal.find('.modal-status-text').html(text)
   openModal($modal)
 }
 
