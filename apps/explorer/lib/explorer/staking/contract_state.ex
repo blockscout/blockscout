@@ -75,18 +75,26 @@ defmodule Explorer.Staking.ContractState do
     block_reward_abi = abi("BlockRewardAuRa")
 
     staking_contract_address = Application.get_env(:explorer, __MODULE__)[:staking_contract_address]
+    # 2d21d217 = keccak256(erc677TokenContract())
+    erc_677_token_contract_signature = "2d21d217"
+
+    # dfc8bf4e = keccak256(validatorSetContract())
+    validator_set_contract_signature = "dfc8bf4e"
 
     %{
-      "erc677TokenContract" => {:ok, [token_contract_address]},
-      "validatorSetContract" => {:ok, [validator_set_contract_address]}
+      "2d21d217" => {:ok, [token_contract_address]},
+      "dfc8bf4e" => {:ok, [validator_set_contract_address]}
     } =
       Reader.query_contract(staking_contract_address, staking_abi, %{
-        "erc677TokenContract" => [],
-        "validatorSetContract" => []
+        "#{erc_677_token_contract_signature}" => [],
+        "#{validator_set_contract_signature}" => []
       })
 
-    %{"blockRewardContract" => {:ok, [block_reward_contract_address]}} =
-      Reader.query_contract(validator_set_contract_address, validator_set_abi, %{"blockRewardContract" => []})
+    # 56b54bae = keccak256(blockRewardContract())
+    block_reward_contract_signature = "56b54bae"
+
+    %{"56b54bae" => {:ok, [block_reward_contract_address]}} =
+      Reader.query_contract(validator_set_contract_address, validator_set_abi, %{"#{block_reward_contract_signature}" => []})
 
     state = %__MODULE__{
       seen_block: 0,
