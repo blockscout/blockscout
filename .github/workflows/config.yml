@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - staking
   pull_request:
     branches:
       - master
