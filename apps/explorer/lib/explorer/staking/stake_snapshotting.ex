@@ -196,7 +196,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
   defp snapshotted_pool_amounts_requests(pool_staking_address, block_number) do
     [
-      snapshotted_total_staked_amount: {:staking, "stakeAmountTotal", [pool_staking_address], block_number},
+      # 5267e1d6 = keccak256(stakeAmountTotal(address))
+      snapshotted_total_staked_amount: {:staking, "5267e1d6", [pool_staking_address], block_number},
       snapshotted_self_staked_amount:
         snapshotted_staker_amount_request(pool_staking_address, pool_staking_address, block_number)[
           :snapshotted_stake_amount
@@ -206,7 +207,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
   defp snapshotted_staker_amount_request(pool_staking_address, staker_address, block_number) do
     [
-      snapshotted_stake_amount: {:staking, "stakeAmount", [pool_staking_address, staker_address], block_number}
+      # a697ecff = keccak256(stakeAmount(address,address))
+      snapshotted_stake_amount: {:staking, "a697ecff", [pool_staking_address, staker_address], block_number}
     ]
   end
 

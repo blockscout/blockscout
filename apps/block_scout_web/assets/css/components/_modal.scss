@@ -102,3 +102,9 @@
     }
   }
 }
+
+@media (min-width: 576px) {
+  .modal-dialog {
+    max-width: 530px !important;
+  }
+}
