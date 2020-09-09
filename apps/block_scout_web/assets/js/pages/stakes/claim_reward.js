@@ -183,9 +183,9 @@ function onPoolsFound ($modal, $modalBody, channel, store) {
       epochs,
       pool_staking_address: poolStakingAddress
     }).receive('error', (error) => {
-      recalcFinished({error: error.reason})
+      recalcFinished({ error: error.reason })
     }).receive('timeout', () => {
-      recalcFinished({error: 'Connection timeout'})
+      recalcFinished({ error: 'Connection timeout' })
     })
     function recalcStarted () {
       status = 'recalculation'
@@ -299,7 +299,7 @@ function showButton (type, $modalBody, calculations) {
 }
 
 function expandEpochsToArray (epochs) {
-  let filtered = epochs.toString().replace(/[-|,]$/g, '').trim()
+  const filtered = epochs.toString().replace(/[-|,]$/g, '').trim()
   if (filtered === '') return []
   let ranges = filtered.split(',')
   ranges = ranges.map((v) => {
@@ -310,7 +310,7 @@ function expandEpochsToArray (epochs) {
       v.sort((a, b) => a - b)
       const min = v[0]
       const max = v[1]
-      let expanded = []
+      const expanded = []
       for (let i = min; i <= max; i++) {
         expanded.push(i)
       }

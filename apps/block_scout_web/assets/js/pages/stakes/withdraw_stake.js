@@ -23,7 +23,7 @@ function setupWithdrawStakeModal (address, store, msg) {
   setupValidation(
     $form,
     {
-      'amount': value => isAmountValid(value, store, msg)
+      amount: value => isAmountValid(value, store, msg)
     },
     $modal.find('form button')
   )
@@ -31,7 +31,7 @@ function setupWithdrawStakeModal (address, store, msg) {
   setupValidation(
     $form,
     {
-      'amount': value => isWithdrawAmountValid(value, store, msg)
+      amount: value => isWithdrawAmountValid(value, store, msg)
     },
     $modal.find('form button.withdraw')
   )
@@ -39,7 +39,7 @@ function setupWithdrawStakeModal (address, store, msg) {
   setupValidation(
     $form,
     {
-      'amount': value => isOrderWithdrawAmountValid(value, store, msg)
+      amount: value => isOrderWithdrawAmountValid(value, store, msg)
     },
     $modal.find('form button.order-withdraw')
   )

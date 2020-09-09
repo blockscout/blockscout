@@ -294,11 +294,11 @@ export function refreshPage (store) {
 }
 
 function loadPage (store, path) {
-  store.dispatch({type: 'START_REQUEST', path})
-  $.getJSON(path, merge({type: 'JSON'}, store.getState().additionalParams))
-    .done(response => store.dispatch(Object.assign({type: 'ITEMS_FETCHED'}, humps.camelizeKeys(response))))
-    .fail(() => store.dispatch({type: 'REQUEST_ERROR'}))
-    .always(() => store.dispatch({type: 'FINISH_REQUEST'}))
+  store.dispatch({ type: 'START_REQUEST', path })
+  $.getJSON(path, merge({ type: 'JSON' }, store.getState().additionalParams))
+    .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
+    .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
+    .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
 }
 
 function firstPageLoad (store) {
