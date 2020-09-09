@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.AddressController do
           )
       end
 
-    exchange_rate = Market.get_exchange_rate("CELO") || Token.null()
+    exchange_rate = Market.get_exchange_rate("cGLD") || Token.null()
     total_supply = Chain.total_supply()
 
     items =

@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
       render(
         conn,
         "index.html",
-        exchange_rate: Market.get_exchange_rate("CELO") || Token.null(),
+        exchange_rate: Market.get_exchange_rate("cGLD") || Token.null(),
         internal_transactions: internal_transactions,
         block_height: Chain.block_height(),
         show_token_transfers: Chain.transaction_has_token_transfers?(hash),

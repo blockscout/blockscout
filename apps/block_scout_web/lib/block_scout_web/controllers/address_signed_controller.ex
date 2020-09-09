@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.AddressSignedController do
         current_path: current_path(conn),
         transaction_count: transaction_count,
         validation_count: validation_count,
-        exchange_rate: Market.get_exchange_rate("CELO") || Token.null(),
+        exchange_rate: Market.get_exchange_rate("cGLD") || Token.null(),
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
       )
     else
