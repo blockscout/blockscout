@@ -169,12 +169,12 @@
                   ) %>
               <%= link(
                     gettext("Active Pools"),
-                    class: "dropdown-item #{tab_status("active_pools", @conn.request_path)}",
+                    class: "dropdown-item #{tab_status("active-pools", @conn.request_path)}",
                     to: active_pools_path(@conn, :index)
                   ) %>
               <%= link(
                     gettext("Inactive Pools"),
-                    class: "dropdown-item #{tab_status("inactive_pools", @conn.request_path)}",
+                    class: "dropdown-item #{tab_status("inactive-pools", @conn.request_path)}",
                     to: inactive_pools_path(@conn, :index)
                   ) %>
             </div>
