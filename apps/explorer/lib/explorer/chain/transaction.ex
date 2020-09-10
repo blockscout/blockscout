@@ -182,7 +182,8 @@ defmodule Explorer.Chain.Transaction do
              :s,
              :v,
              :status,
-             :value
+             :value,
+             :revert_reason
            ]}
 
   @derive {Jason.Encoder,
@@ -201,7 +202,8 @@ defmodule Explorer.Chain.Transaction do
              :s,
              :v,
              :status,
-             :value
+             :value,
+             :revert_reason
            ]}
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
