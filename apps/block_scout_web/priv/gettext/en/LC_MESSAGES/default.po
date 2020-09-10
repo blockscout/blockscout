@@ -1158,7 +1158,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:51
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:101
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:116
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:121
 msgid "QR Code"
 msgstr ""
 
@@ -1428,7 +1428,7 @@ msgid "Topics"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:86
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:91
 msgid "Total Supply"
 msgstr ""
 
@@ -1585,7 +1585,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:16
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:20
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:66
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:71
 msgid "View Contract"
 msgstr ""
 
@@ -1699,8 +1699,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:142
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:102
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:110
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:117
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:125
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:122
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:130
 msgid "Close"
 msgstr ""
 
@@ -1717,7 +1717,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:76
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:74
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:79
 msgid "Decimals"
 msgstr ""
 
