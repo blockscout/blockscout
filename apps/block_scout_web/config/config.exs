@@ -38,6 +38,7 @@ config :block_scout_web,
   moon_token_addresses: System.get_env("MOON_TOKEN_ADDRESSES"),
   bricks_token_addresses: System.get_env("BRICKS_TOKEN_ADDRESSES"),
   multi_token_bridge_mediator: System.get_env("MULTI_TOKEN_BRIDGE_MEDIATOR"),
+  foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC"),
   gas_price: System.get_env("GAS_PRICE", nil)
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true

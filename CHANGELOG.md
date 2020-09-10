@@ -1,6 +1,8 @@
 ## Current
 
 ### Features
+- [#3282](https://github.com/poanetwork/blockscout/pull/3282) - Import bridged tokens custom metadata
+- [#3281](https://github.com/poanetwork/blockscout/pull/3281) - Write contract: display currently connected address
 - [#3279](https://github.com/poanetwork/blockscout/pull/3279) - NFT instance: link to the app
 - [#3278](https://github.com/poanetwork/blockscout/pull/3278) - Support of fetching of NFT tokens metadata from IPFS
 - [#3273](https://github.com/poanetwork/blockscout/pull/3273) - Update token metadata at burn/mint events
@@ -8,6 +10,7 @@
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
+- [#3284](https://github.com/poanetwork/blockscout/pull/3284) - Fix fetch_coin_balance query: coin balance delta
 - [#3276](https://github.com/poanetwork/blockscout/pull/3276) - Bridged tokens status/metadata fetcher refactoring
 - [#3264](https://github.com/poanetwork/blockscout/pull/3264) - Fix encoding of address output if function input exists
 - [#3259](https://github.com/poanetwork/blockscout/pull/3259), [#3269](https://github.com/poanetwork/blockscout/pull/3269) - Contract interaction: array input type parsing fix
