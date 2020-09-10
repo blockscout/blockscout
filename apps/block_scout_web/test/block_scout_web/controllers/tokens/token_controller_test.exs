@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.Tokens.TokenControllerTest do
     end
   end
 
-  describe "GET token_counters/2" do
+  describe "GET token-counters/2" do
     test "returns token counters", %{conn: conn} do
       contract_address = insert(:address)
 
@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.Tokens.TokenControllerTest do
         token_id: token_id
       )
 
-      conn = get(conn, "/token_counters", %{"id" => Address.checksum(contract_address.hash)})
+      conn = get(conn, "/token-counters", %{"id" => Address.checksum(contract_address.hash)})
 
       assert conn.status == 200
       {:ok, response} = Jason.decode(conn.resp_body)

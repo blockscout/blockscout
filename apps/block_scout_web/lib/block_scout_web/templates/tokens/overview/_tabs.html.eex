@@ -1,13 +1,13 @@
 <div class="card-tabs js-card-tabs">
   <%= link(
         gettext("Token Transfers"),
-        class: "card-tab #{tab_status("token_transfers", @conn.request_path)}",
+        class: "card-tab #{tab_status("token-transfers", @conn.request_path)}",
         to: token_path(@conn, :show, @token.contract_address_hash)
       )
     %>
   <%= link(
         gettext("Token Holders"),
-        class: "card-tab #{tab_status("token_holders", @conn.request_path)}",
+        class: "card-tab #{tab_status("token-holders", @conn.request_path)}",
         "data-test": "token_holders_tab",
         to: token_holder_path(@conn, :index, Address.checksum(@token.contract_address_hash))
       )
@@ -24,7 +24,7 @@
     <%= link(
         gettext("Read Contract"),
         to: token_read_contract_path(@conn, :index, Address.checksum(@token.contract_address_hash)),
-        class: "card-tab #{tab_status("read_contract", @conn.request_path)}")
+        class: "card-tab #{tab_status("read-contract", @conn.request_path)}")
       %>
   <% end %>
 </div>

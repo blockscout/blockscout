@@ -5,7 +5,7 @@ defmodule Indexer.Supervisor do
 
   use Supervisor
 
-  alias Indexer.{Block, PendingOpsCleaner, SetBridgedStatusForTokens}
+  alias Indexer.{Block, PendingOpsCleaner, SetBridgedMetadataForTokens}
   alias Indexer.Block.{Catchup, Realtime}
 
   alias Indexer.Fetcher.{
@@ -20,6 +20,7 @@ defmodule Indexer.Supervisor do
     Token,
     TokenBalance,
     TokenInstance,
+    TokenTotalSupplyOnDemand,
     TokenUpdater,
     UncleBlock
   }
@@ -117,6 +118,7 @@ defmodule Indexer.Supervisor do
 
       # Out-of-band fetchers
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
 
       # Temporary workers
       {UncatalogedTokenTransfers.Supervisor, [[]]},
@@ -131,7 +133,7 @@ defmodule Indexer.Supervisor do
 
     all_fetchers =
       if multi_token_bridge_mediator && multi_token_bridge_mediator !== "" do
-        [{SetBridgedStatusForTokens, [[], []]} | basic_fetchers]
+        [{SetBridgedMetadataForTokens, [[], []]} | basic_fetchers]
       else
         basic_fetchers
       end
