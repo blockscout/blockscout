@@ -9,9 +9,17 @@ export const walletEnabled = () => {
     } else if (window.ethereum.isUnlocked === false && window.ethereum.isNiftyWallet) { // Nifty Wallet
       return Promise.resolve(false)
     } else {
-      window.ethereum.enable()
-      window.web3 = new Web3(window.web3.currentProvider)
-      return Promise.resolve(true)
+      if (window.ethereum.request) {
+        return window.ethereum.request({ method: 'eth_requestAccounts' })
+          .then((_res) => {
+            window.web3 = new Web3(window.web3.currentProvider)
+            return Promise.resolve(true)
+          })
+      } else {
+        window.ethereum.enable()
+        window.web3 = new Web3(window.web3.currentProvider)
+        return Promise.resolve(true)
+      }
     }
   } else if (window.web3) {
     window.web3 = new Web3(window.web3.currentProvider)
@@ -23,7 +31,11 @@ export const walletEnabled = () => {
 
 export const connectToWallet = () => {
   if (window.ethereum) {
-    window.ethereum.enable()
+    if (window.ethereum.request) {
+      window.ethereum.request({ method: 'eth_requestAccounts' })
+    } else {
+      window.ethereum.enable()
+    }
   }
 }
 
@@ -35,20 +47,28 @@ export const getCurrentAccount = async () => {
 }
 
 export const hideConnectButton = () => {
-  if (window.ethereum) {
-    window.web3 = new Web3(window.ethereum)
-    if (window.ethereum.isNiftyWallet) {
-      return true
-    } else if (window.ethereum.isMetaMask) {
-      if (window.ethereum.selectedAddress) {
-        return true
+  return new Promise((resolve) => {
+    if (window.ethereum) {
+      window.web3 = new Web3(window.ethereum)
+      if (window.ethereum.isNiftyWallet) {
+        resolve({ shouldHide: true, account: window.ethereum.selectedAddress })
+      } else if (window.ethereum.isMetaMask) {
+        window.ethereum.sendAsync({ method: 'eth_accounts' }, function (error, resp) {
+          if (error) {
+            resolve({ shouldHide: false })
+          }
+
+          if (resp) {
+            const { result: accounts } = resp
+            accounts.length > 0 ? resolve({ shouldHide: true, account: accounts[0] }) : resolve({ shouldHide: false })
+          }
+        })
       } else {
-        return false
+        console.log(window.ethereum.selectedAddress)
+        resolve({ shouldHide: true, account: window.ethereum.selectedAddress })
       }
     } else {
-      return true
+      resolve({ shouldHide: false })
     }
-  } else {
-    return false
-  }
+  })
 }
