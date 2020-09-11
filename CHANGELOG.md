@@ -10,6 +10,7 @@
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
+- [#3291](https://github.com/poanetwork/blockscout/pull/3291) - Support unlimited number of external rewards in block
 - [#3290](https://github.com/poanetwork/blockscout/pull/3290) - Eliminate protocol Jason.Encoder not implemented for... error
 - [#3284](https://github.com/poanetwork/blockscout/pull/3284) - Fix fetch_coin_balance query: coin balance delta
 - [#3276](https://github.com/poanetwork/blockscout/pull/3276) - Bridged tokens status/metadata fetcher refactoring
