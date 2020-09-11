@@ -22,6 +22,11 @@ defmodule Explorer.Chain.Wei do
 
   alias Explorer.Chain.Wei
 
+  @derive {Jason.Encoder,
+           except: [
+             :__meta__
+           ]}
+
   defstruct ~w(value)a
 
   use Ecto.Type
