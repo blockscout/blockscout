@@ -33,35 +33,81 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
 - [List of hosted mainnets, testnets, and additional chains using BlockScout](https://docs.blockscout.com/for-projects/supported-projects)
 - [Hosted instance versions](https://docs.blockscout.com/about/use-cases/hosted-blockscout)
 
-
 ## Getting Started
 
-### Requirements
+1. Install requirements
 
-For a complete list of requirements, see the [blockscout docs](https://docs.blockscout.com/for-developers/information-and-settings/requirements).
- > Note that we use older versions of Elixir and Erlang (see `.tool-versions`).  For help installing and managing these versions using `asdf`, you can follow the instructions in this article [here](https://medium.com/juq/how-to-manage-elixir-versions-on-mac-or-linux-getting-started-with-elixir-12308e7b6451).
+    For a complete list of requirements, see the [blockscout docs](https://docs.blockscout.com/for-developers/information-and-settings/requirements).
+     > Note that we use older versions of Elixir and Erlang (see `.tool-versions`).  For help installing and managing these versions, you can follow the instructions in this article [here](https://medium.com/juq/how-to-manage-elixir-versions-on-mac-or-linux-getting-started-with-elixir-12308e7b6451).
 
-### Default Config
+2. Set up some default configuration
 
-Set up some default configuration:
+    ```shell
+    cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs
+    cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs
+    ```
 
-```shell
-cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs
-cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs
-```
+3. Add Env Variables
 
-### Install Deps and Compile
+4. Install Deps and Compile
 
-```shell
-mix local.hex --force
-mix local.rebar --force
-mix deps.get
-cd apps/explorer && npm install
-cd -
-cd apps/block_scout_web/assets && npm install
-cd -
-mix compile
-```
+    ```shell
+    mix local.hex --force
+    mix local.rebar --force
+    mix deps.get
+    cd apps/block_scout_web/assets/ && \
+      npm install && \
+      npm run deploy && \
+      cd -
+    cd apps/explorer/ && \
+      npm install && \
+      cd -
+    mix compile
+    ```
+
+5. Start blockscout in a docker container
+
+    ```shell
+    cd docker
+    make start
+    ```
+
+6. If not already running, start postgres
+
+    ```shell
+    docker run -d \
+      --name postgres \
+      -e POSTGRES_PASSWORD=mysecretpassword \
+      -p 5432:5432 \
+      postgres
+    ```
+
+    ```shell
+    docker exec -it postgres /bin/sh
+    ```
+
+7. Create and migrate database
+
+    ```shell
+    mix do ecto.create, ecto.migrate
+    ```
+
+8. Build static assets for deployment
+
+    If you have deployed previously, remove static assets from the previous build:
+    ```shell
+    mix phx.digest.clean
+    ```
+
+    ```shell
+    mix phx.digest
+    ```
+
+9. Launch blockscout and view on `localhost:4000`
+
+    ```shell
+    mix phx.server
+    ```
 
 ### Additional documentation
 
