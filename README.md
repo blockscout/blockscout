@@ -36,8 +36,36 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
 
 ## Getting Started
 
+### Requirements
+
+For a complete list of requirements, see the [blockscout docs](https://docs.blockscout.com/for-developers/information-and-settings/requirements).
+ > Note that we use older versions of Elixir and Erlang (see `.tool-versions`).  For help installing and managing these versions using `asdf`, you can follow the instructions in this article [here](https://medium.com/juq/how-to-manage-elixir-versions-on-mac-or-linux-getting-started-with-elixir-12308e7b6451).
+
+### Default Config
+
+Set up some default configuration:
+
+```shell
+cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs
+cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs
+```
+
+### Install Deps and Compile
+
+```shell
+mix local.hex --force
+mix local.rebar --force
+mix deps.get
+cd apps/explorer && npm install
+cd -
+cd apps/block_scout_web/assets && npm install
+cd -
+mix compile
+```
+
+### Additional documentation
+
 See the [project documentation](https://docs.blockscout.com/) for instructions:
-- [Requirements](https://docs.blockscout.com/for-developers/information-and-settings/requirements)
 - [Ansible deployment](https://docs.blockscout.com/for-developers/ansible-deployment)
 - [Manual deployment](https://docs.blockscout.com/for-developers/manual-deployment)
 - [ENV variables](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
