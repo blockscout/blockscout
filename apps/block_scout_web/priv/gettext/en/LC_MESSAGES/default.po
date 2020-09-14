@@ -1968,3 +1968,7 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
 msgid "This API is provided to support some rpc methods in the exact format specified for Celo nodes, which can be found "
 msgstr ""
+
+# From templates/transaction/_token_transfer.html.eex#L29
+msgid "cGLD"
+msgstr "CELO"
