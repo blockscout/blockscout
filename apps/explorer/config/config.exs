@@ -153,6 +153,14 @@ case System.get_env("SUPPLY_MODULE") do
     :ok
 end
 
+case System.get_env("MARKET_CAP_ENABLED", "false") do
+  "false" ->
+    config :explorer, market_cap_enabled: false
+
+  _ ->
+    config :explorer, market_cap_enabled: true
+end
+
 if System.get_env("SOURCE_MODULE") == "TokenBridge" do
   config :explorer, Explorer.ExchangeRates.Source, source: Explorer.ExchangeRates.Source.TokenBridge
 end
