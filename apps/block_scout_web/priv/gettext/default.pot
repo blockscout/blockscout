@@ -1969,5 +1969,7 @@ msgid "This API is provided to support some rpc methods in the exact format spec
 msgstr ""
 
 # From templates/transaction/_token_transfer.html.eex#L29
+# From templates/transaction/overview.html.eex#L245
+# From templates/transaction_token_transfer/_token_transfer.html.eex#L23
 msgid "cGLD"
 msgstr "CELO"

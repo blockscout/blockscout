@@ -121,6 +121,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     }
   end
 
+  # TODO: update token name?
   defp prepare_common_token_transfer(token_transfer) do
     %{
       "blockNumber" => to_string(token_transfer.block_number),
