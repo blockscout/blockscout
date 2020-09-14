@@ -17,13 +17,15 @@
             <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
             </span>
           </div>
-          <div class="dashboard-banner-chart-legend-item">
-            <span class="dashboard-banner-chart-legend-label">
-              <%= gettext "Market Cap" %>
-            </span>
-            <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= market_cap(@market_cap_calculation, @exchange_rate) %>">
-            </span>
-          </div>
+          <%= if @market_cap_enabled do %>
+            <div class="dashboard-banner-chart-legend-item">
+              <span class="dashboard-banner-chart-legend-label">
+                <%= gettext "Market Cap" %>
+              </span>
+              <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= market_cap(@market_cap_calculation, @exchange_rate) %>">
+              </span>
+            </div>
+          <% end %>
         </div>
       </div>
       <!-- Stats -->
