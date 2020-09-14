@@ -15,7 +15,7 @@
             class: "dropdown-item"
           ) do %>
         <div class="row">
-          <p class="mb-0 col-md-6"><%= token_name(token_balance.token) %></p>
+          <p class="mb-0 col-md-6"><%= Gettext.gettext(BlockScoutWeb.Gettext, token_name(token_balance.token)) %></p>
           <%= if token_balance.token.usd_value do %>
             <p class="mb-0 col-md-6 text-right">
               <span data-selector="token-balance-usd" data-usd-value="<%= balance_in_usd(token_balance) %>"></span>

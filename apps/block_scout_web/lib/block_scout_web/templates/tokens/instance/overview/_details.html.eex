@@ -5,7 +5,7 @@
         <div class="card-body">
           <h1 class="card-title">
             <%= if token_name?(@token) do %>
-              <%= @token.name %>
+              <%= Gettext.gettext(BlockScoutWeb.Gettext, @token.name) %>
             <% else %>
               <%= gettext("Token Details") %>
             <% end %>

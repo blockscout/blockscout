@@ -1973,3 +1973,6 @@ msgstr ""
 # From templates/transaction_token_transfer/_token_transfer.html.eex#L23
 msgid "cGLD"
 msgstr "CELO"
+
+msgid "Celo Gold"
+msgstr "Celo"

@@ -6,7 +6,7 @@
             class: "tile-title-lg",
             "data-test": "token_transfers_#{@token.contract_address_hash}"
         ) do %>
-        <%= token_name(@token) %>
+        <%= Gettext.gettext(BlockScoutWeb.Gettext, token_name(@token)) %>
       <% end %>
       <span><%= @token.type %> - <%= @token.contract_address_hash %></span>
       <%= if @token.usd_value do %>
