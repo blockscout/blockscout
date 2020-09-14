@@ -33,6 +33,7 @@ defmodule BlockScoutWeb.ChainController do
       average_block_time: AverageBlockTime.average_block_time(),
       exchange_rate: exchange_rate,
       chart_data_path: market_history_chart_path(conn, :show),
+      market_cap_enabled: Application.get_env(:explorer, :market_cap_enabled),
       market_cap_calculation: market_cap_calculation,
       transaction_estimated_count: transaction_estimated_count,
       transactions_path: recent_transactions_path(conn, :index),
