@@ -86,9 +86,9 @@
             <dd class="col-sm-9">
               <%= formatted_fee(@transaction, denomination: :ether, include_label: false) %>
               <%= if gas_currency_token_name.name == "" do %>
-                <%= gas_currency_token_name.symbol %>
+                <%= Gettext.gettext(BlockScoutWeb.Gettext, gas_currency_token_name.symbol) %>
               <% else %>
-                <%= gas_currency_token_name.name %> (<%= gas_currency_token_name.symbol %>)
+                <%= Gettext.gettext(BlockScoutWeb.Gettext, gas_currency_token_name.name) %> (<%= Gettext.gettext(BlockScoutWeb.Gettext, gas_currency_token_name.symbol) %>)
               <% end %>
             </dd>
           </dl>
@@ -242,7 +242,7 @@
                      <%= value %>
                  <% end %>
                   <%= " "%>
-                  <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
+                  <%= link(Gettext.gettext(BlockScoutWeb.Gettext, token_symbol(transfer.token)), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
               </h3>
             <% end %>
             </div>

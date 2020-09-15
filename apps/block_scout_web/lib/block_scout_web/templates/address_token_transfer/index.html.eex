@@ -8,7 +8,7 @@
 
         <%= if assigns[:token] do %>
         <h2 class="card-title">
-          <span class="text-muted"><%= gettext "Tokens" %></span> / <%= token_name(@token) %>
+          <span class="text-muted"><%= gettext "Tokens" %></span> / <%= Gettext.gettext(BlockScoutWeb.Gettext, token_name(@token)) %>
         </h2>
         <% end %>
 

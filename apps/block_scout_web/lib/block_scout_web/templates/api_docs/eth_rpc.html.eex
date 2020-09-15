@@ -4,7 +4,7 @@
       <h1 class="card-title margin-bottom-sm"><%= gettext("ETH RPC API Documentation") %></h2>
       <p class="api-text-monospace" data-endpoint-url="<%= eth_rpc_api_url() %>">[ <%= gettext "Base URL:" %> <%= eth_rpc_api_url()%> ]</p>
       <p class="card-subtitle margin-bottom-0">
-        <%= gettext "This API is provided to support some rpc methods in the exact format specified for ethereum nodes, which can be found " %>
+        <%= gettext "This API is provided to support some rpc methods in the exact format specified for Celo nodes, which can be found " %>
 
         <a href="https://github.com/ethereum/wiki/wiki/JSON-RPC"><%= gettext "here." %></a>
         <%= gettext "This is useful to allow sending requests to blockscout without having to change anything about the request." %>

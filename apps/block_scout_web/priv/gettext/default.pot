@@ -217,7 +217,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:27
 #: lib/block_scout_web/templates/layout/app.html.eex:70
-msgid "Block Mined, awaiting import..."
+msgid "Block Proposed, awaiting import..."
 msgstr ""
 
 #, elixir-format
@@ -268,7 +268,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:17
-msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks."
+msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for the Celo Network."
 msgstr ""
 
 #, elixir-format
@@ -1019,15 +1019,8 @@ msgid "Method Id"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:39
-#: lib/block_scout_web/templates/block/overview.html.eex:135
-#: lib/block_scout_web/templates/chain/_block.html.eex:15
-msgid "Miner"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/views/block_view.ex:85
-msgid "Miner Reward"
+msgid "Validator Reward"
 msgstr ""
 
 #, elixir-format
@@ -1464,11 +1457,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/index.html.eex:6
 msgid "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
-msgid "This API is provided to support some rpc methods in the exact format specified for ethereum nodes, which can be found "
 msgstr ""
 
 #, elixir-format
@@ -1967,3 +1955,25 @@ msgstr ""
 #: lib/block_scout_web/templates/block/overview.html.eex:58
 msgid "Round number"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/_tile.html.eex:39
+#: lib/block_scout_web/templates/block/overview.html.eex:135
+#: lib/block_scout_web/templates/chain/_block.html.eex:15
+msgid "Validator"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
+msgid "This API is provided to support some rpc methods in the exact format specified for Celo nodes, which can be found "
+msgstr ""
+
+# From templates/transaction/_token_transfer.html.eex#L29
+# From templates/transaction/overview.html.eex#L245
+# From templates/transaction_token_transfer/_token_transfer.html.eex#L23
+msgid "cGLD"
+msgstr "CELO"
+
+# From templates/tokens/overview/details.html.eex#L8
+msgid "Celo Gold"
+msgstr "CELO"

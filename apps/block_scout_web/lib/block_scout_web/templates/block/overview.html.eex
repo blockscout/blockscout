@@ -132,7 +132,7 @@
       <!-- Validator -->
       <div class="card card-background-1 flex-grow-1">
         <div class="card-body card-body-flex-column-space-between">
-          <h2 class="card-title balance-card-title"><%= gettext "Miner" %></h2>
+          <h2 class="card-title balance-card-title"><%= gettext "Validator" %></h2>
           <div class="text-right tooltipCustom">
             <!-- Validator's Name -->
             <span class="tooltiptextTopMiner"> <%= @block.miner %></span>

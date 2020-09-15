@@ -5,7 +5,7 @@
         <div class="card-body" token-page data-async-counters="<%= @counters_path %>">
           <h1 class="card-title">
             <%= if token_name?(@token) do %>
-              <%= @token.name %>
+              <%= Gettext.gettext(BlockScoutWeb.Gettext, @token.name) %>
             <% else %>
               <%= gettext("Token Details") %>
             <% end %>
@@ -79,7 +79,7 @@
                   <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
                 <% else %>
                   <%= format_integer_to_currency(@token.total_supply) %>
-                <% end %> <%= @token.symbol %>
+                <% end %> <%= Gettext.gettext(BlockScoutWeb.Gettext, @token.symbol) %>
               </h3>
               <%= if @token.usd_value do %>
                 <div class="text-uppercase">
