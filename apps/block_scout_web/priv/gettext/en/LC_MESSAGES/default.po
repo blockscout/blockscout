@@ -997,12 +997,10 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/app.html.eex:30
 #: lib/block_scout_web/templates/layout/app.html.eex:73
 #: lib/block_scout_web/views/address_view.ex:189
-#: lib/block_scout_web/views/address_view.ex:189
 msgid "Market Cap"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:169
 #: lib/block_scout_web/views/transaction_view.ex:169
 msgid "Max of"
 msgstr ""
@@ -1824,7 +1822,6 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:221
 #: lib/block_scout_web/templates/transaction/overview.html.eex:256
 #: lib/block_scout_web/views/transaction_view.ex:303
-#: lib/block_scout_web/views/transaction_view.ex:303
 #: lib/block_scout_web/views/wei_helpers.ex:78
 msgid "CELO"
 msgstr ""
@@ -1975,4 +1972,4 @@ msgstr "CELO"
 
 # From templates/tokens/overview/details.html.eex#L8
 msgid "Celo Gold"
-msgstr "Celo"
+msgstr "CELO"

@@ -1976,4 +1976,4 @@ msgstr "CELO"
 
 # From templates/tokens/overview/details.html.eex#L8
 msgid "Celo Gold"
-msgstr "Celo"
+msgstr "CELO"
