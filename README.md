@@ -39,6 +39,8 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
 
     For a complete list of requirements, see the [blockscout docs](https://docs.blockscout.com/for-developers/information-and-settings/requirements).
      > Note that we use older versions of Elixir and Erlang (see `.tool-versions`).  For help installing and managing these versions, you can follow the instructions in this article [here](https://medium.com/juq/how-to-manage-elixir-versions-on-mac-or-linux-getting-started-with-elixir-12308e7b6451).
+     >
+     > If it is still not recognizing Elixir, you can try adding this to your `~/.zshrc` file: `PATH=/$HOME/asdf/installs/elixir/1.9.1/.bin:$PATH`.  You can find your correct path using `asdf which elixir`.
 
 2. Set up some default configuration
 
@@ -57,7 +59,7 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
     mix deps.get
     cd apps/block_scout_web/assets/ && \
       npm install && \
-      npm run deploy && \
+      npm run build && \
       cd -
     cd apps/explorer/ && \
       npm install && \
@@ -66,6 +68,10 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
     ```
 
 5. Start blockscout in a docker container
+
+     > If you do not already have docker installed, you can get it here:  
+     >   - [Mac](https://hub.docker.com/editions/community/docker-ce-desktop-mac)
+     >   - [Windows](https://hub.docker.com/editions/community/docker-ce-desktop-windows)
 
     ```shell
     cd docker
@@ -117,6 +123,9 @@ See the [project documentation](https://docs.blockscout.com/) for instructions:
 - [ENV variables](https://docs.blockscout.com/for-developers/information-and-settings/env-variables)
 - [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
 
+## Troubleshooting
+
+Delete the `build` and `deps` folders and reinstall.
 
 ## Acknowledgements
 
