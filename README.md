@@ -35,21 +35,56 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
 
 ## Getting Started
 
-1. Install requirements
+1. Install Erlang and Elixir
+
+    1. Install asdf
+
+       ```shell
+       brew install asdf
+       ```
+
+    2. Add it to your `.zshrc`:
+
+       ```shell
+       echo -e '\n. $(brew --prefix asdf)/asdf.sh' >> ~/.zshrc
+       ```
+
+    3. Test that it worked
+
+       ```shell
+       asdf --version
+       ```
+
+    4. Install Erlang and Elixir plugins
+
+       ```shell
+       asdf plugin-add erlang
+       asdf plugin-add elixir
+       ```
+
+    5. Install correct versions of Erlang and Elixir (see `.tool-versions`)
+
+       ```shell
+       asdf install erlang 22.0.7
+       asdf install elixir 1.9.1
+       ```
+
+    6. Restart your terminal and check that it worked
+
+       ```shell
+       elixir -v
+       ```
+
+2. Install remaining requirements
 
     For a complete list of requirements, see the [blockscout docs](https://docs.blockscout.com/for-developers/information-and-settings/requirements).
-     > Note that we use older versions of Elixir and Erlang (see `.tool-versions`).  For help installing and managing these versions, you can follow the instructions in this article [here](https://medium.com/juq/how-to-manage-elixir-versions-on-mac-or-linux-getting-started-with-elixir-12308e7b6451).
-     >
-     > If it is still not recognizing Elixir, you can try adding this to your `~/.zshrc` file: `PATH=/$HOME/asdf/installs/elixir/1.9.1/.bin:$PATH`.  You can find your correct path using `asdf which elixir`.
 
-2. Set up some default configuration
+3. Set up some default configuration
 
     ```shell
     cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs
     cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs
     ```
-
-3. Add Env Variables
 
 4. Install Deps and Compile
 
@@ -67,7 +102,7 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
     mix compile
     ```
 
-5. Start blockscout in a docker container
+5. Add env variables and start blockscout in a docker container
 
      > If you do not already have docker installed, you can get it here:  
      >   - [Mac](https://hub.docker.com/editions/community/docker-ce-desktop-mac)
@@ -75,45 +110,14 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
 
     ```shell
     cd docker
+    NETWORK=Celo ETHEREUM_JSONRPC_VARIANT=geth
+    ETHEREUM_JSONRPC_HTTP_URL=http://104.198.100.15:8545 ETHEREUM_JSONRPC_WS_URL=ws://104.198.100.15:8546 COIN=cGLD
     make start
     ```
 
-6. If not already running, start postgres
+     > Note that the values for `ETHEREUM_JSONRPC_HTTP_URL` and `ETHEREUM_JSONRPC_WS_URL` may vary and should point to a running archive node.
 
-    ```shell
-    docker run -d \
-      --name postgres \
-      -e POSTGRES_PASSWORD=mysecretpassword \
-      -p 5432:5432 \
-      postgres
-    ```
-
-    ```shell
-    docker exec -it postgres /bin/sh
-    ```
-
-7. Create and migrate database
-
-    ```shell
-    mix do ecto.create, ecto.migrate
-    ```
-
-8. Build static assets for deployment
-
-    If you have deployed previously, remove static assets from the previous build:
-    ```shell
-    mix phx.digest.clean
-    ```
-
-    ```shell
-    mix phx.digest
-    ```
-
-9. Launch blockscout and view on `localhost:4000`
-
-    ```shell
-    mix phx.server
-    ```
+    This will create the database container, run migrations and start the indexer.  You can now view blockscout on `localhost:4000`!
 
 ### Additional documentation
 
