@@ -48,7 +48,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
         external_url(nil)
       end
 
-    if String.trim(result) == "", do: external_url(nil), else: result
+    if !result || (result && String.trim(result)) == "", do: external_url(nil), else: result
   end
 
   def total_supply_usd(token) do
