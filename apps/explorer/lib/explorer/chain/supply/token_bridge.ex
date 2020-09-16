@@ -217,7 +217,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
         query =
           from(t in Token,
             where: t.contract_address_hash == ^bridged_token_hash,
-            select: t.total_supply
+            select: {t.total_supply, t.decimals}
           )
 
         bridged_token_balance =
@@ -226,10 +226,14 @@ defmodule Explorer.Chain.Supply.TokenBridge do
 
         bridged_token_balance_formatted =
           if bridged_token_balance do
-            bridged_token_balance_wei = %Explorer.Chain.Wei{value: bridged_token_balance}
+            {bridged_token_balance_with_decimals, decimals} = bridged_token_balance
 
-            bridged_token_balance_wei
-            |> Wei.to(:ether)
+            decimals_multiplier =
+              10
+              |> :math.pow(Decimal.to_integer(decimals))
+              |> Decimal.from_float()
+
+            Decimal.div(bridged_token_balance_with_decimals, decimals_multiplier)
           else
             bridged_token_balance
           end
@@ -247,7 +251,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
         if bridged_token_price do
           Decimal.add(acc, Decimal.mult(bridged_token_price, bridged_token_balance))
         else
-          Decimal.new(0)
+          acc
         end
       end)
 
