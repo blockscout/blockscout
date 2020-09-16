@@ -110,8 +110,8 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
 
     ```shell
     cd docker
-    NETWORK=Celo ETHEREUM_JSONRPC_VARIANT=geth
-    ETHEREUM_JSONRPC_HTTP_URL=http://104.198.100.15:8545 ETHEREUM_JSONRPC_WS_URL=ws://104.198.100.15:8546 COIN=cGLD
+    export NETWORK=Celo ETHEREUM_JSONRPC_VARIANT=geth
+    export ETHEREUM_JSONRPC_HTTP_URL=http://104.198.100.15:8545 ETHEREUM_JSONRPC_WS_URL=ws://104.198.100.15:8546 export COIN=cGLD
     make start
     ```
 
