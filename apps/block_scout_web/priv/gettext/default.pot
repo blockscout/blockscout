@@ -1246,13 +1246,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:241
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:272
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:222
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:253
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:235
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1940,7 +1940,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:143
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:189
 msgid "Apps"
 msgstr ""
 
@@ -1950,7 +1949,7 @@ msgid "Copy Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:239
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:220
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 
@@ -2638,4 +2637,14 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:15
 msgid "validator"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_metatags.html.eex:2
+msgid "%{subnetwork} Staking DApp - BlockScout"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_metatags.html.eex:6
+msgid "DApp for Staking %{symbol} tokens"
 msgstr ""

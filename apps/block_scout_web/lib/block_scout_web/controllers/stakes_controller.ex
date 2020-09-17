@@ -132,8 +132,11 @@ defmodule BlockScoutWeb.StakesController do
   # this is called when the page is loaded for the first time
   # or when it is reloaded by a user
   defp render_template(filter, conn, _) do
+    token = ContractState.get(:token, %Token{})
+
     render(conn, "index.html",
       top: render_top(conn),
+      token: token,
       pools_type: filter,
       current_path: current_path(conn),
       average_block_time: AverageBlockTime.average_block_time(),
