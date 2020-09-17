@@ -15,9 +15,12 @@ defmodule Explorer.Counters.Bridge do
   @current_total_supply_from_token_bridge_cache_key "current_total_supply_from_token_bridge"
   @current_market_cap_from_omni_bridge_cache_key "current_market_cap_from_omni_bridge"
 
-  def table_name do
-    @prices_table
-  end
+  @ets_opts [
+    :set,
+    :named_table,
+    :public,
+    read_concurrency: true
+  ]
 
   def price_cache_key(symbol) do
     "token_symbol_price_#{symbol}"
@@ -34,7 +37,7 @@ defmodule Explorer.Counters.Bridge do
   @update_interval_in_seconds Keyword.get(config, :update_interval_in_seconds)
 
   @doc """
-  Starts a process to periodically update the counter of the token holders.
+  Starts a process to periodically update bridges marketcaps.
   """
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -48,16 +51,21 @@ defmodule Explorer.Counters.Bridge do
     {:ok, %{consolidate?: enable_consolidation?()}, {:continue, :ok}}
   end
 
-  def create_tables do
-    opts = [
-      :set,
-      :named_table,
-      :public,
-      read_concurrency: true
-    ]
+  def create_prices_table do
+    if :ets.whereis(@prices_table) == :undefined do
+      :ets.new(@prices_table, @ets_opts)
+    end
+  end
 
-    :ets.new(table_name(), opts)
-    :ets.new(@bridges_table, opts)
+  def create_bridges_table do
+    if :ets.whereis(@bridges_table) == :undefined do
+      :ets.new(@bridges_table, @ets_opts)
+    end
+  end
+
+  def create_tables do
+    create_prices_table()
+    create_bridges_table()
   end
 
   defp schedule_next_consolidation do
@@ -65,10 +73,10 @@ defmodule Explorer.Counters.Bridge do
   end
 
   @doc """
-  Inserts new items into the `:ets` table.
+  Inserts new bridged token price into the `:ets` table.
   """
-  def insert_counter({key, info}) do
-    :ets.insert(table_name(), {key, info})
+  def insert_price({key, info}) do
+    :ets.insert(@prices_table, {key, info})
   end
 
   @impl true
@@ -96,13 +104,15 @@ defmodule Explorer.Counters.Bridge do
   Fetches the info for a specific item from the `:ets` table.
   """
   def fetch_token_price(symbol) do
-    do_fetch_token_price(:ets.lookup(table_name(), price_cache_key(symbol)))
+    create_prices_table()
+    do_fetch_token_price(:ets.lookup(@prices_table, price_cache_key(symbol)))
   end
 
   defp do_fetch_token_price([{_, result}]), do: result
   defp do_fetch_token_price([]), do: 0
 
   def fetch_token_bridge_total_supply do
+    create_bridges_table()
     do_fetch_token_bridge_total_supply(:ets.lookup(@bridges_table, @current_total_supply_from_token_bridge_cache_key))
   end
 
@@ -113,6 +123,7 @@ defmodule Explorer.Counters.Bridge do
   end
 
   def fetch_omni_bridge_market_cap do
+    create_bridges_table()
     do_fetch_omni_bridge_market_cap(:ets.lookup(@bridges_table, @current_market_cap_from_omni_bridge_cache_key))
   end
 
@@ -153,7 +164,7 @@ defmodule Explorer.Counters.Bridge do
     bridged_mainnet_tokens_list
     |> Enum.each(fn {_bridged_token_hash, bridged_token_symbol} ->
       bridged_token_price = TokenBridge.get_current_price_for_bridged_token(bridged_token_symbol)
-      insert_counter({price_cache_key(bridged_token_symbol), bridged_token_price})
+      insert_price({price_cache_key(bridged_token_symbol), bridged_token_price})
     end)
 
     update_total_supply_from_token_bridge_cache()
