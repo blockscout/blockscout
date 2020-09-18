@@ -10,6 +10,7 @@
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
+- [#3303](https://github.com/poanetwork/blockscout/pull/3303) - Address contract twins feature performance
 - [#3295](https://github.com/poanetwork/blockscout/pull/3295) - Token instance: check if external_url is not null before trimming
 - [#3291](https://github.com/poanetwork/blockscout/pull/3291) - Support unlimited number of external rewards in block
 - [#3290](https://github.com/poanetwork/blockscout/pull/3290) - Eliminate protocol Jason.Encoder not implemented for... error

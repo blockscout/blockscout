@@ -3244,7 +3244,7 @@ defmodule Explorer.Chain do
               query =
                 from(
                   address in Address,
-                  left_join: smart_contract in SmartContract,
+                  inner_join: smart_contract in SmartContract,
                   on: address.hash == smart_contract.address_hash,
                   where: fragment("md5(contract_code::text)") == ^contract_code_md5,
                   where: address.hash != ^target_address_hash,
