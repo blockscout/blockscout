@@ -20,7 +20,6 @@ defmodule Indexer.Supervisor do
     Token,
     TokenBalance,
     TokenInstance,
-    TokenTotalSupplyOnDemand,
     TokenUpdater,
     UncleBlock
   }
@@ -118,7 +117,6 @@ defmodule Indexer.Supervisor do
 
       # Out-of-band fetchers
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
 
       # Temporary workers
       {UncatalogedTokenTransfers.Supervisor, [[]]},

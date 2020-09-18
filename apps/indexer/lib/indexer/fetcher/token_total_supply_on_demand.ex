@@ -1,6 +1,7 @@
 defmodule Indexer.Fetcher.TokenTotalSupplyOnDemand do
   @moduledoc """
   Ensures that we have a reasonably up to date token supply.
+  Currently disabled because caaused a deadlock when opening not-verified contract address.
 
   """
 

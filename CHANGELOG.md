@@ -6,7 +6,6 @@
 - [#3279](https://github.com/poanetwork/blockscout/pull/3279) - NFT instance: link to the app
 - [#3278](https://github.com/poanetwork/blockscout/pull/3278) - Support of fetching of NFT metadata from IPFS
 - [#3273](https://github.com/poanetwork/blockscout/pull/3273) - Update token metadata at burn/mint events
-- [#3268](https://github.com/poanetwork/blockscout/pull/3268) - Token total supply on-demand fetcher
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
