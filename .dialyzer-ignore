@@ -26,3 +26,4 @@ lib/indexer/fetcher/token_total_supply_on_demand.ex:16
 lib/explorer/exchange_rates/source.ex:41
 lib/explorer/exchange_rates/source/coin_gecko.ex:115
 lib/explorer/exchange_rates/source/coin_gecko.ex:136
+lib/explorer/smart_contract/verifier.ex:86
