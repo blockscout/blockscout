@@ -50,10 +50,30 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       if explicit_coin_id do
         {:ok, explicit_coin_id}
       else
-        coin_id()
+        case coin_id() do
+          {:ok, id} ->
+            {:ok, id}
+
+          _ ->
+            {:ok, nil}
+        end
       end
 
-    "#{base_url()}/coins/#{id}"
+    if id, do: "#{base_url()}/coins/#{id}", else: nil
+  end
+
+  @impl Source
+  def source_url(symbol) do
+    id =
+      case coin_id(symbol) do
+        {:ok, id} ->
+          id
+
+        _ ->
+          nil
+      end
+
+    if id, do: "#{base_url()}/coins/#{id}", else: nil
   end
 
   defp base_url do
@@ -61,9 +81,15 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   def coin_id do
+    symbol = String.downcase(Explorer.coin())
+
+    coin_id(symbol)
+  end
+
+  def coin_id(symbol) do
     url = "#{base_url()}/coins/list"
 
-    symbol = String.downcase(Explorer.coin())
+    symbol_downcase = String.downcase(symbol)
 
     case HTTPoison.get(url, headers()) do
       {:ok, %Response{body: body, status_code: 200}} ->
@@ -71,7 +97,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
         symbol_data =
           Enum.find(data, fn item ->
-            item["symbol"] == symbol
+            item["symbol"] == symbol_downcase
           end)
 
         if symbol_data do
@@ -85,6 +111,9 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
       {:error, %Error{reason: reason}} ->
         {:error, reason}
+
+      {:error, :nxdomain} ->
+        {:error, "CoinGecko is not responsive"}
     end
   end
 
@@ -103,6 +132,9 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
       {:error, %Error{reason: reason}} ->
         {:error, reason}
+
+      {:error, :nxdomain} ->
+        {:error, "CoinGecko is not responsive"}
     end
   end
 
