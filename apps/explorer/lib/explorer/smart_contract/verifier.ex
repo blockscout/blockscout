@@ -33,14 +33,20 @@ defmodule Explorer.SmartContract.Verifier do
 
     all_versions_extra = all_versions ++ [evm_version]
 
-    Enum.reduce(all_versions_extra, false, fn version, acc ->
+    Enum.reduce_while(all_versions_extra, false, fn version, acc ->
       case acc do
         {:ok, _} = result ->
-          result
+          {:cont, result}
+
+        {:error, :compiler_version} ->
+          {:halt, acc}
+
+        {:error, :name} ->
+          {:halt, acc}
 
         _ ->
           cur_params = Map.put(params, "evm_version", version)
-          verify(address_hash, cur_params)
+          {:cont, verify(address_hash, cur_params)}
       end
     end)
   end
@@ -112,13 +118,13 @@ defmodule Explorer.SmartContract.Verifier do
     %{
       "metadata_hash" => _metadata_hash,
       "bytecode" => blockchain_bytecode_without_whisper,
-      "compiler_version" => compiler_version
+      "compiler_version" => compiler_version_from_input
     } = extract_bytecode_and_metadata_hash(blockchain_created_tx_input)
 
     empty_constructor_arguments = arguments_data == "" or arguments_data == nil
 
     cond do
-      generated_compiler_version != compiler_version ->
+      compiler_version_from_input != generated_compiler_version ->
         {:error, :compiler_version}
 
       generated_bytecode != blockchain_bytecode_without_whisper &&
@@ -226,7 +232,9 @@ defmodule Explorer.SmartContract.Verifier do
           @metadata_hash_prefix_0_5_family_2 <>
           <<metadata_hash::binary-size(64)>> <>
           @metadata_hash_common_suffix <>
-          "7826" <> <<compiler_version::binary-size(76)>> <> "0057" <> _constructor_arguments ->
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(76)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
         do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
 
       <<_::binary-size(2)>> <>
@@ -235,7 +243,9 @@ defmodule Explorer.SmartContract.Verifier do
           @metadata_hash_prefix_0_5_family_2 <>
           <<metadata_hash::binary-size(64)>> <>
           @metadata_hash_common_suffix <>
-          "7827" <> <<compiler_version::binary-size(78)>> <> "0057" <> _constructor_arguments ->
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(78)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
         do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
 
       <<_::binary-size(2)>> <>
@@ -244,7 +254,9 @@ defmodule Explorer.SmartContract.Verifier do
           @metadata_hash_prefix_0_5_family_2 <>
           <<metadata_hash::binary-size(64)>> <>
           @metadata_hash_common_suffix <>
-          "7828" <> <<compiler_version::binary-size(80)>> <> "0058" <> _constructor_arguments ->
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(80)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
         do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
 
       <<_::binary-size(2)>> <>
@@ -253,7 +265,9 @@ defmodule Explorer.SmartContract.Verifier do
           @metadata_hash_prefix_0_5_family_2 <>
           <<metadata_hash::binary-size(64)>> <>
           @metadata_hash_common_suffix <>
-          "7829" <> <<compiler_version::binary-size(82)>> <> "0059" <> _constructor_arguments ->
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(82)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
         do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
 
       # Solidity >= 0.6.0 https://github.com/ethereum/solidity/blob/develop/Changelog.md#060-2019-12-17
@@ -275,25 +289,33 @@ defmodule Explorer.SmartContract.Verifier do
       @metadata_hash_prefix_0_6_0 <>
           <<metadata_hash::binary-size(68)>> <>
           @metadata_hash_common_suffix <>
-          "7826" <> <<compiler_version::binary-size(76)>> <> "0057" <> _constructor_arguments ->
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(76)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
         do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
 
       @metadata_hash_prefix_0_6_0 <>
           <<metadata_hash::binary-size(68)>> <>
           @metadata_hash_common_suffix <>
-          "7827" <> <<compiler_version::binary-size(78)>> <> "0057" <> _constructor_arguments ->
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(78)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
         do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
 
       @metadata_hash_prefix_0_6_0 <>
           <<metadata_hash::binary-size(68)>> <>
           @metadata_hash_common_suffix <>
-          "7828" <> <<compiler_version::binary-size(80)>> <> "0058" <> _constructor_arguments ->
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(80)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
         do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
 
       @metadata_hash_prefix_0_6_0 <>
           <<metadata_hash::binary-size(68)>> <>
           @metadata_hash_common_suffix <>
-          "7829" <> <<compiler_version::binary-size(82)>> <> "0059" <> _constructor_arguments ->
+          "78" <>
+          <<_::binary-size(2)>> <>
+          <<compiler_version::binary-size(82)>> <> "00" <> <<_::binary-size(2)>> <> _constructor_arguments ->
         do_extract_bytecode_and_metadata_hash_output(metadata_hash, extracted, compiler_version)
 
       <<next::binary-size(2)>> <> rest ->

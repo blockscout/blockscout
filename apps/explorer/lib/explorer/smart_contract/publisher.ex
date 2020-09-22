@@ -5,6 +5,7 @@ defmodule Explorer.SmartContract.Publisher do
 
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
+  alias Explorer.SmartContract.Solidity.CompilerVersion
   alias Explorer.SmartContract.Verifier
 
   @doc """
@@ -76,10 +77,12 @@ defmodule Explorer.SmartContract.Publisher do
 
     prepared_external_libraries = prepare_external_libraies(params["external_libraries"])
 
+    compiler_version = CompilerVersion.get_strict_compiler_version(params["compiler_version"])
+
     %{
       address_hash: address_hash,
       name: params["name"],
-      compiler_version: params["compiler_version"],
+      compiler_version: compiler_version,
       evm_version: params["evm_version"],
       optimization_runs: params["optimization_runs"],
       optimization: params["optimization"],
