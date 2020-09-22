@@ -12,7 +12,7 @@ defmodule Explorer.SmartContract.SolcDownloader do
   def ensure_exists(version) do
     path = file_path(version)
 
-    if File.exists?(path) do
+    if File.exists?(path) && version !== "latest" do
       path
     else
       {:ok, compiler_versions} = CompilerVersion.fetch_versions()

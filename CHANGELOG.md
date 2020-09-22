@@ -11,6 +11,9 @@
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
+- [#3307](https://github.com/poanetwork/blockscout/pull/3307) - Replace "latest" compiler version with the actual one
+- [#3303](https://github.com/poanetwork/blockscout/pull/3303) - Address contract twins feature performance
+- [#3295](https://github.com/poanetwork/blockscout/pull/3295) - Token instance: check if external_url is not null before trimming
 - [#3291](https://github.com/poanetwork/blockscout/pull/3291) - Support unlimited number of external rewards in block
 - [#3290](https://github.com/poanetwork/blockscout/pull/3290) - Eliminate protocol Jason.Encoder not implemented for... error
 - [#3284](https://github.com/poanetwork/blockscout/pull/3284) - Fix fetch_coin_balance query: coin balance delta
@@ -21,6 +24,7 @@
 - [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
 
 ### Chore
+- [#3297](https://github.com/poanetwork/blockscout/pull/3297) - Actualize names of default chains
 - [#3285](https://github.com/poanetwork/blockscout/pull/3285) - Switch to RPC endpoint polling if ETHEREUM_JSONRPC_WS_URL is an empty string
 - [#3274](https://github.com/poanetwork/blockscout/pull/3274) - Replace underscore with hyphen in routes
 - [#3260](https://github.com/poanetwork/blockscout/pull/3260) - Update NPM dependencies to fix known vulnerabilities
