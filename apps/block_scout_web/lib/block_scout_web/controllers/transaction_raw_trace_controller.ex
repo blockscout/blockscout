@@ -1,14 +1,14 @@
 defmodule BlockScoutWeb.TransactionRawTraceController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.TransactionView
+  alias BlockScoutWeb.{AccessHelpers, TransactionView}
   alias EthereumJSONRPC
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Import
   alias Explorer.Chain.Import.Runner.InternalTransactions
   alias Explorer.ExchangeRates.Token
 
-  def index(conn, %{"transaction_id" => hash_string}) do
+  def index(conn, %{"transaction_id" => hash_string} = params) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
          {:ok, transaction} <-
            Chain.hash_to_transaction(
@@ -21,7 +21,9 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
                [to_address: :smart_contract] => :optional,
                :token_transfers => :optional
              }
-           ) do
+           ),
+         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelpers.restricted_access?(to_string(transaction.to_address_hash), params) do
       internal_transactions = Chain.all_transaction_to_internal_transactions(hash)
 
       first_trace_exists =
@@ -76,6 +78,12 @@ defmodule BlockScoutWeb.TransactionRawTraceController do
         transaction: transaction
       )
     else
+      {:restricted_access, _} ->
+        conn
+        |> put_status(404)
+        |> put_view(TransactionView)
+        |> render("not_found.html", transaction_hash: hash_string)
+
       :error ->
         conn
         |> put_status(422)
