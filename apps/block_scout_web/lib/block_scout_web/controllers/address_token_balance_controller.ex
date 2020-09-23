@@ -1,11 +1,13 @@
 defmodule BlockScoutWeb.AddressTokenBalanceController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.AccessHelpers
   alias Explorer.{Chain, Market}
 
-  def index(conn, %{"address_id" => address_hash_string}) do
+  def index(conn, %{"address_id" => address_hash_string} = params) do
     with true <- ajax?(conn),
-         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       token_balances =
         address_hash
         |> Chain.fetch_last_token_balances()

@@ -1,13 +1,15 @@
 defmodule BlockScoutWeb.AddressDecompiledContractController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.AccessHelpers
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
 
-  def index(conn, %{"address_id" => address_hash_string}) do
+  def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_decompiled_contract_address(address_hash) do
+         {:ok, address} <- Chain.find_decompiled_contract_address(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",
@@ -17,6 +19,9 @@ defmodule BlockScoutWeb.AddressDecompiledContractController do
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
       )
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         not_found(conn)
 
