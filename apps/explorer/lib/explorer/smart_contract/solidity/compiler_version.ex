@@ -60,4 +60,29 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersion do
 
     "#{solc_bin_api_url}/bin/list.json"
   end
+
+  def get_strict_compiler_version(compiler_version) do
+    if compiler_version == "latest" do
+      {:ok, compiler_versions} = fetch_versions()
+
+      if Enum.count(compiler_versions) > 1 do
+        latest_stable_version =
+          compiler_versions
+          |> Enum.drop(1)
+          |> Enum.reduce_while("", fn version, acc ->
+            if String.contains?(version, "-nightly") do
+              {:cont, acc}
+            else
+              {:halt, version}
+            end
+          end)
+
+        latest_stable_version
+      else
+        "latest"
+      end
+    else
+      compiler_version
+    end
+  end
 end

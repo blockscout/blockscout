@@ -42,7 +42,12 @@ $tooltip-background-color: $btn-line-color !default;
 
 .tooltip-market-cap {
     .tooltip-inner {
-        max-width: 350px !important;
+        @media (min-width: 576px) {
+            max-width: 250px !important;
+        }
+        @media (min-width: 768px) {
+            max-width: 350px !important;
+        }
         width: 350px !important;
     }
 }
