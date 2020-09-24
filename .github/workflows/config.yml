@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - name: "ELIXIR_VERSION.lock"
@@ -46,7 +46,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -61,7 +61,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -76,7 +76,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -103,7 +103,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -121,7 +121,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -142,7 +142,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -167,7 +167,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -211,7 +211,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -265,7 +265,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -321,7 +321,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -377,7 +377,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -433,7 +433,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
