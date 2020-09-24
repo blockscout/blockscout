@@ -6,6 +6,10 @@ defmodule BlockScoutWeb.AccessHelpers do
   alias BlockScoutWeb.WebRouter.Helpers
   alias Plug.Conn
 
+  defp get_restricted_key(%Phoenix.Socket{}) do
+    nil
+  end
+
   defp get_restricted_key(conn) do
     conn_with_params = Conn.fetch_query_params(conn)
     conn_with_params.query_params["key"]
