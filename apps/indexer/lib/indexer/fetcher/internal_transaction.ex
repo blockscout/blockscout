@@ -18,7 +18,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.TokenBalance
-  alias Indexer.Transform.Addresses
+  alias Indexer.Transform.{Addresses, TokenTransfers}
 
   @behaviour BufferedTask
 
@@ -83,8 +83,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
     final
   end
 
-  defp params(%{block_number: block_number, hash: hash, index: index}) when is_integer(block_number) do
-    %{block_number: block_number, hash_data: to_string(hash), transaction_index: index}
+  defp params(%{block_number: block_number, hash: hash, index: index, block_hash: block_hash})
+       when is_integer(block_number) do
+    %{block_number: block_number, hash_data: to_string(hash), transaction_index: index, block_hash: block_hash}
   end
 
   @impl BufferedTask
@@ -146,12 +147,18 @@ defmodule Indexer.Fetcher.InternalTransaction do
         |> Chain.get_transactions_of_block_number()
         |> Enum.map(&params(&1))
         |> case do
-          [] -> {:ok, []}
-          transactions -> EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
+          [] ->
+            {nil, {:ok, []}}
+
+          [%{block_hash: block_hash} | _] = transactions ->
+            {block_hash, EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)}
         end
         |> case do
-          {:ok, internal_transactions} -> {:ok, internal_transactions ++ acc_list}
-          error_or_ignore -> error_or_ignore
+          {block_hash, {:ok, internal_transactions}} ->
+            {:ok, Enum.map(internal_transactions, fn a -> Map.put(a, :block_hash, block_hash) end) ++ acc_list}
+
+          {_, error_or_ignore} ->
+            error_or_ignore
         end
 
       _, error_or_ignore ->
@@ -182,11 +189,19 @@ defmodule Indexer.Fetcher.InternalTransaction do
       })
 
     # Gold token special updates
-    with true <- Application.get_env(:indexer, Indexer.Block.Fetcher, [])[:enable_gold_token],
-         {:ok, gold_token} <- Util.get_address("GoldToken") do
-      set = add_gold_token_balances(gold_token, addresses_params, MapSet.new())
-      TokenBalance.async_fetch(MapSet.to_list(set))
-    end
+    token_transfers =
+      with true <- Application.get_env(:indexer, Indexer.Block.Fetcher, [])[:enable_gold_token],
+           {:ok, gold_token} <- Util.get_address("GoldToken") do
+        set = add_gold_token_balances(gold_token, addresses_params, MapSet.new())
+        TokenBalance.async_fetch(MapSet.to_list(set))
+
+        %{token_transfers: celo_token_transfers} =
+          TokenTransfers.parse_itx(internal_transactions_params_without_failed_creations, gold_token)
+
+        celo_token_transfers
+      else
+        _ -> []
+      end
 
     address_hash_to_block_number =
       Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
@@ -204,6 +219,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     imports =
       Chain.import(%{
+        token_transfers: %{params: token_transfers},
         addresses: %{params: addresses_params},
         internal_transactions: %{params: internal_transactions_and_empty_block_numbers, with: :blockless_changeset},
         timeout: :infinity

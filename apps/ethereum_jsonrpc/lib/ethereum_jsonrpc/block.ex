@@ -451,7 +451,7 @@ defmodule EthereumJSONRPC.Block do
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash randomness receiptsRoot sealFields sha3Uncles
+       when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash randomness receiptsRoot sealFields sha3Uncles epochSnarkData
                      signature stateRoot step transactionsRoot uncles bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningHeader bitcoinMergedMiningMerkleProof hashForMergedMining),
        do: entry
 

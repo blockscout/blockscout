@@ -141,6 +141,17 @@ defmodule Indexer.Block.Fetcher do
     Application.get_env(:indexer, __MODULE__, [])[key]
   end
 
+  defp read_addresses do
+    with {:ok, gold_token} <- Util.get_address("GoldToken"),
+         {:ok, stable_token} <- Util.get_address("StableToken"),
+         {:ok, oracle_address} <- Util.get_address("SortedOracles") do
+      {:ok, gold_token, stable_token, oracle_address}
+    else
+      err ->
+        {:error, err}
+    end
+  end
+
   @decorate span(tracer: Tracer)
   @spec fetch_and_import_range(t, Range.t()) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
@@ -172,30 +183,19 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: normal_token_transfers, tokens: normal_tokens} = TokenTransfers.parse(logs),
          gold_token_enabled = config(:enable_gold_token),
-         {:read_token_address, {:ok, gold_token}} <-
-           {:read_token_address,
-            if gold_token_enabled do
-              Util.get_address("GoldToken")
+         {:ok, gold_token, stable_token, oracle_address} <-
+           (if gold_token_enabled do
+              read_addresses()
             else
-              {:ok, nil}
-            end},
-         {:read_stable_token_address, {:ok, stable_token}} <-
-           {:read_stable_token_address,
-            if gold_token_enabled do
-              Util.get_address("StableToken")
+              {:ok, nil, nil, nil}
+            end),
+         %{token_transfers: celo_token_transfers} =
+           (if gold_token_enabled do
+              TokenTransfers.parse_tx(transactions_with_receipts, gold_token)
             else
-              {:ok, nil}
-            end},
-         {:read_oracle_address, {:ok, oracle_address}} <-
-           {:read_oracle_address,
-            if gold_token_enabled do
-              Util.get_address("SortedOracles")
-            else
-              {:ok, nil}
-            end},
+              %{token_transfers: []}
+            end),
          # Non gold fees should be handled by events
-         fee_tokens = [],
-         fee_token_transfers = [],
          %{
            accounts: celo_accounts,
            validators: celo_validators,
@@ -227,14 +227,13 @@ defmodule Indexer.Block.Fetcher do
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, json_rpc_named_arguments),
          tokens =
-           fee_tokens ++
-             normal_tokens ++
+           normal_tokens ++
              (if gold_token_enabled do
                 [%{contract_address_hash: gold_token, type: "ERC-20"}]
               else
                 []
               end),
-         token_transfers = fee_token_transfers ++ normal_token_transfers,
+         token_transfers = normal_token_transfers ++ celo_token_transfers,
          addresses =
            Addresses.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),

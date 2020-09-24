@@ -420,14 +420,12 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   def celo_transfer_id_fetcher(
-        %{transaction_hash: transaction_hash, log_index: log_index, tx_index: tx_index, index: index},
+        %{transaction_hash: transaction_hash, log_index: log_index},
         _
       ) do
     Jason.encode!(%{
       transaction_hash: to_string(transaction_hash),
-      log_index: log_index,
-      tx_index: tx_index,
-      index: index
+      log_index: log_index
     })
   end
 

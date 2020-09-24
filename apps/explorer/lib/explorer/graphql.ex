@@ -254,8 +254,14 @@ defmodule Explorer.GraphQL do
   end
 
   def txtransfers_query_for_address(address_hash) do
-    txtransfers_query()
-    |> where([t], t.address_hash == ^address_hash)
+    query =
+      txtransfers_query()
+      |> where([t], t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash)
+
+    from(
+      t in subquery(query),
+      order_by: [desc: t.block_number, asc: t.nonce]
+    )
   end
 
   def celo_tx_transfers_query_by_txhash(tx_hash) do
@@ -271,107 +277,16 @@ defmodule Explorer.GraphQL do
   def celo_tx_transfers_query_by_address(address_hash) do
     celo_tx_transfers_query()
     |> where([t], t.from_address_hash == ^address_hash or t.to_address_hash == ^address_hash)
-    |> order_by([t], desc: t.block_number)
+    |> order_by([t, _, tx], desc: t.block_number, asc: tx.nonce)
   end
 
   def txtransfers_query do
-    tt_query =
-      from(
-        tt in TokenTransfer,
-        join: t in CeloParams,
-        where: tt.token_contract_address_hash == t.address_value,
-        where: t.name == "goldToken" or t.name == "stableToken",
-        where: not is_nil(tt.transaction_hash),
-        select: %{
-          transaction_hash: tt.transaction_hash,
-          address_hash: tt.from_address_hash,
-          block_number: tt.block_number
-        }
-      )
-
-    tt_query2 =
-      from(
-        tt in TokenTransfer,
-        join: t in CeloParams,
-        where: tt.token_contract_address_hash == t.address_value,
-        where: t.name == "goldToken" or t.name == "stableToken",
-        where: not is_nil(tt.transaction_hash),
-        select: %{
-          transaction_hash: tt.transaction_hash,
-          address_hash: tt.to_address_hash,
-          block_number: tt.block_number
-        }
-      )
-
-    tx_query =
-      from(
-        tx in Transaction,
-        where: tx.value > ^0,
-        select: %{
-          transaction_hash: tx.hash,
-          address_hash: tx.from_address_hash,
-          block_number: tx.block_number
-        }
-      )
-
-    tx_query2 =
-      from(
-        tx in Transaction,
-        where: tx.value > ^0,
-        select: %{
-          transaction_hash: tx.hash,
-          address_hash: tx.to_address_hash,
-          block_number: tx.block_number
-        }
-      )
-
-    internal_query =
-      from(
-        tx in InternalTransaction,
-        where: tx.value > ^0,
-        where: tx.call_type != fragment("'delegatecall'"),
-        where: not is_nil(tx.transaction_hash),
-        where: tx.index != 0,
-        select: %{
-          transaction_hash: tx.transaction_hash,
-          address_hash: tx.from_address_hash,
-          block_number: tx.block_number
-        }
-      )
-
-    internal_query2 =
-      from(
-        tx in InternalTransaction,
-        where: tx.value > ^0,
-        where: tx.call_type != fragment("'delegatecall'"),
-        where: not is_nil(tx.transaction_hash),
-        where: tx.index != 0,
-        select: %{
-          transaction_hash: tx.transaction_hash,
-          address_hash: tx.to_address_hash,
-          block_number: tx.block_number
-        }
-      )
-
-    query =
-      tt_query
-      |> union_all(^tx_query)
-      |> union_all(^internal_query)
-      |> union_all(^tt_query2)
-      |> union_all(^tx_query2)
-      |> union_all(^internal_query2)
-
-    result =
-      from(tt in subquery(query),
-        select: %{
-          transaction_hash: tt.transaction_hash,
-          address_hash: tt.address_hash,
-          block_number: tt.block_number
-        },
-        distinct: [tt.block_number, tt.transaction_hash, tt.address_hash]
-      )
-
-    from(tt in subquery(result),
+    from(
+      tt in TokenTransfer,
+      join: t in CeloParams,
+      where: tt.token_contract_address_hash == t.address_value,
+      where: t.name == "goldToken" or t.name == "stableToken",
+      where: not is_nil(tt.transaction_hash),
       inner_join: tx in Transaction,
       on: tx.hash == tt.transaction_hash,
       inner_join: b in Block,
@@ -380,7 +295,8 @@ defmodule Explorer.GraphQL do
       on: tx.gas_currency_hash == token.contract_address_hash,
       select: %{
         transaction_hash: tt.transaction_hash,
-        address_hash: tt.address_hash,
+        to_address_hash: tt.to_address_hash,
+        from_address_hash: tt.from_address_hash,
         gas_used: tx.gas_used,
         gas_price: tx.gas_price,
         fee_currency: tx.gas_currency_hash,
@@ -389,123 +305,41 @@ defmodule Explorer.GraphQL do
         gateway_fee_recipient: tx.gas_fee_recipient_hash,
         timestamp: b.timestamp,
         input: tx.input,
+        nonce: tx.nonce,
         block_number: tt.block_number
       },
-      order_by: [desc: tt.block_number]
+      distinct: [desc: tt.block_number, desc: tt.transaction_hash],
+      # to get the ordering from distinct clause, something is needed here too
+      order_by: [desc: tt.from_address_hash, desc: tt.to_address_hash]
     )
   end
 
   def celo_tx_transfers_query do
-    tt_query =
-      from(
-        tt in TokenTransfer,
-        join: t in CeloParams,
-        where: tt.token_contract_address_hash == t.address_value,
-        where: t.name == "goldToken",
-        select: %{
-          transaction_hash: tt.transaction_hash,
-          from_address_hash: tt.from_address_hash,
-          to_address_hash: tt.to_address_hash,
-          log_index: tt.log_index,
-          tx_index: -1,
-          index: -1,
-          value: tt.amount,
-          usd_value: 0,
-          comment: tt.comment,
-          block_number: tt.block_number
-        }
-      )
-
-    usd_query =
-      from(
-        tt in TokenTransfer,
-        join: t in CeloParams,
-        where: tt.token_contract_address_hash == t.address_value,
-        where: t.name == "stableToken",
-        select: %{
-          transaction_hash: tt.transaction_hash,
-          from_address_hash: tt.from_address_hash,
-          to_address_hash: tt.to_address_hash,
-          log_index: tt.log_index,
-          tx_index: 0 - tt.log_index,
-          index: 0 - tt.log_index,
-          value: 0 - tt.amount,
-          usd_value: tt.amount,
-          comment: tt.comment,
-          block_number: 0 - tt.block_number
-        }
-      )
-
-    tx_query =
-      from(
-        tx in Transaction,
-        where: tx.value > ^0,
-        select: %{
-          transaction_hash: tx.hash,
-          from_address_hash: tx.from_address_hash,
-          to_address_hash: tx.to_address_hash,
-          log_index: 0 - tx.index,
-          tx_index: tx.index,
-          index: 0 - tx.index,
-          value: tx.value,
-          usd_value: 0 - tx.value,
-          comment: fragment("encode(?::bytea, 'hex')", tx.hash),
-          block_number: tx.block_number
-        }
-      )
-
-    internal_query =
-      from(
-        tx in InternalTransaction,
-        where: tx.value > ^0,
-        where: tx.call_type != fragment("'delegatecall'"),
-        where: tx.index != 0,
-        select: %{
-          transaction_hash: tx.transaction_hash,
-          from_address_hash: tx.from_address_hash,
-          to_address_hash: tx.to_address_hash,
-          log_index: 0 - tx.index,
-          tx_index: 0 - tx.index,
-          index: tx.index,
-          value: tx.value,
-          usd_value: 0 - tx.value,
-          comment: fragment("encode(?::bytea, 'hex')", tx.transaction_hash),
-          block_number: tx.block_number
-        }
-      )
-
-    query =
-      tt_query
-      |> union_all(^usd_query)
-      |> union_all(^tx_query)
-      |> union_all(^internal_query)
-
-    result =
-      from(tt in subquery(query),
-        inner_join: tx in Transaction,
-        on: tx.hash == tt.transaction_hash,
-        inner_join: b in Block,
-        on: tx.block_hash == b.hash,
-        select: %{
-          gas_used: tx.gas_used,
-          gas_price: tx.gas_price,
-          timestamp: b.timestamp,
-          input: tx.input,
-          transaction_hash: tt.transaction_hash,
-          from_address_hash: tt.from_address_hash,
-          to_address_hash: tt.to_address_hash,
-          log_index: tt.log_index,
-          tx_index: tt.tx_index,
-          index: tt.index,
-          comment: tt.comment,
-          value: fragment("greatest(?, ?)", tt.value, tt.usd_value),
-          token: fragment("(case when ? < 0 then 'cUSD' else 'cGLD' end)", tt.block_number),
-          block_number: fragment("abs(?)", tt.block_number)
-        }
-      )
-
-    from(tt in subquery(result),
-      order_by: [desc: tt.block_number, desc: tt.value, desc: tt.tx_index, desc: tt.log_index, desc: tt.index]
+    from(
+      tt in TokenTransfer,
+      join: t in CeloParams,
+      where: tt.token_contract_address_hash == t.address_value,
+      where: t.name == "goldToken" or t.name == "stableToken",
+      inner_join: tx in Transaction,
+      on: tx.hash == tt.transaction_hash,
+      inner_join: b in Block,
+      on: tt.block_number == b.number,
+      select: %{
+        gas_used: tx.gas_used,
+        gas_price: tx.gas_price,
+        timestamp: b.timestamp,
+        input: tx.input,
+        transaction_hash: tt.transaction_hash,
+        from_address_hash: tt.from_address_hash,
+        to_address_hash: tt.to_address_hash,
+        log_index: tt.log_index,
+        value: tt.amount,
+        comment: tt.comment,
+        token: fragment("(case when ? = 'stableToken' then 'cUSD' else 'cGLD' end)", t.name),
+        nonce: tx.nonce,
+        block_number: tt.block_number
+      },
+      order_by: [desc: tt.block_number, desc: tt.amount, desc: tt.log_index]
     )
   end
 

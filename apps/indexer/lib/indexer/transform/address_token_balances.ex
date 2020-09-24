@@ -12,6 +12,7 @@ defmodule Indexer.Transform.AddressTokenBalances do
   defp reducer({:token_transfers_params, token_transfers_params}, initial) when is_list(token_transfers_params) do
     token_transfers_params
     |> ignore_burn_address_transfers_for_token_erc_721
+    |> Enum.filter(fn %{to_address_hash: hash} -> hash != nil end)
     |> Enum.reduce(initial, fn %{
                                  block_number: block_number,
                                  from_address_hash: from_address_hash,
