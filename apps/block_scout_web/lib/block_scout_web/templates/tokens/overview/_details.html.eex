@@ -74,7 +74,7 @@
           <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
             <span class="mr-4 mb-3 mb-md-0">
               <%= link to:
-                  address_path(@conn, :show, Address.checksum(@token.contract_address_hash)),
+                  AccessHelpers.get_path(@conn, :address_path, :show, Address.checksum(@token.contract_address_hash)),
                   "data-test": "token_contract_address"
               do %>
                 <%=  gettext "View Contract" %>
