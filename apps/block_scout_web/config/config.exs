@@ -21,6 +21,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network_icon: System.get_env("NETWORK_ICON"),
   logo: System.get_env("LOGO"),
   logo_footer: System.get_env("LOGO_FOOTER"),
+  logo_text: System.get_env("LOGO_TEXT"),
   has_emission_funds: false
 
 config :block_scout_web,
