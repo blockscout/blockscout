@@ -12,35 +12,68 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
   @impl Source
   def format_data(%{"market_data" => _} = json_data) do
-    {:ok, price} = get_btc_price()
-    btc_price = to_decimal(price)
-
     market_data = json_data["market_data"]
-    {:ok, last_updated, 0} = DateTime.from_iso8601(market_data["last_updated"])
 
-    current_price = to_decimal(market_data["current_price"]["usd"])
+    last_updated = get_last_updated(market_data)
+    current_price = get_current_price(market_data)
 
     id = json_data["id"]
-    btc_value = if id != "btc", do: Decimal.div(current_price, btc_price), else: 1
+    btc_value = get_btc_value(id, market_data)
+
+    circulating_supply_data = market_data && market_data["circulating_supply"]
+    total_supply_data = market_data && market_data["total_supply"]
+    market_cap_data_usd = market_data && market_data["market_cap"] && market_data["market_cap"]["usd"]
+    total_volume_data_usd = market_data && market_data["total_volume"] && market_data["total_volume"]["usd"]
 
     [
       %Token{
-        available_supply: to_decimal(market_data["circulating_supply"]),
-        total_supply: to_decimal(market_data["total_supply"]) || to_decimal(market_data["circulating_supply"]),
+        available_supply: to_decimal(circulating_supply_data),
+        total_supply: to_decimal(total_supply_data) || to_decimal(circulating_supply_data),
         btc_value: btc_value,
-        id: json_data["id"],
+        id: id,
         last_updated: last_updated,
-        market_cap_usd: to_decimal(market_data["market_cap"]["usd"]),
+        market_cap_usd: to_decimal(market_cap_data_usd),
         name: json_data["name"],
         symbol: String.upcase(json_data["symbol"]),
         usd_value: current_price,
-        volume_24h_usd: to_decimal(market_data["total_volume"]["usd"])
+        volume_24h_usd: to_decimal(total_volume_data_usd)
       }
     ]
   end
 
   @impl Source
   def format_data(_), do: []
+
+  defp get_last_updated(market_data) do
+    last_updated_data = market_data && market_data["last_updated"]
+
+    if last_updated_data do
+      {:ok, last_updated, 0} = DateTime.from_iso8601(last_updated_data)
+      last_updated
+    else
+      nil
+    end
+  end
+
+  defp get_current_price(market_data) do
+    if market_data["current_price"] do
+      to_decimal(market_data["current_price"]["usd"])
+    else
+      1
+    end
+  end
+
+  defp get_btc_value(id, market_data) do
+    {:ok, price} = get_btc_price()
+    btc_price = to_decimal(price)
+    current_price = get_current_price(market_data)
+
+    if id != "btc" && current_price && btc_price do
+      Decimal.div(current_price, btc_price)
+    else
+      1
+    end
+  end
 
   @impl Source
   def source_url do
