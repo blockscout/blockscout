@@ -134,6 +134,7 @@ defmodule Explorer.Counters.Bridge do
   end
 
   defp update_total_supply_from_token_bridge_cache do
+    create_bridges_table()
     current_total_supply_from_token_bridge = TokenBridge.get_current_total_supply_from_token_bridge()
 
     :ets.insert(
@@ -145,6 +146,7 @@ defmodule Explorer.Counters.Bridge do
   end
 
   defp update_total_omni_bridge_market_cap_cache do
+    create_bridges_table()
     current_total_supply_from_omni_bridge = TokenBridge.get_current_market_cap_from_omni_bridge()
 
     :ets.insert(
