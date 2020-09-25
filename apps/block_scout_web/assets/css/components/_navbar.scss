@@ -245,6 +245,17 @@ $navbar-logo-width: auto !default;
   width: $navbar-logo-width;
 }
 
+.logo-text {
+  color: #333;
+  font-size: 0.7rem;
+  margin-left: 5px;
+  line-height: 28px;
+
+  &.footer {
+    color: #fff;
+  }
+}
+
 @include media-breakpoint-up(md) {
   .navbar-expand-lg .navbar-nav .nav-link {
     padding-left: $header-link-horizontal-padding;
