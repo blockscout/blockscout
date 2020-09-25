@@ -42,6 +42,10 @@ defmodule BlockScoutWeb.LayoutView do
       "/images/blockscout_logo.svg"
   end
 
+  def logo_text do
+    Keyword.get(application_config(), :logo_text) || nil
+  end
+
   def subnetwork_title do
     Keyword.get(application_config(), :subnetwork) || "POA Sokol"
   end
