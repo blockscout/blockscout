@@ -9,7 +9,6 @@ $footer-background-color: $primary;
 $footer-title-color: #fff;
 $footer-text-color: #96bde8;
 $footer-item-disc-color: $secondary;
-.footer-logo { filter: brightness(0) invert(1); }
 
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
@@ -47,7 +46,7 @@ $tile-type-block-color: $secondary;
 $tile-type-progress-bar-color: $secondary;
 a.tile-title { color: $secondary !important; }
 .card-body {  
-	a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link):not([data-test=token_link]) {
+	a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link):not([data-test=token_link]):not(#dropdown-tokens) {
 		color: $secondary;
 
 		&:hover {
