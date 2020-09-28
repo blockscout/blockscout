@@ -9,6 +9,7 @@ $footer-background-color: $primary;
 $footer-title-color: #fff;
 $footer-text-color: #96bde8;
 $footer-item-disc-color: $secondary;
+.footer-logo { filter: brightness(0) invert(1); }
 
 // dashboard
 $dashboard-line-color-price: $tertiary; // price left border
@@ -78,30 +79,3 @@ $api-text-monospace-color: #20446e;
 $dark-primary: #15bba6;
 $dark-secondary: #93d7ff;
 $dark-primary-alternate: #15bba6;
-
-.dark-theme-applied {
-	.navbar-logo {
-		content: url('/images/xdai_logo_dark.png') !important;
-	}
-	.footer-logo {
-		content: url('/images/xdai_logo_dark.png') !important;
-	}
-}
-
-.navbar-brand .navbar-logo {
-	transform: translateZ(0);
-	-webkit-transform: translateZ(0);
-}
-.footer-logo {
-	transform: translateZ(0);
-	-webkit-transform: translateZ(0);
-}
-
-.dark-theme-applied {
-	.navbar-brand .navbar-logo {
-		filter: brightness(1) invert(0) !important;
-	}
-	.footer-logo {
-		filter: brightness(1) invert(0) !important;
-	}
-}
