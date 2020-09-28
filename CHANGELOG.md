@@ -12,6 +12,7 @@
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
+- [#3319](https://github.com/poanetwork/blockscout/pull/3319) - Eliminate horizontal scroll
 - [#3314](https://github.com/poanetwork/blockscout/pull/3314) - Handle nil values from response of CoinGecko price API
 - [#3313](https://github.com/poanetwork/blockscout/pull/3313) - Fix xDai styles: invisible tokens on address
 - [#3312](https://github.com/poanetwork/blockscout/pull/3312) - Replace symbol for some tokens to be able to find price in CoinGecko for OmniBridge balance
