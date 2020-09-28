@@ -28,7 +28,7 @@
 - [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
 
 ### Chore
-- [#3316](https://github.com/poanetwork/blockscout/pull/3316) - xDai smile logos
+- [#3316](https://github.com/poanetwork/blockscout/pull/3316), [#3317](https://github.com/poanetwork/blockscout/pull/3317) - xDai smile logo
 - [#3315](https://github.com/poanetwork/blockscout/pull/3315) - Environment variable to disable Bridge market cap updater
 - [#3308](https://github.com/poanetwork/blockscout/pull/3308) - Fixate latest stable release of Elixir, Node, Postgres
 - [#3297](https://github.com/poanetwork/blockscout/pull/3297) - Actualize names of default chains
