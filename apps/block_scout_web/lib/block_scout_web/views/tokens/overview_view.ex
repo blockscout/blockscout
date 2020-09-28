@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   alias Explorer.Chain.{Address, SmartContract, Token}
 
-  alias BlockScoutWeb.{CurrencyHelpers, LayoutView}
+  alias BlockScoutWeb.{AccessHelpers, CurrencyHelpers, LayoutView}
 
   @tabs ["token-transfers", "token-holders", "read-contract", "inventory"]
   @etherscan_token_link "https://etherscan.io/token/"

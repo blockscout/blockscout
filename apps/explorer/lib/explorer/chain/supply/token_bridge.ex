@@ -214,7 +214,14 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     bridged_mainnet_tokens_with_supply =
       bridged_mainnet_tokens_list
       |> Enum.map(fn {bridged_token_hash, bridged_token_symbol} ->
-        bridged_token_price = Bridge.fetch_token_price(bridged_token_symbol)
+        bridged_token_symbol_corrected =
+          case bridged_token_symbol do
+            "POA20" -> "POA"
+            "yDAI+yUSDC+yUSDT+yTUSD" -> "yCurve"
+            symbol -> symbol
+          end
+
+        bridged_token_price = Bridge.fetch_token_price(bridged_token_symbol_corrected)
 
         query =
           from(t in Token,

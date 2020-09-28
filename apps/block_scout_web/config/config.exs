@@ -21,6 +21,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network_icon: System.get_env("NETWORK_ICON"),
   logo: System.get_env("LOGO"),
   logo_footer: System.get_env("LOGO_FOOTER"),
+  logo_text: System.get_env("LOGO_TEXT"),
   has_emission_funds: true
 
 config :block_scout_web,
@@ -37,7 +38,9 @@ config :block_scout_web,
   external_apps: System.get_env("EXTERNAL_APPS"),
   multi_token_bridge_mediator: System.get_env("MULTI_TOKEN_BRIDGE_MEDIATOR"),
   foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC"),
-  gas_price: System.get_env("GAS_PRICE", nil)
+  gas_price: System.get_env("GAS_PRICE", nil),
+  restricted_list: System.get_env("RESTRICTED_LIST", nil),
+  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil)
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
