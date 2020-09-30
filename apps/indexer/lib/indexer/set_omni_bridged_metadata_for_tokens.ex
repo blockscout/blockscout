@@ -1,4 +1,4 @@
-defmodule Indexer.SetBridgedMetadataForTokens do
+defmodule Indexer.SetOmniBridgedMetadataForTokens do
   @moduledoc """
   Peiodically checks unprocessed tokens and sets bridged status.
   """
@@ -34,15 +34,15 @@ defmodule Indexer.SetBridgedMetadataForTokens do
 
     {:ok, token_addresses} = Chain.unprocessed_token_addresses_to_reveal_bridged_tokens()
 
-    fetch_bridged_tokens_metadata(token_addresses)
+    fetch_omni_bridged_tokens_metadata(token_addresses)
 
     Process.send_after(self(), :reveal_unprocessed_tokens, interval)
 
     {:noreply, state}
   end
 
-  defp fetch_bridged_tokens_metadata(token_addresses) do
-    :ok = Chain.fetch_bridged_tokens_metadata(token_addresses)
+  defp fetch_omni_bridged_tokens_metadata(token_addresses) do
+    :ok = Chain.fetch_omni_bridged_tokens_metadata(token_addresses)
 
     Logger.debug(fn -> "Bridged status fetched for tokens" end)
   end

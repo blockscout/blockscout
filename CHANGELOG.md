@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3320](https://github.com/poanetwork/blockscout/pull/3320) - Bridged tokens from AMB extensions support
 - [#3311](https://github.com/poanetwork/blockscout/pull/3311) - List of addresses with restricted access option
 - [#3293](https://github.com/poanetwork/blockscout/pull/3293) - Composite market cap for xDai: TokenBridge + OmniBridge
 - [#3282](https://github.com/poanetwork/blockscout/pull/3282), [#3318](https://github.com/poanetwork/blockscout/pull/3318) - Import bridged tokens custom metadata
