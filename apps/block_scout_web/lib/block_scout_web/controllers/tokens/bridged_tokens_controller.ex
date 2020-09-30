@@ -31,11 +31,12 @@ defmodule BlockScoutWeb.BridgedTokensController do
     items =
       tokens_page
       |> Enum.with_index(1)
-      |> Enum.map(fn {token, index} ->
+      |> Enum.map(fn {[token, bridged_token], index} ->
         View.render_to_string(
           BridgedTokensView,
           "_tile.html",
           token: token,
+          bridged_token: bridged_token,
           index: index
         )
       end)

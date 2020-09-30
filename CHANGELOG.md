@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3320](https://github.com/poanetwork/blockscout/pull/3320) - Bridged tokens from AMB extensions support
 - [#3311](https://github.com/poanetwork/blockscout/pull/3311) - List of addresses with restricted access option
 - [#3293](https://github.com/poanetwork/blockscout/pull/3293) - Composite market cap for xDai: TokenBridge + OmniBridge
 - [#3282](https://github.com/poanetwork/blockscout/pull/3282), [#3318](https://github.com/poanetwork/blockscout/pull/3318) - Import bridged tokens custom metadata
@@ -12,6 +13,8 @@
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
+- [#3323](https://github.com/poanetwork/blockscout/pull/3323) - Fix logs list API endpoint response
+- [#3319](https://github.com/poanetwork/blockscout/pull/3319) - Eliminate horizontal scroll
 - [#3314](https://github.com/poanetwork/blockscout/pull/3314) - Handle nil values from response of CoinGecko price API
 - [#3313](https://github.com/poanetwork/blockscout/pull/3313) - Fix xDai styles: invisible tokens on address
 - [#3312](https://github.com/poanetwork/blockscout/pull/3312) - Replace symbol for some tokens to be able to find price in CoinGecko for OmniBridge balance
@@ -28,6 +31,7 @@
 - [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
 
 ### Chore
+- [#3325](https://github.com/poanetwork/blockscout/pull/3325) - Dark theme improvements
 - [#3316](https://github.com/poanetwork/blockscout/pull/3316), [#3317](https://github.com/poanetwork/blockscout/pull/3317) - xDai smile logo
 - [#3315](https://github.com/poanetwork/blockscout/pull/3315) - Environment variable to disable Bridge market cap updater
 - [#3308](https://github.com/poanetwork/blockscout/pull/3308) - Fixate latest stable release of Elixir, Node, Postgres
