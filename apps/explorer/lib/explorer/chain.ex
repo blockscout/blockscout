@@ -3778,12 +3778,15 @@ defmodule Explorer.Chain do
       {:ok, "0x"} ->
         nil
 
-      {:ok, balancer_current_tokens_encoded} ->
+      {:ok, "0x" <> balancer_current_tokens_encoded} ->
         [balancer_current_tokens] =
-          balancer_current_tokens_encoded
-          |> String.trim_leading("0x")
-          |> Base.decode16!(case: :mixed)
-          |> TypeDecoder.decode_raw([{:array, :address}])
+          try do
+            balancer_current_tokens_encoded
+            |> Base.decode16!(case: :mixed)
+            |> TypeDecoder.decode_raw([{:array, :address}])
+          rescue
+            _ -> []
+          end
 
         bridged_token_custom_metadata =
           parse_bridged_token_custom_metadata(
@@ -3792,9 +3795,18 @@ defmodule Explorer.Chain do
             foreign_token_address_hash
           )
 
-        if is_map(bridged_token_custom_metadata),
-          do: "#{Map.get(bridged_token_custom_metadata, :tokens)} #{Map.get(bridged_token_custom_metadata, :weights)}",
-          else: nil
+        if is_map(bridged_token_custom_metadata) do
+          tokens = Map.get(bridged_token_custom_metadata, :tokens)
+          weights = Map.get(bridged_token_custom_metadata, :weights)
+
+          if tokens == "" do
+            nil
+          else
+            if weights !== "", do: "#{tokens} #{weights}", else: tokens
+          end
+        else
+          nil
+        end
 
       _ ->
         nil
@@ -3840,7 +3852,7 @@ defmodule Explorer.Chain do
          foreign_token_address_hash
        ) do
     balancer_current_tokens
-    |> Enum.reduce(%{:tokens => "", :weights => ""}, fn balancer_token_bytes, acc ->
+    |> Enum.reduce(%{:tokens => "", :weights => ""}, fn balancer_token_bytes, balancer_tokens_weights ->
       balancer_token_hash_without_0x =
         balancer_token_bytes
         |> Base.encode16(case: :lower)
@@ -3848,58 +3860,84 @@ defmodule Explorer.Chain do
       balancer_token_hash = "0x" <> balancer_token_hash_without_0x
 
       # 95d89b41 = keccak256(symbol())
-      symbol_signature = "95d89b41"
+      symbol_signature = "0x95d89b41"
 
-      {:ok, symbol_encoded} =
-        symbol_signature
-        |> Contract.eth_call_request(balancer_token_hash, 1, nil, nil)
-        |> json_rpc(eth_call_foreign_json_rpc_named_arguments)
+      case symbol_signature
+           |> Contract.eth_call_request(balancer_token_hash, 1, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
+        {:ok, "0x" <> symbol_encoded} ->
+          [symbol] =
+            symbol_encoded
+            |> Base.decode16!(case: :mixed)
+            |> TypeDecoder.decode_raw([:string])
 
-      [symbol] =
-        symbol_encoded
-        |> String.trim_leading("0x")
-        |> Base.decode16!(case: :mixed)
-        |> TypeDecoder.decode_raw([:string])
+          # f1b8a9b7 = keccak256(getNormalizedWeight(address))
+          get_normalized_weight_signature = "0xf1b8a9b7"
 
-      # f1b8a9b7 = keccak256(getNormalizedWeight(address))
-      get_normalized_weight_signature = "f1b8a9b7"
+          get_normalized_weight_arg_abi_encoded =
+            [balancer_token_bytes]
+            |> TypeEncoder.encode([:address])
+            |> Base.encode16(case: :lower)
 
-      get_normalized_weight_arg_abi_encoded =
-        [balancer_token_bytes]
-        |> TypeEncoder.encode([:address])
-        |> Base.encode16(case: :lower)
+          get_normalized_weight_abi_encoded = get_normalized_weight_signature <> get_normalized_weight_arg_abi_encoded
 
-      get_normalized_weight_abi_encoded = get_normalized_weight_signature <> get_normalized_weight_arg_abi_encoded
+          get_normalized_weight_resp =
+            get_normalized_weight_abi_encoded
+            |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
+            |> json_rpc(eth_call_foreign_json_rpc_named_arguments)
 
-      {:ok, normalized_weight_encoded} =
-        get_normalized_weight_abi_encoded
-        |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
-        |> json_rpc(eth_call_foreign_json_rpc_named_arguments)
+          parse_balancer_weights(get_normalized_weight_resp, balancer_tokens_weights, symbol)
 
-      [normalized_weight] =
-        normalized_weight_encoded
-        |> String.trim_leading("0x")
-        |> Base.decode16!(case: :mixed)
-        |> TypeDecoder.decode_raw([{:uint, 256}])
-
-      normalized_weight_to_100_perc = 100 * normalized_weight
-
-      normalized_weight_in_perc =
-        normalized_weight_to_100_perc
-        |> div(1_000_000_000_000_000_000)
-
-      current_tokens = Map.get(acc, :tokens)
-      current_weights = Map.get(acc, :weights)
-
-      tokens_value = if current_tokens == "", do: symbol, else: current_tokens <> "/" <> symbol
-
-      weights_value =
-        if current_weights == "",
-          do: "#{normalized_weight_in_perc}",
-          else: current_weights <> "/" <> "#{normalized_weight_in_perc}"
-
-      %{:tokens => tokens_value, :weights => weights_value}
+        _ ->
+          nil
+      end
     end)
+  end
+
+  defp parse_balancer_weights(get_normalized_weight_resp, balancer_tokens_weights, symbol) do
+    case get_normalized_weight_resp do
+      {:ok, "0x" <> normalized_weight_encoded} ->
+        [normalized_weight] =
+          try do
+            normalized_weight_encoded
+            |> Base.decode16!(case: :mixed)
+            |> TypeDecoder.decode_raw([{:uint, 256}])
+          rescue
+            _ ->
+              []
+          end
+
+        normalized_weight_to_100_perc = calc_normalized_weight_to_100_perc(normalized_weight)
+
+        normalized_weight_in_perc =
+          normalized_weight_to_100_perc
+          |> div(1_000_000_000_000_000_000)
+
+        current_tokens = Map.get(balancer_tokens_weights, :tokens)
+        current_weights = Map.get(balancer_tokens_weights, :weights)
+
+        tokens_value = combine_tokens_value(current_tokens, symbol)
+        weights_value = combine_weights_value(current_weights, normalized_weight_in_perc)
+
+        %{:tokens => tokens_value, :weights => weights_value}
+
+      _ ->
+        nil
+    end
+  end
+
+  defp calc_normalized_weight_to_100_perc(normalized_weight) do
+    if normalized_weight, do: 100 * normalized_weight, else: 0
+  end
+
+  defp combine_tokens_value(current_tokens, symbol) do
+    if current_tokens == "", do: symbol, else: current_tokens <> "/" <> symbol
+  end
+
+  defp combine_weights_value(current_weights, normalized_weight_in_perc) do
+    if current_weights == "",
+      do: "#{normalized_weight_in_perc}",
+      else: current_weights <> "/" <> "#{normalized_weight_in_perc}"
   end
 
   @doc """
