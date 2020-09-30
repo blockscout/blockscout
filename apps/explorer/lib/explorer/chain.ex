@@ -237,13 +237,8 @@ defmodule Explorer.Chain do
         |> union(^query_from_address_hash_wrapped)
         |> union(^query_created_contract_address_hash_wrapped)
 
-      full_wrapped_query =
-        from(
-          q in subquery(full_query),
-          select: q
-        )
-
-      full_wrapped_query
+      full_query
+      |> wrapped_union_subquery()
       |> order_by(
         [q],
         desc: q.block_number,
