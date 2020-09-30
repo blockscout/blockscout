@@ -126,7 +126,8 @@ defmodule Explorer.Etherscan.Logs do
         select_merge: %{
           block_timestamp: block.timestamp,
           block_consensus: block.consensus,
-          block_hash: block.hash
+          block_hash: block.hash,
+          block_number: block.number
         }
       )
 
