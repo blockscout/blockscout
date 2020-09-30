@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3293](https://github.com/poanetwork/blockscout/pull/3293) - Composite market cap for xDai: TokenBridge + OmniBridge
 - [#3282](https://github.com/poanetwork/blockscout/pull/3282) - Import bridged tokens custom metadata
 - [#3281](https://github.com/poanetwork/blockscout/pull/3281) - Write contract: display currently connected address
 - [#3279](https://github.com/poanetwork/blockscout/pull/3279) - NFT instance: link to the app
@@ -10,6 +11,7 @@
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
+- [#3307](https://github.com/poanetwork/blockscout/pull/3307) - Replace "latest" compiler version with the actual one
 - [#3303](https://github.com/poanetwork/blockscout/pull/3303) - Address contract twins feature performance
 - [#3295](https://github.com/poanetwork/blockscout/pull/3295) - Token instance: check if external_url is not null before trimming
 - [#3291](https://github.com/poanetwork/blockscout/pull/3291) - Support unlimited number of external rewards in block
