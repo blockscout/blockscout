@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.AddressView
+  alias BlockScoutWeb.{AccessHelpers, AddressView}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.AddressController do
   end
 
   def show(conn, %{"id" => id}) do
-    redirect(conn, to: address_transaction_path(conn, :index, id))
+    redirect(conn, to: AccessHelpers.get_path(conn, :address_transaction_path, :index, id))
   end
 
   def address_counters(conn, %{"id" => address_hash_string}) do

@@ -1,0 +1,19 @@
+.bridged-token-label {
+    display: inline-block;
+    padding: 5px;
+    background: #f5f6fa;
+    color: #a3a9b5;
+    border-radius: 5px;
+    font-size: 10px;
+    &.right {
+        float: right;
+    }
+    &.omni {
+        background: $primary;
+        color: white;
+    }
+    &.amb {
+        background: $secondary;
+        color: white;
+    }
+}

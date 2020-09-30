@@ -11,6 +11,9 @@
   <div class="container-fluid navbar-container">
     <%= link to: webapp_url(@conn), class: "navbar-brand", "data-test": "header_logo" do %>
       <img class="navbar-logo" id="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
+      <%= if logo_text() do %>
+        <span class="logo-text"> <%= logo_text() %> </span>
+      <% end %>
     <% end %>   
     <script>
       if (localStorage.getItem("current-color-mode") === "dark") {
@@ -75,7 +78,7 @@
               <%= gettext("Accounts") %>
             <% end %>
           </li>
-          <%= if Application.get_env(:block_scout_web, :multi_token_bridge_mediator) && Application.get_env(:block_scout_web, :multi_token_bridge_mediator) != "" do %>
+          <%= if Application.get_env(:block_scout_web, :omni_bridge_mediator) && Application.get_env(:block_scout_web, :omni_bridge_mediator) != "" do %>
             <li class="nav-item dropdown">
               <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span class="nav-link-icon">

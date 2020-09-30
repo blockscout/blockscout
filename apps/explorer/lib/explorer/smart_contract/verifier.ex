@@ -41,6 +41,9 @@ defmodule Explorer.SmartContract.Verifier do
         {:error, :compiler_version} ->
           {:halt, acc}
 
+        {:error, :name} ->
+          {:halt, acc}
+
         _ ->
           cur_params = Map.put(params, "evm_version", version)
           {:cont, verify(address_hash, cur_params)}
