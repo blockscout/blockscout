@@ -162,6 +162,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:3
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:42
+#: lib/block_scout_web/templates/stakes/_stakes_stats_item_account.html.eex:43
 msgid "Balance"
 msgstr ""
 
@@ -246,7 +248,7 @@ msgid "Blocks Indexed"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:17
+#: lib/block_scout_web/templates/layout/_footer.html.eex:20
 msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks."
 msgstr ""
 
@@ -778,7 +780,7 @@ msgid "Success"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:76
+#: lib/block_scout_web/templates/chain/show.html.eex:91
 #: lib/block_scout_web/templates/layout/app.html.eex:34
 msgid "Tx/day"
 msgstr ""
@@ -1023,7 +1025,7 @@ msgid "Log Data"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:44
+#: lib/block_scout_web/templates/layout/_footer.html.eex:47
 msgid "Main Networks"
 msgstr ""
 
@@ -1246,13 +1248,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:222
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:253
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:225
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:256
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:219
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1869,8 +1871,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:15
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:10
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:18
-#: lib/block_scout_web/templates/chain/show.html.eex:195
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:50
+#: lib/block_scout_web/templates/chain/show.html.eex:210
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:53
 #: lib/block_scout_web/views/address_view.ex:349
 msgid "Transactions"
 msgstr ""
@@ -1939,7 +1941,7 @@ msgid "Write Proxy"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:143
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:146
 msgid "Apps"
 msgstr ""
 
@@ -1949,7 +1951,7 @@ msgid "Copy Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:220
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:223
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 
@@ -2020,7 +2022,7 @@ msgid "<p>To become a candidate, your staking address must be funded with %{toke
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:171
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:174
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:11
 msgid "Active Pools"
 msgstr ""
@@ -2188,7 +2190,7 @@ msgid "Inactive Pool Addresses. Current validator pools are specified by a check
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:176
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:179
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:18
 msgid "Inactive Pools"
 msgstr ""
@@ -2381,7 +2383,7 @@ msgid "Staker's Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:162
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:165
 msgid "Stakes"
 msgstr ""
 
@@ -2515,7 +2517,7 @@ msgid "Validator pools can be banned for misbehavior (such as not revealing secr
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:166
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:169
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:4
 msgid "Validators"
 msgstr ""
