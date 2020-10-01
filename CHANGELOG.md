@@ -13,6 +13,7 @@
 - [#3261](https://github.com/poanetwork/blockscout/pull/3261) - Bridged tokens table
 
 ### Fixes
+- [#3323](https://github.com/poanetwork/blockscout/pull/3323) - Fix logs list API endpoint response
 - [#3319](https://github.com/poanetwork/blockscout/pull/3319) - Eliminate horizontal scroll
 - [#3314](https://github.com/poanetwork/blockscout/pull/3314) - Handle nil values from response of CoinGecko price API
 - [#3313](https://github.com/poanetwork/blockscout/pull/3313) - Fix xDai styles: invisible tokens on address
