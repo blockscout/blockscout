@@ -152,13 +152,13 @@ $navbar-logo-width: auto !default;
     }
 
     @include media-breakpoint-up(xl) {
-      width: 340px;
+      width: 310px;
     }
     @media (min-width: 1366px) {
       width: 380px;
     }
     @media (min-width: 1440px) {
-      width: 580px;
+      width: 550px;
     }
   }
   .input-group-append {
@@ -245,6 +245,17 @@ $navbar-logo-width: auto !default;
   width: $navbar-logo-width;
 }
 
+.logo-text {
+  color: #333;
+  font-size: 0.7rem;
+  margin-left: 5px;
+  line-height: 28px;
+
+  &.footer {
+    color: #fff;
+  }
+}
+
 @include media-breakpoint-up(md) {
   .navbar-expand-lg .navbar-nav .nav-link {
     padding-left: $header-link-horizontal-padding;
@@ -275,4 +286,8 @@ $navbar-logo-width: auto !default;
   .topnav-nav-link {
     transition: none !important;
   }
+}
+
+.visually-hidden {
+  display: block;
 }

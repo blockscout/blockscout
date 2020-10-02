@@ -17,13 +17,13 @@ lib/block_scout_web/router.ex:1
 lib/block_scout_web/schema/types.ex:31
 lib/phoenix/router.ex:324
 lib/phoenix/router.ex:402
-lib/block_scout_web/views/layout_view.ex:138: The call 'Elixir.Poison.Parser':'parse!'
-lib/block_scout_web/views/layout_view.ex:224: The call 'Elixir.Poison.Parser':'parse!'
+lib/block_scout_web/views/layout_view.ex:142: The call 'Elixir.Poison.Parser':'parse!'
+lib/block_scout_web/views/layout_view.ex:228: The call 'Elixir.Poison.Parser':'parse!'
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:21
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:22
 lib/explorer/smart_contract/reader.ex:336
 lib/indexer/fetcher/token_total_supply_on_demand.ex:16
 lib/explorer/exchange_rates/source.ex:41
-lib/explorer/exchange_rates/source/coin_gecko.ex:115
-lib/explorer/exchange_rates/source/coin_gecko.ex:136
-lib/explorer/smart_contract/verifier.ex:86
+lib/explorer/exchange_rates/source/coin_gecko.ex:148
+lib/explorer/exchange_rates/source/coin_gecko.ex:169
+lib/explorer/smart_contract/verifier.ex:89
