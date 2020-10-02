@@ -1,5 +1,8 @@
 ## Current
 
+
+## 3.3.3-beta
+
 ### Features
 - [#3320](https://github.com/poanetwork/blockscout/pull/3320) - Bridged tokens from AMB extensions support
 - [#3311](https://github.com/poanetwork/blockscout/pull/3311) - List of addresses with restricted access option
