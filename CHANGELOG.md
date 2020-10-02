@@ -1,5 +1,8 @@
 ## Current
 
+
+## 3.3.3-beta
+
 ### Features
 - [#3320](https://github.com/poanetwork/blockscout/pull/3320) - Bridged tokens from AMB extensions support
 - [#3311](https://github.com/poanetwork/blockscout/pull/3311) - List of addresses with restricted access option
@@ -31,6 +34,8 @@
 - [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
 
 ### Chore
+- [#3327](https://github.com/poanetwork/blockscout/pull/3327) - Handle various indexer fetchers errors in setup with non-archive node
+- [#3325](https://github.com/poanetwork/blockscout/pull/3325) - Dark theme improvements
 - [#3316](https://github.com/poanetwork/blockscout/pull/3316), [#3317](https://github.com/poanetwork/blockscout/pull/3317) - xDai smile logo
 - [#3315](https://github.com/poanetwork/blockscout/pull/3315) - Environment variable to disable Bridge market cap updater
 - [#3308](https://github.com/poanetwork/blockscout/pull/3308) - Fixate latest stable release of Elixir, Node, Postgres
@@ -62,6 +67,7 @@
 - [#3220](https://github.com/poanetwork/blockscout/pull/3220) - Allow interaction with navbar menu at block-not-found page
 
 ### Chore
+- [#3326](https://github.com/poanetwork/blockscout/pull/3326) - Chart smooth lines
 - [#3250](https://github.com/poanetwork/blockscout/pull/3250) - Eliminate occurrences of obsolete env variable ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT
 - [#3240](https://github.com/poanetwork/blockscout/pull/3240), [#3251](https://github.com/poanetwork/blockscout/pull/3251) - various CSS imroving
 - [f3a720](https://github.com/poanetwork/blockscout/commit/2dd909c10a79b0bf4b7541a486be114152f3a720) - Make wobserver optional
