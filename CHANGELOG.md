@@ -63,6 +63,7 @@
 - [#3220](https://github.com/poanetwork/blockscout/pull/3220) - Allow interaction with navbar menu at block-not-found page
 
 ### Chore
+- [#3326](https://github.com/poanetwork/blockscout/pull/3326) - Chart smooth lines
 - [#3250](https://github.com/poanetwork/blockscout/pull/3250) - Eliminate occurrences of obsolete env variable ETHEREUM_JSONRPC_JSON_RPC_TRANSPORT
 - [#3240](https://github.com/poanetwork/blockscout/pull/3240), [#3251](https://github.com/poanetwork/blockscout/pull/3251) - various CSS imroving
 - [f3a720](https://github.com/poanetwork/blockscout/commit/2dd909c10a79b0bf4b7541a486be114152f3a720) - Make wobserver optional
