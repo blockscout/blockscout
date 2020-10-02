@@ -64,7 +64,9 @@ defmodule Explorer.Chain.Address.CoinBalanceDaily do
     )
   end
 
-  def changeset(%__MODULE__{} = balance, params) do
+  def changeset(_, params) when is_nil(params), do: :ignore
+
+  def changeset(%__MODULE__{} = balance, params) when not is_nil(params) do
     balance
     |> cast(params, @allowed_fields)
     |> validate_required(@required_fields)
