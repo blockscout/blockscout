@@ -31,6 +31,7 @@
 - [#3256](https://github.com/poanetwork/blockscout/pull/3256) - Fix for invisible validator address at block page and wrong alert text color at xDai
 
 ### Chore
+- [#3327](https://github.com/poanetwork/blockscout/pull/3327) - Handle various indexer fetchers errors in setup with non-archive node
 - [#3325](https://github.com/poanetwork/blockscout/pull/3325) - Dark theme improvements
 - [#3316](https://github.com/poanetwork/blockscout/pull/3316), [#3317](https://github.com/poanetwork/blockscout/pull/3317) - xDai smile logo
 - [#3315](https://github.com/poanetwork/blockscout/pull/3315) - Environment variable to disable Bridge market cap updater
