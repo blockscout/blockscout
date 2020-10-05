@@ -1,5 +1,15 @@
 ## Current
 
+### Features
+- [#3330](https://github.com/poanetwork/blockscout/pull/3330) - Caching of address transactions counter, remove query 10_000 rows limit
+
+
+### Fixes
+- [#3329](https://github.com/poanetwork/blockscout/pull/3329) - Fix pagination for bridged tokens list page
+
+### Chore
+
+
 
 ## 3.3.3-beta
 

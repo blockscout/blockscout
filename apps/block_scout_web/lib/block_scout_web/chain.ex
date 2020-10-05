@@ -220,6 +220,10 @@ defmodule BlockScoutWeb.Chain do
     %{"contract_address_hash" => contract_address_hash, "holder_count" => holder_count}
   end
 
+  defp paging_params([%Token{contract_address_hash: contract_address_hash, holder_count: holder_count}, _]) do
+    %{"contract_address_hash" => contract_address_hash, "holder_count" => holder_count}
+  end
+
   defp paging_params({%Reward{block: %{number: number}}, _}) do
     %{"block_number" => number, "index" => 0}
   end
