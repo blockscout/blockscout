@@ -1,5 +1,14 @@
 ## Current
 
+### Features
+
+
+### Fixes
+- [#3329](https://github.com/poanetwork/blockscout/pull/3329) - Fix pagination for bridged tokens list page
+
+### Chore
+
+
 
 ## 3.3.3-beta
 
