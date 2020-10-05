@@ -69,6 +69,7 @@ defmodule Explorer.Staking.ContractState do
     ])
 
     Subscriber.to(:blocks, :realtime)
+    Subscriber.to(:blocks, :catchup)
 
     staking_abi = abi("StakingAuRa")
     validator_set_abi = abi("ValidatorSetAuRa")
@@ -128,6 +129,19 @@ defmodule Explorer.Staking.ContractState do
   @doc "Handles new blocks and decides to fetch fresh chain info"
   def handle_info({:chain_event, :blocks, :realtime, blocks}, state) do
     latest_block = Enum.max_by(blocks, & &1.number, fn -> %{number: 0} end)
+    Logger.warn("handle_info: #{latest_block.number}")
+
+    if latest_block.number > state.seen_block do
+      fetch_state(state.contracts, state.abi, latest_block.number)
+      {:noreply, %{state | seen_block: latest_block.number}}
+    else
+      {:noreply, state}
+    end
+  end
+
+  def handle_info({:chain_event, :blocks, :catchup, blocks}, state) do
+    latest_block = Enum.max_by(blocks, & &1.number, fn -> %{number: 0} end)
+    Logger.warn("handle_info 2: #{latest_block.number}")
 
     if latest_block.number > state.seen_block do
       fetch_state(state.contracts, state.abi, latest_block.number)
