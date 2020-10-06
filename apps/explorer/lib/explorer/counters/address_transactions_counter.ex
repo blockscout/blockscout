@@ -49,7 +49,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
 
   def fetch(address) do
     if cache_expired?() do
-      Task.async(fn ->
+      Task.start_link(fn ->
         update_cache(address)
       end)
     end
