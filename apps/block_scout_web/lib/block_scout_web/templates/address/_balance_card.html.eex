@@ -1,6 +1,9 @@
 <div class="card card-background-1" data-test="outside_of_dropdown">
   <div class="card-body card-body-flex-column-space-between">
-    <h2 class="card-title balance-card-title"><%= gettext "Balance" %></h2>
+    <div style="display: inline-flex;">
+      <h2 class="card-title balance-card-title"><%= gettext "Balance" %></h2>
+      <img class="custom-balance-icon">
+    </div>
     <div class="text-right">
       <h3
         class="address-balance-text"
