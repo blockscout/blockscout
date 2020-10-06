@@ -48,7 +48,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
   end
 
   def fetch(address) do
-    if cache_expired?() do
+    if cache_expired?(address) do
       Task.start_link(fn ->
         update_cache(address)
       end)
@@ -60,10 +60,9 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
 
   def cache_name, do: @cache_name
 
-  def updated_at_key, do: @last_update_key
-
-  defp cache_expired? do
-    updated_at = fetch_from_cache(@last_update_key)
+  defp cache_expired?(address) do
+    address_hash_string = get_address_hash_string(address)
+    updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
 
     cond do
       is_nil(updated_at) -> true
@@ -75,7 +74,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
   defp update_cache(address) do
     new_data = Chain.address_to_transaction_count(address)
     address_hash_string = get_address_hash_string(address)
-    put_into_cache(@last_update_key, current_time())
+    put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", current_time())
     put_into_cache("hash_#{address_hash_string}", new_data)
   end
 
@@ -85,7 +84,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
         value
 
       [] ->
-        nil
+        0
     end
   end
 
