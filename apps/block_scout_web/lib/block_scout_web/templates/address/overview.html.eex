@@ -2,17 +2,6 @@
   <% dark_forest_address_var = Application.get_env(:block_scout_web, :dark_forest_address) %>
   <% dark_forest_address = if dark_forest_address_var, do: String.downcase(dark_forest_address_var), else: nil %>
   <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
-  <script>
-    function applyCustomMode() {
-      const darkForestContractAddressHash = "<%= dark_forest_address %>"
-
-      const addressHash = "<%= @address.hash %>".toLowerCase()
-      if (addressHash == darkForestContractAddressHash) {
-        document.body.className += " " + "dark-forest-theme-applied";
-      }
-    }
-    window.onload = applyCustomMode()
-  </script>
   <div class="row">
     <!-- Address details -->
     <div class="card-section col-md-12 col-lg-8 pr-0-md">
