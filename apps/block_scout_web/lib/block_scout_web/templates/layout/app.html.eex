@@ -47,7 +47,17 @@
   </head>
 
   <body>
+    <% dark_forest_address_var = Application.get_env(:block_scout_web, :dark_forest_address) %>
+  <% dark_forest_address = if dark_forest_address_var, do: String.downcase(dark_forest_address_var), else: nil %>
     <script>
+      function applyCustomMode() {
+        const darkForestContractAddressHash = "<%= dark_forest_address %>"
+
+        const addressHash = "<%= @address.hash %>".toLowerCase()
+        if (window.location.pathname.toLowerCase().includes(darkForestContractAddressHash)) {
+          document.body.className += " " + "dark-forest-theme-applied";
+        }
+      }
       function applyDarkMode() {
         if (localStorage.getItem("current-color-mode") === "dark") {
           document.body.className += " " + "dark-theme-applied";
@@ -55,6 +65,7 @@
         }
       }
       window.onload = applyDarkMode()
+      window.onload = applyCustomMode()
     </script>
     <div class="layout-container">
       <%= if not Explorer.Chain.finished_indexing?() do %>

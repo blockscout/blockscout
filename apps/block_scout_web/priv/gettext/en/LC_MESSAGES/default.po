@@ -72,7 +72,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:56
+#: lib/block_scout_web/templates/layout/app.html.eex:67
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -406,8 +406,8 @@ msgid "Copy ABI"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:41
-#: lib/block_scout_web/templates/address/overview.html.eex:45
+#: lib/block_scout_web/templates/address/overview.html.eex:30
+#: lib/block_scout_web/templates/address/overview.html.eex:34
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:16
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:20
 msgid "Copy Address"
@@ -464,7 +464,7 @@ msgid "Create2"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:124
+#: lib/block_scout_web/templates/address/overview.html.eex:113
 msgid "Created by"
 msgstr ""
 
@@ -535,7 +535,7 @@ msgid "Description"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:36
+#: lib/block_scout_web/templates/address/overview.html.eex:25
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:166
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:127
 msgid "Details"
@@ -615,7 +615,7 @@ msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:137
+#: lib/block_scout_web/templates/address/overview.html.eex:126
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
@@ -948,7 +948,7 @@ msgid "It could still be in the TX Pool of a different node, waiting to be broad
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:109
+#: lib/block_scout_web/templates/address/overview.html.eex:98
 msgid "Last Balance Update: Block #"
 msgstr ""
 
@@ -1153,8 +1153,8 @@ msgid "Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:61
-#: lib/block_scout_web/templates/address/overview.html.eex:161
+#: lib/block_scout_web/templates/address/overview.html.eex:50
+#: lib/block_scout_web/templates/address/overview.html.eex:150
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:51
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:101
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
@@ -1265,14 +1265,14 @@ msgid "Show"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:62
+#: lib/block_scout_web/templates/address/overview.html.eex:51
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:52
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:37
 msgid "Show QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:76
+#: lib/block_scout_web/templates/address/overview.html.eex:65
 msgid "Show Validator Info"
 msgstr ""
 
@@ -1537,7 +1537,7 @@ msgid "Validator Data"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:80
+#: lib/block_scout_web/templates/address/overview.html.eex:69
 msgid "Validator Info"
 msgstr ""
 
@@ -1637,7 +1637,7 @@ msgid "Yes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:129
+#: lib/block_scout_web/templates/address/overview.html.eex:118
 msgid "at"
 msgstr ""
 
@@ -1695,8 +1695,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
-#: lib/block_scout_web/templates/address/overview.html.eex:162
-#: lib/block_scout_web/templates/address/overview.html.eex:170
+#: lib/block_scout_web/templates/address/overview.html.eex:151
+#: lib/block_scout_web/templates/address/overview.html.eex:159
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:102
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:110
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:122
