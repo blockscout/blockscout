@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.LayoutView do
     }
   ]
 
-  alias BlockScoutWeb.SocialMedia
+  alias BlockScoutWeb.{CustomContractsHelpers, SocialMedia}
 
   def logo do
     Keyword.get(application_config(), :logo) || "/images/blockscout_logo.svg"

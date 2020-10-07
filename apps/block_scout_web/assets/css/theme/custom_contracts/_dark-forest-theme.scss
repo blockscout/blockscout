@@ -142,12 +142,20 @@ $dark-primary-alternate: $dark-primary;
 		}
 	}
 
-	.card-tab .fa-check-circle {
-		color: $dark-primary;
+	.check_dark_forest_icon {
+		margin-left: 10px;
 	}
 
-	.card-tab.active .fa-check-circle {
-		color: $body-dark;
+	.card-tab .check_dark_forest_icon {
+		svg path {
+			fill: $dark-primary;
+		}
+	}
+
+	.card-tab.active .check_dark_forest_icon {
+		svg path {
+			fill: $body-dark;
+		}
 	}
 
 	.card-background-1 {
@@ -259,12 +267,14 @@ $dark-primary-alternate: $dark-primary;
 	}
 
 	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon .btn-contract-icon {
+		border-radius: 0;
+		border: none;
 		border-color: $dark-primary;
 		&:hover {
-			background-color: $labels-dark;
+			background-color: rgba(117, 249, 77, 0.4);
 		}
 	}
-
+	
 	// pagination
 	.pagination-container .pagination .page-link {
 		color: #fff !important;
@@ -274,7 +284,8 @@ $dark-primary-alternate: $dark-primary;
 		padding: 15px;
 		&:not(.no-hover):hover {
 			color: #fff;
-			background-color: $dark-light-bg;
+			border: 1px solid #fff;
+			background-color: $dark-primary;
 			path {
 				fill: #fff;
 			}
@@ -466,16 +477,19 @@ $dark-primary-alternate: $dark-primary;
 		background-color: $dark-light;
 		border-color: $dark-light;
 		color: #fff;
+		height: 32px;
+		border-radius: 0px;
+		border-color: #fff;
 	}
 
 	.logs-search-btn {
-		color: $labels-dark;
-	}
+		border: none;
+		background-color: $dark-primary;
+		color: $body-dark;
 
-	.logs-search-btn {
 		&:hover {
 			background-color: $dark-primary;
-			color: #fff;
+			color: $body-dark;
 		}
 	}
 
@@ -569,9 +583,9 @@ $dark-primary-alternate: $dark-primary;
 
 	// Content loading placeholders
 	.tile-loader, .table-content-loader {
-		background-color: $labels-dark !important;
+		background-color: rgba(117, 249, 77, 0.4) !important;
 		&:before {
-			background: linear-gradient(to right, $labels-dark 2%, lighten($labels-dark, 3) 18%, $labels-dark 33%);
+			background: linear-gradient(to right, rgba(117, 249, 77, 0.4) 2%, lighten(rgba(117, 249, 77, 0.4), 3) 18%, rgba(117, 249, 77, 0.4) 33%);
 		}
 	}
 
@@ -714,7 +728,7 @@ $dark-primary-alternate: $dark-primary;
 	.table-bordered, .table-bordered td, .table-bordered th {
 		border-color: darken($labels-dark, 30);
 	}
-	.dark-theme-applied .table td, .dark-theme-applied .table th, .dark-theme-applied hr {
+	.dark-forest-theme-applied .table td, .dark-forest-theme-applied .table th, .dark-forest-theme-applied hr {
 		border-top-color: darken($labels-dark, 30);
 	}
 	.btn-copy-ico svg path {
@@ -918,10 +932,6 @@ $dark-primary-alternate: $dark-primary;
 		background: $dark-primary;
 	}
 
-	.fa-check-circle {
-		content: url(/images/custom-themes/dark-forest/union.svg);
-	}
-
 	.custom-balance-icon {
 		content: url(/images/custom-themes/dark-forest/pic_balance.svg);
 		margin-right: 0px;
@@ -972,6 +982,9 @@ $dark-primary-alternate: $dark-primary;
 
 	.application-icon {
 		content: url(/images/custom-themes/dark-forest/planet.svg);
+		&:hover {
+			background-color: rgba(117, 249, 77, 0.4);
+		}
 		@media screen and (max-width: 768px) {
 			float: right;
 		}
@@ -987,18 +1000,18 @@ $dark-primary-alternate: $dark-primary;
 	border: none;
 }
 
-.dark-theme-applied .dropdown-item {
+.dark-forest-theme-applied .dropdown-item {
 	background-color: $dark-light!important;
 	color: #fff !important;
 }
 
-.dark-theme-applied .dropdown-item.active:not(.header), .dark-theme-applied .dropdown-item:not(.header):hover, .dark-theme-applied .dropdown-item:not(.header):focus {
+.dark-forest-theme-applied .dropdown-item.active:not(.header), .dark-forest-theme-applied .dropdown-item:not(.header):hover, .dark-forest-theme-applied .dropdown-item:not(.header):focus {
     background-image: none;
     width: 100%;
-    background-color: #3f426c !important;
+    background-color: rgba(117, 249, 77, 0.4) !important;
 }
 
-.dark-theme-applied .dropdown-item.active.header, .dark-theme-applied .dropdown-item.header:hover, .dark-theme-applied .dropdown-item.header:focus {
+.dark-forest-theme-applied .dropdown-item.active.header, .dark-forest-theme-applied .dropdown-item.header:hover, .dark-forest-theme-applied .dropdown-item.header:focus {
     background-color: $dark-light !important;
 }
 
