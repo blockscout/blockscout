@@ -14,7 +14,7 @@
         document.documentElement.className += " " + "dark-forest-theme-applied";
         return;
       }
-      document.getElementsByTagName("body")[0].style.visibility = "visible";
+      document.getElementsByClassName("layout-container")[0].style.visibility = "visible";
     })
   }
   window.onload = applyCustomMode()
