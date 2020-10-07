@@ -50,14 +50,16 @@
     <% raw_dark_forest_addresses = CustomContractsHelpers.get_raw_dark_forest_addresses_list() %>
     <script>
       function applyCustomMode() {
-        const darkForestContractAddressHashes = "<%= raw_dark_forest_addresses %>".split(',').map(hash => hash.toLowerCase())
-
-        darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
-          if (window.location.pathname.toLowerCase().includes(darkForestContractAddressHash)) {
-            document.body.className += " " + "dark-forest-theme-applied";
-            return;
-          }
-        })
+        const darkForestContractAddressHashesRaw = "<%= raw_dark_forest_addresses %>"
+        if (darkForestContractAddressHashesRaw !== "") {
+          const darkForestContractAddressHashes = darkForestContractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
+          darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
+            if (window.location.pathname.toLowerCase().includes(darkForestContractAddressHash)) {
+              document.body.className += " " + "dark-forest-theme-applied";
+              return;
+            }
+          })
+        }
       }
       function applyDarkMode() {
         if (localStorage.getItem("current-color-mode") === "dark") {
