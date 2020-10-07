@@ -80,8 +80,8 @@
         @view_module == Elixir.BlockScoutWeb.TransactionTokenTransferView
       ) -> %>
         <script>
-          if (document.getElementsByTagName("body")[0]) {
-            document.getElementsByTagName("body")[0].style.visibility = "hidden";
+          if (document.getElementsByClassName("layout-container")[0]) {
+            document.getElementsByClassName("layout-container")[0].style.visibility = "hidden";
           }
         </script>
       <% true -> %>
