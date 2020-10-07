@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.BridgedTokensController do
           nil
 
         next_page_params ->
-          tokens_path(
+          bridged_tokens_path(
             conn,
             :index,
             Map.delete(next_page_params, "type")
