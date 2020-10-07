@@ -11,9 +11,12 @@
     darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
       if (to_address == darkForestContractAddressHash) {
         document.body.className += " " + "dark-forest-theme-applied";
+        document.documentElement.className += " " + "dark-forest-theme-applied";
         return;
       }
     })
+
+    document.getElementsByClassName("layout-container")[0].style.visibility = "visible";
   }
   window.onload = applyCustomMode()
 </script>

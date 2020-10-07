@@ -10,6 +10,7 @@ $dark-primary-alternate: $dark-primary;
 
 .dark-forest-theme-applied {
 	color: #ffffff;
+	background-color: $body-dark;
 
 	.dark-mode-changer--dark svg path {
 		fill: $dark-primary;
