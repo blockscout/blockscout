@@ -1,9 +1,26 @@
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
+  <% dark_forest_address_var = Application.get_env(:block_scout_web, :dark_forest_address) %>
+  <% dark_forest_address = if dark_forest_address_var, do: String.downcase(dark_forest_address_var), else: nil %>
+  <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
   <div class="row">
     <!-- Address details -->
     <div class="card-section col-md-12 col-lg-8 pr-0-md">
       <div class="card">
         <div class="card-body">
+          <%= cond do %>
+            <% current_address == dark_forest_address -> %>
+              <div class="custom-dapp-header-container">
+                <img class="custom-address-icon"/>
+                <div class="custom-dapp-header-description-container">
+                  <span class="address-detail-item custom-address-details">
+                    <%= gettext "zkSnark space warfare (v0.4)" %>
+                  </span>
+                  <a href="https://zkga.me/" target="_blank" class="application-icon-link"><img class="application-icon"/></a>
+                </div>
+              </div>
+            <% true -> %>
+              <%= nil %>
+          <% end %>
           <h1 class="card-title lg-card-title">
             <%= address_title(@address) %> <%= gettext "Details" %>
             <!-- buttons -->

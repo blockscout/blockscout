@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3333](https://github.com/poanetwork/blockscout/pull/3333) - Dark forest contract custom theme
 - [#3330](https://github.com/poanetwork/blockscout/pull/3330) - Caching of address transactions counter, remove query 10_000 rows limit
 
 
