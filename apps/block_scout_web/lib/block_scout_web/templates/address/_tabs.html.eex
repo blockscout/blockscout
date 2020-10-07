@@ -1,3 +1,5 @@
+<% dark_forest_addresses_list = CustomContractsHelpers.get_dark_forest_addresses_list() %>
+<% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
 <div class="card-tabs js-card-tabs">
   <%= link(
         gettext("Transactions"),
@@ -53,7 +55,14 @@
         class: "card-tab #{tab_status("contracts", @conn.request_path)}") do %>
         <%= gettext("Code") %>
       <%= if smart_contract_verified?(@address) do %>
-        <i class="far fa-check-circle"></i>
+        <%= cond do %>
+          <% Enum.member?(dark_forest_addresses_list, current_address) -> %>
+            <i class="check_dark_forest_icon">
+              <%= render BlockScoutWeb.IconsView, "_check_dark_forest_icon.html" %>
+            </i>
+          <% true -> %>
+            <i class="far fa-check-circle"></i>
+        <% end %>
       <% end %>
     <% end %>
   <% end %>
