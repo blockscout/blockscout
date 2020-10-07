@@ -47,14 +47,18 @@
   </head>
 
   <body>
-    <% dark_forest_address_var = Application.get_env(:block_scout_web, :dark_forest_address) %>
-    <% dark_forest_address = if dark_forest_address_var, do: String.downcase(dark_forest_address_var), else: nil %>
+    <% raw_dark_forest_addresses = CustomContractsHelpers.get_raw_dark_forest_addresses_list() %>
     <script>
       function applyCustomMode() {
-        const darkForestContractAddressHash = "<%= dark_forest_address %>"
-
-        if (window.location.pathname.toLowerCase().includes(darkForestContractAddressHash)) {
-          document.body.className += " " + "dark-forest-theme-applied";
+        const darkForestContractAddressHashesRaw = "<%= raw_dark_forest_addresses %>"
+        if (darkForestContractAddressHashesRaw !== "") {
+          const darkForestContractAddressHashes = darkForestContractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
+          darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
+            if (window.location.pathname.toLowerCase().includes(darkForestContractAddressHash)) {
+              document.body.className += " " + "dark-forest-theme-applied";
+              return;
+            }
+          })
         }
       }
       function applyDarkMode() {

@@ -1,6 +1,22 @@
 <% block = @transaction.block %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
 <% status = transaction_status(@transaction) %>
+<% raw_dark_forest_addresses = CustomContractsHelpers.get_raw_dark_forest_addresses_list() %>
+<% to_address = @transaction.to_address && "0x" <> Base.encode16(@transaction.to_address.hash.bytes, case: :lower) %>
+<script>
+  function applyCustomMode() {
+    const darkForestContractAddressHashes = "<%= raw_dark_forest_addresses %>".split(',').map(hash => hash.toLowerCase())
+    const to_address = "<%= to_address %>"
+
+    darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
+      if (to_address == darkForestContractAddressHash) {
+        document.body.className += " " + "dark-forest-theme-applied";
+        return;
+      }
+    })
+  }
+  window.onload = applyCustomMode()
+</script>
 <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12 col-lg-8 pr-0-md">
