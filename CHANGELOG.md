@@ -6,6 +6,7 @@
 
 ### Fixes
 - [#3329](https://github.com/poanetwork/blockscout/pull/3329) - Fix pagination for bridged tokens list page
+- [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
 
