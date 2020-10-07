@@ -94,7 +94,7 @@ const elements = {
     render ($el, state, oldState) {
       if (state.countersFetched && state.transactionCount) {
         if (oldState.transactionCount === state.transactionCount) return
-        $el.empty().append('>= ' + numeral(state.transactionCount).format() + ' Transactions')
+        $el.empty().append(numeral(state.transactionCount).format() + ' Transactions')
         $el.show()
         $el.parent('.address-detail-item').removeAttr('style')
       } else {
