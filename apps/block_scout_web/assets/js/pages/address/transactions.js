@@ -50,6 +50,15 @@ const elements = {
     render ($el, state) {
       if (state.channelDisconnected) $el.show()
     }
+  },
+  '[data-test="filter_dropdown"]': {
+    render ($el, state) {
+      if (state.emptyResponse && !state.isSearch) {
+        return $el.hide()
+      }
+
+      return $el.show()
+    }
   }
 }
 
