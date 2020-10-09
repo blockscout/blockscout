@@ -318,7 +318,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:11
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:15
-#: lib/block_scout_web/templates/transaction/index.html.eex:15
+#: lib/block_scout_web/templates/transaction/index.html.eex:22
 msgid "Connection Lost, click to load newer transactions"
 msgstr ""
 
@@ -1058,7 +1058,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:213
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:10
-#: lib/block_scout_web/templates/transaction/index.html.eex:10
+#: lib/block_scout_web/templates/transaction/index.html.eex:17
 msgid "More transactions have come in"
 msgstr ""
 
@@ -1303,7 +1303,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:21
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:20
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:19
-#: lib/block_scout_web/templates/transaction/index.html.eex:20
+#: lib/block_scout_web/templates/transaction/index.html.eex:27
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:11
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:13
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:12
@@ -1371,7 +1371,7 @@ msgid "There are no token transfers for this transaction"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/index.html.eex:26
+#: lib/block_scout_web/templates/transaction/index.html.eex:33
 msgid "There are no transactions."
 msgstr ""
 
@@ -1529,7 +1529,7 @@ msgid "Validated"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/index.html.eex:4
+#: lib/block_scout_web/templates/transaction/index.html.eex:11
 msgid "Validated Transactions"
 msgstr ""
 
