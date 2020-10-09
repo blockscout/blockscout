@@ -51,14 +51,22 @@ defmodule Explorer.Counters.Bridge do
     {:ok, %{consolidate?: enable_consolidation?()}, {:continue, :ok}}
   end
 
+  def prices_table_exists? do
+    :ets.whereis(@prices_table) !== :undefined
+  end
+
   def create_prices_table do
-    if :ets.whereis(@prices_table) == :undefined do
+    unless prices_table_exists?() do
       :ets.new(@prices_table, @ets_opts)
     end
   end
 
+  def bridges_table_exists? do
+    :ets.whereis(@bridges_table) !== :undefined
+  end
+
   def create_bridges_table do
-    if :ets.whereis(@bridges_table) == :undefined do
+    unless bridges_table_exists?() do
       :ets.new(@bridges_table, @ets_opts)
     end
   end
@@ -76,7 +84,9 @@ defmodule Explorer.Counters.Bridge do
   Inserts new bridged token price into the `:ets` table.
   """
   def insert_price({key, info}) do
-    :ets.insert(@prices_table, {key, info})
+    if prices_table_exists?() do
+      :ets.insert(@prices_table, {key, info})
+    end
   end
 
   @impl true
@@ -104,16 +114,22 @@ defmodule Explorer.Counters.Bridge do
   Fetches the info for a specific item from the `:ets` table.
   """
   def fetch_token_price(symbol) do
-    create_prices_table()
-    do_fetch_token_price(:ets.lookup(@prices_table, price_cache_key(symbol)))
+    if prices_table_exists?() do
+      do_fetch_token_price(:ets.lookup(@prices_table, price_cache_key(symbol)))
+    else
+      0
+    end
   end
 
   defp do_fetch_token_price([{_, result}]), do: result
   defp do_fetch_token_price([]), do: 0
 
   def fetch_token_bridge_total_supply do
-    create_bridges_table()
-    do_fetch_token_bridge_total_supply(:ets.lookup(@bridges_table, @current_total_supply_from_token_bridge_cache_key))
+    if bridges_table_exists?() do
+      do_fetch_token_bridge_total_supply(:ets.lookup(@bridges_table, @current_total_supply_from_token_bridge_cache_key))
+    else
+      0
+    end
   end
 
   defp do_fetch_token_bridge_total_supply([{_, result}]), do: result
@@ -123,8 +139,11 @@ defmodule Explorer.Counters.Bridge do
   end
 
   def fetch_omni_bridge_market_cap do
-    create_bridges_table()
-    do_fetch_omni_bridge_market_cap(:ets.lookup(@bridges_table, @current_market_cap_from_omni_bridge_cache_key))
+    if bridges_table_exists?() do
+      do_fetch_omni_bridge_market_cap(:ets.lookup(@bridges_table, @current_market_cap_from_omni_bridge_cache_key))
+    else
+      0
+    end
   end
 
   defp do_fetch_omni_bridge_market_cap([{_, result}]), do: result
@@ -134,27 +153,33 @@ defmodule Explorer.Counters.Bridge do
   end
 
   defp update_total_supply_from_token_bridge_cache do
-    create_bridges_table()
-    current_total_supply_from_token_bridge = TokenBridge.get_current_total_supply_from_token_bridge()
+    if bridges_table_exists?() do
+      current_total_supply_from_token_bridge = TokenBridge.get_current_total_supply_from_token_bridge()
 
-    :ets.insert(
-      @bridges_table,
-      {@current_total_supply_from_token_bridge_cache_key, current_total_supply_from_token_bridge}
-    )
+      :ets.insert(
+        @bridges_table,
+        {@current_total_supply_from_token_bridge_cache_key, current_total_supply_from_token_bridge}
+      )
 
-    current_total_supply_from_token_bridge
+      current_total_supply_from_token_bridge
+    else
+      0
+    end
   end
 
   defp update_total_omni_bridge_market_cap_cache do
-    create_bridges_table()
-    current_total_supply_from_omni_bridge = TokenBridge.get_current_market_cap_from_omni_bridge()
+    if bridges_table_exists?() do
+      current_total_supply_from_omni_bridge = TokenBridge.get_current_market_cap_from_omni_bridge()
 
-    :ets.insert(
-      @bridges_table,
-      {@current_market_cap_from_omni_bridge_cache_key, current_total_supply_from_omni_bridge}
-    )
+      :ets.insert(
+        @bridges_table,
+        {@current_market_cap_from_omni_bridge_cache_key, current_total_supply_from_omni_bridge}
+      )
 
-    current_total_supply_from_omni_bridge
+      current_total_supply_from_omni_bridge
+    else
+      0
+    end
   end
 
   @doc """

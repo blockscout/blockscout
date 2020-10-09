@@ -43,7 +43,8 @@ config :block_scout_web,
   foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC", ""),
   gas_price: System.get_env("GAS_PRICE", nil),
   restricted_list: System.get_env("RESTRICTED_LIST", nil),
-  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil)
+  restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),
+  dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 

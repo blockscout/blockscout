@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.AddressController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.{AccessHelpers, AddressView}
+  alias Explorer.Counters.AddressTransactionsCounter
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
@@ -109,25 +110,11 @@ defmodule BlockScoutWeb.AddressController do
     |> List.to_tuple()
   end
 
-  defp transaction_count(address) do
-    if contract?(address) do
-      incoming_transaction_count = Chain.address_to_incoming_transaction_count(address.hash)
-
-      if incoming_transaction_count == 0 do
-        Chain.total_transactions_sent_by_address(address.hash)
-      else
-        incoming_transaction_count
-      end
-    else
-      Chain.total_transactions_sent_by_address(address.hash)
-    end
+  def transaction_count(address) do
+    AddressTransactionsCounter.fetch(address)
   end
 
   defp validation_count(address) do
     Chain.address_to_validation_count(address.hash)
   end
-
-  defp contract?(%{contract_code: nil}), do: false
-
-  defp contract?(%{contract_code: _}), do: true
 end
