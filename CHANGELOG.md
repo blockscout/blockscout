@@ -6,6 +6,7 @@
 
 
 ### Fixes
+- [#3342](https://github.com/poanetwork/blockscout/pull/3342) - Fix mobile styles for contract code tab
 - [#3341](https://github.com/poanetwork/blockscout/pull/3341) - Change Solc binary downloader path to official primary supported path
 - [#3339](https://github.com/poanetwork/blockscout/pull/3339) - Repair websocket subscription
 - [#3329](https://github.com/poanetwork/blockscout/pull/3329) - Fix pagination for bridged tokens list page
