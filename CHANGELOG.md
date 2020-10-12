@@ -6,6 +6,7 @@
 
 
 ### Fixes
+- [#3347](https://github.com/poanetwork/blockscout/pull/3347) - Contract interaction: fix encoding of bytes output
 - [#3346](https://github.com/poanetwork/blockscout/pull/3346) - Fix inventory tab pagination
 - [#3344](https://github.com/poanetwork/blockscout/pull/3344) - Fix logs search on address page
 - [#3342](https://github.com/poanetwork/blockscout/pull/3342) - Fix mobile styles for contract code tab
