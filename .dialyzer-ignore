@@ -27,3 +27,4 @@ lib/explorer/exchange_rates/source.ex:41
 lib/explorer/exchange_rates/source/coin_gecko.ex:148
 lib/explorer/exchange_rates/source/coin_gecko.ex:169
 lib/explorer/smart_contract/verifier.ex:89
+lib/block_scout_web/templates/address_contract/index.html.eex:117
