@@ -6,6 +6,7 @@
 
 
 ### Fixes
+- [#3344](https://github.com/poanetwork/blockscout/pull/3344) - Fix logs search on address page
 - [#3342](https://github.com/poanetwork/blockscout/pull/3342) - Fix mobile styles for contract code tab
 - [#3341](https://github.com/poanetwork/blockscout/pull/3341) - Change Solc binary downloader path to official primary supported path
 - [#3339](https://github.com/poanetwork/blockscout/pull/3339) - Repair websocket subscription
