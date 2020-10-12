@@ -137,49 +137,45 @@
             </div>
           </li>
         <% end %>
-        <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
+        <%= if Application.get_env(:block_scout_web, :apps_menu) == true || Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
           <li class="nav-item dropdown">
             <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
               </span>
-              <%= gettext("Apps") %>
-            </a>
-            <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown"> 
-              <%= for %{url: url, title: title} <- external_apps_list() do %> 
-                  <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %>
-                    <span class="external-link-icon">
-                      <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
-                    </span>
-                  </a>
+              <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
+                <%= gettext("Apps") %>
+              <% else %>
+                <%= gettext("Stakes") %>
               <% end %>
-            </div>
-          </li>
-        <% end %>
-        <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
-          <li class="nav-item dropdown">
-            <a href="#" role="button" id="stakesDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
-              </span>
-              <%= gettext("Stakes") %>
             </a>
-            <div class="dropdown-menu" aria-labeledby="navbarStakesDropdown">
-              <%= link(
-                    gettext("Validators"),
-                    class: "dropdown-item #{tab_status("validators", @conn.request_path)}",
-                    to: validators_path(@conn, :index)
-                  ) %>
-              <%= link(
-                    gettext("Active Pools"),
-                    class: "dropdown-item #{tab_status("active-pools", @conn.request_path)}",
-                    to: active_pools_path(@conn, :index)
-                  ) %>
-              <%= link(
-                    gettext("Inactive Pools"),
-                    class: "dropdown-item #{tab_status("inactive-pools", @conn.request_path)}",
-                    to: inactive_pools_path(@conn, :index)
-                  ) %>
+            <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
+              <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
+                <%= link(
+                      gettext("Validators"),
+                      class: "dropdown-item #{tab_status("validators", @conn.request_path)}",
+                      to: validators_path(@conn, :index)
+                    ) %>
+                <%= link(
+                      gettext("Active Pools"),
+                      class: "dropdown-item #{tab_status("active-pools", @conn.request_path)}",
+                      to: active_pools_path(@conn, :index)
+                    ) %>
+                <%= link(
+                      gettext("Inactive Pools"),
+                      class: "dropdown-item #{tab_status("inactive-pools", @conn.request_path)}",
+                      to: inactive_pools_path(@conn, :index)
+                    ) %>
+              <% end %>
+              <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
+                <%= for %{url: url, title: title} <- external_apps_list() do %> 
+                    <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %>
+                      <span class="external-link-icon">
+                        <%= render BlockScoutWeb.IconsView, "_external_link.html" %>
+                      </span>
+                    </a>
+                <% end %>
+              <% end %>
             </div>
           </li>
         <% end %>
