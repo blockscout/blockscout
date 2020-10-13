@@ -1,13 +1,5 @@
 @import "./mixins";
 
-html {
-  background-color: #080808;
-}
-
-body {
-  background-color: #080808;
-}
-
 /* Phoenix flash messages */
 .alert:empty {
   display: none;
