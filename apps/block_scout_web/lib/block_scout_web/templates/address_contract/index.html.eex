@@ -7,20 +7,6 @@
   <div class="card">
     <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
     <div class="card-body">
-      <%= if match?({:selfdestructed, _}, contract_creation_code) do %>
-        <div class="button button-disabled button-sm float-right ml-3">
-          <%= gettext("Verify & Publish") %>
-        </div>
-      <% else %>
-        <%= if !BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
-          <%= link(
-                gettext("Verify & Publish"),
-                to: address_verify_contract_path(@conn, :new, @address.hash),
-                class: "button button-primary button-sm float-right ml-3",
-                "data-test": "verify_and_publish"
-              ) %>
-        <% end %>
-      <% end %>
       <%= unless BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
         <%= if metadata_for_verification do %>
           <div class="mb-4">
@@ -112,15 +98,42 @@
               <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= transaction_init %></code></pre>
             </div>
           <% {:ok, contract_code} -> %>
-            <div class="d-flex justify-content-between align-items-baseline">
-              <h3><%= gettext "Contract Byte Code" %></h3>
-              <button type="button" class="btn-line" id="button" data-clipboard-text="<%= contract_code %>" aria-label="copy contract creation code">
-                <%= gettext "Copy Contract Byte Code" %>
-              </button>
-            </div>
-            <div class="tile tile-muted">
-              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= contract_code %></code></pre>
-            </div>
+            <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
+              <div class="d-flex justify-content-between align-items-baseline">
+                <h3><%= gettext "Contract Byte Code" %></h3>
+                <button type="button" class="btn-line" style="float: left;" id="button" data-clipboard-text="<%= contract_code %>" aria-label="copy contract creation code">
+                  <%= gettext "Copy Byte Code" %>
+                </button>
+              </div>
+            <% else %>
+              <div class="d-flex justify-content-between align-items-baseline contract-code-container">
+                <div>
+                  <h3><%= gettext "Contract Byte Code" %></h3>
+                </div>
+                <div class="buttons">
+                  <button type="button" class="btn-line" style="float: left;" id="button" data-clipboard-text="<%= contract_code %>" aria-label="copy contract creation code">
+                    <%= gettext "Copy Byte Code" %>
+                  </button>
+                  <%= if match?({:selfdestructed, _}, contract_creation_code) do %>
+                    <div class="button button-disabled button-sm float-right ml-3">
+                      <%= gettext("Verify & Publish") %>
+                    </div>
+                  <% else %>
+                    <%= if !BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
+                      <%= link(
+                            gettext("Verify & Publish"),
+                            to: address_verify_contract_path(@conn, :new, @address.hash),
+                            class: "button button-primary button-sm float-right ml-3",
+                            "data-test": "verify_and_publish"
+                          ) %>
+                    <% end %>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          <div class="tile tile-muted">
+            <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= contract_code %></code></pre>
+          </div>
         <% end %>
       </section>
 
