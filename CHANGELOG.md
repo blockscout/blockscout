@@ -6,6 +6,7 @@
 
 
 ### Fixes
+- [#3350](https://github.com/poanetwork/blockscout/pull/3350) - Fix tokens list pagination
 - [#3347](https://github.com/poanetwork/blockscout/pull/3347) - Contract interaction: fix encoding of bytes output
 - [#3346](https://github.com/poanetwork/blockscout/pull/3346) - Fix inventory tab pagination
 - [#3344](https://github.com/poanetwork/blockscout/pull/3344) - Fix logs search on address page
