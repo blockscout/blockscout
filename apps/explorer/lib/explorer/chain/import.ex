@@ -168,6 +168,9 @@ defmodule Explorer.Chain.Import do
 
       %Changeset{valid?: true}, {:error, _} = error ->
         error
+
+      :ignore, error ->
+        {:error, error}
     end)
     |> case do
       {:ok, changes} -> {:ok, {runner, changes}}
