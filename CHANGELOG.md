@@ -1,11 +1,12 @@
 ## Current
 
 ### Features
-- [#3333](https://github.com/poanetwork/blockscout/pull/3333) - Dark forest contract custom theme
+- [#3333](https://github.com/poanetwork/blockscout/pull/3333), [#3337](https://github.com/poanetwork/blockscout/pull/3337) - Dark forest contract custom theme
 - [#3330](https://github.com/poanetwork/blockscout/pull/3330) - Caching of address transactions counter, remove query 10_000 rows limit
 
 
 ### Fixes
+- [#3339](https://github.com/poanetwork/blockscout/pull/3339) - Repair websocket subscription
 - [#3329](https://github.com/poanetwork/blockscout/pull/3329) - Fix pagination for bridged tokens list page
 - [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
