@@ -3374,10 +3374,10 @@ defmodule Explorer.Chain do
 
   defp page_tokens(query, %PagingOptions{key: nil}), do: query
 
-  defp page_tokens(query, %PagingOptions{key: {holder_count, contract_address_hash}}) do
+  defp page_tokens(query, %PagingOptions{key: {holder_count, token_name}}) do
     from(token in query,
       where:
-        (token.holder_count == ^holder_count and token.contract_address_hash > ^contract_address_hash) or
+        (token.holder_count == ^holder_count and token.name > ^token_name) or
           token.holder_count < ^holder_count
     )
   end
