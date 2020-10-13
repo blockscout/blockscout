@@ -88,6 +88,17 @@ config :explorer, Explorer.Counters.AddressesCounter,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
 
+address_transactions_counter_cache_period =
+  case Integer.parse(System.get_env("ADDRESS_TRANSACTIONS_COUNTER_CACHE_PERIOD", "")) do
+    {secs, ""} -> :timer.seconds(secs)
+    _ -> :timer.hours(1)
+  end
+
+config :explorer, Explorer.Counters.AddressTransactionsCounter,
+  enabled: true,
+  enable_consolidation: true,
+  period: address_transactions_counter_cache_period
+
 bridge_market_cap_update_interval =
   if System.get_env("BRIDGE_MARKET_CAP_UPDATE_INTERVAL") do
     case Integer.parse(System.get_env("BRIDGE_MARKET_CAP_UPDATE_INTERVAL")) do

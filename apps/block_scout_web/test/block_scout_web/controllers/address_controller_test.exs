@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
   import Mox
 
   alias Explorer.Chain.Address
-  alias Explorer.Counters.AddressesCounter
+  alias Explorer.Counters.{AddressesCounter, AddressTransactionsCounter}
 
   describe "GET index/2" do
     setup :set_mox_global

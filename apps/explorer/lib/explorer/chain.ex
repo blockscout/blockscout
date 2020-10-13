@@ -714,15 +714,11 @@ defmodule Explorer.Chain do
 
   @spec address_to_incoming_transaction_count(Hash.Address.t()) :: non_neg_integer()
   def address_to_incoming_transaction_count(address_hash) do
-    paging_options = %PagingOptions{page_size: @max_incoming_transactions_count}
-
-    base_query =
-      paging_options
-      |> fetch_transactions()
-
     to_address_query =
-      base_query
-      |> where([t], t.to_address_hash == ^address_hash)
+      from(
+        transaction in Transaction,
+        where: transaction.to_address_hash == ^address_hash
+      )
 
     Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
   end
@@ -1948,6 +1944,25 @@ defmodule Explorer.Chain do
 
     Repo.one(query)
   end
+
+  @spec address_to_transaction_count(Address.t()) :: non_neg_integer()
+  def address_to_transaction_count(address) do
+    if contract?(address) do
+      incoming_transaction_count = address_to_incoming_transaction_count(address.hash)
+
+      if incoming_transaction_count == 0 do
+        total_transactions_sent_by_address(address.hash)
+      else
+        incoming_transaction_count
+      end
+    else
+      total_transactions_sent_by_address(address.hash)
+    end
+  end
+
+  defp contract?(%{contract_code: nil}), do: false
+
+  defp contract?(%{contract_code: _}), do: true
 
   @doc """
   Returns a stream of unfetched `t:Explorer.Chain.Address.CoinBalance.t/0`.
@@ -3359,10 +3374,10 @@ defmodule Explorer.Chain do
 
   defp page_tokens(query, %PagingOptions{key: nil}), do: query
 
-  defp page_tokens(query, %PagingOptions{key: {holder_count, contract_address_hash}}) do
+  defp page_tokens(query, %PagingOptions{key: {holder_count, token_name}}) do
     from(token in query,
       where:
-        (token.holder_count == ^holder_count and token.contract_address_hash > ^contract_address_hash) or
+        (token.holder_count == ^holder_count and token.name > ^token_name) or
           token.holder_count < ^holder_count
     )
   end
