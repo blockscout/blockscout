@@ -4338,13 +4338,25 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp fetch_coin_balances(address_hash, paging_options) do
+    address = Repo.get_by(Address, hash: address_hash)
+
+    if contract?(address) do
+      address_hash
+      |> CoinBalance.fetch_coin_balances(paging_options)
+    else
+      address_hash
+      |> CoinBalance.fetch_coin_balances_with_txs(paging_options)
+    end
+  end
+
   @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []
   def address_to_coin_balances(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     balances_raw =
       address_hash
-      |> CoinBalance.fetch_coin_balances(paging_options)
+      |> fetch_coin_balances(paging_options)
       |> page_coin_balances(paging_options)
       |> Repo.all()
 
