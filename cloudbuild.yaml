@@ -2,6 +2,16 @@ steps:
   - name: "gcr.io/cloud-builders/docker"
     args: ["build", "-f", "docker/Dockerfile", "-t", "gcr.io/$PROJECT_ID/blockscout:$COMMIT_SHA", "."]
     waitFor: ["-"]
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-f", "docker/Dockerfile",
+           "--build-arg", "DISABLE_WRITE_API=true",
+           "--build-arg", "DISABLE_INDEXER=true",
+           "--build-arg", "DISABLE_WEBAPP=true",
+           "-t", "gcr.io/$PROJECT_ID/blockscout:api-$COMMIT_SHA", "."]
+    waitFor: ["-"]
 timeout: 1200s
 images:
   - "gcr.io/$PROJECT_ID/blockscout:$COMMIT_SHA"
+  - "gcr.io/$PROJECT_ID/blockscout:api-$COMMIT_SHA"
+
+timeout: 1800s
