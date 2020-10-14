@@ -6,6 +6,7 @@
 
 
 ### Fixes
+- [#3353](https://github.com/poanetwork/blockscout/pull/3353) - Fix xDai buttons hover color
 - [#3352](https://github.com/poanetwork/blockscout/pull/3352) - Fix dark body background
 - [#3350](https://github.com/poanetwork/blockscout/pull/3350) - Fix tokens list pagination
 - [#3347](https://github.com/poanetwork/blockscout/pull/3347) - Contract interaction: fix encoding of bytes output
