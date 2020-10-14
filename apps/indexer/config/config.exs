@@ -42,9 +42,11 @@ config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
   disabled?: System.get_env("ETHEREUM_JSONRPC_VARIANT") == "besu"
 
 # config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
-if System.get_env("POS_STAKING_CONTRACT") do
-  config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
-end
+
+config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
+config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor, disabled?: true
+
+config :indexer, Indexer.Fetcher.StakingPools.Supervisor, disabled?: true
 
 config :indexer, Indexer.Supervisor, enabled: System.get_env("DISABLE_INDEXER") != "true"
 

@@ -58,12 +58,20 @@
       <!-- Gas Used -->
       <div class="mr-3 mr-md-0">
         <%= formatted_gas(@block.gas_used) %>
-        (<%= formatted_gas(Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), format: "#.#%") %>)
+        <% if Decimal.cmp(@block.gas_limit, 0) == :gt do %>
+          (<%= formatted_gas(Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), format: "#.#%") %>)
+        <% else %>
+          (<%= formatted_gas(0, format: "#.#%") %>)
+        <% end %>
         <%= gettext "Gas Used" %>
       </div>
       <!-- Progress bar -->
       <div class="progress">
-        <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas(Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+        <% if Decimal.cmp(@block.gas_limit, 0) == :gt do %>
+          <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas(Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+        <% else %>
+          <div class="progress-bar" role="progressbar" style="width: 0, format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+        <% end %>
         </div>
       </div>
     </div>
