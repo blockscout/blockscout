@@ -80,7 +80,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
   The last coin balance from an Address is the last block indexed.
   """
-  def fetch_coin_balances(address_hash, %PagingOptions{page_size: page_size}) do
+  def fetch_coin_balances_with_txs(address_hash, %PagingOptions{page_size: page_size}) do
     query =
       from(
         cb in CoinBalance,
@@ -101,6 +101,28 @@ defmodule Explorer.Chain.Address.CoinBalance do
     from(balance in subquery(query),
       where: balance.delta != 0,
       limit: ^page_size
+    )
+  end
+
+  def fetch_coin_balances(address_hash, %PagingOptions{page_size: page_size}) do
+    query =
+      from(
+        cb in CoinBalance,
+        where: cb.address_hash == ^address_hash,
+        where: not is_nil(cb.value),
+        order_by: [desc: :block_number],
+        select_merge: %{
+          delta: fragment("a0.value - coalesce(lead(a0.value, 1) over (order by a0.block_number desc), 0)")
+        }
+      )
+
+    from(balance in subquery(query),
+      where: balance.delta != 0,
+      limit: ^page_size,
+      select_merge: %{
+        transaction_hash: nil,
+        transaction_value: nil
+      }
     )
   end
 
