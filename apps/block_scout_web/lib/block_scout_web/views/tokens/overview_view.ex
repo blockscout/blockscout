@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.Tokens.OverviewView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, Token}
 
   alias BlockScoutWeb.{AccessHelpers, CurrencyHelpers, LayoutView}
@@ -61,14 +62,6 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
     Decimal.mult(tokens, price)
   end
 
-  def moon_token?(contract_address) do
-    reddit_token?(contract_address, :moon_token_addresses)
-  end
-
-  def bricks_token?(contract_address) do
-    reddit_token?(contract_address, :bricks_token_addresses)
-  end
-
   def custom_token?(contract_address) do
     contract_address_lower = "0x" <> Base.encode16(contract_address.bytes, case: :lower)
 
@@ -92,30 +85,6 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
     case contract_address_lower do
       _ -> ""
-    end
-  end
-
-  defp reddit_token?(contract_address, env_var) do
-    token_addresses_string = Application.get_env(:block_scout_web, env_var)
-    contract_address_lower = Base.encode16(contract_address.bytes, case: :lower)
-
-    if token_addresses_string do
-      token_addresses =
-        try do
-          token_addresses_string
-          |> String.downcase()
-          |> String.split(",")
-        rescue
-          _ ->
-            []
-        end
-
-      token_addresses
-      |> Enum.any?(fn token ->
-        token == "0x" <> contract_address_lower
-      end)
-    else
-      false
     end
   end
 

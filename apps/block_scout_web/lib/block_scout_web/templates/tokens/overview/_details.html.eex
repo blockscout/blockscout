@@ -4,10 +4,10 @@
       <div class="card">
         <div class="card-body" token-page data-async-counters="<%= @counters_path %>">
           <h1 class="card-title">
-            <%= if moon_token?(@token.contract_address_hash) do %>
+            <%= if Chain.moon_token?(@token.contract_address_hash) do %>
               <img src="/images/icons/moon.png" height="18px"  width="18px" class="reddit-token" />
             <% end %>
-            <%= if bricks_token?(@token.contract_address_hash) do %>
+            <%= if Chain.bricks_token?(@token.contract_address_hash) do %>
               <img src="/images/icons/bricks.png" height="18px"  width="18px" class="reddit-token" />
             <% end %>
             <%= if honey_token?(@token.contract_address_hash) do %>

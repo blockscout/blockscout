@@ -4658,7 +4658,7 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 11
+          token_id: 29
         )
 
       second_page =
@@ -4669,7 +4669,7 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 29
+          token_id: 11
         )
 
       paging_options = %PagingOptions{key: {first_page.token_id}, page_size: 1}

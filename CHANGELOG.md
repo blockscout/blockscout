@@ -6,9 +6,10 @@
 
 
 ### Fixes
+- [#3352](https://github.com/poanetwork/blockscout/pull/3352) - Fix dark body background
 - [#3350](https://github.com/poanetwork/blockscout/pull/3350) - Fix tokens list pagination
 - [#3347](https://github.com/poanetwork/blockscout/pull/3347) - Contract interaction: fix encoding of bytes output
-- [#3346](https://github.com/poanetwork/blockscout/pull/3346) - Fix inventory tab pagination
+- [#3346](https://github.com/poanetwork/blockscout/pull/3346), [#3351](https://github.com/poanetwork/blockscout/pull/3351) - Fix inventory tab pagination
 - [#3344](https://github.com/poanetwork/blockscout/pull/3344) - Fix logs search on address page
 - [#3342](https://github.com/poanetwork/blockscout/pull/3342) - Fix mobile styles for contract code tab
 - [#3341](https://github.com/poanetwork/blockscout/pull/3341) - Change Solc binary downloader path to official primary supported path

@@ -22,6 +22,12 @@
       <span>
         <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
         &rarr;
+        <%= if Chain.moon_token?(@transaction.to_address_hash) do %>
+          <img src="/images/icons/moon.png" height="18px"  width="18px" class="reddit-token" />
+        <% end %>
+        <%= if Chain.bricks_token?(@transaction.to_address_hash) do %>
+          <img src="/images/icons/bricks.png" height="18px"  width="18px" class="reddit-token" />
+        <% end %>
         <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, assigns[:current_address]) |> BlockScoutWeb.RenderHelpers.render_partial() %>
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
