@@ -157,7 +157,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
 
     case type do
       "address" ->
-        "0x" <> Base.encode16(value)
+        value
 
       "uint256" ->
         %Wei{value: Decimal.new(value)}
