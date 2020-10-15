@@ -1,11 +1,13 @@
 ## Current
 
 ### Features
+- [#3354](https://github.com/poanetwork/blockscout/pull/3354) - Tx hash in EOA coin balance history
 - [#3333](https://github.com/poanetwork/blockscout/pull/3333), [#3337](https://github.com/poanetwork/blockscout/pull/3337) - Dark forest contract custom theme
 - [#3330](https://github.com/poanetwork/blockscout/pull/3330) - Caching of address transactions counter, remove query 10_000 rows limit
 
 
 ### Fixes
+- [#3353](https://github.com/poanetwork/blockscout/pull/3353) - Fix xDai buttons hover color
 - [#3352](https://github.com/poanetwork/blockscout/pull/3352) - Fix dark body background
 - [#3350](https://github.com/poanetwork/blockscout/pull/3350) - Fix tokens list pagination
 - [#3347](https://github.com/poanetwork/blockscout/pull/3347) - Contract interaction: fix encoding of bytes output
