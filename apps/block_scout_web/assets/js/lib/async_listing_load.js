@@ -304,21 +304,11 @@ function loadPage (store, path) {
 function firstPageLoad (store) {
   const $element = $('[data-async-listing]')
   function loadItemsNext () {
-    const path = store.getState().nextPagePath
-    store.dispatch({ type: 'START_REQUEST' })
-    $.getJSON(path, { type: 'JSON' })
-      .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
-      .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
+    loadPage(store, store.getState().nextPagePath)
   }
 
   function loadItemsPrev () {
-    const path = store.getState().prevPagePath
-    store.dispatch({ type: 'START_REQUEST' })
-    $.getJSON(path, { type: 'JSON' })
-      .done(response => store.dispatch(Object.assign({ type: 'ITEMS_FETCHED' }, humps.camelizeKeys(response))))
-      .fail(() => store.dispatch({ type: 'REQUEST_ERROR' }))
-      .always(() => store.dispatch({ type: 'FINISH_REQUEST' }))
+    loadPage(store, store.getState().prevPagePath)
   }
   loadItemsNext()
 
