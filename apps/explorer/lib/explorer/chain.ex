@@ -5387,7 +5387,9 @@ defmodule Explorer.Chain do
     reddit_token?(contract_address, :bricks_token_addresses)
   end
 
-  defp reddit_token?(contract_address, env_var) do
+  defp reddit_token?(contract_address, _env_var) when is_nil(contract_address), do: false
+
+  defp reddit_token?(contract_address, env_var) when not is_nil(contract_address) do
     token_addresses_string = Application.get_env(:block_scout_web, env_var)
     contract_address_lower = Base.encode16(contract_address.bytes, case: :lower)
 
