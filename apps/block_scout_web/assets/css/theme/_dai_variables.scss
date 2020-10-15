@@ -33,6 +33,9 @@ $dashboard-banner-network-plain-container-background-color: #20446e; // stats bg
 // navigation
 .navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
 
+// form
+$form-control-border-color-active: $secondary;
+
 // buttons
 $btn-line-bg: #fff; // button bg
 $btn-line-color: $secondary; // button border and font color && hover bg color
@@ -75,7 +78,44 @@ $badge-neutral-color: #20446e;
 $badge-neutral-background-color: rgba(#20446e, .1);
 $api-text-monospace-color: #20446e;
 
+// Staking
+$stakes-btn-remove-pool-color: $secondary;
+$stakes-dashboard-copy-icon-color: $secondary;
+$btn-full-primary-bg: $secondary;
+$stakes-address-color: $secondary;
+$stakes-control-color: $secondary;
+$stakes-link-color: $secondary;
+$progress-from-to-progress-background: $secondary;
+$stakes-stats-item-border-color: rgba(#fff, .5);
+$check-color: $secondary;
+$modal-status-graph-success: $secondary;
+$stakes-progress-graph-color: $secondary;
+
 // Dark theme
 $dark-primary: #15bba6;
 $dark-secondary: #93d7ff;
 $dark-primary-alternate: #15bba6;
+$dark-tertiary: #5a77ff;
+
+.dark-theme-applied .tile .tile-body a, .dark-theme-applied .tile span[data-address-hash] {
+    color: $dark-tertiary!important;
+}
+
+.dark-theme-applied .btn-line {
+    background-color: transparent!important;
+    border-color: $dark-tertiary!important;
+    color: $dark-tertiary!important;
+
+    &[disabled] {
+        &,
+        &:hover {
+            background-color: transparent!important;
+            border-color: $dark-tertiary!important;
+            color: $dark-tertiary!important;
+        }
+    }
+}
+
+.dark-theme-applied .btn-line:hover {
+    color: $additional-font!important;
+}
