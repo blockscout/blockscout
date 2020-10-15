@@ -13,7 +13,7 @@ defmodule Indexer.Supervisor do
     CoinBalance,
     CoinBalanceOnDemand,
     ContractCode,
-    InternalTransaction,
+    # InternalTransaction,
     PendingTransaction,
     ReplacedTransaction,
     StakingPools,
