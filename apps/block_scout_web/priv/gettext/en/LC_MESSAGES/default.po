@@ -72,7 +72,7 @@ msgid "(query)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:88
+#: lib/block_scout_web/templates/layout/app.html.eex:104
 msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
 msgstr ""
 
@@ -2658,7 +2658,7 @@ msgstr ""
 msgid "validator"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:149
 msgid "Stakes"
 msgstr ""
