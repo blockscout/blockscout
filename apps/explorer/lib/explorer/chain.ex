@@ -4338,13 +4338,25 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp fetch_coin_balances(address_hash, paging_options) do
+    address = Repo.get_by(Address, hash: address_hash)
+
+    if contract?(address) do
+      address_hash
+      |> CoinBalance.fetch_coin_balances(paging_options)
+    else
+      address_hash
+      |> CoinBalance.fetch_coin_balances_with_txs(paging_options)
+    end
+  end
+
   @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []
   def address_to_coin_balances(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     balances_raw =
       address_hash
-      |> CoinBalance.fetch_coin_balances(paging_options)
+      |> fetch_coin_balances(paging_options)
       |> page_coin_balances(paging_options)
       |> Repo.all()
 
@@ -5375,7 +5387,9 @@ defmodule Explorer.Chain do
     reddit_token?(contract_address, :bricks_token_addresses)
   end
 
-  defp reddit_token?(contract_address, env_var) do
+  defp reddit_token?(contract_address, _env_var) when is_nil(contract_address), do: false
+
+  defp reddit_token?(contract_address, env_var) when not is_nil(contract_address) do
     token_addresses_string = Application.get_env(:block_scout_web, env_var)
     contract_address_lower = Base.encode16(contract_address.bytes, case: :lower)
 
