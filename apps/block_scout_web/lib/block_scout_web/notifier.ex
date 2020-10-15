@@ -7,11 +7,13 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.{AddressContractVerificationView, Endpoint}
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, TokenTransfer, Transaction}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.SmartContract.{Solidity.CodeCompiler, Solidity.CompilerVersion}
+  alias Explorer.Staking.ContractState
   alias Phoenix.View
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
@@ -25,6 +27,11 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :address_coin_balances, type, address_coin_balances})
       when type in [:realtime, :on_demand] do
     Enum.each(address_coin_balances, &broadcast_address_coin_balance/1)
+  end
+
+  def handle_event({:chain_event, :address_token_balances, type, address_token_balances})
+      when type in [:realtime, :on_demand] do
+    Enum.each(address_token_balances, &broadcast_address_token_balance/1)
   end
 
   def handle_event(
@@ -97,6 +104,16 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("exchange_rate:new_rate", "new_rate", %{
       exchange_rate: exchange_rate_with_available_supply,
       market_history_data: Enum.map(market_history_data, fn day -> Map.take(day, [:closing_price, :date]) end)
+    })
+  end
+
+  def handle_event({:chain_event, :staking_update}) do
+    Endpoint.broadcast("stakes:staking_update", "staking_update", %{
+      block_number: BlockNumber.get_max(),
+      epoch_number: ContractState.get(:epoch_number, 0),
+      staking_allowed: ContractState.get(:staking_allowed, false),
+      staking_token_defined: ContractState.get(:token, nil) != nil,
+      validator_set_apply_block: ContractState.get(:validator_set_apply_block, 0)
     })
   end
 
@@ -183,6 +200,12 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
     Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
+      block_number: block_number
+    })
+  end
+
+  defp broadcast_address_token_balance(%{address_hash: address_hash, block_number: block_number}) do
+    Endpoint.broadcast("addresses:#{address_hash}", "token_balance", %{
       block_number: block_number
     })
   end

@@ -114,6 +114,21 @@ $card-tab-icon-color-active: #fff !default;
   }
 }
 
+.card-title-paging {
+  padding: 0px $card-horizontal-padding;
+  display: flex;
+  justify-content: flex-end;
+  min-height: 54px;
+}
+
+.card-footer-paging {
+  padding: 0px $card-horizontal-padding;
+  padding-bottom: 25px;
+  display: flex;
+  justify-content: flex-end;
+  min-height: 80px;
+}
+
 .card-title-controls {
   align-items: center;
   display: flex;

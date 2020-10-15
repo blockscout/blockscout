@@ -13,7 +13,7 @@
         "data-test": "token_link",
         class: "text-truncate") %>
       <%= if @bridged_token.type do %>
-        <div class="bridged-token-label right <%= @bridged_token.type %>"><%= String.upcase(@bridged_token.type) %></div>
+        <div class="bs-label right <%= @bridged_token.type %>"><%= String.upcase(@bridged_token.type) %></div>
       <% end %>
       <%= if owl_token_amb?(@token.contract_address.hash) do %>
         <span
