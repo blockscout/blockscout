@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#2292](https://github.com/poanetwork/blockscout/pull/2292) - Add Web UI for POSDAO Staking DApp
 - [#3354](https://github.com/poanetwork/blockscout/pull/3354) - Tx hash in EOA coin balance history
 - [#3333](https://github.com/poanetwork/blockscout/pull/3333), [#3337](https://github.com/poanetwork/blockscout/pull/3337) - Dark forest contract custom theme
 - [#3330](https://github.com/poanetwork/blockscout/pull/3330) - Caching of address transactions counter, remove query 10_000 rows limit
@@ -26,7 +27,6 @@
 ## 3.3.3-beta
 
 ### Features
-- [#2292](https://github.com/poanetwork/blockscout/pull/2292) - Add Web UI for POSDAO Staking DApp
 - [#3320](https://github.com/poanetwork/blockscout/pull/3320) - Bridged tokens from AMB extensions support
 - [#3311](https://github.com/poanetwork/blockscout/pull/3311) - List of addresses with restricted access option
 - [#3293](https://github.com/poanetwork/blockscout/pull/3293) - Composite market cap for xDai: TokenBridge + OmniBridge
