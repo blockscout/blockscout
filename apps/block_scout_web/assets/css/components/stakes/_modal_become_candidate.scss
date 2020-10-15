@@ -1,6 +1,6 @@
 .modal-become-candidate {
-  max-width: 100%;
-  width: 280px;
+  max-width: 400px;
+  width: 100%;
 
   @include media-breakpoint-down(sm) {
     margin-left: auto;

@@ -1,7 +1,8 @@
 ## Current
 
 ### Features
-- [#3354](https://github.com/poanetwork/blockscout/pull/3354) - Tx hash in coin balance history
+- [#2292](https://github.com/poanetwork/blockscout/pull/2292) - Add Web UI for POSDAO Staking DApp
+- [#3354](https://github.com/poanetwork/blockscout/pull/3354) - Tx hash in EOA coin balance history
 - [#3333](https://github.com/poanetwork/blockscout/pull/3333), [#3337](https://github.com/poanetwork/blockscout/pull/3337) - Dark forest contract custom theme
 - [#3330](https://github.com/poanetwork/blockscout/pull/3330) - Caching of address transactions counter, remove query 10_000 rows limit
 
