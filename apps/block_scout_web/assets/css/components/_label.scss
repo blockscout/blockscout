@@ -1,4 +1,4 @@
-.bridged-token-label {
+.bs-label {
     display: inline-block;
     padding: 5px;
     background: #f5f6fa;
@@ -15,5 +15,12 @@
     &.amb {
         background: $secondary;
         color: #fff;
+    }
+    &.secondary {
+        background: $secondary;
+        color: #fff;
+    }
+    &.from-dropdown {
+        margin-top: -3px;
     }
 }

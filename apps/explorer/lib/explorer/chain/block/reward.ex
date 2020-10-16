@@ -200,25 +200,9 @@ defmodule Explorer.Chain.Block.Reward do
       |> Enum.map(fn {key, _value} -> key end)
       |> List.first()
 
-    value =
-      case Reader.query_contract(address, abi, params) do
-        %{^method_id => {:ok, [result]}} -> result
-        _ -> @empty_address
-      end
-
-    type =
-      abi
-      |> Enum.at(0)
-      |> Map.get("outputs", [])
-      |> Enum.at(0)
-      |> Map.get("type", "")
-
-    case type do
-      "address" ->
-        "0x" <> Base.encode16(value, case: :lower)
-
-      _ ->
-        value
+    case Reader.query_contract(address, abi, params) do
+      %{^method_id => {:ok, [result]}} -> result
+      _ -> @empty_address
     end
   end
 

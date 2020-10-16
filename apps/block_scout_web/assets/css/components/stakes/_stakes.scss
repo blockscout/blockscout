@@ -14,6 +14,7 @@ $stakes-stats-item-border-color: #fff !default;
 .stakes-top-stats {
   display: flex;
   justify-content: space-between;
+  align-items: center;
 
   @include stats-item($stakes-stats-item-border-color, $stakes-stats-item-color);
 
@@ -44,10 +45,11 @@ $stakes-stats-item-border-color: #fff !default;
   }
 
   @include media-breakpoint-down(sm) {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
   .copy-icon {
+    min-width: 18px;
     margin-left: 20px;
     path {
       fill: $stakes-dashboard-copy-icon-color;
@@ -59,31 +61,54 @@ $stakes-stats-item-border-color: #fff !default;
   align-items: center;
   display: flex;
 
-  .stakes-top-stats-item-address & {
-    white-space: normal;
-    word-break: break-all;
+  div:nth-child(1) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 }
 
+.stakes-top-stats-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
 .stakes-top-stats-login {
-  color: $primary;
-  cursor: pointer;
-  margin-right: 8px;
+  &, &:hover {
+    color: $secondary;
+    text-decoration: none;
+    cursor: pointer;
+    margin-right: 8px;
+  }
 }
 
 .stakes-address-container {
   display: flex;
-  cursor: pointer;
   justify-content: flex-start;
 
   .stakes-address {
-    color: $stakes-address-color;
     margin-right: 10px;
 
     .stakes-tr-banned & {
       color: $stakes-banned-color;
     }
+
+    a {
+      text-decoration: none;
+      color: $stakes-address-color;
+    }
   }
+
+  .stakes-address-active {
+    color: $stakes-address-color;
+    cursor: pointer;
+  }
+
+  .check-tooltip {
+		position: relative;
+		top: -1px;
+	}
 }
 
 .stakes-controls {
@@ -91,6 +116,7 @@ $stakes-stats-item-border-color: #fff !default;
   display: flex;
   justify-content: flex-end;
   padding-right: 30px;
+  float: left;
 }
 
 .stakes-control {
@@ -110,13 +136,29 @@ $stakes-stats-item-border-color: #fff !default;
 }
 
 .stakes-control-icon {
-  margin-right: 10px;
   path {
     fill: $stakes-control-color;
   }
 }
 
+.stakes-top-stats-item {
+  min-width: 180px;
+
+  &.stakes-top-stats-item-address {
+    min-width: 260px;
+    width: 100%;
+  }
+
+  @include media-breakpoint-down(sm) {
+    min-width: auto;
+    &.stakes-top-stats-item-address {
+      grid-column-end: span 2 !important;
+    }
+  }
+}
+
 .stakes-top-buttons {
+  min-width: 180px;
   align-items: center;
   display: flex;
   justify-content: center;
@@ -129,12 +171,21 @@ $stakes-stats-item-border-color: #fff !default;
   @include media-breakpoint-down(md) {
     grid-column-start: 2;
     grid-row-start: 2;
-    justify-self: end;
+    justify-self: left;
   }
 
   @include media-breakpoint-down(sm) {
+    min-width: auto;
+    grid-column-end: span 2;
     grid-column-start: auto !important;
     grid-row-start: auto !important;
     justify-self: center;
+  }
+}
+
+.staking-pg-container {
+  padding: 0 30px 30px;
+  &.at-bottom {
+    padding-top: 30px;
   }
 }

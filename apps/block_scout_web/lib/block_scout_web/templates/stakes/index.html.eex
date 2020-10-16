@@ -1,0 +1,46 @@
+<div data-selector="stakes-top">
+  <%= raw(@top) %>
+</div>
+<section data-page="stakes" class="container" data-refresh-interval="<%= @refresh_interval %>">
+  <div class="card" data-async-load data-async-listing="<%= @current_path %>">
+    <%= render BlockScoutWeb.StakesView, "_stakes_tabs.html", conn: @conn %>
+
+    <%=
+      render BlockScoutWeb.StakesView,
+      "_stakes_title.html",
+      title: list_title(@pools_type),
+      show_banned_checkbox: @pools_type == :inactive
+    %>
+
+    <div class="card-title-paging">
+      <%=
+        render BlockScoutWeb.CommonComponentsView,
+        "_pagination_container.html",
+        position: "top",
+        show_pagination_limit: true,
+        data_next_page_button: true,
+        data_prev_page_button: true
+      %>
+    </div>
+
+    <%=
+      render BlockScoutWeb.StakesView,
+      "_table.html",
+      pools_type: @pools_type
+    %>
+
+    <div class="card-footer-paging">
+      <%=
+        render BlockScoutWeb.CommonComponentsView,
+        "_pagination_container.html",
+        position: "bottom",
+        cur_page_number: "1",
+        show_pagination_limit: true,
+        data_next_page_button: true,
+        data_prev_page_button: true
+      %>
+    </div>
+
+  </div>
+</section>
+<div class="stakes-progress-graph-thing-for-getting-color"></div>
