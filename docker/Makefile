@@ -235,13 +235,13 @@ endif
 
 HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep ${DOCKER_IMAGE})
 build: 
-	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
-ifdef HAS_BLOCKSCOUT_IMAGE
-	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
-else
-	@echo "==> No image found trying to build one..."
+# 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
+# ifdef HAS_BLOCKSCOUT_IMAGE
+# 	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
+# else
+# 	@echo "==> No image found trying to build one..."
 	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
-endif
+# endif
 
 migrate: build postgres
 	@echo "==> Running migrations"
