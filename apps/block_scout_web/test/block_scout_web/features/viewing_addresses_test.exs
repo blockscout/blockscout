@@ -364,8 +364,13 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     end
 
     test "filter tokens balances by token name", %{session: session, lincoln: lincoln} do
-      session
-      |> AddressPage.visit_page(lincoln)
+      next =
+        session
+        |> AddressPage.visit_page(lincoln)
+
+      Process.sleep(2_000)
+
+      next
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
       |> assert_has(AddressPage.token_balance(count: 2))
@@ -374,19 +379,29 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     end
 
     # flaky test
-    # test "filter token balances by token symbol", %{session: session, lincoln: lincoln} do
-    #   session
-    #   |> AddressPage.visit_page(lincoln)
-    #   |> AddressPage.click_balance_dropdown_toggle()
-    #   |> AddressPage.fill_balance_dropdown_search("T2")
-    #   |> assert_has(AddressPage.token_balance(count: 2))
-    #   |> assert_has(AddressPage.token_type(count: 2))
-    #   |> assert_has(AddressPage.token_type_count(type: "ERC-20", text: "1"))
-    # end
+    test "filter token balances by token symbol", %{session: session, lincoln: lincoln} do
+      next =
+        session
+        |> AddressPage.visit_page(lincoln)
+
+      Process.sleep(2_000)
+
+      next
+      |> AddressPage.click_balance_dropdown_toggle()
+      |> AddressPage.fill_balance_dropdown_search("T2")
+      |> assert_has(AddressPage.token_balance(count: 2))
+      |> assert_has(AddressPage.token_type(count: 2))
+      |> assert_has(AddressPage.token_type_count(type: "ERC-20", text: "1"))
+    end
 
     test "reset token balances filter when dropdown closes", %{session: session, lincoln: lincoln} do
-      session
-      |> AddressPage.visit_page(lincoln)
+      next =
+        session
+        |> AddressPage.visit_page(lincoln)
+
+      Process.sleep(2_000)
+
+      next
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
       |> AddressPage.click_outside_of_the_dropdown()
