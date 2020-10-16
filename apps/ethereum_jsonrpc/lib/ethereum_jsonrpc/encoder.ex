@@ -68,6 +68,7 @@ defmodule EthereumJSONRPC.Encoder do
       |> TypeDecoder.decode_raw(types_list)
       |> Enum.zip(types_list)
       |> Enum.map(fn
+        {value, :address} -> "0x" <> Base.encode16(value, case: :lower)
         {value, _} -> value
       end)
 
