@@ -302,8 +302,7 @@ defmodule Explorer.SmartContract.ReaderTest do
   describe "link_outputs_and_values/2" do
     test "links the ABI outputs with the values retrieved from the blockchain" do
       blockchain_values = %{
-        "getOwner" =>
-          {:ok, "0x6937cb25eb54bc013b9c13c47ab38eb63edd1493"}
+        "getOwner" => {:ok, "0x6937cb25eb54bc013b9c13c47ab38eb63edd1493"}
       }
 
       outputs = [%{"name" => "", "type" => "address"}]
