@@ -120,10 +120,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
       {:ok, internal_transactions_params} ->
         import_internal_transaction(internal_transactions_params, unique_numbers)
 
-      {:error, reason} ->
-        Logger.error(fn -> ["failed to fetch internal transactions for blocks: ", inspect(reason)] end,
-          error_count: unique_numbers_count
-        )
+      {:error, _} ->
 
         # re-queue the de-duped entries
         {:retry, unique_numbers}
