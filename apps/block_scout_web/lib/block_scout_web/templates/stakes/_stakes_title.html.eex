@@ -1,0 +1,17 @@
+<div class="card-title-container">
+  <div class="card-title"><%= @title %></div>
+  <div class="card-title-controls">
+    <%= if @show_banned_checkbox do %>
+      <div class="check card-title-control">
+        <input type="checkbox" pool-filter-banned />
+        <div class="check-icon"></div>
+        <div class="check-text"><%= gettext("Show banned only") %></div>
+      </div>
+    <% end %>
+    <div class="check card-title-control">
+      <input type="checkbox" pool-filter-my />
+      <div class="check-icon"></div>
+      <div class="check-text"><%= gettext("Show only those I have stake in") %></div>
+    </div>
+  </div>
+</div>

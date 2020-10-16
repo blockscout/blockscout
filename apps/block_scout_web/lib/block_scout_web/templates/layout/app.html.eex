@@ -7,7 +7,8 @@
 
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
     <link rel="preload" href="<%= static_path(@conn, "/css/non-critical.css") %>" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="stylesheet" href="<%= static_path(@conn, "/css/non-critical.css") %>">
+    <noscript><link rel="stylesheet" href="<%= static_path(@conn, "/css/non-critical.css") %>"></noscript>
+    <%= render_existing(@view_module, "styles.html", assigns) %>
 
     <link rel="apple-touch-icon" sizes="180x180" href="<%= static_path(@conn, "/apple-touch-icon.png") %>">
     <link rel="icon" type="image/png" sizes="32x32" href="<%= static_path(@conn, "/images/favicon-32x32.png") %>">
@@ -151,6 +152,11 @@
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>
+    <%=
+      for status <- ["error", "warning", "success", "question"] do
+        render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status
+      end
+    %>
     <%= render_existing(@view_module, "scripts.html", assigns) %>
   </body>
 </html>
