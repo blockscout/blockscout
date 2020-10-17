@@ -142,6 +142,7 @@ defmodule BlockScoutWeb.Notifier do
         |> Stream.map(
           &(TokenTransfer
             |> Repo.get_by(
+              block_hash: &1.block_hash,
               transaction_hash: &1.transaction_hash,
               token_contract_address_hash: &1.token_contract_address_hash,
               log_index: &1.log_index

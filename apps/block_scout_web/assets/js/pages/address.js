@@ -72,7 +72,7 @@ export function reducer (state = initialState, action) {
 
 let fetchedTokenBalanceBlockNumber = 0
 function loadTokenBalance (blockNumber) {
-  if (blockNumber > fetchedTokenBalanceBlockNumber) {
+  if (blockNumber >= fetchedTokenBalanceBlockNumber) {
     fetchedTokenBalanceBlockNumber = blockNumber
     setTimeout(loadTokenBalanceDropdown, 1000)
   }
