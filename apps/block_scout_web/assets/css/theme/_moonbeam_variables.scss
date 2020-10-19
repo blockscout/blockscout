@@ -1,0 +1,206 @@
+// general
+$primary: #131B34;
+$secondary: #D3347B;
+$tertiary: #74C9C9;
+$quaternary: #F6BF60;
+$quinary: #17263D;
+$additional-font: #fff;
+
+// footer
+$footer-background-color: $primary;
+$footer-title-color: #fff;
+$footer-text-color: #8B99C6;
+$footer-item-disc-color: #74C9C9;
+.footer-logo { filter: brightness(0) invert(1); }
+
+// dashboard
+$dashboard-line-color-price: $tertiary; // price left border
+
+$dashboard-line-color-market: $quaternary;
+
+$dashboard-line-color-transactions: $secondary;
+
+$dashboard-banner-chart-legend-label-color: $footer-text-color;
+$dashboard-stats-item-label-color: $footer-text-color;
+$dashboard-banner-chart-legend-value-color: #fff; // chart labels
+$dashboard-stats-item-value-color: #fff; // stat values
+
+$dashboard-stats-item-border-color: $secondary; // stat border
+
+$dashboard-banner-gradient-start: $primary; // gradient begin
+
+$dashboard-banner-gradient-end: lighten($primary, 5); // gradient end
+
+$dashboard-banner-network-plain-container-background-color: $quinary; // stats bg
+
+
+// navigation
+.navbar { box-shadow: 0px 0px 30px 0px rgba(21, 53, 80, 0.12); } // header shadow
+
+// form
+$form-control-border-color-active: $secondary;
+
+// buttons
+$btn-line-bg: #fff; // button bg
+$btn-line-color: $secondary; // button border and font color && hover bg color
+$btn-copy-color: $secondary; // btn copy
+$btn-qr-color: $secondary; // btn qr-code
+$btn-address-card-icon-color: $secondary; // btn address color
+$btn-contract-color: $secondary;
+
+//links & tile
+$tile-body-a-color: $secondary;
+$tile-type-block-color: $secondary;
+$tile-type-progress-bar-color: $secondary;
+a.tile-title { color: $secondary !important; }
+.card-body {  
+	a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link):not([data-test=token_link]):not(#dropdown-tokens):not(.btn-line):not(.page-link) {
+		color: $secondary;
+
+		&:hover {
+			color: $secondary;
+		}
+	}
+}
+
+// card
+$card-background-1: $secondary;
+$card-tab-active: $secondary;
+
+.layout-container {
+	.dashboard-banner-container {
+	  background-image: linear-gradient(
+	    to bottom,
+	    $dashboard-banner-gradient-start,
+	    $dashboard-banner-gradient-end
+	  );
+	}
+}
+
+.navbar.navbar-primary {
+    background-color: $quinary;
+    color: #fff;
+}
+
+.nav-item {
+    color: #fff;
+}
+
+.navbar.navbar-primary .form-control {
+    background-color: $quinary;
+    border-color: $quinary;
+    color: $footer-text-color;
+}
+
+.navbar.navbar-primary .navbar-nav .nav-link {
+    color: #fff;
+}
+
+.navbar.navbar-primary .navbar-nav .nav-link.active, .navbar.navbar-primary .navbar-nav .nav-link:hover, .navbar.navbar-primary .navbar-nav .nav-link.active-icon {
+    color: #fff;
+}
+
+.dark-mode-changer {
+    svg path {
+        fill: #fff;
+    }
+}
+
+.navbar.navbar-primary .navbar-nav .nav-link .nav-link-icon.blocks-menu-item path {
+    fill: $tertiary;
+}
+
+.navbar.navbar-primary .navbar-nav .nav-link .nav-link-icon.transactions-menu-item path {
+    fill: $quaternary;
+}
+
+.navbar.navbar-primary .navbar-nav .nav-link .nav-link-icon.accounts-menu-item path {
+    fill: $secondary;
+}
+
+.navbar.navbar-primary .navbar-nav .nav-link .nav-link-icon.tokens-menu-item path {
+    fill: #8E44EE;
+}
+
+.navbar.navbar-primary .navbar-nav .nav-link .nav-link-icon.apis-menu-item path {
+    fill: $tertiary;
+}
+
+.navbar.navbar-primary .navbar-nav .nav-link .nav-link-icon.apps-menu-item path {
+    fill: $quaternary;
+}
+
+.nav-item .dropdown-menu .dropdown-item {
+    background-color: $quinary;
+    color: $footer-text-color;
+}
+
+.nav-item .dropdown-menu .dropdown-item:hover {
+    color: #fff;
+}
+
+.nav-item .dropdown-menu .dropdown-item.header {
+    background-color: $quinary !important;
+}
+
+.dropdown-item.division {
+    border-top: 1px solid $primary;
+}
+
+.footer {
+    background-color: #131B34;
+    background-image: url(/images/custom-themes/moonbeam/footer_logo.svg) !important;
+    background-position: bottom 0px right 30px;
+    background-repeat: no-repeat;
+}
+
+.footer-social-icon {
+    color: $tertiary;
+}
+
+// Badges
+$badge-neutral-color: #20446e;
+$badge-neutral-background-color: rgba(#20446e, .1);
+$api-text-monospace-color: #20446e;
+
+// Staking
+$stakes-btn-remove-pool-color: $secondary;
+$stakes-dashboard-copy-icon-color: $secondary;
+$btn-full-primary-bg: $secondary;
+$stakes-address-color: $secondary;
+$stakes-control-color: $secondary;
+$stakes-link-color: $secondary;
+$progress-from-to-progress-background: $secondary;
+$stakes-stats-item-border-color: rgba(#fff, .5);
+$check-color: $secondary;
+$modal-status-graph-success: $secondary;
+$stakes-progress-graph-color: $secondary;
+
+// Dark theme
+$dark-primary: #15bba6;
+$dark-secondary: #93d7ff;
+$dark-primary-alternate: #15bba6;
+$dark-tertiary: #5a77ff;
+
+.dark-theme-applied .tile .tile-body a, .dark-theme-applied .tile span[data-address-hash] {
+    color: $dark-tertiary!important;
+}
+
+.dark-theme-applied .btn-line {
+    background-color: transparent!important;
+    border-color: $dark-tertiary!important;
+    color: $dark-tertiary!important;
+
+    &[disabled] {
+        &,
+        &:hover {
+            background-color: transparent!important;
+            border-color: $dark-tertiary!important;
+            color: $dark-tertiary!important;
+        }
+    }
+}
+
+.dark-theme-applied .btn-line:hover {
+    color: $additional-font!important;
+}

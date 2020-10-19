@@ -28,7 +28,7 @@
         <%= if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter)[:enabled] do %>
           <li class="nav-item dropdown">
             <a class="nav-link topnav-nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
+              <span class="nav-link-icon blocks-menu-item">
                 <%= render BlockScoutWeb.IconsView, "_block_icon.html" %>
               </span>
               <%= gettext("Blocks") %>
@@ -47,7 +47,7 @@
           </li>
           <li class="nav-item dropdown">            <li class="nav-item dropdown" id="activeTransactions">
             <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
+              <span class="nav-link-icon transactions-menu-item">
                 <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
               </span>
               <%= gettext("Transactions") %>
@@ -72,7 +72,7 @@
           </li>
           <li class="nav-item">
             <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("accounts", @conn.request_path)}" do %>
-              <span class="nav-link-icon">
+              <span class="nav-link-icon accounts-menu-item">
                 <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
               </span>
               <%= gettext("Accounts") %>
@@ -81,7 +81,7 @@
           <%= if Chain.bridged_tokens_enabled?() do %>
             <li class="nav-item dropdown">
               <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <span class="nav-link-icon">
+                <span class="nav-link-icon tokens-menu-item">
                   <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
                 </span>
                 <%= gettext("Tokens") %>
@@ -107,7 +107,7 @@
           <% else %>
             <li class="nav-item">
               <%= link to: tokens_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("tokens", @conn.request_path)}" do %>
-                <span class="nav-link-icon">
+                <span class="nav-link-icon tokens-menu-item">
                   <%= render BlockScoutWeb.IconsView, "_tokens_icon.html" %>
                 </span>
                 <%= gettext("Tokens") %>
@@ -118,7 +118,7 @@
         <%= if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:reading_enabled] || Application.get_env(:block_scout_web, :api_url) do %>
           <li class="nav-item dropdown">
             <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
+              <span class="nav-link-icon apis-menu-item">
                 <%= render BlockScoutWeb.IconsView, "_api_icon.html" %>
               </span>
               <%= gettext("APIs") %>
@@ -145,7 +145,7 @@
         <%= if Application.get_env(:block_scout_web, :apps_menu) == true || Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
           <li class="nav-item dropdown">
             <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
+              <span class="nav-link-icon apps-menu-item">
                 <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
               </span>
               <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
