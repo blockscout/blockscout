@@ -8,6 +8,7 @@
 
 
 ### Fixes
+- [#3368](https://github.com/poanetwork/blockscout/pull/3368) - Fix Verify contract loading button width
 - [#3357](https://github.com/poanetwork/blockscout/pull/3357) - Fix token transfer realtime fetcher
 - [#3353](https://github.com/poanetwork/blockscout/pull/3353) - Fix xDai buttons hover color
 - [#3352](https://github.com/poanetwork/blockscout/pull/3352) - Fix dark body background
