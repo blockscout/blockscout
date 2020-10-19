@@ -7,10 +7,33 @@
   </td>
   <td class="stakes-td">
     <% token = token_display_name(@token) %>
-    <%= link(token,
-      to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
-      "data-test": "token_link",
-      class: "text-truncate") %>
+    <div>
+      <%= link(token,
+        to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
+        "data-test": "token_link",
+        class: "text-truncate") %>
+      <%= if @bridged_token.type do %>
+        <div class="bs-label right <%= @bridged_token.type %>"><%= String.upcase(@bridged_token.type) %></div>
+      <% end %>
+      <%= if owl_token_amb?(@token.contract_address.hash) do %>
+        <span
+          data-toggle="tooltip"
+          data-placement="top"
+          data-html="true"
+          title="<%= owl_token_amb_info() %>">
+          <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="owl_info"></i>
+        </span>
+      <% end %>
+      <%= if owl_token_omni?(@token.contract_address.hash) do %>
+        <span
+          data-toggle="tooltip"
+          data-placement="top"
+          data-html="true"
+          title="<%= owl_token_omni_info() %>">
+          <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="owl_info"></i>
+        </span>
+      <% end %>
+    </div>
   </td>
   <td class="stakes-td">
     <%= render BlockScoutWeb.AddressView,

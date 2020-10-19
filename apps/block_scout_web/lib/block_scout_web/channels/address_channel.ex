@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.AddressChannel do
          {:ok, address = %{fetched_coin_balance: balance}} when not is_nil(balance) <-
            Chain.hash_to_address(casted_address_hash),
          exchange_rate <- Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-         {:ok, rendered} <- render_balance_card(address, exchange_rate, socket.assigns.locale) do
+         {:ok, rendered} <- render_balance_card(address, exchange_rate, socket) do
       reply =
         {:ok,
          %{
@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.AddressChannel do
         %{address: address, exchange_rate: exchange_rate},
         socket
       ) do
-    case render_balance_card(address, exchange_rate, socket.assigns.locale) do
+    case render_balance_card(address, exchange_rate, socket) do
       {:ok, rendered} ->
         push(socket, "balance", %{
           balance_card: rendered,
@@ -190,14 +190,15 @@ defmodule BlockScoutWeb.AddressChannel do
     {:noreply, socket}
   end
 
-  defp render_balance_card(address, exchange_rate, locale) do
-    Gettext.put_locale(BlockScoutWeb.Gettext, locale)
+  defp render_balance_card(address, exchange_rate, socket) do
+    Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     try do
       rendered =
         View.render_to_string(
           AddressView,
           "_balance_card.html",
+          conn: socket,
           address: address,
           coin_balance_status: :current,
           exchange_rate: exchange_rate

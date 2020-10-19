@@ -27,7 +27,7 @@
           <span><%= gettext("There was a problem loading the chart.") %></span>
         </button>
         <div data-chart-container style="display: none;" class="mb-4">
-          <canvas data-chart="coinBalanceHistoryChart" data-coin_balance_history_data_path="<%= address_coin_balance_by_day_path(@conn, :index, @address) %>" width="350" height="152"></canvas>
+          <canvas data-chart="coinBalanceHistoryChart" data-coin_balance_history_data_path="<%= AccessHelpers.get_path(@conn, :address_coin_balance_by_day_path, :index, @address.hash) %>" width="350" height="152"></canvas>
         </div>
 
         <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>

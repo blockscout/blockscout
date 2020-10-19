@@ -7,7 +7,8 @@
 
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
     <link rel="preload" href="<%= static_path(@conn, "/css/non-critical.css") %>" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="stylesheet" href="<%= static_path(@conn, "/css/non-critical.css") %>">
+    <noscript><link rel="stylesheet" href="<%= static_path(@conn, "/css/non-critical.css") %>"></noscript>
+    <%= render_existing(@view_module, "styles.html", assigns) %>
 
     <link rel="apple-touch-icon" sizes="180x180" href="<%= static_path(@conn, "/apple-touch-icon.png") %>">
     <link rel="icon" type="image/png" sizes="32x32" href="<%= static_path(@conn, "/images/favicon-32x32.png") %>">
@@ -36,6 +37,52 @@
   </head>
 
   <body>
+    <% raw_dark_forest_addresses = CustomContractsHelpers.get_raw_dark_forest_addresses_list() %>
+    <%= cond do %>
+      <% (
+        @view_module == Elixir.BlockScoutWeb.TransactionInternalTransactionView ||
+        @view_module == Elixir.BlockScoutWeb.TransactionLogView ||
+        @view_module == Elixir.BlockScoutWeb.TransactionRawTraceView ||
+        @view_module == Elixir.BlockScoutWeb.TransactionTokenTransferView
+      ) -> %>
+        <% to_address = @transaction && @transaction.to_address && "0x" <> Base.encode16(@transaction.to_address.hash.bytes, case: :lower) %>
+        <script>
+          function applyCustomMode() {
+            const darkForestContractAddressHashesRaw = "<%= raw_dark_forest_addresses %>"
+            if (darkForestContractAddressHashesRaw !== "") {
+              const darkForestContractAddressHashes = darkForestContractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
+              const to_address = "<%= to_address %>"
+
+              darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
+                if (to_address == darkForestContractAddressHash) {
+                  document.body.className += " " + "dark-forest-theme-applied";
+                  return;
+                }
+              })
+            }
+
+          }
+
+          window.onload = applyCustomMode()
+        </script>
+      <% true -> %>
+        <script>
+          function applyCustomMode() {
+            const darkForestContractAddressHashesRaw = "<%= raw_dark_forest_addresses %>"
+            if (darkForestContractAddressHashesRaw !== "") {
+              const darkForestContractAddressHashes = darkForestContractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
+              darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
+                if (window.location.pathname.toLowerCase().includes(darkForestContractAddressHash)) {
+                  document.body.className += " " + "dark-forest-theme-applied";
+                  return;
+                }
+              })
+            }
+          }
+
+          window.onload = applyCustomMode()
+        </script>
+    <% end %>
     <script>
       function applyDarkMode() {
         if (localStorage.getItem("current-color-mode") === "dark") {
@@ -43,6 +90,7 @@
           document.body.style.backgroundColor = "#1c1d31";
         }
       }
+
       window.onload = applyDarkMode()
     </script>
     <div class="layout-container">
@@ -104,6 +152,11 @@
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>
+    <%=
+      for status <- ["error", "warning", "success", "question"] do
+        render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status
+      end
+    %>
     <%= render_existing(@view_module, "scripts.html", assigns) %>
   </body>
 </html>

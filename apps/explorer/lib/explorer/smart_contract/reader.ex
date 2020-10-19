@@ -415,19 +415,19 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   defp new_value(%{"type" => "address"} = output, [value], _index) do
-    Map.put_new(output, "value", bytes_to_string(value))
+    Map.put_new(output, "value", value)
   end
 
   defp new_value(%{"type" => :address} = output, [value], _index) do
-    Map.put_new(output, "value", bytes_to_string(value))
+    Map.put_new(output, "value", value)
   end
 
   defp new_value(%{"type" => "address"} = output, values, index) do
-    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+    Map.put_new(output, "value", Enum.at(values, index))
   end
 
   defp new_value(%{"type" => :address} = output, values, index) do
-    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+    Map.put_new(output, "value", Enum.at(values, index))
   end
 
   defp new_value(%{"type" => "bytes" <> number_rest} = output, values, index) do
@@ -446,6 +446,10 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   defp new_value(%{"type" => "bytes"} = output, values, index) do
+    Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
+  end
+
+  defp new_value(%{"type" => :bytes} = output, values, index) do
     Map.put_new(output, "value", bytes_to_string(Enum.at(values, index)))
   end
 

@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.LayoutView do
   @issue_url "https://github.com/poanetwork/blockscout/issues/new"
   @default_other_networks [
     %{
-      title: "POA Core",
+      title: "POA",
       url: "https://blockscout.com/poa/core"
     },
     %{
@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.LayoutView do
       test_net?: true
     },
     %{
-      title: "xDai Chain",
+      title: "xDai",
       url: "https://blockscout.com/poa/xdai"
     },
     %{
@@ -25,13 +25,13 @@ defmodule BlockScoutWeb.LayoutView do
       other?: true
     },
     %{
-      title: "RSK Mainnet",
+      title: "RSK",
       url: "https://blockscout.com/rsk/mainnet",
       other?: true
     }
   ]
 
-  alias BlockScoutWeb.SocialMedia
+  alias BlockScoutWeb.{CustomContractsHelpers, SocialMedia}
 
   def logo do
     Keyword.get(application_config(), :logo) || "/images/blockscout_logo.svg"
@@ -40,6 +40,10 @@ defmodule BlockScoutWeb.LayoutView do
   def logo_footer do
     Keyword.get(application_config(), :logo_footer) || Keyword.get(application_config(), :logo) ||
       "/images/blockscout_logo.svg"
+  end
+
+  def logo_text do
+    Keyword.get(application_config(), :logo_text) || nil
   end
 
   def subnetwork_title do

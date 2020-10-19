@@ -1,0 +1,5 @@
+<span class="stakes-control js-withdraw-stake <%= if assigns[:extra_class] do @extra_class end %>" data-address="<%= to_string(@address) %>" data-placement="top" data-toggle="tooltip" title="Withdraw">
+    <svg class="stakes-control-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+        <path fill-rule="evenodd" d="M15 16H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1zm-1-3H2v1h12v-1zm-3.754-8.279L9 3.479V8a1 1 0 0 1-2 0V3.488L5.765 4.719a1.042 1.042 0 0 1-1.469 0 1.032 1.032 0 0 1 0-1.464L7.235.326a1.04 1.04 0 0 1 1.137-.22c.007.003.012.01.019.013.144.049.28.122.394.236l2.921 2.911a1.027 1.027 0 0 1 0 1.455 1.036 1.036 0 0 1-1.46 0z"/>
+    </svg>
+</span>

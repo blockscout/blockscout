@@ -12,7 +12,7 @@ defmodule Explorer.SmartContract.SolcDownloader do
   def ensure_exists(version) do
     path = file_path(version)
 
-    if File.exists?(path) do
+    if File.exists?(path) && version !== "latest" do
       path
     else
       {:ok, compiler_versions} = CompilerVersion.fetch_versions()
@@ -83,7 +83,7 @@ defmodule Explorer.SmartContract.SolcDownloader do
   end
 
   defp download(version) do
-    download_path = "https://ethereum.github.io/solc-bin/bin/soljson-#{version}.js"
+    download_path = "https://solc-bin.ethereum.org/bin/soljson-#{version}.js"
 
     download_path
     |> HTTPoison.get!([], timeout: 60_000, recv_timeout: 60_000)

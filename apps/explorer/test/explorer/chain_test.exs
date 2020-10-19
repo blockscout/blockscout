@@ -4658,7 +4658,7 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 11
+          token_id: 29
         )
 
       second_page =
@@ -4669,7 +4669,7 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token,
-          token_id: 29
+          token_id: 11
         )
 
       paging_options = %PagingOptions{key: {first_page.token_id}, page_size: 1}
@@ -4980,7 +4980,7 @@ defmodule Explorer.ChainTest do
 
       options = %PagingOptions{page_size: 20, page_number: 1}
 
-      assert [gotten_validator] = Chain.staking_pools(:validator, options)
+      assert [%{pool: gotten_validator}] = Chain.staking_pools(:validator, options)
       assert inserted_validator.staking_address_hash == gotten_validator.staking_address_hash
     end
 
@@ -4990,8 +4990,27 @@ defmodule Explorer.ChainTest do
 
       options = %PagingOptions{page_size: 20, page_number: 1}
 
-      assert [gotten_pool] = Chain.staking_pools(:active, options)
+      assert [%{pool: gotten_pool}] = Chain.staking_pools(:active, options)
       assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
+    end
+
+    test "all active staking pools ordered by staking_address" do
+      address1 = Factory.address_hash()
+      address2 = Factory.address_hash()
+      address3 = Factory.address_hash()
+
+      assert address1 < address2 and address2 < address3
+
+      # insert pools in descending order
+      insert(:staking_pool, is_active: true, staking_address_hash: address3)
+      insert(:staking_pool, is_active: true, staking_address_hash: address2)
+      insert(:staking_pool, is_active: true, staking_address_hash: address1)
+
+      # get all active pools in ascending order
+      assert [%{pool: pool1}, %{pool: pool2}, %{pool: pool3}] = Chain.staking_pools(:active, :all)
+      assert pool1.staking_address_hash == address1
+      assert pool2.staking_address_hash == address2
+      assert pool3.staking_address_hash == address3
     end
 
     test "inactive staking pools" do
@@ -5000,7 +5019,7 @@ defmodule Explorer.ChainTest do
 
       options = %PagingOptions{page_size: 20, page_number: 1}
 
-      assert [gotten_pool] = Chain.staking_pools(:inactive, options)
+      assert [%{pool: gotten_pool}] = Chain.staking_pools(:inactive, options)
       assert inserted_pool.staking_address_hash == gotten_pool.staking_address_hash
     end
   end

@@ -64,7 +64,6 @@ export const hideConnectButton = () => {
           }
         })
       } else {
-        console.log(window.ethereum.selectedAddress)
         resolve({ shouldHide: true, account: window.ethereum.selectedAddress })
       }
     } else {
