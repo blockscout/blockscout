@@ -1046,6 +1046,11 @@ $dark-stakes-banned-background: #3e314c;
 	.tooltip-inversed-color.bs-tooltip-auto[x-placement^="left"] .arrow::before {
 		border-left-color: $btn-line-color !important;
 	}
+
+	.stakes-top {
+		background-color: $dark-bg;
+		background-image: none;
+	}
 }
 
 .navbar-dark .navbar-toggler {
