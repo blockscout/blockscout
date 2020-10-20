@@ -37,3 +37,12 @@
 .word-break-all {
   word-break: break-all;
 }
+
+.centered-container {
+  display: flex;
+  align-items: center;
+}
+
+.pre-wrap {
+  white-space: pre-wrap;
+}
