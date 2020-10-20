@@ -1,10 +1,12 @@
 <section class="container" data-page="transaction-pending-list">
   <div class="card">
     <div class="card-body" data-async-listing="<%= @current_path %>">
-      <h1 class="card-title"><%= gettext "Pending Transactions" %></h1>
+      <h1 class="card-title list-title-description"><%= gettext "Pending Transactions" %></h1>
 
-      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
-
+      <div class="list-top-pagination-container-wrapper">
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      </div>
+ 
       <div data-selector="channel-batching-message" style="display:none;">
         <div data-selector="reload-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>

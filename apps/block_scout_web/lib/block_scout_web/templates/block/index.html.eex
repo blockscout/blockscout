@@ -7,9 +7,11 @@
         </div>
       </div>
 
-      <h1 class="card-title"><%= gettext("%{block_type}s", block_type: @block_type) %></h1>
+      <h1 class="card-title list-title-description"><%= gettext("%{block_type}s", block_type: @block_type) %></h1>
 
-      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      <div class="list-top-pagination-container-wrapper">
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      </div>
 
       <div data-items>
         <%= render BlockScoutWeb.CommonComponentsView, "_tile-loader.html" %>
