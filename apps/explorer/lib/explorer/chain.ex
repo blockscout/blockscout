@@ -5488,6 +5488,7 @@ defmodule Explorer.Chain do
     Block
     |> where([b], b.number == ^number)
     |> select([b], b.timestamp)
+    |> limit(1)
     |> Repo.one()
   end
 end
