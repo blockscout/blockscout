@@ -1058,6 +1058,7 @@ defmodule Explorer.Chain do
   def search_token(word) do
     term =
       word
+      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
       |> String.replace(~r/ +/, " & ")
 
     term_final = term <> ":*"
@@ -1086,6 +1087,7 @@ defmodule Explorer.Chain do
   def search_contract(word) do
     term =
       word
+      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
       |> String.replace(~r/ +/, " & ")
 
     term_final = term <> ":*"
