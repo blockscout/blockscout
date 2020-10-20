@@ -1207,6 +1207,13 @@ msgid "Responses"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/block/_tile.html.eex:48
+#: lib/block_scout_web/templates/chain/_block.html.eex:24
+#: lib/block_scout_web/views/internal_transaction_view.ex:28
+msgid "Reward"
+msgstr "Minted"
+
+#, elixir-format
 #: lib/block_scout_web/views/block_view.ex:56
 msgid "Miner Reward"
 msgstr "Validator Reward"
