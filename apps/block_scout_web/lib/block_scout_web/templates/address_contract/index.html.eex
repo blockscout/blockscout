@@ -145,7 +145,7 @@
               <h3><%= gettext "External libraries" %></h3>
             </div>
             <div class="tile tile-muted mb-4">
-              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_external_libraries(target_contract.external_libraries)) %></code>
+              <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= raw(format_external_libraries(target_contract.external_libraries, @conn)) %></code>
               </pre>
             </div>
           </section>
