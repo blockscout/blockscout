@@ -378,7 +378,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.token_type_count(type: "ERC-721", text: "1"))
     end
 
-    # flaky test
     test "filter token balances by token symbol", %{session: session, lincoln: lincoln} do
       next =
         session

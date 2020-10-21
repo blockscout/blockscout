@@ -244,8 +244,18 @@ defmodule Explorer.SmartContract.Verifier.ConstructorArguments do
          metadata_hash_prefix
        ) do
     if is_constructor_arguments_still_has_metadata_prefix(constructor_arguments, metadata_hash_prefix) do
-      <<_::binary-size(2)>> <> rest = constructor_arguments
-      extract_constructor_arguments(rest, check_func, contract_source_code, contract_name)
+      {ind, _} = :binary.match(constructor_arguments, metadata_hash_prefix)
+      offset = if ind > 2, do: ind - 2, else: 0
+
+      processed_constructor_arguments =
+        if offset > 0 do
+          <<_::binary-size(offset)>> <> rest = constructor_arguments
+          rest
+        else
+          constructor_arguments
+        end
+
+      extract_constructor_arguments(processed_constructor_arguments, check_func, contract_source_code, contract_name)
     else
       extract_constructor_arguments_check_func(
         constructor_arguments,
