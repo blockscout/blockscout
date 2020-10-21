@@ -8,6 +8,7 @@
 
 
 ### Fixes
+- [#3375](https://github.com/poanetwork/blockscout/pull/3375) - Prevent terminating of tokens/contracts process
 - [#3374](https://github.com/poanetwork/blockscout/pull/3374) - Fix find block timestamp query
 - [#3373](https://github.com/poanetwork/blockscout/pull/3373) - Fix horizontal scroll in Tokens table
 - [#3370](https://github.com/poanetwork/blockscout/pull/3370) - Improve contracts verification: refine constructor arguments extractor
