@@ -38,11 +38,13 @@ defmodule BlockScoutWeb.StakesController do
         })
       end
 
+    epoch_end_in = if epoch_end_block - block_number >= 0, do: epoch_end_block - block_number, else: 0
+
     View.render_to_string(StakesView, "_stakes_top.html",
       account: account,
       block_number: block_number,
       candidates_limit_reached: active_pools_length >= max_candidates,
-      epoch_end_in: epoch_end_block - block_number,
+      epoch_end_in: epoch_end_in,
       epoch_number: epoch_number,
       token: token
     )

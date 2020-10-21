@@ -1469,6 +1469,7 @@ defmodule Explorer.ChainTest do
     test "returns 1.0 if fully indexed blocks" do
       for index <- 0..9 do
         insert(:block, number: index)
+        Process.sleep(200)
       end
 
       assert Decimal.cmp(Chain.indexed_ratio(), 1) == :eq
@@ -1479,6 +1480,7 @@ defmodule Explorer.ChainTest do
     test "fetches min block numbers" do
       for index <- 5..9 do
         insert(:block, number: index)
+        Process.sleep(200)
       end
 
       assert 5 = Chain.fetch_min_block_number()
@@ -3469,14 +3471,20 @@ defmodule Explorer.ChainTest do
 
     # 0101
     test "0..0 with blocks 1,3" do
-      Enum.each([1, 3], &insert(:block, number: &1))
+      Enum.each([1, 3], fn num ->
+        insert(:block, number: num)
+        Process.sleep(200)
+      end)
 
       assert Chain.missing_block_number_ranges(0..0) == [0..0]
     end
 
     # 0111
     test "0..0 with blocks 1..3" do
-      Enum.each(1..3, &insert(:block, number: &1))
+      Enum.each(1..3, fn num ->
+        insert(:block, number: num)
+        Process.sleep(200)
+      end)
 
       assert Chain.missing_block_number_ranges(0..0) == [0..0]
     end
@@ -3518,7 +3526,10 @@ defmodule Explorer.ChainTest do
 
     # 1101
     test "0..0 with blocks 0,1,3" do
-      Enum.each([0, 1, 3], &insert(:block, number: &1))
+      Enum.each([0, 1, 3], fn num ->
+        insert(:block, number: num)
+        Process.sleep(200)
+      end)
 
       assert Chain.missing_block_number_ranges(0..0) == []
     end
@@ -3532,7 +3543,10 @@ defmodule Explorer.ChainTest do
 
     # 1111
     test "0..0 with blocks 0..3" do
-      Enum.each(0..2, &insert(:block, number: &1))
+      Enum.each(0..2, fn num ->
+        insert(:block, number: num)
+        Process.sleep(200)
+      end)
 
       assert Chain.missing_block_number_ranges(0..0) == []
     end

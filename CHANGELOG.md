@@ -1,13 +1,19 @@
 ## Current
 
 ### Features
-- [#2292](https://github.com/poanetwork/blockscout/pull/2292), [#3356](https://github.com/poanetwork/blockscout/pull/3356), [#3359](https://github.com/poanetwork/blockscout/pull/3359), [#3360](https://github.com/poanetwork/blockscout/pull/3360) - Add Web UI for POSDAO Staking DApp
+- [#2292](https://github.com/poanetwork/blockscout/pull/2292), [#3356](https://github.com/poanetwork/blockscout/pull/3356), [#3359](https://github.com/poanetwork/blockscout/pull/3359), [#3360](https://github.com/poanetwork/blockscout/pull/3360), [#3365](https://github.com/poanetwork/blockscout/pull/3365) - Add Web UI for POSDAO Staking DApp
 - [#3354](https://github.com/poanetwork/blockscout/pull/3354) - Tx hash in EOA coin balance history
 - [#3333](https://github.com/poanetwork/blockscout/pull/3333), [#3337](https://github.com/poanetwork/blockscout/pull/3337) - Dark forest contract custom theme
 - [#3330](https://github.com/poanetwork/blockscout/pull/3330) - Caching of address transactions counter, remove query 10_000 rows limit
 
 
 ### Fixes
+- [#3376](https://github.com/poanetwork/blockscout/pull/3376) - Fix contract nested inputs
+- [#3375](https://github.com/poanetwork/blockscout/pull/3375) - Prevent terminating of tokens/contracts process
+- [#3374](https://github.com/poanetwork/blockscout/pull/3374) - Fix find block timestamp query
+- [#3373](https://github.com/poanetwork/blockscout/pull/3373) - Fix horizontal scroll in Tokens table
+- [#3370](https://github.com/poanetwork/blockscout/pull/3370) - Improve contracts verification: refine constructor arguments extractor
+- [#3368](https://github.com/poanetwork/blockscout/pull/3368) - Fix Verify contract loading button width
 - [#3357](https://github.com/poanetwork/blockscout/pull/3357) - Fix token transfer realtime fetcher
 - [#3353](https://github.com/poanetwork/blockscout/pull/3353) - Fix xDai buttons hover color
 - [#3352](https://github.com/poanetwork/blockscout/pull/3352) - Fix dark body background
@@ -22,6 +28,9 @@
 - [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
+- [#3372](https://github.com/poanetwork/blockscout/pull/3372) - Improve all lists header container
+- [#3371](https://github.com/poanetwork/blockscout/pull/3371) - Eliminate dark background except Dark forest theme
+- [#3366](https://github.com/poanetwork/blockscout/pull/3366) - Stabilize tests execution in Github Actions CI
 - [#3343](https://github.com/poanetwork/blockscout/pull/3343) - Make (Bridged) Tokens' list page's header more compact
 
 
