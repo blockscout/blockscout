@@ -9,6 +9,7 @@
 
 
 ### Fixes
+- [#3382](https://github.com/poanetwork/blockscout/pull/3382) - Check ets table exists for know tokens
 - [#3376](https://github.com/poanetwork/blockscout/pull/3376) - Fix contract nested inputs
 - [#3375](https://github.com/poanetwork/blockscout/pull/3375) - Prevent terminating of tokens/contracts process
 - [#3374](https://github.com/poanetwork/blockscout/pull/3374) - Fix find block timestamp query
