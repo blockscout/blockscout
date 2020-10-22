@@ -640,16 +640,16 @@ defmodule Explorer.Chain do
       from(
         block in Block,
         left_join: transaction in assoc(block, :transactions),
-        inner_join: emission_reward in EmissionReward,
+        left_join: emission_reward in EmissionReward,
         on: fragment("? <@ ?", block.number, emission_reward.block_range),
         where: block.number == ^block_number,
         group_by: emission_reward.reward,
         select: %Wei{
-          value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0) + emission_reward.reward
+          value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0) + coalesce(emission_reward.reward, 0)
         }
       )
 
-    Repo.one!(query)
+    Repo.one(query)
   end
 
   @doc """

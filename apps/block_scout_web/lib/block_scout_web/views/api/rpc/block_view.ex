@@ -7,9 +7,13 @@ defmodule BlockScoutWeb.API.RPC.BlockView do
 
   def render("block_reward.json", %{block: block, reward: reward}) do
     reward_as_string =
-      reward
-      |> Wei.to(:wei)
-      |> Decimal.to_string(:normal)
+      if reward do
+        reward
+        |> Wei.to(:wei)
+        |> Decimal.to_string(:normal)
+      else
+        ""
+      end
 
     data = %{
       "blockNumber" => to_string(block.number),
