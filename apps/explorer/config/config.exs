@@ -88,6 +88,30 @@ config :explorer, Explorer.Counters.AddressesCounter,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
 
+address_transactions_counter_cache_period =
+  case Integer.parse(System.get_env("ADDRESS_TRANSACTIONS_COUNTER_CACHE_PERIOD", "")) do
+    {secs, ""} -> :timer.seconds(secs)
+    _ -> :timer.hours(1)
+  end
+
+config :explorer, Explorer.Counters.AddressTransactionsCounter,
+  enabled: true,
+  enable_consolidation: true,
+  period: address_transactions_counter_cache_period
+
+bridge_market_cap_update_interval =
+  if System.get_env("BRIDGE_MARKET_CAP_UPDATE_INTERVAL") do
+    case Integer.parse(System.get_env("BRIDGE_MARKET_CAP_UPDATE_INTERVAL")) do
+      {integer, ""} -> integer
+      _ -> nil
+    end
+  end
+
+config :explorer, Explorer.Counters.Bridge,
+  enabled: if(System.get_env("SUPPLY_MODULE") === "TokenBridge", do: true, else: false),
+  enable_consolidation: System.get_env("DISABLE_BRIDGE_MARKET_CAP_UPDATER") !== "true",
+  update_interval_in_seconds: bridge_market_cap_update_interval || 30 * 60
+
 config :explorer, Explorer.ExchangeRates, enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true", store: :ets
 
 config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
@@ -142,16 +166,12 @@ config :explorer, Explorer.Chain.Block.Reward,
   validators_contract_address: System.get_env("VALIDATORS_CONTRACT"),
   keys_manager_contract_address: System.get_env("KEYS_MANAGER_CONTRACT")
 
-config :explorer, Explorer.Staking.PoolsReader,
-  validators_contract_address: System.get_env("POS_VALIDATORS_CONTRACT"),
-  staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
-
 if System.get_env("POS_STAKING_CONTRACT") do
-  config :explorer, Explorer.Staking.EpochCounter,
+  config :explorer, Explorer.Staking.ContractState,
     enabled: true,
     staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
 else
-  config :explorer, Explorer.Staking.EpochCounter, enabled: false
+  config :explorer, Explorer.Staking.ContractState, enabled: false
 end
 
 case System.get_env("SUPPLY_MODULE") do

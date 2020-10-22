@@ -1,6 +1,9 @@
 <div class="card card-background-1" data-test="outside_of_dropdown">
   <div class="card-body card-body-flex-column-space-between">
-    <h2 class="card-title balance-card-title"><%= gettext "Balance" %></h2>
+    <div style="display: inline-flex;">
+      <h2 class="card-title balance-card-title"><%= gettext "Balance" %></h2>
+      <img class="custom-balance-icon">
+    </div>
     <div class="text-right">
       <h3
         class="address-balance-text"
@@ -19,7 +22,7 @@
       <p
         class="address-current-balance"
         data-token-balance-dropdown
-        data-api_path="<%= address_token_balance_path(BlockScoutWeb.Endpoint, :index, @address.hash) %>"
+        data-api_path="<%= AccessHelpers.get_path(@conn, :address_token_balance_path, :index, @address.hash) %>"
       >
           <span data-loading class="mb-0">
             <span class="loading-spinner-small mr-2">

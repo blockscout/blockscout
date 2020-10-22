@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressView do
 
   require Logger
 
-  alias BlockScoutWeb.LayoutView
+  alias BlockScoutWeb.{AccessHelpers, CustomContractsHelpers, LayoutView}
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
@@ -13,15 +13,15 @@ defmodule BlockScoutWeb.AddressView do
   @dialyzer :no_match
 
   @tabs [
-    "coin_balances",
+    "coin-balances",
     "contracts",
-    "decompiled_contracts",
-    "internal_transactions",
-    "token_transfers",
-    "read_contract",
-    "read_proxy",
-    "write_contract",
-    "write_proxy",
+    "decompiled-contracts",
+    "internal-transactions",
+    "token-transfers",
+    "read-contract",
+    "read-proxy",
+    "write-contract",
+    "write-proxy",
     "tokens",
     "transactions",
     "validations"
@@ -132,7 +132,7 @@ defmodule BlockScoutWeb.AddressView do
       do: ""
 
   def balance_percentage(%Address{fetched_coin_balance: balance}, total_supply) do
-    if total_supply > 0 do
+    if Decimal.cmp(total_supply, 0) == :gt do
       balance
       |> Wei.to(:ether)
       |> Decimal.div(Decimal.new(total_supply))
@@ -222,6 +222,8 @@ defmodule BlockScoutWeb.AddressView do
     |> Base.encode64()
   end
 
+  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_twin: true}}), do: false
+
   def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
 
   def smart_contract_verified?(%Address{smart_contract: nil}), do: false
@@ -262,7 +264,11 @@ defmodule BlockScoutWeb.AddressView do
 
   def trimmed_hash(%Hash{} = hash) do
     string_hash = to_string(hash)
-    "#{String.slice(string_hash, 0..5)}–#{String.slice(string_hash, -6..-1)}"
+    trimmed_hash(string_hash)
+  end
+
+  def trimmed_hash(address) when is_binary(address) do
+    "#{String.slice(address, 0..5)}–#{String.slice(address, -6..-1)}"
   end
 
   def trimmed_hash(_), do: ""
@@ -339,16 +345,16 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   defp tab_name(["tokens"]), do: gettext("Tokens")
+  defp tab_name(["internal-transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["transactions"]), do: gettext("Transactions")
-  defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
-  defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
+  defp tab_name(["token-transfers"]), do: gettext("Token Transfers")
   defp tab_name(["contracts"]), do: gettext("Code")
-  defp tab_name(["decompiled_contracts"]), do: gettext("Decompiled Code")
-  defp tab_name(["read_contract"]), do: gettext("Read Contract")
-  defp tab_name(["read_proxy"]), do: gettext("Read Proxy")
-  defp tab_name(["write_contract"]), do: gettext("Write Contract")
-  defp tab_name(["write_proxy"]), do: gettext("Write Proxy")
-  defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
+  defp tab_name(["decompiled-contracts"]), do: gettext("Decompiled Code")
+  defp tab_name(["read-contract"]), do: gettext("Read Contract")
+  defp tab_name(["read-proxy"]), do: gettext("Read Proxy")
+  defp tab_name(["write-contract"]), do: gettext("Write Contract")
+  defp tab_name(["write-proxy"]), do: gettext("Write Proxy")
+  defp tab_name(["coin-balances"]), do: gettext("Coin Balance History")
   defp tab_name(["validations"]), do: gettext("Blocks Validated")
   defp tab_name(["logs"]), do: gettext("Logs")
 

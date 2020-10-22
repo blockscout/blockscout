@@ -42,8 +42,19 @@
                     <span class="dashboard-banner-chart-legend-label">
                     <%= gettext "Price" %>
                     </span>
-                    <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
-                    </span>
+                    <div class="dashboard-banner-chart-legend-value-container">
+                      <span class="dashboard-banner-chart-legend-value inline" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+                      </span>
+                      <%= if @gas_price do%>
+                        <span class="dashboard-banner-chart-legend-value inline ml-2">
+                          <span class="gas-price-icon">
+                            <%= render BlockScoutWeb.IconsView, "_gas_price_icon.html" %>
+                          </span>
+                          <%= @gas_price <> " " %>
+                          <%= gettext "Gwei" %>
+                        </span>
+                      <% end %>
+                    </div>
                 </div>
             <% end %>
             <%= if Enum.member?(@chart_config.market, :market_cap) do %>
@@ -51,8 +62,23 @@
                 <span class="dashboard-banner-chart-legend-label">
                 <%= gettext "Market Cap" %>
                 </span>
-                <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= market_cap(@market_cap_calculation, @exchange_rate) %>">
-                </span>
+                <div>
+                  <% total_market_cap = market_cap(@market_cap_calculation, @exchange_rate) %>
+                  <span style="display: contents;" class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= total_market_cap %>">
+                  </span>
+                  <%= if token_bridge_supply?() do %>
+                    <% token_bridge_market_cap = total_market_cap_from_token_bridge(@exchange_rate) %>
+                    <% omni_bridge_market_cap = total_market_cap_from_omni_bridge() %>
+                    <span
+                      data-toggle="tooltip"
+                      data-placement="top"
+                      data-html="true"
+                      data-template="<div class='tooltip tooltip-inversed-color tooltip-market-cap' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
+                      title="<div class='token-bridge-market-cap-header'><b><%= format_usd_value(total_market_cap) %></b> is a sum of assets locked in TokenBridge and OmniBridge</div><div class='token-bridge-market-cap-description'><b><%= format_usd_value(token_bridge_market_cap) %></b> locked in Dai in TokenBridge <br/><b><%= format_usd_value(omni_bridge_market_cap) %></b> locked in different assets in OmniBridge</div>">
+                      <i style="color: #ffffff;" class="fa fa-info-circle ml-1" data-test="token-bridge-supply"></i>
+                    </span>
+                  <% end %>
+                </div>
             </div>
             <% end %>
           <% end %>

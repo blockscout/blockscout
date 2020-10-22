@@ -1,0 +1,17 @@
+<div class="input-group <%= if assigns[:classes] do @classes end %>">
+  <input
+    id="<%= if assigns[:id] do @id end %>"
+    <%= if assigns[:attributes] do @attributes end %>
+    type="<%= if assigns[:type] do @type end %>"
+    class="<%= if assigns[:input_classes] do @input_classes end %>"
+    placeholder="<%= if assigns[:placeholder] do @placeholder end %>"
+    value="<%= if assigns[:value] do @value end %>"
+    <%= if assigns[:disabled] do "disabled" end %>
+  />
+  <%= if assigns[:prepend] do %>
+    <div class="input-group-prepend last">
+      <div class="input-group-text"><%= @prepend %></div>
+    </div>
+  <% end %>
+  <div class="input-group-message"><%= if assigns[:message] do @message end %></div>
+</div>

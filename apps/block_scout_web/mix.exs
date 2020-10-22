@@ -99,6 +99,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:logger_file_backend, "~> 0.0.10"},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
+      {:number, "~> 1.0.1"},
       {:phoenix, "== 1.5.4"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html, "~> 2.10"},
@@ -129,7 +130,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:timex, "~> 3.6"},
       {:wallaby, "~> 0.22", only: [:test], runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
-      {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https-updated-deps"},
+      {:wobserver, "~> 0.2.0", github: "poanetwork/wobserver", branch: "support-https"},
       {:phoenix_form_awesomplete, "~> 0.1.4"},
       {:ex_json_schema, "~> 0.6.2"}
     ]

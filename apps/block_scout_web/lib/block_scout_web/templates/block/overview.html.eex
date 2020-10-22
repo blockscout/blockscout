@@ -122,19 +122,23 @@
       <div class="card card-background-1 flex-grow-1">
         <div class="card-body card-body-flex-column-space-between">
           <h2 class="card-title balance-card-title"><%= gettext "Miner" %></h2>
-          <div class="text-right tooltipCustom">
+          <div class="text-right">
             <!-- Validator's Name -->
-            <span class="tooltiptextTopMiner"> <%= @block.miner %></span>
+            <span
+              data-toggle="tooltip"
+              data-placement="top"
+              data-template="<div class='tooltip tooltip-inversed-color tooltip-validator-details' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
+              title="<%= @block.miner %>">
+              <h3 class="address-balance-text text-truncate" >
 
-            <h3 class="address-balance-text text-truncate" >
-
-              <%= render BlockScoutWeb.AddressView,
-                "_link.html",
-                address: @block.miner,
-                contract: false,
-                class: "",
-                use_custom_tooltip: true %>
-            </h3>
+                <%= render BlockScoutWeb.AddressView,
+                  "_link.html",
+                  address: @block.miner,
+                  contract: false,
+                  class: "",
+                  use_custom_tooltip: true %>
+              </h3>
+            </span>
           </div>
         </div>
       </div>

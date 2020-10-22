@@ -2,11 +2,12 @@
 :0: Unknown function 'Elixir.ExUnit.CaseTemplate':'__proxy__'/2
 :0: Unknown type 'Elixir.Map':t/0
 :0: Unknown type 'Elixir.Hash':t/0
+:0: Unknown type 'Elixir.Address':t/0
 apps/ethereum_jsonrpc/lib/ethereum_jsonrpc.ex:400: Function timestamp_to_datetime/1 has no local return
 lib/explorer/repo/prometheus_logger.ex:8
 lib/block_scout_web/views/layout_view.ex:175
 lib/explorer/smart_contract/publisher_worker.ex:6
-lib/explorer/smart_contract/verifier.ex:84
+lib/explorer/smart_contract/verifier.ex:83
 apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: Function microseconds_time/1 has no local return
 apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: The call 'Elixir.System':convert_time_unit(__@1::any(),'native','microseconds') breaks the contract (integer(),time_unit() | 'native',time_unit() | 'native') -> integer()
 lib/block_scout_web/views/layout_view.ex:172: The call 'Elixir.Poison.Parser':'parse!'(any(),#{'keys':='atoms!'}) will never return since the success typing is (binary() | maybe_improper_list(binary() | maybe_improper_list(any(),binary() | []) | byte(),binary() | []),[{atom(),_}]) -> 'false' | 'nil' | 'true' | binary() | ['false' | 'nil' | 'true' | binary() | [any()] | number() | map()] | number() | map() and the contract is (iodata(),'Elixir.Keyword':t()) -> t()
@@ -16,7 +17,16 @@ lib/block_scout_web/router.ex:1
 lib/block_scout_web/schema/types.ex:31
 lib/phoenix/router.ex:324
 lib/phoenix/router.ex:402
-lib/block_scout_web/views/layout_view.ex:138: The call 'Elixir.Poison.Parser':'parse!'
-lib/block_scout_web/views/layout_view.ex:224: The call 'Elixir.Poison.Parser':'parse!'
+lib/block_scout_web/views/layout_view.ex:142: The call 'Elixir.Poison.Parser':'parse!'
+lib/block_scout_web/views/layout_view.ex:228: The call 'Elixir.Poison.Parser':'parse!'
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:21
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:22
+lib/explorer/smart_contract/reader.ex:330
+lib/indexer/fetcher/token_total_supply_on_demand.ex:16
+lib/explorer/exchange_rates/source.ex:41
+lib/explorer/exchange_rates/source/coin_gecko.ex:148
+lib/explorer/exchange_rates/source/coin_gecko.ex:169
+lib/explorer/smart_contract/verifier.ex:89
+lib/block_scout_web/templates/address_contract/index.html.eex:117
+lib/explorer/staking/stake_snapshotting.ex:14: Function do_snapshotting/6 has no local return
+lib/explorer/staking/stake_snapshotting.ex:179

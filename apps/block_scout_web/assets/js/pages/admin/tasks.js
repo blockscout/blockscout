@@ -14,7 +14,7 @@ const runTask = (event) => {
   $loading.show()
 
   $.get(apiPath)
-    .done(response => {
+    .done(_response => {
       $successMessage.show()
       $loading.hide()
     })

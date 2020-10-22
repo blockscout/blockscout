@@ -1,3 +1,12 @@
+<% metadata_for_verification = Chain.address_verified_twin_contract(@address_hash) %>
+<% contract_name_value = if metadata_for_verification, do: metadata_for_verification.name, else: "" %>
+<% optimization_runs_value = if metadata_for_verification, do: metadata_for_verification.optimization_runs, else: "200" %>
+<% optimization = if metadata_for_verification, do: metadata_for_verification.optimization, else: true %>
+<% evm_version = if metadata_for_verification, do: metadata_for_verification.evm_version, else: "default" %>
+<% compiler_version = if metadata_for_verification, do: metadata_for_verification.compiler_version, else: "latest" %>
+<% contract_source_code_value = if metadata_for_verification, do: metadata_for_verification.contract_source_code, else: "" %>
+<% fetch_constructor_arguments_automatically = if metadata_for_verification, do: true, else: false %>
+<% display_constructor_arguments_text_area = if fetch_constructor_arguments_automatically, do: "none", else: "block" %>
 <section data-page="contract-verification" class="container new-smart-contract-container">
   <div data-selector="channel-disconnected-message" style="display: none;">
     <div data-selector="reload-button" class="alert alert-danger">
@@ -28,7 +37,7 @@
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :name, gettext("Contract Name") %>
             <div class="center-column">
-              <%= text_input f, :name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+              <%= text_input f, :name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block", "data-test": "contract_name", value: contract_name_value %>
               <%= error_tag f, :name, id: "contract-name-help-block", class: "text-danger form-error" %>
             </div>
             <div class="smart-contract-form-group-tooltip">Must match the name specified in the code. For example, in <span class="tooltip-quote">contract MyContract {..}</span> <strong>MyContract</strong> is the contract name.</div>
@@ -61,7 +70,7 @@
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :compiler_version, gettext("Compiler") %>
             <div class="center-column">
-              <%= select f, :compiler_version, @compiler_versions, class: "form-control border-rounded", selected: "latest", "aria-describedby": "compiler-help-block" %>
+              <%= select f, :compiler_version, @compiler_versions, class: "form-control border-rounded", selected: compiler_version, "aria-describedby": "compiler-help-block" %>
               <%= error_tag f, :compiler_version, id: "compiler-help-block", class: "text-danger form-error" %>
             </div>
             <div class="smart-contract-form-group-tooltip">The compiler version is specified in <span class="tooltip-quote">pragma solidity X.X.X</span>. Use the compiler version rather than the nightly build. If using the Solidity compiler, run <span class="tooltip-quote">solc —version</span> to check.</div>
@@ -72,7 +81,7 @@
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label :evm_version, :evm_version, gettext("EVM Version") %>
             <div class="center-column">
-              <%= select f, :evm_version, @evm_versions, class: "form-control border-rounded", selected: "default", "aria-describedby": "evm-version-help-block" %>
+              <%= select f, :evm_version, @evm_versions, class: "form-control border-rounded", selected: evm_version, "aria-describedby": "evm-version-help-block" %>
             </div>
             <div class="smart-contract-form-group-tooltip">The EVM version the contract is written for. If the bytecode does not match the version, we try to verify using the latest EVM version. <a href="https://forum.poa.network/t/smart-contract-verification-evm-version-details/2318" target="_blank">EVM version details</a>.</div>
           </div>
@@ -84,12 +93,12 @@
             <div class="center-column">
               <div class="form-radios-group">
                 <div class="radio-big">
-                  <%= radio_button f, :optimization, false, class: "form-check-input optimization-false" %>
+                  <%= radio_button f, :optimization, false, checked: !optimization, class: "form-check-input optimization-false" %>
                   <div class="radio-icon"></div>
                   <%= label :smart_contract_optimization, :false, gettext("No"), class: "radio-text" %>
                 </div>
                 <div class="radio-big">
-                  <%= radio_button f, :optimization, true, checked: true, class: "form-check-input optimization-true", "aria-describedby": "optimization-help-block" %>
+                  <%= radio_button f, :optimization, true, checked: optimization, class: "form-check-input optimization-true", "aria-describedby": "optimization-help-block" %>
                   <div class="radio-icon"></div>
                   <%= label :smart_contract_optimization, :true, gettext("Yes"), class: "radio-text" %>
                 </div>
@@ -104,7 +113,7 @@
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :name, gettext("Optimization runs") %>
             <div class="center-column">
-              <%= text_input f, :optimization_runs, value: 200, class: "form-control border-rounded", "aria-describedby": "optimization-runs-help-block", "data-test": "optimization-runs" %>
+              <%= text_input f, :optimization_runs, value: 200, class: "form-control border-rounded", "aria-describedby": "optimization-runs-help-block", "data-test": "optimization-runs", value: optimization_runs_value %>
             </div>
             <div class="smart-contract-form-group-tooltip"></div>
           </div>
@@ -114,7 +123,7 @@
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :contract_source_code, gettext("Enter the Solidity Contract Code") %>
             <div class="center-column">
-              <%= textarea f, :contract_source_code, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-source-code-help-block" %>
+              <%= textarea f, :contract_source_code, class: "form-control border-rounded monospace", rows: 3, "aria-describedby": "contract-source-code-help-block", value: contract_source_code_value %>
               <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger form-error", "data-test": "contract-source-code-error" %>
             </div>
             <div class="smart-contract-form-group-tooltip">We recommend using flattened code. This is necessary if your code utilizes a library or inherits dependencies. Use the <a href="https://github.com/poanetwork/solidity-flattener" target="_blank">POA solidity flattener or the <a href="https://www.npmjs.com/package/truffle-flattener" target="_blank">truffle flattener</a>.</div>
@@ -127,12 +136,12 @@
             <div class="center-column">
               <div class="form-radios-group">
                 <div class="radio-big">
-                  <%= radio_button f, :autodetect_contructor_args, false, checked: true, class: "form-check-input autodetectfalse" %>
+                  <%= radio_button f, :autodetect_contructor_args, false, checked: !fetch_constructor_arguments_automatically, class: "form-check-input autodetectfalse" %>
                   <div class="radio-icon"></div>
                   <%= label :autodetect_contructor_args, :false, gettext("No"), class: "radio-text" %>
                 </div>
                 <div class="radio-big">
-                  <%= radio_button f, :autodetect_contructor_args, true, class: "form-check-input autodetecttrue", "aria-describedby": "autodetect_contructor_args-help-block" %>
+                  <%= radio_button f, :autodetect_contructor_args, true, checked: fetch_constructor_arguments_automatically, class: "form-check-input autodetecttrue", "aria-describedby": "autodetect_contructor_args-help-block" %>
                   <div class="radio-icon"></div>
                   <%= label :autodetect_contructor_args, :true, gettext("Yes"), class: "radio-text" %>
                 </div>
@@ -142,7 +151,7 @@
           </div>
         </div>
 
-        <div class="smart-contract-form-group constructor-arguments">
+        <div class="smart-contract-form-group constructor-arguments" style="display: <%= display_constructor_arguments_text_area %>">
           <div class="smart-contract-form-group-inner-wrapper">
             <%= label f, :contructor_arguments, gettext("ABI-encoded Constructor Arguments (if required by the contract)") %>
             <div class="center-column">
@@ -277,7 +286,7 @@
 
         <div class="smart-contract-form-buttons">
           <button
-            class="position-absolute btn-full-primary d-none mr-2"
+            class="position-absolute w-118 btn-full-primary d-none mr-2"
             disabled="true"
             id="loading"
             name="button"
