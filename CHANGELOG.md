@@ -1,6 +1,8 @@
 ## Current
 
 ### Features
+- [#3384](https://github.com/poanetwork/blockscout/pull/3384) - Address total gas usage
+- [#3377](https://github.com/poanetwork/blockscout/pull/3377) - Add links to contract libraries
 - [#2292](https://github.com/poanetwork/blockscout/pull/2292), [#3356](https://github.com/poanetwork/blockscout/pull/3356), [#3359](https://github.com/poanetwork/blockscout/pull/3359), [#3360](https://github.com/poanetwork/blockscout/pull/3360), [#3365](https://github.com/poanetwork/blockscout/pull/3365) - Add Web UI for POSDAO Staking DApp
 - [#3354](https://github.com/poanetwork/blockscout/pull/3354) - Tx hash in EOA coin balance history
 - [#3333](https://github.com/poanetwork/blockscout/pull/3333), [#3337](https://github.com/poanetwork/blockscout/pull/3337) - Dark forest contract custom theme
@@ -8,6 +10,7 @@
 
 
 ### Fixes
+- [#3382](https://github.com/poanetwork/blockscout/pull/3382) - Check ets table exists for know tokens
 - [#3376](https://github.com/poanetwork/blockscout/pull/3376) - Fix contract nested inputs
 - [#3375](https://github.com/poanetwork/blockscout/pull/3375) - Prevent terminating of tokens/contracts process
 - [#3374](https://github.com/poanetwork/blockscout/pull/3374) - Fix find block timestamp query
@@ -28,7 +31,7 @@
 - [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
-- [#3372](https://github.com/poanetwork/blockscout/pull/3372) - Improve all lists header container
+- [#3372](https://github.com/poanetwork/blockscout/pull/3372), [#3380](https://github.com/poanetwork/blockscout/pull/3380) - Improve all lists header container
 - [#3371](https://github.com/poanetwork/blockscout/pull/3371) - Eliminate dark background except Dark forest theme
 - [#3366](https://github.com/poanetwork/blockscout/pull/3366) - Stabilize tests execution in Github Actions CI
 - [#3343](https://github.com/poanetwork/blockscout/pull/3343) - Make (Bridged) Tokens' list page's header more compact

@@ -253,7 +253,7 @@ msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_token/index.html.eex:28
+#: lib/block_scout_web/templates/address_token/index.html.eex:30
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:63
 msgid "CSV"
 msgstr ""
@@ -462,7 +462,7 @@ msgid "Create2"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:122
+#: lib/block_scout_web/templates/address/overview.html.eex:126
 msgid "Created by"
 msgstr ""
 
@@ -613,7 +613,7 @@ msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:135
+#: lib/block_scout_web/templates/address/overview.html.eex:139
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
@@ -807,7 +807,7 @@ msgid "There are no token transfers for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_token/index.html.eex:18
+#: lib/block_scout_web/templates/address_token/index.html.eex:20
 msgid "There are no tokens for this address."
 msgstr ""
 
@@ -879,6 +879,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:11
+#: lib/block_scout_web/templates/address_token_transfer/index.html.eex:17
 #: lib/block_scout_web/templates/tokens/instance/overview/_tabs.html.eex:3
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:16
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:3
@@ -946,7 +947,7 @@ msgid "It could still be in the TX Pool of a different node, waiting to be broad
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:107
+#: lib/block_scout_web/templates/address/overview.html.eex:111
 msgid "Last Balance Update: Block #"
 msgstr ""
 
@@ -1153,7 +1154,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:59
-#: lib/block_scout_web/templates/address/overview.html.eex:159
+#: lib/block_scout_web/templates/address/overview.html.eex:163
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:51
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:101
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:36
@@ -1284,7 +1285,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_coin_balance/index.html.eex:36
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:52
 #: lib/block_scout_web/templates/address_logs/index.html.eex:21
-#: lib/block_scout_web/templates/address_token/index.html.eex:13
+#: lib/block_scout_web/templates/address_token/index.html.eex:15
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:56
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:48
 #: lib/block_scout_web/templates/address_validation/index.html.eex:22
@@ -1638,7 +1639,7 @@ msgid "Yes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:127
+#: lib/block_scout_web/templates/address/overview.html.eex:131
 msgid "at"
 msgstr ""
 
@@ -1696,8 +1697,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
-#: lib/block_scout_web/templates/address/overview.html.eex:160
-#: lib/block_scout_web/templates/address/overview.html.eex:168
+#: lib/block_scout_web/templates/address/overview.html.eex:164
+#: lib/block_scout_web/templates/address/overview.html.eex:172
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:102
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:110
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:122
@@ -1844,7 +1845,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:5
-#: lib/block_scout_web/templates/address_token_transfer/index.html.eex:17
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:15
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:10
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:18
