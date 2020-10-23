@@ -22,10 +22,10 @@ defmodule BlockScoutWeb.BridgedTokensView do
   end
 
   def owl_token_amb_info do
-    "<div class='token-bridge-market-cap-header'>OWL token bridged through AMB extension with support of <i>burnOWL</i> method. It is recommended to use.</div>"
+    "<div class='custom-tooltip-header'>OWL token bridged through AMB extension with support of <i>burnOWL</i> method. It is recommended to use.</div>"
   end
 
   def owl_token_omni_info do
-    "<div class='token-bridge-market-cap-header'>OWL token bridged through OmniBridge without support of <i>burnOWL</i> method. It is not recommended to use.</div>"
+    "<div class='custom-tooltip-header'>OWL token bridged through OmniBridge without support of <i>burnOWL</i> method. It is not recommended to use.</div>"
   end
 end
