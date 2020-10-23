@@ -69,6 +69,7 @@ defmodule Explorer.Chain do
     BlockCount,
     BlockNumber,
     Blocks,
+    GasUsage,
     TransactionCount,
     Transactions,
     Uncles
@@ -722,6 +723,28 @@ defmodule Explorer.Chain do
       )
 
     Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
+  end
+
+  @spec address_to_incoming_transaction_gas_usage(Hash.Address.t()) :: non_neg_integer()
+  def address_to_incoming_transaction_gas_usage(address_hash) do
+    to_address_query =
+      from(
+        transaction in Transaction,
+        where: transaction.to_address_hash == ^address_hash
+      )
+
+    Repo.aggregate(to_address_query, :sum, :gas_used, timeout: :infinity)
+  end
+
+  @spec address_to_outcoming_transaction_gas_usage(Hash.Address.t()) :: non_neg_integer()
+  def address_to_outcoming_transaction_gas_usage(address_hash) do
+    to_address_query =
+      from(
+        transaction in Transaction,
+        where: transaction.from_address_hash == ^address_hash
+      )
+
+    Repo.aggregate(to_address_query, :sum, :gas_used, timeout: :infinity)
   end
 
   @spec max_incoming_transactions_count() :: non_neg_integer()
@@ -1590,7 +1613,7 @@ defmodule Explorer.Chain do
         where: block.consensus == true
       )
 
-    Repo.one!(query)
+    Repo.one!(query) || 0
   end
 
   @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
@@ -1615,6 +1638,17 @@ defmodule Explorer.Chain do
         a0 in Address,
         select: fragment("SUM(a0.fetched_coin_balance)"),
         where: a0.fetched_coin_balance > ^0
+      )
+
+    Repo.one!(query) || 0
+  end
+
+  @spec fetch_sum_gas_used() :: non_neg_integer
+  def fetch_sum_gas_used do
+    query =
+      from(
+        t0 in Transaction,
+        select: fragment("SUM(t0.gas_used)")
       )
 
     Repo.one!(query) || 0
@@ -1960,6 +1994,21 @@ defmodule Explorer.Chain do
       end
     else
       total_transactions_sent_by_address(address.hash)
+    end
+  end
+
+  @spec address_to_gas_usage_count(Address.t()) :: non_neg_integer()
+  def address_to_gas_usage_count(address) do
+    if contract?(address) do
+      incoming_transaction_gas_usage = address_to_incoming_transaction_gas_usage(address.hash)
+
+      if incoming_transaction_gas_usage == 0 do
+        address_to_outcoming_transaction_gas_usage(address.hash)
+      else
+        incoming_transaction_gas_usage
+      end
+    else
+      address_to_outcoming_transaction_gas_usage(address.hash)
     end
   end
 
@@ -2697,6 +2746,17 @@ defmodule Explorer.Chain do
         SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
 
       rows
+    else
+      cached_value
+    end
+  end
+
+  @spec total_gas_usage() :: non_neg_integer()
+  def total_gas_usage do
+    cached_value = GasUsage.get_sum()
+
+    if is_nil(cached_value) do
+      0
     else
       cached_value
     end

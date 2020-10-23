@@ -52,11 +52,25 @@ $tooltip-background-color: $btn-line-color !default;
     }
 }
 
-.token-bridge-market-cap-header {
+.tooltip-gas-usage {
+    .tooltip-inner {
+        @media (min-width: 576px) {
+            max-width: 150px !important;
+        }
+        @media (min-width: 768px) {
+            max-width: 150px !important;
+        }
+        width: 150px !important;
+    }
+}
+
+.custom-tooltip-header {
     font-size: 1.2em;
     margin-bottom: 10px;
 }
 
-.token-bridge-market-cap-description {
-    text-align: left;
+.custom-tooltip-description {
+    .left {
+        text-align: left;
+    }
 }
