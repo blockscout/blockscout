@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3377](https://github.com/poanetwork/blockscout/pull/3377) - Add links to contract libraries
 - [#2292](https://github.com/poanetwork/blockscout/pull/2292), [#3356](https://github.com/poanetwork/blockscout/pull/3356), [#3359](https://github.com/poanetwork/blockscout/pull/3359), [#3360](https://github.com/poanetwork/blockscout/pull/3360), [#3365](https://github.com/poanetwork/blockscout/pull/3365) - Add Web UI for POSDAO Staking DApp
 - [#3354](https://github.com/poanetwork/blockscout/pull/3354) - Tx hash in EOA coin balance history
 - [#3333](https://github.com/poanetwork/blockscout/pull/3333), [#3337](https://github.com/poanetwork/blockscout/pull/3337) - Dark forest contract custom theme
@@ -8,6 +9,9 @@
 
 
 ### Fixes
+- [#3376](https://github.com/poanetwork/blockscout/pull/3376) - Fix contract nested inputs
+- [#3375](https://github.com/poanetwork/blockscout/pull/3375) - Prevent terminating of tokens/contracts process
+- [#3374](https://github.com/poanetwork/blockscout/pull/3374) - Fix find block timestamp query
 - [#3373](https://github.com/poanetwork/blockscout/pull/3373) - Fix horizontal scroll in Tokens table
 - [#3370](https://github.com/poanetwork/blockscout/pull/3370) - Improve contracts verification: refine constructor arguments extractor
 - [#3368](https://github.com/poanetwork/blockscout/pull/3368) - Fix Verify contract loading button width

@@ -266,17 +266,11 @@ defmodule Explorer.SmartContract.Reader do
 
   defp format_input_type(input_type) do
     case input_type do
-      {:array, {type, size}, array_size} ->
-        Atom.to_string(type) <> Integer.to_string(size) <> "[" <> Integer.to_string(array_size) <> "]"
-
       {:array, type, array_size} ->
-        Atom.to_string(type) <> "[" <> Integer.to_string(array_size) <> "]"
-
-      {:array, {type, size}} ->
-        Atom.to_string(type) <> Integer.to_string(size) <> "[]"
+        format_input_type(type) <> "[" <> Integer.to_string(array_size) <> "]"
 
       {:array, type} ->
-        Atom.to_string(type) <> "[]"
+        format_input_type(type) <> "[]"
 
       {type, size} ->
         Atom.to_string(type) <> Integer.to_string(size)
