@@ -94,6 +94,17 @@ address_transactions_counter_cache_period =
     _ -> :timer.hours(1)
   end
 
+config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
+  enabled: true,
+  enable_consolidation: true,
+  update_interval_in_seconds: balances_update_interval || 30 * 60
+
+address_transactions_gas_usage_counter_cache_period =
+  case Integer.parse(System.get_env("ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD", "")) do
+    {secs, ""} -> :timer.seconds(secs)
+    _ -> :timer.hours(1)
+  end
+
 config :explorer, Explorer.Counters.AddressTransactionsCounter,
   enabled: true,
   enable_consolidation: true,

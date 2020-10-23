@@ -21,6 +21,7 @@ export const initialState = {
   balanceCard: null,
   fetchedCoinBalanceBlockNumber: null,
   transactionCount: null,
+  gasUsageCount: null,
   validationCount: null,
   countersFetched: false
 }
@@ -41,6 +42,7 @@ export function reducer (state = initialState, action) {
     case 'COUNTERS_FETCHED': {
       return Object.assign({}, state, {
         transactionCount: action.transactionCount,
+        gasUsageCount: action.gasUsageCount,
         validationCount: action.validationCount,
         countersFetched: true
       })
@@ -103,6 +105,22 @@ const elements = {
       if (state.countersFetched && state.transactionCount) {
         if (oldState.transactionCount === state.transactionCount) return
         $el.empty().append(numeral(state.transactionCount).format() + ' Transactions')
+        $el.show()
+        $el.parent('.address-detail-item').removeAttr('style')
+      } else {
+        $el.hide()
+        $el.parent('.address-detail-item').css('display', 'none')
+      }
+    }
+  },
+  '[data-selector="gas-usage-count"]': {
+    load ($el) {
+      return { gasUsageCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (state.countersFetched && state.gasUsageCount) {
+        if (oldState.gasUsageCount === state.gasUsageCount) return
+        $el.empty().append(numeral(state.gasUsageCount).format() + ' Gas used')
         $el.show()
         $el.parent('.address-detail-item').removeAttr('style')
       } else {
