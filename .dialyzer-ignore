@@ -30,3 +30,4 @@ lib/explorer/smart_contract/verifier.ex:89
 lib/block_scout_web/templates/address_contract/index.html.eex:117
 lib/explorer/staking/stake_snapshotting.ex:14: Function do_snapshotting/6 has no local return
 lib/explorer/staking/stake_snapshotting.ex:179
+lib/explorer/counters/address_gas_usage_counter.ex:69
