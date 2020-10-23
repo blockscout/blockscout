@@ -69,6 +69,7 @@ defmodule Explorer.Chain do
     BlockCount,
     BlockNumber,
     Blocks,
+    GasUsage,
     TransactionCount,
     Transactions,
     Uncles
@@ -1612,7 +1613,7 @@ defmodule Explorer.Chain do
         where: block.consensus == true
       )
 
-    Repo.one!(query)
+    Repo.one!(query) || 0
   end
 
   @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
@@ -1637,6 +1638,17 @@ defmodule Explorer.Chain do
         a0 in Address,
         select: fragment("SUM(a0.fetched_coin_balance)"),
         where: a0.fetched_coin_balance > ^0
+      )
+
+    Repo.one!(query) || 0
+  end
+
+  @spec fetch_sum_gas_used() :: non_neg_integer
+  def fetch_sum_gas_used do
+    query =
+      from(
+        t0 in Transaction,
+        select: fragment("SUM(t0.gas_used)")
       )
 
     Repo.one!(query) || 0
@@ -2734,6 +2746,17 @@ defmodule Explorer.Chain do
         SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
 
       rows
+    else
+      cached_value
+    end
+  end
+
+  @spec total_gas_usage() :: non_neg_integer()
+  def total_gas_usage do
+    cached_value = GasUsage.get_sum()
+
+    if is_nil(cached_value) do
+      0
     else
       cached_value
     end
