@@ -12,6 +12,7 @@
 
 
 ### Fixes
+- [#3399](https://github.com/poanetwork/blockscout/pull/3399) - Fix Token transfers CSV export
 - [#3396](https://github.com/poanetwork/blockscout/pull/3396) - Handle exchange rates request throttled
 - [#3382](https://github.com/poanetwork/blockscout/pull/3382) - Check ets table exists for know tokens
 - [#3376](https://github.com/poanetwork/blockscout/pull/3376) - Fix contract nested inputs
