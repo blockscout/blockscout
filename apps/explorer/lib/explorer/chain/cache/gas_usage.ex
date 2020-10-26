@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Cache.GasUsage do
 
   require Logger
 
-  @default_cache_period :timer.minutes(10)
+  @default_cache_period :timer.minutes(30)
 
   use Explorer.Chain.MapCache,
     name: :gas_usage,

@@ -28,9 +28,9 @@ defmodule Explorer.Chain.Transaction.History.HistorianTest do
         insert(:block, timestamp: DateTime.from_unix!(days_to_secs(1)))
       ]
 
-      insert(:transaction) |> with_block(Enum.at(blocks, 0))
-      insert(:transaction) |> with_block(Enum.at(blocks, 1))
-      insert(:transaction) |> with_block(Enum.at(blocks, 2))
+      transaction_1 = insert(:transaction) |> with_block(Enum.at(blocks, 0))
+      transaction_2 = insert(:transaction) |> with_block(Enum.at(blocks, 1))
+      transaction_3 = insert(:transaction) |> with_block(Enum.at(blocks, 2))
 
       expected = [
         %{date: ~D[1970-01-04], number_of_transactions: 0}
@@ -38,17 +38,19 @@ defmodule Explorer.Chain.Transaction.History.HistorianTest do
 
       assert {:ok, ^expected} = Historian.compile_records(1)
 
+      total_gas_used_1 = Decimal.add(transaction_1.gas_used, transaction_2.gas_used)
+
       expected = [
         %{date: ~D[1970-01-04], number_of_transactions: 0},
-        %{date: ~D[1970-01-03], number_of_transactions: 2}
+        %{date: ~D[1970-01-03], gas_used: total_gas_used_1, number_of_transactions: 2}
       ]
 
       assert {:ok, ^expected} = Historian.compile_records(2)
 
       expected = [
         %{date: ~D[1970-01-04], number_of_transactions: 0},
-        %{date: ~D[1970-01-03], number_of_transactions: 2},
-        %{date: ~D[1970-01-02], number_of_transactions: 1}
+        %{date: ~D[1970-01-03], gas_used: total_gas_used_1, number_of_transactions: 2},
+        %{date: ~D[1970-01-02], gas_used: transaction_3.gas_used, number_of_transactions: 1}
       ]
 
       assert {:ok, ^expected} = Historian.compile_records(3)

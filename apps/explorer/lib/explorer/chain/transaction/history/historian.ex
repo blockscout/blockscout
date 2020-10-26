@@ -63,7 +63,9 @@ defmodule Explorer.Chain.Transaction.History.Historian do
           )
 
         num_transactions = Repo.aggregate(query, :count, :hash, timeout: :infinity)
-        records = [%{date: day_to_fetch, number_of_transactions: num_transactions} | records]
+        gas_used = Repo.aggregate(query, :sum, :gas_used, timeout: :infinity)
+
+        records = [%{date: day_to_fetch, number_of_transactions: num_transactions, gas_used: gas_used} | records]
         compile_records(num_days - 1, records)
       else
         records = [%{date: day_to_fetch, number_of_transactions: 0} | records]

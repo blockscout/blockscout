@@ -69,6 +69,13 @@ $tooltip-background-color: $btn-line-color !default;
     margin-bottom: 10px;
 }
 
+.custom-tooltip-total-transactions {
+    margin-top: 6px;
+    @media (min-width: 992px) {
+        margin-top: 9px;
+    }
+}
+
 .custom-tooltip-description {
     .left {
         text-align: left;
