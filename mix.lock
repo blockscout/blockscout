@@ -114,6 +114,6 @@
   "tzdata": {:hex, :tzdata, "1.0.1", "f6027a331af7d837471248e62733c6ebee86a72e57c613aa071ebb1f750fc71a", [:mix], [{:hackney, "~> 1.0", [hex: :hackney, repo: "hexpm", optional: false]}], "hexpm", "cf1345dfbce6acdfd4e23cbb36e96e53d1981bc89181cd0b936f4f398f4c0b78"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.5.0", "8516502659002cec19e244ebd90d312183064be95025a319a6c7e89f4bccd65b", [:rebar3], [], "hexpm", "d48d002e15f5cc105a696cf2f1bbb3fc72b4b770a184d8420c8db20da2674b38"},
   "wallaby": {:hex, :wallaby, "0.22.0", "e5d16bfa7ab23562c8a6e3b0a31445a2fd470ca622082a910114807ba823780d", [:mix], [{:httpoison, "~> 0.12 or ~> 1.0", [hex: :httpoison, repo: "hexpm", optional: false]}, {:poison, ">= 1.4.0", [hex: :poison, repo: "hexpm", optional: false]}, {:poolboy, "~> 1.5", [hex: :poolboy, repo: "hexpm", optional: false]}], "hexpm", "b5ec4fdb22f79bc1656cf8766718d0ab77e961839a5946a3ecf212448e30bf15"},
-  "websocket_client": {:hex, :websocket_client, "1.4.2", "f1036e3f9427eecdb66808eee56dbcaeb5a1a352306e6a0d0d23a9487205f4d7", [:rebar3], [], "hexpm", "c005e5f8f2f6a8533c497a509dc52f3e6fb42fa2e0d67bff8ebc8802868d84ed"},
-  "wobserver": {:git, "https://github.com/poanetwork/wobserver.git", "dae1d987d473c126191bb8f32c089f42a18f8712", [branch: "support-https-updated-deps"]},
+  "websocket_client": {:hex, :websocket_client, "1.3.0", "2275d7daaa1cdacebf2068891c9844b15f4fdc3de3ec2602420c2fb486db59b6", [:rebar3], [], "hexpm", "b864fa076f059b615da4ab99240e515b26132ce4d2d0f9df5d7f22f01fa04b65"},
+  "wobserver": {:git, "https://github.com/poanetwork/wobserver.git", "13bcda30a87f4f0be1878920a79433ad831eefbe", [branch: "support-https"]},
 }

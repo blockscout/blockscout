@@ -2,9 +2,12 @@
   <div class="card">
     <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
       <h1 class="card-title"><%= gettext "Bridged Tokens" %></h1>
-	  <p class="card-subtitle">List of the tokens bridged through OmniBridge <span class="bridged-token-label omni">OMNI</span> and Arbitrary Message Bridge <span class="bridged-token-label amb">AMB</span> extensions</p>
-
-    <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+	  <div>
+	  	<p class="card-subtitle tokens-description">List of the tokens bridged through OmniBridge <span class="bridged-token-label omni">OMNI</span> and Arbitrary Message Bridge <span class="bridged-token-label amb">AMB</span> extensions</p>
+	  	<div class="tokens-top-pagination-container-wrapper">
+		  <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+	  	</div>
+	  </div>
 
     <div class="addresses-table-container">
       <div class="stakes-table-container">
@@ -32,7 +35,7 @@
 	      </th>
 	    </tr>
 	  </thead>
-	  <tbody data-items data-selector="top-tokens-list">
+	  <tbody data-items data-selector="top-bridged-tokens-list">
 	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", total_supply: @total_supply %>
 	  </tbody>
 	</table>

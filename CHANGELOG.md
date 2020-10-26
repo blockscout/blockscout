@@ -1,5 +1,25 @@
 ## Current
 
+### Features
+- [#3333](https://github.com/poanetwork/blockscout/pull/3333), [#3337](https://github.com/poanetwork/blockscout/pull/3337) - Dark forest contract custom theme
+- [#3330](https://github.com/poanetwork/blockscout/pull/3330) - Caching of address transactions counter, remove query 10_000 rows limit
+
+
+### Fixes
+- [#3352](https://github.com/poanetwork/blockscout/pull/3352) - Fix dark body background
+- [#3350](https://github.com/poanetwork/blockscout/pull/3350) - Fix tokens list pagination
+- [#3347](https://github.com/poanetwork/blockscout/pull/3347) - Contract interaction: fix encoding of bytes output
+- [#3346](https://github.com/poanetwork/blockscout/pull/3346), [#3351](https://github.com/poanetwork/blockscout/pull/3351) - Fix inventory tab pagination
+- [#3344](https://github.com/poanetwork/blockscout/pull/3344) - Fix logs search on address page
+- [#3342](https://github.com/poanetwork/blockscout/pull/3342) - Fix mobile styles for contract code tab
+- [#3341](https://github.com/poanetwork/blockscout/pull/3341) - Change Solc binary downloader path to official primary supported path
+- [#3339](https://github.com/poanetwork/blockscout/pull/3339) - Repair websocket subscription
+- [#3329](https://github.com/poanetwork/blockscout/pull/3329) - Fix pagination for bridged tokens list page
+- [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
+
+### Chore
+- [#3343](https://github.com/poanetwork/blockscout/pull/3343) - Make (Bridged) Tokens' list page's header more compact
+
 
 ## 3.3.3-beta
 

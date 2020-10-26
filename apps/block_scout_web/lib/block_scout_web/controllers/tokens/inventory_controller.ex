@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
             token_inventory_path(
               conn,
               :index,
-              Address.checksum(address_hash_string),
+              address_hash_string,
               Map.delete(next_page_params, "type")
             )
         end

@@ -45,6 +45,52 @@
   </head>
 
   <body>
+    <% raw_dark_forest_addresses = CustomContractsHelpers.get_raw_dark_forest_addresses_list() %>
+    <%= cond do %>
+      <% (
+        @view_module == Elixir.BlockScoutWeb.TransactionInternalTransactionView ||
+        @view_module == Elixir.BlockScoutWeb.TransactionLogView ||
+        @view_module == Elixir.BlockScoutWeb.TransactionRawTraceView ||
+        @view_module == Elixir.BlockScoutWeb.TransactionTokenTransferView
+      ) -> %>
+        <% to_address = @transaction && @transaction.to_address && "0x" <> Base.encode16(@transaction.to_address.hash.bytes, case: :lower) %>
+        <script>
+          function applyCustomMode() {
+            const darkForestContractAddressHashesRaw = "<%= raw_dark_forest_addresses %>"
+            if (darkForestContractAddressHashesRaw !== "") {
+              const darkForestContractAddressHashes = darkForestContractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
+              const to_address = "<%= to_address %>"
+
+              darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
+                if (to_address == darkForestContractAddressHash) {
+                  document.body.className += " " + "dark-forest-theme-applied";
+                  return;
+                }
+              })
+            }
+
+          }
+
+          window.onload = applyCustomMode()
+        </script>
+      <% true -> %>
+        <script>
+          function applyCustomMode() {
+            const darkForestContractAddressHashesRaw = "<%= raw_dark_forest_addresses %>"
+            if (darkForestContractAddressHashesRaw !== "") {
+              const darkForestContractAddressHashes = darkForestContractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
+              darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
+                if (window.location.pathname.toLowerCase().includes(darkForestContractAddressHash)) {
+                  document.body.className += " " + "dark-forest-theme-applied";
+                  return;
+                }
+              })
+            }
+          }
+
+          window.onload = applyCustomMode()
+        </script>
+    <% end %>
     <script>
       function applyDarkMode() {
         if (localStorage.getItem("current-color-mode") === "dark") {
@@ -52,6 +98,7 @@
           document.body.style.backgroundColor = "#1c1d31";
         }
       }
+
       window.onload = applyDarkMode()
     </script>
     <div class="layout-container">
