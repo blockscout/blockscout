@@ -33,7 +33,11 @@ defmodule Explorer.ExchangeRates.Source do
         {:ok, result}
 
       {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
-        {:error, decode_json(body)["error"]}
+        if is_map(decode_json(body)) do
+          {:error, decode_json(body)["error"]}
+        else
+          {:error, body}
+        end
 
       {:error, %Error{reason: reason}} ->
         {:error, reason}
@@ -41,8 +45,6 @@ defmodule Explorer.ExchangeRates.Source do
       {:error, :nxdomain} ->
         {:error, "CoinGecko is not responsive"}
     end
-  after
-    {:error, ""}
   end
 
   @doc """

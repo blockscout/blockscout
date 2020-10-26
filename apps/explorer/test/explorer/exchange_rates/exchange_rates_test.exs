@@ -106,7 +106,10 @@ defmodule Explorer.ExchangeRatesTest do
 
       assert {:noreply, ^state} = ExchangeRates.handle_info({nil, {:error, "some error"}}, state)
 
-      assert_receive {_, {:ok, _}}
+      assert_receive :update
+
+      assert {:noreply, ^state} = ExchangeRates.handle_info(:update, state)
+      assert_receive {_, {:ok, [%Token{}]}}
     end
   end
 
