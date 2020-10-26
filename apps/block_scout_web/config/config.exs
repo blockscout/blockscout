@@ -21,8 +21,11 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network_icon: System.get_env("NETWORK_ICON"),
   logo: System.get_env("LOGO") || "/images/poa_logo.svg",
   logo_footer: System.get_env("LOGO_FOOTER"),
-logo_text: System.get_env("LOGO_TEXT"),
-  has_emission_funds: true
+  logo_text: System.get_env("LOGO_TEXT"),
+  has_emission_funds: true,
+  staking_enabled: not is_nil(System.get_env("POS_STAKING_CONTRACT")),
+  # how often (in blocks) the list of pools should autorefresh in UI (zero turns off autorefreshing)
+  staking_pool_list_refresh_interval: 5
 
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",

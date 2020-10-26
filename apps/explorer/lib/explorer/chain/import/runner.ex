@@ -51,4 +51,11 @@ defmodule Explorer.Chain.Import.Runner do
   @callback run(Multi.t(), changes_list, %{optional(atom()) => term()}) :: Multi.t()
   # @callback run_insert_only(Multi.t(), changes_list, %{optional(atom()) => term()}) :: Multi.t()
   @callback timeout() :: timeout()
+
+  @doc """
+  The optional list of runner-specific options.
+  """
+  @callback runner_specific_options() :: [atom()]
+
+  @optional_callbacks runner_specific_options: 0
 end

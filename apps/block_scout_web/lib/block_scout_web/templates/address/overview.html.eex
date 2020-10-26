@@ -102,6 +102,10 @@
                 <span data-selector="transaction-count">
                 </span>
               </span>
+              <span class="address-detail-item" style="display: none">
+                <span data-selector="gas-usage-count">
+                </span>
+              </span>
               <%= if @address.fetched_coin_balance_block_number do %>
                 <span class="address-detail-item">
                   <%= gettext("Last Balance Update: Block #") %><span data-selector="fetched-coin-balance-block-number"><%= @address.fetched_coin_balance_block_number %></span>
