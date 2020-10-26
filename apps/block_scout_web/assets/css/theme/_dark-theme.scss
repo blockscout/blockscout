@@ -563,7 +563,7 @@ $dark-stakes-banned-background: #3e314c;
 		transition: border-color 0.15s ease-in-out;
 
 		&[readonly] {
-			background-color: $dark-light!important;
+			background-color: $dark-light !important;
 		}
 
 		&::placeholder {
@@ -694,6 +694,12 @@ $dark-stakes-banned-background: #3e314c;
 			}
 		}
 
+		.close {
+			color: #fff;
+		}
+	}
+
+	#qrModal {
 		.close {
 			color: #fff;
 		}
@@ -1059,7 +1065,7 @@ $dark-stakes-banned-background: #3e314c;
 }
 
 .dark-theme-applied .dropdown-item {
-	background-color: $dark-light!important;
+	background-color: $dark-light !important;
 	color: #fff !important;
 }
 
@@ -1075,7 +1081,7 @@ $dark-stakes-banned-background: #3e314c;
 	.dark-theme-applied .navbar.navbar-primary .navbar-nav .nav-link:focus {
 		background-image: none;
 		width: 100%;
-		background-color: #35335d!important;
+		background-color: #35335d !important;
 		color: white;
 		border: none;
 	}
