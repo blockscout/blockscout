@@ -1,12 +1,12 @@
-defmodule Explorer.Counters.AddressTransactionsCounter do
+defmodule Explorer.Counters.AddressTransactionsGasUsageCounter do
   @moduledoc """
-  Caches Address transactions counter.
+  Caches Address transactions gas usage counter.
   """
   use GenServer
 
   alias Explorer.Chain
 
-  @cache_name :address_transactions_counter
+  @cache_name :address_transactions_gas_usage_counter
   @last_update_key "last_update"
   @cache_period Application.get_env(:explorer, __MODULE__)[:period]
 
@@ -17,7 +17,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
     read_concurrency: true
   ]
 
-  config = Application.get_env(:explorer, Explorer.Counters.AddressTransactionsCounter)
+  config = Application.get_env(:explorer, Explorer.Counters.AddressTransactionsGasUsageCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()
@@ -74,7 +74,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
   defp update_cache(address) do
     address_hash_string = get_address_hash_string(address)
     put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", current_time())
-    new_data = Chain.address_to_transaction_count(address)
+    new_data = Chain.address_to_gas_usage_count(address)
     put_into_cache("hash_#{address_hash_string}", new_data)
   end
 

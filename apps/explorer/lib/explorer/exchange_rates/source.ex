@@ -41,6 +41,8 @@ defmodule Explorer.ExchangeRates.Source do
       {:error, :nxdomain} ->
         {:error, "CoinGecko is not responsive"}
     end
+  after
+    {:error, ""}
   end
 
   @doc """

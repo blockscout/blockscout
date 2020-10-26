@@ -74,7 +74,7 @@
                       data-placement="top"
                       data-html="true"
                       data-template="<div class='tooltip tooltip-inversed-color tooltip-market-cap' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
-                      title="<div class='token-bridge-market-cap-header'><b><%= format_usd_value(total_market_cap) %></b> is a sum of assets locked in TokenBridge and OmniBridge</div><div class='token-bridge-market-cap-description'><b><%= format_usd_value(token_bridge_market_cap) %></b> locked in Dai in TokenBridge <br/><b><%= format_usd_value(omni_bridge_market_cap) %></b> locked in different assets in OmniBridge</div>">
+                      title="<div class='custom-tooltip-header'><b><%= format_usd_value(total_market_cap) %></b> is a sum of assets locked in TokenBridge and OmniBridge</div><div class='custom-tooltip-description left'><b><%= format_usd_value(token_bridge_market_cap) %></b> locked in Dai in TokenBridge <br/><b><%= format_usd_value(omni_bridge_market_cap) %></b> locked in different assets in OmniBridge</div>">
                       <i style="color: #ffffff;" class="fa fa-info-circle ml-1" data-test="token-bridge-supply"></i>
                     </span>
                   <% end %>
@@ -118,9 +118,22 @@
             <span class="dashboard-banner-network-stats-label">
               <%= gettext "Total transactions" %>
             </span>
-            <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
-              <%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
-            </span>
+            <div style="display: flex;">
+              <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
+                <%= BlockScoutWeb.Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
+              </span>
+              <%= if @total_gas_usage > 0 do %>
+                <span
+                  data-toggle="tooltip"
+                  data-placement="top"
+                  data-html="true"
+                  data-template="<div class='tooltip tooltip-inversed-color tooltip-gas-usage' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
+                  title="<div class='custom-tooltip-header'>Total gas used</div><div class='custom-tooltip-description'><b><%= BlockScoutWeb.Cldr.Number.to_string!(@total_gas_usage, format: "#,###") %><b></div>"
+                  style="margin-top:8px;">
+                  <i style="color: #ffffff;" class="fa fa-info-circle ml-2"></i>
+                </span>
+              <% end %>
+            </div>
           </div>
           <div class="dashboard-banner-network-stats-item dashboard-banner-network-stats-item-3">
             <span class="dashboard-banner-network-stats-label">
