@@ -91,7 +91,18 @@
                     <%= gettext "Tx/day" %>
                 </span>
                 <span class="dashboard-banner-chart-legend-value" data-selector="tx_per_day">
-                    <%= BlockScoutWeb.Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).number_of_transactions, format: "#,###") %>
+                    <% num_of_transactions = BlockScoutWeb.Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).number_of_transactions, format: "#,###") %>
+                    <%= num_of_transactions %>
+                    <%= if Enum.at(@transaction_stats, 0).gas_used do %>
+                      <span
+                        data-toggle="tooltip"
+                        data-placement="top"
+                        data-html="true"
+                        data-template="<div class='tooltip tooltip-inversed-color tooltip-gas-usage' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
+                        title="<div class='custom-tooltip-header'>Gas used</div><div class='custom-tooltip-description'><b><%= BlockScoutWeb.Cldr.Number.to_string!(Enum.at(@transaction_stats, 0).gas_used, format: "#,###") %><b></div>">
+                        <i style="color: #ffffff;" class="fa fa-info-circle ml-1"></i>
+                      </span>
+                    <% end %>
                 </span>
             </div>
             <% end %>
