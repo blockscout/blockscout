@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3398](https://github.com/poanetwork/blockscout/pull/3398) - Collect and display gas usage per day at the main page
 - [#3385](https://github.com/poanetwork/blockscout/pull/3385), [#3397](https://github.com/poanetwork/blockscout/pull/3397) - Total gas usage at the main page
 - [#3384](https://github.com/poanetwork/blockscout/pull/3384), [#3386](https://github.com/poanetwork/blockscout/pull/3386) - Address total gas usage
 - [#3377](https://github.com/poanetwork/blockscout/pull/3377) - Add links to contract libraries
