@@ -1,7 +1,7 @@
 ## Current
 
 ### Features
-- [#3385](https://github.com/poanetwork/blockscout/pull/3385) - Total gas usage at the main page
+- [#3385](https://github.com/poanetwork/blockscout/pull/3385), [#3397](https://github.com/poanetwork/blockscout/pull/3397) - Total gas usage at the main page
 - [#3384](https://github.com/poanetwork/blockscout/pull/3384), [#3386](https://github.com/poanetwork/blockscout/pull/3386) - Address total gas usage
 - [#3377](https://github.com/poanetwork/blockscout/pull/3377) - Add links to contract libraries
 - [#2292](https://github.com/poanetwork/blockscout/pull/2292), [#3356](https://github.com/poanetwork/blockscout/pull/3356), [#3359](https://github.com/poanetwork/blockscout/pull/3359), [#3360](https://github.com/poanetwork/blockscout/pull/3360), [#3365](https://github.com/poanetwork/blockscout/pull/3365) - Add Web UI for POSDAO Staking DApp
