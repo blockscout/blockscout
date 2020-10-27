@@ -163,7 +163,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
         {:error, decode_json(body)["error"]}
 
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 301..302 ->
+      {:ok, %Response{body: _body, status_code: status_code}} when status_code in 301..302 ->
         {:error, "CoinGecko redirected"}
 
       {:error, %Error{reason: reason}} ->
