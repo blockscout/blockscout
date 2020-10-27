@@ -64,12 +64,15 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   defp get_btc_value(id, market_data) do
-    {:ok, price} = get_btc_price()
-    btc_price = to_decimal(price)
-    current_price = get_current_price(market_data)
+    with {:ok, price} <- get_btc_price() do
+      btc_price = to_decimal(price)
+      current_price = get_current_price(market_data)
 
-    if id != "btc" && current_price && btc_price do
-      Decimal.div(current_price, btc_price)
+      if id != "btc" && current_price && btc_price do
+        Decimal.div(current_price, btc_price)
+      else
+        1
+      end
     else
       1
     end
