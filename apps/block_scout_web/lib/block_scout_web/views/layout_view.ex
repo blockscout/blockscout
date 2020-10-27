@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.LayoutView do
       url: "https://blockscout.com/poa/core"
     },
     %{
-      title: "POA Sokol",
+      title: "Sokol",
       url: "https://blockscout.com/poa/sokol",
       test_net?: true
     },
@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   def subnetwork_title do
-    Keyword.get(application_config(), :subnetwork) || "POA Sokol"
+    Keyword.get(application_config(), :subnetwork) || "Sokol"
   end
 
   def network_title do
