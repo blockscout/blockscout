@@ -142,6 +142,12 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
         {:error, decode_json(body)["error"]}
 
+      {:ok, %Response{body: _body, status_code: status_code}} when status_code in 301..302 ->
+        {:error, "CoinGecko redirected"}
+
+      {:ok, %Response{body: _body, status_code: _status_code}} ->
+        {:error, "CoinGecko unexpected status code"}
+
       {:error, %Error{reason: reason}} ->
         {:error, reason}
 
@@ -165,6 +171,9 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
       {:ok, %Response{body: _body, status_code: status_code}} when status_code in 301..302 ->
         {:error, "CoinGecko redirected"}
+
+      {:ok, %Response{body: _body, status_code: _status_code}} ->
+        {:error, "CoinGecko unexpected status code"}
 
       {:error, %Error{reason: reason}} ->
         {:error, reason}
