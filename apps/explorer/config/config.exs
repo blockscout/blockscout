@@ -179,7 +179,6 @@ config :explorer, Explorer.Chain.Block.Reward,
   validators_contract_address: System.get_env("VALIDATORS_CONTRACT"),
   keys_manager_contract_address: System.get_env("KEYS_MANAGER_CONTRACT")
 
-
 if System.get_env("POS_STAKING_CONTRACT") do
   config :explorer, Explorer.Staking.ContractState,
     enabled: true,

@@ -74,7 +74,8 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
         1
       end
     else
-      1
+      _ ->
+        1
     end
   end
 
