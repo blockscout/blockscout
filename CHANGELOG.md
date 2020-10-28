@@ -36,6 +36,7 @@
 - [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
+- [#3404](https://github.com/poanetwork/blockscout/pull/3404) - DISABLE_KNOWN_TOKENS env var
 - [#3403](https://github.com/poanetwork/blockscout/pull/3403) - Refactor Coingecko interaction
 - [#3394](https://github.com/poanetwork/blockscout/pull/3394) - Actualize docker vars list
 - [#3372](https://github.com/poanetwork/blockscout/pull/3372), [#3380](https://github.com/poanetwork/blockscout/pull/3380) - Improve all lists header container
