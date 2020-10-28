@@ -4,9 +4,8 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   """
 
   alias Explorer.ExchangeRates.{Source, Token}
-  alias HTTPoison.{Error, Response}
 
-  import Source, only: [decode_json: 1, to_decimal: 1, headers: 0]
+  import Source, only: [to_decimal: 1]
 
   @behaviour Source
 
@@ -64,16 +63,17 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   defp get_btc_value(id, market_data) do
-    with {:ok, price} <- get_btc_price() do
-      btc_price = to_decimal(price)
-      current_price = get_current_price(market_data)
+    case get_btc_price() do
+      {:ok, price} ->
+        btc_price = to_decimal(price)
+        current_price = get_current_price(market_data)
 
-      if id != "btc" && current_price && btc_price do
-        Decimal.div(current_price, btc_price)
-      else
-        1
-      end
-    else
+        if id != "btc" && current_price && btc_price do
+          Decimal.div(current_price, btc_price)
+        else
+          1
+        end
+
       _ ->
         1
     end
@@ -128,62 +128,43 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
 
     symbol_downcase = String.downcase(symbol)
 
-    case HTTPoison.get(url, headers()) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        data = decode_json(body)
+    case Source.http_request(url) do
+      {:ok, data} = resp ->
+        if is_list(data) do
+          symbol_data =
+            Enum.find(data, fn item ->
+              item["symbol"] == symbol_downcase
+            end)
 
-        symbol_data =
-          Enum.find(data, fn item ->
-            item["symbol"] == symbol_downcase
-          end)
-
-        if symbol_data do
-          {:ok, symbol_data["id"]}
+          if symbol_data do
+            {:ok, symbol_data["id"]}
+          else
+            {:error, :not_found}
+          end
         else
-          {:error, :not_found}
+          resp
         end
 
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
-        {:error, decode_json(body)["error"]}
-
-      {:ok, %Response{body: _body, status_code: status_code}} when status_code in 301..302 ->
-        {:error, "CoinGecko redirected"}
-
-      {:ok, %Response{body: _body, status_code: _status_code}} ->
-        {:error, "CoinGecko unexpected status code"}
-
-      {:error, %Error{reason: reason}} ->
-        {:error, reason}
-
-      {:error, :nxdomain} ->
-        {:error, "CoinGecko is not responsive"}
+      resp ->
+        resp
     end
   end
 
   defp get_btc_price(currency \\ "usd") do
     url = "#{base_url()}/exchange_rates"
 
-    case HTTPoison.get(url, headers()) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        data = decode_json(body)
-        current_price = data["rates"][currency]["value"]
+    case Source.http_request(url) do
+      {:ok, data} = resp ->
+        if is_map(data) do
+          current_price = data["rates"][currency]["value"]
 
-        {:ok, current_price}
+          {:ok, current_price}
+        else
+          resp
+        end
 
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
-        {:error, decode_json(body)["error"]}
-
-      {:ok, %Response{body: _body, status_code: status_code}} when status_code in 301..302 ->
-        {:error, "CoinGecko redirected"}
-
-      {:ok, %Response{body: _body, status_code: _status_code}} ->
-        {:error, "CoinGecko unexpected status code"}
-
-      {:error, %Error{reason: reason}} ->
-        {:error, reason}
-
-      {:error, :nxdomain} ->
-        {:error, "CoinGecko is not responsive"}
+      resp ->
+        resp
     end
   end
 

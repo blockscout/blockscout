@@ -125,7 +125,7 @@ config :explorer, Explorer.Counters.Bridge,
 
 config :explorer, Explorer.ExchangeRates, enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true", store: :ets
 
-config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
+config :explorer, Explorer.KnownTokens, enabled: System.get_env("DISABLE_KNOWN_TOKENS") != "true", store: :ets
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
