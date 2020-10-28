@@ -29,7 +29,7 @@
     <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
       <!-- substitute the span with <img class="tile-image" /> to token with images -->
       <div class="inventory-erc721-image" >
-        <img src=<%=image_src(@token_transfer.instance)%> />
+        <img src=<%=media_src(@token_transfer.instance)%> />
       </div>
     </div>
   </div>
