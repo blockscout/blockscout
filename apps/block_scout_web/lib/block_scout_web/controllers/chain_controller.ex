@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.ChainController do
 
     # Need datapoint for legend if none currently available.
     if Enum.empty?(transaction_stats) do
-      [%{number_of_transactions: 0}]
+      [%{number_of_transactions: 0, gas_used: 0}]
     else
       transaction_stats
     end
