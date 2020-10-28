@@ -69,12 +69,15 @@
                   <%= if token_bridge_supply?() do %>
                     <% token_bridge_market_cap = total_market_cap_from_token_bridge(@exchange_rate) %>
                     <% omni_bridge_market_cap = total_market_cap_from_omni_bridge() %>
+                    <% formatted_total_market_cap = if Decimal.cmp(total_market_cap, 0) == :gt, do: format_usd_value(total_market_cap), else: "N/A" %>
+                    <% formatted_token_bridge_market_cap = if Decimal.cmp(token_bridge_market_cap, 0) == :gt, do: format_usd_value(token_bridge_market_cap), else: "N/A" %>
+                    <% formatted_omni_bridge_market_cap = if Decimal.cmp(omni_bridge_market_cap, 0) == :gt, do: format_usd_value(omni_bridge_market_cap), else: "N/A" %>
                     <span
                       data-toggle="tooltip"
                       data-placement="top"
                       data-html="true"
                       data-template="<div class='tooltip tooltip-inversed-color tooltip-market-cap' role='tooltip'><div class='arrow'></div><div class='tooltip-inner'></div></div>"
-                      title="<div class='custom-tooltip-header'><b><%= format_usd_value(total_market_cap) %></b> is a sum of assets locked in TokenBridge and OmniBridge</div><div class='custom-tooltip-description left'><b><%= format_usd_value(token_bridge_market_cap) %></b> locked in Dai in TokenBridge <br/><b><%= format_usd_value(omni_bridge_market_cap) %></b> locked in different assets in OmniBridge</div>">
+                      title="<div class='custom-tooltip-header'><b><%= formatted_total_market_cap %></b> is a sum of assets locked in TokenBridge and OmniBridge</div><div class='custom-tooltip-description left'><b><%= formatted_token_bridge_market_cap %></b> locked in Dai in TokenBridge <br/><b><%= formatted_omni_bridge_market_cap %></b> locked in different assets in OmniBridge</div>">
                       <i style="color: #ffffff;" class="fa fa-info-circle ml-1" data-test="token-bridge-supply"></i>
                     </span>
                   <% end %>
