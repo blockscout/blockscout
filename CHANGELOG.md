@@ -37,6 +37,7 @@
 - [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
+- [#3407](https://github.com/poanetwork/blockscout/pull/3407) - Add EthereumJSONRPC.HTTP.HTTPoison.json_rpc function clause when URL is null
 - [#3405](https://github.com/poanetwork/blockscout/pull/3405) - N/A instead of 0 for market cap if it is not fetched
 - [#3404](https://github.com/poanetwork/blockscout/pull/3404) - DISABLE_KNOWN_TOKENS env var
 - [#3403](https://github.com/poanetwork/blockscout/pull/3403) - Refactor Coingecko interaction
