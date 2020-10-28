@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
   use Explorer.Schema
 
   alias Explorer.PagingOptions
-  alias Explorer.Chain.{Address, Block, Hash, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Address.CoinBalance
 
   @optional_fields ~w(value value_fetched_at)a
@@ -42,6 +42,8 @@ defmodule Explorer.Chain.Address.CoinBalance do
     field(:value, Wei)
     field(:value_fetched_at, :utc_datetime_usec)
     field(:delta, Wei, virtual: true)
+    field(:transaction_hash, Hash.Full, virtual: true)
+    field(:transaction_value, Wei, virtual: true)
     field(:block_timestamp, :utc_datetime_usec, virtual: true)
 
     timestamps()
@@ -78,6 +80,30 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
   The last coin balance from an Address is the last block indexed.
   """
+  def fetch_coin_balances_with_txs(address_hash, %PagingOptions{page_size: page_size}) do
+    query =
+      from(
+        cb in CoinBalance,
+        left_join: tx in Transaction,
+        on:
+          cb.block_number == tx.block_number and tx.value > ^0 and
+            (cb.address_hash == tx.to_address_hash or cb.address_hash == tx.from_address_hash),
+        where: cb.address_hash == ^address_hash,
+        where: not is_nil(cb.value),
+        order_by: [desc: :block_number],
+        select_merge: %{
+          delta: fragment("a0.value - coalesce(lead(a0.value, 1) over (order by a0.block_number desc), 0)"),
+          transaction_hash: tx.hash,
+          transaction_value: tx.value
+        }
+      )
+
+    from(balance in subquery(query),
+      where: balance.delta != 0,
+      limit: ^page_size
+    )
+  end
+
   def fetch_coin_balances(address_hash, %PagingOptions{page_size: page_size}) do
     query =
       from(
@@ -85,12 +111,18 @@ defmodule Explorer.Chain.Address.CoinBalance do
         where: cb.address_hash == ^address_hash,
         where: not is_nil(cb.value),
         order_by: [desc: :block_number],
-        select_merge: %{delta: fragment("value - coalesce(lead(value, 1) over (order by block_number desc), 0)")}
+        select_merge: %{
+          delta: fragment("a0.value - coalesce(lead(a0.value, 1) over (order by a0.block_number desc), 0)")
+        }
       )
 
     from(balance in subquery(query),
       where: balance.delta != 0,
-      limit: ^page_size
+      limit: ^page_size,
+      select_merge: %{
+        transaction_hash: nil,
+        transaction_value: nil
+      }
     )
   end
 

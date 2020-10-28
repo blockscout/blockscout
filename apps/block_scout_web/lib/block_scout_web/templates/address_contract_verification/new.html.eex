@@ -286,7 +286,7 @@
 
         <div class="smart-contract-form-buttons">
           <button
-            class="position-absolute btn-full-primary d-none mr-2"
+            class="position-absolute w-118 btn-full-primary d-none mr-2"
             disabled="true"
             id="loading"
             name="button"

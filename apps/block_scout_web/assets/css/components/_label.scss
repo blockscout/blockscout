@@ -1,4 +1,4 @@
-.bridged-token-label {
+.bs-label {
     display: inline-block;
     padding: 5px;
     background: #f5f6fa;
@@ -6,6 +6,7 @@
     border-radius: 5px;
     font-size: 10px;
     &.right {
+        margin-left: auto;
         float: right;
     }
     &.omni {
@@ -15,5 +16,12 @@
     &.amb {
         background: $secondary;
         color: #fff;
+    }
+    &.secondary {
+        background: $secondary;
+        color: #fff;
+    }
+    &.from-dropdown {
+        margin-top: -3px;
     }
 }

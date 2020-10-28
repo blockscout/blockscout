@@ -7,19 +7,19 @@ defmodule Explorer.Chain do
     only: [
       from: 2,
       join: 4,
+      join: 5,
       limit: 2,
       lock: 2,
       order_by: 2,
       order_by: 3,
-      offset: 2,
       preload: 2,
       select: 2,
+      select: 3,
       subquery: 1,
       union: 2,
       union_all: 2,
       where: 2,
-      where: 3,
-      select: 3
+      where: 3
     ]
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, fetch_block_internal_transactions: 2]
@@ -54,6 +54,7 @@ defmodule Explorer.Chain do
     PendingBlockOperation,
     SmartContract,
     StakingPool,
+    StakingPoolsDelegator,
     Token,
     Token.Instance,
     TokenTransfer,
@@ -68,6 +69,7 @@ defmodule Explorer.Chain do
     BlockCount,
     BlockNumber,
     Blocks,
+    GasUsage,
     TransactionCount,
     Transactions,
     Uncles
@@ -723,6 +725,28 @@ defmodule Explorer.Chain do
     Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
   end
 
+  @spec address_to_incoming_transaction_gas_usage(Hash.Address.t()) :: non_neg_integer()
+  def address_to_incoming_transaction_gas_usage(address_hash) do
+    to_address_query =
+      from(
+        transaction in Transaction,
+        where: transaction.to_address_hash == ^address_hash
+      )
+
+    Repo.aggregate(to_address_query, :sum, :gas_used, timeout: :infinity)
+  end
+
+  @spec address_to_outcoming_transaction_gas_usage(Hash.Address.t()) :: non_neg_integer()
+  def address_to_outcoming_transaction_gas_usage(address_hash) do
+    to_address_query =
+      from(
+        transaction in Transaction,
+        where: transaction.from_address_hash == ^address_hash
+      )
+
+    Repo.aggregate(to_address_query, :sum, :gas_used, timeout: :infinity)
+  end
+
   @spec max_incoming_transactions_count() :: non_neg_integer()
   def max_incoming_transactions_count, do: @max_incoming_transactions_count
 
@@ -1057,6 +1081,7 @@ defmodule Explorer.Chain do
   def search_token(word) do
     term =
       word
+      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
       |> String.replace(~r/ +/, " & ")
 
     term_final = term <> ":*"
@@ -1085,6 +1110,7 @@ defmodule Explorer.Chain do
   def search_contract(word) do
     term =
       word
+      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
       |> String.replace(~r/ +/, " & ")
 
     term_final = term <> ":*"
@@ -1587,7 +1613,7 @@ defmodule Explorer.Chain do
         where: block.consensus == true
       )
 
-    Repo.one!(query)
+    Repo.one!(query) || 0
   end
 
   @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
@@ -1612,6 +1638,17 @@ defmodule Explorer.Chain do
         a0 in Address,
         select: fragment("SUM(a0.fetched_coin_balance)"),
         where: a0.fetched_coin_balance > ^0
+      )
+
+    Repo.one!(query) || 0
+  end
+
+  @spec fetch_sum_gas_used() :: non_neg_integer
+  def fetch_sum_gas_used do
+    query =
+      from(
+        t0 in Transaction,
+        select: fragment("SUM(t0.gas_used)")
       )
 
     Repo.one!(query) || 0
@@ -1957,6 +1994,21 @@ defmodule Explorer.Chain do
       end
     else
       total_transactions_sent_by_address(address.hash)
+    end
+  end
+
+  @spec address_to_gas_usage_count(Address.t()) :: non_neg_integer()
+  def address_to_gas_usage_count(address) do
+    if contract?(address) do
+      incoming_transaction_gas_usage = address_to_incoming_transaction_gas_usage(address.hash)
+
+      if incoming_transaction_gas_usage == 0 do
+        address_to_outcoming_transaction_gas_usage(address.hash)
+      else
+        incoming_transaction_gas_usage
+      end
+    else
+      address_to_outcoming_transaction_gas_usage(address.hash)
     end
   end
 
@@ -2694,6 +2746,17 @@ defmodule Explorer.Chain do
         SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
 
       rows
+    else
+      cached_value
+    end
+  end
+
+  @spec total_gas_usage() :: non_neg_integer()
+  def total_gas_usage do
+    cached_value = GasUsage.get_sum()
+
+    if is_nil(cached_value) do
+      0
     else
       cached_value
     end
@@ -4112,6 +4175,7 @@ defmodule Explorer.Chain do
 
     query
     |> join_associations(necessity_by_association)
+    |> preload(:contract_address)
     |> Repo.one()
     |> case do
       nil ->
@@ -4338,13 +4402,32 @@ defmodule Explorer.Chain do
     end
   end
 
+  defp fetch_coin_balances(address_hash, paging_options) do
+    address = Repo.get_by(Address, hash: address_hash)
+
+    if contract?(address) do
+      address_hash
+      |> CoinBalance.fetch_coin_balances(paging_options)
+    else
+      address_hash
+      |> CoinBalance.fetch_coin_balances_with_txs(paging_options)
+    end
+  end
+
+  @spec fetch_last_token_balance(Hash.Address.t(), Hash.Address.t()) :: Decimal.t()
+  def fetch_last_token_balance(address_hash, token_contract_address_hash) do
+    address_hash
+    |> CurrentTokenBalance.last_token_balance(token_contract_address_hash)
+    |> Repo.one() || Decimal.new(0)
+  end
+
   @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []
   def address_to_coin_balances(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     balances_raw =
       address_hash
-      |> CoinBalance.fetch_coin_balances(paging_options)
+      |> fetch_coin_balances(paging_options)
       |> page_coin_balances(paging_options)
       |> Repo.all()
 
@@ -4702,54 +4785,153 @@ defmodule Explorer.Chain do
   end
 
   @doc "Get staking pools from the DB"
-  @spec staking_pools(filter :: :validator | :active | :inactive, options :: PagingOptions.t()) :: [map()]
-  def staking_pools(filter, %PagingOptions{page_size: page_size, page_number: page_number} \\ @default_paging_options) do
-    off = page_size * (page_number - 1)
+  @spec staking_pools(
+          filter :: :validator | :active | :inactive,
+          paging_options :: PagingOptions.t() | :all,
+          address_hash :: Hash.t() | nil,
+          filter_banned :: boolean() | nil,
+          filter_my :: boolean() | nil
+        ) :: [map()]
+  def staking_pools(
+        filter,
+        paging_options \\ @default_paging_options,
+        address_hash \\ nil,
+        filter_banned \\ false,
+        filter_my \\ false
+      ) do
+    base_query =
+      StakingPool
+      |> where(is_deleted: false)
+      |> staking_pool_filter(filter)
+      |> staking_pools_paging_query(paging_options)
 
-    StakingPool
-    |> staking_pool_filter(filter)
-    |> limit(^page_size)
-    |> offset(^off)
-    |> Repo.all()
+    delegator_query =
+      if address_hash do
+        base_query
+        |> join(:left, [p], pd in StakingPoolsDelegator,
+          on:
+            p.staking_address_hash == pd.staking_address_hash and pd.address_hash == ^address_hash and
+              not pd.is_deleted
+        )
+        |> select([p, pd], %{pool: p, delegator: pd})
+      else
+        base_query
+        |> select([p], %{pool: p, delegator: nil})
+      end
+
+    banned_query =
+      if filter_banned do
+        where(delegator_query, is_banned: true)
+      else
+        delegator_query
+      end
+
+    filtered_query =
+      if address_hash && filter_my do
+        where(banned_query, [..., pd], not is_nil(pd))
+      else
+        banned_query
+      end
+
+    Repo.all(filtered_query)
+  end
+
+  defp staking_pools_paging_query(base_query, :all) do
+    base_query
+    |> order_by(asc: :staking_address_hash)
+  end
+
+  defp staking_pools_paging_query(base_query, paging_options) do
+    paging_query =
+      base_query
+      |> limit(^paging_options.page_size)
+      |> order_by(desc: :stakes_ratio, desc: :is_active)
+
+    case paging_options.key do
+      {value, address_hash} ->
+        where(
+          paging_query,
+          [p],
+          p.stakes_ratio < ^value or
+            (p.stakes_ratio == ^value and p.staking_address_hash > ^address_hash)
+        )
+
+      _ ->
+        paging_query
+    end
   end
 
   @doc "Get count of staking pools from the DB"
   @spec staking_pools_count(filter :: :validator | :active | :inactive) :: integer
   def staking_pools_count(filter) do
     StakingPool
+    |> where(is_deleted: false)
     |> staking_pool_filter(filter)
     |> Repo.aggregate(:count, :staking_address_hash)
   end
 
   defp staking_pool_filter(query, :validator) do
-    where(
-      query,
-      [pool],
-      pool.is_active == true and
-        pool.is_deleted == false and
-        pool.is_validator == true
-    )
+    where(query, is_validator: true)
   end
 
   defp staking_pool_filter(query, :active) do
-    where(
-      query,
-      [pool],
-      pool.is_active == true and
-        pool.is_deleted == false
-    )
+    where(query, is_active: true)
   end
 
   defp staking_pool_filter(query, :inactive) do
-    where(
-      query,
-      [pool],
-      pool.is_active == false and
-        pool.is_deleted == false
+    where(query, is_active: false)
+  end
+
+  def staking_pool(staking_address_hash) do
+    Repo.get_by(StakingPool, staking_address_hash: staking_address_hash)
+  end
+
+  def staking_pool_delegators(staking_address_hash, show_snapshotted_data) do
+    query =
+      from(
+        d in StakingPoolsDelegator,
+        where:
+          d.staking_address_hash == ^staking_address_hash and
+            (d.is_active == true or (^show_snapshotted_data and d.snapshotted_stake_amount > 0 and d.is_active != true)),
+        order_by: [desc: d.stake_amount]
+      )
+
+    query
+    |> Repo.all()
+  end
+
+  def staking_pool_snapshotted_inactive_delegators_count(staking_address_hash) do
+    query =
+      from(
+        d in StakingPoolsDelegator,
+        where:
+          d.staking_address_hash == ^staking_address_hash and
+            d.snapshotted_stake_amount > 0 and
+            d.is_active != true,
+        select: fragment("count(*)")
+      )
+
+    query
+    |> Repo.one()
+  end
+
+  def staking_pool_delegator(staking_address_hash, address_hash) do
+    Repo.get_by(StakingPoolsDelegator,
+      staking_address_hash: staking_address_hash,
+      address_hash: address_hash,
+      is_deleted: false
     )
   end
 
-  defp staking_pool_filter(query, _), do: query
+  def get_total_staked_and_ordered(address_hash) do
+    StakingPoolsDelegator
+    |> where([delegator], delegator.address_hash == ^address_hash and not delegator.is_deleted)
+    |> select([delegator], %{
+      stake_amount: coalesce(sum(delegator.stake_amount), 0),
+      ordered_withdraw: coalesce(sum(delegator.ordered_withdraw), 0)
+    })
+    |> Repo.one()
+  end
 
   defp with_decompiled_code_flag(query, _hash, false), do: query
 
@@ -5187,7 +5369,11 @@ defmodule Explorer.Chain do
         end
 
       if implementation_address do
-        "0x" <> Base.encode16(implementation_address, case: :lower)
+        if String.starts_with?(implementation_address, "0x") do
+          implementation_address
+        else
+          "0x" <> Base.encode16(implementation_address, case: :lower)
+        end
       else
         nil
       end
@@ -5364,6 +5550,7 @@ defmodule Explorer.Chain do
     Block
     |> where([b], b.number == ^number)
     |> select([b], b.timestamp)
+    |> limit(1)
     |> Repo.one()
   end
 end

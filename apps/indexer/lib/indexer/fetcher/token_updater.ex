@@ -78,9 +78,8 @@ defmodule Indexer.Fetcher.TokenUpdater do
     Enum.each(metadata_list, fn %{contract_address_hash: contract_address_hash} = metadata ->
       {:ok, hash} = Hash.Address.cast(contract_address_hash)
 
-      case Chain.token_from_address_hash(hash, options) do
-        {:ok, %Token{cataloged: true} = token} ->
-          update_metadata(token, metadata)
+      with {:ok, %Token{cataloged: true} = token} <- Chain.token_from_address_hash(hash, options) do
+        update_metadata(token, metadata)
       end
     end)
   end

@@ -114,6 +114,21 @@ $card-tab-icon-color-active: #fff !default;
   }
 }
 
+.card-title-paging {
+  padding: 0px $card-horizontal-padding;
+  display: flex;
+  justify-content: flex-end;
+  min-height: 54px;
+}
+
+.card-footer-paging {
+  padding: 0px $card-horizontal-padding;
+  padding-bottom: 25px;
+  display: flex;
+  justify-content: flex-end;
+  min-height: 80px;
+}
+
 .card-title-controls {
   align-items: center;
   display: flex;
@@ -283,13 +298,13 @@ $card-tab-icon-color-active: #fff !default;
   font-size: 11px;
 }
 
-.tokens-description {
+.list-title-description {
   @media (min-width: 992px) {
     display: inline-block;
   }
 }
 
-.tokens-top-pagination-container-wrapper {
+.list-top-pagination-container-wrapper {
   @media (min-width: 992px) {
     float: right;
   }
