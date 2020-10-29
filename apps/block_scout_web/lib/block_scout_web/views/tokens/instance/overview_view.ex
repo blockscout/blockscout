@@ -17,9 +17,9 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
   def total_supply?(%Token{total_supply: nil}), do: false
   def total_supply?(%Token{total_supply: _}), do: true
 
-  def image_src(nil), do: "/images/controller.svg"
+  def media_src(nil), do: "/images/controller.svg"
 
-  def image_src(instance) do
+  def media_src(instance) do
     result =
       cond do
         instance.metadata && instance.metadata["image_url"] ->
@@ -32,11 +32,19 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
           instance.metadata["properties"]["image"]["description"]
 
         true ->
-          image_src(nil)
+          media_src(nil)
       end
 
-    if String.trim(result) == "", do: image_src(nil), else: result
+    if String.trim(result) == "", do: media_src(nil), else: result
   end
+
+  def media_type(media_src) when not is_nil(media_src) do
+    media_src
+    |> String.split(".")
+    |> Enum.at(-1)
+  end
+
+  def media_type(nil), do: nil
 
   def external_url(nil), do: nil
 

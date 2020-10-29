@@ -66,7 +66,15 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     end
   end
 
-  def market_cap(_), do: Decimal.new(0)
+  def market_cap(_) do
+    total_market_cap_from_omni = total_market_cap_from_omni_bridge()
+
+    if total_market_cap_from_omni do
+      total_market_cap_from_omni
+    else
+      Decimal.new(0)
+    end
+  end
 
   def token_bridge_market_cap(%{usd_value: usd_value}) when not is_nil(usd_value) do
     total_coins_from_token_b = total_coins_from_token_bridge()

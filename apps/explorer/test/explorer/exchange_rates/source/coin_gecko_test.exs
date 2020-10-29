@@ -162,5 +162,25 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
 
       assert CoinGecko.coin_id() == {:ok, "callisto"}
     end
+
+    test "returns redirect on fetching", %{bypass: bypass} do
+      Application.put_env(:explorer, :coin, "DAI")
+
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 302, "Request redirected...")
+      end)
+
+      assert CoinGecko.coin_id() == {:error, "Source redirected"}
+    end
+
+    test "returns error on fetching", %{bypass: bypass} do
+      Application.put_env(:explorer, :coin, "DAI")
+
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 503, "Internal server error...")
+      end)
+
+      assert CoinGecko.coin_id() == {:error, "Internal server error..."}
+    end
   end
 end

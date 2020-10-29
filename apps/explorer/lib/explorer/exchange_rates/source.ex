@@ -23,33 +23,20 @@ defmodule Explorer.ExchangeRates.Source do
   defp fetch_exchange_rates_request(_source, source_url) when is_nil(source_url), do: {:error, "Source URL is nil"}
 
   defp fetch_exchange_rates_request(source, source_url) do
-    case HTTPoison.get(source_url, headers()) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        result =
-          body
-          |> decode_json()
-          |> source.format_data()
+    case http_request(source_url) do
+      {:ok, result} = resp ->
+        if is_map(result) do
+          result_formatted =
+            result
+            |> source.format_data()
 
-        {:ok, result}
-
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
-        if is_map(decode_json(body)) do
-          {:error, decode_json(body)["error"]}
+          {:ok, result_formatted}
         else
-          {:error, body}
+          resp
         end
 
-      {:ok, %Response{body: _body, status_code: status_code}} when status_code in 301..302 ->
-        {:error, "CoinGecko redirected"}
-
-      {:ok, %Response{body: _body, status_code: _status_code}} ->
-        {:error, "CoinGecko unexpected status code"}
-
-      {:error, %Error{reason: reason}} ->
-        {:error, reason}
-
-      {:error, :nxdomain} ->
-        {:error, "CoinGecko is not responsive"}
+      resp ->
+        resp
     end
   end
 
@@ -95,5 +82,55 @@ defmodule Explorer.ExchangeRates.Source do
   @spec config(atom()) :: term
   defp config(key) do
     Application.get_env(:explorer, __MODULE__, [])[key]
+  end
+
+  def http_request(source_url) do
+    case HTTPoison.get(source_url, headers()) do
+      {:ok, %Response{body: body, status_code: 200}} ->
+        parse_http_success_response(body)
+
+      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..526 ->
+        parse_http_error_response(body)
+
+      {:ok, %Response{status_code: status_code}} when status_code in 300..308 ->
+        {:error, "Source redirected"}
+
+      {:ok, %Response{status_code: _status_code}} ->
+        {:error, "Source unexpected status code"}
+
+      {:error, %Error{reason: reason}} ->
+        {:error, reason}
+
+      {:error, :nxdomain} ->
+        {:error, "Source is not responsive"}
+
+      {:error, _} ->
+        {:error, "Source unknown response"}
+    end
+  end
+
+  defp parse_http_success_response(body) do
+    body_json = decode_json(body)
+
+    cond do
+      is_map(body_json) ->
+        {:ok, body_json}
+
+      is_list(body_json) ->
+        {:ok, body_json}
+
+      true ->
+        {:ok, body}
+    end
+  end
+
+  defp parse_http_error_response(body) do
+    body_json = decode_json(body)
+
+    if is_map(body_json) do
+      {:error, body_json["error"]}
+    else
+      {:error, body}
+    end
   end
 end
