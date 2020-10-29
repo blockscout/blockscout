@@ -37,7 +37,8 @@
   </head>
 
   <body>
-    <% raw_dark_forest_addresses = CustomContractsHelpers.get_raw_dark_forest_addresses_list() %>
+    <% raw_dark_forest_addresses = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses) %>
+    <% raw_circles_addresses = CustomContractsHelpers.get_raw_custom_addresses_list(:circles_addresses) %>
     <%= cond do %>
       <% (
         @view_module == Elixir.BlockScoutWeb.TransactionInternalTransactionView ||
@@ -48,14 +49,19 @@
         <% to_address = @transaction && @transaction.to_address && "0x" <> Base.encode16(@transaction.to_address.hash.bytes, case: :lower) %>
         <script>
           function applyCustomMode() {
-            const darkForestContractAddressHashesRaw = "<%= raw_dark_forest_addresses %>"
-            if (darkForestContractAddressHashesRaw !== "") {
-              const darkForestContractAddressHashes = darkForestContractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
+            applyCustomTheme("<%= raw_dark_forest_addresses %>", "dark-forest-theme-applied")
+            applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
+          }
+          function applyCustomTheme(contractAddressHashesRaw, customClass) {
+            if (contractAddressHashesRaw !== "") {
+              const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
               const to_address = "<%= to_address %>"
 
-              darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
-                if (to_address == darkForestContractAddressHash) {
-                  document.body.className += " " + "dark-forest-theme-applied";
+              console.log(`Gimme to_address ${to_address}`)
+              contractAddressHashes.forEach(contractAddressHash => {
+                console.log(`Gimme contractAddressHash ${contractAddressHash}`)
+                if (to_address == contractAddressHash) {
+                  document.body.className += " " + customClass;
                   return;
                 }
               })
@@ -68,12 +74,19 @@
       <% true -> %>
         <script>
           function applyCustomMode() {
-            const darkForestContractAddressHashesRaw = "<%= raw_dark_forest_addresses %>"
-            if (darkForestContractAddressHashesRaw !== "") {
-              const darkForestContractAddressHashes = darkForestContractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
-              darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
-                if (window.location.pathname.toLowerCase().includes(darkForestContractAddressHash)) {
-                  document.body.className += " " + "dark-forest-theme-applied";
+            applyCustomTheme("<%= raw_dark_forest_addresses %>", "dark-forest-theme-applied")
+            applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
+          }
+          function applyCustomTheme(contractAddressHashesRaw, customClass) {
+            console.log("Gimme contractAddressHashesRaw")
+            console.log(contractAddressHashesRaw)
+            console.log("Gimme customClass")
+            console.log(customClass)
+            if (contractAddressHashesRaw !== "") {
+              const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
+              contractAddressHashes.forEach(contractAddressHash => {
+                if (window.location.pathname.toLowerCase().includes(contractAddressHash)) {
+                  document.body.className += " " + customClass;
                   return;
                 }
               })
