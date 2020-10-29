@@ -1,5 +1,6 @@
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
-  <% dark_forest_addresses_list = CustomContractsHelpers.get_dark_forest_addresses_list() %>
+  <% dark_forest_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
+  <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
   <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
   <div class="row">
     <!-- Address details -->
@@ -26,6 +27,10 @@
                     </span>
                   </a>
                 </div>
+              </div>
+            <% Enum.member?(circles_addresses_list, current_address) -> %>
+              <div class="custom-dapp-header-container">
+                <img class="custom-address-icon"/>
               </div>
             <% true -> %>
               <%= nil %>
