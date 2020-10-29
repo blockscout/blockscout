@@ -68,9 +68,7 @@
               const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
               const to_address = "<%= to_address %>"
 
-              console.log(`Gimme to_address ${to_address}`)
               contractAddressHashes.forEach(contractAddressHash => {
-                console.log(`Gimme contractAddressHash ${contractAddressHash}`)
                 if (to_address == contractAddressHash) {
                   document.body.className += " " + customClass;
                   return;
@@ -89,10 +87,6 @@
             applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
           }
           function applyCustomTheme(contractAddressHashesRaw, customClass) {
-            console.log("Gimme contractAddressHashesRaw")
-            console.log(contractAddressHashesRaw)
-            console.log("Gimme customClass")
-            console.log(customClass)
             if (contractAddressHashesRaw !== "") {
               const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
               contractAddressHashes.forEach(contractAddressHash => {

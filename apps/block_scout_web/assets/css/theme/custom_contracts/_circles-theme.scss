@@ -413,22 +413,11 @@ $text2: #A4A9B4;
 	}
 
 	// Decoded data
-	.table.thead-light.table-bordered {
-		color: #fff !important;
-	}
 	.table-bordered, .table-bordered td, .table-bordered th {
 		border-color: darken($text2, 30);
 	}
 	.circles-theme-applied .table td, .circles-theme-applied .table th, .circles-theme-applied hr {
 		border-top-color: darken($text2, 30);
-	}
-	.btn-copy-ico svg path {
-		fill: #fff;
-	}
-
-	// 'text dark' label
-	.text-dark {
-		color: #fff;
 	}
 
 	#qrModal {
