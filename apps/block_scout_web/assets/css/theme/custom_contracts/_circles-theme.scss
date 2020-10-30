@@ -236,21 +236,6 @@ $c-dark-text-color: #8a8dba;
 		height: 32px;
 	}
 
-	// table
-	.stakes-table-th {
-		background-color: $c-primary;
-		color: $text2;
-	}
-	.stakes-td {
-		border-bottom-color: darken($text2, 30);
-	}
-	.table th, .table td {
-		border-top-color: darken($text2, 30);
-	}
-	hr {
-		border-top-color: darken($text2, 30);
-	}
-
 	// download csv button
 	.download-all-transactions .download-all-transactions-link svg path {
 		fill: $c-primary;
@@ -406,14 +391,6 @@ $c-dark-text-color: #8a8dba;
 			background: $c-primary;
 			color: #fff;
 		}
-	}
-
-	// Decoded data
-	.table-bordered, .table-bordered td, .table-bordered th {
-		border-color: darken($text2, 30);
-	}
-	.circles-theme-applied .table td, .circles-theme-applied .table th, .circles-theme-applied hr {
-		border-top-color: darken($text2, 30);
 	}
 
 	#qrModal {
