@@ -1,8 +1,11 @@
 defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain
   alias Plug.Conn
   alias Poison.Parser
+
+  import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
 
   @issue_url "https://github.com/poanetwork/blockscout/issues/new"
   @default_other_networks [

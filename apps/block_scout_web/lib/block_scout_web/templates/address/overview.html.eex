@@ -2,6 +2,7 @@
   <% dark_forest_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
   <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
   <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
+  <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
   <div class="row">
     <!-- Address details -->
     <div class="card-section col-md-12 col-lg-8 pr-0-md">
@@ -29,6 +30,10 @@
                 </div>
               </div>
             <% Enum.member?(circles_addresses_list, current_address) -> %>
+              <div class="custom-dapp-header-container">
+                <img class="custom-address-icon"/>
+              </div>
+            <% Enum.member?(circles_addresses_list, created_from_address_hash) -> %>
               <div class="custom-dapp-header-container">
                 <img class="custom-address-icon"/>
               </div>
