@@ -30,7 +30,7 @@ defmodule Explorer.Staking.ContractStateTest do
 
     start_supervised!(ContractState)
 
-    Publisher.broadcast([{:blocks, [%Explorer.Chain.Block{number: 76}]}], :realtime)
+    Publisher.broadcast([{:last_block_number, 76}], :realtime)
 
     Process.sleep(500)
 
