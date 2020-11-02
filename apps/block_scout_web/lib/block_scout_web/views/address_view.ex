@@ -294,9 +294,7 @@ defmodule BlockScoutWeb.AddressView do
     address.contracts_creation_transaction.from_address_hash
   end
 
-  def from_address_hash(_address) do
-    nil
-  end
+  def from_address_hash(_address), do: nil
 
   def address_link_to_other_explorer(link, address, full) do
     if full do
@@ -383,4 +381,10 @@ defmodule BlockScoutWeb.AddressView do
       true -> "#{to_string(address)}"
     end
   end
+
+  def smart_contract_is_gnosis_safe_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
+    address.smart_contract.name == "GnosisSafeProxy" && Chain.gnosis_safe_contract?(address.smart_contract.abi)
+  end
+
+  def smart_contract_is_gnosis_safe_proxy?(_address), do: false
 end
