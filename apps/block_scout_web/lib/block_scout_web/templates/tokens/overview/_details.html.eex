@@ -35,7 +35,7 @@
               <%= gettext("Token Details") %>
             <% end %>
             <!-- buttons -->
-            <span class="overview-title-buttons float-right">
+            <span class="overview-title-buttons token float-right">
               <span class="overview-title-item" data-clipboard-text="<%= Address.checksum(@token.contract_address_hash) %>">
                 <span
                   aria-label='<%= gettext("Copy Address") %>'
