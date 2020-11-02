@@ -5315,17 +5315,18 @@ defmodule Explorer.Chain do
     []
   end
 
-  def is_proxy_contract?(abi) when not is_nil(abi) do
+  def proxy_contract?(abi) when not is_nil(abi) do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
-        Map.get(method, "name") == "implementation"
+        Map.get(method, "name") == "implementation" ||
+          master_copy_pattern?(method)
       end)
 
     if implementation_method_abi, do: true, else: false
   end
 
-  def is_proxy_contract?(abi) when is_nil(abi) do
+  def proxy_contract?(abi) when is_nil(abi) do
     false
   end
 
@@ -5337,52 +5338,119 @@ defmodule Explorer.Chain do
         Map.get(method, "name") == "implementation"
       end)
 
-    implementation_method_abi_state_mutability = Map.get(implementation_method_abi, "stateMutability")
+    implementation_method_abi_state_mutability =
+      implementation_method_abi && Map.get(implementation_method_abi, "stateMutability")
+
     is_eip1967 = if implementation_method_abi_state_mutability == "nonpayable", do: true, else: false
 
-    if is_eip1967 do
-      json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    master_copy_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        master_copy_pattern?(method)
+      end)
 
-      # https://eips.ethereum.org/EIPS/eip-1967
-      eip_1967_implementation_storage_pointer = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+    cond do
+      is_eip1967 ->
+        get_implementation_address_hash_eip_1967(proxy_address_hash)
 
-      {:ok, implementation_address} =
-        Contract.eth_get_storage_at_request(
-          proxy_address_hash,
-          eip_1967_implementation_storage_pointer,
-          nil,
-          json_rpc_named_arguments
-        )
+      implementation_method_abi ->
+        get_implementation_address_hash_basic(proxy_address_hash, abi)
 
-      if String.length(implementation_address) > 42 do
-        "0x" <> String.slice(implementation_address, -40, 40)
-      else
-        implementation_address
-      end
-    else
-      # 5c60da1b = keccak256(implementation())
-      implementation_address =
-        case Reader.query_contract(proxy_address_hash, abi, %{
-               "5c60da1b" => []
-             }) do
-          %{"5c60da1b" => {:ok, [result]}} -> result
-          _ -> nil
-        end
+      master_copy_method_abi ->
+        get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash)
 
-      if implementation_address do
-        if String.starts_with?(implementation_address, "0x") do
-          implementation_address
-        else
-          "0x" <> Base.encode16(implementation_address, case: :lower)
-        end
-      else
+      true ->
         nil
-      end
     end
   end
 
   def get_implementation_address_hash(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
     nil
+  end
+
+  defp get_implementation_address_hash_eip_1967(proxy_address_hash) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    # https://eips.ethereum.org/EIPS/eip-1967
+    eip_1967_implementation_storage_pointer = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+
+    {:ok, implementation_address} =
+      Contract.eth_get_storage_at_request(
+        proxy_address_hash,
+        eip_1967_implementation_storage_pointer,
+        nil,
+        json_rpc_named_arguments
+      )
+
+    abi_decode_address_output(implementation_address)
+  end
+
+  defp get_implementation_address_hash_basic(proxy_address_hash, abi) do
+    # 5c60da1b = keccak256(implementation())
+    implementation_address =
+      case Reader.query_contract(proxy_address_hash, abi, %{
+             "5c60da1b" => []
+           }) do
+        %{"5c60da1b" => {:ok, [result]}} -> result
+        _ -> nil
+      end
+
+    address_to_hex(implementation_address)
+  end
+
+  defp get_implementation_address_hash_from_master_copy_pattern(proxy_address_hash) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    master_copy_storage_pointer = "0x0"
+
+    {:ok, implementation_address} =
+      Contract.eth_get_storage_at_request(
+        proxy_address_hash,
+        master_copy_storage_pointer,
+        nil,
+        json_rpc_named_arguments
+      )
+
+    abi_decode_address_output(implementation_address)
+  end
+
+  defp master_copy_pattern?(method) do
+    Map.get(method, "type") == "constructor" &&
+      method
+      |> Enum.find(fn item ->
+        case item do
+          {"inputs", inputs} ->
+            master_copy_input?(inputs)
+
+          _ ->
+            false
+        end
+      end)
+  end
+
+  defp master_copy_input?(inputs) do
+    inputs
+    |> Enum.find(fn input ->
+      Map.get(input, "name") == "_masterCopy"
+    end)
+  end
+
+  defp abi_decode_address_output(address) do
+    if String.length(address) > 42 do
+      "0x" <> String.slice(address, -40, 40)
+    else
+      address
+    end
+  end
+
+  defp address_to_hex(address) do
+    if address do
+      if String.starts_with?(address, "0x") do
+        address
+      else
+        "0x" <> Base.encode16(address, case: :lower)
+      end
+    end
   end
 
   def get_implementation_abi(implementation_address_hash_string) when not is_nil(implementation_address_hash_string) do

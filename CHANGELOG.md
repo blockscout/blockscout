@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3420](https://github.com/poanetwork/blockscout/pull/3420) - Enable read/write proxy tabs for Gnosis safe proxy contract
 - [#3411](https://github.com/poanetwork/blockscout/pull/3411) - Circles UBI theme
 - [#3406](https://github.com/poanetwork/blockscout/pull/3406), [#3409](https://github.com/poanetwork/blockscout/pull/3409) - Adding mp4 files support for NFTs
 - [#3398](https://github.com/poanetwork/blockscout/pull/3398) - Collect and display gas usage per day at the main page

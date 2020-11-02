@@ -235,7 +235,7 @@ defmodule BlockScoutWeb.AddressView do
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
 
   def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
-    Chain.is_proxy_contract?(address.smart_contract.abi)
+    Chain.proxy_contract?(address.smart_contract.abi)
   end
 
   def smart_contract_is_proxy?(%Address{smart_contract: nil}), do: false
