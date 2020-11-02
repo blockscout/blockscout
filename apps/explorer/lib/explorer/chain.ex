@@ -5326,9 +5326,19 @@ defmodule Explorer.Chain do
     if implementation_method_abi, do: true, else: false
   end
 
-  def proxy_contract?(abi) when is_nil(abi) do
-    false
+  def proxy_contract?(abi) when is_nil(abi), do: false
+
+  def gnosis_safe_contract?(abi) when not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        master_copy_pattern?(method)
+      end)
+
+    if implementation_method_abi, do: true, else: false
   end
+
+  def gnosis_safe_contract?(abi) when is_nil(abi), do: false
 
   def get_implementation_address_hash(proxy_address_hash, abi)
       when not is_nil(proxy_address_hash) and not is_nil(abi) do
