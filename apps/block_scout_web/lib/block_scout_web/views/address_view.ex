@@ -235,7 +235,7 @@ defmodule BlockScoutWeb.AddressView do
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
 
   def smart_contract_is_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
-    Chain.is_proxy_contract?(address.smart_contract.abi)
+    Chain.proxy_contract?(address.smart_contract.abi)
   end
 
   def smart_contract_is_proxy?(%Address{smart_contract: nil}), do: false
@@ -294,9 +294,7 @@ defmodule BlockScoutWeb.AddressView do
     address.contracts_creation_transaction.from_address_hash
   end
 
-  def from_address_hash(_address) do
-    nil
-  end
+  def from_address_hash(_address), do: nil
 
   def address_link_to_other_explorer(link, address, full) do
     if full do
@@ -369,6 +367,20 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def short_contract_name(name, max_length) do
+    short_string(name, max_length)
+  end
+
+  def short_token_id(%Decimal{} = token_id, max_length) do
+    token_id
+    |> Decimal.to_string()
+    |> short_string(max_length)
+  end
+
+  def short_token_id(token_id, max_length) do
+    short_string(token_id, max_length)
+  end
+
+  def short_string(name, max_length) do
     part_length = Kernel.trunc(max_length / 4)
 
     if String.length(name) <= max_length,
@@ -383,4 +395,10 @@ defmodule BlockScoutWeb.AddressView do
       true -> "#{to_string(address)}"
     end
   end
+
+  def smart_contract_is_gnosis_safe_proxy?(%Address{smart_contract: %SmartContract{}} = address) do
+    address.smart_contract.name == "GnosisSafeProxy" && Chain.gnosis_safe_contract?(address.smart_contract.abi)
+  end
+
+  def smart_contract_is_gnosis_safe_proxy?(_address), do: false
 end

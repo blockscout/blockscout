@@ -272,12 +272,29 @@ defmodule Explorer.SmartContract.Reader do
       {:array, type} ->
         format_input_type(type) <> "[]"
 
+      {:tuple, tuple} ->
+        format_tuple_type(tuple)
+
       {type, size} ->
         Atom.to_string(type) <> Integer.to_string(size)
 
       type ->
         Atom.to_string(type)
     end
+  end
+
+  defp format_tuple_type(tuple) do
+    tuple_types =
+      tuple
+      |> Enum.reduce(nil, fn tuple_item, acc ->
+        if acc do
+          acc <> "," <> format_input_type(tuple_item)
+        else
+          format_input_type(tuple_item)
+        end
+      end)
+
+    "tuple[#{tuple_types}]"
   end
 
   def fetch_current_value_from_blockchain(function, abi, contract_address_hash) do

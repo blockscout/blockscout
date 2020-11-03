@@ -3,20 +3,20 @@ defmodule BlockScoutWeb.CustomContractsHelpers do
   Helpers to enable custom contracts themes
   """
 
-  def get_dark_forest_addresses_list do
-    dark_forest_addresses_var = get_raw_dark_forest_addresses_list()
-    dark_forest_addresses_list = (dark_forest_addresses_var && String.split(dark_forest_addresses_var, ",")) || []
+  def get_custom_addresses_list(env_var) do
+    addresses_var = get_raw_custom_addresses_list(env_var)
+    addresses_list = (addresses_var && String.split(addresses_var, ",")) || []
 
-    formatted_dark_forest_addresses_list =
-      dark_forest_addresses_list
+    formatted_addresses_list =
+      addresses_list
       |> Enum.map(fn addr ->
         String.downcase(addr)
       end)
 
-    formatted_dark_forest_addresses_list
+    formatted_addresses_list
   end
 
-  def get_raw_dark_forest_addresses_list do
-    Application.get_env(:block_scout_web, :dark_forest_addresses)
+  def get_raw_custom_addresses_list(env_var) do
+    Application.get_env(:block_scout_web, env_var)
   end
 end

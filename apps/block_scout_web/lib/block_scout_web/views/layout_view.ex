@@ -1,8 +1,11 @@
 defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain
   alias Plug.Conn
   alias Poison.Parser
+
+  import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
 
   @issue_url "https://github.com/poanetwork/blockscout/issues/new"
   @default_other_networks [
@@ -194,10 +197,16 @@ defmodule BlockScoutWeb.LayoutView do
 
   def other_explorers do
     if Application.get_env(:block_scout_web, :link_to_other_explorers) do
-      Application.get_env(:block_scout_web, :other_explorers, [])
+      decode_other_explorers_json(Application.get_env(:block_scout_web, :other_explorers, []))
     else
       []
     end
+  end
+
+  defp decode_other_explorers_json(data) do
+    Jason.decode!(~s(#{data}))
+  rescue
+    _ -> []
   end
 
   def webapp_url(conn) do

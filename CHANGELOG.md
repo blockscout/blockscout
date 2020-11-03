@@ -1,6 +1,8 @@
 ## Current
 
 ### Features
+- [#3420](https://github.com/poanetwork/blockscout/pull/3420) - Enable read/write proxy tabs for Gnosis safe proxy contract
+- [#3411](https://github.com/poanetwork/blockscout/pull/3411) - Circles UBI theme
 - [#3406](https://github.com/poanetwork/blockscout/pull/3406), [#3409](https://github.com/poanetwork/blockscout/pull/3409) - Adding mp4 files support for NFTs
 - [#3398](https://github.com/poanetwork/blockscout/pull/3398) - Collect and display gas usage per day at the main page
 - [#3385](https://github.com/poanetwork/blockscout/pull/3385), [#3397](https://github.com/poanetwork/blockscout/pull/3397) - Total gas usage at the main page
@@ -13,8 +15,11 @@
 
 
 ### Fixes
+- [#3424](https://github.com/poanetwork/blockscout/pull/3424) - Fix display of long NFT IDs
+- [#3422](https://github.com/poanetwork/blockscout/pull/3422) - Fix contract reader: tuple type
 - [#3408](https://github.com/poanetwork/blockscout/pull/3408) - Fix (total) difficulty display
 - [#3401](https://github.com/poanetwork/blockscout/pull/3401) - Fix procedure of marking internal transactions as failed
+- [#3400](https://github.com/poanetwork/blockscout/pull/3400) - Add :last_block_number realtime chain event
 - [#3399](https://github.com/poanetwork/blockscout/pull/3399) - Fix Token transfers CSV export
 - [#3396](https://github.com/poanetwork/blockscout/pull/3396) - Handle exchange rates request throttled
 - [#3382](https://github.com/poanetwork/blockscout/pull/3382) - Check ets table exists for know tokens
@@ -38,6 +43,8 @@
 - [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
+- [#3421](https://github.com/poanetwork/blockscout/pull/3421) - Functions to enable GnosisSafe app link
+- [#3414](https://github.com/poanetwork/blockscout/pull/3414) - Manage lis of other explorers in the footer via env var
 - [#3407](https://github.com/poanetwork/blockscout/pull/3407) - Add EthereumJSONRPC.HTTP.HTTPoison.json_rpc function clause when URL is null
 - [#3405](https://github.com/poanetwork/blockscout/pull/3405) - N/A instead of 0 for market cap if it is not fetched
 - [#3404](https://github.com/poanetwork/blockscout/pull/3404) - DISABLE_KNOWN_TOKENS env var
