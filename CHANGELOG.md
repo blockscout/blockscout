@@ -15,6 +15,7 @@
 
 
 ### Fixes
+- [#3422](https://github.com/poanetwork/blockscout/pull/3422) - Fix contract reader: tuple type
 - [#3408](https://github.com/poanetwork/blockscout/pull/3408) - Fix (total) difficulty display
 - [#3401](https://github.com/poanetwork/blockscout/pull/3401) - Fix procedure of marking internal transactions as failed
 - [#3400](https://github.com/poanetwork/blockscout/pull/3400) - Add :last_block_number realtime chain event
