@@ -15,6 +15,7 @@
 
 
 ### Fixes
+- [#3424](https://github.com/poanetwork/blockscout/pull/3424) - Fix display of long NFT IDs
 - [#3422](https://github.com/poanetwork/blockscout/pull/3422) - Fix contract reader: tuple type
 - [#3408](https://github.com/poanetwork/blockscout/pull/3408) - Fix (total) difficulty display
 - [#3401](https://github.com/poanetwork/blockscout/pull/3401) - Fix procedure of marking internal transactions as failed

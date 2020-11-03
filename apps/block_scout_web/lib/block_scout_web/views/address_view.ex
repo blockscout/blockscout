@@ -367,6 +367,20 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def short_contract_name(name, max_length) do
+    short_string(name, max_length)
+  end
+
+  def short_token_id(%Decimal{} = token_id, max_length) do
+    token_id
+    |> Decimal.to_string()
+    |> short_string(max_length)
+  end
+
+  def short_token_id(token_id, max_length) do
+    short_string(token_id, max_length)
+  end
+
+  def short_string(name, max_length) do
     part_length = Kernel.trunc(max_length / 4)
 
     if String.length(name) <= max_length,

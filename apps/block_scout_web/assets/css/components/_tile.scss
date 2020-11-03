@@ -171,6 +171,10 @@ $tile-body-a-color: #5959d8 !default;
     color: $tile-body-a-color;
   }
 
+  a[data-test=token_link] {
+    color: $tile-body-a-color;
+  }
+
   .tile-body {
     a {
       color: $tile-body-a-color;

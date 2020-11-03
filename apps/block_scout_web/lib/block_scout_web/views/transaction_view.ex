@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias Timex.Duration
 
   import BlockScoutWeb.Gettext
-  import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
+  import BlockScoutWeb.AddressView, only: [from_address_hash: 1, short_token_id: 2]
   import BlockScoutWeb.Tokens.Helpers
 
   @tabs ["token-transfers", "internal-transactions", "logs", "raw-trace"]
