@@ -186,7 +186,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/_link.html.eex:2
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:28
-#: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:57
+#: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:50
 msgid "Block #%{number}"
 msgstr ""
 
@@ -980,7 +980,7 @@ msgid "License ID"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:307
+#: lib/block_scout_web/templates/transaction/overview.html.eex:286
 msgid "Limit"
 msgstr ""
 
@@ -1513,7 +1513,7 @@ msgid "Use the search box to find a hosted network, or select from the list of a
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:301
+#: lib/block_scout_web/templates/transaction/overview.html.eex:280
 msgid "Used"
 msgstr ""
 
@@ -1544,7 +1544,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:205
-#: lib/block_scout_web/templates/transaction/overview.html.eex:279
+#: lib/block_scout_web/templates/transaction/overview.html.eex:258
 msgid "Value"
 msgstr ""
 
@@ -1740,7 +1740,7 @@ msgid "Decimals"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:297
+#: lib/block_scout_web/templates/transaction/overview.html.eex:276
 msgid "Gas"
 msgstr ""
 
@@ -1871,7 +1871,7 @@ msgid "Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:256
+#: lib/block_scout_web/templates/transaction/overview.html.eex:242
 msgid " Token Burning"
 msgstr ""
 
@@ -1883,7 +1883,7 @@ msgid "Token Burning"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/overview.html.eex:238
+#: lib/block_scout_web/templates/transaction/overview.html.eex:231
 msgid " Token Minting"
 msgstr ""
 

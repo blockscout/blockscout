@@ -221,14 +221,7 @@
               <div class="text-right">
               <%= for transfer  <- token_transfers do %>
                 <h3 class="address-balance-text">
-                  <%= case token_transfer_amount(transfer) do %>
-                    <% {:ok, :erc721_instance} -> %>
-                      <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id)), "data-test": "token_link") %><%= "]" %>
-                    <% {:ok, value} -> %>
-                      <%= value %>
-                  <% end %>
-                    <%= " "%>
-                    <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash), "data-test": "token_link") %>
+                  <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, transfer) %>
                 </h3>
               <% end %>
               </div>
@@ -239,14 +232,7 @@
               <div class="text-right">
               <%= for transfer  <- mintings do %>
                 <h3 class="address-balance-text">
-                  <%= case token_transfer_amount(transfer) do %>
-                    <% {:ok, :erc721_instance} -> %>
-                      <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id)), "data-test": "token_link") %><%= "]" %>
-                    <% {:ok, value} -> %>
-                      <%= value %>
-                  <% end %>
-                    <%= " "%>
-                    <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash), "data-test": "token_link") %>
+                  <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, transfer) %>
                 </h3>
               <% end %>
               </div>
@@ -257,14 +243,7 @@
               <div class="text-right">
               <%= for transfer  <- burnings do %>
                 <h3 class="address-balance-text">
-                  <%= case token_transfer_amount(transfer) do %>
-                    <% {:ok, :erc721_instance} -> %>
-                      <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id)), "data-test": "token_link") %><%= "]" %>
-                    <% {:ok, value} -> %>
-                      <%= value %>
-                  <% end %>
-                    <%= " "%>
-                    <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash), "data-test": "token_link") %>
+                  <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, transfer) %>
                 </h3>
               <% end %>
               </div>
