@@ -370,6 +370,12 @@ $c-dark-text-color: #8a8dba;
 		}
 	}
 
+	.overview-title-buttons.token {
+		@media (max-width: 768px) {
+			margin-top: 0px;
+		}
+	}
+
 	.awesomplete {
 		& > ul {
 			background: $c-primary;

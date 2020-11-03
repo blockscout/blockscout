@@ -44,7 +44,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
       &#8594;
     </div>
 
-    <%= if queryable?(function["inputs"]) || writeable?(function) do %>
+    <%= if queryable?(function["inputs"]) || writable?(function) do %>
       <div style="width: 100%; overflow: hidden;">
         <%=
           for status <- ["error", "warning", "success", "question"] do
@@ -52,7 +52,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
           end
         %>
         <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
-        <form class="form-inline" data-function-form data-action="<%= if writeable?(function), do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
+        <form class="form-inline" data-function-form data-action="<%= if writable?(function), do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
           <input type="hidden" name="method_id" value='<%= function["method_id"] %>' />
 
@@ -70,7 +70,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
             </div>
           <% end %>
 
-          <input type="submit" value='<%= if writeable?(function), do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 mt-2 write-contract-btn" />
+          <input type="submit" value='<%= if writable?(function), do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 mt-2 write-contract-btn" />
         </form>
 
         <%= if outputs?(function["outputs"]) do %>
