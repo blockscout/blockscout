@@ -7,7 +7,7 @@ defmodule Indexer.Fetcher.CoinBalanceOnDemand do
   If we have a fetched coin balance, but it is over 100 blocks old, we will fetch and create a fetched coin baalnce.
   """
 
-  @latest_balance_stale_threshold :timer.hours(24)
+  @latest_balance_stale_threshold :timer.hours(1)
 
   use GenServer
   use Indexer.Fetcher
