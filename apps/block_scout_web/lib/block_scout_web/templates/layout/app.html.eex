@@ -46,7 +46,8 @@
   </head>
 
   <body>
-    <% raw_dark_forest_addresses = CustomContractsHelpers.get_raw_dark_forest_addresses_list() %>
+    <% raw_dark_forest_addresses = CustomContractsHelpers.get_raw_custom_addresses_list(:dark_forest_addresses) %>
+    <% raw_circles_addresses = CustomContractsHelpers.get_raw_custom_addresses_list(:circles_addresses) %>
     <%= cond do %>
       <% (
         @view_module == Elixir.BlockScoutWeb.TransactionInternalTransactionView ||
@@ -55,42 +56,104 @@
         @view_module == Elixir.BlockScoutWeb.TransactionTokenTransferView
       ) -> %>
         <% to_address = @transaction && @transaction.to_address && "0x" <> Base.encode16(@transaction.to_address.hash.bytes, case: :lower) %>
+        <% {:ok, created_from_address} = if @transaction.to_address_hash, do: Chain.hash_to_address(@transaction.to_address_hash), else: {:ok, nil} %>
+        <% created_from_address_hash_str = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
         <script>
           function applyCustomMode() {
-            const darkForestContractAddressHashesRaw = "<%= raw_dark_forest_addresses %>"
-            if (darkForestContractAddressHashesRaw !== "") {
-              const darkForestContractAddressHashes = darkForestContractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
+            applyCustomTheme("<%= raw_dark_forest_addresses %>", "dark-forest-theme-applied")
+            applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
+          }
+          function applyCustomTheme(contractAddressHashesRaw, customClass) {
+            if (contractAddressHashesRaw !== "") {
+              const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
               const to_address = "<%= to_address %>"
+              const created_from_address_hash_str = "<%= created_from_address_hash_str %>"
 
-              darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
-                if (to_address == darkForestContractAddressHash) {
-                  document.body.className += " " + "dark-forest-theme-applied";
+              contractAddressHashes.forEach(contractAddressHash => {
+                if (contractAddressHash == to_address) {
+                  document.body.className += " " + customClass;
+                  return;
+                } else if (contractAddressHash == created_from_address_hash_str) {
+                  document.body.className += " " + customClass;
                   return;
                 }
               })
             }
 
+          }
+
+          window.onload = applyCustomMode()
+        </script>
+      <% (
+        @view_module == Elixir.BlockScoutWeb.AddressTransactionView ||
+        @view_module == Elixir.BlockScoutWeb.AddressTokenTransferView ||
+        @view_module == Elixir.BlockScoutWeb.AddressTokenView ||
+        @view_module == Elixir.BlockScoutWeb.AddressInternalTransactionView ||
+        @view_module == Elixir.BlockScoutWeb.AddressCoinBalanceView ||
+        @view_module == Elixir.BlockScoutWeb.AddressLogsView ||
+        @view_module == Elixir.BlockScoutWeb.AddressValidationView ||
+        @view_module == Elixir.BlockScoutWeb.AddressContractView ||
+        @view_module == Elixir.BlockScoutWeb.AddressReadContractView ||
+        @view_module == Elixir.BlockScoutWeb.AddressReadProxyView ||
+        @view_module == Elixir.BlockScoutWeb.AddressWriteContractView ||
+        @view_module == Elixir.BlockScoutWeb.AddressWriteProxyView
+      ) -> %>
+        <% created_from_address = if @address && from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
+        <script>
+          function applyCustomMode() {
+            applyCustomTheme("<%= raw_dark_forest_addresses %>", "dark-forest-theme-applied")
+            applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
+          }
+          function applyCustomTheme(contractAddressHashesRaw, customClass) {
+            if (contractAddressHashesRaw !== "") {
+              const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
+              const created_from_address = "<%= created_from_address %>"
+              contractAddressHashes.forEach(contractAddressHash => {
+                if (window.location.pathname.toLowerCase().includes(contractAddressHash)) {
+                  document.body.className += " " + customClass;
+                  return;
+                } else if (contractAddressHash == created_from_address) {
+                  document.body.className += " " + customClass;
+                  return;
+                }
+              })
+            }
+          }
+
+          window.onload = applyCustomMode()
+        </script>
+      <% (
+        @view_module == Elixir.BlockScoutWeb.Tokens.TransferView ||
+        @view_module == Elixir.BlockScoutWeb.Tokens.ReadContractView ||
+        @view_module == Elixir.BlockScoutWeb.Tokens.HolderView
+      ) -> %>
+        <% {:ok, created_from_address} = if @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
+        <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
+        <script>
+          function applyCustomMode() {
+            applyCustomTheme("<%= raw_dark_forest_addresses %>", "dark-forest-theme-applied")
+            applyCustomTheme("<%= raw_circles_addresses %>", "circles-theme-applied")
+          }
+          function applyCustomTheme(contractAddressHashesRaw, customClass) {
+            if (contractAddressHashesRaw !== "") {
+              const contractAddressHashes = contractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
+              const created_from_address_hash = "<%= created_from_address_hash %>"
+              contractAddressHashes.forEach(contractAddressHash => {
+                if (window.location.pathname.toLowerCase().includes(contractAddressHash)) {
+                  document.body.className += " " + customClass;
+                  return;
+                } else if (contractAddressHash == created_from_address_hash) {
+                  document.body.className += " " + customClass;
+                  return;
+                }
+              })
+            }
           }
 
           window.onload = applyCustomMode()
         </script>
       <% true -> %>
-        <script>
-          function applyCustomMode() {
-            const darkForestContractAddressHashesRaw = "<%= raw_dark_forest_addresses %>"
-            if (darkForestContractAddressHashesRaw !== "") {
-              const darkForestContractAddressHashes = darkForestContractAddressHashesRaw.split(',').map(hash => hash.toLowerCase())
-              darkForestContractAddressHashes.forEach(darkForestContractAddressHash => {
-                if (window.location.pathname.toLowerCase().includes(darkForestContractAddressHash)) {
-                  document.body.className += " " + "dark-forest-theme-applied";
-                  return;
-                }
-              })
-            }
-          }
-
-          window.onload = applyCustomMode()
-        </script>
+        <%= nil %>
     <% end %>
     <script>
       function applyDarkMode() {

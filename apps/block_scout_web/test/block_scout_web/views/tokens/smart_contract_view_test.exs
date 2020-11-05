@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.SmartContractViewTest do
     end
   end
 
-  describe "writeable?" do
+  describe "writable?" do
     test "returns true when there is write function" do
       function = %{
         "type" => "function",
@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.SmartContractViewTest do
         "constant" => false
       }
 
-      assert SmartContractView.writeable?(function)
+      assert SmartContractView.writable?(function)
     end
 
     test "returns false when it is not a write function" do
@@ -43,19 +43,19 @@ defmodule BlockScoutWeb.SmartContractViewTest do
         "constant" => true
       }
 
-      refute SmartContractView.writeable?(function)
+      refute SmartContractView.writable?(function)
     end
 
     test "returns false when there is no function" do
       function = %{}
 
-      refute SmartContractView.writeable?(function)
+      refute SmartContractView.writable?(function)
     end
 
     test "returns false when there function is nil" do
       function = nil
 
-      refute SmartContractView.writeable?(function)
+      refute SmartContractView.writable?(function)
     end
   end
 

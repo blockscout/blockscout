@@ -39,14 +39,7 @@
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">
-          <%= case token_transfer_amount(@token_transfer) do %>
-            <% {:ok, :erc721_instance} -> %>
-              <%= "TokenID ["%><%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, Address.checksum(@token_transfer.token.contract_address_hash), to_string(@token_transfer.token_id))) %><%= "]" %>
-            <% {:ok, value} -> %>
-              <%= value %>
-          <% end %>
-          <%= " "%>
-          <%= link(@token_transfer.token.symbol, to: token_path(BlockScoutWeb.Endpoint, :show, @token_transfer.token.contract_address_hash)) %>
+          <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, @token_transfer) %>
         </span>
       </span>
     </div>
