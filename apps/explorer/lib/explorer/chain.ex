@@ -1554,6 +1554,7 @@ defmodule Explorer.Chain do
 
       iex> for index <- 5..9 do
       ...>   insert(:block, number: index)
+      ...>   Process.sleep(200)
       ...> end
       iex> Explorer.Chain.indexed_ratio()
       Decimal.new(1, 50, -2)

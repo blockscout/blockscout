@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3406](https://github.com/poanetwork/blockscout/pull/3406), [#3409](https://github.com/poanetwork/blockscout/pull/3409) - Adding mp4 files support for NFTs
 - [#3398](https://github.com/poanetwork/blockscout/pull/3398) - Collect and display gas usage per day at the main page
 - [#3385](https://github.com/poanetwork/blockscout/pull/3385), [#3397](https://github.com/poanetwork/blockscout/pull/3397) - Total gas usage at the main page
 - [#3384](https://github.com/poanetwork/blockscout/pull/3384), [#3386](https://github.com/poanetwork/blockscout/pull/3386) - Address total gas usage
@@ -12,6 +13,8 @@
 
 
 ### Fixes
+- [#3408](https://github.com/poanetwork/blockscout/pull/3408) - Fix (total) difficulty display
+- [#3401](https://github.com/poanetwork/blockscout/pull/3401) - Fix procedure of marking internal transactions as failed
 - [#3399](https://github.com/poanetwork/blockscout/pull/3399) - Fix Token transfers CSV export
 - [#3396](https://github.com/poanetwork/blockscout/pull/3396) - Handle exchange rates request throttled
 - [#3382](https://github.com/poanetwork/blockscout/pull/3382) - Check ets table exists for know tokens
@@ -35,6 +38,10 @@
 - [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
+- [#3407](https://github.com/poanetwork/blockscout/pull/3407) - Add EthereumJSONRPC.HTTP.HTTPoison.json_rpc function clause when URL is null
+- [#3405](https://github.com/poanetwork/blockscout/pull/3405) - N/A instead of 0 for market cap if it is not fetched
+- [#3404](https://github.com/poanetwork/blockscout/pull/3404) - DISABLE_KNOWN_TOKENS env var
+- [#3403](https://github.com/poanetwork/blockscout/pull/3403) - Refactor Coingecko interaction
 - [#3394](https://github.com/poanetwork/blockscout/pull/3394) - Actualize docker vars list
 - [#3372](https://github.com/poanetwork/blockscout/pull/3372), [#3380](https://github.com/poanetwork/blockscout/pull/3380) - Improve all lists header container
 - [#3371](https://github.com/poanetwork/blockscout/pull/3371) - Eliminate dark background except Dark forest theme

@@ -84,8 +84,14 @@
     <div class="card-section col-md-12 col-lg-5 pl-0-md">
       <div class="card">
         <div class="card-body">
-          <div class="erc721-image" >
-            <img src=<%=image_src(@token_instance.instance)%> />
+          <div class="erc721-media" >
+            <%= if media_type(media_src(@token_instance.instance)) == "mp4" do %>
+              <video autoplay>
+                <source src=<%= media_src(@token_instance.instance) %> type="video/mp4">
+              </video>
+            <% else %>
+              <img src=<%= media_src(@token_instance.instance) %> />
+            <% end %>
           </div>
         </div>
       </div>
