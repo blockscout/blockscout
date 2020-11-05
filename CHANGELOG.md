@@ -15,10 +15,11 @@
 
 
 ### Fixes
+- [#3428](https://github.com/poanetwork/blockscout/pull/3428) - Fix address tokens search
 - [#3424](https://github.com/poanetwork/blockscout/pull/3424) - Fix display of long NFT IDs
 - [#3422](https://github.com/poanetwork/blockscout/pull/3422) - Fix contract reader: tuple type
 - [#3408](https://github.com/poanetwork/blockscout/pull/3408) - Fix (total) difficulty display
-- [#3401](https://github.com/poanetwork/blockscout/pull/3401) - Fix procedure of marking internal transactions as failed
+- [#3401](https://github.com/poanetwork/blockscout/pull/3401), [#3432](https://github.com/poanetwork/blockscout/pull/3432) - Fix procedure of marking internal transactions as failed
 - [#3400](https://github.com/poanetwork/blockscout/pull/3400) - Add :last_block_number realtime chain event
 - [#3399](https://github.com/poanetwork/blockscout/pull/3399) - Fix Token transfers CSV export
 - [#3396](https://github.com/poanetwork/blockscout/pull/3396) - Handle exchange rates request throttled
@@ -43,6 +44,7 @@
 - [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
+- [#3431](https://github.com/poanetwork/blockscout/pull/3431) - Standardize token name definition, if name is empty
 - [#3421](https://github.com/poanetwork/blockscout/pull/3421) - Functions to enable GnosisSafe app link
 - [#3414](https://github.com/poanetwork/blockscout/pull/3414) - Manage lis of other explorers in the footer via env var
 - [#3407](https://github.com/poanetwork/blockscout/pull/3407) - Add EthereumJSONRPC.HTTP.HTTPoison.json_rpc function clause when URL is null

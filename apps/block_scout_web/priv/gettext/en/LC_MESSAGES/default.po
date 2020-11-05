@@ -886,7 +886,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:14
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:7
-#: lib/block_scout_web/views/address_view.ex:348
+#: lib/block_scout_web/views/address_view.ex:346
 #: lib/block_scout_web/views/tokens/instance/overview_view.ex:119
 #: lib/block_scout_web/views/tokens/overview_view.ex:40
 #: lib/block_scout_web/views/transaction_view.ex:395
@@ -1779,7 +1779,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:46
 #: lib/block_scout_web/templates/address_validation/index.html.eex:13
-#: lib/block_scout_web/views/address_view.ex:356
+#: lib/block_scout_web/views/address_view.ex:354
 msgid "Blocks Validated"
 msgstr ""
 
@@ -1789,18 +1789,18 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:187
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:126
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:149
-#: lib/block_scout_web/views/address_view.ex:349
+#: lib/block_scout_web/views/address_view.ex:347
 msgid "Code"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:32
-#: lib/block_scout_web/views/address_view.ex:355
+#: lib/block_scout_web/views/address_view.ex:353
 msgid "Coin Balance History"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_view.ex:350
+#: lib/block_scout_web/views/address_view.ex:348
 msgid "Decompiled Code"
 msgstr ""
 
@@ -1809,7 +1809,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:19
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:11
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:6
-#: lib/block_scout_web/views/address_view.ex:346
+#: lib/block_scout_web/views/address_view.ex:344
 #: lib/block_scout_web/views/transaction_view.ex:396
 msgid "Internal Transactions"
 msgstr ""
@@ -1819,7 +1819,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_logs/index.html.eex:8
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:17
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:8
-#: lib/block_scout_web/views/address_view.ex:357
+#: lib/block_scout_web/views/address_view.ex:355
 #: lib/block_scout_web/views/transaction_view.ex:397
 msgid "Logs"
 msgstr ""
@@ -1827,7 +1827,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:79
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:25
-#: lib/block_scout_web/views/address_view.ex:351
+#: lib/block_scout_web/views/address_view.ex:349
 #: lib/block_scout_web/views/tokens/overview_view.ex:42
 msgid "Read Contract"
 msgstr ""
@@ -1839,7 +1839,7 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:87
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:108
 #: lib/block_scout_web/templates/tokens/index.html.eex:4
-#: lib/block_scout_web/views/address_view.ex:345
+#: lib/block_scout_web/views/address_view.ex:343
 msgid "Tokens"
 msgstr ""
 
@@ -1850,7 +1850,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:18
 #: lib/block_scout_web/templates/chain/show.html.eex:238
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:53
-#: lib/block_scout_web/views/address_view.ex:347
+#: lib/block_scout_web/views/address_view.ex:345
 msgid "Transactions"
 msgstr ""
 
@@ -1890,13 +1890,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:86
-#: lib/block_scout_web/views/address_view.ex:352
+#: lib/block_scout_web/views/address_view.ex:350
 msgid "Read Proxy"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:93
-#: lib/block_scout_web/views/address_view.ex:353
+#: lib/block_scout_web/views/address_view.ex:351
 msgid "Write Contract"
 msgstr ""
 
@@ -1913,7 +1913,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:100
-#: lib/block_scout_web/views/address_view.ex:354
+#: lib/block_scout_web/views/address_view.ex:352
 msgid "Write Proxy"
 msgstr ""
 
