@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.Tokens.HelpersTest do
       address = build(:address, hash: "de3fa0f9f8d47790ce88c2b2b82ab81f79f2e65f")
       token = build(:token, symbol: nil, contract_address_hash: address.hash)
 
-      assert Helpers.token_symbol(token) == "de3fa0f..."
+      assert Helpers.token_symbol(token) == "0xde3fa0-f2e65f"
     end
   end
 
@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.Tokens.HelpersTest do
       address = build(:address, hash: "de3fa0f9f8d47790ce88c2b2b82ab81f79f2e65f")
       token = build(:token, name: nil, contract_address_hash: address.hash)
 
-      assert Helpers.token_name(token) == "de3fa0f..."
+      assert Helpers.token_name(token) == "0xde3fa0-f2e65f"
     end
   end
 end
