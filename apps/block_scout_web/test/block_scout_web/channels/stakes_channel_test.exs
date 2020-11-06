@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.StakesChannelTest do
     topic = "stakes:staking_update"
     @endpoint.subscribe(topic)
 
-    Notifier.handle_event({:chain_event, :staking_update})
+    Notifier.handle_event({:chain_event, :staking_update, :realtime, 76})
 
     receive do
       %Phoenix.Socket.Broadcast{topic: ^topic, event: "staking_update", payload: %{epoch_number: _}} ->
