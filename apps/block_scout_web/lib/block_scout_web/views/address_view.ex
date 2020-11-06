@@ -255,9 +255,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def token_title(%Token{name: nil, contract_address_hash: contract_address_hash}) do
-    contract_address_hash
-    |> to_string
-    |> String.slice(0..5)
+    short_hash_left_right(contract_address_hash)
   end
 
   def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
@@ -364,6 +362,34 @@ defmodule BlockScoutWeb.AddressView do
     >> = to_string(hash)
 
     "0x" <> short_address
+  end
+
+  def short_hash_left_right(hash) when not is_nil(hash) do
+    case hash do
+      "0x" <> rest ->
+        shortify_hash_string(rest)
+
+      %Chain.Hash{
+        byte_count: _,
+        bytes: bytes
+      } ->
+        shortify_hash_string(Base.encode16(bytes, case: :lower))
+
+      hash ->
+        shortify_hash_string(hash)
+    end
+  end
+
+  def short_hash_left_right(hash) when is_nil(hash), do: ""
+
+  defp shortify_hash_string(hash) do
+    <<
+      left::binary-size(6),
+      _middle::binary-size(28),
+      right::binary-size(6)
+    >> = to_string(hash)
+
+    "0x" <> left <> "-" <> right
   end
 
   def short_contract_name(name, max_length) do
