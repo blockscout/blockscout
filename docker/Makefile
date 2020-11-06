@@ -306,6 +306,7 @@ else
 	@docker run -d --name $(PG_CONTAINER_NAME) \
 					-e POSTGRES_PASSWORD="" \
 					-e POSTGRES_USER="postgres" \
+					-e POSTGRES_HOST_AUTH_METHOD="trust" \
 					-p 5432:5432 \
 					$(PG_CONTAINER_IMAGE)
 	@sleep 1
