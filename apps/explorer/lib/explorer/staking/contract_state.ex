@@ -131,6 +131,7 @@ defmodule Explorer.Staking.ContractState do
   @doc "Handles new blocks and decides to fetch fresh chain info"
   def handle_info({:chain_event, :last_block_number, :realtime, block_number}, state) do
     Logger.warn("contract_state.ex: last_block_number = #{block_number}")
+
     if block_number > state.seen_block do
       fetch_state(state.contracts, state.abi, block_number)
       {:noreply, %{state | seen_block: block_number}}
@@ -142,10 +143,11 @@ defmodule Explorer.Staking.ContractState do
   def handle_info({:chain_event, :blocks, :realtime, blocks}, state) do
     try do
       blocks = Enum.map(blocks, fn block -> block.number end)
-      Logger.warn("contract_state.ex: blocks = #{inspect blocks}")
+      Logger.warn("contract_state.ex: blocks = #{inspect(blocks, charlists: :as_lists)}")
     rescue
       _ -> Logger.warn("contract_state.ex: blocks = unknown")
     end
+
     {:noreply, state}
   end
 
@@ -284,7 +286,6 @@ defmodule Explorer.Staking.ContractState do
 
     # notify the UI about new block
     Logger.warn("contract_state.ex: broadcast :staking_update")
-    #Publisher.broadcast(:staking_update)
     Publisher.broadcast([{:staking_update, block_number}], :realtime)
   end
 
