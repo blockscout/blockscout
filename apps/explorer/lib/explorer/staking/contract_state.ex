@@ -23,6 +23,7 @@ defmodule Explorer.Staking.ContractState do
     :epoch_number,
     :epoch_start_block,
     :is_snapshotting,
+    :last_known_block_number,
     :max_candidates,
     :min_candidate_stake,
     :min_delegator_stake,
@@ -69,6 +70,7 @@ defmodule Explorer.Staking.ContractState do
     ])
 
     Subscriber.to(:last_block_number, :realtime)
+    Subscriber.to(:blocks, :realtime)
 
     staking_abi = abi("StakingAuRa")
     validator_set_abi = abi("ValidatorSetAuRa")
@@ -111,6 +113,7 @@ defmodule Explorer.Staking.ContractState do
     :ets.insert(@table_name,
       block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address},
       is_snapshotting: false,
+      last_known_block_number: 0,
       snapshotted_epoch_number: -1,
       staking_contract: %{abi: staking_abi, address: staking_contract_address},
       token_contract_address: token_contract_address,
@@ -127,6 +130,7 @@ defmodule Explorer.Staking.ContractState do
 
   @doc "Handles new blocks and decides to fetch fresh chain info"
   def handle_info({:chain_event, :last_block_number, :realtime, block_number}, state) do
+    Logger.warn("contract_state.ex: last_block_number = #{block_number}")
     if block_number > state.seen_block do
       fetch_state(state.contracts, state.abi, block_number)
       {:noreply, %{state | seen_block: block_number}}
@@ -135,7 +139,19 @@ defmodule Explorer.Staking.ContractState do
     end
   end
 
+  def handle_info({:chain_event, :blocks, :realtime, blocks}, state) do
+    try do
+      blocks = Enum.map(blocks, fn block -> block.number end)
+      Logger.warn("contract_state.ex: blocks = #{inspect blocks}")
+    rescue
+      _ -> Logger.warn("contract_state.ex: blocks = unknown")
+    end
+    {:noreply, state}
+  end
+
   defp fetch_state(contracts, abi, block_number) do
+    Logger.warn("contract_state.ex: fetch_state is called for the block #{block_number}")
+
     # read general info from the contracts (including pool list and validator list)
     global_responses = ContractReader.perform_requests(ContractReader.global_requests(), contracts, abi)
 
@@ -153,6 +169,7 @@ defmodule Explorer.Staking.ContractState do
       global_responses
       |> get_settings(validator_min_reward_percent, block_number)
       |> Enum.concat(active_pools_length: Enum.count(global_responses.active_pools))
+      |> Enum.concat(last_known_block_number: block_number)
 
     :ets.insert(@table_name, settings)
 
@@ -266,7 +283,9 @@ defmodule Explorer.Staking.ContractState do
     end
 
     # notify the UI about new block
-    Publisher.broadcast(:staking_update)
+    Logger.warn("contract_state.ex: broadcast :staking_update")
+    #Publisher.broadcast(:staking_update)
+    Publisher.broadcast([{:staking_update, block_number}], :realtime)
   end
 
   defp get_settings(global_responses, validator_min_reward_percent, block_number) do

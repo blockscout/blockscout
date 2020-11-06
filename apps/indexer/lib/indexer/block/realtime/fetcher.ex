@@ -86,6 +86,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       )
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
+    Logger.warn("fetcher.ex: last_block_number = #{number}")
     Publisher.broadcast([{:last_block_number, number}], :realtime)
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block

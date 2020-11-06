@@ -107,9 +107,13 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
-  def handle_event({:chain_event, :staking_update}) do
+  def handle_event({:chain_event, :staking_update, :realtime, passed_block_number}) do
+    block_number = BlockNumber.get_max()
+    last_known_block_number = ContractState.get(:last_known_block_number, 0)
+    require Logger
+    Logger.warn("notifier.ex: received :staking_update and broadcasts stakes:staking_update to Endpoint. BlockNumber.get_max() = #{block_number}. last_known_block_number = #{last_known_block_number}. passed_block_number = #{passed_block_number}")
     Endpoint.broadcast("stakes:staking_update", "staking_update", %{
-      block_number: BlockNumber.get_max(),
+      block_number: block_number,
       epoch_number: ContractState.get(:epoch_number, 0),
       staking_allowed: ContractState.get(:staking_allowed, false),
       staking_token_defined: ContractState.get(:token, nil) != nil,
