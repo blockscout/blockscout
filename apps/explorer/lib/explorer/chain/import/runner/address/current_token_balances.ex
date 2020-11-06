@@ -201,7 +201,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.token_contract_address_hash})
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.token_contract_address_hash, &1.address_hash})
 
     Import.insert_changes_list(
       repo,
