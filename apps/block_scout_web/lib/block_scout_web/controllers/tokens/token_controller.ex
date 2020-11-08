@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.Tokens.TokenController do
 
   alias BlockScoutWeb.AccessHelpers
   alias Explorer.Chain
+  alias Explorer.Counters.{TokenHoldersCounter, TokenTransfersCounter}
 
   def show(conn, %{"id" => address_hash_string}) do
     redirect(conn, to: AccessHelpers.get_path(conn, :token_transfer_path, :index, address_hash_string))
@@ -25,12 +26,12 @@ defmodule BlockScoutWeb.Tokens.TokenController do
   defp fetch_token_counters(token, address_hash, timeout) do
     total_token_transfers_task =
       Task.async(fn ->
-        Chain.count_token_transfers_from_token_hash(address_hash)
+        TokenTransfersCounter.fetch(address_hash)
       end)
 
     total_token_holders_task =
       Task.async(fn ->
-        token.holder_count || Chain.count_token_holders_from_token_hash(address_hash)
+        token.holder_count || TokenHoldersCounter.fetch(address_hash)
       end)
 
     [total_token_transfers_task, total_token_holders_task]
