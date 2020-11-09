@@ -57,6 +57,7 @@ defmodule Indexer.TokenBalances do
     |> Enum.map(fn {_, grouped_address_token_balances} ->
       Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
     end)
+    |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
   end
 
   defp set_token_balance_value({:ok, balance}, token_balance) do

@@ -344,8 +344,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: map(tb, [:address_hash, :token_contract_address_hash, :block_number]),
         # Enforce TokenBalance ShareLocks order (see docs: sharelocks.md)
         order_by: [
-          tb.address_hash,
           tb.token_contract_address_hash,
+          tb.address_hash,
           tb.block_number
         ],
         lock: "FOR UPDATE"
@@ -381,8 +381,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         select: map(ctb, [:address_hash, :token_contract_address_hash]),
         # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
         order_by: [
-          ctb.address_hash,
-          ctb.token_contract_address_hash
+          ctb.token_contract_address_hash,
+          ctb.address_hash
         ],
         lock: "FOR UPDATE"
       )
@@ -467,7 +467,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       new_current_token_balance_query
       |> repo.all()
       # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
-      |> Enum.sort_by(&{&1.address_hash, &1.token_contract_address_hash})
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
 
     {_total, result} =
       repo.insert_all(
