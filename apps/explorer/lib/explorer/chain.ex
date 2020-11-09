@@ -2447,6 +2447,21 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.missing_block_number_ranges(2..0)
       [1..1]
 
+  if range starts with non-consensus block in the middle of the chain, it returns missing numbers.
+
+      iex> insert(:block, number: 12859383, consensus: true)
+      iex> insert(:block, number: 12859384, consensus: false)
+      iex> insert(:block, number: 12859386, consensus: true)
+      iex> Explorer.Chain.missing_block_number_ranges(12859384..12859385)
+      [12859384..12859385]
+
+      if range starts with missing block in the middle of the chain, it returns missing numbers.
+
+      iex> insert(:block, number: 12859383, consensus: true)
+      iex> insert(:block, number: 12859386, consensus: true)
+      iex> Explorer.Chain.missing_block_number_ranges(12859384..12859385)
+      [12859384..12859385]
+
   """
   @spec missing_block_number_ranges(Range.t()) :: [Range.t()]
   def missing_block_number_ranges(range)
