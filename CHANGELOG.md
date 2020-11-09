@@ -16,6 +16,7 @@
 
 
 ### Fixes
+- [#3439](https://github.com/poanetwork/blockscout/pull/3439) - Dark mode color fixes (search, charts)
 - [#3437](https://github.com/poanetwork/blockscout/pull/3437) - Fix Postgres Docker container
 - [#3433](https://github.com/poanetwork/blockscout/pull/3433) - Token balances and rewards tables deadlocks elimination
 - [#3428](https://github.com/poanetwork/blockscout/pull/3428) - Fix address tokens search
@@ -26,7 +27,7 @@
 - [#3400](https://github.com/poanetwork/blockscout/pull/3400) - Add :last_block_number realtime chain event
 - [#3399](https://github.com/poanetwork/blockscout/pull/3399) - Fix Token transfers CSV export
 - [#3396](https://github.com/poanetwork/blockscout/pull/3396) - Handle exchange rates request throttled
-- [#3382](https://github.com/poanetwork/blockscout/pull/3382) - Check ets table exists for know tokens
+- [#3382](https://github.com/poanetwork/blockscout/pull/3382) - Check ets table exists for known tokens
 - [#3376](https://github.com/poanetwork/blockscout/pull/3376) - Fix contract nested inputs
 - [#3375](https://github.com/poanetwork/blockscout/pull/3375) - Prevent terminating of tokens/contracts process
 - [#3374](https://github.com/poanetwork/blockscout/pull/3374) - Fix find block timestamp query

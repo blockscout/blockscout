@@ -1059,6 +1059,16 @@ $dark-stakes-banned-background: #3e314c;
 		background-color: $dark-bg;
 		background-image: none;
 	}
+
+	.input-group {
+		.awesomplete mark {
+			background: $yellow !important;
+		}
+		
+		.awesomplete li:hover mark {
+			background: $yellow !important;
+		}
+	}
 }
 
 .navbar-dark .navbar-toggler {
