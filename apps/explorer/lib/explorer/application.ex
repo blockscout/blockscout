@@ -82,6 +82,8 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.AddressesCounter),
       configure(Explorer.Counters.AddressTransactionsCounter),
       configure(Explorer.Counters.AddressTransactionsGasUsageCounter),
+      configure(Explorer.Counters.TokenHoldersCounter),
+      configure(Explorer.Counters.TokenTransfersCounter),
       configure(Explorer.Counters.AverageBlockTime),
       configure(Explorer.Counters.Bridge),
       configure(Explorer.Validator.MetadataProcessor),

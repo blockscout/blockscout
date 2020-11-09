@@ -16,25 +16,29 @@ defmodule BlockScoutWeb.AccessHelpers do
   end
 
   def restricted_access?(address_hash, params) do
-    formatted_address_hash = String.downcase(address_hash)
-    key = if params && Map.has_key?(params, "key"), do: Map.get(params, "key"), else: nil
-
     restricted_list_var = Application.get_env(:block_scout_web, :restricted_list)
     restricted_list = (restricted_list_var && String.split(restricted_list_var, ",")) || []
 
-    formatted_restricted_list =
-      restricted_list
-      |> Enum.map(fn addr ->
-        String.downcase(addr)
-      end)
+    if Enum.count(restricted_list) > 0 do
+      formatted_restricted_list =
+        restricted_list
+        |> Enum.map(fn addr ->
+          String.downcase(addr)
+        end)
 
-    address_restricted =
-      formatted_restricted_list
-      |> Enum.member?(formatted_address_hash)
+      formatted_address_hash = String.downcase(address_hash)
 
-    correct_key = key && key == Application.get_env(:block_scout_web, :restricted_list_key)
+      address_restricted =
+        formatted_restricted_list
+        |> Enum.member?(formatted_address_hash)
 
-    if address_restricted && !correct_key, do: {:restricted_access, true}, else: {:ok, false}
+      key = if params && Map.has_key?(params, "key"), do: Map.get(params, "key"), else: nil
+      correct_key = key && key == Application.get_env(:block_scout_web, :restricted_list_key)
+
+      if address_restricted && !correct_key, do: {:restricted_access, true}, else: {:ok, false}
+    else
+      {:ok, false}
+    end
   end
 
   def get_path(conn, path, template, address_hash) do
