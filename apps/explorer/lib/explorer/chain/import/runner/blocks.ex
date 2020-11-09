@@ -467,7 +467,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       new_current_token_balance_query
       |> repo.all()
       # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
-      |> Enum.sort_by(&{&1.address_hash, &1.token_contract_address_hash})
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.address_hash})
 
     {_total, result} =
       repo.insert_all(
