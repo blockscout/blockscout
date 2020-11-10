@@ -5,6 +5,7 @@ import _ from 'lodash'
 import { subscribeChannel } from '../socket'
 import { connectElements } from '../lib/redux_helpers.js'
 import { createAsyncLoadStore, refreshPage } from '../lib/async_listing_load'
+import Queue from '../lib/queue'
 import Web3 from 'web3'
 import { openPoolInfoModal } from './stakes/validator_info'
 import { openDelegatorsListModal } from './stakes/delegators_list'
@@ -25,6 +26,7 @@ export const initialState = {
   blockRewardContract: null,
   channel: null,
   currentBlockNumber: 0, // current block number
+  finishRequestResolve: null,
   lastEpochNumber: 0,
   network: null,
   refreshBlockNumber: 0, // last page refresh block number
@@ -86,7 +88,8 @@ export function reducer (state = initialState, action) {
     }
     case 'PAGE_REFRESHED': {
       return Object.assign({}, state, {
-        refreshBlockNumber: action.refreshBlockNumber
+        refreshBlockNumber: action.refreshBlockNumber,
+        finishRequestResolve: action.finishRequestResolve
       })
     }
     case 'RECEIVED_UPDATE': {
@@ -108,6 +111,12 @@ export function reducer (state = initialState, action) {
     }
     case 'FINISH_REQUEST': {
       $(stakesPageSelector).fadeTo(0, 1)
+      if (state.finishRequestResolve) {
+        state.finishRequestResolve()
+        return Object.assign({}, state, {
+          finishRequestResolve: null
+        })
+      }
       return state
     }
     default:
@@ -139,10 +148,17 @@ if ($stakesPage.length) {
   const channel = subscribeChannel('stakes:staking_update')
   store.dispatch({ type: 'CHANNEL_CONNECTED', channel })
 
-  channel.on('staking_update', msg => {
+  let updating = false
+
+  async function onStakingUpdate (msg) { // eslint-disable-line no-inner-declarations
     const state = store.getState()
+
+    if (state.finishRequestResolve || updating) {
+      return
+    }
+    updating = true
+
     const firstMsg = (state.currentBlockNumber === 0)
-    const accountChanged = (msg.account !== state.account)
 
     store.dispatch({ type: 'BLOCK_CREATED', currentBlockNumber: msg.block_number })
 
@@ -153,7 +169,7 @@ if ($stakesPage.length) {
 
     $stakesTop.html(msg.top_html)
 
-    if (accountChanged) {
+    if (msg.account !== state.account) {
       store.dispatch({ type: 'ACCOUNT_UPDATED', account: msg.account })
       resetFilterMy(store)
     }
@@ -162,16 +178,15 @@ if ($stakesPage.length) {
       msg.staking_allowed !== state.stakingAllowed ||
       msg.epoch_number > state.lastEpochNumber ||
       msg.validator_set_apply_block !== state.validatorSetApplyBlock ||
-      (state.refreshInterval && msg.block_number >= state.refreshBlockNumber + state.refreshInterval)
+      (state.refreshInterval && msg.block_number >= state.refreshBlockNumber + state.refreshInterval) ||
+      msg.account !== state.account || msg.by_set_account
     ) {
-      if (firstMsg || accountChanged) {
+      if (firstMsg) {
         // Don't refresh the page for the first load
-        // as it is already refreshed by `initialize` function.
-        // Also, don't refresh that after reconnect
-        // as it is already refreshed by `setAccount` function.
+        // as it is already refreshed by the `initialize` function.
         msg.dont_refresh_page = true
       }
-      reloadPoolList(msg, store)
+      await reloadPoolList(msg, store)
     }
 
     const refreshBlockNumber = store.getState().refreshBlockNumber
@@ -185,13 +200,36 @@ if ($stakesPage.length) {
 
     const $refreshInformerLink = $refreshInformer.find('a')
     $refreshInformerLink.off('click')
-    $refreshInformerLink.on('click', (event) => {
+    $refreshInformerLink.on('click', async (event) => {
       event.preventDefault()
-      $refreshInformer.hide()
-      $stakesPage.fadeTo(0, 0.5)
-      delete msg.dont_refresh_page // refresh anyway
-      reloadPoolList(msg, store)
+      if (!store.getState().finishRequestResolve) {
+        $refreshInformer.hide()
+        $stakesPage.fadeTo(0, 0.5)
+        delete msg.dont_refresh_page // refresh anyway
+        await reloadPoolList(msg, store)
+      }
     })
+
+    updating = false
+  }
+
+  const messagesQueue = new Queue()
+
+  setTimeout(async () => {
+    while (true) {
+      const msg = messagesQueue.dequeue()
+      if (msg) {
+        // Synchronously handle the message
+        await onStakingUpdate(msg)
+      } else {
+        // Wait for the next message
+        await new Promise(resolve => setTimeout(resolve, 10))
+      }
+    }
+  }, 0)
+
+  channel.on('staking_update', msg => {
+    messagesQueue.enqueue(msg)
   })
 
   channel.on('contracts', msg => {
@@ -298,10 +336,12 @@ async function checkNetworkAndAccount (store, web3) {
   const accounts = await web3.eth.getAccounts()
   const account = accounts[0] ? accounts[0].toLowerCase() : null
 
-  if (account !== state.account) {
-    setAccount(account, store)
-  } else if (refresh) {
-    refreshPageWrapper(store)
+  if (account !== state.account && await setAccount(account, store)) {
+    refresh = false // because refreshing will be done by `onStakingUpdate`
+  }
+
+  if (refresh) {
+    await refreshPageWrapper(store)
   }
 
   setTimeout(() => {
@@ -320,21 +360,29 @@ async function loginByMetamask () {
   }
 }
 
-function refreshPageWrapper (store) {
+async function refreshPageWrapper (store) {
+  while (store.getState().finishRequestResolve) {
+    // Don't let anything simultaneously refresh the page
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
+
   let currentBlockNumber = store.getState().currentBlockNumber
   if (!currentBlockNumber) {
     currentBlockNumber = $('[data-block-number]', $stakesTop).data('blockNumber')
   }
 
-  refreshPage(store)
-  store.dispatch({
-    type: 'PAGE_REFRESHED',
-    refreshBlockNumber: currentBlockNumber
+  await new Promise(resolve => {
+    store.dispatch({
+      type: 'PAGE_REFRESHED',
+      refreshBlockNumber: currentBlockNumber,
+      finishRequestResolve: resolve
+    })
+    $refreshInformer.hide()
+    refreshPage(store)
   })
-  $refreshInformer.hide()
 }
 
-function reloadPoolList (msg, store) {
+async function reloadPoolList (msg, store) {
   store.dispatch({
     type: 'RECEIVED_UPDATE',
     lastEpochNumber: msg.epoch_number,
@@ -343,7 +391,7 @@ function reloadPoolList (msg, store) {
     validatorSetApplyBlock: msg.validator_set_apply_block
   })
   if (!msg.dont_refresh_page) {
-    refreshPageWrapper(store)
+    await refreshPageWrapper(store)
   }
 }
 
@@ -353,24 +401,32 @@ function resetFilterMy (store) {
 }
 
 function setAccount (account, store) {
-  store.dispatch({ type: 'ACCOUNT_UPDATED', account })
-  if (!account) {
-    resetFilterMy(store)
-  }
+  return new Promise(resolve => {
+    store.dispatch({ type: 'ACCOUNT_UPDATED', account })
+    if (!account) {
+      resetFilterMy(store)
+    }
 
-  const errorMsg = 'Cannot properly set account due to connection loss. Please, reload the page.'
-  const $addressField = $('.stakes-top-stats-item-address .stakes-top-stats-value')
-  $addressField.html('Loading...')
-  store.getState().channel.push(
-    'set_account', account
-  ).receive('ok', () => {
-    $addressField.html(account)
-    refreshPageWrapper(store)
-    hideCurrentModal()
-  }).receive('error', () => {
-    openErrorModal('Change account', errorMsg, true)
-  }).receive('timeout', () => {
-    openErrorModal('Change account', errorMsg, true)
+    const errorMsg = 'Cannot properly set account due to connection loss. Please, reload the page.'
+    const $addressField = $('.stakes-top-stats-item-address .stakes-top-stats-value')
+    $addressField.html('Loading...')
+    store.getState().channel.push(
+      'set_account', account
+    ).receive('ok', () => {
+      $addressField.html(`
+        <div data-placement="bottom" data-toggle="tooltip" title="${account}">
+          ${account}
+        </div>
+      `)
+      hideCurrentModal()
+      resolve(true)
+    }).receive('error', () => {
+      openErrorModal('Change account', errorMsg, true)
+      resolve(false)
+    }).receive('timeout', () => {
+      openErrorModal('Change account', errorMsg, true)
+      resolve(false)
+    })
   })
 }
 
@@ -395,6 +451,17 @@ function updateFilters (store, filterType) {
   const filterBanned = $stakesPage.find('[pool-filter-banned]')
   const filterMy = $stakesPage.find('[pool-filter-my]')
   const state = store.getState()
+
+  if (state.finishRequestResolve) {
+    if (filterType === 'my') {
+      filterMy.prop('checked', !filterMy.prop('checked'))
+    } else {
+      filterBanned.prop('checked', !filterBanned.prop('checked'))
+    }
+    openWarningModal('Still loading', 'The previous request to load pool list is not yet finished. Please, wait...')
+    return
+  }
+
   if (filterType === 'my' && !state.account) {
     filterMy.prop('checked', false)
     openWarningModal('Unauthorized', 'Please login with MetaMask')

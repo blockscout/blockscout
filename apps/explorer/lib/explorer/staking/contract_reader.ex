@@ -5,38 +5,38 @@ defmodule Explorer.Staking.ContractReader do
 
   alias Explorer.SmartContract.Reader
 
-  def global_requests do
+  def global_requests(block_number) do
     [
       # 673a2a1f = keccak256(getPools())
-      active_pools: {:staking, "673a2a1f", []},
+      active_pools: {:staking, "673a2a1f", [], block_number},
       # 8c2243ae = keccak256(stakingEpochEndBlock())
-      epoch_end_block: {:staking, "8c2243ae", []},
+      epoch_end_block: {:staking, "8c2243ae", [], block_number},
       # 794c0c68 = keccak256(stakingEpoch())
-      epoch_number: {:staking, "794c0c68", []},
+      epoch_number: {:staking, "794c0c68", [], block_number},
       # 7069e746 = keccak256(stakingEpochStartBlock())
-      epoch_start_block: {:staking, "7069e746", []},
+      epoch_start_block: {:staking, "7069e746", [], block_number},
       # df6f55f5 = keccak256(getPoolsInactive())
-      inactive_pools: {:staking, "df6f55f5", []},
+      inactive_pools: {:staking, "df6f55f5", [], block_number},
       # f0786096 = keccak256(MAX_CANDIDATES())
-      max_candidates: {:staking, "f0786096", []},
+      max_candidates: {:staking, "f0786096", [], block_number},
       # 5fef7643 = keccak256(candidateMinStake())
-      min_candidate_stake: {:staking, "5fef7643", []},
+      min_candidate_stake: {:staking, "5fef7643", [], block_number},
       # da7a9b6a = keccak256(delegatorMinStake())
-      min_delegator_stake: {:staking, "da7a9b6a", []},
+      min_delegator_stake: {:staking, "da7a9b6a", [], block_number},
       # 957950a7 = keccak256(getPoolsLikelihood())
-      pools_likelihood: {:staking, "957950a7", []},
+      pools_likelihood: {:staking, "957950a7", [], block_number},
       # a5d54f65 = keccak256(getPoolsToBeElected())
-      pools_to_be_elected: {:staking, "a5d54f65", []},
+      pools_to_be_elected: {:staking, "a5d54f65", [], block_number},
       # f4942501 = keccak256(areStakeAndWithdrawAllowed())
-      staking_allowed: {:staking, "f4942501", []},
+      staking_allowed: {:staking, "f4942501", [], block_number},
       # 2d21d217 = keccak256(erc677TokenContract())
-      token_contract_address: {:staking, "2d21d217", []},
+      token_contract_address: {:staking, "2d21d217", [], block_number},
       # 704189ca = keccak256(unremovableValidator())
-      unremovable_validator: {:validator_set, "704189ca", []},
+      unremovable_validator: {:validator_set, "704189ca", [], block_number},
       # b7ab4db5 = keccak256(getValidators())
-      validators: {:validator_set, "b7ab4db5", []},
+      validators: {:validator_set, "b7ab4db5", [], block_number},
       # b927ef43 = keccak256(validatorSetApplyBlock())
-      validator_set_apply_block: {:validator_set, "b927ef43", []}
+      validator_set_apply_block: {:validator_set, "b927ef43", [], block_number}
     ]
   end
 
@@ -199,10 +199,10 @@ defmodule Explorer.Staking.ContractReader do
   end
 
   # args = [staking_epoch, delegator_staked, validator_staked, total_staked, pool_reward \\ 10_00000]
-  def delegator_reward_request(args) do
+  def delegator_reward_request(args, block_number) do
     [
       # 5fba554e = keccak256(delegatorShare(uint256,uint256,uint256,uint256,uint256))
-      delegator_share: {:block_reward, "5fba554e", args}
+      delegator_share: {:block_reward, "5fba554e", args, block_number}
     ]
   end
 
@@ -234,76 +234,83 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  def mining_by_staking_request(staking_address, block_number) do
+    [
+      # 00535175 = keccak256(miningByStakingAddress(address))
+      mining_address: {:validator_set, "00535175", [staking_address], block_number}
+    ]
+  end
+
   def pool_staking_requests(staking_address, block_number) do
     [
       active_delegators: active_delegators_request(staking_address, block_number)[:active_delegators],
       # 73c21803 = keccak256(poolDelegatorsInactive(address))
-      inactive_delegators: {:staking, "73c21803", [staking_address]},
+      inactive_delegators: {:staking, "73c21803", [staking_address], block_number},
       # a711e6a1 = keccak256(isPoolActive(address))
-      is_active: {:staking, "a711e6a1", [staking_address]},
-      mining_address_hash: mining_by_staking_request(staking_address)[:mining_address],
+      is_active: {:staking, "a711e6a1", [staking_address], block_number},
+      mining_address_hash: mining_by_staking_request(staking_address, block_number)[:mining_address],
       # a697ecff = keccak256(stakeAmount(address,address))
-      self_staked_amount: {:staking, "a697ecff", [staking_address, staking_address]},
+      self_staked_amount: {:staking, "a697ecff", [staking_address, staking_address], block_number},
       # 5267e1d6 = keccak256(stakeAmountTotal(address))
-      total_staked_amount: {:staking, "5267e1d6", [staking_address]},
+      total_staked_amount: {:staking, "5267e1d6", [staking_address], block_number},
       # 527d8bc4 = keccak256(validatorRewardPercent(address))
-      validator_reward_percent: {:block_reward, "527d8bc4", [staking_address]}
+      validator_reward_percent: {:block_reward, "527d8bc4", [staking_address], block_number}
     ]
   end
 
-  def pool_mining_requests(mining_address) do
+  def pool_mining_requests(mining_address, block_number) do
     [
       # a881c5fd = keccak256(areDelegatorsBanned(address))
-      are_delegators_banned: {:validator_set, "a881c5fd", [mining_address]},
+      are_delegators_banned: {:validator_set, "a881c5fd", [mining_address], block_number},
       # c9e9694d = keccak256(banReason(address))
-      ban_reason: {:validator_set, "c9e9694d", [mining_address]},
+      ban_reason: {:validator_set, "c9e9694d", [mining_address], block_number},
       # 5836d08a = keccak256(bannedUntil(address))
-      banned_until: {:validator_set, "5836d08a", [mining_address]},
+      banned_until: {:validator_set, "5836d08a", [mining_address], block_number},
       # 1a7fa237 = keccak256(bannedDelegatorsUntil(address))
-      banned_delegators_until: {:validator_set, "1a7fa237", [mining_address]},
+      banned_delegators_until: {:validator_set, "1a7fa237", [mining_address], block_number},
       # a92252ae = keccak256(isValidatorBanned(address))
-      is_banned: {:validator_set, "a92252ae", [mining_address]},
+      is_banned: {:validator_set, "a92252ae", [mining_address], block_number},
       # b41832e4 = keccak256(validatorCounter(address))
-      was_validator_count: {:validator_set, "b41832e4", [mining_address]},
+      was_validator_count: {:validator_set, "b41832e4", [mining_address], block_number},
       # 1d0cd4c6 = keccak256(banCounter(address))
-      was_banned_count: {:validator_set, "1d0cd4c6", [mining_address]}
+      was_banned_count: {:validator_set, "1d0cd4c6", [mining_address], block_number}
     ]
   end
 
-  def staker_requests(pool_staking_address, staker_address) do
+  def staker_requests(pool_staking_address, staker_address, block_number) do
     [
       # 950a6513 = keccak256(maxWithdrawOrderAllowed(address,address))
-      max_ordered_withdraw_allowed: {:staking, "950a6513", [pool_staking_address, staker_address]},
+      max_ordered_withdraw_allowed: {:staking, "950a6513", [pool_staking_address, staker_address], block_number},
       # 6bda1577 = keccak256(maxWithdrawAllowed(address,address))
-      max_withdraw_allowed: {:staking, "6bda1577", [pool_staking_address, staker_address]},
+      max_withdraw_allowed: {:staking, "6bda1577", [pool_staking_address, staker_address], block_number},
       # e9ab0300 = keccak256(orderedWithdrawAmount(address,address))
-      ordered_withdraw: {:staking, "e9ab0300", [pool_staking_address, staker_address]},
+      ordered_withdraw: {:staking, "e9ab0300", [pool_staking_address, staker_address], block_number},
       # a4205967 = keccak256(orderWithdrawEpoch(address,address))
-      ordered_withdraw_epoch: {:staking, "a4205967", [pool_staking_address, staker_address]},
+      ordered_withdraw_epoch: {:staking, "a4205967", [pool_staking_address, staker_address], block_number},
       # a697ecff = keccak256(stakeAmount(address,address))
-      stake_amount: {:staking, "a697ecff", [pool_staking_address, staker_address]}
+      stake_amount: {:staking, "a697ecff", [pool_staking_address, staker_address], block_number}
     ]
   end
 
-  def staking_by_mining_request(mining_address) do
+  def staking_by_mining_request(mining_address, block_number) do
     [
       # 1ee4d0bc = keccak256(stakingByMiningAddress(address))
-      staking_address: {:validator_set, "1ee4d0bc", [mining_address]}
+      staking_address: {:validator_set, "1ee4d0bc", [mining_address], block_number}
     ]
   end
 
-  def validator_min_reward_percent_request(epoch_number) do
+  def validator_min_reward_percent_request(epoch_number, block_number) do
     [
       # cdf7a090 = keccak256(validatorMinRewardPercent(uint256))
-      value: {:block_reward, "cdf7a090", [epoch_number]}
+      value: {:block_reward, "cdf7a090", [epoch_number], block_number}
     ]
   end
 
   # args = [staking_epoch, validator_staked, total_staked, pool_reward \\ 10_00000]
-  def validator_reward_request(args) do
+  def validator_reward_request(args, block_number) do
     [
       # 8737929a = keccak256(validatorShare(uint256,uint256,uint256,uint256))
-      validator_share: {:block_reward, "8737929a", args}
+      validator_share: {:block_reward, "8737929a", args, block_number}
     ]
   end
 

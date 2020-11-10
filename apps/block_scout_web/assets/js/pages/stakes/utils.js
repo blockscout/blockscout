@@ -10,8 +10,8 @@ export async function makeContractCall (call, store, gasLimit, callbackFunc) {
   if (!callbackFunc) {
     callbackFunc = function (errorMessage) {
       if (!errorMessage) {
-        state.refreshPageFunc(store)
         openSuccessModal('Success', 'Transaction is confirmed.')
+        state.refreshPageFunc(store)
       } else {
         openErrorModal('Error', errorMessage)
       }

@@ -138,6 +138,32 @@ defmodule Explorer.SmartContract.Reader do
     end)
   end
 
+  @spec query_contract_by_block_number(
+          String.t(),
+          term(),
+          functions(),
+          non_neg_integer()
+        ) :: functions_results()
+  def query_contract_by_block_number(contract_address, abi, functions, block_number) do
+    requests =
+      functions
+      |> Enum.map(fn {method_id, args} ->
+        %{
+          contract_address: contract_address,
+          method_id: method_id,
+          args: args,
+          block_number: block_number
+        }
+      end)
+
+    requests
+    |> query_contracts(abi)
+    |> Enum.zip(requests)
+    |> Enum.into(%{}, fn {response, request} ->
+      {request.method_id, response}
+    end)
+  end
+
   @doc """
   Runs batch of contract functions on given addresses for smart contract with an expected ABI and functions.
 
