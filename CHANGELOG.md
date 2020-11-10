@@ -16,6 +16,7 @@
 
 
 ### Fixes
+- [#3440](https://github.com/poanetwork/blockscout/pull/3440) - Rewrite missing blocks range query
 - [#3439](https://github.com/poanetwork/blockscout/pull/3439) - Dark mode color fixes (search, charts)
 - [#3437](https://github.com/poanetwork/blockscout/pull/3437) - Fix Postgres Docker container
 - [#3433](https://github.com/poanetwork/blockscout/pull/3433) - Token balances and rewards tables deadlocks elimination
