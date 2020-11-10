@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Cache.BlockCount do
     key: :count,
     key: :async_task,
     global_ttl: cache_period(),
-    ttl_check_interval: :timer.minutes(1),
+    ttl_check_interval: :timer.minutes(15),
     callback: &async_task_on_deletion(&1)
 
   alias Explorer.Chain
