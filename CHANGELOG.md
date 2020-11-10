@@ -48,6 +48,7 @@
 - [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
+- [#3446](https://github.com/poanetwork/blockscout/pull/3446) - Change default ttl_check_interval for counters on the main page
 - [#3431](https://github.com/poanetwork/blockscout/pull/3431) - Standardize token name definition, if name is empty
 - [#3421](https://github.com/poanetwork/blockscout/pull/3421) - Functions to enable GnosisSafe app link
 - [#3414](https://github.com/poanetwork/blockscout/pull/3414) - Manage lis of other explorers in the footer via env var
