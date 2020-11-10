@@ -7,8 +7,7 @@ defmodule BlockScoutWeb.Application do
 
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
   alias BlockScoutWeb.{Endpoint, Prometheus}
-  alias BlockScoutWeb.RealtimeEventHandler
-  alias BlockScoutWeb.StakingEventHandler
+  alias BlockScoutWeb.{RealtimeEventHandler, StakingEventHandler}
 
   def start(_type, _args) do
     import Supervisor.Spec
