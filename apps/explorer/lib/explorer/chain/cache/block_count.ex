@@ -3,9 +3,7 @@ defmodule Explorer.Chain.Cache.BlockCount do
   Cache for block count.
   """
 
-  require Logger
-
-  @default_cache_period :timer.minutes(10)
+  @default_cache_period :timer.hours(2)
 
   use Explorer.Chain.MapCache,
     name: :block_count,
@@ -14,6 +12,8 @@ defmodule Explorer.Chain.Cache.BlockCount do
     global_ttl: cache_period(),
     ttl_check_interval: :timer.minutes(15),
     callback: &async_task_on_deletion(&1)
+
+  require Logger
 
   alias Explorer.Chain
 
