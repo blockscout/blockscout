@@ -1607,7 +1607,6 @@ defmodule Explorer.Chain do
 
   @spec fetch_count_consensus_block() :: non_neg_integer
   def fetch_count_consensus_block do
-    Logger.debug("Gimme fetch_count_consensus_block inner")
     query =
       from(block in Block,
         select: count(block.hash),
