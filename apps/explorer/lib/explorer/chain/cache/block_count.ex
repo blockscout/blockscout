@@ -31,6 +31,7 @@ defmodule Explorer.Chain.Cache.BlockCount do
     {:ok, task} =
       Task.start(fn ->
         try do
+          Logger.debug("Gimme fetch_count_consensus_block")
           result = Chain.fetch_count_consensus_block()
 
           set_count(result)
@@ -54,12 +55,14 @@ defmodule Explorer.Chain.Cache.BlockCount do
   defp async_task_on_deletion(_data), do: nil
 
   defp cache_period do
-    "BLOCK_COUNT_CACHE_PERIOD"
+    period = "BLOCK_COUNT_CACHE_PERIOD"
     |> System.get_env("")
     |> Integer.parse()
     |> case do
       {integer, ""} -> :timer.seconds(integer)
       _ -> @default_cache_period
     end
+    Logger.debug("Gimme period #{period}")
+    period
   end
 end
