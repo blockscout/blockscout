@@ -2147,6 +2147,12 @@ defmodule BlockScoutWeb.Etherscan do
         description: "The constructor argument data provided."
       },
       %{
+        key: "autodetectConstructorArguments",
+        placeholder: false,
+        type: "boolean",
+        description: "Whether or not automatically detect constructor argument."
+      },
+      %{
         key: "evmVersion",
         placeholder: "evmVersion",
         type: "string",

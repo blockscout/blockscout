@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3442](https://github.com/poanetwork/blockscout/pull/3442) - Constructor arguments autodetection in API verify endpoint
 - [#3435](https://github.com/poanetwork/blockscout/pull/3435) - Token transfers counter cache
 - [#3420](https://github.com/poanetwork/blockscout/pull/3420) - Enable read/write proxy tabs for Gnosis safe proxy contract
 - [#3411](https://github.com/poanetwork/blockscout/pull/3411) - Circles UBI theme
@@ -49,6 +50,7 @@
 - [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
+- [#3446](https://github.com/poanetwork/blockscout/pull/3446) - Set infinity timeout and increase cache invalidation period for counters on the main page
 - [#3431](https://github.com/poanetwork/blockscout/pull/3431) - Standardize token name definition, if name is empty
 - [#3421](https://github.com/poanetwork/blockscout/pull/3421) - Functions to enable GnosisSafe app link
 - [#3414](https://github.com/poanetwork/blockscout/pull/3414) - Manage lis of other explorers in the footer via env var

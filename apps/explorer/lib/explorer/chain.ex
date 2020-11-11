@@ -1613,7 +1613,7 @@ defmodule Explorer.Chain do
         where: block.consensus == true
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
@@ -1628,7 +1628,7 @@ defmodule Explorer.Chain do
         where: a0.fetched_coin_balance > ^0
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @spec fetch_sum_coin_total_supply() :: non_neg_integer
@@ -1640,7 +1640,7 @@ defmodule Explorer.Chain do
         where: a0.fetched_coin_balance > ^0
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @spec fetch_sum_gas_used() :: non_neg_integer
@@ -1651,7 +1651,7 @@ defmodule Explorer.Chain do
         select: fragment("SUM(t0.gas_used)")
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @doc """
