@@ -1607,14 +1607,14 @@ defmodule Explorer.Chain do
 
   @spec fetch_count_consensus_block() :: non_neg_integer
   def fetch_count_consensus_block do
-    Logger.debug("Gimme fetch_count_consensus_block")
+    Logger.debug("Gimme fetch_count_consensus_block inner")
     query =
       from(block in Block,
         select: count(block.hash),
         where: block.consensus == true
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
@@ -1652,7 +1652,7 @@ defmodule Explorer.Chain do
         select: fragment("SUM(t0.gas_used)")
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @doc """

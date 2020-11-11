@@ -32,6 +32,7 @@ defmodule Explorer.Chain.Cache.TransactionCount do
     {:ok, task} =
       Task.start(fn ->
         try do
+          Logger.debug("Gimme transactions_count")
           result = Repo.aggregate(Transaction, :count, :hash, timeout: :infinity)
 
           set_count(result)
