@@ -17,6 +17,7 @@
 
 
 ### Fixes
+- [#3449](https://github.com/poanetwork/blockscout/pull/3449) - Correct avg time calculation
 - [#3440](https://github.com/poanetwork/blockscout/pull/3440) - Rewrite missing blocks range query
 - [#3439](https://github.com/poanetwork/blockscout/pull/3439) - Dark mode color fixes (search, charts)
 - [#3437](https://github.com/poanetwork/blockscout/pull/3437) - Fix Postgres Docker container
