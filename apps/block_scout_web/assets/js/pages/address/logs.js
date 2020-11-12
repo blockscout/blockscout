@@ -4,6 +4,7 @@ import humps from 'humps'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
 import '../address'
+import { utils } from 'web3'
 
 export const initialState = {
   addressHash: null,
@@ -74,7 +75,7 @@ if ($('[data-page="address-logs"]').length) {
     })
     const topic = $('[data-search-field]').val()
     const addressHashPlain = store.getState().addressHash
-    const addressHashChecksum = addressHashPlain && window.web3.toChecksumAddress(addressHashPlain)
+    const addressHashChecksum = addressHashPlain && utils.toChecksumAddress(addressHashPlain)
     const path = '/search-logs?topic=' + topic + '&address_id=' + addressHashChecksum
     store.dispatch({ type: 'START_REQUEST' })
     $.getJSON(path, { type: 'JSON' })
