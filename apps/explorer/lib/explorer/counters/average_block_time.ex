@@ -103,7 +103,7 @@ defmodule Explorer.Counters.AverageBlockTime do
         {sum + duration, count + 1}
       end)
 
-    average = sum / count
+    average = if count == 0, do: 0, else: sum / count
 
     average
     |> round()
@@ -115,8 +115,13 @@ defmodule Explorer.Counters.AverageBlockTime do
     |> Enum.reduce({[], nil, nil}, fn {block_number, timestamp}, {durations, last_block_number, last_timestamp} ->
       if last_timestamp do
         block_numbers_range = last_block_number - block_number
-        duration = (last_timestamp - timestamp) / block_numbers_range
-        {[duration | durations], block_number, timestamp}
+
+        if block_numbers_range == 0 do
+          {durations, block_number, timestamp}
+        else
+          duration = (last_timestamp - timestamp) / block_numbers_range
+          {[duration | durations], block_number, timestamp}
+        end
       else
         {durations, block_number, timestamp}
       end
