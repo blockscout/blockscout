@@ -169,7 +169,7 @@ if ($stakesPage.length) {
 
     $stakesTop.html(msg.top_html)
 
-    if (msg.account !== state.account) {
+    if (accountChanged(msg.account, state)) {
       store.dispatch({ type: 'ACCOUNT_UPDATED', account: msg.account })
       resetFilterMy(store)
     }
@@ -179,7 +179,7 @@ if ($stakesPage.length) {
       msg.epoch_number > state.lastEpochNumber ||
       msg.validator_set_apply_block !== state.validatorSetApplyBlock ||
       (state.refreshInterval && msg.block_number >= state.refreshBlockNumber + state.refreshInterval) ||
-      msg.account !== state.account || msg.by_set_account
+      accountChanged(msg.account, state) || msg.by_set_account
     ) {
       if (firstMsg) {
         // Don't refresh the page for the first load
@@ -304,6 +304,10 @@ if ($stakesPage.length) {
   initialize(store)
 }
 
+function accountChanged (account, state) {
+  return account !== state.account
+}
+
 function hideCurrentModal () {
   const $modal = currentModal()
   if ($modal) $modal.modal('hide')
@@ -336,7 +340,7 @@ async function checkNetworkAndAccount (store, web3) {
   const accounts = await web3.eth.getAccounts()
   const account = accounts[0] ? accounts[0].toLowerCase() : null
 
-  if (account !== state.account && await setAccount(account, store)) {
+  if (accountChanged(account, state) && await setAccount(account, store)) {
     refresh = false // because refreshing will be done by `onStakingUpdate`
   }
 

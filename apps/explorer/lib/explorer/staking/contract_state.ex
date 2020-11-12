@@ -325,9 +325,7 @@ defmodule Explorer.Staking.ContractState do
 
   defp get_mining_to_staking_address(validators, contracts, abi, block_number) do
     validators.all
-    |> Enum.map(fn mining_address ->
-      ContractReader.staking_by_mining_request(mining_address, block_number)
-    end)
+    |> Enum.map(&ContractReader.staking_by_mining_request(&1, block_number))
     |> ContractReader.perform_grouped_requests(validators.all, contracts, abi)
     |> Map.new(fn {mining_address, resp} -> {mining_address, address_string_to_bytes(resp.staking_address).bytes} end)
   end
@@ -336,20 +334,13 @@ defmodule Explorer.Staking.ContractState do
     # read pool info from the contracts by its staking address
     pool_staking_responses =
       pools
-      |> Enum.map(fn staking_address_hash ->
-        ContractReader.pool_staking_requests(staking_address_hash, block_number)
-      end)
+      |> Enum.map(&ContractReader.pool_staking_requests(&1, block_number))
       |> ContractReader.perform_grouped_requests(pools, contracts, abi)
 
     # read pool info from the contracts by its mining address
     pool_mining_responses =
       pools
-      |> Enum.map(fn staking_address_hash ->
-        ContractReader.pool_mining_requests(
-          pool_staking_responses[staking_address_hash].mining_address_hash,
-          block_number
-        )
-      end)
+      |> Enum.map(&ContractReader.pool_mining_requests(pool_staking_responses[&1].mining_address_hash, block_number))
       |> ContractReader.perform_grouped_requests(pools, contracts, abi)
 
     # get a flat list of all stakers in the form of {pool_staking_address, staker_address, is_active}
