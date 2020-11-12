@@ -4567,7 +4567,7 @@ defmodule Explorer.Chain do
   def count_token_holders_from_token_hash(contract_address_hash) do
     query = from(ctb in CurrentTokenBalance.token_holders_query(contract_address_hash), select: fragment("COUNT(*)"))
 
-    Repo.one!(query)
+    Repo.one!(query, timeout: :infinity)
   end
 
   @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]
