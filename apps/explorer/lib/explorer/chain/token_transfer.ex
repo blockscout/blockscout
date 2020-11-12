@@ -186,7 +186,7 @@ defmodule Explorer.Chain.TokenTransfer do
         select: fragment("COUNT(*)")
       )
 
-    Repo.one(query)
+    Repo.one(query, timeout: :infinity)
   end
 
   @spec count_token_transfers_from_token_hash_and_token_id(Hash.t(), binary()) :: non_neg_integer()
@@ -198,7 +198,7 @@ defmodule Explorer.Chain.TokenTransfer do
         select: fragment("COUNT(*)")
       )
 
-    Repo.one(query)
+    Repo.one(query, timeout: :infinity)
   end
 
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
