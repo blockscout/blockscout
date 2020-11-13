@@ -19,8 +19,6 @@ defmodule Explorer.Staking.StakeSnapshotting do
         mining_to_staking_address,
         block_number
       ) do
-    :ets.insert(ets_table_name, is_snapshotting: true)
-
     # get staking addresses for the pending validators
     pool_staking_addresses =
       pools_mining_addresses
@@ -89,12 +87,15 @@ defmodule Explorer.Staking.StakeSnapshotting do
     validator_reward_responses =
       pool_staking_responses
       |> Enum.map(fn {_pool_staking_address, resp} ->
-        ContractReader.validator_reward_request([
-          epoch_number,
-          resp.snapshotted_self_staked_amount,
-          resp.snapshotted_total_staked_amount,
-          1000_000
-        ])
+        ContractReader.validator_reward_request(
+          [
+            epoch_number,
+            resp.snapshotted_self_staked_amount,
+            resp.snapshotted_total_staked_amount,
+            1000_000
+          ],
+          block_number
+        )
       end)
       |> ContractReader.perform_grouped_requests(pool_staking_keys, contracts, abi)
 
@@ -116,13 +117,16 @@ defmodule Explorer.Staking.StakeSnapshotting do
       |> Enum.map(fn {{pool_staking_address, _staker_address}, resp} ->
         staking_resp = pool_staking_responses[pool_staking_address]
 
-        ContractReader.delegator_reward_request([
-          epoch_number,
-          resp.snapshotted_stake_amount,
-          staking_resp.snapshotted_self_staked_amount,
-          staking_resp.snapshotted_total_staked_amount,
-          1000_000
-        ])
+        ContractReader.delegator_reward_request(
+          [
+            epoch_number,
+            resp.snapshotted_stake_amount,
+            staking_resp.snapshotted_self_staked_amount,
+            staking_resp.snapshotted_total_staked_amount,
+            1000_000
+          ],
+          block_number
+        )
       end)
       |> ContractReader.perform_grouped_requests(delegator_keys, contracts, abi)
 
