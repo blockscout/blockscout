@@ -23,8 +23,14 @@ export const walletEnabled = () => {
                   window.web3 = new Web3(window.web3.currentProvider)
                   resolve(true)
                 })
+                .catch(_error => {
+                  resolve(false)
+                })
             }
           }
+        })
+        .catch(_error => {
+          resolve(false)
         })
     } else if (window.web3) {
       window.web3 = new Web3(window.web3.currentProvider)
@@ -59,16 +65,13 @@ export const shouldHideConnectButton = () => {
       if (window.ethereum.isNiftyWallet) {
         resolve({ shouldHide: true, account: window.ethereum.selectedAddress })
       } else if (window.ethereum.isMetaMask) {
-        window.ethereum.request({ method: 'eth_accounts' }, function (error, resp) {
-          if (error) {
-            resolve({ shouldHide: false })
-          }
-
-          if (resp) {
-            const { result: accounts } = resp
+        window.ethereum.request({ method: 'eth_accounts' })
+          .then(accounts => {
             accounts.length > 0 ? resolve({ shouldHide: true, account: accounts[0] }) : resolve({ shouldHide: false })
-          }
-        })
+          })
+          .catch(_error => {
+            resolve({ shouldHide: false })
+          })
       } else {
         resolve({ shouldHide: true, account: window.ethereum.selectedAddress })
       }

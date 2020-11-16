@@ -30,15 +30,16 @@ const loadFunctions = (element) => {
         }
       })
 
-      shouldHideConnectButton().then(({ shouldHide, account }) => {
-        if (shouldHide && account) {
-          showConnectedToElements($connect, $connectTo, $connectedTo, account)
-        } else if (shouldHide) {
-          hideConnectButton($connect, $connectTo, $connectedTo)
-        } else {
-          showConnectElements($connect, $connectTo, $connectedTo)
-        }
-      })
+      shouldHideConnectButton()
+        .then(({ shouldHide, account }) => {
+          if (shouldHide && account) {
+            showConnectedToElements($connect, $connectTo, $connectedTo, account)
+          } else if (shouldHide) {
+            hideConnectButton($connect, $connectTo, $connectedTo)
+          } else {
+            showConnectElements($connect, $connectTo, $connectedTo)
+          }
+        })
 
       $connect.on('click', () => {
         connectToWallet()
