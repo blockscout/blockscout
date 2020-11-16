@@ -8,7 +8,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   http: [port: 4002],
   secret_key_base: "27Swe6KtEtmN37WyEYRjKWyxYULNtrxlkCEKur4qoV+Lwtk8lafsR16ifz1XBBYj",
   server: true,
-  pubsub: [name: BlockScoutWeb.PubSub],
+  pubsub_server: BlockScoutWeb.PubSub,
   checksum_address_hashes: true
 
 config :block_scout_web, BlockScoutWeb.Tracer, disabled?: false

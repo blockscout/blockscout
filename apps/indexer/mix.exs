@@ -10,7 +10,7 @@ defmodule Indexer.MixProject do
       deps: deps(),
       deps_path: "../../deps",
       description: "Fetches block chain data from on-chain node for later reading with Explorer.",
-      elixir: "~> 1.9",
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
@@ -51,7 +51,7 @@ defmodule Indexer.MixProject do
       # RLP encoding
       {:ex_rlp, "~> 0.5.2"},
       # Code coverage
-      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
+      {:excoveralls, "~> 0.13.1"},
       # Importing to database
       {:explorer, in_umbrella: true},
       # libsecp2561k1 crypto functions

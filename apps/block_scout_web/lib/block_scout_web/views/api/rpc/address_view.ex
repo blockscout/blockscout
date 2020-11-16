@@ -22,6 +22,11 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("pendingtxlist.json", %{transactions: transactions}) do
+    data = Enum.map(transactions, &prepare_pending_transaction/1)
+    RPCView.render("show.json", data: data)
+  end
+
   def render("txlist.json", %{transactions: transactions}) do
     data = Enum.map(transactions, &prepare_transaction/1)
     RPCView.render("show.json", data: data)
@@ -76,6 +81,22 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "balance" => to_string(address.fetched_coin_balance && address.fetched_coin_balance.value),
       "address" => to_string(address.hash),
       "stale" => address.stale? || false
+    }
+  end
+
+  defp prepare_pending_transaction(transaction) do
+    %{
+      "hash" => "#{transaction.hash}",
+      "nonce" => "#{transaction.nonce}",
+      "from" => "#{transaction.from_address_hash}",
+      "to" => "#{transaction.to_address_hash}",
+      "value" => "#{transaction.value.value}",
+      "gas" => "#{transaction.gas}",
+      "gasPrice" => "#{transaction.gas_price.value}",
+      "input" => "#{transaction.input}",
+      "contractAddress" => "#{transaction.created_contract_address_hash}",
+      "cumulativeGasUsed" => "#{transaction.cumulative_gas_used}",
+      "gasUsed" => "#{transaction.gas_used}"
     }
   end
 

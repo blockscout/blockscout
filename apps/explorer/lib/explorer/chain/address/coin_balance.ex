@@ -72,16 +72,18 @@ defmodule Explorer.Chain.Address.CoinBalance do
   The last coin balance from an Address is the last block indexed.
   """
   def fetch_coin_balances(address_hash, %PagingOptions{page_size: page_size}) do
-    from(
-      cb in CoinBalance,
-      where: cb.address_hash == ^address_hash,
-      where: not is_nil(cb.value),
-      inner_join: b in Block,
-      on: cb.block_number == b.number,
-      order_by: [desc: :block_number],
-      limit: ^page_size,
-      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
-      select_merge: %{block_timestamp: b.timestamp}
+    query =
+      from(
+        cb in CoinBalance,
+        where: cb.address_hash == ^address_hash,
+        where: not is_nil(cb.value),
+        order_by: [desc: :block_number],
+        select_merge: %{delta: fragment("value - coalesce(lead(value, 1) over (order by block_number desc), 0)")}
+      )
+
+    from(balance in subquery(query),
+      where: balance.delta != 0,
+      limit: ^page_size
     )
   end
 
@@ -90,29 +92,55 @@ defmodule Explorer.Chain.Address.CoinBalance do
   corresponds to the maximum balance in that day. Only the last 90 days of data are used.
   """
   def balances_by_day(address_hash, block_timestamp \\ nil) do
+    {days_to_consider, _} =
+      Application.get_env(:block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance)[:coin_balance_history_days]
+      |> Integer.parse()
+
     CoinBalance
     |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
     |> where([cb], cb.address_hash == ^address_hash)
-    |> limit_time_interval(block_timestamp)
+    |> limit_time_interval(days_to_consider, block_timestamp)
     |> group_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
     |> order_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
     |> select([cb, b], %{date: type(fragment("date_trunc('day', ?)", b.timestamp), :date), value: max(cb.value)})
   end
 
-  def limit_time_interval(query, nil) do
-    query |> where([cb, b], b.timestamp >= fragment("date_trunc('day', now()) - interval '90 days'"))
+  def limit_time_interval(query, days_to_consider, nil) do
+    query
+    |> where(
+      [cb, b],
+      b.timestamp >=
+        fragment("date_trunc('day', now() - CAST(? AS INTERVAL))", ^%Postgrex.Interval{days: days_to_consider})
+    )
   end
 
-  def limit_time_interval(query, %{timestamp: timestamp}) do
-    query |> where([cb, b], b.timestamp >= fragment("(? AT TIME ZONE ?) - interval '90 days'", ^timestamp, ^"Etc/UTC"))
+  def limit_time_interval(query, days_to_consider, %{timestamp: timestamp}) do
+    query
+    |> where(
+      [cb, b],
+      b.timestamp >=
+        fragment(
+          "(? AT TIME ZONE ?) - CAST(? AS INTERVAL)",
+          ^timestamp,
+          ^"Etc/UTC",
+          ^%Postgrex.Interval{days: days_to_consider}
+        )
+    )
   end
 
   def last_coin_balance_timestamp(address_hash) do
-    CoinBalance
-    |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
-    |> where([cb], cb.address_hash == ^address_hash)
-    |> last(:block_number)
-    |> select([cb, b], %{timestamp: b.timestamp, value: cb.value})
+    coin_balance_query =
+      CoinBalance
+      |> where([cb], cb.address_hash == ^address_hash)
+      |> last(:block_number)
+      |> select([cb, b], %{block_number: cb.block_number, value: cb.value})
+
+    from(
+      cb in subquery(coin_balance_query),
+      inner_join: b in Block,
+      on: cb.block_number == b.number,
+      select: %{timestamp: b.timestamp, value: cb.value}
+    )
   end
 
   def changeset(%__MODULE__{} = balance, params) do

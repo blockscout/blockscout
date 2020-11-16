@@ -10,13 +10,13 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
       render(conn, "gettoken.json", %{token: token})
     else
       {:contractaddress_param, :error} ->
-        render(conn, :error, error: "Query parameter contractaddress is required")
+        render(conn, :error, error: "Query parameter contract address is required")
 
       {:format, :error} ->
-        render(conn, :error, error: "Invalid contractaddress hash")
+        render(conn, :error, error: "Invalid contract address hash")
 
       {:token, {:error, :not_found}} ->
-        render(conn, :error, error: "contractaddress not found")
+        render(conn, :error, error: "contract address not found")
     end
   end
 

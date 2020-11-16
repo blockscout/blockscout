@@ -73,6 +73,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/accounts", AddressController, only: [:index])
 
+    resources("/tokens", TokensController, only: [:index])
+
     resources "/address", AddressController, only: [:show] do
       resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
 
@@ -123,6 +125,27 @@ defmodule BlockScoutWeb.WebRouter do
         AddressReadContractController,
         only: [:index, :show],
         as: :read_contract
+      )
+
+      resources(
+        "/read_proxy",
+        AddressReadProxyController,
+        only: [:index, :show],
+        as: :read_proxy
+      )
+
+      resources(
+        "/write_contract",
+        AddressWriteContractController,
+        only: [:index, :show],
+        as: :write_contract
+      )
+
+      resources(
+        "/write_proxy",
+        AddressWriteProxyController,
+        only: [:index, :show],
+        as: :write_proxy
       )
 
       resources(

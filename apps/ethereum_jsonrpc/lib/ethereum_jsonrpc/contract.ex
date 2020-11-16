@@ -32,16 +32,21 @@ defmodule EthereumJSONRPC.Contract do
       abi
       |> ABI.parse_specification()
 
-    functions = Enum.into(parsed_abi, %{}, &{&1.function, &1})
+    functions = Enum.into(parsed_abi, %{}, &{&1.method_id, &1})
 
     requests_with_index = Enum.with_index(requests)
 
     indexed_responses =
       requests_with_index
       |> Enum.map(fn {%{contract_address: contract_address, function_name: function_name, args: args} = request, index} ->
-        functions[function_name]
+        {_, function} =
+          Enum.find(functions, fn {_method_id, func} ->
+            func.function == function_name && Enum.count(func.input_names) == Enum.count(args)
+          end)
+
+        function
         |> Encoder.encode_function_call(args)
-        |> eth_call_request(contract_address, index, Map.get(request, :block_number))
+        |> eth_call_request(contract_address, index, Map.get(request, :block_number), Map.get(request, :from))
       end)
       |> json_rpc(json_rpc_named_arguments)
       |> case do
@@ -70,7 +75,7 @@ defmodule EthereumJSONRPC.Contract do
       Enum.map(requests, fn _ -> format_error(error) end)
   end
 
-  defp eth_call_request(data, contract_address, id, block_number) do
+  def eth_call_request(data, contract_address, id, block_number, from) do
     block =
       case block_number do
         nil -> "latest"
@@ -80,8 +85,26 @@ defmodule EthereumJSONRPC.Contract do
     request(%{
       id: id,
       method: "eth_call",
-      params: [%{to: contract_address, data: data}, block]
+      params: [%{to: contract_address, data: data, from: from}, block]
     })
+  end
+
+  def eth_get_storage_at_request(contract_address, storage_pointer, block_number, json_rpc_named_arguments) do
+    block =
+      case block_number do
+        nil -> "latest"
+        block_number -> integer_to_quantity(block_number)
+      end
+
+    result =
+      %{id: 0, method: "eth_getStorageAt", params: [contract_address, storage_pointer, block]}
+      |> request()
+      |> json_rpc(json_rpc_named_arguments)
+
+    case result do
+      {:ok, storage_value} -> {:ok, storage_value}
+      other -> other
+    end
   end
 
   defp format_error(message) when is_binary(message) do
