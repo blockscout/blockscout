@@ -207,6 +207,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     |> required_param(params, "contractSourceCode", "contract_source_code")
     |> optional_param(params, "evmVersion", "evm_version")
     |> optional_param(params, "constructorArguments", "constructor_arguments")
+    |> optional_param(params, "autodetectConstructorArguments", "autodetect_contructor_args")
     |> optional_param(params, "optimizationRuns", "optimization_runs")
     |> parse_optimization_runs()
   end
