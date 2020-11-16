@@ -63,18 +63,22 @@ defmodule BlockScoutWeb.StakesChannel do
       |> assign(:mining_address, mining_address)
       |> push_contracts()
 
-    handle_out(
-      "staking_update",
-      %{
-        block_number: BlockNumber.get_max(),
-        dont_refresh_page: true,
-        epoch_number: ContractState.get(:epoch_number, 0),
-        staking_allowed: ContractState.get(:staking_allowed, false),
-        staking_token_defined: ContractState.get(:token, nil) != nil,
-        validator_set_apply_block: ContractState.get(:validator_set_apply_block, 0)
-      },
-      socket
-    )
+    data =
+      case Map.fetch(socket.assigns, :staking_update_data) do
+        {:ok, staking_update_data} ->
+          staking_update_data
+
+        _ ->
+          %{
+            block_number: BlockNumber.get_max(),
+            epoch_number: ContractState.get(:epoch_number, 0),
+            staking_allowed: ContractState.get(:staking_allowed, false),
+            staking_token_defined: ContractState.get(:token, nil) != nil,
+            validator_set_apply_block: ContractState.get(:validator_set_apply_block, 0)
+          }
+      end
+
+    handle_out("staking_update", Map.merge(data, %{by_set_account: true}), socket)
 
     {:reply, :ok, socket}
   end
@@ -399,16 +403,30 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_out("staking_update", data, socket) do
-    dont_refresh_page =
-      case Map.fetch(data, :dont_refresh_page) do
+    by_set_account =
+      case Map.fetch(data, :by_set_account) do
         {:ok, value} -> value
         _ -> false
+      end
+
+    socket =
+      if by_set_account do
+        # if :by_set_account is in the `data`,
+        # it means that this function was called by
+        # handle_in("set_account", ...), so we
+        # shouldn't assign the incoming data to the socket
+        socket
+      else
+        # otherwise, we should do the assignment
+        # to use the incoming data later by
+        # handle_in("set_account", ...) and StakesController.render_top
+        assign(socket, :staking_update_data, data)
       end
 
     push(socket, "staking_update", %{
       account: socket.assigns[:account],
       block_number: data.block_number,
-      dont_refresh_page: dont_refresh_page,
+      by_set_account: by_set_account,
       epoch_number: data.epoch_number,
       staking_allowed: data.staking_allowed,
       staking_token_defined: data.staking_token_defined,

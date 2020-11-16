@@ -148,13 +148,8 @@ function getMarketCapData (marketHistoryData, availableSupply) {
 // colors for light and dark theme
 var priceLineColor
 var mcapLineColor
-if (localStorage.getItem('current-color-mode') === 'dark') {
-  priceLineColor = sassVariables.darkprimary
-  mcapLineColor = sassVariables.darksecondary
-} else {
-  priceLineColor = sassVariables.dashboardLineColorPrice
-  mcapLineColor = sassVariables.dashboardLineColorMarket
-}
+priceLineColor = sassVariables.dashboardLineColorPrice
+mcapLineColor = sassVariables.dashboardLineColorMarket
 
 class MarketHistoryChart {
   constructor (el, availableSupply, _marketHistoryData, dataConfig) {

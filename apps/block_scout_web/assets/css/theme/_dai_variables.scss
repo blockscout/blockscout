@@ -48,6 +48,7 @@ $btn-contract-color: $secondary;
 $tile-body-a-color: $secondary;
 $tile-type-block-color: $secondary;
 $tile-type-progress-bar-color: $secondary;
+.tile a:hover,
 a.tile-title { color: $secondary !important; }
 .card-body {  
 	a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link):not([data-test=token_link]):not(#dropdown-tokens):not(.btn-line):not(.page-link) {
@@ -97,7 +98,10 @@ $dark-secondary: #93d7ff;
 $dark-primary-alternate: #15bba6;
 $dark-tertiary: #5a77ff;
 
-.dark-theme-applied .tile .tile-body a, .dark-theme-applied .tile span[data-address-hash] {
+.dark-theme-applied .tile .tile-body a,
+.dark-theme-applied .tile a:hover,
+.dark-theme-applied .tile span[data-address-hash],
+.dark-theme-applied .tile a[data-test=token_link] {
     color: $dark-tertiary!important;
 }
 
@@ -118,4 +122,14 @@ $dark-tertiary: #5a77ff;
 
 .dark-theme-applied .btn-line:hover {
     color: $additional-font!important;
+}
+
+.dark-theme-applied .card-body {  
+    a:not(.dropdown-item):not(.button):not([data-test=address_hash_link]):not(.alert-link):not([data-test=token_link]):not(#dropdown-tokens):not(.btn-line):not(.page-link) {
+        color: $dark-tertiary;
+
+        &:hover {
+            color: $dark-tertiary;
+        }
+    }
 }

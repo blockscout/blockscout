@@ -57,7 +57,7 @@
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Difficulty" %></dt>
             <dd class="col-sm-9">
-              <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Block difficulty for miner, used to calibrate block generation time (Note: constant in POA based networks)."><%= @block.difficulty |> BlockScoutWeb.Cldr.Number.to_string! %></span>
+              <span data-toggle="tooltip" data-placement="top" title="" data-original-title="Block difficulty for miner, used to calibrate block generation time (Note: constant in POA based networks)."><%= @block.difficulty |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string! %></span>
             </dd>
           </dl>
 
@@ -65,7 +65,7 @@
             <!-- Total Difficulty -->
             <dl class="row">
               <dt class="col-sm-3 text-muted"><%= gettext "Total Difficulty" %></dt>
-              <dd class="col-sm-9"><span data-toggle="tooltip" data-placement="top" title="" data-original-title="Integer of the total difficulty of the chain until this block."><%= @block.total_difficulty |> BlockScoutWeb.Cldr.Number.to_string! %></span></dd>
+              <dd class="col-sm-9"><span data-toggle="tooltip" data-placement="top" title="" data-original-title="Integer of the total difficulty of the chain until this block."><%= @block.total_difficulty |> Decimal.to_integer() |> BlockScoutWeb.Cldr.Number.to_string! %></span></dd>
             </dl>
 
             <!-- Nonce -->

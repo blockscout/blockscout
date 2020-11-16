@@ -94,11 +94,19 @@ defmodule Explorer.KnownTokens do
   @spec lookup(String.t()) :: {:ok, Hash.Address.t()} | :error | nil
   def lookup(symbol) do
     if store() == :ets && enabled?() do
-      case :ets.lookup(table_name(), symbol) do
-        [{_symbol, address} | _] -> Hash.Address.cast(address)
-        _ -> nil
+      if ets_table_exists?(table_name()) do
+        case :ets.lookup(table_name(), symbol) do
+          [{_symbol, address} | _] -> Hash.Address.cast(address)
+          _ -> nil
+        end
+      else
+        nil
       end
     end
+  end
+
+  defp ets_table_exists?(table) do
+    :ets.whereis(table) !== :undefined
   end
 
   @doc false

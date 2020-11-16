@@ -29,6 +29,7 @@ export const initialState = {
   transactionsError: false,
   transactionsLoading: true,
   transactionCount: null,
+  totalGasUsageCount: null,
   usdMarketCap: null,
   blockCount: null
 }
@@ -183,6 +184,15 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.transactionCount === state.transactionCount) return
       $el.empty().append(numeral(state.transactionCount).format())
+    }
+  },
+  '[data-selector="total-gas-usage"]': {
+    load ($el) {
+      return { totalGasUsageCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (oldState.totalGasUsageCount === state.totalGasUsageCount) return
+      $el.empty().append(numeral(state.totalGasUsageCount).format())
     }
   },
   '[data-selector="block-count"]': {

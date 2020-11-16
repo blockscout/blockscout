@@ -94,22 +94,7 @@ defmodule Explorer.SmartContract.Reader do
           functions()
         ) :: functions_results()
   def query_contract(contract_address, abi, functions) do
-    requests =
-      functions
-      |> Enum.map(fn {method_id, args} ->
-        %{
-          contract_address: contract_address,
-          method_id: method_id,
-          args: args
-        }
-      end)
-
-    requests
-    |> query_contracts(abi)
-    |> Enum.zip(requests)
-    |> Enum.into(%{}, fn {response, request} ->
-      {request.method_id, response}
-    end)
+    query_contract_inner(contract_address, abi, functions, nil, nil)
   end
 
   @spec query_contract(
@@ -119,6 +104,20 @@ defmodule Explorer.SmartContract.Reader do
           functions()
         ) :: functions_results()
   def query_contract(contract_address, from, abi, functions) do
+    query_contract_inner(contract_address, abi, functions, nil, from)
+  end
+
+  @spec query_contract_by_block_number(
+          String.t(),
+          term(),
+          functions(),
+          non_neg_integer()
+        ) :: functions_results()
+  def query_contract_by_block_number(contract_address, abi, functions, block_number) do
+    query_contract_inner(contract_address, abi, functions, block_number, nil)
+  end
+
+  defp query_contract_inner(contract_address, abi, functions, block_number, from) do
     requests =
       functions
       |> Enum.map(fn {method_id, args} ->
@@ -126,7 +125,8 @@ defmodule Explorer.SmartContract.Reader do
           contract_address: contract_address,
           from: from,
           method_id: method_id,
-          args: args
+          args: args,
+          block_number: block_number
         }
       end)
 
@@ -272,12 +272,29 @@ defmodule Explorer.SmartContract.Reader do
       {:array, type} ->
         format_input_type(type) <> "[]"
 
+      {:tuple, tuple} ->
+        format_tuple_type(tuple)
+
       {type, size} ->
         Atom.to_string(type) <> Integer.to_string(size)
 
       type ->
         Atom.to_string(type)
     end
+  end
+
+  defp format_tuple_type(tuple) do
+    tuple_types =
+      tuple
+      |> Enum.reduce(nil, fn tuple_item, acc ->
+        if acc do
+          acc <> "," <> format_input_type(tuple_item)
+        else
+          format_input_type(tuple_item)
+        end
+      end)
+
+    "tuple[#{tuple_types}]"
   end
 
   def fetch_current_value_from_blockchain(function, abi, contract_address_hash) do

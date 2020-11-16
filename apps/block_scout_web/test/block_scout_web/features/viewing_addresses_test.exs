@@ -373,8 +373,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       next
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
-      |> assert_has(AddressPage.token_balance(count: 2))
-      |> assert_has(AddressPage.token_type(count: 2))
+      |> assert_has(AddressPage.token_balance(count: 1))
+      |> assert_has(AddressPage.token_type(count: 1))
       |> assert_has(AddressPage.token_type_count(type: "ERC-721", text: "1"))
     end
 
@@ -388,8 +388,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       next
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("T2")
-      |> assert_has(AddressPage.token_balance(count: 2))
-      |> assert_has(AddressPage.token_type(count: 2))
+      |> assert_has(AddressPage.token_balance(count: 1))
+      |> assert_has(AddressPage.token_type(count: 1))
       |> assert_has(AddressPage.token_type_count(type: "ERC-20", text: "1"))
     end
 
