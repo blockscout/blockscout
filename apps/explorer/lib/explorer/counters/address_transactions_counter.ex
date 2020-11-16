@@ -17,7 +17,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
     read_concurrency: true
   ]
 
-  config = Application.get_env(:explorer, Explorer.Counters.AddressesCounter)
+  config = Application.get_env(:explorer, Explorer.Counters.AddressTransactionsCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()

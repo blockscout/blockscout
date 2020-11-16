@@ -197,7 +197,9 @@ $dark-stakes-banned-background: #3e314c;
 		color: $labels-dark;
 	}
 	.tile .tile-body a,
-	.tile span[data-address-hash] { color: $dark-primary; }
+	.tile a:hover,
+	.tile span[data-address-hash],
+	.tile a[data-test=token_link] { color: $dark-primary; }
 	.fade-up-blocks-chain .tile-type-block-animation .tile-type-line-up {
 		background-color: $dark-primary;
 	}
@@ -563,7 +565,7 @@ $dark-stakes-banned-background: #3e314c;
 		transition: border-color 0.15s ease-in-out;
 
 		&[readonly] {
-			background-color: $dark-light!important;
+			background-color: $dark-light !important;
 		}
 
 		&::placeholder {
@@ -694,6 +696,12 @@ $dark-stakes-banned-background: #3e314c;
 			}
 		}
 
+		.close {
+			color: #fff;
+		}
+	}
+
+	#qrModal {
 		.close {
 			color: #fff;
 		}
@@ -1051,6 +1059,16 @@ $dark-stakes-banned-background: #3e314c;
 		background-color: $dark-bg;
 		background-image: none;
 	}
+
+	.input-group {
+		.awesomplete mark {
+			background: $yellow !important;
+		}
+		
+		.awesomplete li:hover mark {
+			background: $yellow !important;
+		}
+	}
 }
 
 .navbar-dark .navbar-toggler {
@@ -1059,7 +1077,7 @@ $dark-stakes-banned-background: #3e314c;
 }
 
 .dark-theme-applied .dropdown-item {
-	background-color: $dark-light!important;
+	background-color: $dark-light !important;
 	color: #fff !important;
 }
 
@@ -1075,7 +1093,7 @@ $dark-stakes-banned-background: #3e314c;
 	.dark-theme-applied .navbar.navbar-primary .navbar-nav .nav-link:focus {
 		background-image: none;
 		width: 100%;
-		background-color: #35335d!important;
+		background-color: #35335d !important;
 		color: white;
 		border: none;
 	}

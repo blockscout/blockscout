@@ -19,15 +19,8 @@
         <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_transfer.to_address, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.to_address), use_custom_tooltip: false %>
       </span>
 
-      <span class="tile-title text-truncate">
-        <%= case token_transfer_amount(@token_transfer) do%>
-          <% {:ok, :erc721_instance} -> %>
-            <%= "TokenID2 ["%><%= link(@token_transfer.token_id, to: token_instance_path(@conn, :show, @token_transfer.token.contract_address_hash, to_string(@token_transfer.token_id))) %><%= "]" %>
-          <% {:ok, value} -> %>
-            <%= value %>
-        <% end %>
-        <%= " "%>
-        <%= link(token_symbol(@token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @token_transfer.token.contract_address_hash)) %>
+      <span class="tile-title">
+        <%= render BlockScoutWeb.TransactionView, "_total_transfers.html", Map.put(assigns, :transfer, @token_transfer) %>
       </span>
     </div>
   </div>

@@ -19,11 +19,21 @@ defmodule BlockScoutWeb.StakesController do
   # when a new block appears (see `staking_update` event handled in `StakesChannel`),
   # or when the page is loaded for the first time or reloaded by a user (i.e. it is called by the `render_template(filter, conn, _)`)
   def render_top(conn) do
-    active_pools_length = ContractState.get(:active_pools_length, 0)
-    block_number = BlockNumber.get_max()
-    epoch_end_block = ContractState.get(:epoch_end_block, 0)
-    epoch_number = ContractState.get(:epoch_number, 0)
-    max_candidates = ContractState.get(:max_candidates, 0)
+    staking_data =
+      case Map.fetch(conn.assigns, :staking_update_data) do
+        {:ok, data} ->
+          data
+
+        _ ->
+          %{
+            active_pools_length: ContractState.get(:active_pools_length, 0),
+            block_number: BlockNumber.get_max(),
+            epoch_end_block: ContractState.get(:epoch_end_block, 0),
+            epoch_number: ContractState.get(:epoch_number, 0),
+            max_candidates: ContractState.get(:max_candidates, 0)
+          }
+      end
+
     token = ContractState.get(:token, %Token{})
 
     account =
@@ -38,14 +48,17 @@ defmodule BlockScoutWeb.StakesController do
         })
       end
 
-    epoch_end_in = if epoch_end_block - block_number >= 0, do: epoch_end_block - block_number, else: 0
+    epoch_end_in =
+      if staking_data.epoch_end_block - staking_data.block_number >= 0,
+        do: staking_data.epoch_end_block - staking_data.block_number,
+        else: 0
 
     View.render_to_string(StakesView, "_stakes_top.html",
       account: account,
-      block_number: block_number,
-      candidates_limit_reached: active_pools_length >= max_candidates,
+      block_number: staking_data.block_number,
+      candidates_limit_reached: staking_data.active_pools_length >= staking_data.max_candidates,
       epoch_end_in: epoch_end_in,
-      epoch_number: epoch_number,
+      epoch_number: staking_data.epoch_number,
       token: token
     )
   end

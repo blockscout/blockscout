@@ -1,10 +1,11 @@
-/* ERC721 image block */
-.inventory-erc721-image {
+/* ERC721 media block */
+.inventory-erc721-media {
     display: flex;
     justify-content: center;
+    max-height: 50px;
 }
 
- .inventory-erc721-image img {
+ .inventory-erc721-media img {
     height: 50px;
 }
-/* ERC721 image block end */
+/* ERC721 media block end */

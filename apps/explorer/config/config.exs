@@ -94,6 +94,39 @@ address_transactions_counter_cache_period =
     _ -> :timer.hours(1)
   end
 
+address_transactions_gas_usage_counter_cache_period =
+  case Integer.parse(System.get_env("ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD", "")) do
+    {secs, ""} -> :timer.seconds(secs)
+    _ -> :timer.hours(1)
+  end
+
+config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
+  enabled: true,
+  enable_consolidation: true,
+  period: address_transactions_gas_usage_counter_cache_period
+
+token_holders_counter_cache_period =
+  case Integer.parse(System.get_env("TOKEN_HOLDERS_COUNTER_CACHE_PERIOD", "")) do
+    {secs, ""} -> :timer.seconds(secs)
+    _ -> :timer.hours(1)
+  end
+
+config :explorer, Explorer.Counters.TokenHoldersCounter,
+  enabled: true,
+  enable_consolidation: true,
+  period: token_holders_counter_cache_period
+
+token_transfers_counter_cache_period =
+  case Integer.parse(System.get_env("TOKEN_TRANSFERS_COUNTER_CACHE_PERIOD", "")) do
+    {secs, ""} -> :timer.seconds(secs)
+    _ -> :timer.hours(1)
+  end
+
+config :explorer, Explorer.Counters.TokenTransfersCounter,
+  enabled: true,
+  enable_consolidation: true,
+  period: token_transfers_counter_cache_period
+
 config :explorer, Explorer.Counters.AddressTransactionsCounter,
   enabled: true,
   enable_consolidation: true,
@@ -114,7 +147,7 @@ config :explorer, Explorer.Counters.Bridge,
 
 config :explorer, Explorer.ExchangeRates, enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true", store: :ets
 
-config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
+config :explorer, Explorer.KnownTokens, enabled: System.get_env("DISABLE_KNOWN_TOKENS") != "true", store: :ets
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
