@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 3.4.0-beta
+
+### Features
 - [#3442](https://github.com/poanetwork/blockscout/pull/3442) - Constructor arguments autodetection in API verify endpoint
 - [#3435](https://github.com/poanetwork/blockscout/pull/3435) - Token transfers counter cache
 - [#3420](https://github.com/poanetwork/blockscout/pull/3420) - Enable read/write proxy tabs for Gnosis safe proxy contract
@@ -14,7 +23,6 @@
 - [#3354](https://github.com/poanetwork/blockscout/pull/3354) - Tx hash in EOA coin balance history
 - [#3333](https://github.com/poanetwork/blockscout/pull/3333), [#3337](https://github.com/poanetwork/blockscout/pull/3337), [#3393](https://github.com/poanetwork/blockscout/pull/3393) - Dark forest contract custom theme
 - [#3330](https://github.com/poanetwork/blockscout/pull/3330) - Caching of address transactions counter, remove query 10_000 rows limit
-
 
 ### Fixes
 - [#3449](https://github.com/poanetwork/blockscout/pull/3449) - Correct avg time calculation
