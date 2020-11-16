@@ -1,0 +1,1 @@
+query TRANSFERS($param0: String!) { transferTxs(addressHash: $param0, first: 100) { edges { node { transactionHash, blockNumber, timestamp, gasPrice, gasUsed, feeToken, gatewayFee, gatewayFeeRecipient, input, celoTransfer(first: 10) { edges { node { fromAddressHash, toAddressHash, value, token } } } } } } }

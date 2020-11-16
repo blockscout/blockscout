@@ -10,10 +10,12 @@
   "scripts": {
     "build": "tsc -b .",
     "clean": "tsc -b . --clean",
-    "load-testing": "artillery run artillery.yml"
+    "load-testing": "artillery run artillery.yml",
+    "report": "artillery report"
   },
   "devDependencies": {
-    "easygraphql-load-tester": "^2.0.3"
+    "easygraphql-load-tester": "^2.0.3",
+    "typescript": "^3.8.3"
   },
   "dependencies": {
     "artillery": "^1.6.0",

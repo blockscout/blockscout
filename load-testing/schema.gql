@@ -15,6 +15,7 @@ type Address {
   fetchedCoinBalance: Wei
   fetchedCoinBalanceBlockNumber: Int
   hash: AddressHash
+  online: Boolean
   smartContract: SmartContract
   transactions(after: String, before: String, count: Int, first: Int, last: Int): TransactionConnection
 }
@@ -62,10 +63,12 @@ Celo account information
 """
 type CeloAccount {
   accountType: String
+  activeGold: Wei
   address: AddressHash
   addressInfo: Address
   attestationsFulfilled: Int
   attestationsRequested: Int
+  claims(after: String, before: String, first: Int, last: Int): CeloClaimsConnection
   group: CeloValidatorGroup
   lockedGold: Wei
   name: String
@@ -73,6 +76,45 @@ type CeloAccount {
   url: String
   usd: Wei
   validator: CeloValidator
+  voted(after: String, before: String, first: Int, last: Int): CeloValidatorGroupConnection
+  votes: Wei
+}
+
+type CeloAccountConnection {
+  edges: [CeloAccountEdge]
+  pageInfo: PageInfo!
+}
+
+type CeloAccountEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: CeloAccount
+}
+
+"""
+Celo Claims
+
+"""
+type CeloClaims {
+  address: AddressHash
+  element: String
+  type: String
+  verified: Boolean
+}
+
+type CeloClaimsConnection {
+  edges: [CeloClaimsEdge]
+  pageInfo: PageInfo!
+}
+
+type CeloClaimsEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: CeloClaims
 }
 
 """
@@ -80,10 +122,47 @@ Celo network parameters
 
 """
 type CeloParameters {
+  goldToken: AddressHash
   maxElectableValidators: Int
   minElectableValidators: Int
   numRegisteredValidators: Int
+  stableToken: AddressHash
   totalLockedGold: Wei
+}
+
+"""
+Represents a CELO or usd token transfer between addresses.
+
+"""
+type CeloTransfer implements Node {
+  blockNumber: Int
+  comment: String
+  fromAddressHash: AddressHash
+  gasPrice: Wei
+  gasUsed: Decimal
+
+  """The ID of an object"""
+  id: ID!
+  input: String
+  logIndex: Int
+  timestamp: DateTime
+  toAddressHash: AddressHash
+  token: String
+  transactionHash: FullHash
+  value: Decimal
+}
+
+type CeloTransferConnection {
+  edges: [CeloTransferEdge]
+  pageInfo: PageInfo!
+}
+
+type CeloTransferEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: CeloTransfer
 }
 
 """
@@ -92,6 +171,7 @@ Celo validator information
 """
 type CeloValidator {
   account: CeloAccount
+  activeGold: Wei
   address: AddressHash
   addressInfo: Address
   attestationsFulfilled: Int
@@ -131,6 +211,7 @@ type CeloValidatorGroup {
   account: CeloAccount
   accumulatedActive: Wei
   accumulatedRewards: Wei
+  activeGold: Wei
   address: AddressHash
   addressInfo: Address
   affiliates(after: String, before: String, first: Int, last: Int): CeloValidatorConnection
@@ -143,7 +224,48 @@ type CeloValidatorGroup {
   rewardsRatio: Wei
   url: String
   usd: Wei
+  voters(after: String, before: String, first: Int, last: Int): CeloAccountConnection
   votes: Wei
+}
+
+type CeloValidatorGroupConnection {
+  edges: [CeloValidatorGroupEdge]
+  pageInfo: PageInfo!
+}
+
+type CeloValidatorGroupEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: CeloValidatorGroup
+}
+
+"""
+Coin balance record
+
+"""
+type CoinBalance implements Node {
+  blockNumber: Int
+  blockTimestamp: DateTime
+  delta: Wei
+
+  """The ID of an object"""
+  id: ID!
+  value: Wei
+}
+
+type CoinBalanceConnection {
+  edges: [CoinBalanceEdge]
+  pageInfo: PageInfo!
+}
+
+type CoinBalanceEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: CoinBalance
 }
 
 """
@@ -184,6 +306,35 @@ A 32-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash.
 
 """
 scalar FullHash
+
+"""
+Represents a CELO token transfer between addresses.
+
+"""
+type GoldTransfer implements Node {
+  blockNumber: Int
+  comment: String
+  fromAddressHash: AddressHash
+
+  """The ID of an object"""
+  id: ID!
+  toAddressHash: AddressHash
+  transactionHash: FullHash
+  value: Decimal
+}
+
+type GoldTransferConnection {
+  edges: [GoldTransferEdge]
+  pageInfo: PageInfo!
+}
+
+type GoldTransferEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: GoldTransfer
+}
 
 """
 Models internal transactions.
@@ -273,8 +424,17 @@ type RootQueryType {
   """Gets an account by address hash."""
   celoAccount(hash: AddressHash!): CeloAccount
 
+  """Gets all the claims given a address hash."""
+  celoClaims(hash: AddressHash!, limit: Int = 20): [CeloClaims]
+
+  """Gets all elected validator signers."""
+  celoElectedValidators(blockNumber: Int!): [Address]
+
   """Gets Celo network parameters"""
   celoParameters: CeloParameters
+
+  """Gets CELO and stable token transfers."""
+  celoTransfers(addressHash: AddressHash, after: String, before: String, count: Int, first: Int, last: Int): CeloTransferConnection
 
   """Gets a validator by address hash."""
   celoValidator(hash: AddressHash!): CeloValidator
@@ -284,6 +444,12 @@ type RootQueryType {
 
   """Gets all validator groups."""
   celoValidatorGroups: [CeloValidatorGroup]
+
+  """Gets coin balances by address hash"""
+  coinBalances(address: AddressHash!, after: String, before: String, count: Int, first: Int, last: Int): CoinBalanceConnection
+
+  """Gets CELO token transfers."""
+  goldTransfers(addressHash: AddressHash, after: String, before: String, count: Int, first: Int, last: Int): GoldTransferConnection
 
   """Gets latest block number."""
   latestBlock: Int
@@ -302,6 +468,9 @@ type RootQueryType {
 
   """Gets a transaction by hash."""
   transaction(hash: FullHash!): Transaction
+
+  """Gets CELO and stable token transfer transactions."""
+  transferTxs(addressHash: AddressHash, after: String, before: String, count: Int, first: Int, last: Int): TransferTxConnection
 }
 
 type RootSubscriptionType {
@@ -339,6 +508,7 @@ type TokenTransfer implements Node {
   amount: Decimal
   blockHash: FullHash
   blockNumber: Int
+  comment: String
   fromAddressHash: AddressHash
 
   """The ID of an object"""
@@ -403,6 +573,41 @@ type TransactionEdge {
 
   """The item at the end of the edge"""
   node: Transaction
+}
+
+"""
+Represents a CELO token transfer between addresses.
+
+"""
+type TransferTx implements Node {
+  addressHash: AddressHash
+  blockNumber: Int
+  celoTransfer(after: String, before: String, count: Int, first: Int, last: Int): CeloTransferConnection
+  feeCurrency: AddressHash
+  feeToken: String
+  gasPrice: Wei
+  gasUsed: Decimal
+  gatewayFee: AddressHash
+  gatewayFeeRecipient: AddressHash
+
+  """The ID of an object"""
+  id: ID!
+  input: String
+  timestamp: DateTime
+  transactionHash: FullHash
+}
+
+type TransferTxConnection {
+  edges: [TransferTxEdge]
+  pageInfo: PageInfo!
+}
+
+type TransferTxEdge {
+  """A cursor for use in pagination"""
+  cursor: String!
+
+  """The item at the end of the edge"""
+  node: TransferTx
 }
 
 enum Type {

@@ -1,14 +1,29 @@
 config:
-#  target: 'https://baklava-blockscout.celo-testnet.org'
   target: 'http://localhost:4000'
   phases:
-    - duration: 30
-      arrivalRate: 50
-  processor: './lib/index.js'
+    - duration: 60
+      arrivalRate: 1
+      rampTo: 5
+      name: Warm up
+    - duration: 120
+      arrivalRate: 3
+      rampTo: 20
+      name: Ramp up load
+    - duration: 240
+      arrivalRate: 20
+      name: Sustained load
+  processor: './lib/processor.js'
+  environments:
+    alfajores:
+      target: 'https://alfajores-blockscout.celo-testnet.org'
+    baklava:
+      target: 'https://baklava-blockscout.celo-testnet.org'
+    mainnet:
+      target: 'https://rc1-blockscout.celo-testnet.org'
 scenarios:
   - name: 'GraphQL Query load test'
     flow:
-      - function: 'testCases'
+      - function: 'loadTestCases'
       - loop:
           - post:
               url: '/graphiql'

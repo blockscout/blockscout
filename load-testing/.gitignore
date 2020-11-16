@@ -1,0 +1,5 @@
+lib/
+*.log
+easygraphql-load-tester-queries.json
+reports/
+logs/
