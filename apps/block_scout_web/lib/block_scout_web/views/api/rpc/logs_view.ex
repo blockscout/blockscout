@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.API.RPC.LogsView do
     [first_topic, second_topic, third_topic, fourth_topic]
   end
 
-  defp integer_to_hex(integer), do: Integer.to_string(integer, 16)
+  defp integer_to_hex(integer), do: "0x" <> String.downcase(Integer.to_string(integer, 16))
 
   defp decimal_to_hex(decimal) do
     decimal

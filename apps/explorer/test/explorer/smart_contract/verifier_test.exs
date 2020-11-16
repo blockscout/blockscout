@@ -757,33 +757,32 @@ defmodule Explorer.SmartContract.VerifierTest do
       assert abi != nil
     end
 
-    # flaky test
-    # test "verification is failed if wrong nightly version of compiler ~0.5.11" do
-    #   bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753 =
-    #     "0x608060405234801561001057600080fd5b5060405161026b38038061026b8339818101604052602081101561003357600080fd5b81019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101cf8061009c6000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c010000000000000000000000000000000000000000000000000000000090048063256fec88146100635780633fa4f245146100ad578063812600df146100cb575b600080fd5b61006b6100f9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100b561011f565b6040518082815260200191505060405180910390f35b6100f7600480360360208110156100e157600080fd5b8101908080359060200190929190505050610125565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a72305820f7420b8c3b16d83ce728d8c279f0f887c4dcd7bfcd38c484acc9cdb82fde785764736f6c637828302e352e31312d6e696768746c792e323031392e362e32352b636f6d6d69742e31636338343735330058"
+    test "verification is failed if wrong nightly version of compiler ~0.5.11" do
+      bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753 =
+        "0x608060405234801561001057600080fd5b5060405161026b38038061026b8339818101604052602081101561003357600080fd5b81019080805190602001909291905050508060008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506101cf8061009c6000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c010000000000000000000000000000000000000000000000000000000090048063256fec88146100635780633fa4f245146100ad578063812600df146100cb575b600080fd5b61006b6100f9565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6100b561011f565b6040518082815260200191505060405180910390f35b6100f7600480360360208110156100e157600080fd5b8101908080359060200190929190505050610125565b005b600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60005481565b806000540160008190555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505056fea265627a7a72305820f7420b8c3b16d83ce728d8c279f0f887c4dcd7bfcd38c484acc9cdb82fde785764736f6c637828302e352e31312d6e696768746c792e323031392e362e32352b636f6d6d69742e31636338343735330058"
 
-    #   constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
-    #   contract_address = insert(:contract_address, contract_code: bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753)
-    #   bytecode_construtor_arguments = "#{bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753}#{constructor_arguments}"
+      constructor_arguments = "000000000000000000000000000000000000000000000000000000000000000a"
+      contract_address = insert(:contract_address, contract_code: bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753)
+      bytecode_construtor_arguments = "#{bytecode_0_5_11_nightly_2019_6_25_commit_1cc84753}#{constructor_arguments}"
 
-    #   :transaction
-    #   |> insert(
-    #     created_contract_address_hash: contract_address.hash,
-    #     input: bytecode_construtor_arguments
-    #   )
-    #   |> with_block()
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: bytecode_construtor_arguments
+      )
+      |> with_block()
 
-    #   params = %{
-    #     "contract_source_code" => @code_0_5,
-    #     "compiler_version" => "v0.5.11-nightly.2019.8.10+commit.f5f2bbb2",
-    #     "evm_version" => "homestead",
-    #     "name" => "Incrementer",
-    #     "optimization" => false,
-    #     "constructor_arguments" => constructor_arguments
-    #   }
+      params = %{
+        "contract_source_code" => @code_0_5,
+        "compiler_version" => "v0.5.11-nightly.2019.8.10+commit.f5f2bbb2",
+        "evm_version" => "homestead",
+        "name" => "Incrementer",
+        "optimization" => false,
+        "constructor_arguments" => constructor_arguments
+      }
 
-    #   response = Verifier.evaluate_authenticity(contract_address.hash, params)
-    #   assert {:error, :compiler_version} = response
-    # end
+      response = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert {:error, :compiler_version} = response
+    end
   end
 end

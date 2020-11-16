@@ -10,7 +10,7 @@
               <%= gettext("Token Details") %>
             <% end %>
             <!-- buttons -->
-            <span class="overview-title-buttons float-right">
+            <span class="overview-title-buttons token float-right">
               <span class="overview-title-item">
                 <span
                   aria-label='<%= gettext("View Contract") %>'
@@ -63,6 +63,13 @@
 
           <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
             <div class="d-flex flex-row justify-content-start text-muted">
+              <%= if external_url(@token_instance.instance) do %>
+                <span class="mr-4">
+                  <a data-test="external_url" href=<%=external_url(@token_instance.instance) %> target="_blank">
+                  View In App <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
+                  </a>
+                </span>
+              <% end %>
               <span class="mr-4"> <%= @token.type %> </span>
               <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
               <%= if decimals?(@token) do %>
@@ -77,8 +84,14 @@
     <div class="card-section col-md-12 col-lg-5 pl-0-md">
       <div class="card">
         <div class="card-body">
-          <div class="erc721-image" >
-            <img src=<%=image_src(@token_instance.instance)%> />
+          <div class="erc721-media" >
+            <%= if media_type(media_src(@token_instance.instance)) == "mp4" do %>
+              <video autoplay>
+                <source src=<%= media_src(@token_instance.instance) %> type="video/mp4">
+              </video>
+            <% else %>
+              <img src=<%= media_src(@token_instance.instance) %> />
+            <% end %>
           </div>
         </div>
       </div>

@@ -14,47 +14,38 @@
 
         <%= if !assigns[:token] do %>
         <div class="clearfix">
-          <h2 class="card-title float-left"><%= gettext "Transactions" %></h2>
-          <div class="dropdown float-right u-push-sm">
-            <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
-              id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Filter: <%= format_current_filter(@filter) %>
-            </button>
-            <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
-              <%= link(
-                gettext("All"),
-                to: address_token_transfers_path(@conn, :index, to_string(@address.hash)),
-                class: "address__link address__link--active dropdown-item",
-                "data-test": "filter_option"
-              ) %>
-              <%= link(
-                gettext("To"),
-                to: address_token_transfers_path(
-                  @conn,
-                  :index,
-                  to_string(@address.hash),
-                  filter: "to"
-                ),
-                class: "address__link address__link--active dropdown-item",
-                "data-test": "filter_option"
-              ) %>
-              <%= link(
-                gettext("From"),
-                to: address_token_transfers_path(
-                  @conn,
-                  :index,
-                  to_string(@address.hash),
-                  filter: "from"
-                ),
-                class: "address__link address__link--active dropdown-item",
-                "data-test": "filter_option"
-              ) %>
+          <h2 class="card-title float-left"><%= gettext "Token Transfers" %></h2>
+          <div class="top-pagination-outer-container float-right">
+            <div class="dropdown u-push-sm">
+              <button data-test="filter_dropdown" class="btn-dropdown-line dropdown-toggle" type="button"
+                id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Filter: <%= format_current_filter(@filter) %>
+              </button>
+              <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
+                <%= link(
+                  gettext("All"),
+                  to: AccessHelpers.get_path(@conn, :address_token_transfers_path, :index, to_string(@address.hash)),
+                  class: "address__link address__link--active dropdown-item",
+                  "data-test": "filter_option"
+                ) %>
+                <%= link(
+                  gettext("To"),
+                  to: AccessHelpers.get_path(@conn, :address_token_transfers_path, :index, to_string(@address.hash), %{:filter => "to"}),
+                  class: "address__link address__link--active dropdown-item",
+                  "data-test": "filter_option"
+                ) %>
+                <%= link(
+                  gettext("From"),
+                  to: AccessHelpers.get_path(@conn, :address_token_transfers_path, :index, to_string(@address.hash), %{:filter => "from"}),
+                  class: "address__link address__link--active dropdown-item",
+                  "data-test": "filter_option"
+                ) %>
+              </div>
             </div>
+            <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
           </div>
         </div>
         <% end %>
-
-        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
 
         <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
           <span><%= gettext "There are no token transfers for this address." %></span>

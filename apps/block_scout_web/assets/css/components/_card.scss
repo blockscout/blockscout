@@ -114,6 +114,21 @@ $card-tab-icon-color-active: #fff !default;
   }
 }
 
+.card-title-paging {
+  padding: 0px $card-horizontal-padding;
+  display: flex;
+  justify-content: flex-end;
+  min-height: 54px;
+}
+
+.card-footer-paging {
+  padding: 0px $card-horizontal-padding;
+  padding-bottom: 25px;
+  display: flex;
+  justify-content: flex-end;
+  min-height: 80px;
+}
+
 .card-title-controls {
   align-items: center;
   display: flex;
@@ -269,4 +284,28 @@ $card-tab-icon-color-active: #fff !default;
 
 .implementation-value {
   line-height: 30px;
+}
+
+.connect-container {
+  display: flex;
+  height: 36px;
+  line-height: 36px;
+}
+
+.write-contract-btn {
+  padding: 6px 8px !important;
+  height: 31px !important;
+  font-size: 11px;
+}
+
+.list-title-description {
+  @media (min-width: 992px) {
+    display: inline-block;
+  }
+}
+
+.list-top-pagination-container-wrapper {
+  @media (min-width: 992px) {
+    float: right;
+  }
 }

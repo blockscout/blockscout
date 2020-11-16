@@ -1,16 +1,32 @@
+<% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
+<% address_hash_str = "0x" <> Base.encode16(@token.contract_address_hash.bytes, case: :lower) %>
+<% {:ok, created_from_address} = if @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
+<% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
 <section class="address-overview" data-page="token-details" data-page-address-hash="<%= @token.contract_address_hash %>">
   <div class="row">
     <div class="card-section col-md-12 col-lg-8 pr-0-md">
       <div class="card">
         <div class="card-body" token-page data-async-counters="<%= @counters_path %>">
           <h1 class="card-title">
+            <%= cond do %>
+              <% Enum.member?(circles_addresses_list, address_hash_str) -> %>
+                <div class="custom-dapp-header-container">
+                  <img class="custom-address-icon"/>
+                </div>
+              <% Enum.member?(circles_addresses_list, created_from_address_hash) -> %>
+                <div class="custom-dapp-header-container">
+                  <img class="custom-address-icon"/>
+                </div>
+              <% true -> %>
+                <%= nil %>
+            <% end %>
             <%= if token_name?(@token) do %>
               <%= @token.name %>
             <% else %>
               <%= gettext("Token Details") %>
             <% end %>
             <!-- buttons -->
-            <span class="overview-title-buttons float-right">
+            <span class="overview-title-buttons token float-right">
               <span class="overview-title-item" data-clipboard-text="<%= Address.checksum(@token.contract_address_hash) %>">
                 <span
                   aria-label='<%= gettext("Copy Address") %>'
@@ -52,6 +68,11 @@
                   <a data-test="original_token_contract_address" href=<%= foreign_bridged_token_explorer_link(@token) %> target="_blank">View Original Token <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span></a>
                 <% end %>
               </div>
+              <div  style="margin-top: 15px; font-size: 12px;">
+                <%= if Map.has_key?(@token, :custom_metadata) do %>
+                  <%= @token.custom_metadata %>
+                <% end %>
+              </div>
             <% end %>
           </h1>
 
@@ -60,7 +81,7 @@
           <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
             <span class="mr-4 mb-3 mb-md-0">
               <%= link to:
-                  address_path(@conn, :show, Address.checksum(@token.contract_address_hash)),
+                  AccessHelpers.get_path(@conn, :address_path, :show, Address.checksum(@token.contract_address_hash)),
                   "data-test": "token_contract_address"
               do %>
                 <%=  gettext "View Contract" %>

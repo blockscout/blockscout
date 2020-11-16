@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - master
+      - staking
 
 env:
   MIX_ENV: test
@@ -19,7 +20,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - name: "ELIXIR_VERSION.lock"
@@ -27,50 +28,12 @@ jobs:
       - name: "OTP_VERSION.lock"
         run: echo "${OTP_VERSION}" > OTP_VERSION.lock
       - run: mix deps.get
-      - name: Restore cache node modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: |
-            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            v7-npm-install-{{ .Branch }}
-            v7-npm-install
       - run: npm install
         working-directory: apps/explorer
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: v3-npm-install-{{ .Branch }}-{{ checksum "apps/explorer/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: v3-npm-install-{{ .Branch }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: v3-npm-install
       - run: npm install
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install-{{ .Branch }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
@@ -84,7 +47,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -99,7 +62,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -114,7 +77,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -141,7 +104,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -159,7 +122,7 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -180,58 +143,16 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
-      - name: Restore cache node modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: |
-            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            'v7-npm-install-{{ .Branch }}'
-            v7-npm-install
       - run: npm install
         working-directory: apps/explorer
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: >-
-            v3-npm-install-{{ .Branch }}-{{ checksum
-            "apps/explorer/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: 'v3-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: v3-npm-install
       - run: npm install
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: >-
-            v7-npm-install-{{ .Branch }}-{{ checksum
-            "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: 'v7-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
@@ -247,58 +168,16 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
-      - name: Restore cache node modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: |
-            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            'v7-npm-install-{{ .Branch }}'
-            v7-npm-install
       - run: npm install
         working-directory: apps/explorer
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: >-
-            v3-npm-install-{{ .Branch }}-{{ checksum
-            "apps/explorer/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: 'v3-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: v3-npm-install
       - run: npm install
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: >-
-            v7-npm-install-{{ .Branch }}-{{ checksum
-            "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: 'v7-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
@@ -333,58 +212,16 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
-      - name: Restore cache node modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: |
-            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            v7-npm-install-{{ .Branch }}
-            v7-npm-install
       - run: npm install
         working-directory: apps/explorer
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: >-
-            v3-npm-install-{{ .Branch }}-{{ checksum
-            "apps/explorer/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: 'v3-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: v3-npm-install
       - run: npm install
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: >-
-            v7-npm-install-{{ .Branch }}-{{ checksum
-            "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: 'v7-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
@@ -429,58 +266,16 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
-      - name: Restore cache node modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: |
-            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            v7-npm-install-{{ .Branch }}
-            v7-npm-install
       - run: npm install
         working-directory: apps/explorer
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: >-
-            v3-npm-install-{{ .Branch }}-{{ checksum
-            "apps/explorer/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: 'v3-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: v3-npm-install
       - run: npm install
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: >-
-            v7-npm-install-{{ .Branch }}-{{ checksum
-            "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: 'v7-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
@@ -527,58 +322,16 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
-      - name: Restore cache node modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: |
-            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            v7-npm-install-{{ .Branch }}
-            v7-npm-install
       - run: npm install
         working-directory: apps/explorer
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: >-
-            v3-npm-install-{{ .Branch }}-{{ checksum
-            "apps/explorer/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: 'v3-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: v3-npm-install
       - run: npm install
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: >-
-            v7-npm-install-{{ .Branch }}-{{ checksum
-            "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install-{{ .Branch }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
@@ -625,58 +378,16 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
-      - name: Restore cache node modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: |
-            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            'v7-npm-install-{{ .Branch }}'
-            v7-npm-install
       - run: npm install
         working-directory: apps/explorer
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: >-
-            v3-npm-install-{{ .Branch }}-{{ checksum
-            "apps/explorer/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: 'v3-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: v3-npm-install
       - run: npm install
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: >-
-            v7-npm-install-{{ .Branch }}-{{ checksum
-            "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: 'v7-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"
@@ -723,58 +434,16 @@ jobs:
       - uses: actions/setup-elixir@v1
         with:
           otp-version: '22.2'
-          elixir-version: '1.10.3'
+          elixir-version: '1.10.4'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
-      - name: Restore cache node modules
-        uses: actions/cache@v2
-        with:
-          path: ~/.npm
-          key: |
-            v7-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
-            v7-npm-install-{{ .Branch }}
-            v7-npm-install
       - run: npm install
         working-directory: apps/explorer
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: >-
-            v3-npm-install-{{ .Branch }}-{{ checksum
-            "apps/explorer/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: 'v3-npm-install-{{ .Branch }}'
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/explorer/node_modules
-          key: v3-npm-install
       - run: npm install
         working-directory: apps/block_scout_web/assets
       - run: npm rebuild node-sass
         working-directory: apps/block_scout_web/assets
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: >-
-            v7-npm-install-{{ .Branch }}-{{ checksum
-            "apps/block_scout_web/assets/package-lock.json" }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install-{{ .Branch }}
-      - name: Save cache dependencies
-        uses: actions/cache@v2
-        with:
-          path: apps/block_scout_web/assets/node_modules
-          key: v7-npm-install
       - run: mix compile
       - run: make
         working-directory: "deps/libsecp256k1"

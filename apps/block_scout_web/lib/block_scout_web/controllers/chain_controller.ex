@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.ChainController do
   alias BlockScoutWeb.ChainView
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Transaction}
-  alias Explorer.Chain.Supply.RSK
+  alias Explorer.Chain.Supply.{RSK, TokenBridge}
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.ChainController do
 
   def show(conn, _params) do
     transaction_estimated_count = Chain.transaction_estimated_count()
+    total_gas_usage = Chain.total_gas_usage()
     block_count = Chain.block_estimated_count()
     address_count = Chain.address_estimated_count()
 
@@ -20,6 +21,9 @@ defmodule BlockScoutWeb.ChainController do
       case Application.get_env(:explorer, :supply) do
         RSK ->
           RSK
+
+        TokenBridge ->
+          TokenBridge
 
         _ ->
           :standard
@@ -47,9 +51,11 @@ defmodule BlockScoutWeb.ChainController do
       chart_data_paths: chart_data_paths,
       market_cap_calculation: market_cap_calculation,
       transaction_estimated_count: transaction_estimated_count,
+      total_gas_usage: total_gas_usage,
       transactions_path: recent_transactions_path(conn, :index),
       transaction_stats: transaction_stats,
-      block_count: block_count
+      block_count: block_count,
+      gas_price: Application.get_env(:block_scout_web, :gas_price)
     )
   end
 
@@ -59,7 +65,7 @@ defmodule BlockScoutWeb.ChainController do
 
     # Need datapoint for legend if none currently available.
     if Enum.empty?(transaction_stats) do
-      [%{number_of_transactions: 0}]
+      [%{number_of_transactions: 0, gas_used: 0}]
     else
       transaction_stats
     end

@@ -9,6 +9,8 @@ defmodule Explorer.SmartContract.ReaderTest do
 
   doctest Explorer.SmartContract.Reader
 
+  # 6d4ce63c = keccak from get()
+
   setup :verify_on_exit!
 
   describe "query_contract/4" do
@@ -19,9 +21,9 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       blockchain_get_function_mock()
 
-      response = Reader.query_contract(contract_address_hash, abi, %{"get" => []})
+      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []})
 
-      assert %{"get" => {:ok, [0]}} == response
+      assert %{"6d4ce63c" => {:ok, [0]}} == response
     end
 
     test "handles errors when there are malformed function arguments" do
@@ -40,11 +42,11 @@ defmodule Explorer.SmartContract.ReaderTest do
         "type" => "function"
       }
 
-      string_argument = %{"sum" => ["abc"]}
+      string_argument = %{"a50e1860" => ["abc"]}
 
       response = Reader.query_contract(contract_address_hash, [int_function_abi], string_argument)
 
-      assert %{"sum" => {:error, "Data overflow encoding int, data `abc` cannot fit in 256 bits"}} = response
+      assert %{"a50e1860" => {:error, "Data overflow encoding int, data `abc` cannot fit in 256 bits"}} = response
     end
 
     test "handles standardize errors returned from RPC requests" do
@@ -60,9 +62,9 @@ defmodule Explorer.SmartContract.ReaderTest do
         end
       )
 
-      response = Reader.query_contract(contract_address_hash, abi, %{"get" => []})
+      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []})
 
-      assert %{"get" => {:error, "(12345) Error message"}} = response
+      assert %{"6d4ce63c" => {:error, "(12345) Error message"}} = response
     end
 
     test "handles bad_gateway errors returned from RPC requests" do
@@ -78,9 +80,9 @@ defmodule Explorer.SmartContract.ReaderTest do
         end
       )
 
-      response = Reader.query_contract(contract_address_hash, abi, %{"get" => []})
+      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []})
 
-      assert %{"get" => {:error, "Bad gateway"}} = response
+      assert %{"6d4ce63c" => {:error, "Bad gateway"}} = response
     end
 
     test "handles other types of errors" do
@@ -96,9 +98,9 @@ defmodule Explorer.SmartContract.ReaderTest do
         end
       )
 
-      response = Reader.query_contract(contract_address_hash, abi, %{"get" => []})
+      response = Reader.query_contract(contract_address_hash, abi, %{"6d4ce63c" => []})
 
-      assert %{"get" => {:error, "no function clause matches"}} = response
+      assert %{"6d4ce63c" => {:error, "no function clause matches"}} = response
     end
   end
 
@@ -111,7 +113,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       blockchain_get_function_mock()
 
-      assert Reader.query_verified_contract(hash, %{"get" => []}) == %{"get" => {:ok, [0]}}
+      assert Reader.query_verified_contract(hash, %{"6d4ce63c" => []}) == %{"6d4ce63c" => {:ok, [0]}}
     end
   end
 
@@ -259,11 +261,10 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       assert [
                %{
-                 "name" => "",
                  "type" => "uint256",
                  "value" => 0
                }
-             ] = Reader.query_function(smart_contract.address_hash, %{name: "get", args: []}, :regular)
+             ] = Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: []}, :regular)
     end
 
     test "nil arguments is treated as []" do
@@ -273,11 +274,10 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       assert [
                %{
-                 "name" => "",
                  "type" => "uint256",
                  "value" => 0
                }
-             ] = Reader.query_function(smart_contract.address_hash, %{name: "get", args: nil}, :regular)
+             ] = Reader.query_function(smart_contract.address_hash, %{method_id: "6d4ce63c", args: nil}, :regular)
     end
   end
 
@@ -302,8 +302,7 @@ defmodule Explorer.SmartContract.ReaderTest do
   describe "link_outputs_and_values/2" do
     test "links the ABI outputs with the values retrieved from the blockchain" do
       blockchain_values = %{
-        "getOwner" =>
-          {:ok, <<105, 55, 203, 37, 235, 84, 188, 1, 59, 156, 19, 196, 122, 179, 142, 182, 62, 221, 20, 147>>}
+        "getOwner" => {:ok, "0x6937cb25eb54bc013b9c13c47ab38eb63edd1493"}
       }
 
       outputs = [%{"name" => "", "type" => "address"}]
