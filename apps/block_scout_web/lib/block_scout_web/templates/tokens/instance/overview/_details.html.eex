@@ -10,7 +10,7 @@
               <%= gettext("Token Details") %>
             <% end %>
             <!-- buttons -->
-            <span class="overview-title-buttons float-right">
+            <span class="overview-title-buttons token float-right">
               <span class="overview-title-item">
                 <span
                   aria-label='<%= gettext("View Contract") %>'

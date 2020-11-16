@@ -241,11 +241,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
     internal_transactions_params
     |> Enum.map(fn internal_transaction_param ->
       transaction_index = internal_transaction_param[:transaction_index]
+      block_number = internal_transaction_param[:block_number]
 
       failed_parent =
         internal_transactions_params
         |> Enum.filter(fn internal_transactions_param ->
-          internal_transactions_param[:transaction_index] == transaction_index &&
+          internal_transactions_param[:block_number] == block_number &&
+            internal_transactions_param[:transaction_index] == transaction_index &&
             internal_transactions_param[:trace_address] == [] && !is_nil(internal_transactions_param[:error])
         end)
         |> Enum.at(0)
