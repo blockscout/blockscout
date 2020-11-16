@@ -5,7 +5,7 @@ defmodule Indexer.Application do
 
   use Application
 
-  alias Indexer.Memory
+  alias Indexer.{Health, Memory}
 
   @impl Application
   def start(_type, _args) do
@@ -18,7 +18,9 @@ defmodule Indexer.Application do
     memory_monitor_name = Memory.Monitor
 
     base_children = [
-      {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]}
+      {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
+      {Plug.Cowboy,
+       scheme: :http, plug: Health.Plug, options: [port: Application.get_env(:indexer, :health_check_port)]}
     ]
 
     children =

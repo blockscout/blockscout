@@ -13,6 +13,13 @@ block_transformers = %{
 # Compile time environment variable access requires recompilation.
 configured_transformer = System.get_env("BLOCK_TRANSFORMER") || "celo"
 
+port =
+  case System.get_env("PORT") && Integer.parse(System.get_env("PORT")) do
+    {port, _} -> port
+    :error -> nil
+    nil -> nil
+  end
+
 block_transformer =
   case Map.get(block_transformers, configured_transformer) do
     nil ->
@@ -46,6 +53,7 @@ config :indexer,
     String.to_integer(System.get_env("TOKEN_METADATA_UPDATE_INTERVAL") || "#{10 * 60 * 60}"),
   # bytes
   memory_limit: 1 <<< 32,
+  health_check_port: port || 4000,
   first_block: System.get_env("FIRST_BLOCK") || "0",
   last_block: System.get_env("LAST_BLOCK") || "",
   max_skipping_distance: max_skipping_distance
