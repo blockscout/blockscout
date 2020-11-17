@@ -7,13 +7,13 @@ defmodule BlockScoutWeb.LayoutView do
   @issue_url "https://github.com/celo-org/celo-monorepo/issues/new"
   @default_other_networks [
     %{
-      title: "Celo Alfajores",
-      url: "https://alfajores-blockscout.celo-testnet.org/",
-      test_net?: true
+      title: "Celo Mainnet",
+      url: "https://explorer.celo.org",
+      test_net?: false
     },
     %{
-      title: "Celo Integration",
-      url: "https://integration-blockscout.celo-testnet.org/",
+      title: "Celo Alfajores",
+      url: "https://alfajores-blockscout.celo-testnet.org/",
       test_net?: true
     },
     %{

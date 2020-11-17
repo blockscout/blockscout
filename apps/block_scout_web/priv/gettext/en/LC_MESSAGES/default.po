@@ -997,10 +997,12 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/app.html.eex:30
 #: lib/block_scout_web/templates/layout/app.html.eex:73
 #: lib/block_scout_web/views/address_view.ex:189
+#: lib/block_scout_web/views/address_view.ex:189
 msgid "Market Cap"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:169
 #: lib/block_scout_web/views/transaction_view.ex:169
 msgid "Max of"
 msgstr ""
@@ -1243,14 +1245,14 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:141
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:158
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:137
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:154
 msgid "Search"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:131
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:135
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:139
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1821,6 +1823,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:29
 #: lib/block_scout_web/templates/transaction/overview.html.eex:221
 #: lib/block_scout_web/templates/transaction/overview.html.eex:256
+#: lib/block_scout_web/views/transaction_view.ex:303
 #: lib/block_scout_web/views/transaction_view.ex:303
 #: lib/block_scout_web/views/wei_helpers.ex:78
 msgid "CELO"

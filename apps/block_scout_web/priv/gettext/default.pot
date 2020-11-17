@@ -1244,14 +1244,14 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:141
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:158
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:137
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:154
 msgid "Search"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:131
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:135
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:139
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
