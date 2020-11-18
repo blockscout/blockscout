@@ -8,7 +8,7 @@ export function openMakeStakeModal (event, store) {
   const state = store.getState()
 
   if (!state.account) {
-    openWarningModal('Unauthorized', 'You haven\'t approved the reading of account list from your MetaMask or MetaMask is not installed.')
+    openWarningModal('Unauthorized', 'You haven\'t approved the reading of account list from your MetaMask or the latest MetaMask is not installed.')
     return
   }
 

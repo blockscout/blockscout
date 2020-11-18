@@ -17,7 +17,7 @@ export function openClaimRewardModal (event, store) {
   const state = store.getState()
 
   if (!state.account) {
-    openWarningModal('Unauthorized', 'Please login with MetaMask')
+    openWarningModal('Unauthorized', 'You are not logged in. Please login with the latest version of MetaMask')
     return
   }
 

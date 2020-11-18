@@ -158,8 +158,6 @@ if ($stakesPage.length) {
     }
     updating = true
 
-    const firstMsg = (state.currentBlockNumber === 0)
-
     store.dispatch({ type: 'BLOCK_CREATED', currentBlockNumber: msg.block_number })
 
     // hide tooltip on tooltip triggering element reloading
@@ -179,13 +177,9 @@ if ($stakesPage.length) {
       msg.epoch_number > state.lastEpochNumber ||
       msg.validator_set_apply_block !== state.validatorSetApplyBlock ||
       (state.refreshInterval && msg.block_number >= state.refreshBlockNumber + state.refreshInterval) ||
-      accountChanged(msg.account, state) || msg.by_set_account
+      accountChanged(msg.account, state) ||
+      msg.by_set_account
     ) {
-      if (firstMsg) {
-        // Don't refresh the page for the first load
-        // as it is already refreshed by the `initialize` function.
-        msg.dont_refresh_page = true
-      }
       await reloadPoolList(msg, store)
     }
 
@@ -205,7 +199,6 @@ if ($stakesPage.length) {
       if (!store.getState().finishRequestResolve) {
         $refreshInformer.hide()
         $stakesPage.fadeTo(0, 0.5)
-        delete msg.dont_refresh_page // refresh anyway
         await reloadPoolList(msg, store)
       }
     })
@@ -308,6 +301,28 @@ function accountChanged (account, state) {
   return account !== state.account
 }
 
+async function getAccounts () {
+  let accounts = []
+  try {
+    accounts = await window.ethereum.request({ method: 'eth_accounts' })
+  } catch (e) {
+    console.error('eth_accounts request failed. Make sure you are using the latest version of MetaMask')
+    openErrorModal('Get account', 'Cannot get your account address. Make sure you are using the latest version of MetaMask')
+  }
+  return accounts
+}
+
+async function getNetId (web3) {
+  let netId = null
+  if (!window.ethereum.chainId) {
+    console.error('Cannot get chainId. Make sure you are using the latest MetaMask version')
+  } else {
+    const { chainId } = window.ethereum
+    netId = web3.utils.isHex(chainId) ? web3.utils.hexToNumber(chainId) : chainId
+  }
+  return netId
+}
+
 function hideCurrentModal () {
   const $modal = currentModal()
   if ($modal) $modal.modal('hide')
@@ -316,51 +331,63 @@ function hideCurrentModal () {
 function initialize (store) {
   if (window.ethereum) {
     const web3 = new Web3(window.ethereum)
-    window.ethereum.autoRefreshOnNetworkChange = false
+    if (window.ethereum.autoRefreshOnNetworkChange) {
+      window.ethereum.autoRefreshOnNetworkChange = false
+    }
     store.dispatch({ type: 'WEB3_DETECTED', web3 })
 
-    checkNetworkAndAccount(store, web3)
+    initNetworkAndAccount(store, web3)
+
+    window.ethereum.on('chainChanged', async (chainId) => {
+      const newNetId = web3.utils.isHex(chainId) ? web3.utils.hexToNumber(chainId) : chainId
+      setNetwork(newNetId, store)
+    })
+
+    window.ethereum.on('accountsChanged', async (accs) => {
+      const newAccount = accs && accs.length > 0 ? accs[0].toLowerCase() : null
+      if (accountChanged(newAccount, store.getState())) {
+        await setAccount(newAccount, store)
+      }
+    })
 
     $stakesTop.on('click', '[data-selector="login-button"]', loginByMetamask)
   } else {
+    // We do the first load immediately if the latest version of MetaMask is not installed
     refreshPageWrapper(store)
   }
 }
 
-async function checkNetworkAndAccount (store, web3) {
-  const networkId = await web3.eth.net.getId()
+async function initNetworkAndAccount (store, web3) {
   const state = store.getState()
-  let refresh = false
+  const networkId = await getNetId(web3)
 
   if (!state.network || (networkId !== state.network.id)) {
     setNetwork(networkId, store)
-    refresh = true
   }
 
-  const accounts = await web3.eth.getAccounts()
+  const accounts = await getAccounts()
   const account = accounts[0] ? accounts[0].toLowerCase() : null
 
-  if (accountChanged(account, state) && await setAccount(account, store)) {
-    refresh = false // because refreshing will be done by `onStakingUpdate`
-  }
-
-  if (refresh) {
+  if (accountChanged(account, state)) {
+    await setAccount(account, store)
+    // We don't call `refreshPageWrapper` in this case because it will be called
+    // by the `onStakingUpdate` function
+  } else {
     await refreshPageWrapper(store)
   }
-
-  setTimeout(() => {
-    checkNetworkAndAccount(store, web3)
-  }, 100)
 }
 
 async function loginByMetamask () {
   event.stopPropagation()
   event.preventDefault()
   try {
-    await window.ethereum.enable()
+    await window.ethereum.request({ method: 'eth_requestAccounts' })
   } catch (e) {
     console.log(e)
-    console.error('User denied account access')
+    if (e.code !== 4001) {
+      console.error('eth_requestAccounts failed. Make sure you are using the latest MetaMask version')
+      openErrorModal('Request account access', 'Cannot request access to your account in MetaMask. Make sure you are using the latest version of MetaMask')
+    }
   }
 }
 
@@ -394,9 +421,7 @@ async function reloadPoolList (msg, store) {
     stakingTokenDefined: msg.staking_token_defined,
     validatorSetApplyBlock: msg.validator_set_apply_block
   })
-  if (!msg.dont_refresh_page) {
-    await refreshPageWrapper(store)
-  }
+  await refreshPageWrapper(store)
 }
 
 function resetFilterMy (store) {
@@ -417,11 +442,13 @@ function setAccount (account, store) {
     store.getState().channel.push(
       'set_account', account
     ).receive('ok', () => {
-      $addressField.html(`
-        <div data-placement="bottom" data-toggle="tooltip" title="${account}">
-          ${account}
-        </div>
-      `)
+      if (account) {
+        $addressField.html(`
+          <div data-placement="bottom" data-toggle="tooltip" title="${account}">
+            ${account}
+          </div>
+        `)
+      }
       hideCurrentModal()
       resolve(true)
     }).receive('error', () => {
@@ -468,7 +495,7 @@ function updateFilters (store, filterType) {
 
   if (filterType === 'my' && !state.account) {
     filterMy.prop('checked', false)
-    openWarningModal('Unauthorized', 'Please login with MetaMask')
+    openWarningModal('Unauthorized', 'You are not logged in. Please login with the latest version of MetaMask')
     return
   }
   store.dispatch({
