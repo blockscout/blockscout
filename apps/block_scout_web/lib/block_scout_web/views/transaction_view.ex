@@ -48,8 +48,18 @@ defmodule BlockScoutWeb.TransactionView do
   def token_transfer_type(transaction) do
     transaction_with_transfers = Repo.preload(transaction, token_transfers: :token)
 
+    token_transfers_filtered_by_block_hash =
+      transaction_with_transfers
+      |> Map.get(:token_transfers, [])
+      |> Enum.filter(fn token_transfer ->
+        token_transfer.block_hash == transaction.block_hash
+      end)
+
+    transaction_with_transfers_filtered =
+      Map.put(transaction_with_transfers, :token_transfers, token_transfers_filtered_by_block_hash)
+
     type = Chain.transaction_token_transfer_type(transaction)
-    if type, do: {type, transaction_with_transfers}, else: {nil, transaction_with_transfers}
+    if type, do: {type, transaction_with_transfers_filtered}, else: {nil, transaction_with_transfers_filtered}
   end
 
   def aggregate_token_transfers(token_transfers) do
