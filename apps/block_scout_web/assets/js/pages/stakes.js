@@ -496,7 +496,7 @@ function updateFilters (store, filterType) {
 
   if (filterType === 'my' && !state.account) {
     filterMy.prop('checked', false)
-    openWarningModal('Unauthorized', 'You are not logged in. Please login with the latest version of MetaMask')
+    openWarningModal('Unauthorized', constants.METAMASK_PLEASE_LOGIN)
     return
   }
   store.dispatch({
