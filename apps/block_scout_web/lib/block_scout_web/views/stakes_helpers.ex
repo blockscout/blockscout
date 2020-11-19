@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.StakesHelpers do
 
     amount.sign
     |> Decimal.new(amount.coef, amount.exp - decimals)
-    |> Decimal.reduce()
+    |> Decimal.normalize()
   end
 
   def format_token_amount(amount, token, options \\ [])
