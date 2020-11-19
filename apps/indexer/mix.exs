@@ -51,7 +51,7 @@ defmodule Indexer.MixProject do
       # RLP encoding
       {:ex_rlp, "~> 0.5.2"},
       # Code coverage
-      {:excoveralls, "~> 0.13.1"},
+      {:excoveralls, "~> 0.13.3"},
       # Importing to database
       {:explorer, in_umbrella: true},
       # libsecp2561k1 crypto functions
