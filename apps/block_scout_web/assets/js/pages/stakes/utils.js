@@ -19,7 +19,7 @@ export async function makeContractCall (call, store, gasLimit, callbackFunc) {
   }
 
   if (!from) {
-    return callbackFunc('Your MetaMask account is undefined. Please, ensure you are using the latest MetaMask and connected it to the page')
+    return callbackFunc('Your MetaMask account is undefined. Please, ensure you are using the latest version of MetaMask and connected it to the page')
   } else if (!web3) {
     return callbackFunc('Web3 is undefined. Please, contact support.')
   }

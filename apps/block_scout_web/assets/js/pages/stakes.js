@@ -18,6 +18,7 @@ import { openClaimRewardModal, claimRewardConnectionLost } from './stakes/claim_
 import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
 import { checkForTokenDefinition, isSupportedNetwork } from './stakes/utils'
 import { currentModal, openWarningModal, openErrorModal } from '../lib/modals'
+import constants from './stakes/constants'
 
 const stakesPageSelector = '[data-page="stakes"]'
 
@@ -306,8 +307,8 @@ async function getAccounts () {
   try {
     accounts = await window.ethereum.request({ method: 'eth_accounts' })
   } catch (e) {
-    console.error('eth_accounts request failed. Make sure you are using the latest version of MetaMask')
-    openErrorModal('Get account', 'Cannot get your account address. Make sure you are using the latest version of MetaMask')
+    console.error(`eth_accounts request failed. ${constants.METAMASK_VERSION_WARNING}`)
+    openErrorModal('Get account', `Cannot get your account address. ${constants.METAMASK_VERSION_WARNING}`)
   }
   return accounts
 }
@@ -315,7 +316,7 @@ async function getAccounts () {
 async function getNetId (web3) {
   let netId = null
   if (!window.ethereum.chainId) {
-    console.error('Cannot get chainId. Make sure you are using the latest MetaMask version')
+    console.error(`Cannot get chainId. ${constants.METAMASK_VERSION_WARNING}`)
   } else {
     const { chainId } = window.ethereum
     netId = web3.utils.isHex(chainId) ? web3.utils.hexToNumber(chainId) : chainId
@@ -385,8 +386,8 @@ async function loginByMetamask () {
   } catch (e) {
     console.log(e)
     if (e.code !== 4001) {
-      console.error('eth_requestAccounts failed. Make sure you are using the latest MetaMask version')
-      openErrorModal('Request account access', 'Cannot request access to your account in MetaMask. Make sure you are using the latest version of MetaMask')
+      console.error(`eth_requestAccounts failed. ${constants.METAMASK_VERSION_WARNING}`)
+      openErrorModal(`Request account access', 'Cannot request access to your account in MetaMask. ${constants.METAMASK_VERSION_WARNING}`)
     }
   }
 }
