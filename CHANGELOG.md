@@ -5,6 +5,7 @@
 ### Fixes
 
 ### Chore
+- [#3460](https://github.com/poanetwork/blockscout/pull/3460) - Update Staking DApp scripts due to MetaMask breaking changes
 
 
 ## 3.4.0-beta
