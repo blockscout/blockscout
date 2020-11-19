@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.Application do
 
   alias BlockScoutWeb.Counters.BlocksIndexedCounter
   alias BlockScoutWeb.{Endpoint, Prometheus}
-  alias BlockScoutWeb.RealtimeEventHandler
+  alias BlockScoutWeb.{RealtimeEventHandler, StakingEventHandler}
 
   def start(_type, _args) do
     import Supervisor.Spec
@@ -22,6 +22,7 @@ defmodule BlockScoutWeb.Application do
       supervisor(Endpoint, []),
       {Absinthe.Subscription, Endpoint},
       {RealtimeEventHandler, name: RealtimeEventHandler},
+      {StakingEventHandler, name: StakingEventHandler},
       {BlocksIndexedCounter, name: BlocksIndexedCounter}
     ]
 

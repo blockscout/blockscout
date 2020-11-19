@@ -17,7 +17,6 @@ defmodule Explorer.Chain do
       select: 3,
       subquery: 1,
       union: 2,
-      union_all: 2,
       where: 2,
       where: 3
     ]
@@ -1614,7 +1613,7 @@ defmodule Explorer.Chain do
         where: block.consensus == true
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
@@ -1629,7 +1628,7 @@ defmodule Explorer.Chain do
         where: a0.fetched_coin_balance > ^0
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @spec fetch_sum_coin_total_supply() :: non_neg_integer
@@ -1641,7 +1640,7 @@ defmodule Explorer.Chain do
         where: a0.fetched_coin_balance > ^0
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @spec fetch_sum_gas_used() :: non_neg_integer
@@ -1652,7 +1651,7 @@ defmodule Explorer.Chain do
         select: fragment("SUM(t0.gas_used)")
       )
 
-    Repo.one!(query) || 0
+    Repo.one!(query, timeout: :infinity) || 0
   end
 
   @doc """
@@ -2448,6 +2447,21 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.missing_block_number_ranges(2..0)
       [1..1]
 
+  if range starts with non-consensus block in the middle of the chain, it returns missing numbers.
+
+      iex> insert(:block, number: 12859383, consensus: true)
+      iex> insert(:block, number: 12859384, consensus: false)
+      iex> insert(:block, number: 12859386, consensus: true)
+      iex> Explorer.Chain.missing_block_number_ranges(12859384..12859385)
+      [12859384..12859385]
+
+      if range starts with missing block in the middle of the chain, it returns missing numbers.
+
+      iex> insert(:block, number: 12859383, consensus: true)
+      iex> insert(:block, number: 12859386, consensus: true)
+      iex> Explorer.Chain.missing_block_number_ranges(12859384..12859385)
+      [12859384..12859385]
+
   """
   @spec missing_block_number_ranges(Range.t()) :: [Range.t()]
   def missing_block_number_ranges(range)
@@ -2456,66 +2470,73 @@ defmodule Explorer.Chain do
     range_min = min(range_start, range_end)
     range_max = max(range_start, range_end)
 
-    missing_prefix_query =
-      from(block in Block,
-        select: %{min: type(^range_min, block.number), max: min(block.number) - 1},
-        where: block.consensus == true,
-        having: ^range_min < min(block.number) and min(block.number) < ^range_max
+    ordered_missing_query =
+      from(b in Block,
+        right_join:
+          missing_range in fragment(
+            """
+              (SELECT distinct b1.number 
+              FROM generate_series((?)::integer, (?)::integer) AS b1(number)
+              WHERE NOT EXISTS
+                (SELECT 1 FROM blocks b2 WHERE b2.number=b1.number AND b2.consensus))
+            """,
+            ^range_min,
+            ^range_max
+          ),
+        on: b.number == missing_range.number,
+        select: missing_range.number,
+        order_by: missing_range.number,
+        distinct: missing_range.number
       )
 
-    missing_suffix_query =
-      from(block in Block,
-        select: %{min: max(block.number) + 1, max: type(^range_max, block.number)},
-        where: block.consensus == true,
-        having: ^range_min < max(block.number) and max(block.number) < ^range_max
-      )
+    missing_blocks = Repo.all(ordered_missing_query, timeout: :infinity)
 
-    missing_infix_query =
-      from(block in Block,
-        select: %{min: type(^range_min, block.number), max: type(^range_max, block.number)},
-        where: block.consensus == true,
-        having:
-          (is_nil(min(block.number)) and is_nil(max(block.number))) or
-            (^range_max < min(block.number) or max(block.number) < ^range_min)
-      )
+    [block_ranges, last_block_range_start, last_block_range_end] =
+      missing_blocks
+      |> Enum.reduce([[], nil, nil], fn block_number, [block_ranges, last_block_range_start, last_block_range_end] ->
+        cond do
+          !last_block_range_start ->
+            [block_ranges, block_number, block_number]
 
-    # Gaps and Islands is the term-of-art for finding the runs of missing (gaps) and existing (islands) data.  If you
-    # Google for `sql missing ranges` you won't find much, but `sql gaps and islands` will get a lot of hits.
+          block_number == last_block_range_end + 1 ->
+            [block_ranges, last_block_range_start, block_number]
 
-    land_query =
-      from(block in Block,
-        where: block.consensus == true and ^range_min <= block.number and block.number <= ^range_max,
-        windows: [w: [order_by: block.number]],
-        select: %{last_number: block.number |> lag() |> over(:w), next_number: block.number}
-      )
+          true ->
+            block_ranges = block_ranges_extend(block_ranges, last_block_range_start, last_block_range_end)
+            [block_ranges, block_number, block_number]
+        end
+      end)
 
-    gap_query =
-      from(
-        coastline in subquery(land_query),
-        where: coastline.last_number != coastline.next_number - 1,
-        select: %{min: coastline.last_number + 1, max: coastline.next_number - 1}
-      )
-
-    missing_query =
-      missing_prefix_query
-      |> union_all(^missing_infix_query)
-      |> union_all(^gap_query)
-      |> union_all(^missing_suffix_query)
-
-    {first, last, direction} =
-      if range_start <= range_end do
-        {:min, :max, :asc}
+    final_block_ranges =
+      if last_block_range_start && last_block_range_end do
+        block_ranges_extend(block_ranges, last_block_range_start, last_block_range_end)
       else
-        {:max, :min, :desc}
+        block_ranges
       end
 
-    ordered_missing_query =
-      from(missing_range in subquery(missing_query),
-        select: %Range{first: field(missing_range, ^first), last: field(missing_range, ^last)},
-        order_by: [{^direction, field(missing_range, ^first)}]
-      )
+    ordered_block_ranges =
+      final_block_ranges
+      |> Enum.sort(fn %Range{first: first1, last: _}, %Range{first: first2, last: _} ->
+        if range_start <= range_end do
+          first1 <= first2
+        else
+          first1 >= first2
+        end
+      end)
+      |> Enum.map(fn %Range{first: first, last: last} = range ->
+        if range_start <= range_end do
+          range
+        else
+          %Range{first: last, last: first}
+        end
+      end)
 
-    Repo.all(ordered_missing_query, timeout: :infinity)
+    ordered_block_ranges
+  end
+
+  defp block_ranges_extend(block_ranges, block_range_start, block_range_end) do
+    # credo:disable-for-next-line
+    block_ranges ++ [Range.new(block_range_start, block_range_end)]
   end
 
   @doc """
@@ -4546,7 +4567,7 @@ defmodule Explorer.Chain do
   def count_token_holders_from_token_hash(contract_address_hash) do
     query = from(ctb in CurrentTokenBalance.token_holders_query(contract_address_hash), select: fragment("COUNT(*)"))
 
-    Repo.one!(query)
+    Repo.one!(query, timeout: :infinity)
   end
 
   @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]

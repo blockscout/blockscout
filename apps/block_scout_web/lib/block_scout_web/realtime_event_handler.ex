@@ -28,7 +28,6 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     # Does not come from the indexer
     Subscriber.to(:exchange_rate)
     Subscriber.to(:transaction_stats)
-    Subscriber.to(:staking_update)
     {:ok, []}
   end
 
