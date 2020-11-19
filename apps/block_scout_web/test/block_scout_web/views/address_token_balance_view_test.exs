@@ -69,6 +69,40 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
     end
   end
 
+  describe "sort_by_usd_value_and_name/1" do
+    test "sorts the given tokens by its name and usd_value" do
+      token_balance_a = build(:token_balance, token: build(:token, name: "token name") |> Map.put(:usd_value, 2))
+      token_balance_b = build(:token_balance, token: build(:token, name: "token") |> Map.put(:usd_value, 3))
+      token_balance_c = build(:token_balance, token: build(:token, name: nil) |> Map.put(:usd_value, 2))
+      token_balance_d = build(:token_balance, token: build(:token, name: "Atoken") |> Map.put(:usd_value, 1))
+      token_balance_e = build(:token_balance, token: build(:token, name: "atoken") |> Map.put(:usd_value, nil))
+      token_balance_f = build(:token_balance, token: build(:token, name: "Btoken") |> Map.put(:usd_value, nil))
+      token_balance_g = build(:token_balance, token: build(:token, name: "Btoken") |> Map.put(:usd_value, 1))
+
+      token_balances = [
+        token_balance_a,
+        token_balance_b,
+        token_balance_c,
+        token_balance_d,
+        token_balance_e,
+        token_balance_f,
+        token_balance_g
+      ]
+
+      expected = [
+        token_balance_b,
+        token_balance_a,
+        token_balance_c,
+        token_balance_d,
+        token_balance_g,
+        token_balance_e,
+        token_balance_f
+      ]
+
+      assert AddressTokenBalanceView.sort_by_usd_value_and_name(token_balances) == expected
+    end
+  end
+
   describe "balance_in_usd/1" do
     test "return balance in usd" do
       token =

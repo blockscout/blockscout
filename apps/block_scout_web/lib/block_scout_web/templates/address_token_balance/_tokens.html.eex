@@ -3,7 +3,7 @@
     <%= @type %> (<span data-number-of-tokens-by-type="<%= @type %>"><%= Enum.count(@token_balances)%></span>)
   </h6>
 
-  <%= for token_balance <- sort_by_name(@token_balances) do %>
+  <%= for token_balance <- sort_by_usd_value_and_name(@token_balances) do %>
     <div
       class="border-bottom"
       data-dropdown-token-balance-test
