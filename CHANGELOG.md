@@ -4,6 +4,8 @@
 
 ### Fixes
 
+- [#3464](https://github.com/poanetwork/blockscout/pull/3464) - Fix display of token transfers list at token page (fix unique identifier of a tile)
+
 ### Chore
 - [#3460](https://github.com/poanetwork/blockscout/pull/3460) - Update Staking DApp scripts due to MetaMask breaking changes
 
