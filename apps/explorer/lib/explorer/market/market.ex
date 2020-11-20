@@ -5,6 +5,7 @@ defmodule Explorer.Market do
 
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.{BridgedToken, Hash}
+  alias Explorer.Chain.Supply.TokenBridge
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market.{MarketHistory, MarketHistoryCache}
   alias Explorer.{ExchangeRates, KnownTokens, Repo}
@@ -56,9 +57,17 @@ defmodule Explorer.Market do
 
     matches_known_address = known_address && known_address == token.contract_address_hash
 
-    fetch_token_usd_value? = matches_known_address || mainnet_bridged_token?(token)
+    usd_value =
+      cond do
+        matches_known_address ->
+          fetch_token_usd_value(matches_known_address, symbol)
 
-    usd_value = fetch_token_usd_value(fetch_token_usd_value?, symbol)
+        mainnet_bridged_token?(token) ->
+          TokenBridge.get_current_price_for_bridged_token(symbol)
+
+        true ->
+          nil
+      end
 
     Map.put(token, :usd_value, usd_value)
   end
