@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
 
       sort_by_name = sort_2_tokens_by_name(token_name1, token_name2)
 
-      sort_2_tokens_by_value_desc_and_name(usd_value1, usd_value2, sort_by_name)
+      sort_2_tokens_by_value_desc_and_name(token_balance1, token_balance2, usd_value1, usd_value2, sort_by_name)
     end)
   end
 
@@ -55,27 +55,33 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
     end
   end
 
-  defp sort_2_tokens_by_value_desc_and_name(usd_value1, usd_value2, _sort_by_name)
+  defp sort_2_tokens_by_value_desc_and_name(token_balance1, token_balance2, usd_value1, usd_value2, sort_by_name)
+       when not is_nil(usd_value1) and not is_nil(usd_value2) do
+    case Decimal.cmp(balance_in_usd(token_balance1), balance_in_usd(token_balance2)) do
+      :gt ->
+        true
+
+      :eq ->
+        sort_by_name
+
+      :lt ->
+        false
+    end
+  end
+
+  defp sort_2_tokens_by_value_desc_and_name(_token_balance1, _token_balance2, usd_value1, usd_value2, _sort_by_name)
        when not is_nil(usd_value1) and is_nil(usd_value2) do
     true
   end
 
-  defp sort_2_tokens_by_value_desc_and_name(usd_value1, usd_value2, _sort_by_name)
+  defp sort_2_tokens_by_value_desc_and_name(_token_balance1, _token_balance2, usd_value1, usd_value2, _sort_by_name)
        when is_nil(usd_value1) and not is_nil(usd_value2) do
     false
   end
 
-  defp sort_2_tokens_by_value_desc_and_name(usd_value1, usd_value2, sort_by_name) do
-    cond do
-      usd_value1 && usd_value2 && Decimal.cmp(usd_value1, usd_value2) == :gt ->
-        true
-
-      usd_value1 && usd_value2 && Decimal.cmp(usd_value1, usd_value2) == :eq ->
-        sort_by_name
-
-      true ->
-        sort_by_name
-    end
+  defp sort_2_tokens_by_value_desc_and_name(_token_balance1, _token_balance2, usd_value1, usd_value2, sort_by_name)
+       when is_nil(usd_value1) and is_nil(usd_value2) do
+    sort_by_name
   end
 
   @doc """
