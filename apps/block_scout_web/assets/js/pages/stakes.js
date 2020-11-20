@@ -341,7 +341,7 @@ function initialize (store) {
 
     window.ethereum.on('chainChanged', async (chainId) => {
       const newNetId = web3.utils.isHex(chainId) ? web3.utils.hexToNumber(chainId) : chainId
-      setNetwork(newNetId, store, true)
+      setNetwork(newNetId, store)
     })
 
     window.ethereum.on('accountsChanged', async (accs) => {
@@ -363,7 +363,7 @@ async function initNetworkAndAccount (store, web3) {
   const networkId = await getNetId(web3)
 
   if (!state.network || (networkId !== state.network.id)) {
-    setNetwork(networkId, store, false)
+    setNetwork(networkId, store)
   }
 
   const accounts = await getAccounts()
@@ -462,7 +462,7 @@ function setAccount (account, store) {
   })
 }
 
-function setNetwork (networkId, store, checkSupportedNetwork) {
+function setNetwork (networkId, store) {
   hideCurrentModal()
 
   const network = {
@@ -476,9 +476,7 @@ function setNetwork (networkId, store, checkSupportedNetwork) {
 
   store.dispatch({ type: 'NETWORK_UPDATED', network })
 
-  if (checkSupportedNetwork) {
-    isSupportedNetwork(store)
-  }
+  isSupportedNetwork(store)
 }
 
 function updateFilters (store, filterType) {
