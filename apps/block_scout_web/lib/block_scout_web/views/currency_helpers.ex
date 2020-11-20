@@ -77,6 +77,6 @@ defmodule BlockScoutWeb.CurrencyHelpers do
   def divide_decimals(%{sign: sign, coef: coef, exp: exp}, decimals) do
     sign
     |> Decimal.new(coef, exp - Decimal.to_integer(decimals))
-    |> Decimal.reduce()
+    |> Decimal.normalize()
   end
 end
