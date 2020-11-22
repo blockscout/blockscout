@@ -44,6 +44,7 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     BridgedToken,
+    CurrencyHelpers,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -2010,6 +2011,30 @@ defmodule Explorer.Chain do
     else
       address_to_outcoming_transaction_gas_usage(address.hash)
     end
+  end
+
+  @doc """
+  Return the balance in usd corresponding to this token. Return nil if the usd_value of the token is not present.
+  """
+  def balance_in_usd(%{token: %{usd_value: nil}}) do
+    nil
+  end
+
+  def balance_in_usd(token_balance) do
+    tokens = CurrencyHelpers.divide_decimals(token_balance.value, token_balance.token.decimals)
+    price = token_balance.token.usd_value
+    Decimal.mult(tokens, price)
+  end
+
+  def address_tokens_usd_sum(token_balances) do
+    token_balances
+    |> Enum.reduce(Decimal.new(0), fn token_balance, acc ->
+      if token_balance.value && token_balance.token.usd_value do
+        Decimal.add(acc, balance_in_usd(token_balance))
+      else
+        acc
+      end
+    end)
   end
 
   defp contract?(%{contract_code: nil}), do: false

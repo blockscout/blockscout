@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
   alias BlockScoutWeb.AddressTokenBalanceView
+  alias Explorer.Chain
 
   describe "tokens_count_title/1" do
     test "returns the title pluralized" do
@@ -146,7 +147,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
       token_balance = build(:token_balance, value: Decimal.new(10), token: token)
 
-      result = AddressTokenBalanceView.balance_in_usd(token_balance)
+      result = Chain.balance_in_usd(token_balance)
 
       assert Decimal.cmp(result, 30) == :eq
     end
@@ -159,7 +160,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
       token_balance = build(:token_balance, value: 10, token: token)
 
-      assert AddressTokenBalanceView.balance_in_usd(token_balance) == nil
+      assert Chain.balance_in_usd(token_balance) == nil
     end
 
     test "consider decimals when computing value" do
@@ -170,7 +171,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
       token_balance = build(:token_balance, value: Decimal.new(10), token: token)
 
-      result = AddressTokenBalanceView.balance_in_usd(token_balance)
+      result = Chain.balance_in_usd(token_balance)
 
       assert Decimal.cmp(result, Decimal.from_float(0.3)) == :eq
     end
