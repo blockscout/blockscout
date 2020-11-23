@@ -3182,20 +3182,33 @@ defmodule Explorer.Chain do
         preload: [:contracts_creation_internal_transaction, :contracts_creation_transaction]
       )
 
-    transaction = Repo.one(query)
+    contract_address = Repo.one(query)
+
+    contract_creation_input_data_from_address(contract_address)
+  end
+
+  # credo:disable-for-next-line /Complexity/
+  defp contract_creation_input_data_from_address(address) do
+    internal_transaction = address && address.contracts_creation_internal_transaction
+    transaction = address && address.contracts_creation_transaction
 
     cond do
-      is_nil(transaction) ->
+      is_nil(address) ->
         ""
 
-      transaction.contracts_creation_internal_transaction && transaction.contracts_creation_internal_transaction.input ->
-        Data.to_string(transaction.contracts_creation_internal_transaction.input)
+      internal_transaction && internal_transaction.input ->
+        Data.to_string(internal_transaction.input)
 
-      transaction.contracts_creation_internal_transaction && transaction.contracts_creation_internal_transaction.init ->
-        Data.to_string(transaction.contracts_creation_internal_transaction.init)
+      internal_transaction && internal_transaction.init ->
+        Data.to_string(internal_transaction.init)
 
-      transaction.contracts_creation_transaction && transaction.contracts_creation_transaction.input ->
-        Data.to_string(transaction.contracts_creation_transaction.input)
+      transaction && transaction.input ->
+        Data.to_string(transaction.input)
+
+      is_nil(transaction) && is_nil(internal_transaction) &&
+          not is_nil(address.contract_code) ->
+        %Explorer.Chain.Data{bytes: bytes} = address.contract_code
+        Base.encode16(bytes, case: :lower)
 
       true ->
         ""
