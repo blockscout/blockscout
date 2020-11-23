@@ -5525,7 +5525,8 @@ defmodule Explorer.Chain do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
-        Map.get(method, "name") == "implementation"
+        Map.get(method, "name") == "implementation" ||
+          master_copy_pattern?(method)
       end)
 
     if implementation_method_abi do
