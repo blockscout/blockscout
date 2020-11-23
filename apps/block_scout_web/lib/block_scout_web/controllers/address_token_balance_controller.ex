@@ -17,13 +17,13 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
           conn
           |> put_status(200)
           |> put_layout(false)
-          |> render("_token_balances.html", token_balances: token_balances)
+          |> render("_token_balances.html", address_hash: address_hash, token_balances: token_balances)
 
         _ ->
           conn
           |> put_status(200)
           |> put_layout(false)
-          |> render("_token_balances.html", token_balances: [])
+          |> render("_token_balances.html", address_hash: address_hash, token_balances: [])
       end
     else
       _ ->

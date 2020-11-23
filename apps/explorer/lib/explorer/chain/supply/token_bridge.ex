@@ -11,6 +11,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     ]
 
   alias Explorer.Chain.{BridgedToken, Token, Wei}
+  alias Explorer.Chain.Cache.TokenExchangeRate, as: TokenExchangeRateCache
   alias Explorer.Counters.Bridge
   alias Explorer.ExchangeRates.Source
   alias Explorer.Repo
@@ -198,13 +199,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   def get_current_price_for_bridged_token(symbol) do
     bridged_token_symbol_for_price_fetching = bridged_token_symbol_mapping_to_get_price(symbol)
 
-    case Source.fetch_exchange_rates_for_token(bridged_token_symbol_for_price_fetching) do
-      {:ok, [rates]} ->
-        rates.usd_value
-
-      _ ->
-        nil
-    end
+    TokenExchangeRateCache.fetch(bridged_token_symbol_for_price_fetching)
   end
 
   def get_bridged_mainnet_tokens_list do
@@ -224,7 +219,12 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     bridged_mainnet_tokens_with_supply =
       bridged_mainnet_tokens_list
       |> Enum.map(fn {bridged_token_hash, bridged_token_symbol} ->
-        bridged_token_price = Bridge.fetch_token_price(bridged_token_symbol)
+        bridged_token_price =
+          if TokenExchangeRateCache.fetch(bridged_token_symbol) > 0 do
+            TokenExchangeRateCache.fetch(bridged_token_symbol)
+          else
+            TokenExchangeRateCache.fetch_token_exchange_rate(bridged_token_symbol)
+          end
 
         query =
           from(t in Token,
