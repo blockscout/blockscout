@@ -4872,6 +4872,23 @@ defmodule Explorer.ChainTest do
 
       assert found_creation_data == ""
     end
+
+    test "fetches contract creation input data from contract byte code (if contract is pre-compiled)" do
+      input = %Data{
+        bytes: <<1, 2, 3, 4, 5>>
+      }
+
+      address =
+        insert(:address,
+          contract_code: %Data{
+            bytes: <<1, 2, 3, 4, 5>>
+          }
+        )
+
+      found_creation_data = Chain.contract_creation_input_data(address.hash)
+
+      assert found_creation_data == Data.to_string(input) |> String.replace("0x", "")
+    end
   end
 
   describe "transaction_token_transfer_type/1" do

@@ -3,6 +3,7 @@ import { BigNumber } from 'bignumber.js'
 import { openModal, openErrorModal, openWarningModal, lockModal } from '../../lib/modals'
 import { setupValidation, displayInputError } from '../../lib/validation'
 import { makeContractCall, isSupportedNetwork, isStakingAllowed } from './utils'
+import constants from './constants'
 
 let status = 'modalClosed'
 
@@ -10,7 +11,7 @@ export async function openBecomeCandidateModal (event, store) {
   const state = store.getState()
 
   if (!state.account) {
-    openWarningModal('Unauthorized', 'You haven\'t approved the reading of account list from your MetaMask or MetaMask is not installed.')
+    openWarningModal('Unauthorized', constants.METAMASK_ACCOUNTS_EMPTY)
     return
   }
 
@@ -93,6 +94,8 @@ async function becomeCandidate ($modal, store, msg) {
     }
 
     lockModal($modal)
+
+    console.log(`Call addPool(${stake.toString()}, ${miningAddress})`)
     makeContractCall(stakingContract.methods.addPool(stake.toString(), miningAddress), store)
   } catch (err) {
     openErrorModal('Error', err.message)
