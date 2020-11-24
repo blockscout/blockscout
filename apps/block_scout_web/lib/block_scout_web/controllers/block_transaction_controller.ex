@@ -50,10 +50,19 @@ defmodule BlockScoutWeb.BlockTransactionController do
         items =
           transactions
           |> Enum.map(fn transaction ->
+            token_transfers_filtered_by_block_hash =
+              transaction.token_transfers
+              |> Enum.filter(fn token_transfer ->
+                token_transfer.block_hash == transaction.block_hash
+              end)
+
+            transaction_with_transfers_filtered =
+              Map.put(transaction, :token_transfers, token_transfers_filtered_by_block_hash)
+
             View.render_to_string(
               TransactionView,
               "_tile.html",
-              transaction: transaction,
+              transaction: transaction_with_transfers_filtered,
               burn_address_hash: @burn_address_hash,
               conn: conn
             )
