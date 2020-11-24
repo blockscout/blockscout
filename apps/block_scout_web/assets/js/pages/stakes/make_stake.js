@@ -73,7 +73,7 @@ async function makeStake ($modal, address, store, msg) {
     return
   }
 
-  makeContractCall(stakingContract.methods.stake(address, stake.toString()), store)
+  makeContractCall(stakingContract.methods.stake(address, stake.toFixed()), store)
 }
 
 function isDelegatorStakeValid (value, store, msg, address) {
