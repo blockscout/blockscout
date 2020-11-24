@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3480](https://github.com/poanetwork/blockscout/pull/3480) - Add support of Autonity client
 - [#3470](https://github.com/poanetwork/blockscout/pull/3470) - Display sum of tokens' USD value at tokens holder's address page
 - [#3462](https://github.com/poanetwork/blockscout/pull/3462) - Display price for bridged tokens
 
