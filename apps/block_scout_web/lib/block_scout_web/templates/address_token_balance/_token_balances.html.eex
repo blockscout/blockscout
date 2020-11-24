@@ -11,6 +11,9 @@
 
      <i class="fas fa-chevron-down mr-2"></i>
      <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>
+     <%= if @token_balances && Decimal.cmp(address_tokens_usd_sum_cache(@address_hash, @token_balances), Decimal.new(0)) == :gt do %>
+      (<span data-usd-value=<%= address_tokens_usd_sum_cache(@address_hash, @token_balances) %> ></span>)
+    <% end %>
   </a>
 <% else %>
    <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>

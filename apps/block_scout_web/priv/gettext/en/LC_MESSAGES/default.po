@@ -1,5 +1,5 @@
 #, elixir-format
-#: lib/block_scout_web/views/address_token_balance_view.ex:7
+#: lib/block_scout_web/views/address_token_balance_view.ex:8
 msgid "%{count} token"
 msgid_plural "%{count} tokens"
 msgstr[0] ""
@@ -1243,7 +1243,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:30
+#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:33
 msgid "Search tokens"
 msgstr ""
 

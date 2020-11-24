@@ -122,7 +122,7 @@ function getTxHistoryData (transactionHistory) {
 
   // it should be empty value for tx history the current day
   const prevDayStr = data[0].x
-  var prevDay = moment(prevDayStr)
+  const prevDay = moment(prevDayStr)
   let curDay = prevDay.add(1, 'days')
   curDay = curDay.format('YYYY-MM-DD')
   data.unshift({ x: curDay, y: null })
@@ -146,21 +146,19 @@ function getMarketCapData (marketHistoryData, availableSupply) {
 }
 
 // colors for light and dark theme
-var priceLineColor
-var mcapLineColor
-priceLineColor = sassVariables.dashboardLineColorPrice
-mcapLineColor = sassVariables.dashboardLineColorMarket
+const priceLineColor = sassVariables.dashboardLineColorPrice
+const mcapLineColor = sassVariables.dashboardLineColorMarket
 
 class MarketHistoryChart {
   constructor (el, availableSupply, _marketHistoryData, dataConfig) {
-    var axes = config.options.scales.yAxes.reduce(function (solution, elem) {
+    const axes = config.options.scales.yAxes.reduce(function (solution, elem) {
       solution[elem.id] = elem
       return solution
     },
     {})
 
-    var priceActivated = true
-    var marketCapActivated = true
+    let priceActivated = true
+    let marketCapActivated = true
 
     this.price = {
       label: window.localized.Price,

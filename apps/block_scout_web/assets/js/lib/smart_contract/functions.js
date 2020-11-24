@@ -133,30 +133,33 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
   const { chainId: walletChainIdHex } = window.ethereum
   compareChainIDs(explorerChainId, walletChainIdHex)
     .then(currentAccount => {
-      let methodToCall
-
       if (functionName) {
         const TargetContract = new window.web3.eth.Contract(contractAbi, contractAddress)
-        methodToCall = TargetContract.methods[functionName](...args).send({ from: currentAccount, value: txValue || 0 })
+        const methodToCall = TargetContract.methods[functionName](...args).send({ from: currentAccount, value: txValue || 0 })
+        methodToCall
+          .on('error', function (error) {
+            openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
+          })
+          .on('transactionHash', function (txHash) {
+            onTransactionHash(txHash, $element, functionName)
+          })
       } else {
         const txParams = {
           from: currentAccount,
           to: contractAddress,
           value: txValue || 0
         }
-        methodToCall = window.ethereum.request({
+        window.ethereum.request({
           method: 'eth_sendTransaction',
           params: [txParams]
         })
+          .then(function (txHash) {
+            onTransactionHash(txHash, $element, functionName)
+          })
+          .catch(function (error) {
+            openErrorModal('Error in sending transaction for fallback method', formatError(error), false)
+          })
       }
-
-      methodToCall
-        .on('error', function (error) {
-          openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
-        })
-        .on('transactionHash', function (txHash) {
-          onTransactionHash(txHash, $element, functionName)
-        })
     })
     .catch(error => {
       openWarningModal('Unauthorized', formatError(error))
@@ -167,7 +170,8 @@ function getTxValue ($functionInputs) {
   const WEI_MULTIPLIER = 10 ** 18
   const $txValue = $functionInputs.filter('[tx-value]:first')
   const txValue = $txValue && $txValue.val() && parseFloat($txValue.val()) * WEI_MULTIPLIER
-  return txValue
+  const txValueStr = txValue && txValue.toString(16)
+  return txValueStr
 }
 
 function getContractABI ($form) {

@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.AddressTokenBalanceView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.CurrencyHelpers
+  alias Explorer.Chain
+  alias Explorer.Counters.AddressTokenUsdSum
 
   def tokens_count_title(token_balances) do
     ngettext("%{count} token", "%{count} tokens", Enum.count(token_balances))
@@ -35,7 +36,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
 
       sort_by_name = sort_2_tokens_by_name(token_name1, token_name2)
 
-      sort_2_tokens_by_value_desc_and_name(usd_value1, usd_value2, sort_by_name)
+      sort_2_tokens_by_value_desc_and_name(token_balance1, token_balance2, usd_value1, usd_value2, sort_by_name)
     end)
   end
 
@@ -55,39 +56,36 @@ defmodule BlockScoutWeb.AddressTokenBalanceView do
     end
   end
 
-  defp sort_2_tokens_by_value_desc_and_name(usd_value1, usd_value2, _sort_by_name)
+  defp sort_2_tokens_by_value_desc_and_name(token_balance1, token_balance2, usd_value1, usd_value2, sort_by_name)
+       when not is_nil(usd_value1) and not is_nil(usd_value2) do
+    case Decimal.cmp(Chain.balance_in_usd(token_balance1), Chain.balance_in_usd(token_balance2)) do
+      :gt ->
+        true
+
+      :eq ->
+        sort_by_name
+
+      :lt ->
+        false
+    end
+  end
+
+  defp sort_2_tokens_by_value_desc_and_name(_token_balance1, _token_balance2, usd_value1, usd_value2, _sort_by_name)
        when not is_nil(usd_value1) and is_nil(usd_value2) do
     true
   end
 
-  defp sort_2_tokens_by_value_desc_and_name(usd_value1, usd_value2, _sort_by_name)
+  defp sort_2_tokens_by_value_desc_and_name(_token_balance1, _token_balance2, usd_value1, usd_value2, _sort_by_name)
        when is_nil(usd_value1) and not is_nil(usd_value2) do
     false
   end
 
-  defp sort_2_tokens_by_value_desc_and_name(usd_value1, usd_value2, sort_by_name) do
-    cond do
-      usd_value1 && usd_value2 && Decimal.cmp(usd_value1, usd_value2) == :gt ->
-        true
-
-      usd_value1 && usd_value2 && Decimal.cmp(usd_value1, usd_value2) == :eq ->
-        sort_by_name
-
-      true ->
-        sort_by_name
-    end
+  defp sort_2_tokens_by_value_desc_and_name(_token_balance1, _token_balance2, usd_value1, usd_value2, sort_by_name)
+       when is_nil(usd_value1) and is_nil(usd_value2) do
+    sort_by_name
   end
 
-  @doc """
-  Return the balance in usd corresponding to this token. Return nil if the usd_value of the token is not present.
-  """
-  def balance_in_usd(%{token: %{usd_value: nil}}) do
-    nil
-  end
-
-  def balance_in_usd(token_balance) do
-    tokens = CurrencyHelpers.divide_decimals(token_balance.value, token_balance.token.decimals)
-    price = token_balance.token.usd_value
-    Decimal.mult(tokens, price)
+  def address_tokens_usd_sum_cache(address, token_balances) do
+    AddressTokenUsdSum.fetch(address, token_balances)
   end
 end
