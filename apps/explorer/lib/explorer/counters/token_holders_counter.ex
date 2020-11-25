@@ -8,7 +8,7 @@ defmodule Explorer.Counters.TokenHoldersCounter do
 
   @cache_name :token_holders_counter
   @last_update_key "last_update"
-  @cache_period Application.get_env(:explorer, __MODULE__)[:period]
+  @cache_period Application.compile_env(:explorer, __MODULE__)[:period]
 
   @ets_opts [
     :set,
