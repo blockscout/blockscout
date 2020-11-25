@@ -8,7 +8,7 @@ defmodule Explorer.Counters.AddressTokenUsdSum do
 
   @cache_name :address_tokens_usd_value
   @last_update_key "last_update"
-  @cache_period Application.get_env(:explorer, __MODULE__)[:period]
+  @cache_period Application.compile_env(:explorer, __MODULE__)[:period]
 
   @ets_opts [
     :set,

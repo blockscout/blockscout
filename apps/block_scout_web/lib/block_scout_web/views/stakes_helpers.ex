@@ -68,7 +68,11 @@ defmodule BlockScoutWeb.StakesHelpers do
     reduced = from_wei(amount, token)
 
     if digits >= -reduced.exp or not ellipsize do
-      "#{Number.to_string!(reduced, fractional_digits: min(digits, -reduced.exp))}#{symbol}"
+      if min(digits, -reduced.exp) >= 0 do
+        "#{Number.to_string!(reduced, fractional_digits: min(digits, -reduced.exp))}#{symbol}"
+      else
+        "#{Number.to_string!(reduced, fractional_digits: 0)}#{symbol}"
+      end
     else
       clipped = "#{Number.to_string!(reduced, fractional_digits: digits)}...#{symbol}"
 

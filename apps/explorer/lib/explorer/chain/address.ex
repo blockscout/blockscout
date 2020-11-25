@@ -208,8 +208,9 @@ defmodule Explorer.Chain.Address do
   end
 
   defp stream_every_four_bytes_of_sha256(value) do
-    :sha3_256
-    |> :keccakf1600.hash(value)
+    {:ok, hash} = ExKeccak.hash_256(value)
+
+    hash
     |> stream_binary()
     |> Stream.map(&Bitwise.band(&1, 136))
     |> Stream.flat_map(fn

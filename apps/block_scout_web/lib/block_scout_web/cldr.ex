@@ -8,5 +8,6 @@ defmodule BlockScoutWeb.Cldr do
     locales: ["en"],
     gettext: BlockScoutWeb.Gettext,
     generate_docs: false,
+    precompile_number_formats: ["#,###", "#,##0.##################", "#.#%", "#,##0"],
     providers: [Cldr.Number, Cldr.Unit]
 end
