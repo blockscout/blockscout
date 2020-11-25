@@ -18,6 +18,7 @@
 - [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix doubled token transfer on block's page if block has reorg
 
 ### Chore
+- [#3484](https://github.com/poanetwork/blockscout/pull/3484) - Elixir upgrade to 11.2
 - [#3483](https://github.com/poanetwork/blockscout/pull/3483) - Update outdated dependencies
 - [#3483](https://github.com/poanetwork/blockscout/pull/3483) - Migrate to Erlang/OTP 23
 - [#3468](https://github.com/poanetwork/blockscout/pull/3468) - Do not check supported networks on application loading page
