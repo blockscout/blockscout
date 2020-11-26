@@ -8,7 +8,7 @@ defmodule Explorer.Etherscan do
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.TokenBalance
-  alias Explorer.Chain.{Block, Hash, InternalTransaction, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Block, CeloParams, Hash, InternalTransaction, TokenTransfer, Transaction}
 
   @default_options %{
     order_by_direction: :desc,
@@ -341,12 +341,15 @@ defmodule Explorer.Etherscan do
     query =
       from(
         t in Transaction,
+        left_join: p in CeloParams,
+        on: t.gas_currency_hash == p.address_value,
         inner_join: b in assoc(t, :block),
         order_by: [{^options.order_by_direction, t.block_number}],
         limit: ^options.page_size,
         offset: ^offset(options),
         select:
           merge(map(t, ^@transaction_fields), %{
+            fee_currency: p.name,
             block_timestamp: b.timestamp,
             confirmations: fragment("? - ?", ^max_block_number, t.block_number)
           })
