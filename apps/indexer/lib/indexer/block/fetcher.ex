@@ -13,7 +13,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Market
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
-  alias Explorer.Chain.Cache.{Accounts, BlockNumber, PendingTransactions, Transactions, Uncles}
+  alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Indexer.Block.Fetcher.Receipts
 
   alias Explorer.Celo.Util
@@ -311,7 +311,7 @@ defmodule Indexer.Block.Fetcher do
       async_import_celo_validator_history(range)
 
       update_block_cache(inserted[:blocks])
-      update_transactions_cache(inserted[:transactions], inserted[:fork_transactions])
+      update_transactions_cache(inserted[:transactions])
       update_addresses_cache(inserted[:addresses])
       update_uncles_cache(inserted[:block_second_degree_relations])
       result
@@ -334,10 +334,8 @@ defmodule Indexer.Block.Fetcher do
 
   defp update_block_cache(_), do: :ok
 
-  defp update_transactions_cache(transactions, forked_transactions) do
+  defp update_transactions_cache(transactions) do
     Transactions.update(transactions)
-    PendingTransactions.update_pending(transactions)
-    PendingTransactions.update_pending(forked_transactions)
   end
 
   defp update_addresses_cache(addresses), do: Accounts.drop(addresses)
