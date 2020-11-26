@@ -104,11 +104,11 @@ defmodule Explorer.Mixfile do
       {:que, "~> 0.10.1"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       # Tracing
-      {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
+      {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
-      {:spandex_datadog, "~> 0.4.0"},
+      {:spandex_datadog, "~> 1.0"},
       # `:spandex` tracing of `:ecto`
-      {:spandex_ecto, "~> 0.4.0"},
+      {:spandex_ecto, "~> 0.6.2"},
       # Attach `:prometheus_ecto` to `:ecto`
       {:telemetry, "~> 0.4.1"},
       # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`

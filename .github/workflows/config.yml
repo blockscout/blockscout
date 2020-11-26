@@ -19,8 +19,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - name: "ELIXIR_VERSION.lock"
@@ -46,8 +46,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -61,8 +61,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -76,8 +76,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -103,8 +103,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -121,8 +121,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -142,8 +142,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -167,8 +167,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -211,8 +211,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -265,8 +265,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -321,8 +321,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -377,8 +377,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -433,8 +433,8 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-elixir@v1
         with:
-          otp-version: '22.2'
-          elixir-version: '1.10.4'
+          otp-version: '23.0.1'
+          elixir-version: '1.11.2'
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
