@@ -105,6 +105,28 @@ config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
   enable_consolidation: true,
   period: address_transactions_gas_usage_counter_cache_period
 
+address_tokens_usd_sum_cache_period =
+  case Integer.parse(System.get_env("ADDRESS_TOKENS_USD_SUM_CACHE_PERIOD", "")) do
+    {secs, ""} -> :timer.seconds(secs)
+    _ -> :timer.hours(1)
+  end
+
+config :explorer, Explorer.Counters.AddressTokenUsdSum,
+  enabled: true,
+  enable_consolidation: true,
+  period: address_tokens_usd_sum_cache_period
+
+token_exchange_rate_cache_period =
+  case Integer.parse(System.get_env("TOKEN_EXCHANGE_RATE_CACHE_PERIOD", "")) do
+    {secs, ""} -> :timer.seconds(secs)
+    _ -> :timer.hours(1)
+  end
+
+config :explorer, Explorer.Chain.Cache.TokenExchangeRate,
+  enabled: true,
+  enable_consolidation: true,
+  period: token_exchange_rate_cache_period
+
 token_holders_counter_cache_period =
   case Integer.parse(System.get_env("TOKEN_HOLDERS_COUNTER_CACHE_PERIOD", "")) do
     {secs, ""} -> :timer.seconds(secs)

@@ -15,7 +15,14 @@ defmodule Explorer.SmartContract.SolcDownloader do
     if File.exists?(path) && version !== "latest" do
       path
     else
-      {:ok, compiler_versions} = CompilerVersion.fetch_versions()
+      compiler_versions =
+        case CompilerVersion.fetch_versions() do
+          {:ok, compiler_versions} ->
+            compiler_versions
+
+          {:error, _} ->
+            []
+        end
 
       if version in compiler_versions do
         GenServer.call(__MODULE__, {:ensure_exists, version}, 60_000)

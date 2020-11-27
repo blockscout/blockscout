@@ -91,7 +91,7 @@ export function asyncReducer (state = asyncInitialState, action) {
       })
     }
     case 'ITEMS_FETCHED': {
-      var prevPagePath = null
+      let prevPagePath = null
 
       if (state.pagesStack.length >= 2) {
         prevPagePath = state.pagesStack[state.pagesStack.length - 2]

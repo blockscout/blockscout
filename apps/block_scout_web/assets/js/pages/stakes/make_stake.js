@@ -3,12 +3,13 @@ import { BigNumber } from 'bignumber.js'
 import { openErrorModal, openModal, openWarningModal, lockModal } from '../../lib/modals'
 import { setupValidation } from '../../lib/validation'
 import { makeContractCall, setupChart, isSupportedNetwork, isStakingAllowed } from './utils'
+import constants from './constants'
 
 export function openMakeStakeModal (event, store) {
   const state = store.getState()
 
   if (!state.account) {
-    openWarningModal('Unauthorized', 'You haven\'t approved the reading of account list from your MetaMask or MetaMask is not installed.')
+    openWarningModal('Unauthorized', constants.METAMASK_ACCOUNTS_EMPTY)
     return
   }
 
@@ -72,7 +73,7 @@ async function makeStake ($modal, address, store, msg) {
     return
   }
 
-  makeContractCall(stakingContract.methods.stake(address, stake.toString()), store)
+  makeContractCall(stakingContract.methods.stake(address, stake.toFixed()), store)
 }
 
 function isDelegatorStakeValid (value, store, msg, address) {

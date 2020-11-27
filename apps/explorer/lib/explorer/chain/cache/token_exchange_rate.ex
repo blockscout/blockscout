@@ -1,12 +1,12 @@
-defmodule Explorer.Counters.AddressTransactionsCounter do
+defmodule Explorer.Chain.Cache.TokenExchangeRate do
   @moduledoc """
-  Caches Address transactions counter.
+  Caches Token USD exchange_rate.
   """
   use GenServer
 
-  alias Explorer.Chain
+  alias Explorer.ExchangeRates.Source
 
-  @cache_name :address_transactions_counter
+  @cache_name :token_exchange_rate
   @last_update_key "last_update"
   @cache_period Application.compile_env(:explorer, __MODULE__)[:period]
 
@@ -17,7 +17,7 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
     read_concurrency: true
   ]
 
-  config = Application.get_env(:explorer, Explorer.Counters.AddressTransactionsCounter)
+  config = Application.get_env(:explorer, Explorer.Chain.Cache.TokenExchangeRate)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @spec start_link(term()) :: GenServer.on_start()
@@ -47,22 +47,24 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
     {:noreply, state}
   end
 
-  def fetch(address) do
-    if cache_expired?(address) do
+  def cache_key(symbol) do
+    "token_symbol_exchange_rate_#{symbol}"
+  end
+
+  def fetch(symbol) do
+    if cache_expired?(symbol) || value_is_empty?(symbol) do
       Task.start_link(fn ->
-        update_cache(address)
+        update_cache(symbol)
       end)
     end
 
-    address_hash_string = get_address_hash_string(address)
-    fetch_from_cache("hash_#{address_hash_string}")
+    fetch_from_cache(cache_key(symbol))
   end
 
   def cache_name, do: @cache_name
 
-  defp cache_expired?(address) do
-    address_hash_string = get_address_hash_string(address)
-    updated_at = fetch_from_cache("hash_#{address_hash_string}_#{@last_update_key}")
+  defp cache_expired?(symbol) do
+    updated_at = fetch_from_cache("#{cache_key(symbol)}_#{@last_update_key}")
 
     cond do
       is_nil(updated_at) -> true
@@ -71,11 +73,27 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
     end
   end
 
-  defp update_cache(address) do
-    address_hash_string = get_address_hash_string(address)
-    put_into_cache("hash_#{address_hash_string}_#{@last_update_key}", current_time())
-    new_data = Chain.address_to_transaction_count(address)
-    put_into_cache("hash_#{address_hash_string}", new_data)
+  defp value_is_empty?(symbol) do
+    value = fetch_from_cache(cache_key(symbol))
+    is_nil(value) || value == 0
+  end
+
+  defp update_cache(symbol) do
+    put_into_cache("#{cache_key(symbol)}_#{@last_update_key}", current_time())
+
+    exchange_rate = fetch_token_exchange_rate(symbol)
+
+    put_into_cache(cache_key(symbol), exchange_rate)
+  end
+
+  def fetch_token_exchange_rate(symbol) do
+    case Source.fetch_exchange_rates_for_token(symbol) do
+      {:ok, [rates]} ->
+        rates.usd_value
+
+      _ ->
+        nil
+    end
   end
 
   defp fetch_from_cache(key) do
@@ -88,12 +106,10 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
     end
   end
 
-  defp put_into_cache(key, value) do
-    :ets.insert(@cache_name, {key, value})
-  end
-
-  defp get_address_hash_string(address) do
-    Base.encode16(address.hash.bytes, case: :lower)
+  def put_into_cache(key, value) do
+    if cache_table_exists?() do
+      :ets.insert(@cache_name, {key, value})
+    end
   end
 
   defp current_time do
@@ -102,8 +118,12 @@ defmodule Explorer.Counters.AddressTransactionsCounter do
     DateTime.to_unix(utc_now, :millisecond)
   end
 
+  def cache_table_exists? do
+    :ets.whereis(@cache_name) !== :undefined
+  end
+
   def create_cache_table do
-    if :ets.whereis(@cache_name) == :undefined do
+    unless cache_table_exists?() do
       :ets.new(@cache_name, @ets_opts)
     end
   end

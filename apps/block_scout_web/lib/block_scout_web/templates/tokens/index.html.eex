@@ -21,7 +21,7 @@
 	      <th class="stakes-table-th">
 			<div class="stakes-table-th-content">Address</div>
 	      </th>
-		  <%= if bridged_tokens_enabled?() do%>
+		  <%= if bridged_tokens_enabled?() do %>
 			<th class="stakes-table-th">
 				<div class="stakes-table-th-content">Bridged?</div>
 			</th>

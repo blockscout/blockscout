@@ -63,7 +63,14 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersion do
 
   def get_strict_compiler_version(compiler_version) do
     if compiler_version == "latest" do
-      {:ok, compiler_versions} = fetch_versions()
+      compiler_versions =
+        case fetch_versions() do
+          {:ok, compiler_versions} ->
+            compiler_versions
+
+          {:error, _} ->
+            []
+        end
 
       if Enum.count(compiler_versions) > 1 do
         latest_stable_version =

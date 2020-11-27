@@ -261,7 +261,7 @@
 </nav>
 <script>
   if (localStorage.getItem("current-color-mode") === "dark") {
-    var modeChanger = document.getElementById("dark-mode-changer");
+    let modeChanger = document.getElementById("dark-mode-changer");
     modeChanger.className += " " + "dark-mode-changer--dark";
   }
 </script> 
