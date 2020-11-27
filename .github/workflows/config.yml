@@ -213,6 +213,8 @@ jobs:
         with:
           otp-version: '23.0.1'
           elixir-version: '1.11.2'
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -267,6 +269,8 @@ jobs:
         with:
           otp-version: '23.0.1'
           elixir-version: '1.11.2'
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -323,6 +327,8 @@ jobs:
         with:
           otp-version: '23.0.1'
           elixir-version: '1.11.2'
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
@@ -379,6 +385,8 @@ jobs:
         with:
           otp-version: '23.0.1'
           elixir-version: '1.11.2'
+      - run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - run: echo 'export PATH=~/.cargo/bin/:$PATH' >> $GITHUB_ENV
       - run: mix local.hex --force
       - run: mix local.rebar --force
       - run: mix deps.get
