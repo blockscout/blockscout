@@ -279,7 +279,7 @@ ifdef DISABLE_KNOWN_TOKENS
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISABLE_KNOWN_TOKENS=$(DISABLE_KNOWN_TOKENS)'
 endif
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep ${DOCKER_IMAGE})
+HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
 build: 
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
@@ -289,12 +289,14 @@ else
 	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
 endif
 
-migrate:
+migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
 
+migrate: build postgres
+	@$(MAKE) -f $(THIS_FILE) migrate_only
 
 start:
 	@$(MAKE) -f $(THIS_FILE) build
