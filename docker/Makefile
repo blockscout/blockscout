@@ -295,7 +295,7 @@ migrate_only:
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
 
-migrate: build postgres
+migrate:
 	@$(MAKE) -f $(THIS_FILE) migrate_only
 
 start:
