@@ -29,7 +29,9 @@ function transpileViewScript(file) {
 };
 
 const jsOptimizationParams = {
-  parallel: true
+  cache: true,
+  parallel: true,
+  sourceMap: true
 }
 
 const awesompleteJs = {
@@ -147,17 +149,6 @@ const appJs =
         }
       ]
     },
-    resolve: {
-      fallback: {
-        "os": require.resolve("os-browserify/browser"),
-        "https": require.resolve("https-browserify"),
-        "http": require.resolve("stream-http"),
-        "crypto": require.resolve("crypto-browserify"),
-        "util": require.resolve("util/"),
-        "stream": require.resolve("stream-browserify"),
-        "assert": require.resolve("assert/"),
-      }
-    },
     plugins: [
       new MiniCssExtractPlugin({
         filename: '../css/[name].css'
@@ -172,11 +163,7 @@ const appJs =
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
       new webpack.DefinePlugin({
         'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT)
-      }),
-      new webpack.ProvidePlugin({
-        process: 'process/browser',
-        Buffer: ['buffer', 'Buffer'],
-      }),
+      })
     ]
   }
 
