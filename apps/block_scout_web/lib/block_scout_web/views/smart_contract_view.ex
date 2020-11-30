@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.SmartContractView do
     |> Enum.join(", ")
   end
 
-  def values(values, type) when is_list(values) when type == "tuple[]" do
+  def values(values, type) when is_list(values) and type == "tuple[]" do
     array_from_tuple = tupple_to_array(values)
 
     array_from_tuple_final =
