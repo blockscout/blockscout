@@ -1,6 +1,12 @@
-FROM bitwalker/alpine-elixir-phoenix:1.10.3
+FROM bitwalker/alpine-elixir-phoenix:latest
 
-RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python
+RUN apk --no-cache --update add alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
+
+# Get Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+ENV PATH="$HOME/.cargo/bin:${PATH}"
+ENV RUSTFLAGS="-C target-feature=-crt-static"
 
 EXPOSE 4000
 
@@ -33,12 +39,6 @@ RUN cd apps/block_scout_web/assets/ && \
 
 RUN cd apps/explorer/ && \
     npm install && \
-    apk update && apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python
-
-# RUN mix do ecto.drop --force, ecto.create, ecto.migrate
+    apk update && apk del --force-broken-world alpine-sdk gmp-dev automake libtool inotify-tools autoconf python3
 
 RUN mix phx.digest
-
-# USER default
-
-# CMD ["mix", "phx.server"]
