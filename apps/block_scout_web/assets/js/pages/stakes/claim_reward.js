@@ -10,6 +10,7 @@ import {
 } from '../../lib/modals'
 import { displayInputError, hideInputError } from '../../lib/validation'
 import { isSupportedNetwork, makeContractCall } from './utils'
+import constants from './constants'
 
 let status = 'modalClosed'
 
@@ -17,7 +18,7 @@ export function openClaimRewardModal (event, store) {
   const state = store.getState()
 
   if (!state.account) {
-    openWarningModal('Unauthorized', 'Please login with MetaMask')
+    openWarningModal('Unauthorized', constants.METAMASK_PLEASE_LOGIN)
     return
   }
 

@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
   alias BlockScoutWeb.AddressTokenBalanceView
+  alias Explorer.Chain
 
   describe "tokens_count_title/1" do
     test "returns the title pluralized" do
@@ -71,13 +72,47 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
   describe "sort_by_usd_value_and_name/1" do
     test "sorts the given tokens by its name and usd_value" do
-      token_balance_a = build(:token_balance, token: build(:token, name: "token name") |> Map.put(:usd_value, 2))
-      token_balance_b = build(:token_balance, token: build(:token, name: "token") |> Map.put(:usd_value, 3))
-      token_balance_c = build(:token_balance, token: build(:token, name: nil) |> Map.put(:usd_value, 2))
-      token_balance_d = build(:token_balance, token: build(:token, name: "Atoken") |> Map.put(:usd_value, 1))
-      token_balance_e = build(:token_balance, token: build(:token, name: "atoken") |> Map.put(:usd_value, nil))
-      token_balance_f = build(:token_balance, token: build(:token, name: "Btoken") |> Map.put(:usd_value, nil))
-      token_balance_g = build(:token_balance, token: build(:token, name: "Btoken") |> Map.put(:usd_value, 1))
+      token_balance_a =
+        build(:token_balance,
+          token: build(:token, name: "token name", decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.new(2)),
+          value: Decimal.new(100_500)
+        )
+
+      token_balance_b =
+        build(:token_balance,
+          token: build(:token, name: "token", decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.new(3.45)),
+          value: Decimal.new(100_500)
+        )
+
+      token_balance_c =
+        build(:token_balance,
+          token: build(:token, name: nil, decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.new(2)),
+          value: Decimal.new(100_500)
+        )
+
+      token_balance_d =
+        build(:token_balance,
+          token: build(:token, name: "Atoken", decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.new(1)),
+          value: Decimal.new(100_500)
+        )
+
+      token_balance_e =
+        build(:token_balance,
+          token: build(:token, name: "atoken", decimals: Decimal.new(18)) |> Map.put(:usd_value, nil),
+          value: Decimal.new(100_500)
+        )
+
+      token_balance_f =
+        build(:token_balance,
+          token: build(:token, name: "Btoken", decimals: Decimal.new(18)) |> Map.put(:usd_value, nil),
+          value: Decimal.new(100_500)
+        )
+
+      token_balance_g =
+        build(:token_balance,
+          token: build(:token, name: "Btoken", decimals: Decimal.new(18)) |> Map.put(:usd_value, Decimal.new(1)),
+          value: Decimal.new(100_500)
+        )
 
       token_balances = [
         token_balance_a,
@@ -112,7 +147,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
       token_balance = build(:token_balance, value: Decimal.new(10), token: token)
 
-      result = AddressTokenBalanceView.balance_in_usd(token_balance)
+      result = Chain.balance_in_usd(token_balance)
 
       assert Decimal.cmp(result, 30) == :eq
     end
@@ -125,7 +160,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
       token_balance = build(:token_balance, value: 10, token: token)
 
-      assert AddressTokenBalanceView.balance_in_usd(token_balance) == nil
+      assert Chain.balance_in_usd(token_balance) == nil
     end
 
     test "consider decimals when computing value" do
@@ -136,7 +171,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
 
       token_balance = build(:token_balance, value: Decimal.new(10), token: token)
 
-      result = AddressTokenBalanceView.balance_in_usd(token_balance)
+      result = Chain.balance_in_usd(token_balance)
 
       assert Decimal.cmp(result, Decimal.from_float(0.3)) == :eq
     end

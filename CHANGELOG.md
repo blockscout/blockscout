@@ -1,15 +1,23 @@
 ## Current
 
 ### Features
+- [#3470](https://github.com/poanetwork/blockscout/pull/3470) - Display sum of tokens' USD value at tokens holder's address page
 - [#3462](https://github.com/poanetwork/blockscout/pull/3462) - Display price for bridged tokens
 
 ### Fixes
-
+- [#3477](https://github.com/poanetwork/blockscout/pull/3477) - Contracts interaction: fix broken call of GnosisProxy contract methods with parameters
+- [#3477](https://github.com/poanetwork/blockscout/pull/3477) - Contracts interaction: fix broken call of fallback function
+- [#3476](https://github.com/poanetwork/blockscout/pull/3476) - Fix contract verification of precompiled contracts
+- [#3467](https://github.com/poanetwork/blockscout/pull/3467) - Fix Firefox styles
 - [#3464](https://github.com/poanetwork/blockscout/pull/3464) - Fix display of token transfers list at token page (fix unique identifier of a tile)
 - [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix endless block invalidation issue
-- [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix doubled total transferred/minted/burnt tokens on transaction page if block has reorg
+- [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix doubled total transferred/minted/burnt tokens on transaction's page if block has reorg
+- [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix doubled token transfer on block's page if block has reorg
 
 ### Chore
+- [#3468](https://github.com/poanetwork/blockscout/pull/3468) - Do not check supported networks on application loading page
+- [#3467](https://github.com/poanetwork/blockscout/pull/3467) - NodeJS engine upgrade up to 14
+- [#3460](https://github.com/poanetwork/blockscout/pull/3460) - Update Staking DApp scripts due to MetaMask breaking changes
 
 
 ## 3.4.0-beta
