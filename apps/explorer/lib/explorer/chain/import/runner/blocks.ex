@@ -504,7 +504,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         # Enforce Reward ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: :address_hash, asc: :address_type, asc: :block_hash],
         # acquire locks for `reward`s only
-        lock: "FOR UPDATE OF b0"
+        lock: fragment("FOR UPDATE OF ?", reward)
       )
 
     delete_query =

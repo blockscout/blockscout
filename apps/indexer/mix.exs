@@ -61,9 +61,9 @@ defmodule Indexer.MixProject do
       # Mocking `EthereumJSONRPC.Transport`, so we avoid hitting real chains for local testing
       {:mox, "~> 0.4", only: [:test]},
       # Tracing
-      {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
+      {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
-      {:spandex_datadog, "~> 0.4.0"}
+      {:spandex_datadog, "~> 1.0"}
     ]
   end
 

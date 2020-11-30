@@ -72,12 +72,11 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
-      {:mox, "== 0.5.1"},
       # Documentation
       {:ex_doc, "~> 0.19.0", only: [:dev]},
       # Code coverage
       {:excoveralls, "~> 0.13.3"},
-      {:number, "~> 1.0.1"}
+      {:number, "~> 1.0.3"}
     ]
   end
 end

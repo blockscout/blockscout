@@ -12,7 +12,7 @@ defmodule Explorer.Market.MarketHistoryCache do
   @last_update_key :last_update
   @history_key :history
   # 6 hours
-  @cache_period Application.get_env(:explorer, __MODULE__)[:period]
+  @cache_period Application.compile_env(:explorer, __MODULE__)[:period]
   @recent_days 30
 
   def fetch do
