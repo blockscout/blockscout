@@ -6,6 +6,8 @@
 - [#3462](https://github.com/poanetwork/blockscout/pull/3462) - Display price for bridged tokens
 
 ### Fixes
+- [#3494](https://github.com/poanetwork/blockscout/pull/3494) - Contracts interaction: fix method call with array[] input
+- [#3494](https://github.com/poanetwork/blockscout/pull/3494) - Contracts interaction: fix tuple output display
 - [#3479](https://github.com/poanetwork/blockscout/pull/3479) - Fix working with big numbers in Staking DApp
 - [#3477](https://github.com/poanetwork/blockscout/pull/3477) - Contracts interaction: fix broken call of GnosisProxy contract methods with parameters
 - [#3477](https://github.com/poanetwork/blockscout/pull/3477) - Contracts interaction: fix broken call of fallback function
