@@ -95,8 +95,8 @@ async function becomeCandidate ($modal, store, msg) {
 
     lockModal($modal)
 
-    console.log(`Call addPool(${stake.toString()}, ${miningAddress})`)
-    makeContractCall(stakingContract.methods.addPool(stake.toString(), miningAddress), store)
+    console.log(`Call addPool(${stake.toFixed()}, ${miningAddress})`)
+    makeContractCall(stakingContract.methods.addPool(stake.toFixed(), miningAddress), store)
   } catch (err) {
     openErrorModal('Error', err.message)
   }

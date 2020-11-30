@@ -40,7 +40,7 @@
       </span>
 
       <!-- Transfer -->
-      <%= if involves_token_transfers?(@transaction)  do %>
+      <%= if involves_token_transfers?(@transaction) do %>
         <div class="d-flex flex-column mt-2">
           <% [first_token_transfer | remaining_token_transfers] = @transaction.token_transfers %>
 

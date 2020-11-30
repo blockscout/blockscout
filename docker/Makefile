@@ -1,7 +1,14 @@
 SYSTEM = $(shell uname -s)
 HOST = host.docker.internal
+<<<<<<< HEAD
 DOCKER_IMAGE = blockscout_prod_xdai
 BS_CONTAINER_NAME = blockscout_xdai
+=======
+DOCKER_IMAGE = blockscout_prod
+BS_CONTAINER_NAME = blockscout
+PG_CONTAINER_NAME = postgres
+PG_CONTAINER_IMAGE = postgres:12.5
+>>>>>>> origin/master
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
 
 ifeq ($(SYSTEM), Linux)
@@ -279,7 +286,7 @@ ifdef DISABLE_KNOWN_TOKENS
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'DISABLE_KNOWN_TOKENS=$(DISABLE_KNOWN_TOKENS)'
 endif
 
-HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep ${DOCKER_IMAGE})
+HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep -sw ${DOCKER_IMAGE})
 build: 
 	@echo "==> Checking for blockscout image $(DOCKER_IMAGE)"
 ifdef HAS_BLOCKSCOUT_IMAGE
@@ -289,11 +296,14 @@ else
 	@docker build --build-arg COIN="$(COIN)" -f ./Dockerfile -t $(DOCKER_IMAGE) ../
 endif
 
-migrate:
+migrate_only:
 	@echo "==> Running migrations"
 	@docker run --rm \
 					$(BLOCKSCOUT_CONTAINER_PARAMS) \
 					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.create, ecto.migrate"
+
+migrate:
+	@$(MAKE) -f $(THIS_FILE) migrate_only
 
 
 start:

@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
 
   @cache_name :token_exchange_rate
   @last_update_key "last_update"
-  @cache_period Application.get_env(:explorer, __MODULE__)[:period]
+  @cache_period Application.compile_env(:explorer, __MODULE__)[:period]
 
   @ets_opts [
     :set,
