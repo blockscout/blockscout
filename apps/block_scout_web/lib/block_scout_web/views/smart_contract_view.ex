@@ -49,15 +49,8 @@ defmodule BlockScoutWeb.SmartContractView do
   def values(values, type) when is_list(values) and type == "tuple[]" do
     array_from_tuple = tupple_to_array(values)
 
-    array_from_tuple_final =
-      if Enum.count(array_from_tuple) > 0 do
-        [result] = array_from_tuple
-        result
-      else
-        array_from_tuple
-      end
-
-    array_from_tuple_final
+    array_from_tuple
+    |> Enum.join(", ")
   end
 
   def values(value, type) when type in ["address", "address payable"] do
