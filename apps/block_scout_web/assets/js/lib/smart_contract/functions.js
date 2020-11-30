@@ -135,7 +135,19 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
     .then(currentAccount => {
       if (functionName) {
         const TargetContract = new window.web3.eth.Contract(contractAbi, contractAddress)
-        const methodToCall = TargetContract.methods[functionName](...args).send({ from: currentAccount, value: txValue || 0 })
+        const functionAbi = contractAbi.find(abi =>
+          abi.name === functionName
+        )
+        const inputsCount = functionAbi && functionAbi.inputs.length
+        let methodToCall
+        const sendParams = { from: currentAccount, value: txValue || 0 }
+        if (inputsCount > 1) {
+          methodToCall = TargetContract.methods[functionName](...args).send(sendParams)
+        } else {
+          if (Array.isArray(args) && args[0] === '') {
+            methodToCall = TargetContract.methods[functionName]([]).send(sendParams)
+          } else { methodToCall = TargetContract.methods[functionName](args).send(sendParams) }
+        }
         methodToCall
           .on('error', function (error) {
             openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
