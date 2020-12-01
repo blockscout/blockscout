@@ -53,6 +53,7 @@ export function openMakeStakeModal (event, store) {
 async function makeStake ($modal, address, store, msg) {
   const state = store.getState()
   const stakingContract = state.stakingContract
+  const tokenContract = state.tokenContract
   const validatorSetContract = state.validatorSetContract
   const decimals = state.tokenDecimals
 
@@ -73,7 +74,7 @@ async function makeStake ($modal, address, store, msg) {
     return
   }
 
-  makeContractCall(stakingContract.methods.stake(address, stake.toFixed()), store)
+  makeContractCall(tokenContract.methods.transferAndCall(stakingContract.options.address, stake.toFixed(), address), store)
 }
 
 function isDelegatorStakeValid (value, store, msg, address) {

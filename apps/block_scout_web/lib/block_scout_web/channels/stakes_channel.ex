@@ -723,6 +723,7 @@ defmodule BlockScoutWeb.StakesChannel do
         staking_contract: ContractState.get(:staking_contract),
         block_reward_contract: ContractState.get(:block_reward_contract),
         validator_set_contract: ContractState.get(:validator_set_contract),
+        token_contract: ContractState.get(:token_contract),
         token_decimals: to_string(token.decimals),
         token_symbol: token.symbol
       })
