@@ -19,6 +19,7 @@
 - [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix doubled token transfer on block's page if block has reorg
 
 ### Chore
+- [#3496](https://github.com/poanetwork/blockscout/pull/3496) - Rollback websocket_client module to 1.3.0
 - [#3489](https://github.com/poanetwork/blockscout/pull/3489) - Migrate to Webpack@5
 - [#3487](https://github.com/poanetwork/blockscout/pull/3487) - Docker setup update to be compatible with Erlang OTP 23
 - [#3484](https://github.com/poanetwork/blockscout/pull/3484) - Elixir upgrade to 11.2
