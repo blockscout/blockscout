@@ -20,6 +20,7 @@
 - [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix doubled token transfer on block's page if block has reorg
 
 ### Chore
+- [#3498](https://github.com/poanetwork/blockscout/pull/3498) - Make Staking DApp work with transferAndCall function
 - [#3496](https://github.com/poanetwork/blockscout/pull/3496) - Rollback websocket_client module to 1.3.0
 - [#3489](https://github.com/poanetwork/blockscout/pull/3489) - Migrate to Webpack@5
 - [#3487](https://github.com/poanetwork/blockscout/pull/3487) - Docker setup update to be compatible with Erlang OTP 23
