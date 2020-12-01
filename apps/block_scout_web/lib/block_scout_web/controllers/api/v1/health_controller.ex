@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.V1.HealthController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Health}
 
   def health(conn, _) do
     with {:ok, number, timestamp} <- Chain.last_db_block_status(),
@@ -10,6 +10,22 @@ defmodule BlockScoutWeb.API.V1.HealthController do
     else
       status -> send_resp(conn, :internal_server_error, error(status))
     end
+  end
+
+  def alive?(conn, _) do
+    health_response(conn, Health.alive?())
+  end
+
+  defp health_response(conn, true) do
+    conn
+    |> send_resp(200, "OK")
+    |> halt()
+  end
+
+  defp health_response(conn, false) do
+    conn
+    |> send_resp(503, "Service Unavailable")
+    |> halt()
   end
 
   def result(number, timestamp, cache_number, cache_timestamp) do

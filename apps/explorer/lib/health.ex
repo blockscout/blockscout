@@ -1,4 +1,4 @@
-defmodule Indexer.Health do
+defmodule Explorer.Health do
   @moduledoc """
   Check various health attributes of the application
   """

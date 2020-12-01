@@ -4,7 +4,7 @@ defmodule Indexer.Health.Plug do
   """
 
   import Plug.Conn
-  alias Indexer.Health
+  alias Explorer.Health
 
   @behaviour Plug
 

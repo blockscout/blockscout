@@ -21,6 +21,7 @@ defmodule BlockScoutWeb.ApiRouter do
   scope "/v1", BlockScoutWeb.API.V1, as: :api_v1 do
     pipe_through(:api)
     get("/health", HealthController, :health)
+    get("/health/liveness", HealthController, :alive?)
 
     if Application.get_env(:block_scout_web, __MODULE__)[:writing_enabled] do
       post("/decompiled_smart_contract", DecompiledSmartContractController, :create)
