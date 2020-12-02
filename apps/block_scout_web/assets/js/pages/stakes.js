@@ -36,6 +36,7 @@ export const initialState = {
   stakingAllowed: false,
   stakingTokenDefined: false,
   stakingContract: null,
+  tokenContract: null,
   tokenDecimals: 0,
   tokenSymbol: '',
   validatorSetApplyBlock: 0,
@@ -106,6 +107,7 @@ export function reducer (state = initialState, action) {
         stakingContract: action.stakingContract,
         blockRewardContract: action.blockRewardContract,
         validatorSetContract: action.validatorSetContract,
+        tokenContract: action.tokenContract,
         tokenDecimals: action.tokenDecimals,
         tokenSymbol: action.tokenSymbol
       })
@@ -234,12 +236,15 @@ if ($stakesPage.length) {
       new web3.eth.Contract(msg.block_reward_contract.abi, msg.block_reward_contract.address)
     const validatorSetContract =
       new web3.eth.Contract(msg.validator_set_contract.abi, msg.validator_set_contract.address)
+    const tokenContract =
+      new web3.eth.Contract(msg.token_contract.abi, msg.token_contract.address)
 
     store.dispatch({
       type: 'RECEIVED_CONTRACTS',
       stakingContract,
       blockRewardContract,
       validatorSetContract,
+      tokenContract,
       tokenDecimals: parseInt(msg.token_decimals, 10),
       tokenSymbol: msg.token_symbol
     })
