@@ -8,11 +8,11 @@
   "author": "POA Network",
   "license": "GPL-3.0",
   "engines": {
-    "node": "12.x",
+    "node": "14.x",
     "npm": "6.x"
   },
   "scripts": {},
   "dependencies": {
-    "solc": "^0.6.12"
+    "solc": "^0.7.5"
   }
 }
