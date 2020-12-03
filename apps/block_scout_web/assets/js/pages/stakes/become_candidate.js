@@ -75,6 +75,7 @@ export function becomeCandidateConnectionLost () {
 async function becomeCandidate ($modal, store, msg) {
   const state = store.getState()
   const stakingContract = state.stakingContract
+  const tokenContract = state.tokenContract
   const decimals = state.tokenDecimals
   const stake = new BigNumber($modal.find('[candidate-stake]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
   const $miningAddressInput = $modal.find('[mining-address]')
@@ -95,8 +96,7 @@ async function becomeCandidate ($modal, store, msg) {
 
     lockModal($modal)
 
-    console.log(`Call addPool(${stake.toFixed()}, ${miningAddress})`)
-    makeContractCall(stakingContract.methods.addPool(stake.toFixed(), miningAddress), store)
+    makeContractCall(tokenContract.methods.transferAndCall(stakingContract.options.address, stake.toFixed(), `${miningAddress}01`), store)
   } catch (err) {
     openErrorModal('Error', err.message)
   }

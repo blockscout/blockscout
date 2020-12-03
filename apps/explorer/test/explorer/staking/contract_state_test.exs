@@ -16,7 +16,7 @@ defmodule Explorer.Staking.ContractStateTest do
     assert ContractState.get(:epoch_end_block, 0) == 0
     assert ContractState.get(:min_delegator_stake, 1) == 1
     assert ContractState.get(:min_candidate_stake, 1) == 1
-    assert ContractState.get(:token_contract_address) == nil
+    assert ContractState.get(:token_contract) == nil
   end
 
   test "fetch new epoch data" do
@@ -38,7 +38,7 @@ defmodule Explorer.Staking.ContractStateTest do
     assert ContractState.get(:epoch_end_block) == 152
     assert ContractState.get(:min_delegator_stake) == 1_000_000_000_000_000_000
     assert ContractState.get(:min_candidate_stake) == 1_000_000_000_000_000_000
-    assert ContractState.get(:token_contract_address) == "0x6f7a73c96bd56f8b0debc795511eda135e105ea3"
+    assert ContractState.get(:token_contract).address == "0x6f7a73c96bd56f8b0debc795511eda135e105ea3"
 
     assert Repo.aggregate(StakingPool, :count, :id) == 6
     assert Repo.aggregate(StakingPoolsDelegator, :count, :id) == 16
