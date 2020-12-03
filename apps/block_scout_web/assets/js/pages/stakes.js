@@ -29,6 +29,7 @@ export const initialState = {
   currentBlockNumber: 0, // current block number
   finishRequestResolve: null,
   lastEpochNumber: 0,
+  loading: true,
   network: null,
   refreshBlockNumber: 0, // last page refresh block number
   refreshInterval: null,
