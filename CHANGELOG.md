@@ -6,6 +6,7 @@
 - [#3462](https://github.com/poanetwork/blockscout/pull/3462) - Display price for bridged tokens
 
 ### Fixes
+- [#3506](https://github.com/poanetwork/blockscout/pull/3506) - Fix token trasfer's tile styles: prevent overlapping of long names
 - [#3505](https://github.com/poanetwork/blockscout/pull/3505) - Fix Staking DApp first loading
 - [#3433](https://github.com/poanetwork/blockscout/pull/3433) - Token balances and rewards tables deadlocks elimination
 - [#3494](https://github.com/poanetwork/blockscout/pull/3494), [#3497](https://github.com/poanetwork/blockscout/pull/3497), [#3504](https://github.com/poanetwork/blockscout/pull/3504) - Contracts interaction: fix method call with array[] input
