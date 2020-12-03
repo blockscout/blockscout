@@ -150,7 +150,7 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
         const inputsCount = inputs && inputs.length
         let methodToCall
         const sendParams = { from: currentAccount, value: txValue || 0 }
-        if (inputsCount > 1) {
+        if (inputsCount > 1 || inputsCount === 0) {
           methodToCall = TargetContract.methods[functionName](...args).send(sendParams)
         } else {
           const inputType = inputs[0] && inputs[0].type
