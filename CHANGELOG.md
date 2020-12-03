@@ -6,6 +6,7 @@
 - [#3462](https://github.com/poanetwork/blockscout/pull/3462) - Display price for bridged tokens
 
 ### Fixes
+- [#3509](https://github.com/poanetwork/blockscout/pull/3509) - Fix QR code tooltip appearance in mobile view
 - [#3507](https://github.com/poanetwork/blockscout/pull/3507) - Fix left margin of balance card in mobile view
 - [#3506](https://github.com/poanetwork/blockscout/pull/3506) - Fix token trasfer's tile styles: prevent overlapping of long names
 - [#3505](https://github.com/poanetwork/blockscout/pull/3505) - Fix Staking DApp first loading
