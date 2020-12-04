@@ -199,7 +199,7 @@
       <% {type, %{token_transfers: token_transfers} = transaction_with_transfers} when is_list(token_transfers) and token_transfers != [] -> %>
         <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0">
         <!-- Value -->
-        <div class="card card-background-1 flex-grow-1">
+        <div class="card card-background-1 mob-transaction flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
             <%= if @transaction.value && @transaction.value.value != Decimal.new(0) do %>
               <h2 class="card-title balance-card-title"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
@@ -253,7 +253,7 @@
       <% _ -> %>
         <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column pl-0-md">
         <!-- Value -->
-        <div class="card card-background-1 flex-grow-1">
+        <div class="card card-background-1  mob-transaction flex-grow-1">
           <div class="card-body card-body-flex-column-space-between">
             <h2 class="card-title balance-card-title"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
             <div class="text-right">
@@ -271,7 +271,7 @@
       </div>
     <% end %>
       <!-- Gas -->
-      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
+      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0 mob-transaction">
         <div class="card-body card-body-flex-column-space-between">
           <h2 class="card-title balance-card-title"> <%= gettext "Gas" %> </h2>
           <div class="text-right">

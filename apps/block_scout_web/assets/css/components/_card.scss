@@ -264,6 +264,12 @@ $card-tab-icon-color-active: #fff !default;
   }
 }
 
+.mob-transaction {
+  @include media-breakpoint-down(sm) {
+    margin-left: 15px!important;
+  } 
+}
+
 .implementation-container {
   margin-top: 10px;
 }
