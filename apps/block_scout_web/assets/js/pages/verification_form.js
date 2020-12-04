@@ -49,7 +49,7 @@ const elements = {
     render ($el, state) {
       if (state.newForm) {
         $el.replaceWith(state.newForm)
-        $('button[data-button-loading="animation"]').click(event => {
+        $('button[data-button-loading="animation"]').click(_event => {
           $('#loading').removeClass('d-none')
         })
 
@@ -131,7 +131,7 @@ if ($contractVerificationPage.length) {
     msg: humps.camelizeKeys(msg)
   }))
 
-  $('button[data-button-loading="animation"]').click(event => {
+  $('button[data-button-loading="animation"]').click(_event => {
     $('#loading').removeClass('d-none')
   })
 

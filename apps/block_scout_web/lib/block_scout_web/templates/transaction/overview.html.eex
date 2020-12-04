@@ -271,7 +271,7 @@
       </div>
     <% end %>
       <!-- Gas -->
-      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0 mob-transaction">
+      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
         <div class="card-body card-body-flex-column-space-between">
           <h2 class="card-title balance-card-title"> <%= gettext "Gas" %> </h2>
           <div class="text-right">
