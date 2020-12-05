@@ -46,6 +46,13 @@ defmodule BlockScoutWeb.SmartContractView do
     |> Enum.join(", ")
   end
 
+  def values(values, type) when is_list(values) and type == "tuple[]" do
+    array_from_tuple = tupple_to_array(values)
+
+    array_from_tuple
+    |> Enum.join(", ")
+  end
+
   def values(value, type) when type in ["address", "address payable"] do
     {:ok, address} = Explorer.Chain.Hash.Address.cast(value)
     to_string(address)
@@ -53,4 +60,18 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def values(values, _) when is_list(values), do: Enum.join(values, ",")
   def values(value, _), do: value
+
+  defp tupple_to_array(values) do
+    values
+    |> Enum.map(fn value ->
+      value
+      |> Tuple.to_list()
+      |> Enum.map(&binary_to_utf_string(&1))
+      |> Enum.join(",")
+    end)
+  end
+
+  defp binary_to_utf_string(item) do
+    if is_binary(item), do: "0x" <> Base.encode16(item, case: :lower), else: item
+  end
 end

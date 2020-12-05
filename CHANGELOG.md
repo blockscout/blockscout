@@ -1,6 +1,48 @@
 ## Current
 
 ### Features
+- [#3480](https://github.com/poanetwork/blockscout/pull/3480) - Add support of Autonity client
+- [#3470](https://github.com/poanetwork/blockscout/pull/3470) - Display sum of tokens' USD value at tokens holder's address page
+- [#3462](https://github.com/poanetwork/blockscout/pull/3462) - Display price for bridged tokens
+
+### Fixes
+- [#3509](https://github.com/poanetwork/blockscout/pull/3509) - Fix QR code tooltip appearance in mobile view
+- [#3507](https://github.com/poanetwork/blockscout/pull/3507) - Fix left margin of balance card in mobile view
+- [#3506](https://github.com/poanetwork/blockscout/pull/3506) - Fix token trasfer's tile styles: prevent overlapping of long names
+- [#3505](https://github.com/poanetwork/blockscout/pull/3505) - Fix Staking DApp first loading
+- [#3433](https://github.com/poanetwork/blockscout/pull/3433) - Token balances and rewards tables deadlocks elimination
+- [#3494](https://github.com/poanetwork/blockscout/pull/3494), [#3497](https://github.com/poanetwork/blockscout/pull/3497), [#3504](https://github.com/poanetwork/blockscout/pull/3504) - Contracts interaction: fix method call with array[] input
+- [#3494](https://github.com/poanetwork/blockscout/pull/3494), [#3495](https://github.com/poanetwork/blockscout/pull/3495) - Contracts interaction: fix tuple output display
+- [#3479](https://github.com/poanetwork/blockscout/pull/3479) - Fix working with big numbers in Staking DApp
+- [#3477](https://github.com/poanetwork/blockscout/pull/3477) - Contracts interaction: fix broken call of GnosisProxy contract methods with parameters
+- [#3477](https://github.com/poanetwork/blockscout/pull/3477) - Contracts interaction: fix broken call of fallback function
+- [#3476](https://github.com/poanetwork/blockscout/pull/3476) - Fix contract verification of precompiled contracts
+- [#3467](https://github.com/poanetwork/blockscout/pull/3467) - Fix Firefox styles
+- [#3464](https://github.com/poanetwork/blockscout/pull/3464) - Fix display of token transfers list at token page (fix unique identifier of a tile)
+
+- [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix endless block invalidation issue
+- [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix doubled total transferred/minted/burnt tokens on transaction's page if block has reorg
+- [#3457](https://github.com/poanetwork/blockscout/pull/3457) - Fix doubled token transfer on block's page if block has reorg
+
+### Chore
+- [#3500](https://github.com/poanetwork/blockscout/pull/3500) - Update solc version in explorer folder
+- [#3498](https://github.com/poanetwork/blockscout/pull/3498) - Make Staking DApp work with transferAndCall function
+- [#3496](https://github.com/poanetwork/blockscout/pull/3496) - Rollback websocket_client module to 1.3.0
+- [#3489](https://github.com/poanetwork/blockscout/pull/3489) - Migrate to Webpack@5
+- [#3487](https://github.com/poanetwork/blockscout/pull/3487) - Docker setup update to be compatible with Erlang OTP 23
+- [#3484](https://github.com/poanetwork/blockscout/pull/3484) - Elixir upgrade to 11.2
+- [#3483](https://github.com/poanetwork/blockscout/pull/3483) - Update outdated dependencies
+- [#3483](https://github.com/poanetwork/blockscout/pull/3483) - Migrate to Erlang/OTP 23
+- [#3468](https://github.com/poanetwork/blockscout/pull/3468) - Do not check supported networks on application loading page
+- [#3467](https://github.com/poanetwork/blockscout/pull/3467) - NodeJS engine upgrade up to 14
+- [#3460](https://github.com/poanetwork/blockscout/pull/3460) - Update Staking DApp scripts due to MetaMask breaking changes
+
+
+## 3.4.0-beta
+
+### Features
+- [#3442](https://github.com/poanetwork/blockscout/pull/3442) - Constructor arguments autodetection in API verify endpoint
+- [#3435](https://github.com/poanetwork/blockscout/pull/3435) - Token transfers counter cache
 - [#3420](https://github.com/poanetwork/blockscout/pull/3420) - Enable read/write proxy tabs for Gnosis safe proxy contract
 - [#3411](https://github.com/poanetwork/blockscout/pull/3411) - Circles UBI theme
 - [#3406](https://github.com/poanetwork/blockscout/pull/3406), [#3409](https://github.com/poanetwork/blockscout/pull/3409) - Adding mp4 files support for NFTs
@@ -13,16 +55,21 @@
 - [#3333](https://github.com/poanetwork/blockscout/pull/3333), [#3337](https://github.com/poanetwork/blockscout/pull/3337), [#3393](https://github.com/poanetwork/blockscout/pull/3393) - Dark forest contract custom theme
 - [#3330](https://github.com/poanetwork/blockscout/pull/3330) - Caching of address transactions counter, remove query 10_000 rows limit
 
-
 ### Fixes
+- [#3449](https://github.com/poanetwork/blockscout/pull/3449) - Correct avg time calculation
+- [#3443](https://github.com/poanetwork/blockscout/pull/3443) - Improve blocks handling in Staking DApp
+- [#3440](https://github.com/poanetwork/blockscout/pull/3440) - Rewrite missing blocks range query
+- [#3439](https://github.com/poanetwork/blockscout/pull/3439) - Dark mode color fixes (search, charts)
+- [#3437](https://github.com/poanetwork/blockscout/pull/3437) - Fix Postgres Docker container
+- [#3428](https://github.com/poanetwork/blockscout/pull/3428) - Fix address tokens search
 - [#3424](https://github.com/poanetwork/blockscout/pull/3424) - Fix display of long NFT IDs
 - [#3422](https://github.com/poanetwork/blockscout/pull/3422) - Fix contract reader: tuple type
 - [#3408](https://github.com/poanetwork/blockscout/pull/3408) - Fix (total) difficulty display
-- [#3401](https://github.com/poanetwork/blockscout/pull/3401) - Fix procedure of marking internal transactions as failed
+- [#3401](https://github.com/poanetwork/blockscout/pull/3401), [#3432](https://github.com/poanetwork/blockscout/pull/3432) - Fix procedure of marking internal transactions as failed
 - [#3400](https://github.com/poanetwork/blockscout/pull/3400) - Add :last_block_number realtime chain event
 - [#3399](https://github.com/poanetwork/blockscout/pull/3399) - Fix Token transfers CSV export
 - [#3396](https://github.com/poanetwork/blockscout/pull/3396) - Handle exchange rates request throttled
-- [#3382](https://github.com/poanetwork/blockscout/pull/3382) - Check ets table exists for know tokens
+- [#3382](https://github.com/poanetwork/blockscout/pull/3382) - Check ets table exists for known tokens
 - [#3376](https://github.com/poanetwork/blockscout/pull/3376) - Fix contract nested inputs
 - [#3375](https://github.com/poanetwork/blockscout/pull/3375) - Prevent terminating of tokens/contracts process
 - [#3374](https://github.com/poanetwork/blockscout/pull/3374) - Fix find block timestamp query
@@ -43,6 +90,9 @@
 - [#3335](https://github.com/poanetwork/blockscout/pull/3335) - MarketCap calculation: check that ETS tables exist before inserting new data or lookup from the table
 
 ### Chore
+- [#3450](https://github.com/poanetwork/blockscout/pull/3450) - Replace window.web3 with window.ethereum
+- [#3446](https://github.com/poanetwork/blockscout/pull/3446), [#3448](https://github.com/poanetwork/blockscout/pull/3448) - Set infinity timeout and increase cache invalidation period for counters
+- [#3431](https://github.com/poanetwork/blockscout/pull/3431) - Standardize token name definition, if name is empty
 - [#3421](https://github.com/poanetwork/blockscout/pull/3421) - Functions to enable GnosisSafe app link
 - [#3414](https://github.com/poanetwork/blockscout/pull/3414) - Manage lis of other explorers in the footer via env var
 - [#3407](https://github.com/poanetwork/blockscout/pull/3407) - Add EthereumJSONRPC.HTTP.HTTPoison.json_rpc function clause when URL is null
