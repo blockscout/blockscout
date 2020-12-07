@@ -29,7 +29,7 @@ defmodule Explorer.Staking.ContractState do
     :snapshotted_epoch_number,
     :staking_allowed,
     :staking_contract,
-    :token_contract_address,
+    :token_contract,
     :token,
     :validator_min_reward_percent,
     :validator_set_apply_block,
@@ -73,6 +73,7 @@ defmodule Explorer.Staking.ContractState do
     staking_abi = abi("StakingAuRa")
     validator_set_abi = abi("ValidatorSetAuRa")
     block_reward_abi = abi("BlockRewardAuRa")
+    token_abi = abi("Token")
 
     staking_contract_address = Application.get_env(:explorer, __MODULE__)[:staking_contract_address]
     # 2d21d217 = keccak256(erc677TokenContract())
@@ -113,7 +114,7 @@ defmodule Explorer.Staking.ContractState do
       is_snapshotting: false,
       snapshotted_epoch_number: -1,
       staking_contract: %{abi: staking_abi, address: staking_contract_address},
-      token_contract_address: token_contract_address,
+      token_contract: %{abi: token_abi, address: token_contract_address},
       token: get_token(token_contract_address),
       validator_set_contract: %{abi: validator_set_abi, address: validator_set_contract_address}
     )
@@ -313,7 +314,7 @@ defmodule Explorer.Staking.ContractState do
 
     update_token =
       get(:token) == nil or
-        get(:token_contract_address) != global_responses.token_contract_address or
+        get(:token_contract).address != global_responses.token_contract_address or
         rem(block_number, @token_renew_frequency) == 0
 
     if update_token do

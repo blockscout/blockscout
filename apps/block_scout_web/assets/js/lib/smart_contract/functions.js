@@ -122,20 +122,52 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
     const warningMsg = 'You haven\'t approved the reading of account list from your MetaMask or MetaMask/Nifty wallet is locked or is not installed.'
     return openWarningModal('Unauthorized', warningMsg)
   }
+  const contractAbi = getContractABI($form)
+  const functionAbi = contractAbi.find(abi =>
+    abi.name === functionName
+  )
+  const inputs = functionAbi && functionAbi.inputs
 
   const $functionInputsExceptTxValue = $functionInputs.filter(':not([tx-value])')
-  const args = $.map($functionInputsExceptTxValue, element => $(element).val())
+  const args = $.map($functionInputsExceptTxValue, (element, ind) => {
+    const val = $(element).val()
+    const inputType = inputs[ind] && inputs[ind].type
+    let preparedVal
+    if (isNonSpaceInputType(inputType)) { preparedVal = val.replace(/\s/g, '') } else { preparedVal = val }
+    if (isArrayInputType(inputType)) {
+      return preparedVal.split(',')
+    } else { return preparedVal }
+  })
 
   const txValue = getTxValue($functionInputs)
   const contractAddress = $form.data('contract-address')
-  const contractAbi = getContractABI($form)
 
   const { chainId: walletChainIdHex } = window.ethereum
   compareChainIDs(explorerChainId, walletChainIdHex)
     .then(currentAccount => {
       if (functionName) {
         const TargetContract = new window.web3.eth.Contract(contractAbi, contractAddress)
-        const methodToCall = TargetContract.methods[functionName](...args).send({ from: currentAccount, value: txValue || 0 })
+        const inputsCount = inputs && inputs.length
+        let methodToCall
+        const sendParams = { from: currentAccount, value: txValue || 0 }
+        if (inputsCount > 1 || inputsCount === 0) {
+          methodToCall = TargetContract.methods[functionName](...args).send(sendParams)
+        } else {
+          const inputType = inputs[0] && inputs[0].type
+          if (Array.isArray(args) && args[0] === '') {
+            if (isArrayInputType(inputType)) {
+              methodToCall = TargetContract.methods[functionName]([]).send(sendParams)
+            } else {
+              methodToCall = TargetContract.methods[functionName]().send(sendParams)
+            }
+          } else {
+            if (isArrayInputType(inputType)) {
+              methodToCall = TargetContract.methods[functionName](args).send(sendParams)
+            } else {
+              methodToCall = TargetContract.methods[functionName](args[0]).send(sendParams)
+            }
+          }
+        }
         methodToCall
           .on('error', function (error) {
             openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
@@ -164,6 +196,14 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
     .catch(error => {
       openWarningModal('Unauthorized', formatError(error))
     })
+}
+
+function isArrayInputType (inputType) {
+  return inputType && inputType.includes('[]')
+}
+
+function isNonSpaceInputType (inputType) {
+  return inputType.includes('address') || inputType.includes('int') || inputType.includes('bool')
 }
 
 function getTxValue ($functionInputs) {
