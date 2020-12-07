@@ -7,6 +7,7 @@
 - [#3462](https://github.com/poanetwork/blockscout/pull/3462) - Display price for bridged tokens
 
 ### Fixes
+- [#3514](https://github.com/poanetwork/blockscout/pull/3514) - Read contract: fix internal server error
 - [#3513](https://github.com/poanetwork/blockscout/pull/3513) - Fix input data processing for method call (array type of data)
 - [#3509](https://github.com/poanetwork/blockscout/pull/3509) - Fix QR code tooltip appearance in mobile view
 - [#3507](https://github.com/poanetwork/blockscout/pull/3507), [#3510](https://github.com/poanetwork/blockscout/pull/3510) - Fix left margin of balance card in mobile view
