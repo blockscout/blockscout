@@ -454,6 +454,8 @@ defmodule Explorer.SmartContract.Reader do
     if String.contains?(number_rest, "[]") do
       values_array = Enum.at(values, index)
 
+      values_array = if is_list(values_array), do: values_array, else: []
+
       values_array_formatted =
         Enum.map(values_array, fn value ->
           bytes_to_string(value)
