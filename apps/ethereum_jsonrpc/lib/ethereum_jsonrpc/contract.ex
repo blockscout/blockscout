@@ -78,10 +78,11 @@ defmodule EthereumJSONRPC.Contract do
   end
 
   defp format_args(function, args) do
+    types = function.types
+
     args
     |> Enum.with_index()
     |> Enum.map(fn {arg, index} ->
-      types = function.types
       type = Enum.at(types, index)
 
       convert_string_to_array(type, arg)
@@ -97,27 +98,55 @@ defmodule EthereumJSONRPC.Contract do
         convert_int_string_to_array(arg)
 
       {:array, _} ->
-        if arg && arg !== "" do
-          String.split(arg, ",")
-        else
-          []
-        end
+        convert_string_to_array(arg)
 
       _ ->
         arg
     end
   end
 
-  defp convert_int_string_to_array(arg) do
-    if arg && arg !== "" do
-      arg
-      |> String.split(",")
-      |> Enum.map(fn el ->
-        {int, _} = Integer.parse(el)
-        int
-      end)
-    else
-      []
+  defp convert_int_string_to_array(arg) when is_nil(arg), do: true
+
+  defp convert_int_string_to_array(arg) when not is_nil(arg) do
+    cond do
+      String.starts_with?(arg, "[") && String.ends_with?(arg, "]") ->
+        arg
+        |> String.trim_leading("[")
+        |> String.trim_trailing("]")
+        |> convert_int_string_to_array_inner()
+
+      arg !== "" ->
+        convert_int_string_to_array_inner(arg)
+
+      true ->
+        []
+    end
+  end
+
+  defp convert_int_string_to_array_inner(arg) do
+    arg
+    |> String.split(",")
+    |> Enum.map(fn el ->
+      {int, _} = Integer.parse(el)
+      int
+    end)
+  end
+
+  defp convert_string_to_array(arg) when is_nil(arg), do: true
+
+  defp convert_string_to_array(arg) when not is_nil(arg) do
+    cond do
+      String.starts_with?(arg, "[") && String.ends_with?(arg, "]") ->
+        arg
+        |> String.trim_leading("[")
+        |> String.trim_trailing("]")
+        |> String.split(",")
+
+      arg !== "" ->
+        String.split(arg, ",")
+
+      true ->
+        []
     end
   end
 
@@ -151,11 +180,13 @@ defmodule EthereumJSONRPC.Contract do
         block_number -> integer_to_quantity(block_number)
       end
 
-    request(%{
+    full_params = %{
       id: id,
       method: "eth_call",
       params: [%{to: contract_address, data: data, from: from}, block]
-    })
+    }
+
+    request(full_params)
   end
 
   def eth_get_storage_at_request(contract_address, storage_pointer, block_number, json_rpc_named_arguments) do
