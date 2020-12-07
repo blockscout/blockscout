@@ -13,9 +13,11 @@ defmodule EthereumJSONRPC.Encoder do
   """
   @spec encode_function_call(%ABI.FunctionSelector{}, [term()]) :: String.t()
   def encode_function_call(function_selector, args) do
+    parsed_args = parse_args(args)
+
     encoded_args =
       function_selector
-      |> ABI.encode(parse_args(args))
+      |> ABI.encode(parsed_args)
       |> Base.encode16(case: :lower)
 
     "0x" <> encoded_args
@@ -28,7 +30,15 @@ defmodule EthereumJSONRPC.Encoder do
         Base.decode16!(hexadecimal_digits, case: :mixed)
 
       item ->
-        item
+        if is_list(item) do
+          item
+          |> Enum.map(fn el ->
+            <<"0x", hexadecimal_digits::binary>> = el
+            Base.decode16!(hexadecimal_digits, case: :mixed)
+          end)
+        else
+          item
+        end
     end)
   end
 

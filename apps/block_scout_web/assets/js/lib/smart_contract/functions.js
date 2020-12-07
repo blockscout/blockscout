@@ -135,6 +135,9 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
     let preparedVal
     if (isNonSpaceInputType(inputType)) { preparedVal = val.replace(/\s/g, '') } else { preparedVal = val }
     if (isArrayInputType(inputType)) {
+      if (preparedVal.startsWith('[') && preparedVal.endsWith(']')) {
+        preparedVal = preparedVal.substring(1, preparedVal.length - 1)
+      }
       return preparedVal.split(',')
     } else { return preparedVal }
   })
