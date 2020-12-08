@@ -15,7 +15,7 @@
 - [#3506](https://github.com/poanetwork/blockscout/pull/3506) - Fix token trasfer's tile styles: prevent overlapping of long names
 - [#3505](https://github.com/poanetwork/blockscout/pull/3505) - Fix Staking DApp first loading
 - [#3433](https://github.com/poanetwork/blockscout/pull/3433) - Token balances and rewards tables deadlocks elimination
-- [#3494](https://github.com/poanetwork/blockscout/pull/3494), [#3497](https://github.com/poanetwork/blockscout/pull/3497), [#3504](https://github.com/poanetwork/blockscout/pull/3504) - Contracts interaction: fix method call with array[] input
+- [#3494](https://github.com/poanetwork/blockscout/pull/3494), [#3497](https://github.com/poanetwork/blockscout/pull/3497), [#3504](https://github.com/poanetwork/blockscout/pull/3504), [#3517](https://github.com/poanetwork/blockscout/pull/3517) - Contracts interaction: fix method call with array[] inputs
 - [#3494](https://github.com/poanetwork/blockscout/pull/3494), [#3495](https://github.com/poanetwork/blockscout/pull/3495) - Contracts interaction: fix tuple output display
 - [#3479](https://github.com/poanetwork/blockscout/pull/3479) - Fix working with big numbers in Staking DApp
 - [#3477](https://github.com/poanetwork/blockscout/pull/3477) - Contracts interaction: fix broken call of GnosisProxy contract methods with parameters
