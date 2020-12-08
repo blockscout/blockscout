@@ -135,10 +135,14 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
     let preparedVal
     if (isNonSpaceInputType(inputType)) { preparedVal = val.replace(/\s/g, '') } else { preparedVal = val }
     if (isArrayInputType(inputType)) {
-      if (preparedVal.startsWith('[') && preparedVal.endsWith(']')) {
-        preparedVal = preparedVal.substring(1, preparedVal.length - 1)
+      if (preparedVal === '') {
+        return [[]]
+      } else {
+        if (preparedVal.startsWith('[') && preparedVal.endsWith(']')) {
+          preparedVal = preparedVal.substring(1, preparedVal.length - 1)
+        }
+        return [preparedVal.split(',')]
       }
-      return preparedVal.split(',')
     } else { return preparedVal }
   })
 
@@ -150,27 +154,8 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
     .then(currentAccount => {
       if (functionName) {
         const TargetContract = new window.web3.eth.Contract(contractAbi, contractAddress)
-        const inputsCount = inputs && inputs.length
-        let methodToCall
         const sendParams = { from: currentAccount, value: txValue || 0 }
-        if (inputsCount > 1 || inputsCount === 0) {
-          methodToCall = TargetContract.methods[functionName](...args).send(sendParams)
-        } else {
-          const inputType = inputs[0] && inputs[0].type
-          if (Array.isArray(args) && args[0] === '') {
-            if (isArrayInputType(inputType)) {
-              methodToCall = TargetContract.methods[functionName]([]).send(sendParams)
-            } else {
-              methodToCall = TargetContract.methods[functionName]().send(sendParams)
-            }
-          } else {
-            if (isArrayInputType(inputType)) {
-              methodToCall = TargetContract.methods[functionName](args).send(sendParams)
-            } else {
-              methodToCall = TargetContract.methods[functionName](args[0]).send(sendParams)
-            }
-          }
-        }
+        const methodToCall = TargetContract.methods[functionName](...args).send(sendParams)
         methodToCall
           .on('error', function (error) {
             openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
@@ -202,7 +187,7 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
 }
 
 function isArrayInputType (inputType) {
-  return inputType && inputType.includes('[]')
+  return inputType && inputType.includes('[') && inputType.includes(']')
 }
 
 function isNonSpaceInputType (inputType) {
