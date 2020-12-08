@@ -1,3 +1,6 @@
+<%= if Decimal.cmp(@circles_total_balance, 0) == :gt do %>
+  <p class="address-current-balance"><%= format_according_to_decimals(@circles_total_balance, Decimal.new(18)) %> CRC</p>
+<% end %>
 <%= if Enum.any?(@token_balances) do %>
   <a
       href="#"

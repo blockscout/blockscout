@@ -1243,7 +1243,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:33
+#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:36
 msgid "Search tokens"
 msgstr ""
 
