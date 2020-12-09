@@ -1,0 +1,59 @@
+<section data-page="contract-verification" class="container new-smart-contract-container">
+  <div data-selector="channel-disconnected-message" style="display: none;">
+    <div data-selector="reload-button" class="alert alert-danger">
+      <a href="#" class="alert-link"><%= gettext "Connection Lost" %></a>
+    </div>
+  </div>
+
+  <div class="new-smart-contract-form">
+      <h1 class="smart-contract-title"><%= gettext "New Smart Contract Verification" %></h1>
+
+      <div class="smart-contract-form-group">
+        <div class="smart-contract-form-group-inner-wrapper">
+          <label for="smart_contract_address_hash"><%= gettext("Contract Address") %></label>
+          <div class="center-column">
+            <input aria-describedby="contract-address-help-block" class="form-control border-rounded" id="smart_contract_address_hash" name="smart_contract[address_hash]" type="text" value=<%= @address_hash %> readonly="">
+          </div>
+          <div class="smart-contract-form-group-tooltip">The 0x address supplied on contract creation.</div>
+        </div>
+      </div>
+
+      <div class="smart-contract-form-group">
+        <div class="smart-contract-form-group-inner-wrapper">
+        <label for="smart_contract_metadata_json"><%= gettext("Sources and Metadata JSON") %></label>
+          <div class="center-column">
+            <form action="<%= address_contract_verification_path(@conn, :create) %>" class="dropzone-1" id="metadata-json-dropzone" method="post">
+                <button class="dz-message btn-full-primary"><%= gettext("Drop sources and metadata JSON file or click here") %></button>
+            </form>
+          </div>
+          <div class="smart-contract-form-group-tooltip">Drop all Solidity contract source files and JSON metadata file(s) created during contract compilation into the drop zone.</div>
+        </div>
+      </div>
+      <div class="smart-contract-form-buttons">
+        <button
+          class="position-absolute w-118 btn-full-primary d-none mr-2"
+          disabled="true"
+          id="loading"
+          name="button"
+          type="button"
+        >
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading....") %>
+        </button>
+        <button id="verify-via-json-submit" class="btn-full-primary mr-2" data-button-loading="animation"><%= gettext("Verify & publish") %></button>
+        <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
+        <%=
+          link(
+            gettext("Cancel"),
+            class: "btn-no-border",
+            to: address_contract_path(@conn, :index, @address_hash)
+            )
+        %>
+      </div>
+    </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/dropzone.min.js") %>"></script>
+</section>

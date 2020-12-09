@@ -66,6 +66,34 @@ const awesompleteJs = {
   ]
 }
 
+const dropzoneJs = {
+  entry: {
+    dropzone: './js/lib/dropzone.js',
+  },
+  output: {
+    filename: '[name].min.js',
+    path: path.resolve(__dirname, '../priv/static/js')
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: "css-loader",
+          }
+        ]
+      }
+    ]
+  },
+  optimization: {
+    minimizer: [
+      new TerserJSPlugin(jsOptimizationParams),
+    ]
+  }
+}
+
 const appJs =
   {
     entry: {
@@ -182,4 +210,4 @@ const appJs =
 
 const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript)
 
-module.exports = viewScripts.concat(appJs, awesompleteJs)
+module.exports = viewScripts.concat(appJs, awesompleteJs, dropzoneJs)
