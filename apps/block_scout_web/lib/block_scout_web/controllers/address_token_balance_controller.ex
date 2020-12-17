@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
   alias BlockScoutWeb.{AccessHelpers, CustomContractsHelpers}
   alias Explorer.{Chain, Market}
+  alias Indexer.Fetcher.TokenBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with true <- ajax?(conn),
@@ -12,6 +13,8 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
         address_hash
         |> Chain.fetch_last_token_balances()
         |> Market.add_price()
+
+      TokenBalanceOnDemand.trigger_fetch(address_hash, token_balances)
 
       circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses)
 
