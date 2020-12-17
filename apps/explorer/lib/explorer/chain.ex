@@ -1954,7 +1954,13 @@ defmodule Explorer.Chain do
   end
 
   def check_if_tokens_at_address(address_hash) do
-    Repo.exists?(from(tb in CurrentTokenBalance, where: tb.address_hash == ^address_hash))
+    Repo.exists?(
+      from(
+        tb in CurrentTokenBalance,
+        where: tb.address_hash == ^address_hash,
+        where: tb.value > 0
+      )
+    )
   end
 
   @doc """
