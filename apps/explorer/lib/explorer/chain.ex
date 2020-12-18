@@ -4870,11 +4870,6 @@ defmodule Explorer.Chain do
       |> where(is_deleted: false)
       |> staking_pool_filter(filter)
       |> staking_pools_paging_query(paging_options)
-      |> order_by(
-        [sp],
-        desc: sp.stakes_ratio,
-        asc: sp.staking_address_hash
-      )
 
     delegator_query =
       if address_hash do
@@ -4916,7 +4911,7 @@ defmodule Explorer.Chain do
     paging_query =
       base_query
       |> limit(^paging_options.page_size)
-      |> order_by(desc: :stakes_ratio, desc: :is_active)
+      |> order_by(desc: :stakes_ratio, desc: :is_active, asc: :staking_address_hash)
 
     case paging_options.key do
       {value, address_hash} ->
