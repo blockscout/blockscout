@@ -8,6 +8,7 @@
 - [#3462](https://github.com/poanetwork/blockscout/pull/3462) - Display price for bridged tokens
 
 ### Fixes
+- [#3527](https://github.com/poanetwork/blockscout/pull/3527) - Handle Nethermind trace nil type
 - [#3525](https://github.com/poanetwork/blockscout/pull/3525) - Address token balance on demand fetcher
 - [#3514](https://github.com/poanetwork/blockscout/pull/3514) - Read contract: fix internal server error
 - [#3513](https://github.com/poanetwork/blockscout/pull/3513) - Fix input data processing for method call (array type of data)

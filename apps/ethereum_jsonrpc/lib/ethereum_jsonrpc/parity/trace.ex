@@ -202,38 +202,18 @@ defmodule EthereumJSONRPC.Parity.Trace do
 
   """
 
-  def elixir_to_params(%{"type" => "call" = type} = elixir) do
-    %{
-      "action" => %{
-        "callType" => call_type,
-        "to" => to_address_hash,
-        "from" => from_address_hash,
-        "input" => input,
-        "gas" => gas,
-        "value" => value
-      },
-      "blockNumber" => block_number,
-      "transactionIndex" => transaction_index,
-      "transactionHash" => transaction_hash,
-      "index" => index,
-      "traceAddress" => trace_address
-    } = elixir
+  def elixir_to_params(%{"type" => "call"} = elixir) do
+    elixir_to_call_params(elixir)
+  end
 
-    %{
-      block_number: block_number,
-      transaction_hash: transaction_hash,
-      transaction_index: transaction_index,
-      index: index,
-      trace_address: trace_address,
-      type: type,
-      call_type: call_type,
-      from_address_hash: from_address_hash,
-      to_address_hash: to_address_hash,
-      gas: gas,
-      input: input,
-      value: value
-    }
-    |> put_call_error_or_result(elixir)
+  # In Nethermind client if error exists, type could be nil in cases:
+  # sender not specified
+  # gas limit below intrinsic gas
+  # block gas limit exceeded
+  # insufficient sender balance
+  # wrong transaction nonce
+  def elixir_to_params(%{"type" => nil, "error" => _error} = elixir) do
+    elixir_to_call_params(elixir)
   end
 
   def elixir_to_params(%{"type" => "create" = type} = elixir) do
@@ -286,6 +266,40 @@ defmodule EthereumJSONRPC.Parity.Trace do
       value: value,
       transaction_index: transaction_index
     }
+  end
+
+  defp elixir_to_call_params(%{"type" => type} = elixir) do
+    %{
+      "action" => %{
+        "callType" => call_type,
+        "to" => to_address_hash,
+        "from" => from_address_hash,
+        "input" => input,
+        "gas" => gas,
+        "value" => value
+      },
+      "blockNumber" => block_number,
+      "transactionIndex" => transaction_index,
+      "transactionHash" => transaction_hash,
+      "index" => index,
+      "traceAddress" => trace_address
+    } = elixir
+
+    %{
+      block_number: block_number,
+      transaction_hash: transaction_hash,
+      transaction_index: transaction_index,
+      index: index,
+      trace_address: trace_address,
+      type: type,
+      call_type: call_type,
+      from_address_hash: from_address_hash,
+      to_address_hash: to_address_hash,
+      gas: gas,
+      input: input,
+      value: value
+    }
+    |> put_call_error_or_result(elixir)
   end
 
   @doc """
