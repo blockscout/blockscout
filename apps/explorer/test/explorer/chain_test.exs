@@ -5052,7 +5052,8 @@ defmodule Explorer.ChainTest do
       address5 = Factory.address_hash()
       address6 = Factory.address_hash()
 
-      assert address1 < address2 and address2 < address3 and address3 < address4 and address4 < address5 and address5 < address6
+      assert address1 < address2 and address2 < address3 and address3 < address4 and address4 < address5 and
+               address5 < address6
 
       # insert pools in descending order
       insert(:staking_pool, is_validator: true, is_active: false, staking_address_hash: address6, stakes_ratio: 0)
@@ -5064,10 +5065,16 @@ defmodule Explorer.ChainTest do
 
       # get all pools in the order `desc: :stakes_ratio, desc: :is_active, asc: :staking_address_hash`
       options = %PagingOptions{page_size: 20, page_number: 1}
+
       assert [
-        %{pool: pool1}, %{pool: pool2}, %{pool: pool3},
-        %{pool: pool4}, %{pool: pool5}, %{pool: pool6}
-      ] = Chain.staking_pools(:validator, options)
+               %{pool: pool1},
+               %{pool: pool2},
+               %{pool: pool3},
+               %{pool: pool4},
+               %{pool: pool5},
+               %{pool: pool6}
+             ] = Chain.staking_pools(:validator, options)
+
       assert pool1.staking_address_hash == address3
       assert pool2.staking_address_hash == address4
       assert pool3.staking_address_hash == address1
