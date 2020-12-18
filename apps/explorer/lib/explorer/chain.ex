@@ -4870,6 +4870,11 @@ defmodule Explorer.Chain do
       |> where(is_deleted: false)
       |> staking_pool_filter(filter)
       |> staking_pools_paging_query(paging_options)
+      |> order_by(
+        [sp],
+        desc: sp.stakes_ratio,
+        asc: sp.staking_address_hash
+      )
 
     delegator_query =
       if address_hash do
