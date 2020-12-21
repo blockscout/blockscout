@@ -149,6 +149,7 @@ if ($contractVerificationPage.length) {
         init: function () {
           this.on('addedfile', function (_file) {
             changeVisibilityOfVerifyButton(this.files.length)
+            $('#file-help-block').text('')
           })
 
           this.on('removedfile', function (_file) {

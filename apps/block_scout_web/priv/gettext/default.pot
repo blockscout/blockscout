@@ -266,7 +266,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:88
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:305
-#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:50
+#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:56
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:54
 msgid "Cancel"
@@ -1022,7 +1022,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:69
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:299
-#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:44
+#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:50
 msgid "Loading...."
 msgstr ""
 
@@ -1228,7 +1228,7 @@ msgstr ""
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:302
-#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:47
+#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:53
 msgid "Reset"
 msgstr ""
 
@@ -1589,7 +1589,7 @@ msgstr ""
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:301
-#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:46
+#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:52
 msgid "Verify & publish"
 msgstr ""
 
@@ -2771,7 +2771,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:26
+#: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:30
 msgid "Drop sources and metadata JSON file or click here"
 msgstr ""
 
