@@ -13,6 +13,6 @@
   },
   "scripts": {},
   "dependencies": {
-    "solc": "^0.7.5"
+    "solc": "^0.8.0"
   }
 }

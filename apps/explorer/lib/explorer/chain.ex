@@ -4967,7 +4967,7 @@ defmodule Explorer.Chain do
     paging_query =
       base_query
       |> limit(^paging_options.page_size)
-      |> order_by(desc: :stakes_ratio, desc: :is_active)
+      |> order_by(desc: :stakes_ratio, desc: :is_active, asc: :staking_address_hash)
 
     case paging_options.key do
       {value, address_hash} ->

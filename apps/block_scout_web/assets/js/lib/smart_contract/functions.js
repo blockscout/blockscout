@@ -99,8 +99,10 @@ const readWriteFunction = (element) => {
     if (action === 'read') {
       const url = $form.data('url')
 
+      const contractAbi = getContractABI($form)
+      const inputs = getMethodInputs(contractAbi, functionName)
       const $methodId = $form.find('input[name=method_id]')
-      const args = $.map($functionInputs, element => $(element).val())
+      const args = prepareMethodArgs($functionInputs, inputs)
 
       const data = {
         function_name: functionName,
@@ -117,19 +119,15 @@ const readWriteFunction = (element) => {
   })
 }
 
-function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, functionName, $element) {
-  if (!isWalletEnabled) {
-    const warningMsg = 'You haven\'t approved the reading of account list from your MetaMask or MetaMask/Nifty wallet is locked or is not installed.'
-    return openWarningModal('Unauthorized', warningMsg)
-  }
-  const contractAbi = getContractABI($form)
+function getMethodInputs (contractAbi, functionName) {
   const functionAbi = contractAbi.find(abi =>
     abi.name === functionName
   )
-  const inputs = functionAbi && functionAbi.inputs
+  return functionAbi && functionAbi.inputs
+}
 
-  const $functionInputsExceptTxValue = $functionInputs.filter(':not([tx-value])')
-  const args = $.map($functionInputsExceptTxValue, (element, ind) => {
+function prepareMethodArgs ($functionInputs, inputs) {
+  return $.map($functionInputs, (element, ind) => {
     const val = $(element).val()
     const inputType = inputs[ind] && inputs[ind].type
     let preparedVal
@@ -145,6 +143,18 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
       }
     } else { return preparedVal }
   })
+}
+
+function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, functionName, $element) {
+  if (!isWalletEnabled) {
+    const warningMsg = 'You haven\'t approved the reading of account list from your MetaMask or MetaMask/Nifty wallet is locked or is not installed.'
+    return openWarningModal('Unauthorized', warningMsg)
+  }
+  const contractAbi = getContractABI($form)
+  const inputs = getMethodInputs(contractAbi, functionName)
+
+  const $functionInputsExceptTxValue = $functionInputs.filter(':not([tx-value])')
+  const args = prepareMethodArgs($functionInputsExceptTxValue, inputs)
 
   const txValue = getTxValue($functionInputs)
   const contractAddress = $form.data('contract-address')
@@ -191,6 +201,7 @@ function isArrayInputType (inputType) {
 }
 
 function isNonSpaceInputType (inputType) {
+  console.log('Gimme isNonSpaceInputType')
   return inputType.includes('address') || inputType.includes('int') || inputType.includes('bool')
 }
 
