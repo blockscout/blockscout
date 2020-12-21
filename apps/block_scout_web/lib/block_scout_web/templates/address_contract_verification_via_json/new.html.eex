@@ -22,9 +22,15 @@
         <div class="smart-contract-form-group-inner-wrapper">
         <label for="smart_contract_metadata_json"><%= gettext("Sources and Metadata JSON") %></label>
           <div class="center-column">
-            <form action="<%= address_contract_verification_path(@conn, :create) %>" class="dropzone-1" id="metadata-json-dropzone" method="post">
-                <button class="dz-message btn-full-primary"><%= gettext("Drop sources and metadata JSON file or click here") %></button>
-            </form>
+            <%= form_for @changeset,
+            address_contract_verification_path(@conn, :create),
+            [class: "dropzone-1", style: "display: flex; margin: 0 auto;", id: "metadata-json-dropzone"],
+            fn f -> %>
+              <div style="text-align: center;">
+                <span class="dz-message btn-full-primary"><%= gettext("Drop sources and metadata JSON file or click here") %></span>
+                <%= error_tag f, :file, id: "file-help-block", class: "text-danger form-error", style: "max-width: 600px;" %>
+              </div>
+            <% end %>
           </div>
           <div class="smart-contract-form-group-tooltip">Drop all Solidity contract source files and JSON metadata file(s) created during contract compilation into the drop zone.</div>
         </div>
@@ -43,7 +49,7 @@
           </span>
           <%= gettext("Loading....") %>
         </button>
-        <button id="verify-via-json-submit" class="btn-full-primary mr-2" data-button-loading="animation"><%= gettext("Verify & publish") %></button>
+        <button id="verify-via-json-submit" class="btn-full-primary mr-2" disabled data-button-loading="animation"><%= gettext("Verify & publish") %></button>
         <%= reset gettext("Reset"), class: "btn-line mr-2 js-smart-contract-form-reset" %>
         <%=
           link(

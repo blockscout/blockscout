@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.API.RPC.ContractController
+  alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.Events.Publisher, as: EventsPublisher
   alias Explorer.Chain.SmartContract
@@ -61,9 +62,12 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
 
     if json_file do
       if Chain.smart_contract_verified?(address_hash_string) do
-        # ... todo: we need to return an error here
         EventsPublisher.broadcast(
-          [{:contract_verification_result, {address_hash_string, {:error, []}, conn}}],
+          prepare_verification_error(
+            "This contract already verified in Blockscout.",
+            address_hash_string,
+            conn
+          ),
           :on_demand
         )
       else
@@ -77,12 +81,16 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
       end
     else
       EventsPublisher.broadcast(
-        [{:contract_verification_result, {address_hash_string, {:error, []}, conn}}],
+        prepare_verification_error(
+          "Please attach JSON file with metadata of contract's compilation.",
+          address_hash_string,
+          conn
+        ),
         :on_demand
       )
     end
 
-    send_resp(conn, 200, "ok")
+    send_resp(conn, 204, "")
   end
 
   def create(conn, _params) do
@@ -98,16 +106,16 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           {:ok, _verified_status} ->
             get_metadata_and_publish(address_hash_string, conn)
 
-          _ ->
+          {:error, %{"error" => error}} ->
             EventsPublisher.broadcast(
-              [{:contract_verification_result, {address_hash_string, {:error, []}, conn}}],
+              prepare_verification_error(error, address_hash_string, conn),
               :on_demand
             )
         end
 
-      _ ->
+      {:error, %{"error" => error}} ->
         EventsPublisher.broadcast(
-          [{:contract_verification_result, {address_hash_string, {:error, []}, conn}}],
+          prepare_verification_error(error, address_hash_string, conn),
           :on_demand
         )
     end
@@ -126,12 +134,28 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "secondarySources" => secondary_sources
         })
 
-      _ ->
+      {:error, %{"error" => error}} ->
         EventsPublisher.broadcast(
-          [{:contract_verification_result, {address_hash_string, {:error, []}, conn}}],
+          prepare_verification_error(error, address_hash_string, conn),
           :on_demand
         )
     end
+  end
+
+  defp prepare_verification_error(msg, address_hash_string, conn) do
+    [
+      {:contract_verification_result,
+       {address_hash_string,
+        {:error,
+         %Changeset{
+           action: :insert,
+           errors: [
+             file: {msg, []}
+           ],
+           data: %SmartContract{},
+           valid?: false
+         }}, conn}}
+    ]
   end
 
   def parse_params_from_sourcify(address_hash_string, verification_metadata) do

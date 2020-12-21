@@ -145,9 +145,28 @@ if ($contractVerificationPage.length) {
         parallelUploads: 100,
         uploadMultiple: true,
         addRemoveLinks: true,
-        params: { address_hash: $('#smart_contract_address_hash').val() }
+        params: { address_hash: $('#smart_contract_address_hash').val() },
+        init: function () {
+          this.on('addedfile', function (_file) {
+            changeVisibilityOfVerifyButton(this.files.length)
+            $('#file-help-block').text('')
+          })
+
+          this.on('removedfile', function (_file) {
+            changeVisibilityOfVerifyButton(this.files.length)
+          })
+        }
       })
     }
+
+    function changeVisibilityOfVerifyButton (filesLength) {
+      if (filesLength > 0) {
+        $('#verify-via-json-submit').prop('disabled', false)
+      } else {
+        $('#verify-via-json-submit').prop('disabled', true)
+      }
+    }
+
     setTimeout(function () {
       $('.nightly-builds-false').trigger('click')
     }, 10)
@@ -201,7 +220,7 @@ if ($contractVerificationPage.length) {
       }
     })
 
-    $('#verify-via-json-submit').on('click', function (e) {
+    $('#verify-via-json-submit').on('click', function () {
       if (dropzone.files.length > 0) {
         dropzone.processQueue()
       } else {
