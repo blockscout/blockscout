@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
       )
     end
 
-    send_resp(conn, 200, "ok")
+    send_resp(conn, 204, "")
   end
 
   def create(conn, _params) do
