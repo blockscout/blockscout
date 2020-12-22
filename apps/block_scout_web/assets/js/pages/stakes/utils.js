@@ -1,6 +1,7 @@
 import $ from 'jquery'
 import Chart from 'chart.js'
 import { openErrorModal, openSuccessModal, openWarningModal } from '../../lib/modals'
+import * as Sentry from '@sentry/browser'
 
 export async function makeContractCall (call, store, gasLimit, callbackFunc) {
   const state = store.getState()
@@ -14,6 +15,7 @@ export async function makeContractCall (call, store, gasLimit, callbackFunc) {
         state.refreshPageFunc(store)
       } else {
         openErrorModal('Error', errorMessage)
+        Sentry.captureMessage(errorMessage)
       }
     }
   }
@@ -32,6 +34,7 @@ export async function makeContractCall (call, store, gasLimit, callbackFunc) {
     } catch (e) {
       console.log(`from = ${from}`)
       console.error(e)
+      Sentry.captureException(e)
       return callbackFunc('Your transaction cannot be mined at the moment. Please, try again in a few blocks.')
     }
   }
@@ -46,6 +49,7 @@ export async function makeContractCall (call, store, gasLimit, callbackFunc) {
       if (error.message) {
         const detailsMessage = error.message.replace(/["]/g, '&quot;')
         console.log(detailsMessage)
+        Sentry.captureMessage(detailsMessage)
         const detailsHTML = ` <a href="javascript:void(0);" data-boundary="window" data-container="body" data-html="false" data-placement="top" data-toggle="tooltip" title="${detailsMessage}" data-original-title="${detailsMessage}" class="link-helptip">Details</a>`
         errorMessage = errorMessage + detailsHTML
       }
@@ -69,9 +73,12 @@ export async function makeContractCall (call, store, gasLimit, callbackFunc) {
             callbackFunc('Transaction reverted')
           }
         } else {
-          callbackFunc(`Your transaction wasn't processed in ${maxWaitBlocks} blocks. Please, try again with the increased gas price or fixed nonce (use Reset Account feature of MetaMask).`)
+          const msg = `Your transaction wasn't processed in ${maxWaitBlocks} blocks. Please, try again with the increased gas price or fixed nonce (use Reset Account feature of MetaMask).`
+          Sentry.captureMessage(msg)
+          callbackFunc(msg)
         }
       } catch (e) {
+        Sentry.captureException(e)
         callbackFunc(e.message)
       }
     }

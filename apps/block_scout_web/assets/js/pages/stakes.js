@@ -19,6 +19,7 @@ import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
 import { checkForTokenDefinition, isSupportedNetwork } from './stakes/utils'
 import { currentModal, openWarningModal, openErrorModal } from '../lib/modals'
 import constants from './stakes/constants'
+import * as Sentry from '@sentry/browser'
 
 const stakesPageSelector = '[data-page="stakes"]'
 
@@ -315,6 +316,7 @@ async function getAccounts () {
   } catch (e) {
     console.error(`eth_accounts request failed. ${constants.METAMASK_VERSION_WARNING}`)
     openErrorModal('Get account', `Cannot get your account address. ${constants.METAMASK_VERSION_WARNING}`)
+    Sentry.captureException(e)
   }
   return accounts
 }
@@ -322,7 +324,9 @@ async function getAccounts () {
 async function getNetId (web3) {
   let netId = null
   if (!window.ethereum.chainId) {
-    console.error(`Cannot get chainId. ${constants.METAMASK_VERSION_WARNING}`)
+    const msg = `Cannot get chainId. ${constants.METAMASK_VERSION_WARNING}`
+    console.error(msg)
+    Sentry.captureMessage(msg)
   } else {
     const { chainId } = window.ethereum
     netId = web3.utils.isHex(chainId) ? web3.utils.hexToNumber(chainId) : chainId
@@ -395,6 +399,7 @@ async function loginByMetamask () {
       console.error(`eth_requestAccounts failed. ${constants.METAMASK_VERSION_WARNING}`)
       openErrorModal(`Request account access', 'Cannot request access to your account in MetaMask. ${constants.METAMASK_VERSION_WARNING}`)
     }
+    Sentry.captureException(e)
   }
 }
 
@@ -460,9 +465,11 @@ function setAccount (account, store) {
       resolve(true)
     }).receive('error', () => {
       openErrorModal('Change account', errorMsg, true)
+      Sentry.captureMessage(errorMsg)
       resolve(false)
     }).receive('timeout', () => {
       openErrorModal('Change account', errorMsg, true)
+      Sentry.captureMessage(errorMsg)
       resolve(false)
     })
   })

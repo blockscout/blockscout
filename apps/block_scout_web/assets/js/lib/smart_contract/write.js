@@ -1,4 +1,5 @@
 import Web3 from 'web3'
+import * as Sentry from '@sentry/browser'
 
 export const walletEnabled = () => {
   return new Promise((resolve) => {
@@ -23,13 +24,15 @@ export const walletEnabled = () => {
                   window.web3 = new Web3(window.web3.currentProvider)
                   resolve(true)
                 })
-                .catch(_error => {
+                .catch(error => {
+                  Sentry.captureException(error)
                   resolve(false)
                 })
             }
           }
         })
-        .catch(_error => {
+        .catch(error => {
+          Sentry.captureException(error)
           resolve(false)
         })
     } else if (window.web3) {
@@ -69,7 +72,8 @@ export const shouldHideConnectButton = () => {
           .then(accounts => {
             accounts.length > 0 ? resolve({ shouldHide: true, account: accounts[0] }) : resolve({ shouldHide: false })
           })
-          .catch(_error => {
+          .catch(error => {
+            Sentry.captureException(error)
             resolve({ shouldHide: false })
           })
       } else {

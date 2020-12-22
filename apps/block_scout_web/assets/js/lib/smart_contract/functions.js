@@ -3,6 +3,7 @@ import { props } from 'eth-net-props'
 import { walletEnabled, connectToWallet, getCurrentAccount, shouldHideConnectButton } from './write.js'
 import { openErrorModal, openWarningModal, openSuccessModal, openModalWithMessage } from '../modals.js'
 import '../../pages/address'
+import * as Sentry from '@sentry/browser'
 
 const loadFunctions = (element) => {
   const $element = $(element)
@@ -169,6 +170,7 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
         methodToCall
           .on('error', function (error) {
             openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
+            Sentry.captureException(error)
           })
           .on('transactionHash', function (txHash) {
             onTransactionHash(txHash, $element, functionName)
@@ -188,11 +190,13 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
           })
           .catch(function (error) {
             openErrorModal('Error in sending transaction for fallback method', formatError(error), false)
+            Sentry.captureException(error)
           })
       }
     })
     .catch(error => {
       openWarningModal('Unauthorized', formatError(error))
+      Sentry.captureException(error)
     })
 }
 

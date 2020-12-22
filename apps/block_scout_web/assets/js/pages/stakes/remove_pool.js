@@ -1,5 +1,6 @@
 import { openErrorModal, openQuestionModal } from '../../lib/modals'
 import { makeContractCall, isSupportedNetwork } from './utils'
+import * as Sentry from '@sentry/browser'
 
 export function openRemovePoolModal (store) {
   if (!isSupportedNetwork(store)) return
@@ -18,6 +19,7 @@ async function removePool (store) {
     })
   } catch (err) {
     openErrorModal('Error', 'Currently you cannot remove your pool. Please try again during the next epoch.')
+    Sentry.captureException(err)
     return
   }
 

@@ -4,6 +4,7 @@ import { openModal, openErrorModal, openWarningModal, lockModal } from '../../li
 import { setupValidation, displayInputError } from '../../lib/validation'
 import { makeContractCall, isSupportedNetwork, isStakingAllowed } from './utils'
 import constants from './constants'
+import * as Sentry from '@sentry/browser'
 
 let status = 'modalClosed'
 
@@ -60,7 +61,9 @@ export async function openBecomeCandidateModal (event, store) {
     })
     .receive('timeout', () => {
       $(event.currentTarget).prop('disabled', false)
-      openErrorModal('Become a Candidate', 'Connection timeout')
+      const msg = 'Connection timeout'
+      openErrorModal('Become a Candidate', msg)
+      Sentry.captureMessage(msg)
     })
 }
 
@@ -69,6 +72,7 @@ export function becomeCandidateConnectionLost () {
   if (status === 'modalOpened') {
     status = 'modalClosed'
     openErrorModal('Become a Candidate', errorMsg, true)
+    Sentry.captureMessage(errorMsg)
   }
 }
 
@@ -99,6 +103,7 @@ async function becomeCandidate ($modal, store, msg) {
     makeContractCall(tokenContract.methods.transferAndCall(stakingContract.options.address, stake.toFixed(), `${miningAddress}01`), store)
   } catch (err) {
     openErrorModal('Error', err.message)
+    Sentry.captureException(err)
   }
 }
 
