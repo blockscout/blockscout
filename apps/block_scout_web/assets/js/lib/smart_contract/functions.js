@@ -119,32 +119,6 @@ const readWriteFunction = (element) => {
   })
 }
 
-function getMethodInputs (contractAbi, functionName) {
-  const functionAbi = contractAbi.find(abi =>
-    abi.name === functionName
-  )
-  return functionAbi && functionAbi.inputs
-}
-
-function prepareMethodArgs ($functionInputs, inputs) {
-  return $.map($functionInputs, (element, ind) => {
-    const val = $(element).val()
-    const inputType = inputs[ind] && inputs[ind].type
-    let preparedVal
-    if (isNonSpaceInputType(inputType)) { preparedVal = val.replace(/\s/g, '') } else { preparedVal = val }
-    if (isArrayInputType(inputType)) {
-      if (preparedVal === '') {
-        return [[]]
-      } else {
-        if (preparedVal.startsWith('[') && preparedVal.endsWith(']')) {
-          preparedVal = preparedVal.substring(1, preparedVal.length - 1)
-        }
-        return [preparedVal.split(',')]
-      }
-    } else { return preparedVal }
-  })
-}
-
 function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, functionName, $element) {
   if (!isWalletEnabled) {
     const warningMsg = 'You haven\'t approved the reading of account list from your MetaMask or MetaMask/Nifty wallet is locked or is not installed.'
@@ -196,12 +170,37 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
     })
 }
 
+function getMethodInputs (contractAbi, functionName) {
+  const functionAbi = contractAbi.find(abi =>
+    abi.name === functionName
+  )
+  return functionAbi && functionAbi.inputs
+}
+
+function prepareMethodArgs ($functionInputs, inputs) {
+  return $.map($functionInputs, (element, ind) => {
+    const val = $(element).val()
+    const inputType = inputs[ind] && inputs[ind].type
+    let preparedVal
+    if (isNonSpaceInputType(inputType)) { preparedVal = val.replace(/\s/g, '') } else { preparedVal = val }
+    if (isArrayInputType(inputType)) {
+      if (preparedVal === '') {
+        return [[]]
+      } else {
+        if (preparedVal.startsWith('[') && preparedVal.endsWith(']')) {
+          preparedVal = preparedVal.substring(1, preparedVal.length - 1)
+        }
+        return [preparedVal.split(',')]
+      }
+    } else { return preparedVal }
+  })
+}
+
 function isArrayInputType (inputType) {
   return inputType && inputType.includes('[') && inputType.includes(']')
 }
 
 function isNonSpaceInputType (inputType) {
-  console.log('Gimme isNonSpaceInputType')
   return inputType.includes('address') || inputType.includes('int') || inputType.includes('bool')
 }
 
