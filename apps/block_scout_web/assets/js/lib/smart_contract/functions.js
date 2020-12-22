@@ -99,8 +99,10 @@ const readWriteFunction = (element) => {
     if (action === 'read') {
       const url = $form.data('url')
 
+      const contractAbi = getContractABI($form)
+      const inputs = getMethodInputs(contractAbi, functionName)
       const $methodId = $form.find('input[name=method_id]')
-      const args = $.map($functionInputs, element => $(element).val())
+      const args = prepareMethodArgs($functionInputs, inputs)
 
       const data = {
         function_name: functionName,
@@ -123,28 +125,10 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
     return openWarningModal('Unauthorized', warningMsg)
   }
   const contractAbi = getContractABI($form)
-  const functionAbi = contractAbi.find(abi =>
-    abi.name === functionName
-  )
-  const inputs = functionAbi && functionAbi.inputs
+  const inputs = getMethodInputs(contractAbi, functionName)
 
   const $functionInputsExceptTxValue = $functionInputs.filter(':not([tx-value])')
-  const args = $.map($functionInputsExceptTxValue, (element, ind) => {
-    const val = $(element).val()
-    const inputType = inputs[ind] && inputs[ind].type
-    let preparedVal
-    if (isNonSpaceInputType(inputType)) { preparedVal = val.replace(/\s/g, '') } else { preparedVal = val }
-    if (isArrayInputType(inputType)) {
-      if (preparedVal === '') {
-        return [[]]
-      } else {
-        if (preparedVal.startsWith('[') && preparedVal.endsWith(']')) {
-          preparedVal = preparedVal.substring(1, preparedVal.length - 1)
-        }
-        return [preparedVal.split(',')]
-      }
-    } else { return preparedVal }
-  })
+  const args = prepareMethodArgs($functionInputsExceptTxValue, inputs)
 
   const txValue = getTxValue($functionInputs)
   const contractAddress = $form.data('contract-address')
@@ -184,6 +168,32 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
     .catch(error => {
       openWarningModal('Unauthorized', formatError(error))
     })
+}
+
+function getMethodInputs (contractAbi, functionName) {
+  const functionAbi = contractAbi.find(abi =>
+    abi.name === functionName
+  )
+  return functionAbi && functionAbi.inputs
+}
+
+function prepareMethodArgs ($functionInputs, inputs) {
+  return $.map($functionInputs, (element, ind) => {
+    const val = $(element).val()
+    const inputType = inputs[ind] && inputs[ind].type
+    let preparedVal
+    if (isNonSpaceInputType(inputType)) { preparedVal = val.replace(/\s/g, '') } else { preparedVal = val }
+    if (isArrayInputType(inputType)) {
+      if (preparedVal === '') {
+        return [[]]
+      } else {
+        if (preparedVal.startsWith('[') && preparedVal.endsWith(']')) {
+          preparedVal = preparedVal.substring(1, preparedVal.length - 1)
+        }
+        return [preparedVal.split(',')]
+      }
+    } else { return preparedVal }
+  })
 }
 
 function isArrayInputType (inputType) {
