@@ -183,6 +183,9 @@ function prepareMethodArgs ($functionInputs, inputs) {
     const inputType = inputs[ind] && inputs[ind].type
     let preparedVal
     if (isNonSpaceInputType(inputType)) { preparedVal = val.replace(/\s/g, '') } else { preparedVal = val }
+    if (isAddressInputType(inputType)) {
+      preparedVal = preparedVal.replaceAll('"', '')
+    }
     if (isArrayInputType(inputType)) {
       if (preparedVal === '') {
         return [[]]
@@ -200,8 +203,12 @@ function isArrayInputType (inputType) {
   return inputType && inputType.includes('[') && inputType.includes(']')
 }
 
+function isAddressInputType (inputType) {
+  return inputType.includes('address')
+}
+
 function isNonSpaceInputType (inputType) {
-  return inputType.includes('address') || inputType.includes('int') || inputType.includes('bool')
+  return isAddressInputType(inputType) || inputType.includes('int') || inputType.includes('bool')
 }
 
 function getTxValue ($functionInputs) {
