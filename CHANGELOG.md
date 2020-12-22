@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3532](https://github.com/poanetwork/blockscout/pull/3532) - Contract interaction: an easy setting of precision for integer input
 - [#3531](https://github.com/poanetwork/blockscout/pull/3531) - Allow double quotes in input data of contract methods
 - [#3515](https://github.com/poanetwork/blockscout/pull/3515) - CRC total balance
 - [#3513](https://github.com/poanetwork/blockscout/pull/3513) - Allow square brackets for an array input data in contracts interaction
@@ -16,7 +17,7 @@
 - [#3513](https://github.com/poanetwork/blockscout/pull/3513) - Fix input data processing for method call (array type of data)
 - [#3509](https://github.com/poanetwork/blockscout/pull/3509) - Fix QR code tooltip appearance in mobile view
 - [#3507](https://github.com/poanetwork/blockscout/pull/3507), [#3510](https://github.com/poanetwork/blockscout/pull/3510) - Fix left margin of balance card in mobile view
-- [#3506](https://github.com/poanetwork/blockscout/pull/3506) - Fix token trasfer's tile styles: prevent overlapping of long names
+- [#3506](https://github.com/poanetwork/blockscout/pull/3506) - Fix token transfer's tile styles: prevent overlapping of long names
 - [#3505](https://github.com/poanetwork/blockscout/pull/3505) - Fix Staking DApp first loading
 - [#3433](https://github.com/poanetwork/blockscout/pull/3433) - Token balances and rewards tables deadlocks elimination
 - [#3494](https://github.com/poanetwork/blockscout/pull/3494), [#3497](https://github.com/poanetwork/blockscout/pull/3497), [#3504](https://github.com/poanetwork/blockscout/pull/3504), [#3517](https://github.com/poanetwork/blockscout/pull/3517) - Contracts interaction: fix method call with array[] inputs

@@ -297,6 +297,25 @@ $card-tab-icon-color-active: #fff !default;
   padding: 6px 8px !important;
   height: 31px !important;
   font-size: 11px;
+  margin-left: 20px;
+}
+
+.contract-plus-btn-container {
+  height: 31px !important;
+  &:hover i {
+    color: #fff !important;
+  }
+}
+
+.contract-plus-btn {
+  color: $primary;
+  font-size: 15px;
+}
+
+.custom-power-input {
+  height: 20px;
+  width: 50px !important;
+  margin-top: -10px !important;
 }
 
 .list-title-description {
