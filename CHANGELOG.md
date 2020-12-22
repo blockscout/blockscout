@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3531](https://github.com/poanetwork/blockscout/pull/3531) - Allow double quotes in input data of contract methods
 - [#3515](https://github.com/poanetwork/blockscout/pull/3515) - CRC total balance
 - [#3513](https://github.com/poanetwork/blockscout/pull/3513) - Allow square brackets for an array input data in contracts interaction
 - [#3480](https://github.com/poanetwork/blockscout/pull/3480) - Add support of Autonity client
