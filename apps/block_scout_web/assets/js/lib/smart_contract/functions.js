@@ -52,6 +52,24 @@ const loadFunctions = (element) => {
       $('[data-function]').each((_, element) => {
         readWriteFunction(element)
       })
+
+      $('.contract-exponentiation-btn').on('click', (event) => {
+        const $customPower = $(event.currentTarget).find('[name=custom_power]')
+        let power
+        if ($customPower.length > 0) {
+          power = parseInt($customPower.val(), 10)
+        } else {
+          power = parseInt($(event.currentTarget).data('power'), 10)
+        }
+        const $input = $(event.currentTarget).parent().parent().parent().find('[name=function_input]')
+        const currentInputVal = parseInt($input.val(), 10) || 1
+        const newInputVal = (currentInputVal * Math.pow(10, power)).toString()
+        $input.val(newInputVal.toString())
+      })
+
+      $('[name=custom_power]').on('click', (event) => {
+        $(event.currentTarget).parent().parent().toggleClass('show')
+      })
     })
     .fail(function (response) {
       $element.html(response.statusText)
