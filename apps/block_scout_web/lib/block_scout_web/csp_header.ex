@@ -11,9 +11,9 @@ defmodule BlockScoutWeb.CSPHeader do
   def call(conn, _opts) do
     Controller.put_secure_browser_headers(conn, %{
       "content-security-policy" => "\
-        connect-src 'self' #{websocket_endpoints(conn)} https://o170146.ingest.sentry.io/; \
+        connect-src 'self' #{websocket_endpoints(conn)} *.sentry.io *.google-analytics.com; \
         default-src 'self';\
-        script-src 'self' 'unsafe-inline' 'unsafe-eval';\
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' *.googletagmanager.com *.google-analytics.com;\
         style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com;\
         img-src 'self' * data:;\
         media-src 'self' * data:;\
