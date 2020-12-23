@@ -24,15 +24,28 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
       IO.inspect("Show circles_addresses_list")
       IO.inspect(circles_addresses_list)
 
+      token_balances_with_price =
+        token_balances
+        |> Market.add_price()
+
+      IO.inspect("Show token_balances_with_price")
+      IO.inspect(token_balances_with_price)
+
+      token_balances_except_bridged =
+        token_balances
+        |> Enum.filter(fn token_balance -> !token_balance.token.bridged end)
+
       circles_total_balance =
         if Enum.count(circles_addresses_list) > 0 do
-          token_balances
+          token_balances_except_bridged
           |> Enum.reduce(Decimal.new(0), fn token_balance, acc_balance ->
             {:ok, token_address} = Chain.hash_to_address(token_balance.address_hash)
 
+            from_address = from_address_hash(token_address)
+
             created_from_address_hash =
-              if from_address_hash(token_address),
-                do: "0x" <> Base.encode16(from_address_hash(token_address).bytes, case: :lower),
+              if from_address,
+                do: "0x" <> Base.encode16(from_address.bytes, case: :lower),
                 else: nil
 
             if Enum.member?(circles_addresses_list, created_from_address_hash) && token_balance.token.name == "Circles" &&
@@ -48,13 +61,6 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
 
       IO.inspect("Show circles_total_balance")
       IO.inspect(circles_total_balance)
-
-      token_balances_with_price =
-        token_balances
-        |> Market.add_price()
-
-      IO.inspect("Show token_balances_with_price")
-      IO.inspect(token_balances_with_price)
 
       case AccessHelpers.restricted_access?(address_hash_string, params) do
         {:ok, false} ->
