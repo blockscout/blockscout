@@ -69,10 +69,15 @@ defmodule Explorer.Market do
           nil
       end
 
+    IO.inspect("Show usd_value for symbol #{symbol}")
+    IO.inspect(usd_value)
+
     Map.put(token, :usd_value, usd_value)
   end
 
   def add_price(%CurrentTokenBalance{token: token} = token_balance) do
+    IO.inspect("Show add_price for token:")
+    IO.inspect(token)
     token_with_price = add_price(token)
 
     Map.put(token_balance, :token, token_with_price)
