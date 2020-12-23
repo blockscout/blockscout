@@ -12,13 +12,17 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
       token_balances =
         address_hash
         |> Chain.fetch_last_token_balances()
-        |> Market.add_price()
+
+      IO.inspect("Show token_balances")
+      IO.inspect(token_balances)
 
       Task.start_link(fn ->
         TokenBalanceOnDemand.trigger_fetch(address_hash, token_balances)
       end)
 
       circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses)
+      IO.inspect("Show circles_addresses_list")
+      IO.inspect(circles_addresses_list)
 
       circles_total_balance =
         if Enum.count(circles_addresses_list) > 0 do
@@ -42,6 +46,16 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
           Decimal.new(0)
         end
 
+      IO.inspect("Show circles_total_balance")
+      IO.inspect(circles_total_balance)
+
+      token_balances_with_price =
+        token_balances
+        |> Market.add_price()
+
+      IO.inspect("Show token_balances_with_price")
+      IO.inspect(token_balances_with_price)
+
       case AccessHelpers.restricted_access?(address_hash_string, params) do
         {:ok, false} ->
           conn
@@ -49,7 +63,7 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
           |> put_layout(false)
           |> render("_token_balances.html",
             address_hash: address_hash,
-            token_balances: token_balances,
+            token_balances: token_balances_with_price,
             circles_total_balance: circles_total_balance
           )
 

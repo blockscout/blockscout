@@ -194,12 +194,14 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     omni_bridge_market_cap
   end
 
-  def get_current_price_for_bridged_token(symbol) when is_nil(symbol), do: nil
+  def get_current_price_for_bridged_token(symbol, _address_hash) when is_nil(symbol), do: nil
 
-  def get_current_price_for_bridged_token(symbol) do
+  def get_current_price_for_bridged_token(_symbol, address_hash) when is_nil(address_hash), do: nil
+
+  def get_current_price_for_bridged_token(symbol, address_hash) do
     bridged_token_symbol_for_price_fetching = bridged_token_symbol_mapping_to_get_price(symbol)
 
-    TokenExchangeRateCache.fetch(bridged_token_symbol_for_price_fetching)
+    TokenExchangeRateCache.fetch(bridged_token_symbol_for_price_fetching, address_hash)
   end
 
   def get_bridged_mainnet_tokens_list do
@@ -219,9 +221,11 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     bridged_mainnet_tokens_with_supply =
       bridged_mainnet_tokens_list
       |> Enum.map(fn {bridged_token_hash, bridged_token_symbol} ->
+        bridged_token_price_from_cache = TokenExchangeRateCache.fetch(bridged_token_symbol, bridged_token_hash)
+
         bridged_token_price =
-          if TokenExchangeRateCache.fetch(bridged_token_symbol) > 0 do
-            TokenExchangeRateCache.fetch(bridged_token_symbol)
+          if bridged_token_price_from_cache && Decimal.cmp(bridged_token_price_from_cache, 0) == :gt do
+            bridged_token_price_from_cache
           else
             TokenExchangeRateCache.fetch_token_exchange_rate(bridged_token_symbol)
           end

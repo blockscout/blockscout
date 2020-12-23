@@ -63,6 +63,9 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
       current_token_balances
       |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
 
+    IO.inspect("Show stale_current_token_balances")
+    IO.inspect(stale_current_token_balances)
+
     if Enum.count(stale_current_token_balances) > 0 do
       GenServer.cast(__MODULE__, {:fetch_and_update, latest_block_number, address_hash, stale_current_token_balances})
     else
@@ -86,6 +89,9 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
         ]
 
         updated_balance = BalanceReader.get_balances_of(stale_current_token_balances_to_fetch)[:ok]
+
+        IO.inspect("Show updated_balance")
+        IO.inspect(updated_balance)
 
         %{}
         |> Map.put(:address_hash, stale_current_token_balance.address_hash)
