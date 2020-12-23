@@ -87,9 +87,6 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
 
     exchange_rate = fetch_token_exchange_rate(symbol)
 
-    IO.inspect("Show exchange_rate for symbol #{symbol}")
-    IO.inspect(exchange_rate)
-
     put_into_cache(cache_key(symbol, address_hash), exchange_rate)
   end
 

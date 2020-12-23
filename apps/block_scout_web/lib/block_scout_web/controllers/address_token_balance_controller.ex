@@ -13,23 +13,15 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
         address_hash
         |> Chain.fetch_last_token_balances()
 
-      IO.inspect("Show token_balances")
-      IO.inspect(token_balances)
-
       Task.start_link(fn ->
         TokenBalanceOnDemand.trigger_fetch(address_hash, token_balances)
       end)
 
       circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses)
-      IO.inspect("Show circles_addresses_list")
-      IO.inspect(circles_addresses_list)
 
       token_balances_with_price =
         token_balances
         |> Market.add_price()
-
-      IO.inspect("Show token_balances_with_price")
-      IO.inspect(token_balances_with_price)
 
       token_balances_except_bridged =
         token_balances
@@ -58,9 +50,6 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
         else
           Decimal.new(0)
         end
-
-      IO.inspect("Show circles_total_balance")
-      IO.inspect(circles_total_balance)
 
       case AccessHelpers.restricted_access?(address_hash_string, params) do
         {:ok, false} ->
