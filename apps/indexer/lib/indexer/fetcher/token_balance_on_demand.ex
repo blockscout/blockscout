@@ -65,8 +65,6 @@ defmodule Indexer.Fetcher.TokenBalanceOnDemand do
 
     if Enum.count(stale_current_token_balances) > 0 do
       GenServer.cast(__MODULE__, {:fetch_and_update, latest_block_number, address_hash, stale_current_token_balances})
-
-      {:stale, latest_block_number}
     else
       :current
     end
