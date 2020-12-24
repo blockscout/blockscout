@@ -52,7 +52,7 @@ defmodule Explorer.Market do
     Repo.insert_all(MarketHistory, records_without_zeroes, on_conflict: :nothing, conflict_target: [:date])
   end
 
-  def add_price(%{symbol: symbol, contract_address_hash: contract_address_hash} = token) do
+  def add_price(%{symbol: symbol} = token) do
     known_address = get_known_address(symbol)
 
     matches_known_address = known_address && known_address == token.contract_address_hash
@@ -63,7 +63,7 @@ defmodule Explorer.Market do
           fetch_token_usd_value(matches_known_address, symbol)
 
         mainnet_bridged_token?(token) ->
-          TokenBridge.get_current_price_for_bridged_token(symbol, contract_address_hash)
+          TokenBridge.get_current_price_for_bridged_token(symbol)
 
         true ->
           nil

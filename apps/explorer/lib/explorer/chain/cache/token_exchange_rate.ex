@@ -47,28 +47,24 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     {:noreply, state}
   end
 
-  def cache_key(symbol, address_hash) do
-    "token_symbol_exchange_rate_#{symbol}_#{address_hash_str_key(address_hash)}"
+  def cache_key(symbol) do
+    "token_symbol_exchange_rate_#{symbol}"
   end
 
-  defp address_hash_str_key(address_hash) do
-    Base.encode16(address_hash.bytes, case: :lower)
-  end
-
-  def fetch(symbol, address_hash) do
-    if cache_expired?(symbol, address_hash) || value_is_empty?(symbol, address_hash) do
+  def fetch(symbol) do
+    if cache_expired?(symbol) || value_is_empty?(symbol) do
       Task.start_link(fn ->
-        update_cache(symbol, address_hash)
+        update_cache(symbol)
       end)
     end
 
-    fetch_from_cache(cache_key(symbol, address_hash))
+    fetch_from_cache(cache_key(symbol))
   end
 
   def cache_name, do: @cache_name
 
-  defp cache_expired?(symbol, address_hash) do
-    updated_at = fetch_from_cache("#{cache_key(symbol, address_hash)}_#{@last_update_key}")
+  defp cache_expired?(symbol) do
+    updated_at = fetch_from_cache("#{cache_key(symbol)}_#{@last_update_key}")
 
     cond do
       is_nil(updated_at) -> true
@@ -77,17 +73,17 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     end
   end
 
-  defp value_is_empty?(symbol, address_hash) do
-    value = fetch_from_cache(cache_key(symbol, address_hash))
+  defp value_is_empty?(symbol) do
+    value = fetch_from_cache(cache_key(symbol))
     is_nil(value) || value == 0
   end
 
-  defp update_cache(symbol, address_hash) do
-    put_into_cache("#{cache_key(symbol, address_hash)}_#{@last_update_key}", current_time())
+  defp update_cache(symbol) do
+    put_into_cache("#{cache_key(symbol)}_#{@last_update_key}", current_time())
 
     exchange_rate = fetch_token_exchange_rate(symbol)
 
-    put_into_cache(cache_key(symbol, address_hash), exchange_rate)
+    put_into_cache(cache_key(symbol), exchange_rate)
   end
 
   def fetch_token_exchange_rate(symbol) do
