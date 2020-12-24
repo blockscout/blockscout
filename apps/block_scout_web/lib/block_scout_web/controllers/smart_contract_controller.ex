@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.SmartContractController do
   alias Explorer.Chain
   alias Explorer.SmartContract.{Reader, Writer}
 
+  @burn_address "0x0000000000000000000000000000000000000000"
+
   def index(conn, %{"hash" => address_hash_string, "type" => contract_type, "action" => action}) do
     address_options = [
       necessity_by_association: %{
@@ -17,9 +19,9 @@ defmodule BlockScoutWeb.SmartContractController do
       implementation_address_hash_string =
         if contract_type == "proxy" do
           Chain.get_implementation_address_hash(address.hash, address.smart_contract.abi) ||
-            "0x0000000000000000000000000000000000000000"
+            @burn_address
         else
-          "0x0000000000000000000000000000000000000000"
+          @burn_address
         end
 
       functions =
