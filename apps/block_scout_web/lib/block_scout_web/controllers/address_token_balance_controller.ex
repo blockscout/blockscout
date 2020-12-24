@@ -14,7 +14,9 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
         |> Chain.fetch_last_token_balances()
         |> Market.add_price()
 
-      TokenBalanceOnDemand.trigger_fetch(address_hash, token_balances)
+      Task.start_link(fn ->
+        TokenBalanceOnDemand.trigger_fetch(address_hash, token_balances)
+      end)
 
       circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses)
 
