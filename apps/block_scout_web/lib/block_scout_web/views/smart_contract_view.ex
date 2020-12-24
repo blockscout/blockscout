@@ -34,6 +34,7 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def address?(type), do: type in ["address", "address payable"]
+  def int?(type), do: String.contains?(type, "int") && !String.contains?(type, "[")
 
   def named_argument?(%{"name" => ""}), do: false
   def named_argument?(%{"name" => nil}), do: false

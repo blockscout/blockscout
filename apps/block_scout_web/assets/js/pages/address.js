@@ -10,6 +10,9 @@ import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 import '../lib/token_balance_dropdown_search'
 import '../lib/async_listing_load'
 import '../app'
+import {
+  openQrModal
+} from '../lib/modals'
 
 export const initialState = {
   channelDisconnected: false,
@@ -215,4 +218,8 @@ if ($addressDetailsPage.length) {
     }))
 
   loadCounters(store)
+
+  $('.btn-qr-icon').click(_event => {
+    openQrModal()
+  })
 }
