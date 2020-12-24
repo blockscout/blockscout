@@ -47,6 +47,10 @@ defmodule EthereumJSONRPC.Encoder do
   """
   @spec decode_result(map(), %ABI.FunctionSelector{} | [%ABI.FunctionSelector{}]) ::
           {String.t(), {:ok, any()} | {:error, String.t() | :invalid_data}}
+  def decode_result(%{error: %{code: code, data: data, message: message}, id: id}, _selector) do
+    {id, {:error, "(#{code}) #{message} (#{data})"}}
+  end
+
   def decode_result(%{error: %{code: code, message: message}, id: id}, _selector) do
     {id, {:error, "(#{code}) #{message}"}}
   end
