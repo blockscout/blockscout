@@ -222,7 +222,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
         bridged_token_price_from_cache = TokenExchangeRateCache.fetch(bridged_token_symbol)
 
         bridged_token_price =
-          if bridged_token_price_from_cache > 0 do
+          if bridged_token_price_from_cache && Decimal.cmp(bridged_token_price_from_cache, 0) == :gt do
             bridged_token_price_from_cache
           else
             TokenExchangeRateCache.fetch_token_exchange_rate(bridged_token_symbol)
