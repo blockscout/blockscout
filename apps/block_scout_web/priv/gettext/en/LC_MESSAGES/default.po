@@ -1163,7 +1163,7 @@ msgid "QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:73
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
 msgid "Query"
 msgstr ""
 
@@ -1243,7 +1243,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:33
+#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:36
 msgid "Search tokens"
 msgstr ""
 
@@ -1616,7 +1616,7 @@ msgid "View transaction %{transaction} on %{subnetwork}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:103
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:119
 msgid "WEI"
 msgstr ""
 
@@ -1907,7 +1907,7 @@ msgid "Waiting for transaction's confirmation..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:73
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:89
 msgid "Write"
 msgstr ""
 

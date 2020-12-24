@@ -259,18 +259,18 @@ defmodule Explorer.SmartContract.Reader do
     |> Enum.with_index()
     |> Enum.all?(fn {target_type, index} ->
       type_to_compare = Map.get(Enum.at(Map.get(target_method, "inputs"), index), "type")
-      target_type_formatted = format_input_type(target_type)
+      target_type_formatted = format_type(target_type)
       target_type_formatted == type_to_compare
     end)
   end
 
-  defp format_input_type(input_type) do
+  defp format_type(input_type) do
     case input_type do
       {:array, type, array_size} ->
-        format_input_type(type) <> "[" <> Integer.to_string(array_size) <> "]"
+        format_type(type) <> "[" <> Integer.to_string(array_size) <> "]"
 
       {:array, type} ->
-        format_input_type(type) <> "[]"
+        format_type(type) <> "[]"
 
       {:tuple, tuple} ->
         format_tuple_type(tuple)
@@ -288,9 +288,9 @@ defmodule Explorer.SmartContract.Reader do
       tuple
       |> Enum.reduce(nil, fn tuple_item, acc ->
         if acc do
-          acc <> "," <> format_input_type(tuple_item)
+          acc <> "," <> format_type(tuple_item)
         else
-          format_input_type(tuple_item)
+          format_type(tuple_item)
         end
       end)
 
@@ -378,6 +378,15 @@ defmodule Explorer.SmartContract.Reader do
     returns
     |> Enum.map(fn output ->
       case output do
+        {:array, type, array_size} ->
+          %{"type" => format_type(type) <> "[" <> Integer.to_string(array_size) <> "]"}
+
+        {:array, type} ->
+          %{"type" => format_type(type) <> "[]"}
+
+        {:tuple, tuple} ->
+          %{"type" => format_tuple_type(tuple)}
+
         {type, size} ->
           full_type = Atom.to_string(type) <> Integer.to_string(size)
           %{"type" => full_type}
@@ -444,6 +453,8 @@ defmodule Explorer.SmartContract.Reader do
   defp new_value(%{"type" => "bytes" <> number_rest} = output, values, index) do
     if String.contains?(number_rest, "[]") do
       values_array = Enum.at(values, index)
+
+      values_array = if is_list(values_array), do: values_array, else: []
 
       values_array_formatted =
         Enum.map(values_array, fn value ->

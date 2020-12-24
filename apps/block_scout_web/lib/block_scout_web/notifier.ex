@@ -32,6 +32,11 @@ defmodule BlockScoutWeb.Notifier do
     Enum.each(address_token_balances, &broadcast_address_token_balance/1)
   end
 
+  def handle_event({:chain_event, :address_current_token_balances, type, address_current_token_balances})
+      when type in [:realtime, :on_demand] do
+    Enum.each(address_current_token_balances, &broadcast_address_token_balance/1)
+  end
+
   def handle_event(
         {:chain_event, :contract_verification_result, :on_demand, {address_hash, contract_verification_result, conn}}
       ) do
