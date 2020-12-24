@@ -82,7 +82,7 @@ defmodule EthereumJSONRPC.ContractTest do
       blockchain_result = [
         {:ok, [42]},
         {:ok, [52]},
-        {:error, "(-32015) Some error"}
+        {:error, "(-32015) Some error (something)"}
       ]
 
       assert EthereumJSONRPC.execute_contract_functions(

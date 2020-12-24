@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3536](https://github.com/poanetwork/blockscout/pull/3536) - Revert reason in the result of contract's method call
 - [#3532](https://github.com/poanetwork/blockscout/pull/3532) - Contract interaction: an easy setting of precision for integer input
 - [#3531](https://github.com/poanetwork/blockscout/pull/3531) - Allow double quotes in input data of contract methods
 - [#3515](https://github.com/poanetwork/blockscout/pull/3515) - CRC total balance
