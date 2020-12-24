@@ -161,9 +161,9 @@ defmodule Explorer.Counters.Bridge do
     bridged_mainnet_tokens_list = TokenBridge.get_bridged_mainnet_tokens_list()
 
     bridged_mainnet_tokens_list
-    |> Enum.each(fn {_bridged_token_hash, bridged_token_symbol} ->
-      bridged_token_price = TokenBridge.get_current_price_for_bridged_token(bridged_token_symbol)
-      cache_key = TokenExchangeRate.cache_key(bridged_token_symbol)
+    |> Enum.each(fn {bridged_token_hash, bridged_token_symbol} ->
+      bridged_token_price = TokenBridge.get_current_price_for_bridged_token(bridged_token_symbol, bridged_token_hash)
+      cache_key = TokenExchangeRate.cache_key(bridged_token_symbol, bridged_token_hash)
       TokenExchangeRate.put_into_cache(cache_key, bridged_token_price)
     end)
 
