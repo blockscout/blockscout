@@ -55,7 +55,7 @@ defmodule Explorer.Token.BalanceReaderTest do
           }
         ])
 
-      assert result == [{:error, "(-32015) VM execution error."}]
+      assert result == [{:error, "(-32015) VM execution error. (Reverted 0x)"}]
     end
   end
 
