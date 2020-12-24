@@ -92,7 +92,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
         where: not is_nil(cb.value),
         order_by: [desc: :block_number],
         select_merge: %{
-          delta: fragment("a0.value - coalesce(lead(a0.value, 1) over (order by a0.block_number desc), 0)"),
+          delta: fragment("sa0.value - coalesce(lead(sa0.value, 1) over (order by sa0.block_number desc), 0)"),
           transaction_hash: tx.hash,
           transaction_value: tx.value
         }
@@ -112,7 +112,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
         where: not is_nil(cb.value),
         order_by: [desc: :block_number],
         select_merge: %{
-          delta: fragment("a0.value - coalesce(lead(a0.value, 1) over (order by a0.block_number desc), 0)")
+          delta: fragment("sa0.value - coalesce(lead(sa0.value, 1) over (order by sa0.block_number desc), 0)")
         }
       )
 
