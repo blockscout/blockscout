@@ -1,10 +1,12 @@
 ## Current
 
 ### Features
+- [#3540](https://github.com/poanetwork/blockscout/pull/3540) - Apply DarkForest custom theme to NFT instances
 
 ### Fixes
 
 ### Chore
+- [#3540](https://github.com/poanetwork/blockscout/pull/3540) - Support different versions of DarkForest (0.4 - 0.5)
 
 
 ## 3.5.0-beta
