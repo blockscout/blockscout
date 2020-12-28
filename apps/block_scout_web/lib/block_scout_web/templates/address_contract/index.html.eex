@@ -1,5 +1,6 @@
 <% contract_creation_code = contract_creation_code(@address) %>
 <% metadata_for_verification = Chain.address_verified_twin_contract(@address.hash) %>
+<% smart_contract_verified = BlockScoutWeb.AddressView.smart_contract_verified?(@address) %>
 
 <section class="container">
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
@@ -7,17 +8,17 @@
   <div class="card">
     <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
     <div class="card-body">
-      <%= unless BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
+      <%= unless smart_contract_verified do %>
         <%= if metadata_for_verification do %>
           <div class="mb-4">
-            <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in our DB") %> <%= link(
+            <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(
       metadata_for_verification.address_hash,
       to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)) %>.<br/> <%=  gettext("All metadata displayed below is from that contract. In order to verify current contract, click") %> <i><%= gettext("Verify & Publish") %></i> <%= gettext("button") %></span>
           </div>
         <% end %>
       <% end %>
-      <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) || (!BlockScoutWeb.AddressView.smart_contract_verified?(@address) && metadata_for_verification) do %>
-        <% target_contract = if BlockScoutWeb.AddressView.smart_contract_verified?(@address), do: @address.smart_contract, else: metadata_for_verification %>
+      <%= if smart_contract_verified || (!smart_contract_verified && metadata_for_verification) do %>
+        <% target_contract = if smart_contract_verified, do: @address.smart_contract, else: metadata_for_verification %>
         <div class="mb-4">
           <dl class="row">
             <dt class="col-md-2 text-muted"><%= gettext "Contract name:" %></dt>
@@ -37,14 +38,14 @@
               <dd class="col-md-4"><%= target_contract.optimization_runs %></dd>
             <% end %>
           </dl>
-          <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) && target_contract.evm_version do %>
+          <%= if smart_contract_verified && target_contract.evm_version do %>
             <dl class="row">
               <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "EVM Version" %></dt>
               <dd class="col-sm-8 col-md-10"><%= target_contract.evm_version %></dd>
             </dl>
           <% end %>
         <hr/>
-        <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) && target_contract.constructor_arguments do %>
+        <%= if smart_contract_verified && target_contract.constructor_arguments do %>
           <section>
             <div class="d-flex justify-content-between align-items-baseline">
               <h3><%= gettext "Constructor Arguments" %></h3>
@@ -98,7 +99,7 @@
               <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= transaction_init %></code></pre>
             </div>
           <% {:ok, contract_code} -> %>
-            <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
+            <%= if smart_contract_verified do %>
               <div class="d-flex justify-content-between align-items-baseline">
                 <h3><%= gettext "Contract Byte Code" %></h3>
                 <button type="button" class="btn-line" style="float: left;" id="button" data-clipboard-text="<%= contract_code %>" aria-label="copy contract creation code">
@@ -119,7 +120,7 @@
                       <%= gettext("Verify & Publish") %>
                     </div>
                   <% else %>
-                    <%= if !BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
+                    <%= if !smart_contract_verified do %>
                       <%= link(
                             gettext("Verify & Publish"),
                             to: address_verify_contract_path(@conn, :new, @address.hash),
@@ -137,8 +138,8 @@
         <% end %>
       </section>
 
-      <%= if BlockScoutWeb.AddressView.smart_contract_verified?(@address) || (!BlockScoutWeb.AddressView.smart_contract_verified?(@address) && metadata_for_verification) do %>
-        <% target_contract = if BlockScoutWeb.AddressView.smart_contract_verified?(@address), do: @address.smart_contract, else: metadata_for_verification %>
+      <%= if smart_contract_verified || (!smart_contract_verified && metadata_for_verification) do %>
+        <% target_contract = if smart_contract_verified, do: @address.smart_contract, else: metadata_for_verification %>
         <%= if target_contract.external_libraries && target_contract.external_libraries != [] do %>
           <section>
             <div class="d-flex justify-content-between align-items-baseline">
