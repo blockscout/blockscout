@@ -10,7 +10,7 @@
   <div class="card">
     <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
     <div class="card-body">
-      <%= unless BlockScoutWeb.AddressView.smart_contract_verified?(@address) do %>
+      <%= unless smart_contract_verified do %>
         <%= if metadata_for_verification do %>
           <div class="mb-4">
             <i style="color: #f7b32b;" class="fa fa-info-circle"></i><span> <%= gettext("Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB") %> <%= link(

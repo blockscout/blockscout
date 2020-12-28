@@ -11,45 +11,9 @@
         <div class="card-body">
           <%= cond do %>
             <% Enum.member?(dark_forest_addresses_list_0_4, current_address) -> %>
-              <div class="custom-dapp-header-container">
-                <img class="custom-address-icon"/>
-                <div class="custom-dapp-header-description-container">
-                  <span class="address-detail-item custom-address-details">
-                    <%= gettext "zkSnark space warfare (v0.4)" %>
-                  </span>
-                  <a href="https://zkga.me/" target="_blank" class="application-icon-link">
-                    <span
-                      aria-label='<%= gettext("Play") %>'
-                      class="application-icon"
-                      data-placement="top"
-                      data-toggle="tooltip"
-                      title='<%= gettext("Play") %>'
-                    >
-                      <img class="application-icon"/>
-                    </span>
-                  </a>
-                </div>
-              </div>
+              <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.4)" %>
             <% Enum.member?(dark_forest_addresses_list_0_5, current_address) -> %>
-              <div class="custom-dapp-header-container">
-                <img class="custom-address-icon"/>
-                <div class="custom-dapp-header-description-container">
-                  <span class="address-detail-item custom-address-details">
-                    <%= gettext "zkSnark space warfare (v0.5)" %>
-                  </span>
-                  <a href="https://zkga.me/" target="_blank" class="application-icon-link">
-                    <span
-                      aria-label='<%= gettext("Play") %>'
-                      class="application-icon"
-                      data-placement="top"
-                      data-toggle="tooltip"
-                      title='<%= gettext("Play") %>'
-                    >
-                      <img class="application-icon"/>
-                    </span>
-                  </a>
-                </div>
-              </div>
+              <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.5)" %>
             <% Enum.member?(circles_addresses_list, current_address) -> %>
               <div class="custom-dapp-header-container">
                 <img class="custom-address-icon"/>

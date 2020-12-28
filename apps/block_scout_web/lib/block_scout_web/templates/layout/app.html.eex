@@ -130,9 +130,12 @@
       <% (
         @view_module == Elixir.BlockScoutWeb.Tokens.TransferView ||
         @view_module == Elixir.BlockScoutWeb.Tokens.ReadContractView ||
-        @view_module == Elixir.BlockScoutWeb.Tokens.HolderView
+        @view_module == Elixir.BlockScoutWeb.Tokens.HolderView ||
+        @view_module == Elixir.BlockScoutWeb.Tokens.Instance.TransferView ||
+        @view_module == Elixir.BlockScoutWeb.Tokens.Instance.MetadataView ||
+        @view_module == Elixir.BlockScoutWeb.PageNotFoundView
       ) -> %>
-        <% {:ok, created_from_address} = if @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
+        <% {:ok, created_from_address} = if @token && @token.contract_address_hash, do: Chain.hash_to_address(@token.contract_address_hash), else: {:ok, nil} %>
         <% created_from_address_hash = if from_address_hash(created_from_address), do: "0x" <> Base.encode16(from_address_hash(created_from_address).bytes, case: :lower), else: nil %>
         <script>
           function applyCustomMode() {
