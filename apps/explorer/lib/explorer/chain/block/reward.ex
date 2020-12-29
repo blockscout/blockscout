@@ -143,7 +143,8 @@ defmodule Explorer.Chain.Block.Reward do
       Application.get_env(:explorer, Explorer.Chain.Block.Reward, %{})[:validators_contract_address]
 
     if validators_contract_address do
-      is_validator_params = %{"isValidator" => [mining_key.bytes]}
+      # facd743b=keccak256(isValidator(address))
+      is_validator_params = %{"facd743b" => [mining_key.bytes]}
 
       call_contract(validators_contract_address, @is_validator_abi, is_validator_params)
     else
@@ -161,7 +162,8 @@ defmodule Explorer.Chain.Block.Reward do
       if keys_manager_contract_address do
         payout_key =
           if keys_manager_contract_address do
-            get_payout_by_mining_params = %{"getPayoutByMining" => [mining_key.bytes]}
+            # 7cded930=keccak256(getPayoutByMining(address))
+            get_payout_by_mining_params = %{"7cded930" => [mining_key.bytes]}
 
             payout_key_hash =
               call_contract(keys_manager_contract_address, @get_payout_by_mining_abi, get_payout_by_mining_params)
@@ -169,8 +171,13 @@ defmodule Explorer.Chain.Block.Reward do
             if payout_key_hash == @empty_address do
               mining_key
             else
-              {:ok, payout_key} = Chain.string_to_address_hash(payout_key_hash)
-              payout_key
+              case Chain.string_to_address_hash(payout_key_hash) do
+                {:ok, payout_key} ->
+                  payout_key
+
+                _ ->
+                  mining_key
+              end
             end
           else
             mining_key
@@ -188,30 +195,14 @@ defmodule Explorer.Chain.Block.Reward do
   defp call_contract(address, abi, params) do
     abi = [abi]
 
-    method_name =
+    method_id =
       params
       |> Enum.map(fn {key, _value} -> key end)
       |> List.first()
 
-    value =
-      case Reader.query_contract(address, abi, params) do
-        %{^method_name => {:ok, [result]}} -> result
-        _ -> @empty_address
-      end
-
-    type =
-      abi
-      |> Enum.at(0)
-      |> Map.get("outputs", [])
-      |> Enum.at(0)
-      |> Map.get("type", "")
-
-    case type do
-      "address" ->
-        "0x" <> Base.encode16(value, case: :lower)
-
-      _ ->
-        value
+    case Reader.query_contract(address, abi, params) do
+      %{^method_id => {:ok, [result]}} -> result
+      _ -> @empty_address
     end
   end
 

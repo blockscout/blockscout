@@ -12,7 +12,19 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
   <% end %>
 <% end %>
 <%= if @action== "write" do %>
-  <button connect-metamask class="button btn-line">Connect to Metamask</button>
+  <div connect-to class="connect-container">
+    <span style="margin-top: -2px;" class="mr-2">
+      <%= render BlockScoutWeb.IconsView, "_inactive_icon.html" %>
+    </span>
+     <h2 style="margin-top: -2px;">Disconnected</h2>
+    <button connect-metamask class="button btn-line ml-4">Connect to Metamask</button>
+  </div>
+  <div connected-to class="connect-container hidden">
+    <span style="margin-top: -2px;" class="mr-2">
+      <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
+    </span>
+    <h2 style="margin-top: -2px;">Connected to</h2><h3 connected-to-address class="ml-2"></h3>
+  </div>
 <% end %>
 <%= if @contract_type == "proxy" do %>
 <div class="implementation-container">
@@ -32,7 +44,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
       &#8594;
     </div>
 
-    <%= if queryable?(function["inputs"]) || writeable?(function) do %>
+    <%= if queryable?(function["inputs"]) || writable?(function) do %>
       <div style="width: 100%; overflow: hidden;">
         <%=
           for status <- ["error", "warning", "success", "question"] do
@@ -40,8 +52,9 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
           end
         %>
         <%= render BlockScoutWeb.SmartContractView, "_pending_contract_write.html" %>
-        <form class="form-inline" data-function-form data-action="<%= if writeable?(function), do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
+        <form class="form-inline" data-function-form data-action="<%= if writable?(function), do: :write, else: :read %>" data-type="<%= @contract_type %>" data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>" data-contract-address="<%= @address.hash %>" data-contract-abi="<%= @contract_abi %>" data-implementation-abi="<%= @implementation_abi  %>" data-chain-id="<%= Explorer.Chain.Cache.NetVersion.get_version() %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
+          <input type="hidden" name="method_id" value='<%= function["method_id"] %>' />
 
           <%= if queryable?(function["inputs"]) do %>
             <%= for input <- function["inputs"] do %>
@@ -57,7 +70,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
             </div>
           <% end %>
 
-          <input type="submit" value='<%= if writeable?(function), do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 mt-2" style="padding: 6px 8px!important;height: 26px;font-size: 11px;" />
+          <input type="submit" value='<%= if writable?(function), do: gettext("Write"), else: gettext("Query")%>' class="button btn-line button-xs py-0 mt-2 write-contract-btn" />
         </form>
 
         <%= if outputs?(function["outputs"]) do %>

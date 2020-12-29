@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
+  alias BlockScoutWeb.{AccessHelpers, AddressView, BlockView, CustomContractsHelpers, TabHelpers}
   alias BlockScoutWeb.Cldr.Number
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block.Reward
@@ -11,9 +11,10 @@ defmodule BlockScoutWeb.TransactionView do
   alias Timex.Duration
 
   import BlockScoutWeb.Gettext
+  import BlockScoutWeb.AddressView, only: [from_address_hash: 1, short_token_id: 2]
   import BlockScoutWeb.Tokens.Helpers
 
-  @tabs ["token_transfers", "internal_transactions", "logs", "raw_trace"]
+  @tabs ["token-transfers", "internal-transactions", "logs", "raw-trace"]
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
@@ -391,10 +392,10 @@ defmodule BlockScoutWeb.TransactionView do
     |> tab_name()
   end
 
-  defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
-  defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
+  defp tab_name(["token-transfers"]), do: gettext("Token Transfers")
+  defp tab_name(["internal-transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["logs"]), do: gettext("Logs")
-  defp tab_name(["raw_trace"]), do: gettext("Raw Trace")
+  defp tab_name(["raw-trace"]), do: gettext("Raw Trace")
 
   defp get_token_transfer_type(token_transfers) do
     token_transfers

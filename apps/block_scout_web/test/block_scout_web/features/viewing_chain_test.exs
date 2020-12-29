@@ -141,8 +141,12 @@ defmodule BlockScoutWeb.ViewingChainTest do
       start_supervised!(AddressesCounter)
       AddressesCounter.consolidate()
 
+      ChainPage.visit_page(session)
+
+      # wait for the `transactions-list` to load
+      :timer.sleep(1000)
+
       session
-      |> ChainPage.visit_page()
       |> assert_has(ChainPage.token_transfers(transaction, count: 1))
       |> click(ChainPage.token_transfers_expansion(transaction))
       |> assert_has(ChainPage.token_transfers(transaction, count: 3))

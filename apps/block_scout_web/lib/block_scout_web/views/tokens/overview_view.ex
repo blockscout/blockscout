@@ -1,11 +1,14 @@
 defmodule BlockScoutWeb.Tokens.OverviewView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, Token}
 
-  alias BlockScoutWeb.{CurrencyHelpers, LayoutView}
+  alias BlockScoutWeb.{AccessHelpers, CurrencyHelpers, CustomContractsHelpers, LayoutView}
 
-  @tabs ["token_transfers", "token_holders", "read_contract", "inventory"]
+  import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
+
+  @tabs ["token-transfers", "token-holders", "read-contract", "inventory"]
   @etherscan_token_link "https://etherscan.io/token/"
   @blockscout_base_link "https://blockscout.com/"
 
@@ -34,9 +37,9 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
     |> tab_name()
   end
 
-  defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
-  defp tab_name(["token_holders"]), do: gettext("Token Holders")
-  defp tab_name(["read_contract"]), do: gettext("Read Contract")
+  defp tab_name(["token-transfers"]), do: gettext("Token Transfers")
+  defp tab_name(["token-holders"]), do: gettext("Token Holders")
+  defp tab_name(["read-contract"]), do: gettext("Read Contract")
   defp tab_name(["inventory"]), do: gettext("Inventory")
 
   def display_inventory?(%Token{type: "ERC-721"}), do: true

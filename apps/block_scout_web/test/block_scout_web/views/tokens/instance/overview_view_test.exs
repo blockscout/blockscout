@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewViewTest do
 
   alias BlockScoutWeb.Tokens.Instance.OverviewView
 
-  describe "image_src/1" do
+  describe "media_src/1" do
     test "fetches image from ['properties']['image']['description'] path" do
       json = """
         {
@@ -28,14 +28,14 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewViewTest do
 
       data = Jason.decode!(json)
 
-      assert OverviewView.image_src(%{metadata: data}) ==
+      assert OverviewView.media_src(%{metadata: data}) ==
                "https://img.paoditu.com/images/cut_trace_images/6b/5f/5b754f6b5f3b5_500_500.jpg"
     end
 
     test "handles empty images" do
       instance = %{metadata: %{"image" => ""}}
 
-      assert OverviewView.image_src(instance) != ""
+      assert OverviewView.media_src(instance) != ""
     end
   end
 end

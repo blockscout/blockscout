@@ -28,6 +28,6 @@ defmodule BlockScoutWeb.TransactionListPage do
   end
 
   def visit_pending_transactions_page(session) do
-    visit(session, "/pending_transactions")
+    visit(session, "/pending-transactions")
   end
 end

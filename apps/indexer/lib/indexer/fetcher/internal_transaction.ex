@@ -109,7 +109,12 @@ defmodule Indexer.Fetcher.InternalTransaction do
         EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
 
       _ ->
-        fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments)
+        try do
+          fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments)
+        rescue
+          error ->
+            {:error, error}
+        end
     end
     |> case do
       {:ok, internal_transactions_params} ->
@@ -156,8 +161,16 @@ defmodule Indexer.Fetcher.InternalTransaction do
         |> Chain.get_transactions_of_block_number()
         |> Enum.map(&params(&1))
         |> case do
-          [] -> {:ok, []}
-          transactions -> EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
+          [] ->
+            {:ok, []}
+
+          transactions ->
+            try do
+              EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
+            catch
+              :exit, error ->
+                {:error, error}
+            end
         end
         |> case do
           {:ok, internal_transactions} -> {:ok, internal_transactions ++ acc_list}
@@ -226,27 +239,28 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   defp remove_failed_creations(internal_transactions_params) do
     internal_transactions_params
-    |> Enum.map(fn internal_transaction_params ->
-      internal_transaction_params[:trace_address]
+    |> Enum.map(fn internal_transaction_param ->
+      transaction_index = internal_transaction_param[:transaction_index]
+      block_number = internal_transaction_param[:block_number]
 
-      failed_parent_index =
-        Enum.find(internal_transaction_params[:trace_address], fn trace_address ->
-          parent = Enum.at(internal_transactions_params, trace_address)
-
-          !is_nil(parent[:error])
+      failed_parent =
+        internal_transactions_params
+        |> Enum.filter(fn internal_transactions_param ->
+          internal_transactions_param[:block_number] == block_number &&
+            internal_transactions_param[:transaction_index] == transaction_index &&
+            internal_transactions_param[:trace_address] == [] && !is_nil(internal_transactions_param[:error])
         end)
-
-      failed_parent = failed_parent_index && Enum.at(internal_transactions_params, failed_parent_index)
+        |> Enum.at(0)
 
       if failed_parent do
-        internal_transaction_params
+        internal_transaction_param
         |> Map.delete(:created_contract_address_hash)
         |> Map.delete(:created_contract_code)
         |> Map.delete(:gas_used)
         |> Map.delete(:output)
         |> Map.put(:error, failed_parent[:error])
       else
-        internal_transaction_params
+        internal_transaction_param
       end
     end)
   end

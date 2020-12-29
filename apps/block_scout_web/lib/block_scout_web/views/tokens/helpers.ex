@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   Helper functions for interacting with `t:BlockScoutWeb.Chain.Token` attributes.
   """
 
-  alias BlockScoutWeb.{CurrencyHelpers}
+  alias BlockScoutWeb.{AddressView, CurrencyHelpers}
   alias Explorer.Chain.{Address, Token}
 
   @doc """
@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   When the token's symbol is nil, the function will return the contract address hash.
   """
   def token_symbol(%Token{symbol: nil, contract_address_hash: address_hash}) do
-    "#{contract_address_hash_truncated(address_hash)}..."
+    AddressView.short_hash_left_right(address_hash)
   end
 
   def token_symbol(%Token{symbol: symbol}) do
@@ -62,16 +62,10 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   def token_name(%Address.Token{} = address_token), do: build_token_name(address_token)
 
   defp build_token_name(%{name: nil, contract_address_hash: address_hash}) do
-    "#{contract_address_hash_truncated(address_hash)}..."
+    AddressView.short_hash_left_right(address_hash)
   end
 
   defp build_token_name(%{name: name}) do
     name
-  end
-
-  defp contract_address_hash_truncated(address_hash) do
-    address_hash
-    |> to_string()
-    |> String.slice(0..6)
   end
 end

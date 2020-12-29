@@ -171,25 +171,7 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiaries do
   # The rewardType "uncle" will show reward for validating an uncle block
   defp get_address_type(reward_type, index) when reward_type == "external" and index == 0, do: :validator
   defp get_address_type(reward_type, index) when reward_type == "external" and index == 1, do: :emission_funds
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 2, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 3, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 4, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 5, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 6, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 7, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 8, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 9, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 10, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 11, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 12, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 13, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 14, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 15, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 16, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 17, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 18, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 19, do: :validator
-  defp get_address_type(reward_type, index) when reward_type == "external" and index == 20, do: :validator
+  defp get_address_type(reward_type, index) when reward_type == "external" and index >= 2, do: :validator
   defp get_address_type(reward_type, _index) when reward_type == "block", do: :validator
   defp get_address_type(reward_type, _index) when reward_type == "uncle", do: :uncle
   defp get_address_type(reward_type, _index) when reward_type == "emptyStep", do: :validator

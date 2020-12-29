@@ -1,54 +1,82 @@
 import Web3 from 'web3'
 
 export const walletEnabled = () => {
-  if (window.ethereum) {
-    window.web3 = new Web3(window.ethereum)
-    if (window.ethereum.isUnlocked && window.ethereum.isNiftyWallet) { // Nifty Wallet
+  return new Promise((resolve) => {
+    if (window.ethereum) {
+      window.web3 = new Web3(window.ethereum)
+      window.ethereum._metamask.isUnlocked()
+        .then(isUnlocked => {
+          if (isUnlocked && window.ethereum.isNiftyWallet) { // Nifty Wallet
+            window.web3 = new Web3(window.web3.currentProvider)
+            resolve(true)
+          } else if (isUnlocked === false && window.ethereum.isNiftyWallet) { // Nifty Wallet
+            window.ethereum.enable()
+            resolve(false)
+          } else {
+            if (window.ethereum.isNiftyWallet) {
+              window.ethereum.enable()
+              window.web3 = new Web3(window.web3.currentProvider)
+              resolve(true)
+            } else {
+              return window.ethereum.request({ method: 'eth_requestAccounts' })
+                .then((_res) => {
+                  window.web3 = new Web3(window.web3.currentProvider)
+                  resolve(true)
+                })
+                .catch(_error => {
+                  resolve(false)
+                })
+            }
+          }
+        })
+        .catch(_error => {
+          resolve(false)
+        })
+    } else if (window.web3) {
       window.web3 = new Web3(window.web3.currentProvider)
-      return Promise.resolve(true)
-    } else if (window.ethereum.isUnlocked === false && window.ethereum.isNiftyWallet) { // Nifty Wallet
-      return Promise.resolve(false)
+      resolve(true)
     } else {
-      window.ethereum.enable()
-      window.web3 = new Web3(window.web3.currentProvider)
-      return Promise.resolve(true)
+      resolve(false)
     }
-  } else if (window.web3) {
-    window.web3 = new Web3(window.web3.currentProvider)
-    return Promise.resolve(true)
-  } else {
-    return Promise.resolve(false)
-  }
+  })
 }
 
 export const connectToWallet = () => {
   if (window.ethereum) {
-    window.ethereum.enable()
+    if (window.ethereum.isNiftyWallet) {
+      window.ethereum.enable()
+    } else {
+      window.ethereum.request({ method: 'eth_requestAccounts' })
+    }
   }
 }
 
 export const getCurrentAccount = async () => {
-  const accounts = await window.web3.eth.getAccounts()
+  const accounts = await window.ethereum.request({ method: 'eth_accounts' })
   const account = accounts[0] ? accounts[0].toLowerCase() : null
 
   return account
 }
 
-export const hideConnectButton = () => {
-  if (window.ethereum) {
-    window.web3 = new Web3(window.ethereum)
-    if (window.ethereum.isNiftyWallet) {
-      return true
-    } else if (window.ethereum.isMetaMask) {
-      if (window.ethereum.selectedAddress) {
-        return true
+export const shouldHideConnectButton = () => {
+  return new Promise((resolve) => {
+    if (window.ethereum) {
+      window.web3 = new Web3(window.ethereum)
+      if (window.ethereum.isNiftyWallet) {
+        resolve({ shouldHide: true, account: window.ethereum.selectedAddress })
+      } else if (window.ethereum.isMetaMask) {
+        window.ethereum.request({ method: 'eth_accounts' })
+          .then(accounts => {
+            accounts.length > 0 ? resolve({ shouldHide: true, account: accounts[0] }) : resolve({ shouldHide: false })
+          })
+          .catch(_error => {
+            resolve({ shouldHide: false })
+          })
       } else {
-        return false
+        resolve({ shouldHide: true, account: window.ethereum.selectedAddress })
       }
     } else {
-      return true
+      resolve({ shouldHide: false })
     }
-  } else {
-    return false
-  }
+  })
 }

@@ -34,19 +34,27 @@ defmodule Explorer.Counters.AverageBlockTimeTest do
 
       first_timestamp = Timex.now()
 
-      insert(:block, number: block_number, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: -100 - 3))
+      insert(:block, number: block_number, consensus: true, timestamp: Timex.shift(first_timestamp, seconds: -100 - 6))
+
+      insert(:block, number: block_number, consensus: false, timestamp: Timex.shift(first_timestamp, seconds: -100 - 12))
+
       insert(:block, number: block_number, consensus: false, timestamp: Timex.shift(first_timestamp, seconds: -100 - 9))
-      insert(:block, number: block_number, consensus: false, timestamp: Timex.shift(first_timestamp, seconds: -100 - 6))
+
+      insert(:block,
+        number: block_number + 1,
+        consensus: true,
+        timestamp: Timex.shift(first_timestamp, seconds: -100 - 3)
+      )
 
       Enum.each(1..100, fn i ->
         insert(:block,
-          number: block_number + i,
+          number: block_number + 1 + i,
           consensus: true,
-          timestamp: Timex.shift(first_timestamp, seconds: -(101 - i) - 9)
+          timestamp: Timex.shift(first_timestamp, seconds: -(101 - i) - 12)
         )
       end)
 
-      assert Repo.aggregate(Block, :count, :hash) == 103
+      assert Repo.aggregate(Block, :count, :hash) == 104
 
       AverageBlockTime.refresh()
 

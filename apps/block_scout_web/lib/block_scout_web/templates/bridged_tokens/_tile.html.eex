@@ -1,0 +1,59 @@
+<tr>
+  <td class="stakes-td">
+      <!-- incremented number by order in the list -->
+      <span class="color-lighten">
+        <%= @index %>
+      </span>
+  </td>
+  <td class="stakes-td">
+    <% token = token_display_name(@token) %>
+    <div class="centered-container">
+      <%= link(token,
+        to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
+        "data-test": "token_link",
+        class: "text-truncate pre-wrap") %>
+      <%= if owl_token_amb?(@token.contract_address.hash) do %>
+        <span
+          data-toggle="tooltip"
+          data-placement="top"
+          data-html="true"
+          title="<%= owl_token_amb_info() %>">
+          <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="owl_info"></i>
+        </span>
+      <% end %>
+      <%= if owl_token_omni?(@token.contract_address.hash) do %>
+        <span
+          data-toggle="tooltip"
+          data-placement="top"
+          data-html="true"
+          title="<%= owl_token_omni_info() %>">
+          <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="owl_info"></i>
+        </span>
+      <% end %>
+      <%= if @bridged_token.type do %>
+        <div class="bs-label right <%= @bridged_token.type %>"><%= String.upcase(@bridged_token.type) %></div>
+      <% end %>
+    </div>
+  </td>
+  <td class="stakes-td">
+    <%= render BlockScoutWeb.AddressView,
+      "_link.html",
+      address: @token.contract_address,
+      contract: true,
+      use_custom_tooltip: false
+    %>
+  </td>
+  <td class="stakes-td">
+    <%= if decimals?(@token) do %>
+      <span data-test="token_supply"><%= format_according_to_decimals(@token.total_supply, @token.decimals) %></span>
+    <% else %>
+      <span data-test="token_supply"><%= format_integer_to_currency(@token.total_supply) %></span>
+    <% end %> <%= @token.symbol %>
+  </td>
+  <td class="stakes-td">
+    <span class="mr-4">
+      <span data-test="transaction_count">
+        <%= @token.holder_count %>
+    </span>
+  </td>
+</tr>

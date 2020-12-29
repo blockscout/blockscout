@@ -28,6 +28,16 @@ defmodule BlockScoutWeb.TokensController do
           )
       end
 
+    items_count_str = Map.get(params, "items_count")
+
+    items_count =
+      if items_count_str do
+        {items_count, _} = Integer.parse(items_count_str)
+        items_count
+      else
+        0
+      end
+
     items =
       tokens_page
       |> Enum.with_index(1)
@@ -36,7 +46,7 @@ defmodule BlockScoutWeb.TokensController do
           TokensView,
           "_tile.html",
           token: token,
-          index: index
+          index: items_count + index
         )
       end)
 

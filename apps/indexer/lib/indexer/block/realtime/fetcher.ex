@@ -21,14 +21,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_token_balances: 1,
       async_import_token_instances: 1,
       async_import_uncles: 1,
-      fetch_and_import_range: 2,
-      async_import_staking_pools: 0
+      fetch_and_import_range: 2
     ]
 
   alias Ecto.Changeset
   alias EthereumJSONRPC.{Blocks, FetchedBalances, Subscription}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
@@ -86,6 +86,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       )
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
+    Publisher.broadcast([{:last_block_number, number}], :realtime)
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
     start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
@@ -369,7 +370,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_token_instances(imported)
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)
-    async_import_staking_pools()
   end
 
   defp balances(

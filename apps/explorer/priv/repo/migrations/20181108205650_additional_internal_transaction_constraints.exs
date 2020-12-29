@@ -9,7 +9,7 @@ defmodule Explorer.Repo.Migrations.AdditionalInternalTransactionConstraints do
   ```
 
   NOTE: you may want to consider using `apps/explorer/priv/repo/migrations/scripts/20181108205650_large_additional_internal_transaction_constraints.sql`
-  instead if you are dealing with a very large number of transactions/internal_transactions.
+  instead if you are dealing with a very large number of transactions/internal-transactions.
   """
 
   use Ecto.Migration

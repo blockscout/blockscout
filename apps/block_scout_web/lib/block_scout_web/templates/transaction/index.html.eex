@@ -1,9 +1,17 @@
+<script>
+  function ShowLayoutContainer() {
+
+    document.getElementsByClassName("layout-container")[0].style.visibility = "visible";
+  }
+  window.onload = ShowLayoutContainer()
+</script>
 <section class="container" data-page="transaction-list">
   <div class="card">
     <div class="card-body" data-async-listing="<%= @current_path %>">
-      <h1 class="card-title"><%= gettext "Validated Transactions" %></h1>
-
-      <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      <h1 class="card-title list-title-description"><%= gettext "Validated Transactions" %></h1>
+      <div class="list-top-pagination-container-wrapper">
+        <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "top", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
+      </div>
 
       <div data-selector="channel-batching-message" style="display: none;">
         <div data-selector="reload-button" class="alert alert-info">

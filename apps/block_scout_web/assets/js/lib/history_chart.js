@@ -148,13 +148,8 @@ function getMarketCapData (marketHistoryData, availableSupply) {
 // colors for light and dark theme
 var priceLineColor
 var mcapLineColor
-if (localStorage.getItem('current-color-mode') === 'dark') {
-  priceLineColor = sassVariables.darkprimary
-  mcapLineColor = sassVariables.darksecondary
-} else {
-  priceLineColor = sassVariables.dashboardLineColorPrice
-  mcapLineColor = sassVariables.dashboardLineColorMarket
-}
+priceLineColor = sassVariables.dashboardLineColorPrice
+mcapLineColor = sassVariables.dashboardLineColorMarket
 
 class MarketHistoryChart {
   constructor (el, availableSupply, _marketHistoryData, dataConfig) {
@@ -174,8 +169,8 @@ class MarketHistoryChart {
       fill: false,
       pointRadius: 0,
       backgroundColor: priceLineColor,
-      borderColor: priceLineColor,
-      lineTension: 0
+      borderColor: priceLineColor
+      // lineTension: 0
     }
     if (dataConfig.market === undefined || dataConfig.market.indexOf('price') === -1) {
       this.price.hidden = true
@@ -190,8 +185,8 @@ class MarketHistoryChart {
       fill: false,
       pointRadius: 0,
       backgroundColor: mcapLineColor,
-      borderColor: mcapLineColor,
-      lineTension: 0
+      borderColor: mcapLineColor
+      // lineTension: 0
     }
     if (dataConfig.market === undefined || dataConfig.market.indexOf('market_cap') === -1) {
       this.marketCap.hidden = true
@@ -206,8 +201,8 @@ class MarketHistoryChart {
       fill: false,
       pointRadius: 0,
       backgroundColor: sassVariables.dashboardLineColorTransactions,
-      borderColor: sassVariables.dashboardLineColorTransactions,
-      lineTension: 0
+      borderColor: sassVariables.dashboardLineColorTransactions
+      // lineTension: 0
     }
 
     if (dataConfig.transactions === undefined || dataConfig.transactions.indexOf('transactions_per_day') === -1) {
