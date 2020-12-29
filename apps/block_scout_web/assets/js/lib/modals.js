@@ -189,3 +189,8 @@ export function openQuestionModal (title, text, acceptCallback = null, exceptCal
 
   openModal($modal)
 }
+
+export function openQrModal () {
+  const $modal = $('#qrModal')
+  openModal($modal)
+}

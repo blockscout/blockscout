@@ -52,6 +52,24 @@ const loadFunctions = (element) => {
       $('[data-function]').each((_, element) => {
         readWriteFunction(element)
       })
+
+      $('.contract-exponentiation-btn').on('click', (event) => {
+        const $customPower = $(event.currentTarget).find('[name=custom_power]')
+        let power
+        if ($customPower.length > 0) {
+          power = parseInt($customPower.val(), 10)
+        } else {
+          power = parseInt($(event.currentTarget).data('power'), 10)
+        }
+        const $input = $(event.currentTarget).parent().parent().parent().find('[name=function_input]')
+        const currentInputVal = parseInt($input.val(), 10) || 1
+        const newInputVal = (currentInputVal * Math.pow(10, power)).toString()
+        $input.val(newInputVal.toString())
+      })
+
+      $('[name=custom_power]').on('click', (event) => {
+        $(event.currentTarget).parent().parent().toggleClass('show')
+      })
     })
     .fail(function (response) {
       $element.html(response.statusText)
@@ -99,8 +117,10 @@ const readWriteFunction = (element) => {
     if (action === 'read') {
       const url = $form.data('url')
 
+      const contractAbi = getContractABI($form)
+      const inputs = getMethodInputs(contractAbi, functionName)
       const $methodId = $form.find('input[name=method_id]')
-      const args = $.map($functionInputs, element => $(element).val())
+      const args = prepareMethodArgs($functionInputs, inputs)
 
       const data = {
         function_name: functionName,
@@ -122,52 +142,99 @@ function callMethod (isWalletEnabled, $functionInputs, explorerChainId, $form, f
     const warningMsg = 'You haven\'t approved the reading of account list from your MetaMask or MetaMask/Nifty wallet is locked or is not installed.'
     return openWarningModal('Unauthorized', warningMsg)
   }
+  const contractAbi = getContractABI($form)
+  const inputs = getMethodInputs(contractAbi, functionName)
 
   const $functionInputsExceptTxValue = $functionInputs.filter(':not([tx-value])')
-  const args = $.map($functionInputsExceptTxValue, element => $(element).val())
+  const args = prepareMethodArgs($functionInputsExceptTxValue, inputs)
 
   const txValue = getTxValue($functionInputs)
   const contractAddress = $form.data('contract-address')
-  const contractAbi = getContractABI($form)
 
   const { chainId: walletChainIdHex } = window.ethereum
   compareChainIDs(explorerChainId, walletChainIdHex)
     .then(currentAccount => {
-      let methodToCall
-
       if (functionName) {
         const TargetContract = new window.web3.eth.Contract(contractAbi, contractAddress)
-        methodToCall = TargetContract.methods[functionName](...args).send({ from: currentAccount, value: txValue || 0 })
+        const sendParams = { from: currentAccount, value: txValue || 0 }
+        const methodToCall = TargetContract.methods[functionName](...args).send(sendParams)
+        methodToCall
+          .on('error', function (error) {
+            openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
+          })
+          .on('transactionHash', function (txHash) {
+            onTransactionHash(txHash, $element, functionName)
+          })
       } else {
         const txParams = {
           from: currentAccount,
           to: contractAddress,
           value: txValue || 0
         }
-        methodToCall = window.ethereum.request({
+        window.ethereum.request({
           method: 'eth_sendTransaction',
           params: [txParams]
         })
+          .then(function (txHash) {
+            onTransactionHash(txHash, $element, functionName)
+          })
+          .catch(function (error) {
+            openErrorModal('Error in sending transaction for fallback method', formatError(error), false)
+          })
       }
-
-      methodToCall
-        .on('error', function (error) {
-          openErrorModal(`Error in sending transaction for method "${functionName}"`, formatError(error), false)
-        })
-        .on('transactionHash', function (txHash) {
-          onTransactionHash(txHash, $element, functionName)
-        })
     })
     .catch(error => {
       openWarningModal('Unauthorized', formatError(error))
     })
 }
 
+function getMethodInputs (contractAbi, functionName) {
+  const functionAbi = contractAbi.find(abi =>
+    abi.name === functionName
+  )
+  return functionAbi && functionAbi.inputs
+}
+
+function prepareMethodArgs ($functionInputs, inputs) {
+  return $.map($functionInputs, (element, ind) => {
+    const val = $(element).val()
+    const inputType = inputs[ind] && inputs[ind].type
+    let preparedVal
+    if (isNonSpaceInputType(inputType)) { preparedVal = val.replace(/\s/g, '') } else { preparedVal = val }
+    if (isAddressInputType(inputType)) {
+      preparedVal = preparedVal.replaceAll('"', '')
+    }
+    if (isArrayInputType(inputType)) {
+      if (preparedVal === '') {
+        return [[]]
+      } else {
+        if (preparedVal.startsWith('[') && preparedVal.endsWith(']')) {
+          preparedVal = preparedVal.substring(1, preparedVal.length - 1)
+        }
+        return [preparedVal.split(',')]
+      }
+    } else { return preparedVal }
+  })
+}
+
+function isArrayInputType (inputType) {
+  return inputType && inputType.includes('[') && inputType.includes(']')
+}
+
+function isAddressInputType (inputType) {
+  return inputType.includes('address')
+}
+
+function isNonSpaceInputType (inputType) {
+  return isAddressInputType(inputType) || inputType.includes('int') || inputType.includes('bool')
+}
+
 function getTxValue ($functionInputs) {
   const WEI_MULTIPLIER = 10 ** 18
   const $txValue = $functionInputs.filter('[tx-value]:first')
   const txValue = $txValue && $txValue.val() && parseFloat($txValue.val()) * WEI_MULTIPLIER
-  return txValue
+  const txValueStr = txValue && txValue.toString(16)
+  return txValueStr
 }
 
 function getContractABI ($form) {

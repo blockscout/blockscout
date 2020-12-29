@@ -69,7 +69,7 @@ function withdrawStake ($modal, address, store, msg) {
   const decimals = store.getState().tokenDecimals
   const amount = new BigNumber($modal.find('[amount]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
 
-  makeContractCall(stakingContract.methods.withdraw(address, amount.toString()), store)
+  makeContractCall(stakingContract.methods.withdraw(address, amount.toFixed()), store)
 }
 
 function orderWithdraw ($modal, address, store, msg) {
@@ -85,7 +85,7 @@ function orderWithdraw ($modal, address, store, msg) {
     return false
   }
 
-  makeContractCall(stakingContract.methods.orderWithdraw(address, amount.toString()), store)
+  makeContractCall(stakingContract.methods.orderWithdraw(address, amount.toFixed()), store)
 }
 
 function isAmountValid (value, store, msg) {

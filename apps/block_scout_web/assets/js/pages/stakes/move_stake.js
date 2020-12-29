@@ -66,7 +66,7 @@ function moveStake ($modal, fromAddress, store, msg) {
   const stake = new BigNumber($modal.find('[move-amount]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
 
   const toAddress = $modal.find('[pool-select]').val()
-  makeContractCall(stakingContract.methods.moveStake(fromAddress, toAddress, stake.toString()), store)
+  makeContractCall(stakingContract.methods.moveStake(fromAddress, toAddress, stake.toFixed()), store)
 }
 
 function isMoveAmountValid (value, store, msg) {

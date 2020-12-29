@@ -49,7 +49,7 @@ const elements = {
     render ($el, state) {
       if (state.newForm) {
         $el.replaceWith(state.newForm)
-        $('button[data-button-loading="animation"]').click(event => {
+        $('button[data-button-loading="animation"]').click(_event => {
           $('#loading').removeClass('d-none')
         })
 
@@ -90,11 +90,10 @@ const elements = {
 const $contractVerificationPage = $('[data-page="contract-verification"]')
 
 function filterNightlyBuilds (filter) {
-  var select, options
-  select = document.getElementById('smart_contract_compiler_version')
-  options = select.getElementsByTagName('option')
+  const select = document.getElementById('smart_contract_compiler_version')
+  const options = select.getElementsByTagName('option')
   for (const option of options) {
-    var txtValue = option.textContent || option.innerText
+    const txtValue = option.textContent || option.innerText
     if (filter) {
       if (txtValue.toLowerCase().indexOf('nightly') > -1) {
         option.style.display = 'none'
@@ -132,7 +131,7 @@ if ($contractVerificationPage.length) {
     msg: humps.camelizeKeys(msg)
   }))
 
-  $('button[data-button-loading="animation"]').click(event => {
+  $('button[data-button-loading="animation"]').click(_event => {
     $('#loading').removeClass('d-none')
   })
 

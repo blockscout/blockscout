@@ -44,6 +44,7 @@ defmodule Explorer.Chain do
     Address.TokenBalance,
     Block,
     BridgedToken,
+    CurrencyHelpers,
     Data,
     DecompiledSmartContract,
     Hash,
@@ -1953,7 +1954,13 @@ defmodule Explorer.Chain do
   end
 
   def check_if_tokens_at_address(address_hash) do
-    Repo.exists?(from(tb in CurrentTokenBalance, where: tb.address_hash == ^address_hash))
+    Repo.exists?(
+      from(
+        tb in CurrentTokenBalance,
+        where: tb.address_hash == ^address_hash,
+        where: tb.value > 0
+      )
+    )
   end
 
   @doc """
@@ -2010,6 +2017,30 @@ defmodule Explorer.Chain do
     else
       address_to_outcoming_transaction_gas_usage(address.hash)
     end
+  end
+
+  @doc """
+  Return the balance in usd corresponding to this token. Return nil if the usd_value of the token is not present.
+  """
+  def balance_in_usd(%{token: %{usd_value: nil}}) do
+    nil
+  end
+
+  def balance_in_usd(token_balance) do
+    tokens = CurrencyHelpers.divide_decimals(token_balance.value, token_balance.token.decimals)
+    price = token_balance.token.usd_value
+    Decimal.mult(tokens, price)
+  end
+
+  def address_tokens_usd_sum(token_balances) do
+    token_balances
+    |> Enum.reduce(Decimal.new(0), fn token_balance, acc ->
+      if token_balance.value && token_balance.token.usd_value do
+        Decimal.add(acc, balance_in_usd(token_balance))
+      else
+        acc
+      end
+    end)
   end
 
   defp contract?(%{contract_code: nil}), do: false
@@ -3182,20 +3213,33 @@ defmodule Explorer.Chain do
         preload: [:contracts_creation_internal_transaction, :contracts_creation_transaction]
       )
 
-    transaction = Repo.one(query)
+    contract_address = Repo.one(query)
+
+    contract_creation_input_data_from_address(contract_address)
+  end
+
+  # credo:disable-for-next-line /Complexity/
+  defp contract_creation_input_data_from_address(address) do
+    internal_transaction = address && address.contracts_creation_internal_transaction
+    transaction = address && address.contracts_creation_transaction
 
     cond do
-      is_nil(transaction) ->
+      is_nil(address) ->
         ""
 
-      transaction.contracts_creation_internal_transaction && transaction.contracts_creation_internal_transaction.input ->
-        Data.to_string(transaction.contracts_creation_internal_transaction.input)
+      internal_transaction && internal_transaction.input ->
+        Data.to_string(internal_transaction.input)
 
-      transaction.contracts_creation_internal_transaction && transaction.contracts_creation_internal_transaction.init ->
-        Data.to_string(transaction.contracts_creation_internal_transaction.init)
+      internal_transaction && internal_transaction.init ->
+        Data.to_string(internal_transaction.init)
 
-      transaction.contracts_creation_transaction && transaction.contracts_creation_transaction.input ->
-        Data.to_string(transaction.contracts_creation_transaction.input)
+      transaction && transaction.input ->
+        Data.to_string(transaction.input)
+
+      is_nil(transaction) && is_nil(internal_transaction) &&
+          not is_nil(address.contract_code) ->
+        %Explorer.Chain.Data{bytes: bytes} = address.contract_code
+        Base.encode16(bytes, case: :lower)
 
       true ->
         ""
@@ -4867,7 +4911,7 @@ defmodule Explorer.Chain do
     paging_query =
       base_query
       |> limit(^paging_options.page_size)
-      |> order_by(desc: :stakes_ratio, desc: :is_active)
+      |> order_by(desc: :stakes_ratio, desc: :is_active, asc: :staking_address_hash)
 
     case paging_options.key do
       {value, address_hash} ->
@@ -5512,7 +5556,8 @@ defmodule Explorer.Chain do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
-        Map.get(method, "name") == "implementation"
+        Map.get(method, "name") == "implementation" ||
+          master_copy_pattern?(method)
       end)
 
     if implementation_method_abi do
