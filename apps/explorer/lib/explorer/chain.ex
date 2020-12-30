@@ -4936,6 +4936,24 @@ defmodule Explorer.Chain do
     |> Repo.aggregate(:count, :staking_address_hash)
   end
 
+  @doc "Get sum of delegators count from the DB"
+  @spec delegators_count_sum(filter :: :validator | :active | :inactive) :: integer
+  def delegators_count_sum(filter) do
+    StakingPool
+    |> where(is_deleted: false)
+    |> staking_pool_filter(filter)
+    |> Repo.aggregate(:sum, :delegators_count)
+  end
+
+  @doc "Get sum of total staked amount from the DB"
+  @spec total_staked_amount_sum(filter :: :validator | :active | :inactive) :: integer
+  def total_staked_amount_sum(filter) do
+    StakingPool
+    |> where(is_deleted: false)
+    |> staking_pool_filter(filter)
+    |> Repo.aggregate(:sum, :total_staked_amount)
+  end
+
   defp staking_pool_filter(query, :validator) do
     where(query, is_validator: true)
   end

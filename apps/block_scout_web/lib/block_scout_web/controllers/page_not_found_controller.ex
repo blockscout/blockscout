@@ -4,6 +4,6 @@ defmodule BlockScoutWeb.PageNotFoundController do
   def index(conn, _params) do
     conn
     |> put_status(:not_found)
-    |> render("index.html")
+    |> render("index.html", token: nil)
   end
 end

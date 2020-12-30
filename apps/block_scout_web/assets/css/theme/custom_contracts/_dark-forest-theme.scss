@@ -269,12 +269,25 @@ $dark-primary-alternate: $dark-primary;
 		content: url(/images/custom-themes/dark-forest/qr.svg);
 	}
 
-	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon .btn-contract-icon {
+	.btn-copy-icon, .btn-qr-icon, .btn-address-card-icon {
 		border-radius: 0;
 		border: none;
 		border-color: $dark-primary;
 		&:hover {
 			background-color: rgba(117, 249, 77, 0.4);
+		}
+	}
+
+	.btn-contract-icon {
+		border-radius: 0;
+		border-color: $dark-primary;
+		&:hover {
+			background-color: rgba(117, 249, 77, 0.4);
+		}
+		svg {
+			path {
+				fill: $dark-primary;
+			}
 		}
 	}
 	

@@ -1,6 +1,18 @@
 ## Current
 
 ### Features
+- [#3541](https://github.com/poanetwork/blockscout/pull/3541) - Staking dapp stats: total number of delegators, total staked amount 
+- [#3540](https://github.com/poanetwork/blockscout/pull/3540) - Apply DarkForest custom theme to NFT instances
+
+### Fixes
+
+### Chore
+- [#3540](https://github.com/poanetwork/blockscout/pull/3540) - Support different versions of DarkForest (0.4 - 0.5)
+
+
+## 3.5.0-beta
+
+### Features
 - [#3536](https://github.com/poanetwork/blockscout/pull/3536) - Revert reason in the result of contract's method call
 - [#3532](https://github.com/poanetwork/blockscout/pull/3532) - Contract interaction: an easy setting of precision for integer input
 - [#3531](https://github.com/poanetwork/blockscout/pull/3531) - Allow double quotes in input data of contract methods
