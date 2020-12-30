@@ -189,3 +189,11 @@ $stakes-stats-item-border-color: #fff !default;
     padding-top: 30px;
   }
 }
+
+.stake-stats-container {
+  @include media-breakpoint-up(lg) {
+    margin-bottom: -30px;
+  }
+  margin-top: 10px;
+  font-size: 12px;
+}

@@ -2319,12 +2319,12 @@ msgid "Share of Pool’s Reward"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:8
+#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:17
 msgid "Show banned only"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:14
+#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:23
 msgid "Show only those I have stake in"
 msgstr ""
 
