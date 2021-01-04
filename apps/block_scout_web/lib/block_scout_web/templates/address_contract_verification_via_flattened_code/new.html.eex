@@ -311,5 +311,4 @@
       <% end %>
     </div>
     <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/verification-form.js") %>"></script>
-    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
 </section>
