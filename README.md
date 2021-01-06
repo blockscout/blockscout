@@ -102,7 +102,28 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
     mix compile
     ```
 
-5. Add env variables and start blockscout in a docker container
+5. Add SSL Certs
+
+   ```shell
+   cd apps/block_scout_web
+   mix phx.gen.cert blockscout blockscout.local
+   ```
+
+   Add blockscout and blockscout.local to your /etc/hosts:
+   
+   ```shell
+   sudo vim /etc/hosts
+   ```
+
+   ```shell
+   127.0.0.1       localhost blockscout blockscout.local
+   255.255.255.255 broadcasthost
+   ::1             localhost blockscout blockscout.local
+   ```
+
+   If using Chrome, enable chrome://flags/#allow-insecure-localhost.
+
+6. Add env variables and start blockscout in a docker container
 
      > If you do not already have docker installed, you can get it here:  
      >   - [Mac](https://hub.docker.com/editions/community/docker-ce-desktop-mac)
@@ -110,7 +131,8 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
 
     ```shell
     cd docker
-    NETWORK=Celo ETHEREUM_JSONRPC_VARIANT=geth
+    NETWORK=Celo
+    ETHEREUM_JSONRPC_VARIANT=geth
     ETHEREUM_JSONRPC_HTTP_URL=http://104.198.100.15:8545
     ETHEREUM_JSONRPC_WS_URL=ws://104.198.100.15:8546 COIN=cGLD
     make start
