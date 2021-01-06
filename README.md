@@ -110,7 +110,7 @@ BlockScout supports a number of projects. Hosted instances include POA Network, 
    ```
 
    Add blockscout and blockscout.local to your /etc/hosts:
-   
+
    ```shell
    sudo vim /etc/hosts
    ```

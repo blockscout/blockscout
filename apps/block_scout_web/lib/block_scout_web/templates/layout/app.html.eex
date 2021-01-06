@@ -53,6 +53,14 @@
         <span data-indexed-ratio="<%=Explorer.Chain.indexed_ratio() %>"></span>
         <%= gettext("- We're indexing this chain right now. Some of the counts may be inaccurate.") %>
       </div>
+
+      <div class="alert text-center mb-0 p-3" data-selector="indexed-status">
+        <%= gettext("Help improve the Celo Block Explorer! Please take a quick moment to answer ") %>
+        <%= link(
+          gettext("this quick feedback survey."),
+          to: "https://forms.gle/7ob72NzoC1dbvKuB7"
+        ) %>
+      </div>
       <%= render BlockScoutWeb.LayoutView, "_topnav.html", assigns %>
 
       <main class="pt-5">
