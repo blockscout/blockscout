@@ -40,6 +40,38 @@ $tooltip-background-color: $btn-line-color !default;
 
 /* Inversed color Bootstrap Tooltip end*/
 
+/* Pale color Bootstrap Tooltip */
+
+.tooltip-pale-color {
+    .tooltip-inner {
+        background-color: rgba(#fff, 0.5) !important;
+        color: #333 !important;
+    }
+}
+
+.tooltip-pale-color.bs-tooltip-top .arrow::before,
+.tooltip-pale-color.bs-tooltip-auto[x-placement^="top"] .arrow::before {
+    border-top-color: rgba($primary, 0.5) !important;
+}
+    
+.tooltip-pale-color.bs-tooltip-right .arrow::before,
+.tooltip-pale-color.bs-tooltip-auto[x-placement^="right"] .arrow::before {
+    border-right-color: rgba($primary, 0.5) !important;
+}
+    
+.tooltip-pale-color.bs-tooltip-bottom .arrow::before,
+.tooltip-pale-color.bs-tooltip-auto[x-placement^="bottom"] .arrow::before {
+    border-bottom-color: rgba($primary, 0.5) !important;
+}
+    
+    
+.tooltip-pale-color.bs-tooltip-left .arrow::before,
+.tooltip-pale-color.bs-tooltip-auto[x-placement^="left"] .arrow::before {
+    border-left-color: rgba($primary, 0.5) !important;
+}
+
+/* Pale color Bootstrap Tooltip end*/
+
 .tooltip-market-cap {
     .tooltip-inner {
         @media (min-width: 576px) {
