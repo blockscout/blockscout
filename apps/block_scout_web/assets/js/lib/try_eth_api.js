@@ -48,7 +48,7 @@ function dropDomain (url) {
   return new URL(url).pathname
 }
 
-$('button[data-try-eth-api-ui-button-type="execute"]').click(event => {
+$('button[data-try-eth-api-ui-button-type="execute"]').on("click",event => {
   const clickedButton = $(event.target)
   const module = clickedButton.attr('data-module')
   const action = clickedButton.attr('data-action')

@@ -57,7 +57,7 @@
       <% end %>
 
       <div class="survey-banner alert text-center mb-0 p-3" data-selector="indexed-status">
-          <button class="survey-banner-dismiss btn btn-no-border d-inline mr-2" type="button" data-dismiss="survey-banner">
+          <button class="survey-banner-dismiss btn btn-no-border d-inline mr-2 p-1 h-1" type="button">
             <i class="fas fa-times"></i>
           </button>
         <%= gettext("Help improve the Celo Block Explorer! Please take a quick moment to answer ") %>

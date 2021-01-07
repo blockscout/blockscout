@@ -1,3 +1,5 @@
+import $ from 'jquery'
+
 // We need to import the CSS so that webpack will load it.
 // The ExtractTextPlugin is used to separate it out into
 // its own CSS file.
@@ -60,3 +62,8 @@ import './lib/modals'
 import './lib/try_api'
 import './lib/try_eth_api'
 import './lib/card_tabs'
+
+$('.survey-banner-dismiss').on("click", function () {
+    $('.survey-banner').hide()
+    console.log('hi')
+})

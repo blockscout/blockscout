@@ -56,7 +56,7 @@ function handleSuccess (query, xhr, clickedButton) {
 }
 
 // Show 'Try it out' UI for a module/action.
-$('button[data-selector*="btn-try-api"]').click(event => {
+$('button[data-selector*="btn-try-api"]').on("click", event => {
   const clickedButton = $(event.target)
   const module = clickedButton.attr('data-module')
   const action = clickedButton.attr('data-action')
@@ -70,7 +70,7 @@ $('button[data-selector*="btn-try-api"]').click(event => {
 })
 
 // Hide 'Try it out' UI for a module/action.
-$('button[data-selector*="btn-try-api-cancel"]').click(event => {
+$('button[data-selector*="btn-try-api-cancel"]').on("click",event => {
   const clickedButton = $(event.target)
   const module = clickedButton.attr('data-module')
   const action = clickedButton.attr('data-action')
@@ -81,7 +81,7 @@ $('button[data-selector*="btn-try-api-cancel"]').click(event => {
 })
 
 // Clear API server response/result, curl command, and request URL
-$('button[data-selector*="btn-try-api-clear"]').click(event => {
+$('button[data-selector*="btn-try-api-clear"]').on("click",event => {
   const clickedButton = $(event.target)
   const module = clickedButton.attr('data-module')
   const action = clickedButton.attr('data-action')
@@ -108,7 +108,7 @@ $('input[data-selector*="try-api-ui"][data-required="true"]').on('keyup', (event
 //   * request URL
 //   * server response
 //
-$('button[data-try-api-ui-button-type="execute"]').click(event => {
+$('button[data-try-api-ui-button-type="execute"]').on("click",event => {
   const clickedButton = $(event.target)
   const module = clickedButton.attr('data-module')
   const action = clickedButton.attr('data-action')
