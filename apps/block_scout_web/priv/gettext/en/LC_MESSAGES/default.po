@@ -1226,13 +1226,13 @@ msgstr "Validator Reward"
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:218
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:249
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:241
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:212
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:204
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1928,7 +1928,7 @@ msgid "Copy Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:208
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 
@@ -2009,7 +2009,6 @@ msgid "<p>To become a candidate, your staking address must be funded with %{toke
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:159
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:11
 msgid "Active Pools"
 msgstr ""
@@ -2182,7 +2181,6 @@ msgid "Inactive Pool Addresses. Current validator pools are specified by a check
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:163
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:18
 msgid "Inactive Pools"
 msgstr ""
@@ -2504,7 +2502,6 @@ msgid "Validator pools can be banned for misbehavior (such as not revealing secr
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:155
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:4
 msgid "Validators"
 msgstr ""
@@ -2637,4 +2634,9 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract/index.html.eex:14
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:5
 msgid "Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:155
+msgid "Staking"
 msgstr ""
