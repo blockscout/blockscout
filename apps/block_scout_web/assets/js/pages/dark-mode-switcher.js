@@ -9,7 +9,3 @@ $('.dark-mode-changer').on("click", function () {
   // reload each theme switch
   document.location.reload(true)
 })
-
-$('.survey-banner-dismiss').on("click",function () {
-  $('.survey-banner').hide()
-})

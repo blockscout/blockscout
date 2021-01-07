@@ -44,7 +44,7 @@
       }
       window.onload = applyDarkMode()
     </script>
-    <div class="layout-container">
+    <div class="layout-container" data-page="app-container">
       <%= if not Explorer.Chain.finished_indexing?() do %>
         <div class="alert alert-warning text-center mb-0 p-3" data-selector="indexed-status">
           <span class="loading-spinner-small mr-2">
@@ -56,10 +56,10 @@
         </div>
       <% end %>
 
-      <div class="survey-banner alert text-center mb-0 p-3" data-selector="indexed-status">
-          <button class="survey-banner-dismiss btn btn-no-border d-inline mr-2 p-1 h-1" type="button">
-            <i class="fas fa-times"></i>
-          </button>
+      <div class="survey-banner alert text-center mb-0 p-3" data-selector="survey-banner">
+        <button class="survey-banner-dismiss btn btn-no-border d-inline mr-2" type="button">
+          <i class="fas fa-times"></i>
+        </button>
         <%= gettext("Help improve the Celo Block Explorer! Please take a quick moment to answer ") %>
         <%= link(
           gettext("this quick feedback survey."),
