@@ -7,3 +7,9 @@ $(document).click(function (event) {
     $('.navbar-toggler').click()
   }
 })
+
+$(document).on('keyup', function (event) {
+  if (event.key === '/') {
+    $('#q').trigger('focus')
+  }
+})
