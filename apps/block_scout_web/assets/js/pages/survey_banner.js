@@ -1,12 +1,6 @@
 import $ from 'jquery'
 import omit from 'lodash/omit'
-import URI from 'urijs'
-import humps from 'humps'
-import numeral from 'numeral'
-import socket, { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { updateAllCalculatedUsdValues } from '../lib/currency.js'
-import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 
 export const initialState = {
   showBanner: true
@@ -44,7 +38,6 @@ if ($app.length) {
 $('.survey-banner-dismiss').on('click', _event => {
   console.log('goodbye banner')
   store.dispatch({
-    type: 'DISMISS_BANNER',
-    msg: humps.camelizeKeys(msg)
+    type: 'DISMISS_BANNER'
   })
 })
