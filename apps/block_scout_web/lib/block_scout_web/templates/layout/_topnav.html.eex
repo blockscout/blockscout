@@ -152,16 +152,8 @@
             <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
               <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
                 <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
-                  <%= gettext("Validators") %>
-                  <span class="bs-label secondary right from-dropdown">Beta</span>
-                </a>
-                <a class="dropdown-item <%= #{tab_status("active-pools", @conn.request_path)} %>" href="<%= active_pools_path(@conn, :index) %>">
-                  <%= gettext("Active Pools") %>
-                  <span class="bs-label secondary right from-dropdown">Beta</span>
-                </a>
-                <a class="dropdown-item <%= #{tab_status("inactive-pools", @conn.request_path)} %>" href="<%= inactive_pools_path(@conn, :index) %>">
-                  <%= gettext("Inactive Pools") %>
-                  <span class="bs-label secondary right from-dropdown">Beta</span>
+                  <%= gettext("Staking") %>
+                  <span class="bs-label secondary right from-dropdown">New</span>
                 </a>
               <% end %>
               <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>

@@ -8,6 +8,7 @@
 - [#3551](https://github.com/poanetwork/blockscout/pull/3551) - Fix contract's method's output of tuple type
 
 ### Chore
+- [#3557](https://github.com/poanetwork/blockscout/pull/3557) - Single Staking menu
 - [#3540](https://github.com/poanetwork/blockscout/pull/3540), [#3545](https://github.com/poanetwork/blockscout/pull/3545) - Support different versions of DarkForest (0.4 - 0.5)
 
 
