@@ -1240,7 +1240,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:210
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:241
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:254
 msgid "Search"
 msgstr ""
 
@@ -2707,4 +2707,9 @@ msgstr ""
 
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:155
 msgid "Staking"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:247
+msgid "Press / and focus will be moved to the search field"
 msgstr ""
