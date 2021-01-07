@@ -13,3 +13,13 @@ $(document).on('keyup', function (event) {
     $('#q').trigger('focus')
   }
 })
+
+$('#q').on('focus', function (_event) {
+  $('#slash-icon').hide()
+  $(this).addClass('focused-field')
+})
+
+$('#q').on('focusout', function (_event) {
+  $('#slash-icon').show()
+  $(this).removeClass('focused-field')
+})

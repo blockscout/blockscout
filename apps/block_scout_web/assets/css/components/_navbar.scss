@@ -313,3 +313,7 @@ $navbar-logo-width: auto !default;
 .visually-hidden {
   display: block;
 }
+
+.focused-field {
+  border: 1px solid $secondary !important;
+}
