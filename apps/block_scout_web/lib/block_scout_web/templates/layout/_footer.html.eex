@@ -28,6 +28,9 @@
           <a href="https://t.me/poa_network" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Telegram") %>'>
             <i class="fab fa-telegram-plane"></i>
           </a>
+          <a href="https://duneanalytics.com/maxaleks/xdai-staking" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Staking") %>'>
+            <i class="fas fa-chart-bar"></i>
+          </a>
         </div>
       </div>
 
