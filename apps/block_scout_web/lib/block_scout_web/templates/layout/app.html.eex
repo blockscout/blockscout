@@ -189,6 +189,10 @@
       @view_module != Elixir.BlockScoutWeb.AddressView &&
       @view_module != Elixir.BlockScoutWeb.BridgedTokensView &&
       @view_module != Elixir.BlockScoutWeb.TokensView &&
+      @view_module != Elixir.BlockScoutWeb.GasTrackerConsumersThreeHrsView &&
+      @view_module != Elixir.BlockScoutWeb.GasTrackerConsumersDayView &&
+      @view_module != Elixir.BlockScoutWeb.GasTrackerSpendersThreeHrsView &&
+      @view_module != Elixir.BlockScoutWeb.GasTrackerSpendersDayView &&
       @view_module != Elixir.BlockScoutWeb.TransactionView &&
       @view_module != Elixir.BlockScoutWeb.PendingTransactionView &&
       @view_module != Elixir.BlockScoutWeb.TransactionInternalTransactionView &&

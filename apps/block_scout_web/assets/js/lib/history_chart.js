@@ -6,6 +6,41 @@ import moment from 'moment'
 import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
 
+function xAxes (fontColor) {
+  return [{
+    gridLines: {
+      display: false,
+      drawBorder: false
+    },
+    type: 'time',
+    time: {
+      unit: 'day',
+      stepSize: 14
+    },
+    ticks: {
+      fontColor: fontColor
+    }
+  }]
+}
+
+const gridLines = {
+  display: false,
+  drawBorder: false
+}
+
+const padding = {
+  left: 20,
+  right: 20
+}
+
+const legend = {
+  display: false
+}
+
+function formatValue (val) {
+  return `${numeral(val).format('0,0')}`
+}
+
 const config = {
   type: 'line',
   responsive: true,
@@ -14,35 +49,14 @@ const config = {
   },
   options: {
     layout: {
-      padding: {
-        left: 20,
-        right: 20
-      }
+      padding: padding
     },
-    legend: {
-      display: false
-    },
+    legend: legend,
     scales: {
-      xAxes: [{
-        gridLines: {
-          display: false,
-          drawBorder: false
-        },
-        type: 'time',
-        time: {
-          unit: 'day',
-          stepSize: 14
-        },
-        ticks: {
-          fontColor: sassVariables.dashboardBannerChartAxisFontColor
-        }
-      }],
+      xAxes: xAxes(sassVariables.dashboardBannerChartAxisFontColor),
       yAxes: [{
         id: 'price',
-        gridLines: {
-          display: false,
-          drawBorder: false
-        },
+        gridLines: gridLines,
         ticks: {
           beginAtZero: true,
           callback: (value, _index, _values) => `$${numeral(value).format('0,0.00')}`,
@@ -51,10 +65,7 @@ const config = {
         }
       }, {
         id: 'marketCap',
-        gridLines: {
-          display: false,
-          drawBorder: false
-        },
+        gridLines: gridLines,
         ticks: {
           callback: (_value, _index, _values) => '',
           maxTicksLimit: 6,
@@ -63,13 +74,10 @@ const config = {
       }, {
         id: 'numTransactions',
         position: 'right',
-        gridLines: {
-          display: false,
-          drawBorder: false
-        },
+        gridLines: gridLines,
         ticks: {
           beginAtZero: true,
-          callback: (value, _index, _values) => `${numeral(value).format('0,0')}`,
+          callback: (value, _index, _values) => formatValue(value),
           maxTicksLimit: 4,
           fontColor: sassVariables.dashboardBannerChartAxisFontColor
         }
@@ -93,6 +101,73 @@ const config = {
         }
       }
     }
+  }
+}
+
+var gasUsageFontColor
+if (localStorage.getItem('current-color-mode') === 'dark') {
+  gasUsageFontColor = sassVariables.dashboardBannerChartAxisFontColor
+} else {
+  gasUsageFontColor = sassVariables.dashboardBannerChartAxisFontAltColor
+}
+
+const gasUsageConfig = {
+  type: 'line',
+  responsive: true,
+  data: {
+    datasets: []
+  },
+  options: {
+    layout: {
+      padding: padding
+    },
+    legend: legend,
+    scales: {
+      xAxes: xAxes(gasUsageFontColor),
+      yAxes: [{
+        id: 'gasUsage',
+        position: 'right',
+        gridLines: gridLines,
+        ticks: {
+          beginAtZero: true,
+          callback: (value, _index, _values) => formatValue(value),
+          maxTicksLimit: 4,
+          fontColor: gasUsageFontColor
+        }
+      }]
+    },
+    tooltips: {
+      mode: 'index',
+      intersect: false,
+      callbacks: {
+        label: ({ datasetIndex, yLabel }, { datasets }) => {
+          const label = datasets[datasetIndex].label
+          if (datasets[datasetIndex].yAxisID === 'gasUsage') {
+            return `${label}: ${formatValue(yLabel)}`
+          } else {
+            return yLabel
+          }
+        }
+      }
+    }
+  }
+}
+
+const blockGasPieConfig = {
+  type: 'doughnut',
+  responsive: true,
+  data: {
+    datasets: [{
+      label: 'Population (millions)',
+      backgroundColor: ['linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(26,236,124,1) 0%, rgba(230,58,90,1) 100%)', '#fff'],
+      data: [2478, 5267]
+    }]
+  },
+  options: {
+    layout: {
+      padding: padding
+    },
+    legend: legend
   }
 }
 
@@ -128,6 +203,23 @@ function getTxHistoryData (transactionHistory) {
   data.unshift({ x: curDay, y: null })
 
   setDataToLocalStorage('txHistoryData', data)
+  return data
+}
+
+function getGasUsageHistoryData (gasUsageHistory) {
+  if (gasUsageHistory.length === 0) {
+    return getDataFromLocalStorage('gasUsageHistoryData')
+  }
+  const data = gasUsageHistory.map(dataPoint => ({ x: dataPoint.date, y: dataPoint.gas_used }))
+
+  // it should be empty value for tx history the current day
+  const prevDayStr = data[0].x
+  const prevDay = moment(prevDayStr)
+  let curDay = prevDay.add(1, 'days')
+  curDay = curDay.format('YYYY-MM-DD')
+  data.unshift({ x: curDay, y: null })
+
+  setDataToLocalStorage('gasUsageHistoryData', data)
   return data
 }
 
@@ -244,6 +336,54 @@ class MarketHistoryChart {
   }
 }
 
+class GasUsageHistoryChart {
+  constructor (el, dataConfig) {
+    const axes = gasUsageConfig.options.scales.yAxes.reduce(function (solution, elem) {
+      solution[elem.id] = elem
+      return solution
+    },
+    {})
+
+    this.gasUsage = {
+      label: 'Gas/day',
+      yAxisID: 'gasUsage',
+      data: [],
+      fill: false,
+      pointRadius: 0,
+      backgroundColor: sassVariables.dashboardLineColorTransactions,
+      borderColor: sassVariables.dashboardLineColorTransactions
+    }
+
+    if (dataConfig.gas_usage === undefined || dataConfig.gas_usage.indexOf('gas_usage_per_day') === -1) {
+      this.gasUsage.hidden = true
+      axes.gasUsage.display = false
+    }
+
+    gasUsageConfig.data.datasets = [this.gasUsage]
+
+    const isChartLoadedKey = 'isChartLoaded'
+    const isChartLoaded = window.sessionStorage.getItem(isChartLoadedKey) === 'true'
+    if (isChartLoaded) {
+      gasUsageConfig.options.animation = false
+    } else {
+      window.sessionStorage.setItem(isChartLoadedKey, true)
+    }
+
+    this.chart = new Chart(el, gasUsageConfig)
+  }
+
+  updateGasUsageHistory (gasUsageHistory) {
+    this.gasUsage.data = getGasUsageHistoryData(gasUsageHistory)
+    this.chart.update()
+  }
+}
+
+class BlockGasChart {
+  constructor (el) {
+    this.chart = new Chart(el, blockGasPieConfig)
+  }
+}
+
 export function createMarketHistoryChart (el) {
   const dataPaths = $(el).data('history_chart_paths')
   const dataConfig = $(el).data('history_chart_config')
@@ -279,7 +419,48 @@ export function createMarketHistoryChart (el) {
   return chart
 }
 
+export function createGasUsageHistoryChart (el) {
+  const dataPaths = $(el).data('history_chart_paths')
+  const dataConfig = $(el).data('history_chart_config')
+
+  const $chartError = $('[data-chart-error-message]')
+  const chart = new GasUsageHistoryChart(el, dataConfig)
+  Object.keys(dataPaths).forEach(function (historySource) {
+    $.getJSON(dataPaths[historySource], { type: 'JSON' })
+      .done(data => {
+        switch (historySource) {
+          case 'gas_usage': {
+            const gasUsageHistory = JSON.parse(data.history_data)
+
+            $(el).show()
+            chart.updateGasUsageHistory(gasUsageHistory)
+            break
+          }
+        }
+      })
+      .fail(() => {
+        $(el).hide()
+        $chartError.show()
+      })
+  })
+  return chart
+}
+
+export function createBlockGasHistoryChart (el) {
+  $(el).easyPieChart({
+    size: 160,
+    barColor: "#17d3e6",
+    scaleLength: 0,
+    lineWidth: 15,
+    trackColor: "#373737",
+    lineCap: "circle",
+    animate: 2000,
+  })
+}
+
 $('[data-chart-error-message]').on('click', _event => {
   $('[data-chart-error-message]').hide()
   createMarketHistoryChart($('[data-chart="historyChart"]')[0])
+  createGasUsageHistoryChart($('[data-chart="gasUsageChart"]')[0])
+  createBlockGasHistoryChart($('.blockGasChart')[0])
 })

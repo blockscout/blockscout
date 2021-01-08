@@ -1,0 +1,23 @@
+<script defer src="<%= static_path(@conn, "/js/chart-loader.js") %>"></script>
+<script src="<%= static_path(@conn, "/js/easy-pie-chart.min.js") %>"></script>
+
+<div class="dashboard-banner-chart gas-usage-chart" style="display: table-cell; width:70%;">
+    <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
+        <span><%= gettext("There was a problem loading the chart.") %></span>
+    </button>
+    <div>
+        <canvas data-chart="gasUsageChart"
+                data-history_chart_paths=
+                '{<%= for {{key, value}, x} <- Enum.with_index(@chart_data_paths) do %>
+                    "<%= key %>":"<%= value %>"
+                    <%= if x<(map_size(@chart_data_paths)-1) do %>
+                    ,
+                    <% end %>
+                <% end %>}'
+                data-history_chart_config = '<%= @chart_config_json %>'
+                width="700"
+                height="152"
+                style="display: none;">
+        </canvas>
+    </div>
+</div>
