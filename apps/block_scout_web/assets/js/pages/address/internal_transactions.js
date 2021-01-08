@@ -75,15 +75,6 @@ const elements = {
       $channelBatching.show()
       $el[0].innerHTML = numeral(state.internalTransactionsBatch.length).format()
     }
-  },
-  '[data-test="filter_dropdown"]': {
-    render ($el, state) {
-      if (state.emptyResponse && !state.isSearch) {
-        return $el.hide()
-      }
-
-      return $el.show()
-    }
   }
 }
 
