@@ -35,6 +35,7 @@ const jsOptimizationParams = {
 const awesompleteJs = {
   entry: {
     awesomplete: './js/lib/awesomplete.js',
+    'easy-pie-chart': './js/lib/easy-pie-chart.js',
     'awesomplete-util': './js/lib/awesomplete-util.js',
   },
   output: {
