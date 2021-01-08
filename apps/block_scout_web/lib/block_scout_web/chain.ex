@@ -196,6 +196,10 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {value, address_hash}}]
   end
 
+  def paging_options(%{"total_gas" => total_gas, "address_hash" => address_hash}) do
+    [paging_options: %{@default_paging_options | key: {total_gas, address_hash}}]
+  end
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
   def param_to_block_number(formatted_number) when is_binary(formatted_number) do
@@ -285,6 +289,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%StakingPool{staking_address_hash: address_hash, stakes_ratio: value}) do
     %{"address_hash" => address_hash, "value" => Decimal.to_string(value)}
+  end
+
+  defp paging_params(%{address_hash: address_hash, total_gas: total_gas}) do
+    %{"address_hash" => address_hash, "total_gas" => Decimal.to_integer(total_gas)}
   end
 
   defp block_or_transaction_from_param(param) do

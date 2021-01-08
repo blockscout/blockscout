@@ -1,0 +1,22 @@
+<tr>
+  <td class="stakes-td">
+      <!-- incremented number by order in the list -->
+      <span class="color-lighten">
+        <%= @index %>
+      </span>
+  </td>
+  <td class="stakes-td">
+    <%= render BlockScoutWeb.AddressView,
+      "_link.html",
+      address: hash_to_address(@gas_consumer.address_hash),
+      contract: true,
+      use_custom_tooltip: false
+    %>
+  </td>
+  <td class="stakes-td">
+    $<%= BlockScoutWeb.Cldr.Number.to_string!(gas_fees(@gas_consumer.total_gas)) %> (<%= BlockScoutWeb.Cldr.Number.to_string!(@gas_consumer.total_gas) %>)
+  </td>
+  <td class="stakes-td">
+    <%= gas_usage_perc(@gas_consumer.total_gas, @total_gas_in_period) %>%
+  </td>
+</tr>
