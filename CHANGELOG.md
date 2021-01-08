@@ -7,6 +7,7 @@
 
 ### Fixes
 - [#3551](https://github.com/poanetwork/blockscout/pull/3551) - Fix contract's method's output of tuple type
+- [#3559](https://github.com/poanetwork/blockscout/pull/3559) - Do not hide filter at address/transactions.
 
 ### Chore
 - [#3557](https://github.com/poanetwork/blockscout/pull/3557) - Single Staking menu
