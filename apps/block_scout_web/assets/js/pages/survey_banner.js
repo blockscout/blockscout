@@ -35,7 +35,7 @@ if ($app.length) {
   connectElements({ store, elements })
 }
 
-$('.survey-banner-dismiss').on('click', _event => {
+$('.survey-banner-dismiss').on('click', () => {
   console.log('goodbye banner')
   store.dispatch({
     type: 'DISMISS_BANNER'
