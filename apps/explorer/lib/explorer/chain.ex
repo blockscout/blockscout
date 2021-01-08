@@ -1873,6 +1873,59 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  @spec list_top_gas_consumers([DateTime.t()]) :: [map()]
+  def list_top_gas_consumers(period, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    list_top_gas_usage_query(period, :to, paging_options)
+  end
+
+  @spec list_top_gas_spenders([DateTime.t()]) :: [map()]
+  def list_top_gas_spenders(period, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    list_top_gas_usage_query(period, :from, paging_options)
+  end
+
+  defp list_top_gas_usage_query(duration, column, paging_options) do
+    initial_query =
+      if column == :to do
+        from(t in Transaction,
+          select: %{
+            address_hash: t.to_address_hash,
+            total_gas: sum(t.gas_used)
+          },
+          group_by: t.to_address_hash,
+          where: not is_nil(t.to_address_hash)
+        )
+      else
+        from(t in Transaction,
+          select: %{
+            address_hash: t.from_address_hash,
+            total_gas: sum(t.gas_used)
+          },
+          group_by: t.from_address_hash,
+          where: not is_nil(t.from_address_hash)
+        )
+      end
+
+    base_query =
+      initial_query
+      |> where([t], t.inserted_at > ^duration)
+      |> order_by([t], desc: sum(t.gas_used))
+
+    intermediate_query =
+      from(t in subquery(base_query),
+        select: t,
+        where: t.total_gas > 0
+      )
+
+    intermediate_query
+    |> limit(^paging_options.page_size)
+    |> page_gas_usage(paging_options)
+    |> Repo.all()
+  end
+
   @doc """
   Calls `reducer` on a stream of `t:Explorer.Chain.Block.t/0` without `t:Explorer.Chain.Block.Reward.t/0`.
   """
@@ -3508,6 +3561,14 @@ defmodule Explorer.Chain do
       where:
         (token.holder_count == ^holder_count and token.name > ^token_name) or
           token.holder_count < ^holder_count
+    )
+  end
+
+  defp page_gas_usage(query, %PagingOptions{key: nil}), do: query
+
+  defp page_gas_usage(query, %PagingOptions{key: {total_gas, _}}) do
+    from(tx in query,
+      where: tx.total_gas < ^total_gas
     )
   end
 
@@ -5715,5 +5776,12 @@ defmodule Explorer.Chain do
     |> select([b], b.timestamp)
     |> limit(1)
     |> Repo.one()
+  end
+
+  def total_gas(gas_items) do
+    gas_items
+    |> Enum.reduce(Decimal.new(0), fn gas_item, acc ->
+      if gas_item.total_gas, do: Decimal.add(acc, gas_item.total_gas), else: acc
+    end)
   end
 end
