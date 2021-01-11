@@ -40,7 +40,7 @@ if ($app.length) {
   bindCloseButton(store)
 }
 
-function bindCloseButton(store) {
+function bindCloseButton (store) {
   $('.survey-banner-dismiss').on('click', () => {
     store.dispatch({
       type: 'DISMISS_BANNER'

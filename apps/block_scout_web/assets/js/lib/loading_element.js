@@ -1,5 +1,5 @@
 import $ from 'jquery'
 
-$('button[data-loading="animation"]').on("click", () => {
+$('button[data-loading="animation"]').on('click', () => {
   $('#loading').removeClass('d-none')
 })

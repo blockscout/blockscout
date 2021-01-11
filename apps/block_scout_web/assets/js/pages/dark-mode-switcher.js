@@ -1,6 +1,6 @@
 import $ from 'jquery'
 
-$('.dark-mode-changer').on("click", function () {
+$('.dark-mode-changer').on('click', function () {
   if (localStorage.getItem('current-color-mode') === 'dark') {
     localStorage.setItem('current-color-mode', 'light')
   } else {
