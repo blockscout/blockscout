@@ -4,7 +4,7 @@ import $ from 'jquery'
 import omit from 'lodash/omit'
 
 export const initialState = {
-  showBanner: !(localStorage.getItem('showSurveyBanner') === "false")
+  showBanner: !(localStorage.getItem('showSurveyBanner') === 'false')
 }
 
 export function reducer (state = initialState, action) {
