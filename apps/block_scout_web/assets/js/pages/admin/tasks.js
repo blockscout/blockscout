@@ -23,4 +23,4 @@ const runTask = (event) => {
     })
 }
 
-$('#run-create-contract-methods').click(runTask)
+$('#run-create-contract-methods').on('click', runTask)

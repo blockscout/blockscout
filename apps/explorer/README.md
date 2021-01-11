@@ -2,18 +2,15 @@
 
 This is a tool for inspecting and analyzing the POA Network blockchain.
 
-
 ## Machine Requirements
 
 * Erlang/OTP 20.2+
 * Elixir 1.5+
 * Postgres 10.0
 
-
 ## Required Accounts
 
 * Github for code storage
-
 
 ## Setup Instructions
 

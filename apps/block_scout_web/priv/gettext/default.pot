@@ -216,7 +216,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:27
-#: lib/block_scout_web/templates/layout/app.html.eex:70
+#: lib/block_scout_web/templates/layout/app.html.eex:81
 msgid "Block Proposed, awaiting import..."
 msgstr ""
 
@@ -255,7 +255,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:26
-#: lib/block_scout_web/templates/layout/app.html.eex:69
+#: lib/block_scout_web/templates/layout/app.html.eex:80
 msgid "Blocks Indexed"
 msgstr ""
 
@@ -852,7 +852,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:28
-#: lib/block_scout_web/templates/layout/app.html.eex:71
+#: lib/block_scout_web/templates/layout/app.html.eex:82
 msgid "Indexing Tokens"
 msgstr ""
 
@@ -905,7 +905,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:29
-#: lib/block_scout_web/templates/layout/app.html.eex:72
+#: lib/block_scout_web/templates/layout/app.html.eex:83
 msgid "Less than"
 msgstr ""
 
@@ -994,7 +994,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:23
 #: lib/block_scout_web/templates/layout/app.html.eex:30
-#: lib/block_scout_web/templates/layout/app.html.eex:73
+#: lib/block_scout_web/templates/layout/app.html.eex:84
 #: lib/block_scout_web/views/address_view.ex:189
 #: lib/block_scout_web/views/address_view.ex:189
 msgid "Market Cap"
@@ -1153,7 +1153,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:31
-#: lib/block_scout_web/templates/layout/app.html.eex:74
+#: lib/block_scout_web/templates/layout/app.html.eex:85
 msgid "Price"
 msgstr ""
 
@@ -1817,7 +1817,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:15
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20
-#: lib/block_scout_web/templates/layout/app.html.eex:75
+#: lib/block_scout_web/templates/layout/app.html.eex:86
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:29
 #: lib/block_scout_web/templates/transaction/overview.html.eex:221
@@ -1977,3 +1977,13 @@ msgstr "CELO"
 # From templates/tokens/overview/details.html.eex#L8
 msgid "Celo Gold"
 msgstr "CELO"
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/app.html.eex:63
+msgid "Help improve the Celo Block Explorer! Please take a quick moment to answer "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/app.html.eex:65
+msgid "this quick feedback survey."
+msgstr ""

@@ -1,3 +1,3 @@
 import $ from 'jquery'
 
-$('[data-selector="stop-propagation"]').click((event) => event.stopPropagation())
+$('[data-selector="stop-propagation"]').on('click', (event) => event.stopPropagation())

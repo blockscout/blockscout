@@ -1,3 +1,3 @@
 import $ from 'jquery'
 
-$('[data-selector="reload-button"]').click(() => window.location.reload())
+$('[data-selector="reload-button"]').on('click', () => window.location.reload())
