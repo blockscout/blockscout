@@ -4,7 +4,7 @@ import $ from 'jquery'
 import omit from 'lodash/omit'
 
 export const initialState = {
-  showBanner: true
+  showBanner: !(localStorage.getItem('showSurveyBanner') === "false")
 }
 
 export function reducer (state = initialState, action) {
@@ -14,6 +14,7 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, omit(action, 'type'))
     }
     case 'DISMISS_BANNER': {
+      sessionStorage.setItem('showSurveyBanner', false)
       return Object.assign({}, state, { showBanner: false })
     }
     default:
