@@ -56,7 +56,7 @@
         </div>
       <% end %>
 
-      <div class="survey-banner alert text-center mb-0 p-3" data-selector="survey-banner">
+      <div class="survey-banner alert text-center mb-0 p-3" hidden data-selector="survey-banner">
         <button class="survey-banner-dismiss btn btn-no-border d-inline mr-2" type="button">
           <i class="fas fa-times"></i>
         </button>

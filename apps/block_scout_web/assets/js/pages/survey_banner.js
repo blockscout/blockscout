@@ -1,9 +1,10 @@
+import { connectElements, createStore } from '../lib/redux_helpers.js'
+
 import $ from 'jquery'
 import omit from 'lodash/omit'
-import { createStore, connectElements } from '../lib/redux_helpers.js'
 
 export const initialState = {
-  showBanner: true
+  showBanner: !(localStorage.getItem('showSurveyBanner') === "false")
 }
 
 export function reducer (state = initialState, action) {
@@ -13,6 +14,7 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, omit(action, 'type'))
     }
     case 'DISMISS_BANNER': {
+      localStorage.setItem('showSurveyBanner', false)
       return Object.assign({}, state, { showBanner: false })
     }
     default:
@@ -23,21 +25,26 @@ export function reducer (state = initialState, action) {
 const elements = {
   '[data-selector="survey-banner"]': {
     render ($el, state) {
-      if (!state.showBanner) $el.hide()
+      if (state.showBanner) {
+        $el.removeAttr('hidden')
+      } else {
+        $el.attr('hidden', true)
+      }
     }
   }
 }
 
 const $app = $('[data-page="app-container"]')
 if ($app.length) {
-  console.log('app exists')
   const store = createStore(reducer)
   connectElements({ store, elements })
+  bindCloseButton(store)
 }
 
-$('.survey-banner-dismiss').on('click', () => {
-  console.log('goodbye banner')
-  store.dispatch({
-    type: 'DISMISS_BANNER'
+function bindCloseButton(store) {
+  $('.survey-banner-dismiss').on('click', () => {
+    store.dispatch({
+      type: 'DISMISS_BANNER'
+    })
   })
-})
+}
