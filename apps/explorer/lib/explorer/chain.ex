@@ -1911,7 +1911,7 @@ defmodule Explorer.Chain do
 
     base_query =
       initial_query
-      |> where([t], t.inserted_at > ^duration)
+      |> where([t], t.inserted_at >= ^duration)
       |> order_by([t], desc: sum(t.gas_used))
 
     intermediate_query =

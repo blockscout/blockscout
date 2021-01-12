@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.GasTrackerConsumersDayController do
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.{ChainController, GasTrackerView}
-  alias Explorer.Chain
+  alias Explorer.{Chain, PagingOptions}
   alias Phoenix.View
 
   def index(conn, %{"type" => "JSON"} = params) do
@@ -14,7 +14,15 @@ defmodule BlockScoutWeb.GasTrackerConsumersDayController do
       three_hours_before
       |> Chain.list_top_gas_consumers(params |> paging_options())
 
-    total_gas_consumed_in_period = Chain.total_gas(gas_consumers)
+    all_items_params = [
+      paging_options: %PagingOptions{}
+    ]
+
+    gas_consumers_all =
+      three_hours_before
+      |> Chain.list_top_gas_consumers(all_items_params)
+
+    total_gas_consumed_in_period = Chain.total_gas(gas_consumers_all)
 
     {gas_consumers_page, next_page} = split_list_by_page(gas_consumers)
 

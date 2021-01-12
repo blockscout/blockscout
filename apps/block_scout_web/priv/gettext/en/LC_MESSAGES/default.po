@@ -2648,10 +2648,7 @@ msgid "Press / and focus will be moved to the search field"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/gas_tracker_consumers_day/index.html.eex:4
-#: lib/block_scout_web/templates/gas_tracker_consumers_three_hrs/index.html.eex:4
-#: lib/block_scout_web/templates/gas_tracker_spenders_day/index.html.eex:4
-#: lib/block_scout_web/templates/gas_tracker_spenders_three_hrs/index.html.eex:4
+#: lib/block_scout_web/templates/gas_tracker/_header.html.eex:4
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:170
 msgid "Gas Tracker"
 msgstr ""
