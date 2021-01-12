@@ -165,6 +165,12 @@
                     </a>
                 <% end %>
               <% end %>
+              <%= if Application.get_env(:block_scout_web, :enable_gas_tracker) == true do %>
+                <a class="dropdown-item" href="/gas-tracker-consumers-3hrs">
+                  <%= gettext("Gas Tracker") %>
+                  <span class="bs-label secondary right from-dropdown">New</span>
+                </a>
+              <% end %>
             </div>
           </li>
         <% end %>

@@ -1218,13 +1218,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:254
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:260
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:204
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1374,6 +1374,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_coin_balance/index.html.eex:27
 #: lib/block_scout_web/templates/chain/show.html.eex:9
+#: lib/block_scout_web/templates/gas_tracker/_chart.html.eex:6
 msgid "There was a problem loading the chart."
 msgstr ""
 
@@ -1920,7 +1921,7 @@ msgid "Copy Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:208
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:214
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 
@@ -2634,6 +2635,35 @@ msgid "Staking"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:247
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:253
 msgid "Press / and focus will be moved to the search field"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/gas_tracker_consumers_day/index.html.eex:4
+#: lib/block_scout_web/templates/gas_tracker_consumers_three_hrs/index.html.eex:4
+#: lib/block_scout_web/templates/gas_tracker_spenders_day/index.html.eex:4
+#: lib/block_scout_web/templates/gas_tracker_spenders_three_hrs/index.html.eex:4
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:170
+msgid "Gas Tracker"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/gas_tracker/_tabs.html.eex:8
+msgid "Gas consumers 24hrs"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/gas_tracker/_tabs.html.eex:3
+msgid "Gas consumers 3hrs"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/gas_tracker/_tabs.html.eex:18
+msgid "Gas spenders 24hrs"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/gas_tracker/_tabs.html.eex:13
+msgid "Gas spenders 3hrs"
 msgstr ""
