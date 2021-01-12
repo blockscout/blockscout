@@ -46,7 +46,9 @@
 						</th>
 						</tr>
 					</thead>
-					<tbody data-items data-selector="top-gas-spenders-list"></tbody>
+					<tbody data-items data-selector="top-gas-spenders-list">
+						<%= render BlockScoutWeb.CommonComponentsView, "_table-loader-4-columns.html" %>
+					</tbody>
 				</table>
 			</div>
 
