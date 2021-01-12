@@ -1,6 +1,15 @@
 ## Current
 
 ### Features
+
+### Fixes
+
+### Chore
+
+
+## 3.5.1-beta
+
+### Features
 - [#3558](https://github.com/poanetwork/blockscout/pull/3558) - Focus to search field with a forward slash key
 - [#3541](https://github.com/poanetwork/blockscout/pull/3541) - Staking dapp stats: total number of delegators, total staked amount 
 - [#3540](https://github.com/poanetwork/blockscout/pull/3540) - Apply DarkForest custom theme to NFT instances
