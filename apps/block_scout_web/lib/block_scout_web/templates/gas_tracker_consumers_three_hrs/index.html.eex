@@ -6,7 +6,7 @@
 			<div style="display: table; width: 100%;">
 				<%= render BlockScoutWeb.GasTrackerView, "_chart.html", transaction_stats: @transaction_stats, conn: @conn, chart_data_paths: @chart_data_paths, chart_config_json: @chart_config_json %>
 				<div style="display: table-cell; vertical-align: middle; text-align: center;">
-					<span style="font-size: 3em; font-weight: 500;"><%= BlockScoutWeb.Cldr.Number.to_string!(@total_gas_usage, format: "#,###") %></span>
+					<span style="font-size: 3em; font-weight: 500;"><%= if @total_gas_usage > 0, do: BlockScoutWeb.Cldr.Number.to_string!(@total_gas_usage, format: "#,###"), else: "N/A" %></span>
 					<div style="font-size: 1.5em;">Gas used in total</div>
 				</div>
 			</div>

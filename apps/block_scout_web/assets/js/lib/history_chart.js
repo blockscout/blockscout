@@ -223,6 +223,23 @@ function getGasUsageHistoryData (gasUsageHistory) {
   return data
 }
 
+function getGasUsageHistoryData (gasUsageHistory) {
+  if (gasUsageHistory.length === 0) {
+    return getDataFromLocalStorage('gasUsageHistoryData')
+  }
+  const data = gasUsageHistory.map(dataPoint => ({ x: dataPoint.date, y: dataPoint.gas_used }))
+
+  // it should be empty value for tx history the current day
+  const prevDayStr = data[0].x
+  const prevDay = moment(prevDayStr)
+  let curDay = prevDay.add(1, 'days')
+  curDay = curDay.format('YYYY-MM-DD')
+  data.unshift({ x: curDay, y: null })
+
+  setDataToLocalStorage('gasUsageHistoryData', data)
+  return data
+}
+
 function getMarketCapData (marketHistoryData, availableSupply) {
   if (marketHistoryData.length === 0) {
     return getDataFromLocalStorage('marketCapDataSokol')

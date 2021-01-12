@@ -1895,7 +1895,8 @@ defmodule Explorer.Chain do
             address_hash: t.to_address_hash,
             total_gas: sum(t.gas_used)
           },
-          group_by: t.to_address_hash
+          group_by: t.to_address_hash,
+          where: not is_nil(t.to_address_hash)
         )
       else
         from(t in Transaction,
@@ -1903,7 +1904,8 @@ defmodule Explorer.Chain do
             address_hash: t.from_address_hash,
             total_gas: sum(t.gas_used)
           },
-          group_by: t.from_address_hash
+          group_by: t.from_address_hash,
+          where: not is_nil(t.from_address_hash)
         )
       end
 
