@@ -1,0 +1,15 @@
+<section class="container js-stakes-welcome-alert" style="display: none;">
+<div class="card">
+  <div class="card-body card-body-flex-column-space-between" style="padding-left: 50px;">
+    <button type="button" class="stakes-btn-close-alert">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+            <path fill="#ddd" fill-rule="evenodd" d="M10.435 8.983l7.261 7.261a1.027 1.027 0 1 1-1.452 1.452l-7.261-7.261-7.262 7.262a1.025 1.025 0 1 1-1.449-1.45l7.262-7.261L.273 1.725A1.027 1.027 0 1 1 1.725.273l7.261 7.261 7.23-7.231a1.025 1.025 0 1 1 1.449 1.45l-7.23 7.23z"></path>
+        </svg>
+    </button>
+    <span style="font-size: 1.3em;">
+        <i style="color: #f7b32b;" class="fa fa-info-circle ml-1"></i>
+        Participate in Proof-of-Stake consensus on the xDai chain as a delegator or validator. To start you will need STAKE on the xDai network. <a href="https://www.xdaichain.com/for-stakers/staking-protocol" target="_blank">Learn More</a>
+    </span>
+  </div>
+</div>
+</section>

@@ -22,6 +22,12 @@ import constants from './stakes/constants'
 
 const stakesPageSelector = '[data-page="stakes"]'
 
+if (localStorage.getItem('stakes-alert-read') === 'true') {
+  $('.js-stakes-welcome-alert').hide()
+} else {
+  $('.js-stakes-welcome-alert').show()
+}
+
 export const initialState = {
   account: null,
   blockRewardContract: null,
@@ -145,6 +151,7 @@ const elements = {
 const $stakesPage = $(stakesPageSelector)
 const $stakesTop = $('[data-selector="stakes-top"]')
 const $refreshInformer = $('.refresh-informer', $stakesPage)
+
 if ($stakesPage.length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierPool')
   connectElements({ store, elements })
@@ -295,6 +302,10 @@ if ($stakesPage.length) {
       if (checkForTokenDefinition(store)) {
         openClaimWithdrawalModal(event, store)
       }
+    })
+    .on('click', '.stakes-btn-close-alert', event => {
+      $(event.target).closest('section.container').hide()
+      localStorage.setItem('stakes-alert-read', 'true')
     })
 
   $stakesPage
