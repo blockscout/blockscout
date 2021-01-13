@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
 

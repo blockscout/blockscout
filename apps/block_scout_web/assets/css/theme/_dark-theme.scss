@@ -1101,6 +1101,11 @@ $dark-stakes-banned-background: #3e314c;
 	.custom-power-input {
 		border-color: $dark-primary;
 	}
+	.stakes-btn-close-alert {
+		path {
+			fill: #fff;
+		  }
+	}
 }
 
 .navbar-dark .navbar-toggler {
