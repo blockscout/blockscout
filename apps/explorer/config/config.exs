@@ -23,15 +23,7 @@ config :explorer,
       else: Explorer.Chain.Events.DBSender
     )
 
-average_block_period =
-  case Integer.parse(System.get_env("AVERAGE_BLOCK_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.minutes(30)
-  end
-
-config :explorer, Explorer.Counters.AverageBlockTime,
-  enabled: true,
-  period: average_block_period
+config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
 config :explorer, Explorer.Chain.Events.Listener,
   enabled:
@@ -88,71 +80,29 @@ config :explorer, Explorer.Counters.AddressesCounter,
   enable_consolidation: true,
   update_interval_in_seconds: balances_update_interval || 30 * 60
 
-address_transactions_counter_cache_period =
-  case Integer.parse(System.get_env("ADDRESS_TRANSACTIONS_COUNTER_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(1)
-  end
-
-address_transactions_gas_usage_counter_cache_period =
-  case Integer.parse(System.get_env("ADDRESS_TRANSACTIONS_GAS_USAGE_COUNTER_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(1)
-  end
-
 config :explorer, Explorer.Counters.AddressTransactionsGasUsageCounter,
   enabled: true,
-  enable_consolidation: true,
-  period: address_transactions_gas_usage_counter_cache_period
-
-address_tokens_usd_sum_cache_period =
-  case Integer.parse(System.get_env("ADDRESS_TOKENS_USD_SUM_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(1)
-  end
+  enable_consolidation: true
 
 config :explorer, Explorer.Counters.AddressTokenUsdSum,
   enabled: true,
-  enable_consolidation: true,
-  period: address_tokens_usd_sum_cache_period
-
-token_exchange_rate_cache_period =
-  case Integer.parse(System.get_env("TOKEN_EXCHANGE_RATE_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(1)
-  end
+  enable_consolidation: true
 
 config :explorer, Explorer.Chain.Cache.TokenExchangeRate,
   enabled: true,
-  enable_consolidation: true,
-  period: token_exchange_rate_cache_period
-
-token_holders_counter_cache_period =
-  case Integer.parse(System.get_env("TOKEN_HOLDERS_COUNTER_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(1)
-  end
+  enable_consolidation: true
 
 config :explorer, Explorer.Counters.TokenHoldersCounter,
   enabled: true,
-  enable_consolidation: true,
-  period: token_holders_counter_cache_period
-
-token_transfers_counter_cache_period =
-  case Integer.parse(System.get_env("TOKEN_TRANSFERS_COUNTER_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(1)
-  end
+  enable_consolidation: true
 
 config :explorer, Explorer.Counters.TokenTransfersCounter,
   enabled: true,
-  enable_consolidation: true,
-  period: token_transfers_counter_cache_period
+  enable_consolidation: true
 
 config :explorer, Explorer.Counters.AddressTransactionsCounter,
   enabled: true,
-  enable_consolidation: true,
-  period: address_transactions_counter_cache_period
+  enable_consolidation: true
 
 bridge_market_cap_update_interval =
   if System.get_env("BRIDGE_MARKET_CAP_UPDATE_INTERVAL") do
@@ -262,14 +212,6 @@ config :spandex_ecto, SpandexEcto.EctoLogger,
   service: :ecto,
   tracer: Explorer.Tracer,
   otp_app: :explorer
-
-market_history_cache_period =
-  case Integer.parse(System.get_env("MARKET_HISTORY_CACHE_PERIOD", "")) do
-    {secs, ""} -> :timer.seconds(secs)
-    _ -> :timer.hours(6)
-  end
-
-config :explorer, Explorer.Market.MarketHistoryCache, period: market_history_cache_period
 
 config :explorer, Explorer.Chain.Cache.Blocks,
   ttl_check_interval: if(System.get_env("DISABLE_INDEXER") == "true", do: :timer.seconds(1), else: false),
