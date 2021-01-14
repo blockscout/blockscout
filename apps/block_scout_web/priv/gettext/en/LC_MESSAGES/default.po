@@ -1133,7 +1133,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:39
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:41
 msgid "Page"
 msgstr ""
 
@@ -1205,7 +1205,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:11
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:13
 msgid "Records"
 msgstr ""
 
@@ -1279,7 +1279,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:5
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:7
 msgid "Show"
 msgstr ""
 
@@ -1691,7 +1691,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:39
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:41
 msgid "of"
 msgstr ""
 
