@@ -48,7 +48,8 @@ export const initialState = {
   tokenSymbol: '',
   validatorSetApplyBlock: 0,
   validatorSetContract: null,
-  web3: null
+  web3: null,
+  stakingErrorShown: false
 }
 
 // 100 - id of xDai network, 101 - id of xDai test network
@@ -128,6 +129,11 @@ export function reducer (state = initialState, action) {
         })
       }
       return state
+    }
+    case 'UNHEALTHY_APP_ERROR_SHOWN': {
+      return Object.assign({}, state, {
+        stakingErrorShown: true
+      })
     }
     default:
       return state
@@ -213,6 +219,11 @@ if ($stakesPage.length) {
         await reloadPoolList(msg, store)
       }
     })
+
+    if (msg.epoch_end_block === 0 && !state.stakingErrorShown) {
+      openErrorModal('Staking DApp is currently unavailable', 'Not all functions are active at the moment. Please try again later.')
+      store.dispatch({ type: 'UNHEALTHY_APP_ERROR_SHOWN' })
+    }
 
     updating = false
   }

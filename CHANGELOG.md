@@ -6,6 +6,7 @@
 ### Fixes
 
 ### Chore
+- [#3565](https://github.com/poanetwork/blockscout/pull/3565) - Staking dapp: unhealthy state alert message
 
 
 ## 3.5.1-beta

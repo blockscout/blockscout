@@ -72,6 +72,7 @@ defmodule BlockScoutWeb.StakesChannel do
           %{
             block_number: BlockNumber.get_max(),
             epoch_number: ContractState.get(:epoch_number, 0),
+            epoch_end_block: ContractState.get(:epoch_end_block, 0),
             staking_allowed: ContractState.get(:staking_allowed, false),
             staking_token_defined: ContractState.get(:token, nil) != nil,
             validator_set_apply_block: ContractState.get(:validator_set_apply_block, 0)
@@ -423,11 +424,14 @@ defmodule BlockScoutWeb.StakesChannel do
         assign(socket, :staking_update_data, data)
       end
 
+    epoch_end_block = if Map.has_key?(data, :epoch_end_block), do: data.epoch_end_block, else: 0
+
     push(socket, "staking_update", %{
       account: socket.assigns[:account],
       block_number: data.block_number,
       by_set_account: by_set_account,
       epoch_number: data.epoch_number,
+      epoch_end_block: epoch_end_block,
       staking_allowed: data.staking_allowed,
       staking_token_defined: data.staking_token_defined,
       validator_set_apply_block: data.validator_set_apply_block,
