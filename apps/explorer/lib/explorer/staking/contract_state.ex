@@ -23,6 +23,7 @@ defmodule Explorer.Staking.ContractState do
     :epoch_number,
     :epoch_start_block,
     :is_snapshotting,
+    :last_known_block_number,
     :max_candidates,
     :min_candidate_stake,
     :min_delegator_stake,
@@ -112,6 +113,7 @@ defmodule Explorer.Staking.ContractState do
     :ets.insert(@table_name,
       block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address},
       is_snapshotting: false,
+      last_known_block_number: 0,
       snapshotted_epoch_number: -1,
       staking_contract: %{abi: staking_abi, address: staking_contract_address},
       token_contract: %{abi: token_abi, address: token_contract_address},
@@ -128,6 +130,8 @@ defmodule Explorer.Staking.ContractState do
 
   @doc "Handles new blocks and decides to fetch fresh chain info"
   def handle_info({:chain_event, :last_block_number, :realtime, block_number}, state) do
+    Logger.warn("contract_state.ex: last_block_number = #{block_number}")
+
     if block_number > state.seen_block do
       # read general info from the contracts (including pool list and validator list)
       global_responses =
@@ -157,6 +161,8 @@ defmodule Explorer.Staking.ContractState do
   end
 
   defp fetch_state(contracts, abi, global_responses, block_number, epoch_very_beginning) do
+    Logger.warn("contract_state.ex: fetch_state is called for the block #{block_number}")
+
     validator_min_reward_percent =
       get_validator_min_reward_percent(global_responses.epoch_number, block_number, contracts, abi)
 
@@ -168,11 +174,14 @@ defmodule Explorer.Staking.ContractState do
 
     active_pools_length = Enum.count(global_responses.active_pools)
 
+    Logger.warn("contract_state.ex: save to ETS")
+
     # save the general info to ETS (excluding pool list and validator list)
     settings =
       global_responses
       |> get_settings(validator_min_reward_percent, block_number)
       |> Enum.concat(active_pools_length: active_pools_length)
+      |> Enum.concat(last_known_block_number: block_number)
 
     :ets.insert(@table_name, settings)
 
@@ -186,6 +195,8 @@ defmodule Explorer.Staking.ContractState do
         block_number
       )
 
+    Logger.warn("contract_state.ex: get_mining_to_staking_address")
+
     # miningToStakingAddress mapping
     mining_to_staking_address = get_mining_to_staking_address(validators, contracts, abi, block_number)
 
@@ -197,6 +208,8 @@ defmodule Explorer.Staking.ContractState do
           global_responses.inactive_pools
       )
 
+    Logger.warn("contract_state.ex: get_responses")
+
     %{
       pool_staking_responses: pool_staking_responses,
       pool_mining_responses: pool_mining_responses,
@@ -205,6 +218,8 @@ defmodule Explorer.Staking.ContractState do
 
     # to keep sort order when using `perform_grouped_requests` (see below)
     pool_staking_keys = Enum.map(pool_staking_responses, fn {pool_staking_address, _} -> pool_staking_address end)
+
+    Logger.warn("contract_state.ex: get_candidate_reward_responses")
 
     # call `BlockReward.validatorShare` function for each pool
     # to get validator's reward share of the pool (needed for the `Delegators` list in UI)
@@ -229,6 +244,8 @@ defmodule Explorer.Staking.ContractState do
         end
       end)
 
+    Logger.warn("contract_state.ex: get_delegator_reward_responses")
+
     delegator_reward_responses =
       get_delegator_reward_responses(
         delegator_responses,
@@ -252,6 +269,8 @@ defmodule Explorer.Staking.ContractState do
 
     snapshotted_epoch_number = get(:snapshotted_epoch_number)
 
+    Logger.warn("contract_state.ex: get_pool_entries")
+
     # form entries for writing to the `staking_pools` table in DB
     pool_entries =
       get_pool_entries(%{
@@ -270,6 +289,8 @@ defmodule Explorer.Staking.ContractState do
     # form entries for writing to the `staking_pools_delegators` table in DB
     delegator_entries = get_delegator_entries(staker_responses, delegator_reward_responses)
 
+    Logger.warn("contract_state.ex: start to perform SQL queries")
+
     # perform SQL queries
     {:ok, _} =
       Chain.import(%{
@@ -277,6 +298,8 @@ defmodule Explorer.Staking.ContractState do
         staking_pools_delegators: %{params: delegator_entries},
         timeout: :infinity
       })
+
+    Logger.warn("contract_state.ex: finish performing SQL queries")
 
     if epoch_very_beginning or start_snapshotting do
       at_start_snapshotting(block_number)
@@ -306,6 +329,7 @@ defmodule Explorer.Staking.ContractState do
       validator_set_apply_block: global_responses.validator_set_apply_block
     }
 
+    Logger.warn("contract_state.ex: broadcast :staking_update")
     Publisher.broadcast([{:staking_update, data}], :realtime)
   end
 
