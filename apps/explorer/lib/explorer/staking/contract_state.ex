@@ -356,17 +356,23 @@ defmodule Explorer.Staking.ContractState do
   end
 
   defp get_responses(pools, block_number, contracts, abi) do
+    Logger.warn("contract_state.ex: get_responses.pool_staking_requests")
+
     # read pool info from the contracts by its staking address
     pool_staking_responses =
       pools
       |> Enum.map(&ContractReader.pool_staking_requests(&1, block_number))
       |> ContractReader.perform_grouped_requests(pools, contracts, abi)
 
+    Logger.warn("contract_state.ex: get_responses.pool_mining_requests")
+
     # read pool info from the contracts by its mining address
     pool_mining_responses =
       pools
       |> Enum.map(&ContractReader.pool_mining_requests(pool_staking_responses[&1].mining_address_hash, block_number))
       |> ContractReader.perform_grouped_requests(pools, contracts, abi)
+
+    Logger.warn("contract_state.ex: get_responses.flat_map")
 
     # get a flat list of all stakers in the form of {pool_staking_address, staker_address, is_active}
     stakers =
@@ -376,6 +382,8 @@ defmodule Explorer.Staking.ContractState do
           Enum.map(resp.inactive_delegators, &{pool_staking_address, &1, false})
       end)
 
+    Logger.warn("contract_state.ex: get_responses.staker_requests")
+
     # read info of each staker from the contracts
     staker_responses =
       stakers
@@ -383,6 +391,8 @@ defmodule Explorer.Staking.ContractState do
         ContractReader.staker_requests(pool_staking_address, staker_address, block_number)
       end)
       |> ContractReader.perform_grouped_requests(stakers, contracts, abi)
+
+    Logger.warn("contract_state.ex: get_responses.staker_requests.end")
 
     %{
       pool_staking_responses: pool_staking_responses,
@@ -576,6 +586,8 @@ defmodule Explorer.Staking.ContractState do
       candidate_reward_resp = candidate_reward_responses[pool_staking_address]
       is_validator = is_validator[staking_resp.mining_address_hash] || false
 
+      Logger.warn("contract_state.ex: get_pool_entries.delegators_count")
+
       delegators_count =
         length(staking_resp.active_delegators) +
           if show_snapshotted_data(
@@ -589,41 +601,48 @@ defmodule Explorer.Staking.ContractState do
             0
           end
 
-      %{
-        staking_address_hash: pool_staking_address,
-        delegators_count: delegators_count,
-        stakes_ratio:
-          if staking_resp.is_active do
-            ratio(staking_resp.total_staked_amount, staked_total)
-          else
-            0
-          end,
-        validator_reward_ratio: Float.floor(candidate_reward_resp.validator_share / 10_000, 2),
-        likelihood: ratio(likelihood[pool_staking_address] || 0, total_likelihood),
-        validator_reward_percent: staking_resp.validator_reward_percent / 10_000,
-        is_deleted: false,
-        is_validator: is_validator,
-        is_unremovable: address_bytes_to_string(pool_staking_address) == global_responses.unremovable_validator,
-        ban_reason: binary_to_string(mining_resp.ban_reason)
-      }
-      |> Map.merge(
-        Map.take(staking_resp, [
-          :is_active,
-          :mining_address_hash,
-          :self_staked_amount,
-          :total_staked_amount
-        ])
-      )
-      |> Map.merge(
-        Map.take(mining_resp, [
-          :are_delegators_banned,
-          :banned_delegators_until,
-          :banned_until,
-          :is_banned,
-          :was_banned_count,
-          :was_validator_count
-        ])
-      )
+      Logger.warn("contract_state.ex: get_pool_entries.result")
+
+      result =
+        %{
+          staking_address_hash: pool_staking_address,
+          delegators_count: delegators_count,
+          stakes_ratio:
+            if staking_resp.is_active do
+              ratio(staking_resp.total_staked_amount, staked_total)
+            else
+              0
+            end,
+          validator_reward_ratio: Float.floor(candidate_reward_resp.validator_share / 10_000, 2),
+          likelihood: ratio(likelihood[pool_staking_address] || 0, total_likelihood),
+          validator_reward_percent: staking_resp.validator_reward_percent / 10_000,
+          is_deleted: false,
+          is_validator: is_validator,
+          is_unremovable: address_bytes_to_string(pool_staking_address) == global_responses.unremovable_validator,
+          ban_reason: binary_to_string(mining_resp.ban_reason)
+        }
+        |> Map.merge(
+          Map.take(staking_resp, [
+            :is_active,
+            :mining_address_hash,
+            :self_staked_amount,
+            :total_staked_amount
+          ])
+        )
+        |> Map.merge(
+          Map.take(mining_resp, [
+            :are_delegators_banned,
+            :banned_delegators_until,
+            :banned_until,
+            :is_banned,
+            :was_banned_count,
+            :was_validator_count
+          ])
+        )
+
+      Logger.warn("contract_state.ex: get_pool_entries.result.end")
+
+      result
     end)
   end
 
