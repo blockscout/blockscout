@@ -23,6 +23,12 @@ import * as Sentry from '@sentry/browser'
 
 const stakesPageSelector = '[data-page="stakes"]'
 
+if (localStorage.getItem('stakes-alert-read') === 'true') {
+  $('.js-stakes-welcome-alert').hide()
+} else {
+  $('.js-stakes-welcome-alert').show()
+}
+
 export const initialState = {
   account: null,
   blockRewardContract: null,
@@ -43,7 +49,8 @@ export const initialState = {
   tokenSymbol: '',
   validatorSetApplyBlock: 0,
   validatorSetContract: null,
-  web3: null
+  web3: null,
+  stakingErrorShown: false
 }
 
 // 100 - id of xDai network, 101 - id of xDai test network
@@ -124,6 +131,11 @@ export function reducer (state = initialState, action) {
       }
       return state
     }
+    case 'UNHEALTHY_APP_ERROR_SHOWN': {
+      return Object.assign({}, state, {
+        stakingErrorShown: true
+      })
+    }
     default:
       return state
   }
@@ -146,6 +158,7 @@ const elements = {
 const $stakesPage = $(stakesPageSelector)
 const $stakesTop = $('[data-selector="stakes-top"]')
 const $refreshInformer = $('.refresh-informer', $stakesPage)
+
 if ($stakesPage.length) {
   const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierPool')
   connectElements({ store, elements })
@@ -207,6 +220,11 @@ if ($stakesPage.length) {
         await reloadPoolList(msg, store)
       }
     })
+
+    if (msg.epoch_end_block === 0 && !state.stakingErrorShown) {
+      openErrorModal('Staking DApp is currently unavailable', 'Not all functions are active at the moment. Please try again later.')
+      store.dispatch({ type: 'UNHEALTHY_APP_ERROR_SHOWN' })
+    }
 
     updating = false
   }
@@ -296,6 +314,10 @@ if ($stakesPage.length) {
       if (checkForTokenDefinition(store)) {
         openClaimWithdrawalModal(event, store)
       }
+    })
+    .on('click', '.stakes-btn-close-alert', event => {
+      $(event.target).closest('section.container').hide()
+      localStorage.setItem('stakes-alert-read', 'true')
     })
 
   $stakesPage

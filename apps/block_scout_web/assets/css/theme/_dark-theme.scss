@@ -1104,6 +1104,11 @@ $dark-stakes-banned-background: #3e314c;
 	.dropzone-1 {
 		background-color: $dark-light !important;
 	}
+	.stakes-btn-close-alert {
+		path {
+			fill: #fff;
+		  }
+	}
 }
 
 .navbar-dark .navbar-toggler {
