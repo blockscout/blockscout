@@ -7,6 +7,7 @@ import { batchChannel } from '../../lib/utils'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
 import '../address'
+import { isFiltered } from './utils'
 
 const BATCH_THRESHOLD = 10
 
@@ -79,7 +80,13 @@ const elements = {
   '[data-test="filter_dropdown"]': {
     render ($el, state) {
       if (state.emptyResponse && !state.isSearch) {
-        return $el.hide()
+        if (isFiltered(state.filter)) {
+          $el.addClass('no-rm')
+        } else {
+          return $el.hide()
+        }
+      } else {
+        $el.removeClass('no-rm')
       }
 
       return $el.show()

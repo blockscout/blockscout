@@ -1109,7 +1109,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:39
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:41
 msgid "Page"
 msgstr ""
 
@@ -1181,7 +1181,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:11
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:13
 msgid "Records"
 msgstr ""
 
@@ -1219,13 +1219,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:218
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:249
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:254
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:212
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:204
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1253,7 +1253,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:5
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:7
 msgid "Show"
 msgstr ""
 
@@ -1681,7 +1681,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:39
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:41
 msgid "of"
 msgstr ""
 
@@ -1937,7 +1937,7 @@ msgid "Copy Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:208
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 
@@ -2018,7 +2018,6 @@ msgid "<p>To become a candidate, your staking address must be funded with %{toke
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:159
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:11
 msgid "Active Pools"
 msgstr ""
@@ -2191,7 +2190,6 @@ msgid "Inactive Pool Addresses. Current validator pools are specified by a check
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:163
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:18
 msgid "Inactive Pools"
 msgstr ""
@@ -2203,7 +2201,7 @@ msgid "It's me!"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:698
+#: lib/block_scout_web/channels/stakes_channel.ex:702
 msgid "JSON RPC error"
 msgstr ""
 
@@ -2278,7 +2276,7 @@ msgid "Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:754
+#: lib/block_scout_web/channels/stakes_channel.ex:758
 msgid "Pools searching is already in progress for this address"
 msgstr ""
 
@@ -2311,7 +2309,7 @@ msgid "Remove My Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:795
+#: lib/block_scout_web/channels/stakes_channel.ex:799
 msgid "Reward calculating is already in progress for this address"
 msgstr ""
 
@@ -2332,12 +2330,12 @@ msgid "Share of Pool’s Reward"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:17
+#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:22
 msgid "Show banned only"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:23
+#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:28
 msgid "Show only those I have stake in"
 msgstr ""
 
@@ -2391,7 +2389,7 @@ msgid "Stakes Ratio"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:798
+#: lib/block_scout_web/channels/stakes_channel.ex:802
 msgid "Staking epochs are not specified or not in the allowed range"
 msgstr ""
 
@@ -2486,19 +2484,19 @@ msgid "Unable to find any pools you could claim a reward from."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:761
-#: lib/block_scout_web/channels/stakes_channel.ex:808
+#: lib/block_scout_web/channels/stakes_channel.ex:765
+#: lib/block_scout_web/channels/stakes_channel.ex:812
 msgid "Unknown address of Staking contract. Please, contact support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:801
+#: lib/block_scout_web/channels/stakes_channel.ex:805
 msgid "Unknown pool staking address. Please, contact support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:757
-#: lib/block_scout_web/channels/stakes_channel.ex:804
+#: lib/block_scout_web/channels/stakes_channel.ex:761
+#: lib/block_scout_web/channels/stakes_channel.ex:808
 msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 
@@ -2513,7 +2511,6 @@ msgid "Validator pools can be banned for misbehavior (such as not revealing secr
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:155
 #: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:4
 msgid "Validators"
 msgstr ""
@@ -2646,4 +2643,14 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract/index.html.eex:14
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:5
 msgid "Contract is not verified. However, we found a verified contract with the same bytecode in Blockscout DB"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:155
+msgid "Staking"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:247
+msgid "Press / and focus will be moved to the search field"
 msgstr ""
