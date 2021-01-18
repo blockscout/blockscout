@@ -28,6 +28,12 @@ if (localStorage.getItem('stakes-alert-read') === 'true') {
   $('.js-stakes-welcome-alert').show()
 }
 
+if (localStorage.getItem('stakes-warning-read') === 'true') {
+  $('.js-stakes-warning-alert').hide()
+} else {
+  $('.js-stakes-warning-alert').show()
+}
+
 export const initialState = {
   account: null,
   blockRewardContract: null,
@@ -314,9 +320,13 @@ if ($stakesPage.length) {
         openClaimWithdrawalModal(event, store)
       }
     })
-    .on('click', '.stakes-btn-close-alert', event => {
+    .on('click', '.js-stakes-btn-close-welcome-alert', event => {
       $(event.target).closest('section.container').hide()
       localStorage.setItem('stakes-alert-read', 'true')
+    })
+    .on('click', '.js-stakes-btn-close-warning', event => {
+      $(event.target).closest('section.container').hide()
+      localStorage.setItem('stakes-warning-read', 'true')
     })
 
   $stakesPage
