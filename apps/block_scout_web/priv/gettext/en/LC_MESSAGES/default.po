@@ -1114,7 +1114,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:39
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:41
 msgid "Page"
 msgstr ""
 
@@ -1186,7 +1186,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:11
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:13
 msgid "Records"
 msgstr ""
 
@@ -1260,7 +1260,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:5
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:7
 msgid "Show"
 msgstr ""
 
@@ -1673,7 +1673,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:39
+#: lib/block_scout_web/templates/common_components/_pagination_container.html.eex:41
 msgid "of"
 msgstr ""
 
@@ -2193,7 +2193,7 @@ msgid "It's me!"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:698
+#: lib/block_scout_web/channels/stakes_channel.ex:702
 msgid "JSON RPC error"
 msgstr ""
 
@@ -2268,7 +2268,7 @@ msgid "Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:754
+#: lib/block_scout_web/channels/stakes_channel.ex:758
 msgid "Pools searching is already in progress for this address"
 msgstr ""
 
@@ -2301,7 +2301,7 @@ msgid "Remove My Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:795
+#: lib/block_scout_web/channels/stakes_channel.ex:799
 msgid "Reward calculating is already in progress for this address"
 msgstr ""
 
@@ -2322,12 +2322,12 @@ msgid "Share of Pool’s Reward"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:17
+#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:22
 msgid "Show banned only"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:23
+#: lib/block_scout_web/templates/stakes/_stakes_title.html.eex:28
 msgid "Show only those I have stake in"
 msgstr ""
 
@@ -2381,7 +2381,7 @@ msgid "Stakes Ratio"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:798
+#: lib/block_scout_web/channels/stakes_channel.ex:802
 msgid "Staking epochs are not specified or not in the allowed range"
 msgstr ""
 
@@ -2476,19 +2476,19 @@ msgid "Unable to find any pools you could claim a reward from."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:761
-#: lib/block_scout_web/channels/stakes_channel.ex:808
+#: lib/block_scout_web/channels/stakes_channel.ex:765
+#: lib/block_scout_web/channels/stakes_channel.ex:812
 msgid "Unknown address of Staking contract. Please, contact support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:801
+#: lib/block_scout_web/channels/stakes_channel.ex:805
 msgid "Unknown pool staking address. Please, contact support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:757
-#: lib/block_scout_web/channels/stakes_channel.ex:804
+#: lib/block_scout_web/channels/stakes_channel.ex:761
+#: lib/block_scout_web/channels/stakes_channel.ex:808
 msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 

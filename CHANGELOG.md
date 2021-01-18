@@ -1,6 +1,19 @@
 ## Current
 
 ### Features
+- [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
+
+### Fixes
+
+### Chore
+- [#3574](https://github.com/poanetwork/blockscout/pull/3574) - Correct UNI token price
+- [#3567](https://github.com/poanetwork/blockscout/pull/3567) - Force to show filter at the page where filtered items list is empty
+- [#3565](https://github.com/poanetwork/blockscout/pull/3565) - Staking dapp: unhealthy state alert message
+
+
+## 3.5.1-beta
+
+### Features
 - [#3558](https://github.com/poanetwork/blockscout/pull/3558) - Focus to search field with a forward slash key
 - [#3541](https://github.com/poanetwork/blockscout/pull/3541) - Staking dapp stats: total number of delegators, total staked amount 
 - [#3540](https://github.com/poanetwork/blockscout/pull/3540) - Apply DarkForest custom theme to NFT instances
