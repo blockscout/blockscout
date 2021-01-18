@@ -6,6 +6,7 @@
 ### Fixes
 
 ### Chore
+- [#3574](https://github.com/poanetwork/blockscout/pull/3574) - Correct UNI token price
 - [#3567](https://github.com/poanetwork/blockscout/pull/3567) - Force to show filter at the page where filtered items list is empty
 - [#3565](https://github.com/poanetwork/blockscout/pull/3565) - Staking dapp: unhealthy state alert message
 
