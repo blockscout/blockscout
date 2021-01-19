@@ -8,7 +8,7 @@
             <%= address_title(@address) %> <%= gettext "Details" %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
-              <span class="overview-title-item" data-clipboard-text="<%= @address %>">
+              <span class="overview-title-item" data-selector="copy-address" data-clipboard-text="<%= @address %>">
                 <span
                   aria-label='<%= gettext("Copy Address") %>'
                   class="btn-copy-icon"
@@ -28,6 +28,7 @@
               >
                 <span
                   class="btn-qr-icon"
+                  data-selector="qr-code"
                   data-toggle="tooltip"
                   data-placement="top"
                   title='<%= gettext("QR Code") %>'
