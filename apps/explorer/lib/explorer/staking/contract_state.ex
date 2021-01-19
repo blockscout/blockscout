@@ -161,11 +161,12 @@ defmodule Explorer.Staking.ContractState do
 
       fetch_state(state, global_responses, block_number, epoch_very_beginning)
 
-      state = if state.snapshotting_finished do
-        %{state | snapshotting_finished: false}
-      else
-        state
-      end
+      state =
+        if state.snapshotting_finished do
+          %{state | snapshotting_finished: false}
+        else
+          state
+        end
 
       {:noreply, %{state | seen_block: block_number}}
     else
