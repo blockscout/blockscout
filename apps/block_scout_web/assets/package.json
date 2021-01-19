@@ -41,6 +41,7 @@
     "popper.js": "^1.14.7",
     "reduce-reducers": "^0.4.3",
     "redux": "^4.0.0",
+    "uniqid": "^5.2.0",
     "urijs": "^1.19.2"
   },
   "devDependencies": {
