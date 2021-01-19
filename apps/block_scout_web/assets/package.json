@@ -19,7 +19,9 @@
     "eslint": "eslint js/**"
   },
   "dependencies": {
+    "@analytics/segment": "^0.6.0",
     "@fortawesome/fontawesome-free": "^5.1.0-4",
+    "analytics": "^0.6.6",
     "awesomplete": "1.1.2",
     "bignumber.js": "^9.0.0",
     "bootstrap": "^4.3.1",
