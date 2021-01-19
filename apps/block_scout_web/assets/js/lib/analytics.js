@@ -36,12 +36,12 @@ export function reducer (state = initialState, action) {
   }
 }
 
-$(function() {
+$(function () {
   const store = createStore(reducer)
-  if (!state.userID) {
+  if (!store.state.userID) {
     store.dispatch({ type: 'SET_USER_ID' })
   }
-  analytics.identify(state.userID)
+  analytics.identify(store.state.userID)
   analytics.page()
   trackEvents()
 })
@@ -50,35 +50,35 @@ function trackEvents () {
   // Page navigation
 
   // Search box click
-  $('[data-selector="search-bar"]').on('click', function() {
+  $('[data-selector="search-bar"]').on('click', function () {
     analytics.track('search bar click')
   })
 
   // Search submit
-  $('[data-selector="search-bar"]').on('submit', function(e) {
-    e.preventDefault();  //prevent form from submitting
+  $('[data-selector="search-bar"]').on('submit', function (e) {
+    e.preventDefault() // prevent form from submitting
     analytics.track('search event', {
       value: e.value
     })
-  });
+  })
 
   // Click on Balance Card Caret
-  $('[data-selector="address-balance-caret"]').on('click', function() {
+  $('[data-selector="address-balance-caret"]').on('click', function () {
     analytics.track('address balance caret click')
-  });
+  })
 
   // Copy address
-  $('[data-selector="copy-address"]').on('click', function() {
+  $('[data-selector="copy-address"]').on('click', function () {
     analytics.track('copy address click')
   })
 
   // QR code
-  $('[data-selector="qr-code"]').on('click', function() {
+  $('[data-selector="qr-code"]').on('click', function () {
     analytics.track('QR code click')
   })
 
   // "view more transfers" click
-  $('[data-selector="token-transfer-open"]').on('click', function() {
-    analytics.track('\"View more transfers\" click')
+  $('[data-selector="token-transfer-open"]').on('click', function () {
+    analytics.track('"View more transfers" click')
   })
 }
