@@ -29,6 +29,8 @@ defmodule Explorer.Staking.ContractReader do
       pools_to_be_elected: {:staking, "a5d54f65", [], block_number},
       # f4942501 = keccak256(areStakeAndWithdrawAllowed())
       staking_allowed: {:staking, "f4942501", [], block_number},
+      # 74bdb372 = keccak256(lastChangeBlock())
+      staking_last_change_block: {:staking, "74bdb372", [], block_number},
       # 2d21d217 = keccak256(erc677TokenContract())
       token_contract_address: {:staking, "2d21d217", [], block_number},
       # 704189ca = keccak256(unremovableValidator())
@@ -36,7 +38,9 @@ defmodule Explorer.Staking.ContractReader do
       # b7ab4db5 = keccak256(getValidators())
       validators: {:validator_set, "b7ab4db5", [], block_number},
       # b927ef43 = keccak256(validatorSetApplyBlock())
-      validator_set_apply_block: {:validator_set, "b927ef43", [], block_number}
+      validator_set_apply_block: {:validator_set, "b927ef43", [], block_number},
+      # 74bdb372 = keccak256(lastChangeBlock())
+      validator_set_last_change_block: {:validator_set, "74bdb372", [], block_number}
     ]
   end
 
