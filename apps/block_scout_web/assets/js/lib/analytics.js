@@ -10,7 +10,7 @@ const analytics = Analytics({
   app: 'Blockscout',
   plugins: [
     segmentPlugin({
-      writeKey: 'WRITE_KEY'
+      writeKey: process.env.SEGMENT_KEY
     })
   ]
 })
