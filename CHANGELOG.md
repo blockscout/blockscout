@@ -4,6 +4,7 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
 - [#3574](https://github.com/poanetwork/blockscout/pull/3574) - Correct UNI token price
