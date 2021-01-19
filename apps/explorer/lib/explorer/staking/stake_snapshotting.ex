@@ -9,6 +9,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
   alias Explorer.Chain
   alias Explorer.Chain.{StakingPool, StakingPoolsDelegator}
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.Staking.ContractReader
 
   def do_snapshotting(
@@ -194,6 +195,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
     end
 
     :ets.insert(ets_table_name, is_snapshotting: false)
+
+    Publisher.broadcast(:stake_snapshotting_finished)
   end
 
   defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)

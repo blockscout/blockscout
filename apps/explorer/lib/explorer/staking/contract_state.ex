@@ -42,6 +42,7 @@ defmodule Explorer.Staking.ContractState do
 
   defstruct [
     :seen_block,
+    :snapshotting_finished,
     :contracts,
     :abi
   ]
@@ -70,6 +71,7 @@ defmodule Explorer.Staking.ContractState do
     ])
 
     Subscriber.to(:last_block_number, :realtime)
+    Subscriber.to(:stake_snapshotting_finished)
 
     staking_abi = abi("StakingAuRa")
     validator_set_abi = abi("ValidatorSetAuRa")
@@ -102,6 +104,7 @@ defmodule Explorer.Staking.ContractState do
 
     state = %__MODULE__{
       seen_block: 0,
+      snapshotting_finished: false,
       contracts: %{
         staking: staking_contract_address,
         validator_set: validator_set_contract_address,
@@ -128,6 +131,11 @@ defmodule Explorer.Staking.ContractState do
     {:noreply, state}
   end
 
+  @doc "Handles an event about snapshotting finishing"
+  def handle_info({:chain_event, :stake_snapshotting_finished}, state) do
+    {:noreply, %{state | snapshotting_finished: true}}
+  end
+
   @doc "Handles new blocks and decides to fetch fresh chain info"
   def handle_info({:chain_event, :last_block_number, :realtime, block_number}, state) do
     if block_number > state.seen_block do
@@ -146,19 +154,31 @@ defmodule Explorer.Staking.ContractState do
         if loop_block_end >= loop_block_start do
           for bn <- loop_block_start..loop_block_end do
             gr = ContractReader.perform_requests(ContractReader.global_requests(bn), state.contracts, state.abi)
-            fetch_state(state.contracts, state.abi, gr, bn, gr.epoch_start_block == bn + 1)
+            fetch_state(state, gr, bn, gr.epoch_start_block == bn + 1)
           end
         end
       end
 
-      fetch_state(state.contracts, state.abi, global_responses, block_number, epoch_very_beginning)
+      fetch_state(state, global_responses, block_number, epoch_very_beginning)
+
+      state = if state.snapshotting_finished do
+        %{state | snapshotting_finished: false}
+      else
+        state
+      end
+
       {:noreply, %{state | seen_block: block_number}}
     else
       {:noreply, state}
     end
   end
 
-  defp fetch_state(contracts, abi, global_responses, block_number, epoch_very_beginning) do
+  defp fetch_state(state, global_responses, block_number, epoch_very_beginning) do
+    contracts = state.contracts
+    abi = state.abi
+    snapshotting_finished = state.snapshotting_finished
+    first_fetch = get(:epoch_end_block, 0) == 0
+
     validator_min_reward_percent =
       get_validator_min_reward_percent(global_responses.epoch_number, block_number, contracts, abi)
 
@@ -172,12 +192,13 @@ defmodule Explorer.Staking.ContractState do
 
     # determine if something changed in contracts state since the previous seen block.
     # if something changed or the `fetch_state` function is called for the first time
-    # or we are at the beginning of staking epoch, we should update database
+    # or we are at the beginning of staking epoch or snapshotting recently finished
+    # then we should update database
     last_change_block =
       max(global_responses.staking_last_change_block, global_responses.validator_set_last_change_block)
 
     should_update_db =
-      start_snapshotting || get(:epoch_end_block, 0) == 0 || last_change_block > get(:last_change_block)
+      start_snapshotting or snapshotting_finished or first_fetch or last_change_block > get(:last_change_block)
 
     # save the general info to ETS (excluding pool list and validator list)
     settings =
@@ -267,7 +288,20 @@ defmodule Explorer.Staking.ContractState do
 
       snapshotted_epoch_number = get(:snapshotted_epoch_number)
 
-      # form entries for writing to the `staking_pools` table in DB
+      # form entries for writing to the `staking_pools_delegators` table in DB
+      delegator_entries = get_delegator_entries(staker_responses, delegator_reward_responses)
+
+      # perform SQL queries
+      {:ok, _} =
+        Chain.import(%{
+          staking_pools_delegators: %{params: delegator_entries},
+          timeout: :infinity
+        })
+
+      # form entries for writing to the `staking_pools` table in DB.
+      # !!! it's important to do this AFTER updating `staking_pools_delegators`
+      # !!! table because the `get_pool_entries` function requires fresh
+      # !!! info about delegators of validators from the `staking_pools_delegators` table
       pool_entries =
         get_pool_entries(%{
           pools: pools,
@@ -282,14 +316,10 @@ defmodule Explorer.Staking.ContractState do
           staked_total: staked_total
         })
 
-      # form entries for writing to the `staking_pools_delegators` table in DB
-      delegator_entries = get_delegator_entries(staker_responses, delegator_reward_responses)
-
       # perform SQL queries
       {:ok, _} =
         Chain.import(%{
           staking_pools: %{params: pool_entries},
-          staking_pools_delegators: %{params: delegator_entries},
           timeout: :infinity
         })
 
@@ -305,8 +335,6 @@ defmodule Explorer.Staking.ContractState do
         )
       end
     end
-
-    # if should_update_db
 
     # notify the UI about a new block
     data = %{
