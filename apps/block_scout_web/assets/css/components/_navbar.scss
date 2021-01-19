@@ -163,12 +163,27 @@ $navbar-logo-width: auto !default;
   }
   .input-group-append {
     height: 38px;
-    left: 0;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     width: 38px;
     z-index: 5;
+
+    &.left {
+      left: 0px;
+    }
+
+    &.right {
+      right: 8px;
+      width: 25px;
+      height: 25px;
+    }
+
+    &.desktop-only {
+      @include media-breakpoint-down(md) {
+        display: none;
+      }
+    }
 
     * {
       fill: $header-textfield-magnifier-color;
@@ -183,6 +198,13 @@ $navbar-logo-width: auto !default;
     justify-content: center;
     padding: 0;
     width: 100%;
+
+    &.border {
+      border-color: $secondary !important;
+      border-radius: 5px;
+      color: $secondary;
+      background-color: $header-textfield-background-color;
+    }
   }
 }
 
@@ -290,4 +312,8 @@ $navbar-logo-width: auto !default;
 
 .visually-hidden {
   display: block;
+}
+
+.focused-field {
+  border: 1px solid $secondary !important;
 }

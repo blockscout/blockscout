@@ -1,5 +1,19 @@
 <div class="card-title-container">
-  <div class="card-title"><%= @title %></div>
+  <div class="card-title">
+    <%= @title %>
+    <%= if @is_validator do%>
+      <div class="stake-stats-container">
+        <span><b><%= Chain.staking_pools_count(:validator) %></b> validator pools</span>
+        <span> and <b><%= Chain.delegators_count_sum(:validator) %></b> delegators</span>
+        <span> staking a total of <b><%= format_token_amount(Chain.total_staked_amount_sum(:validator), @token, digits: 0, ellipsize: false, symbol: false) %></b> STAKE</span>
+      </div>
+    <% end %>
+    <%= if @show_banned_checkbox do%>
+      <div class="stake-stats-container">
+        <span>A validator pool may be inactivated during a staking epoch. If the inactive pool is a current validator, STAKE and any accrued delegator rewards cannot be moved or withdrawn until the current staking epoch is complete. See the <a href="https://www.xdaichain.com/about-xdai/faqs/public-staking-validators-and-delegators#what-is-an-inactive-pool" target="_blank">Inactive Pool FAQs</a> for more information.</span>
+      </div>
+    <% end %>
+  </div>
   <div class="card-title-controls">
     <%= if @show_banned_checkbox do %>
       <div class="check card-title-control">

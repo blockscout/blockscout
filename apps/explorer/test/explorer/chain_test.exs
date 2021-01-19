@@ -5117,6 +5117,60 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "delegators_count_sum/1" do
+    test "validators pools" do
+      insert(:staking_pool, is_active: true, is_validator: true, delegators_count: 10)
+      insert(:staking_pool, is_active: true, is_validator: false, delegators_count: 7)
+      insert(:staking_pool, is_active: true, is_validator: true, delegators_count: 5)
+
+      assert Chain.delegators_count_sum(:validator) == 15
+    end
+
+    test "active staking pools" do
+      insert(:staking_pool, is_active: true, delegators_count: 10)
+      insert(:staking_pool, is_active: true, delegators_count: 7)
+      insert(:staking_pool, is_active: false, delegators_count: 5)
+
+      assert Chain.delegators_count_sum(:active) == 17
+    end
+
+    test "inactive staking pools" do
+      insert(:staking_pool, is_active: true, delegators_count: 10)
+      insert(:staking_pool, is_active: true, delegators_count: 7)
+      insert(:staking_pool, is_active: false, delegators_count: 5)
+      insert(:staking_pool, is_active: false, delegators_count: 1)
+
+      assert Chain.delegators_count_sum(:inactive) == 6
+    end
+  end
+
+  describe "total_staked_amount_sum/1" do
+    test "validators pools" do
+      insert(:staking_pool, is_active: true, is_validator: true, total_staked_amount: 10)
+      insert(:staking_pool, is_active: true, is_validator: false, total_staked_amount: 7)
+      insert(:staking_pool, is_active: true, is_validator: true, total_staked_amount: 5)
+
+      assert Chain.total_staked_amount_sum(:validator) == Decimal.new("15")
+    end
+
+    test "active staking pools" do
+      insert(:staking_pool, is_active: true, total_staked_amount: 10)
+      insert(:staking_pool, is_active: true, total_staked_amount: 7)
+      insert(:staking_pool, is_active: false, total_staked_amount: 5)
+
+      assert Chain.total_staked_amount_sum(:active) == Decimal.new("17")
+    end
+
+    test "inactive staking pools" do
+      insert(:staking_pool, is_active: true, total_staked_amount: 10)
+      insert(:staking_pool, is_active: true, total_staked_amount: 7)
+      insert(:staking_pool, is_active: false, total_staked_amount: 5)
+      insert(:staking_pool, is_active: false, total_staked_amount: 1)
+
+      assert Chain.total_staked_amount_sum(:inactive) == Decimal.new("6")
+    end
+  end
+
   describe "extract_db_name/1" do
     test "extracts correct db name" do
       db_url = "postgresql://viktor:@localhost:5432/blockscout-dev-1"
