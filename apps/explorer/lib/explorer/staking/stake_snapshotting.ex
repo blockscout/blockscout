@@ -8,8 +8,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
   require Logger
 
   alias Explorer.Chain
-  alias Explorer.Chain.{StakingPool, StakingPoolsDelegator}
   alias Explorer.Chain.Events.Publisher
+  alias Explorer.Chain.{StakingPool, StakingPoolsDelegator}
   alias Explorer.Staking.ContractReader
 
   def do_snapshotting(
