@@ -183,8 +183,6 @@ defmodule Explorer.Staking.ContractState do
     validator_min_reward_percent =
       get_validator_min_reward_percent(global_responses.epoch_number, block_number, contracts, abi)
 
-    is_validator = Enum.into(global_responses.validators, %{}, &{address_bytes_to_string(&1), true})
-
     start_snapshotting =
       global_responses.epoch_number > get(:snapshotted_epoch_number) && global_responses.epoch_number > 0 &&
         not get(:is_snapshotting)
@@ -220,121 +218,7 @@ defmodule Explorer.Staking.ContractState do
 
     # we should update database as something changed in contracts state
     if should_update_db do
-      # form the list of validator pools
-      validators =
-        get_validators(
-          start_snapshotting,
-          global_responses,
-          contracts,
-          abi,
-          block_number
-        )
-
-      # miningToStakingAddress mapping
-      mining_to_staking_address = get_mining_to_staking_address(validators, contracts, abi, block_number)
-
-      # the list of all pools (validators + active pools + inactive pools)
-      pools =
-        Enum.uniq(
-          Map.values(mining_to_staking_address) ++
-            global_responses.active_pools ++
-            global_responses.inactive_pools
-        )
-
-      %{
-        pool_staking_responses: pool_staking_responses,
-        pool_mining_responses: pool_mining_responses,
-        staker_responses: staker_responses
-      } = get_responses(pools, block_number, contracts, abi)
-
-      # to keep sort order when using `perform_grouped_requests` (see below)
-      pool_staking_keys = Enum.map(pool_staking_responses, fn {pool_staking_address, _} -> pool_staking_address end)
-
-      # call `BlockReward.validatorShare` function for each pool
-      # to get validator's reward share of the pool (needed for the `Delegators` list in UI)
-      candidate_reward_responses =
-        get_candidate_reward_responses(
-          pool_staking_responses,
-          global_responses,
-          pool_staking_keys,
-          contracts,
-          abi,
-          block_number
-        )
-
-      # call `BlockReward.delegatorShare` function for each delegator
-      # to get their reward share of the pool (needed for the `Delegators` list in UI)
-      delegator_responses = get_delegator_responses(staker_responses)
-
-      delegator_reward_responses =
-        get_delegator_reward_responses(
-          delegator_responses,
-          pool_staking_responses,
-          global_responses,
-          contracts,
-          abi,
-          block_number
-        )
-
-      # calculate total amount staked into all active pools
-      staked_total = Enum.sum(for {_, pool} <- pool_staking_responses, pool.is_active, do: pool.total_staked_amount)
-
-      # calculate likelihood of becoming a validator on the next epoch
-      [likelihood_values, total_likelihood] = global_responses.pools_likelihood
-      # array of pool addresses (staking addresses)
-      likelihood =
-        global_responses.pools_to_be_elected
-        |> Enum.zip(likelihood_values)
-        |> Enum.into(%{})
-
-      snapshotted_epoch_number = get(:snapshotted_epoch_number)
-
-      # form entries for writing to the `staking_pools_delegators` table in DB
-      delegator_entries = get_delegator_entries(staker_responses, delegator_reward_responses)
-
-      # perform SQL queries
-      {:ok, _} =
-        Chain.import(%{
-          staking_pools_delegators: %{params: delegator_entries},
-          timeout: :infinity
-        })
-
-      # form entries for writing to the `staking_pools` table in DB.
-      # !!! it's important to do this AFTER updating `staking_pools_delegators`
-      # !!! table because the `get_pool_entries` function requires fresh
-      # !!! info about delegators of validators from the `staking_pools_delegators` table
-      pool_entries =
-        get_pool_entries(%{
-          pools: pools,
-          pool_mining_responses: pool_mining_responses,
-          pool_staking_responses: pool_staking_responses,
-          is_validator: is_validator,
-          candidate_reward_responses: candidate_reward_responses,
-          global_responses: global_responses,
-          snapshotted_epoch_number: snapshotted_epoch_number,
-          likelihood: likelihood,
-          total_likelihood: total_likelihood,
-          staked_total: staked_total
-        })
-
-      # perform SQL queries
-      {:ok, _} =
-        Chain.import(%{
-          staking_pools: %{params: pool_entries},
-          timeout: :infinity
-        })
-
-      if start_snapshotting do
-        do_start_snapshotting(
-          epoch_very_beginning,
-          pool_staking_responses,
-          global_responses,
-          contracts,
-          abi,
-          validators,
-          mining_to_staking_address
-        )
-      end
+      update_database(epoch_very_beginning, start_snapshotting, global_responses, contracts, abi, block_number)
     end
 
     # notify the UI about a new block
@@ -350,6 +234,126 @@ defmodule Explorer.Staking.ContractState do
     }
 
     Publisher.broadcast([{:staking_update, data}], :realtime)
+  end
+
+  defp update_database(epoch_very_beginning, start_snapshotting, global_responses, contracts, abi, block_number) do
+    is_validator = Enum.into(global_responses.validators, %{}, &{address_bytes_to_string(&1), true})
+
+    # form the list of validator pools
+    validators =
+      get_validators(
+        start_snapshotting,
+        global_responses,
+        contracts,
+        abi,
+        block_number
+      )
+
+    # miningToStakingAddress mapping
+    mining_to_staking_address = get_mining_to_staking_address(validators, contracts, abi, block_number)
+
+    # the list of all pools (validators + active pools + inactive pools)
+    pools =
+      Enum.uniq(
+        Map.values(mining_to_staking_address) ++
+          global_responses.active_pools ++
+          global_responses.inactive_pools
+      )
+
+    %{
+      pool_staking_responses: pool_staking_responses,
+      pool_mining_responses: pool_mining_responses,
+      staker_responses: staker_responses
+    } = get_responses(pools, block_number, contracts, abi)
+
+    # to keep sort order when using `perform_grouped_requests` (see below)
+    pool_staking_keys = Enum.map(pool_staking_responses, fn {pool_staking_address, _} -> pool_staking_address end)
+
+    # call `BlockReward.validatorShare` function for each pool
+    # to get validator's reward share of the pool (needed for the `Delegators` list in UI)
+    candidate_reward_responses =
+      get_candidate_reward_responses(
+        pool_staking_responses,
+        global_responses,
+        pool_staking_keys,
+        contracts,
+        abi,
+        block_number
+      )
+
+    # call `BlockReward.delegatorShare` function for each delegator
+    # to get their reward share of the pool (needed for the `Delegators` list in UI)
+    delegator_responses = get_delegator_responses(staker_responses)
+
+    delegator_reward_responses =
+      get_delegator_reward_responses(
+        delegator_responses,
+        pool_staking_responses,
+        global_responses,
+        contracts,
+        abi,
+        block_number
+      )
+
+    # calculate total amount staked into all active pools
+    staked_total = Enum.sum(for {_, pool} <- pool_staking_responses, pool.is_active, do: pool.total_staked_amount)
+
+    # calculate likelihood of becoming a validator on the next epoch
+    [likelihood_values, total_likelihood] = global_responses.pools_likelihood
+    # array of pool addresses (staking addresses)
+    likelihood =
+      global_responses.pools_to_be_elected
+      |> Enum.zip(likelihood_values)
+      |> Enum.into(%{})
+
+    snapshotted_epoch_number = get(:snapshotted_epoch_number)
+
+    # form entries for writing to the `staking_pools_delegators` table in DB
+    delegator_entries = get_delegator_entries(staker_responses, delegator_reward_responses)
+
+    # perform SQL queries
+    {:ok, _} =
+      Chain.import(%{
+        staking_pools_delegators: %{params: delegator_entries},
+        timeout: :infinity
+      })
+
+    # form entries for writing to the `staking_pools` table in DB.
+    # !!! it's important to do this AFTER updating `staking_pools_delegators`
+    # !!! table because the `get_pool_entries` function requires fresh
+    # !!! info about delegators of validators from the `staking_pools_delegators` table
+    pool_entries =
+      get_pool_entries(%{
+        pools: pools,
+        pool_mining_responses: pool_mining_responses,
+        pool_staking_responses: pool_staking_responses,
+        is_validator: is_validator,
+        candidate_reward_responses: candidate_reward_responses,
+        global_responses: global_responses,
+        snapshotted_epoch_number: snapshotted_epoch_number,
+        likelihood: likelihood,
+        total_likelihood: total_likelihood,
+        staked_total: staked_total
+      })
+
+    # perform SQL queries
+    {:ok, _} =
+      Chain.import(%{
+        staking_pools: %{params: pool_entries},
+        timeout: :infinity
+      })
+
+    if start_snapshotting do
+      do_start_snapshotting(
+        epoch_very_beginning,
+        pool_staking_responses,
+        global_responses,
+        contracts,
+        abi,
+        validators,
+        mining_to_staking_address
+      )
+    end
   end
 
   defp get_settings(global_responses, validator_min_reward_percent, block_number) do
