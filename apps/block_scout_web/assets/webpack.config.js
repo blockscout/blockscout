@@ -9,12 +9,6 @@ const glob = require('glob')
 
 // call dotenv and it will return an Object with a parsed key 
 const env = dotenv.config().parsed;
-  
-// reduce it to a nice object
-const envKeys = Object.keys(env).reduce((prev, next) => {
-  prev[`process.env.${next}`] = JSON.stringify(env[next]);
-  return prev;
-}, {});
 
 function transpileViewScript(file) {
   return {
@@ -147,7 +141,7 @@ const appJs =
       }),
       new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
-      new DefinePlugin(envKeys)
+      new DefinePlugin({ 'process.env.SEGMENT_KEY': JSON.stringify(process.env.SEGMENT_KEY) })
     ]
   }
 

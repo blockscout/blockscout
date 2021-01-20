@@ -38,10 +38,10 @@ export function reducer (state = initialState, action) {
 
 $(function () {
   const store = createStore(reducer)
-  if (!store.state.userID) {
+  if (!store.getState().userID) {
     store.dispatch({ type: 'SET_USER_ID' })
   }
-  analytics.identify(store.state.userID)
+  analytics.identify(store.getState().userID)
   analytics.page()
   trackEvents()
 })
