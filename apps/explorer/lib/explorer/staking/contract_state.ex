@@ -131,12 +131,12 @@ defmodule Explorer.Staking.ContractState do
     {:noreply, state}
   end
 
-  @doc "Handles an event about snapshotting finishing"
+  # handles an event about snapshotting finishing
   def handle_info({:chain_event, :stake_snapshotting_finished}, state) do
     {:noreply, %{state | snapshotting_finished: true}}
   end
 
-  @doc "Handles new blocks and decides to fetch fresh chain info"
+  # handles new blocks and decides to fetch fresh chain info
   def handle_info({:chain_event, :last_block_number, :realtime, block_number}, state) do
     if block_number > state.seen_block do
       # read general info from the contracts (including pool list and validator list)
