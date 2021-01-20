@@ -8,7 +8,7 @@
     </button>
     <span style="font-size: 1.3em;">
         <i style="color: #f7b32b;" class="fa fa-info-circle ml-1"></i>
-        Due to high loading, Staking Dapp may show data with delay. Because of that after making transactions the result in UI will be visible not right away. We're working on optimization.
+        Due to high load volumes, current staking data display may lag behind actual transactions. Transactions are being processed correctly on-chain. We are currently working to address this UI display issue.
     </span>
   </div>
 </div>
