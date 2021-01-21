@@ -14,7 +14,6 @@ const analytics = Analytics({
     })
   ]
 })
-analytics.page()
 
 export const initialState = {
   userID: localStorage.getItem('userID')
@@ -42,6 +41,7 @@ $(function () {
     store.dispatch({ type: 'SET_USER_ID' })
   }
   analytics.identify(store.getState().userID)
+  analytics.page()
   trackEvents()
 })
 
@@ -65,7 +65,7 @@ function trackEvents () {
   })
 
   // Click on Balance Card Caret
-  $('[data-selector="address-balance-caret"]').on('click', function () {
+  $('[data-selector="balance-card"]').on('click', function () {
     analytics.track('Address balance caret clicked')
   })
 

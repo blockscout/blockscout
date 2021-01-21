@@ -3,7 +3,6 @@
     href="#"
     data-dropdown-toggle
     data-toggle="dropdown"
-    data-selector="address-balance-caret"
     role="button"
     id="dropdown-tokens"
     aria-haspopup="true"
