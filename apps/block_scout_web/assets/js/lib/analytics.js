@@ -47,7 +47,7 @@ $(function () {
 
 function trackEvents () {
   // Page navigation
-  window.addEventListener('locationchange', function (){
+  window.addEventListener('locationchange', function () {
     analytics.page()
   })
 

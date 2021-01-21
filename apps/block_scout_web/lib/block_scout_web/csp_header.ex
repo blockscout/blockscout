@@ -10,8 +10,11 @@ defmodule BlockScoutWeb.CSPHeader do
 
   def call(conn, _opts) do
     Controller.put_secure_browser_headers(conn, %{
-      "content-security-policy" => "\
-        connect-src 'self' 'unsafe-inline' 'unsafe-eval' 'unsafe-hashes' https://cdn.segment.com https://api.segment.io #{websocket_endpoints(conn)}; \
+      "content-security-policy" =>
+        "\
+        connect-src 'self' 'unsafe-inline' 'unsafe-eval' 'unsafe-hashes' https://cdn.segment.com https://api.segment.io #{
+          websocket_endpoints(conn)
+        }; \
         default-src 'self';\
         script-src 'self' 'unsafe-inline' 'unsafe-eval' 'unsafe-hashes' https://cdn.segment.com https://api.segment.io;\
         style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com;\
