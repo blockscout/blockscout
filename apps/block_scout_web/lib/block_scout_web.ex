@@ -17,6 +17,7 @@ defmodule BlockScoutWeb do
   and import those modules here.
   """
   def version(), do: Application.get_env(:block_scout_web, :version)
+  def segment_key(), do: Application.get_env(:block_scout_web, :segment_key)
 
   def controller do
     quote do
