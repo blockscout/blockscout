@@ -19,19 +19,18 @@
       <p
         class="address-current-balance"
         data-token-balance-dropdown
-        data-selector="address-balance-caret"
         data-api_path="<%= address_token_balance_path(BlockScoutWeb.Endpoint, :index, @address.hash) %>"
       >
-          <span data-loading class="mb-0">
-            <span class="loading-spinner-small mr-2">
-              <span class="loading-spinner-block-1"></span>
-              <span class="loading-spinner-block-2"></span>
-            </span>
-            <%= gettext("Fetching tokens...") %>
+        <span data-loading class="mb-0">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
           </span>
-          <span data-error-message class="mb-0" style="display: none;">
-            <%= gettext("Error trying to fetch balances.") %>
-          </span>
+          <%= gettext("Fetching tokens...") %>
+        </span>
+        <span data-error-message class="mb-0" style="display: none;">
+          <%= gettext("Error trying to fetch balances.") %>
+        </span>
       </p>
     </div>
   </div>

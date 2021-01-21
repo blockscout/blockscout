@@ -42,43 +42,45 @@ $(function () {
     store.dispatch({ type: 'SET_USER_ID' })
   }
   analytics.identify(store.getState().userID)
-  analytics.page()
   trackEvents()
 })
 
 function trackEvents () {
   // Page navigation
+  window.addEventListener('locationchange', function (){
+    analytics.page()
+  })
 
   // Search box click
   $('[data-selector="search-bar"]').on('click', function () {
-    analytics.track('search bar click')
+    analytics.track('Search bar clicked')
   })
 
   // Search submit
-  $('[data-selector="search-bar"]').on('submit', function (e) {
+  $('[data-selector="search-form"]').on('submit', function (e) {
     e.preventDefault() // prevent form from submitting
-    analytics.track('search event', {
+    analytics.track('Search submit', {
       value: e.value
     })
   })
 
   // Click on Balance Card Caret
   $('[data-selector="address-balance-caret"]').on('click', function () {
-    analytics.track('address balance caret click')
+    analytics.track('Address balance caret clicked')
   })
 
   // Copy address
   $('[data-selector="copy-address"]').on('click', function () {
-    analytics.track('copy address click')
+    analytics.track('Copy address clicked')
   })
 
   // QR code
   $('[data-selector="qr-code"]').on('click', function () {
-    analytics.track('QR code click')
+    analytics.track('QR code clicked')
   })
 
   // "view more transfers" click
   $('[data-selector="token-transfer-open"]').on('click', function () {
-    analytics.track('"View more transfers" click')
+    analytics.track('"View more transfers" clicked')
   })
 }
