@@ -30,42 +30,44 @@ function reducer (state = initialState, action) {
 }
 
 function trackEvents () {
-  // Page navigation
-  window.addEventListener('locationchange', function () {
-    analytics.page()
-  })
-
-  // Search box click
-  $('[data-selector="search-bar"]').on('click', function () {
-    analytics.track('Search bar clicked')
-  })
-
-  // Search submit
-  $('[data-selector="search-form"]').on('submit', function (e) {
-    e.preventDefault() // prevent form from submitting
-    analytics.track('Search submit', {
-      value: e.value
+  $(function () {
+    // Page navigation
+    window.addEventListener('locationchange', function () {
+      analytics.page()
     })
-  })
 
-  // Click on Balance Card Caret
-  $('[data-selector="balance-card"]').on('click', function () {
-    analytics.track('Address balance caret clicked')
-  })
+    // Search box click
+    $('[data-selector="search-bar"]').on('click', function () {
+      analytics.track('Search bar clicked')
+    })
 
-  // Copy address
-  $('[data-selector="copy-address"]').on('click', function () {
-    analytics.track('Copy address clicked')
-  })
+    // Search submit
+    $('[data-selector="search-form"]').on('submit', function (e) {
+      e.preventDefault() // prevent form from submitting
+      analytics.track('Search submit', {
+        value: e.value
+      })
+    })
 
-  // QR code
-  $('[data-selector="qr-code"]').on('click', function () {
-    analytics.track('QR code clicked')
-  })
+    // Click on Balance Card Caret
+    $('[data-selector="balance-card"]').on('click', function () {
+      analytics.track('Address balance caret clicked')
+    })
 
-  // "view more transfers" click
-  $('[data-selector="token-transfer-open"]').on('click', function () {
-    analytics.track('"View more transfers" clicked')
+    // Copy address
+    $('[data-selector="copy-address"]').on('click', function () {
+      analytics.track('Copy address clicked')
+    })
+
+    // QR code
+    $('[data-selector="qr-code"]').on('click', function () {
+      analytics.track('QR code clicked')
+    })
+
+    // "view more transfers" click
+    $('[data-selector="token-transfer-open"]').on('click', function () {
+      analytics.track('View more transfers')
+    })
   })
 }
 
