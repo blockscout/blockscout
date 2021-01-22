@@ -69,7 +69,7 @@ function trackEvents () {
   })
 }
 
-export default function initAnalytics (segmentKey) {
+function initAnalytics (segmentKey) {
   // instantiate analytics
   analytics = Analytics({
     app: 'Blockscout',
@@ -93,3 +93,8 @@ export default function initAnalytics (segmentKey) {
   // track analytics events
   trackEvents()
 }
+
+(function () {
+  const analyticsKey = window.ANALYTICS_KEY || 'invalid key' // defined globally
+  initAnalytics(analyticsKey)
+})()

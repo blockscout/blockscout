@@ -31,6 +31,7 @@
         'Price': '<%= gettext("Price") %>',
         'Ether': '<%= gettext("Ether") %>'
       }
+      window.ANALYTICS_KEY = '<%= segment_key() %>'
     </script>
   </head>
 
@@ -43,9 +44,6 @@
         }
       }
       window.onload = applyDarkMode()
-
-      // TODO: import this function
-      // initAnalytics('<%= segment_key() %>')
     </script>
     <div class="layout-container" data-page="app-container">
       <%= if not Explorer.Chain.finished_indexing?() do %>
