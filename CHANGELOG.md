@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3584](https://github.com/poanetwork/blockscout/pull/3584) - Token holders API endpoint
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes

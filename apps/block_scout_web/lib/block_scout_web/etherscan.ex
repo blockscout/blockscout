@@ -276,6 +276,23 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @token_gettokenholders_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "address" => "0x0000000000000000000000000000000000000000",
+        "value" => "965208500001258757122850"
+      }
+    ]
+  }
+
+  @token_gettokenholders_example_value_error %{
+    "status" => "0",
+    "message" => "Invalid contract address format",
+    "result" => nil
+  }
+
   @stats_tokensupply_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -660,6 +677,18 @@ defmodule BlockScoutWeb.Etherscan do
         type: "log index",
         definition: "A nonnegative number used to identify logs.",
         example: ~s("1")
+      }
+    }
+  }
+
+  @token_holder_details %{
+    name: "Token holder Detail",
+    fields: %{
+      address: @address_hash_type,
+      value: %{
+        type: "value",
+        definition: "A nonnegative number used to identify the balance of the target token.",
+        example: ~s("1000000000000000000")
       }
     }
   }
@@ -1825,6 +1854,56 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @token_gettokenholders_action %{
+    name: "getTokenHolders",
+    description: "Get token holders by contract address.",
+    required_params: [
+      %{
+        key: "contractaddress",
+        placeholder: "contractAddressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying contracts."
+      }
+    ],
+    optional_params: [
+      %{
+        key: "page",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction."
+      },
+      %{
+        key: "offset",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@token_gettokenholders_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @token_holder_details
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@token_gettokenholders_example_value_error)
+      }
+    ]
+  }
+
   @stats_tokensupply_action %{
     name: "tokensupply",
     description:
@@ -2446,7 +2525,10 @@ defmodule BlockScoutWeb.Etherscan do
 
   @token_module %{
     name: "token",
-    actions: [@token_gettoken_action]
+    actions: [
+      @token_gettoken_action,
+      @token_gettokenholders_action
+    ]
   }
 
   @stats_module %{
