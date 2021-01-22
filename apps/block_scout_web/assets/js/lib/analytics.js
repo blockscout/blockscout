@@ -6,20 +6,14 @@ import segmentPlugin from '@analytics/segment'
 import omit from 'lodash/omit'
 import uniqid from 'uniqid'
 
-const analytics = Analytics({
-  app: 'Blockscout',
-  plugins: [
-    segmentPlugin({
-      writeKey: process.env.SEGMENT_KEY
-    })
-  ]
-})
+let analytics
+let store
 
-export const initialState = {
+const initialState = {
   userID: localStorage.getItem('userID')
 }
 
-export function reducer (state = initialState, action) {
+function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD':
     case 'ELEMENTS_LOAD': {
@@ -34,16 +28,6 @@ export function reducer (state = initialState, action) {
       return state
   }
 }
-
-$(function () {
-  const store = createStore(reducer)
-  if (!store.getState().userID) {
-    store.dispatch({ type: 'SET_USER_ID' })
-  }
-  analytics.identify(store.getState().userID)
-  analytics.page()
-  trackEvents()
-})
 
 function trackEvents () {
   // Page navigation
@@ -83,4 +67,29 @@ function trackEvents () {
   $('[data-selector="token-transfer-open"]').on('click', function () {
     analytics.track('"View more transfers" clicked')
   })
+}
+
+export default function initAnalytics (segmentKey) {
+  // instantiate analytics
+  analytics = Analytics({
+    app: 'Blockscout',
+    plugins: [
+      segmentPlugin({
+        writeKey: segmentKey
+      })
+    ]
+  })
+
+  // instantiate store
+  store = createStore(reducer)
+  if (!store.getState().userID) {
+    store.dispatch({ type: 'SET_USER_ID' })
+  }
+
+  // initial analytics
+  analytics.identify(store.getState().userID)
+  analytics.page()
+
+  // track analytics events
+  trackEvents()
 }

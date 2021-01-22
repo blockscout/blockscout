@@ -3,12 +3,8 @@ const TerserJSPlugin = require('terser-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
-const { ContextReplacementPlugin, DefinePlugin } = require('webpack')
-const dotenv = require('dotenv');
+const { ContextReplacementPlugin } = require('webpack')
 const glob = require('glob')
-
-// call dotenv and it will return an Object with a parsed key 
-const env = dotenv.config().parsed;
 
 function transpileViewScript(file) {
   return {
@@ -140,8 +136,7 @@ const appJs =
         filename: '../css/[name].css'
       }),
       new CopyWebpackPlugin([{ from: 'static/', to: '../' }]),
-      new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
-      new DefinePlugin({ 'process.env.SEGMENT_KEY': JSON.stringify(process.env.SEGMENT_KEY) })
+      new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/)
     ]
   }
 
