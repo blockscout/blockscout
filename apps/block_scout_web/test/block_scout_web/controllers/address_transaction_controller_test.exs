@@ -157,4 +157,176 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
              end)
     end
   end
+
+  describe "GET token-transfers-csv/2" do
+    test "exports token transfers to csv", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:token_transfer, transaction: transaction, from_address: address)
+      insert(:token_transfer, transaction: transaction, to_address: address)
+
+      from_period = Timex.shift(Timex.now(), minutes: -1)
+      to_period = Timex.now()
+
+      conn =
+        get(conn, "/token-transfers-csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
+    end
+  end
+
+  describe "GET transactions_csv/2" do
+    test "download csv file with transactions", %{conn: conn} do
+      address = insert(:address)
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block()
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block()
+
+      from_period = Timex.shift(Timex.now(), minutes: -1)
+      to_period = Timex.now()
+
+      conn =
+        get(conn, "/transactions-csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
+    end
+  end
+
+  describe "GET internal_transactions_csv/2" do
+    test "download csv file with internal transactions", %{conn: conn} do
+      address = insert(:address)
+
+      transaction_1 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        index: 3,
+        transaction: transaction_1,
+        from_address: address,
+        block_number: transaction_1.block_number,
+        block_hash: transaction_1.block_hash,
+        block_index: 0,
+        transaction_index: transaction_1.index
+      )
+
+      transaction_2 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        index: 1,
+        transaction: transaction_2,
+        to_address: address,
+        block_number: transaction_2.block_number,
+        block_hash: transaction_2.block_hash,
+        block_index: 1,
+        transaction_index: transaction_2.index
+      )
+
+      transaction_3 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        index: 2,
+        transaction: transaction_3,
+        created_contract_address: address,
+        block_number: transaction_3.block_number,
+        block_hash: transaction_3.block_hash,
+        block_index: 2,
+        transaction_index: transaction_3.index
+      )
+
+      from_period = Timex.shift(Timex.now(), minutes: -1)
+      to_period = Timex.now()
+
+      conn =
+        get(conn, "/internal-transactions-csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 5
+    end
+  end
+
+  describe "GET logs_csv/2" do
+    test "download csv file with logs", %{conn: conn} do
+      address = insert(:address)
+
+      transaction_1 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:log,
+        address: address,
+        index: 3,
+        transaction: transaction_1,
+        block: transaction_1.block,
+        block_number: transaction_1.block_number
+      )
+
+      transaction_2 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:log,
+        address: address,
+        index: 1,
+        transaction: transaction_2,
+        block: transaction_2.block,
+        block_number: transaction_2.block_number
+      )
+
+      transaction_3 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:log,
+        address: address,
+        index: 2,
+        transaction: transaction_3,
+        block: transaction_3.block,
+        block_number: transaction_3.block_number
+      )
+
+      from_period = Timex.shift(Timex.now(), minutes: -1)
+      to_period = Timex.now()
+
+      conn =
+        get(conn, "/logs-csv", %{
+          "address_id" => Address.checksum(address.hash),
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 5
+    end
+  end
 end
