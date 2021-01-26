@@ -224,7 +224,9 @@ config :explorer, Explorer.Chain.Block.Reward,
 if System.get_env("POS_STAKING_CONTRACT") do
   config :explorer, Explorer.Staking.ContractState,
     enabled: true,
-    staking_contract_address: System.get_env("POS_STAKING_CONTRACT")
+    staking_contract_address: System.get_env("POS_STAKING_CONTRACT"),
+    eth_subscribe_max_delay: System.get_env("POS_ETH_SUBSCRIBE_MAX_DELAY", "60"),
+    eth_blocknumber_pull_interval: System.get_env("POS_ETH_BLOCKNUMBER_PULL_INTERVAL", "500")
 else
   config :explorer, Explorer.Staking.ContractState, enabled: false
 end

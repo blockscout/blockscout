@@ -25,7 +25,9 @@ defmodule Explorer.Staking.ContractStateTest do
 
     Application.put_env(:explorer, ContractState,
       enabled: true,
-      staking_contract_address: "0x1100000000000000000000000000000000000001"
+      staking_contract_address: "0x1100000000000000000000000000000000000001",
+      eth_blocknumber_pull_interval: "500",
+      eth_subscribe_max_delay: "60"
     )
 
     start_supervised!(ContractState)
