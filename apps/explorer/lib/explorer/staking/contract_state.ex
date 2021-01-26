@@ -429,6 +429,7 @@ defmodule Explorer.Staking.ContractState do
       |> Enum.concat(active_pools_length: Enum.count(global_responses.active_pools))
       |> Enum.concat(last_change_block: last_change_block)
       |> Enum.concat(seen_block: block_number)
+
     :ets.insert(@table_name, settings)
   end
 
