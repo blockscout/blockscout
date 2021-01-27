@@ -1,9 +1,11 @@
 ## Current
 
 ### Features
+- [#3584](https://github.com/poanetwork/blockscout/pull/3584) - Token holders API endpoint
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3583](https://github.com/poanetwork/blockscout/pull/3583) - Reduce RPC requests and DB changes by Staking DApp
 
 ### Chore
 - [#3574](https://github.com/poanetwork/blockscout/pull/3574) - Correct UNI token price

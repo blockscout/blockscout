@@ -141,7 +141,7 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:91
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:10
 #: lib/block_scout_web/views/address_token_transfer_view.ex:10
-#: lib/block_scout_web/views/address_transaction_view.ex:11
+#: lib/block_scout_web/views/address_transaction_view.ex:10
 msgid "All"
 msgstr ""
 
@@ -250,12 +250,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:20
 msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_token/index.html.eex:30
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:63
-msgid "CSV"
 msgstr ""
 
 #, elixir-format
@@ -694,7 +688,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:36
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:9
 #: lib/block_scout_web/views/address_token_transfer_view.ex:9
-#: lib/block_scout_web/views/address_transaction_view.ex:10
+#: lib/block_scout_web/views/address_transaction_view.ex:9
 msgid "From"
 msgstr ""
 
@@ -843,7 +837,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:30
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:8
 #: lib/block_scout_web/views/address_token_transfer_view.ex:8
-#: lib/block_scout_web/views/address_transaction_view.ex:9
+#: lib/block_scout_web/views/address_transaction_view.ex:8
 msgid "To"
 msgstr ""
 

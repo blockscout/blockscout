@@ -23,6 +23,7 @@ defmodule Explorer.Staking.ContractState do
     :epoch_number,
     :epoch_start_block,
     :is_snapshotting,
+    :last_change_block,
     :max_candidates,
     :min_candidate_stake,
     :min_delegator_stake,
@@ -41,6 +42,7 @@ defmodule Explorer.Staking.ContractState do
 
   defstruct [
     :seen_block,
+    :snapshotting_finished,
     :contracts,
     :abi
   ]
@@ -69,6 +71,7 @@ defmodule Explorer.Staking.ContractState do
     ])
 
     Subscriber.to(:last_block_number, :realtime)
+    Subscriber.to(:stake_snapshotting_finished)
 
     staking_abi = abi("StakingAuRa")
     validator_set_abi = abi("ValidatorSetAuRa")
@@ -101,6 +104,7 @@ defmodule Explorer.Staking.ContractState do
 
     state = %__MODULE__{
       seen_block: 0,
+      snapshotting_finished: false,
       contracts: %{
         staking: staking_contract_address,
         validator_set: validator_set_contract_address,
@@ -112,6 +116,7 @@ defmodule Explorer.Staking.ContractState do
     :ets.insert(@table_name,
       block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address},
       is_snapshotting: false,
+      last_change_block: 0,
       snapshotted_epoch_number: -1,
       staking_contract: %{abi: staking_abi, address: staking_contract_address},
       token_contract: %{abi: token_abi, address: token_contract_address},
@@ -126,7 +131,12 @@ defmodule Explorer.Staking.ContractState do
     {:noreply, state}
   end
 
-  @doc "Handles new blocks and decides to fetch fresh chain info"
+  # handles an event about snapshotting finishing
+  def handle_info({:chain_event, :stake_snapshotting_finished}, state) do
+    {:noreply, %{state | snapshotting_finished: true}}
+  end
+
+  # handles new blocks and decides to fetch fresh chain info
   def handle_info({:chain_event, :last_block_number, :realtime, block_number}, state) do
     if block_number > state.seen_block do
       # read general info from the contracts (including pool list and validator list)
@@ -144,23 +154,34 @@ defmodule Explorer.Staking.ContractState do
         if loop_block_end >= loop_block_start do
           for bn <- loop_block_start..loop_block_end do
             gr = ContractReader.perform_requests(ContractReader.global_requests(bn), state.contracts, state.abi)
-            fetch_state(state.contracts, state.abi, gr, bn, gr.epoch_start_block == bn + 1)
+            fetch_state(state, gr, bn, gr.epoch_start_block == bn + 1)
           end
         end
       end
 
-      fetch_state(state.contracts, state.abi, global_responses, block_number, epoch_very_beginning)
+      fetch_state(state, global_responses, block_number, epoch_very_beginning)
+
+      state =
+        if state.snapshotting_finished do
+          %{state | snapshotting_finished: false}
+        else
+          state
+        end
+
       {:noreply, %{state | seen_block: block_number}}
     else
       {:noreply, state}
     end
   end
 
-  defp fetch_state(contracts, abi, global_responses, block_number, epoch_very_beginning) do
+  defp fetch_state(state, global_responses, block_number, epoch_very_beginning) do
+    contracts = state.contracts
+    abi = state.abi
+    snapshotting_finished = state.snapshotting_finished
+    first_fetch = get(:epoch_end_block, 0) == 0
+
     validator_min_reward_percent =
       get_validator_min_reward_percent(global_responses.epoch_number, block_number, contracts, abi)
-
-    is_validator = Enum.into(global_responses.validators, %{}, &{address_bytes_to_string(&1), true})
 
     start_snapshotting =
       global_responses.epoch_number > get(:snapshotted_epoch_number) && global_responses.epoch_number > 0 &&
@@ -168,13 +189,55 @@ defmodule Explorer.Staking.ContractState do
 
     active_pools_length = Enum.count(global_responses.active_pools)
 
+    # determine if something changed in contracts state since the previous seen block.
+    # if something changed or the `fetch_state` function is called for the first time
+    # or we are at the beginning of staking epoch or snapshotting recently finished
+    # then we should update database
+    last_change_block =
+      max(global_responses.staking_last_change_block, global_responses.validator_set_last_change_block)
+
+    should_update_db =
+      start_snapshotting or snapshotting_finished or first_fetch or last_change_block > get(:last_change_block)
+
     # save the general info to ETS (excluding pool list and validator list)
     settings =
       global_responses
       |> get_settings(validator_min_reward_percent, block_number)
       |> Enum.concat(active_pools_length: active_pools_length)
+      |> Enum.concat(last_change_block: last_change_block)
 
     :ets.insert(@table_name, settings)
+
+    if epoch_very_beginning or start_snapshotting do
+      # if the block_number is the latest block of the finished staking epoch
+      # or we are starting Blockscout server, the BlockRewardAuRa contract balance
+      # could increase before (without Mint/Transfer events),
+      # so we need to update its balance in database
+      update_block_reward_balance(block_number)
+    end
+
+    # we should update database as something changed in contracts state
+    if should_update_db do
+      update_database(epoch_very_beginning, start_snapshotting, global_responses, contracts, abi, block_number)
+    end
+
+    # notify the UI about a new block
+    data = %{
+      active_pools_length: active_pools_length,
+      block_number: block_number,
+      epoch_end_block: global_responses.epoch_end_block,
+      epoch_number: global_responses.epoch_number,
+      max_candidates: global_responses.max_candidates,
+      staking_allowed: global_responses.staking_allowed,
+      staking_token_defined: get(:token, nil) != nil,
+      validator_set_apply_block: global_responses.validator_set_apply_block
+    }
+
+    Publisher.broadcast([{:staking_update, data}], :realtime)
+  end
+
+  defp update_database(epoch_very_beginning, start_snapshotting, global_responses, contracts, abi, block_number) do
+    is_validator = Enum.into(global_responses.validators, %{}, &{address_bytes_to_string(&1), true})
 
     # form the list of validator pools
     validators =
@@ -220,14 +283,7 @@ defmodule Explorer.Staking.ContractState do
 
     # call `BlockReward.delegatorShare` function for each delegator
     # to get their reward share of the pool (needed for the `Delegators` list in UI)
-    delegator_responses =
-      Enum.reduce(staker_responses, %{}, fn {{pool_staking_address, staker_address, _is_active} = key, value}, acc ->
-        if pool_staking_address != staker_address do
-          Map.put(acc, key, value)
-        else
-          acc
-        end
-      end)
+    delegator_responses = get_delegator_responses(staker_responses)
 
     delegator_reward_responses =
       get_delegator_reward_responses(
@@ -252,7 +308,20 @@ defmodule Explorer.Staking.ContractState do
 
     snapshotted_epoch_number = get(:snapshotted_epoch_number)
 
-    # form entries for writing to the `staking_pools` table in DB
+    # form entries for writing to the `staking_pools_delegators` table in DB
+    delegator_entries = get_delegator_entries(staker_responses, delegator_reward_responses)
+
+    # perform SQL queries
+    {:ok, _} =
+      Chain.import(%{
+        staking_pools_delegators: %{params: delegator_entries},
+        timeout: :infinity
+      })
+
+    # form entries for writing to the `staking_pools` table in DB.
+    # !!! it's important to do this AFTER updating `staking_pools_delegators`
+    # !!! table because the `get_pool_entries` function requires fresh
+    # !!! info about delegators of validators from the `staking_pools_delegators` table
     pool_entries =
       get_pool_entries(%{
         pools: pools,
@@ -267,20 +336,12 @@ defmodule Explorer.Staking.ContractState do
         staked_total: staked_total
       })
 
-    # form entries for writing to the `staking_pools_delegators` table in DB
-    delegator_entries = get_delegator_entries(staker_responses, delegator_reward_responses)
-
     # perform SQL queries
     {:ok, _} =
       Chain.import(%{
         staking_pools: %{params: pool_entries},
-        staking_pools_delegators: %{params: delegator_entries},
         timeout: :infinity
       })
-
-    if epoch_very_beginning or start_snapshotting do
-      at_start_snapshotting(block_number)
-    end
 
     if start_snapshotting do
       do_start_snapshotting(
@@ -293,20 +354,6 @@ defmodule Explorer.Staking.ContractState do
         mining_to_staking_address
       )
     end
-
-    # notify the UI about a new block
-    data = %{
-      active_pools_length: active_pools_length,
-      block_number: block_number,
-      epoch_end_block: global_responses.epoch_end_block,
-      epoch_number: global_responses.epoch_number,
-      max_candidates: global_responses.max_candidates,
-      staking_allowed: global_responses.staking_allowed,
-      staking_token_defined: get(:token, nil) != nil,
-      validator_set_apply_block: global_responses.validator_set_apply_block
-    }
-
-    Publisher.broadcast([{:staking_update, data}], :realtime)
   end
 
   defp get_settings(global_responses, validator_min_reward_percent, block_number) do
@@ -388,6 +435,16 @@ defmodule Explorer.Staking.ContractState do
       )
     end)
     |> ContractReader.perform_grouped_requests(pool_staking_keys, contracts, abi)
+  end
+
+  defp get_delegator_responses(staker_responses) do
+    Enum.reduce(staker_responses, %{}, fn {{pool_staking_address, staker_address, _is_active} = key, value}, acc ->
+      if pool_staking_address != staker_address do
+        Map.put(acc, key, value)
+      else
+        acc
+      end
+    end)
   end
 
   defp get_delegator_reward_responses(
@@ -603,7 +660,7 @@ defmodule Explorer.Staking.ContractState do
     end)
   end
 
-  defp at_start_snapshotting(block_number) do
+  defp update_block_reward_balance(block_number) do
     # update ERC balance of the BlockReward contract
     token = get(:token)
 
