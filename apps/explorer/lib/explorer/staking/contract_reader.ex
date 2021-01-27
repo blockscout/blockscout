@@ -19,6 +19,8 @@ defmodule Explorer.Staking.ContractReader do
       inactive_pools: {:staking, "df6f55f5", [], block_number},
       # f0786096 = keccak256(MAX_CANDIDATES())
       max_candidates: {:staking, "f0786096", [], block_number},
+      # 714897df = keccak256(MAX_VALIDATORS())
+      max_validators: {:validator_set, "714897df", [], block_number},
       # 5fef7643 = keccak256(candidateMinStake())
       min_candidate_stake: {:staking, "5fef7643", [], block_number},
       # da7a9b6a = keccak256(delegatorMinStake())

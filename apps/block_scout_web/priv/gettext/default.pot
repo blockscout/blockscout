@@ -142,7 +142,7 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:91
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:10
 #: lib/block_scout_web/views/address_token_transfer_view.ex:10
-#: lib/block_scout_web/views/address_transaction_view.ex:11
+#: lib/block_scout_web/views/address_transaction_view.ex:10
 msgid "All"
 msgstr ""
 
@@ -254,12 +254,6 @@ msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_token/index.html.eex:30
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:63
-msgid "CSV"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/views/internal_transaction_view.ex:21
 msgid "Call"
 msgstr ""
@@ -342,6 +336,9 @@ msgstr ""
 
 #, elixir-format
 msgid "Contract ABI"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:18
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:27
 #: lib/block_scout_web/templates/address_contract_verification_via_json/new.html.eex:13
@@ -374,7 +371,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:115
-msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification_via_flattened_code/new.html.eex:170
 msgid "Contract Libraries"
 msgstr ""
@@ -692,7 +688,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:36
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:9
 #: lib/block_scout_web/views/address_token_transfer_view.ex:9
-#: lib/block_scout_web/views/address_transaction_view.ex:10
+#: lib/block_scout_web/views/address_transaction_view.ex:9
 msgid "From"
 msgstr ""
 
@@ -842,7 +838,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:30
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:8
 #: lib/block_scout_web/views/address_token_transfer_view.ex:8
-#: lib/block_scout_web/views/address_transaction_view.ex:9
+#: lib/block_scout_web/views/address_transaction_view.ex:8
 msgid "To"
 msgstr ""
 
@@ -2152,18 +2148,6 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:52
-msgid "Current Reward Percent"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:60
-msgid "Current Reward Percent is calculated based on the Working Stake Amount."
-msgstr ""
-
-#, elixir-format
-#:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:32
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:34
 msgid "Current Stake Amount"
@@ -2180,7 +2164,6 @@ msgid "DApp for Staking %{symbol} tokens"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:5
 #: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:31
 #: lib/block_scout_web/templates/stakes/_table.html.eex:38
 msgid "Delegators"
@@ -2309,13 +2292,6 @@ msgid "Pools searching is already in progress for this address"
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:52
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:54
-msgid "Potential Reward Percent"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:16
 msgid "Reason for Ban: %{ban_reason}"
 msgstr ""
@@ -2339,12 +2315,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/channels/stakes_channel.ex:799
 msgid "Reward calculating is already in progress for this address"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:58
-msgid "Reward distribution is based on stake amount. Validator receives a minimum of %{min}%."
 msgstr ""
 
 #, elixir-format
@@ -2712,4 +2682,34 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:247
 msgid "Press / and focus will be moved to the search field"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:52
+msgid "Current Reward Share"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:60
+msgid "Current Reward Share is calculated based on the Working Stake Amount."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:5
+msgid "Delegators of "
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:52
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:54
+msgid "Potential Reward Share"
+msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:58
+msgid "Reward distribution is based on stake amount. Validator receives at least %{min}% of the pool reward."
 msgstr ""
