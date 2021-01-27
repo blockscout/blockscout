@@ -26,6 +26,13 @@
         </div>
 
         <div class="transaction-bottom-panel">
+          <div csv-download class="download-all-transactions">
+            Download <a class="download-all-transactions-link" href=<%= csv_export_path(@conn, :index, %{"address" => Address.checksum(@address.hash), "type" => "token-transfers"}) %>><%= gettext("CSV") %></span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="16">
+                  <path fill="#333333" fill-rule="evenodd" d="M13 16H1c-.999 0-1-1-1-1V1s-.004-1 1-1h6l7 7v8s-.032 1-1 1zm-1-8c0-.99-1-1-1-1H8s-1 .001-1-1V3c0-.999-1-1-1-1H2v12h10V8z"/>
+              </svg>
+            </a>
+          </div>
           <%= render BlockScoutWeb.CommonComponentsView, "_pagination_container.html", position: "bottom", cur_page_number: "1", show_pagination_limit: true, data_next_page_button: true, data_prev_page_button: true %>
         </div>
 

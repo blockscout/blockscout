@@ -96,7 +96,9 @@ const appJs =
       'try-api': './js/lib/try_api.js',
       'try-eth-api': './js/lib/try_eth_api.js',
       'async-listing-load': './js/lib/async_listing_load',
-      'non-critical': './css/non-critical.scss'
+      'non-critical': './css/non-critical.scss',
+      'export-csv': './css/export-csv.scss',
+      'datepicker': './js/lib/datepicker.js',
     },
     output: {
       filename: '[name].js',

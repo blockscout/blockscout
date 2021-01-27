@@ -139,9 +139,9 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:24
 #: lib/block_scout_web/templates/layout/_network_selector.html.eex:21
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:91
-#: lib/block_scout_web/views/address_internal_transaction_view.ex:10
+#: lib/block_scout_web/views/address_internal_transaction_view.ex:11
 #: lib/block_scout_web/views/address_token_transfer_view.ex:10
-#: lib/block_scout_web/views/address_transaction_view.ex:10
+#: lib/block_scout_web/views/address_transaction_view.ex:11
 msgid "All"
 msgstr ""
 
@@ -680,9 +680,9 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:40
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:38
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:36
-#: lib/block_scout_web/views/address_internal_transaction_view.ex:9
+#: lib/block_scout_web/views/address_internal_transaction_view.ex:10
 #: lib/block_scout_web/views/address_token_transfer_view.ex:9
-#: lib/block_scout_web/views/address_transaction_view.ex:9
+#: lib/block_scout_web/views/address_transaction_view.ex:10
 msgid "From"
 msgstr ""
 
@@ -829,9 +829,9 @@ msgstr ""
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:34
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:32
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:30
-#: lib/block_scout_web/views/address_internal_transaction_view.ex:8
+#: lib/block_scout_web/views/address_internal_transaction_view.ex:9
 #: lib/block_scout_web/views/address_token_transfer_view.ex:8
-#: lib/block_scout_web/views/address_transaction_view.ex:8
+#: lib/block_scout_web/views/address_transaction_view.ex:9
 msgid "To"
 msgstr ""
 
@@ -2657,4 +2657,22 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/gas_tracker/_tabs.html.eex:13
 msgid "Gas spenders 3hrs"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:66
+#: lib/block_scout_web/templates/address_logs/index.html.eex:36
+#: lib/block_scout_web/templates/address_token/index.html.eex:30
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:63
+msgid "CSV"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/csv_export/index.html.eex:18
+msgid "Download"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/csv_export/index.html.eex:5
+msgid "Export Data"
 msgstr ""

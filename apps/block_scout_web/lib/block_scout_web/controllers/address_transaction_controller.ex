@@ -9,6 +9,14 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias BlockScoutWeb.{AccessHelpers, TransactionView}
   alias Explorer.{Chain, Market}
+
+  alias Explorer.Chain.{
+    AddressInternalTransactionCsvExporter,
+    AddressLogCsvExporter,
+    AddressTokenTransferCsvExporter,
+    AddressTransactionCsvExporter
+  }
+
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
@@ -139,4 +147,105 @@ defmodule BlockScoutWeb.AddressTransactionController do
         end
     end
   end
+
+  def token_transfers_csv(conn, %{
+        "address_id" => address_hash_string,
+        "from_period" => from_period,
+        "to_period" => to_period
+      })
+      when is_binary(address_hash_string) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      address
+      |> AddressTokenTransferCsvExporter.export(from_period, to_period)
+      |> Enum.into(
+        conn
+        |> put_resp_content_type("application/csv")
+        |> put_resp_header("content-disposition", "attachment; filename=token_transfers.csv")
+        |> send_chunked(200)
+      )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
+    end
+  end
+
+  def token_transfers_csv(conn, _), do: not_found(conn)
+
+  def transactions_csv(conn, %{
+        "address_id" => address_hash_string,
+        "from_period" => from_period,
+        "to_period" => to_period
+      }) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      address
+      |> AddressTransactionCsvExporter.export(from_period, to_period)
+      |> Enum.into(
+        conn
+        |> put_resp_content_type("application/csv")
+        |> put_resp_header("content-disposition", "attachment; filename=transactions.csv")
+        |> send_chunked(200)
+      )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
+    end
+  end
+
+  def transactions_csv(conn, _), do: not_found(conn)
+
+  def internal_transactions_csv(conn, %{
+        "address_id" => address_hash_string,
+        "from_period" => from_period,
+        "to_period" => to_period
+      }) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      address
+      |> AddressInternalTransactionCsvExporter.export(from_period, to_period)
+      |> Enum.into(
+        conn
+        |> put_resp_content_type("application/csv")
+        |> put_resp_header("content-disposition", "attachment; filename=internal_transactions.csv")
+        |> send_chunked(200)
+      )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
+    end
+  end
+
+  def internal_transactions_csv(conn, _), do: not_found(conn)
+
+  def logs_csv(conn, %{"address_id" => address_hash_string, "from_period" => from_period, "to_period" => to_period}) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      address
+      |> AddressLogCsvExporter.export(from_period, to_period)
+      |> Enum.into(
+        conn
+        |> put_resp_content_type("application/csv")
+        |> put_resp_header("content-disposition", "attachment; filename=logs.csv")
+        |> send_chunked(200)
+      )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
+    end
+  end
+
+  def logs_csv(conn, _), do: not_found(conn)
 end

@@ -42,6 +42,7 @@
     "path-parser": "^4.2.0",
     "phoenix": "file:../../../deps/phoenix",
     "phoenix_html": "file:../../../deps/phoenix_html",
+    "pikaday": "^1.8.2",
     "popper.js": "^1.14.7",
     "reduce-reducers": "^0.4.3",
     "redux": "^4.0.5",

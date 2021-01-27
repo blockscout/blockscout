@@ -1,0 +1,23 @@
+<link rel="stylesheet" href="<%= static_path(@conn, "/css/export-csv.css") %>">
+<section class="container">
+  <div class="card">
+    <div class="card-body">
+      <h1 class="card-title list-title-description"><%= gettext "Export Data" %></h1>
+
+      <div>
+	  	<p class="card-subtitle list-title-description">Export <%= type_display_name(@type) %> for address <%= link(
+            @address_hash_string,
+            to: address_path(@conn, :show, @address_hash_string)
+          ) %> to CSV file</p>
+	  </div>
+
+      <div class="dates-container">
+      from <input class="js-datepicker js-datepicker-from form-control" type="text" /> to <input class="js-datepicker js-datepicker-to form-control" type="text" />
+      </div>
+
+      <a id="export-csv-button" class="button button-primary" href=<%= address_transaction_path(@conn, type_download_path(@type), %{"address_id" => address_checksum(@address_hash_string), "from_period" => default_period_start(), "to_period" => default_period_end()}) %>><%= gettext("Download") %></span>
+      </a>
+    </div>
+  </div>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/datepicker.js") %>"></script>
+</section>
