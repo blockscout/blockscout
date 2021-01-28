@@ -216,24 +216,31 @@ defmodule Explorer.Chain do
   def address_to_internal_transactions(hash, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     direction = Keyword.get(options, :direction)
+
+    from_period = from_period(options)
+    to_period = to_period(options)
+
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     if direction == nil do
       query_to_address_hash_wrapped =
         InternalTransaction
         |> InternalTransaction.where_address_fields_match(hash, :to_address_hash)
+        |> InternalTransaction.where_inserted_at_in_period(from_period, to_period)
         |> common_where_limit_order(paging_options)
         |> wrapped_union_subquery()
 
       query_from_address_hash_wrapped =
         InternalTransaction
         |> InternalTransaction.where_address_fields_match(hash, :from_address_hash)
+        |> InternalTransaction.where_inserted_at_in_period(from_period, to_period)
         |> common_where_limit_order(paging_options)
         |> wrapped_union_subquery()
 
       query_created_contract_address_hash_wrapped =
         InternalTransaction
         |> InternalTransaction.where_address_fields_match(hash, :created_contract_address_hash)
+        |> InternalTransaction.where_inserted_at_in_period(from_period, to_period)
         |> common_where_limit_order(paging_options)
         |> wrapped_union_subquery()
 
@@ -257,6 +264,7 @@ defmodule Explorer.Chain do
       InternalTransaction
       |> InternalTransaction.where_nonpending_block()
       |> InternalTransaction.where_address_fields_match(hash, direction)
+      |> InternalTransaction.where_inserted_at_in_period(from_period, to_period)
       |> common_where_limit_order(paging_options)
       |> preload(transaction: :block)
       |> join_associations(necessity_by_association)
@@ -429,8 +437,12 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
+    from_period = from_period(options)
+    to_period = to_period(options)
+
     options
     |> address_to_transactions_tasks_query()
+    |> where_inserted_at_in_period(from_period, to_period)
     |> join_associations(necessity_by_association)
     |> Transaction.matching_address_queries_list(direction, address_hash)
     |> Enum.map(fn query -> Task.async(fn -> Repo.all(query) end) end)
@@ -527,6 +539,9 @@ defmodule Explorer.Chain do
   def address_to_logs(address_hash, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
 
+    from_period = from_period(options)
+    to_period = to_period(options)
+
     {block_number, transaction_index, log_index} = paging_options.key || {BlockNumber.get_max(), 0, 0}
 
     base_query =
@@ -558,6 +573,7 @@ defmodule Explorer.Chain do
 
     wrapped_query
     |> filter_topic(options)
+    |> where_inserted_at_in_period(from_period, to_period)
     |> Repo.all()
     |> Enum.take(paging_options.page_size)
   end
@@ -571,6 +587,30 @@ defmodule Explorer.Chain do
   end
 
   defp filter_topic(base_query, _), do: base_query
+
+  def where_inserted_at_in_period(base_query, from, to) when is_nil(from) and not is_nil(to) do
+    from(log in base_query,
+      where: log.inserted_at < ^to
+    )
+  end
+
+  def where_inserted_at_in_period(base_query, from, to) when not is_nil(from) and is_nil(to) do
+    from(log in base_query,
+      where: log.inserted_at >= ^from
+    )
+  end
+
+  def where_inserted_at_in_period(base_query, from, to) when is_nil(from) and is_nil(to) do
+    from(log in base_query,
+      where: 1
+    )
+  end
+
+  def where_inserted_at_in_period(base_query, from, to) do
+    from(log in base_query,
+      where: log.inserted_at >= ^from and log.inserted_at < ^to
+    )
+  end
 
   @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0`s given the address_hash and the token contract
@@ -5804,6 +5844,26 @@ defmodule Explorer.Chain do
       end)
     else
       false
+    end
+  end
+
+  defp from_period(options) do
+    case Timex.parse(Keyword.get(options, :from_period), "{YYYY}-{0M}-{0D}") do
+      {:ok, from_period} ->
+        from_period
+
+      _ ->
+        nil
+    end
+  end
+
+  def to_period(options) do
+    case Timex.parse(Keyword.get(options, :to_period) || "", "{YYYY}-{0M}-{0D}") do
+      {:ok, to_period} ->
+        to_period
+
+      _ ->
+        nil
     end
   end
 end

@@ -575,6 +575,38 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
+  def where_inserted_at_in_period(query, from, to) when is_nil(from) and not is_nil(to) do
+    where(
+      query,
+      [it],
+      it.inserted_at < ^to
+    )
+  end
+
+  def where_inserted_at_in_period(query, from, to) when not is_nil(from) and is_nil(to) do
+    where(
+      query,
+      [it],
+      it.inserted_at >= ^from
+    )
+  end
+
+  def where_inserted_at_in_period(query, from, to) when is_nil(from) and is_nil(to) do
+    where(
+      query,
+      [it],
+      1
+    )
+  end
+
+  def where_inserted_at_in_period(query, from, to) do
+    where(
+      query,
+      [it],
+      it.inserted_at >= ^from and it.inserted_at < ^to
+    )
+  end
+
   def where_block_number_is_not_null(query) do
     where(query, [t], not is_nil(t.block_number))
   end
