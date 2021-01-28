@@ -2110,18 +2110,6 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:52
-msgid "Current Reward Percent"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:60
-msgid "Current Reward Percent is calculated based on the Working Stake Amount."
-msgstr ""
-
-#, elixir-format
-#:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:32
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:34
 msgid "Current Stake Amount"
@@ -2138,7 +2126,6 @@ msgid "DApp for Staking %{symbol} tokens"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:5
 #: lib/block_scout_web/templates/stakes/_stakes_progress.html.eex:31
 #: lib/block_scout_web/templates/stakes/_table.html.eex:38
 msgid "Delegators"
@@ -2267,13 +2254,6 @@ msgid "Pools searching is already in progress for this address"
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:52
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:54
-msgid "Potential Reward Percent"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_modal_pool_info.html.eex:16
 msgid "Reason for Ban: %{ban_reason}"
 msgstr ""
@@ -2297,12 +2277,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/channels/stakes_channel.ex:799
 msgid "Reward calculating is already in progress for this address"
-msgstr ""
-
-#, elixir-format
-#:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:58
-msgid "Reward distribution is based on stake amount. Validator receives a minimum of %{min}%."
 msgstr ""
 
 #, elixir-format
@@ -2683,4 +2657,34 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/csv_export/index.html.eex:5
 msgid "Export Data"
+msgstr ""
+
+#, elixir-format, fuzzy
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:52
+msgid "Current Reward Share"
+msgstr ""
+
+#, elixir-format, fuzzy
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:60
+msgid "Current Reward Share is calculated based on the Working Stake Amount."
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:5
+msgid "Delegators of "
+msgstr ""
+
+#, elixir-format, fuzzy
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:52
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:54
+msgid "Potential Reward Share"
+msgstr ""
+
+#, elixir-format, fuzzy
+#:
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:58
+msgid "Reward distribution is based on stake amount. Validator receives at least %{min}% of the pool reward."
 msgstr ""
