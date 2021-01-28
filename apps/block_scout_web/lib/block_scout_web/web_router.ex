@@ -258,6 +258,8 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/csv-export", CsvExportController, :index)
 
+    post("/captcha", CaptchaController, :index)
+
     get("/transactions-csv", AddressTransactionController, :transactions_csv)
 
     get("/token-autocomplete", ChainController, :token_autocomplete)

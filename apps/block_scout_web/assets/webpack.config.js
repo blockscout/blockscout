@@ -98,6 +98,7 @@ const appJs =
       'non-critical': './css/non-critical.scss',
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
+      'captcha_helper': './js/lib/captcha_helper.js',
     },
     output: {
       filename: '[name].js',
