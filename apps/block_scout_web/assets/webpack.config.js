@@ -97,8 +97,7 @@ const appJs =
       'async-listing-load': './js/lib/async_listing_load',
       'non-critical': './css/non-critical.scss',
       'export-csv': './css/export-csv.scss',
-      'datepicker': './js/lib/datepicker.js',
-      'captcha_helper': './js/lib/captcha_helper.js',
+      'datepicker': './js/lib/datepicker.js'
     },
     output: {
       filename: '[name].js',
