@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
   alias Plug.Conn
-  alias Poison.Parser
 
   @issue_url "https://github.com/celo-org/celo-monorepo/issues/new"
   @default_other_networks [
@@ -100,7 +99,9 @@ defmodule BlockScoutWeb.LayoutView do
     BlockScoutWeb.version()
   end
 
-  def segment_key, do: BlockScoutWeb.segment_key()
+  def segment_key do
+    BlockScoutWeb.segment_key()
+  end
 
   def release_link(version) do
     release_link_env_var = Application.get_env(:block_scout_web, :release_link)
@@ -132,7 +133,6 @@ defmodule BlockScoutWeb.LayoutView do
       if Application.get_env(:block_scout_web, :other_networks) do
         :block_scout_web
         |> Application.get_env(:other_networks)
-        |> Parser.parse!(%{keys: :atoms!})
       else
         @default_other_networks
       end
