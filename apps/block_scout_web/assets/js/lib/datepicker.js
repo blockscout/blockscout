@@ -32,7 +32,7 @@ $button.on('click', () => {
   const resp = grecaptcha.getResponse()
   if (resp) {
     $.ajax({
-      url: '/captcha?type=JSON',
+      url: './captcha?type=JSON',
       type: 'POST',
       headers: {
         'x-csrf-token': $('[name=_csrf_token]').val()
