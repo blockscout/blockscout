@@ -43,6 +43,7 @@ function trackEvents () {
 
     // Search submit
     $('[data-selector="search-form"]').on('submit', function (e) {
+      e.preventDefault() // prevent form from submitting
       analytics.track('Search submit', {
         value: e.value
       })
