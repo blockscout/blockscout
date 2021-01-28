@@ -4,6 +4,8 @@ import $ from 'jquery'
 
 const DATE_FORMAT = 'YYYY-MM-DD'
 
+const $button = $('#export-csv-button')
+
 // eslint-disable-next-line
 const _instance1 = new Pikaday({
   field: $('.js-datepicker-from')[0],
@@ -24,16 +26,48 @@ const _instance2 = new Pikaday({
   format: DATE_FORMAT
 })
 
+$button.on('click', () => {
+  $button.addClass('spinner')
+  // eslint-disable-next-line
+  const resp = grecaptcha.getResponse()
+  if (resp) {
+    $.ajax({
+      url: '/captcha?type=JSON',
+      type: 'POST',
+      headers: {
+        'x-csrf-token': $('[name=_csrf_token]').val()
+      },
+      data: {
+        type: 'JSON',
+        captchaResponse: resp
+      }
+    })
+      .done(function (data) {
+        const dataJson = JSON.parse(data)
+        if (dataJson.success) {
+          $button.removeClass('spinner')
+          location.href = $button.data('link')
+        } else {
+          $button.removeClass('spinner')
+          return false
+        }
+      })
+      .fail(function (_jqXHR, textStatus) {
+        $button.removeClass('spinner')
+      })
+  } else {
+    $button.removeClass('spinner')
+  }
+})
+
 function onSelect (date, paramToReplace) {
   const formattedDate = moment(date).format(DATE_FORMAT)
 
-  const $button = $('#export-csv-button')
-
   if (date) {
-    var csvExportPath = $button.prop('href')
+    var csvExportPath = $button.data('link')
 
     var updatedCsvExportUrl = replaceUrlParam(csvExportPath, paramToReplace, formattedDate)
-    $button.attr('href', updatedCsvExportUrl)
+    $button.data('link', updatedCsvExportUrl)
   }
 }
 

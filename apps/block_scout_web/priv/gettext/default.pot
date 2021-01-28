@@ -2642,12 +2642,12 @@ msgid "CSV"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/csv_export/index.html.eex:18
+#: lib/block_scout_web/templates/csv_export/index.html.eex:25
 msgid "Download"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/csv_export/index.html.eex:5
+#: lib/block_scout_web/templates/csv_export/index.html.eex:10
 msgid "Export Data"
 msgstr ""
 

@@ -1,3 +1,8 @@
+<%=
+          for status <- ["error", "warning", "success", "question"] do
+            render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status
+          end
+        %>
 <link rel="stylesheet" href="<%= static_path(@conn, "/css/export-csv.css") %>">
 <section class="container">
   <div class="card">
@@ -5,19 +10,32 @@
       <h1 class="card-title list-title-description"><%= gettext "Export Data" %></h1>
 
       <div>
-	  	<p class="card-subtitle list-title-description">Export <%= type_display_name(@type) %> for address <%= link(
-            @address_hash_string,
-            to: address_path(@conn, :show, @address_hash_string)
-          ) %> to CSV file</p>
-	  </div>
+        <p class="card-subtitle list-title-description">Export <%= type_display_name(@type) %> for address <%= link(
+              @address_hash_string,
+              to: address_path(@conn, :show, @address_hash_string)
+            ) %> to CSV file</p>
+	    </div>
 
       <div class="dates-container">
       from <input class="js-datepicker js-datepicker-from form-control" type="text" /> to <input class="js-datepicker js-datepicker-to form-control" type="text" />
       </div>
 
-      <a id="export-csv-button" class="button button-primary" href=<%= address_transaction_path(@conn, type_download_path(@type), %{"address_id" => address_checksum(@address_hash_string), "from_period" => default_period_start(), "to_period" => default_period_end()}) %>><%= gettext("Download") %></span>
+      <div id="recaptcha" class=mb-3></div>
+      <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
+      <button id="export-csv-button" class="button button-primary" style="padding: 10px 25px;" data-link=<%= address_transaction_path(@conn, type_download_path(@type), %{"address_id" => address_checksum(@address_hash_string), "from_period" => default_period_start(), "to_period" => default_period_end()}) %>><%= gettext("Download") %></button>
       </a>
     </div>
   </div>
+  <script type="text/javascript">
+    var widgetId1
+    var onloadCallback = function() {
+      widgetId1 = grecaptcha.render('recaptcha', {
+        'sitekey': '<%= Application.get_env(:block_scout_web, :re_captcha_client_key) %>',
+        'theme': localStorage.getItem('current-color-mode')
+      })
+    }
+  </script>
+  <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer>
+  </script>
   <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/datepicker.js") %>"></script>
 </section>
