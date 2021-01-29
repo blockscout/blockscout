@@ -27,6 +27,7 @@ defmodule Explorer.Staking.ContractState do
     :max_candidates,
     :min_candidate_stake,
     :min_delegator_stake,
+    :pool_rewards,
     :seen_block,
     :snapshotted_epoch_number,
     :staking_allowed,
@@ -130,6 +131,7 @@ defmodule Explorer.Staking.ContractState do
       block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address},
       is_snapshotting: false,
       last_change_block: 0,
+      pool_rewards: %{},
       seen_block: 0,
       snapshotted_epoch_number: -1,
       staking_contract: %{abi: staking_abi, address: staking_contract_address},
@@ -204,6 +206,12 @@ defmodule Explorer.Staking.ContractState do
     global_responses =
       ContractReader.perform_requests(ContractReader.global_requests(block_number), state.contracts, state.abi)
 
+    token_reward_to_distribute =
+      ContractReader.call_current_token_reward_to_distribute(state.contracts.block_reward, state.contracts.staking, global_responses.epoch_number, block_number)
+
+    current_pool_rewards =
+      ContractReader.call_current_pool_rewards(state.contracts.block_reward, token_reward_to_distribute, global_responses.epoch_number, block_number)
+
     epoch_very_beginning = global_responses.epoch_start_block == block_number + 1
 
     start_snapshotting = start_snapshotting?(global_responses)
@@ -221,7 +229,7 @@ defmodule Explorer.Staking.ContractState do
       start_snapshotting or state.snapshotting_finished or first_fetch or last_change_block > get(:last_change_block)
 
     # save the general info to ETS (excluding pool list and validator list)
-    set_settings(global_responses, state, block_number, last_change_block)
+    set_settings(global_responses, state, block_number, last_change_block, current_pool_rewards)
 
     if epoch_very_beginning or start_snapshotting do
       # if the block_number is the latest block of the finished staking epoch
@@ -422,12 +430,18 @@ defmodule Explorer.Staking.ContractState do
     end
   end
 
-  defp set_settings(global_responses, state, block_number, last_change_block) do
+  defp set_settings(global_responses, state, block_number, last_change_block, current_pool_rewards) do
+    pool_rewards = 
+      global_responses.validators
+      |> Enum.with_index()
+      |> Map.new(fn {mining_address, index} -> {address_bytes_to_string(mining_address), Enum.at(current_pool_rewards, index)} end)
+
     settings =
       global_responses
       |> get_settings(state, block_number)
       |> Enum.concat(active_pools_length: Enum.count(global_responses.active_pools))
       |> Enum.concat(last_change_block: last_change_block)
+      |> Enum.concat(pool_rewards: pool_rewards)
       |> Enum.concat(seen_block: block_number)
 
     :ets.insert(@table_name, settings)

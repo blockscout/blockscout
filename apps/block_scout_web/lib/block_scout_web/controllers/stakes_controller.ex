@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.StakesController do
   alias BlockScoutWeb.StakesView
   alias Explorer.Chain
   alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.Token
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Staking.ContractState
@@ -106,11 +107,15 @@ defmodule BlockScoutWeb.StakesController do
         token = ContractState.get(:token, %Token{})
         epoch_number = ContractState.get(:epoch_number, 0)
         staking_allowed = ContractState.get(:staking_allowed, false)
+        pool_rewards = ContractState.get(:pool_rewards, %{})
 
         items =
           pools
           |> Enum.with_index(last_index + 1)
           |> Enum.map(fn {%{pool: pool, delegator: delegator}, index} ->
+            mining_address_str = String.downcase(Hash.to_string(pool.mining_address_hash))
+            require Logger
+            Logger.warn("#{mining_address_str}: #{pool_rewards[mining_address_str]}")
             View.render_to_string(
               StakesView,
               "_rows.html",
