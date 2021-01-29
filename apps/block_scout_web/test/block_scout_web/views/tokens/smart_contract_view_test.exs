@@ -264,13 +264,13 @@ defmodule BlockScoutWeb.SmartContractViewTest do
       ]
 
       assert SmartContractView.values(value, "address[]") ==
-               "0x5f26097334b6a32b7951df61fd0c5803ec5d8354, 0xcf260ea317555637c55f70e55dba8d5ad8414cb0"
+               "0x5f26097334b6a32b7951df61fd0c5803ec5d8354,0xcf260ea317555637c55f70e55dba8d5ad8414cb0"
     end
 
     test "returns the value when the type is neither 'address' nor 'address payable'" do
       value = "POA"
 
-      assert SmartContractView.values(value, "not address") == "POA"
+      assert SmartContractView.values(value, "string") == "POA"
     end
   end
 end
