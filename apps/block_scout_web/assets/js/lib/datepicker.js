@@ -10,7 +10,7 @@ const $button = $('#export-csv-button')
 const _instance1 = new Pikaday({
   field: $('.js-datepicker-from')[0],
   onSelect: (date) => onSelect(date, 'from_period'),
-  defaultDate: moment().add(-3, 'months').toDate(),
+  defaultDate: moment().add(-1, 'months').toDate(),
   setDefaultDate: true,
   maxDate: new Date(),
   format: DATE_FORMAT
@@ -43,6 +43,8 @@ $button.on('click', () => {
       }
     })
       .done(function (data) {
+        // eslint-disable-next-line
+        grecaptcha.reset()
         const dataJson = JSON.parse(data)
         if (dataJson.success) {
           $button.removeClass('spinner')

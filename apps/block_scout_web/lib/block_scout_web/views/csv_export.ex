@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.CsvExportView do
 
   defp default_period_start do
     DateTime.utc_now()
-    |> Timex.shift(months: -3)
+    |> Timex.shift(months: -1)
     |> Timex.format!("{YYYY}-{0M}-{0D}")
   end
 
