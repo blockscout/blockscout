@@ -5832,12 +5832,6 @@ defmodule Explorer.Chain do
     end)
   end
 
-  defp from_period(options) do
-    case Timex.parse(Keyword.get(options, :from_period), "{YYYY}-{0M}-{0D}") do
-      {:ok, from_period} ->
-        from_period
-  end
-
   defp from_block(options) do
     Keyword.get(options, :from_block) || nil
   end
