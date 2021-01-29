@@ -13,18 +13,21 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporter do
 
   @spec export(Address.t(), String.t(), String.t()) :: Enumerable.t()
   def export(address, from_period, to_period) do
+    from_block = Chain.convert_date_to_min_block(from_period)
+    to_block = Chain.convert_date_to_max_block(to_period)
+
     address.hash
-    |> fetch_all_internal_transactions(from_period, to_period, @paging_options)
+    |> fetch_all_internal_transactions(from_block, to_block, @paging_options)
     |> to_csv_format()
     |> dump_to_stream()
   end
 
-  defp fetch_all_internal_transactions(address_hash, from_period, to_period, paging_options, acc \\ []) do
+  defp fetch_all_internal_transactions(address_hash, from_block, to_block, paging_options, acc \\ []) do
     options =
       []
       |> Keyword.put(:paging_options, paging_options)
-      |> Keyword.put(:from_period, from_period)
-      |> Keyword.put(:to_period, to_period)
+      |> Keyword.put(:from_block, from_block)
+      |> Keyword.put(:to_block, to_block)
 
     internal_transactions = Chain.address_to_internal_transactions(address_hash, options)
 
@@ -34,7 +37,7 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporter do
       {_internal_transactions,
        [%InternalTransaction{block_number: block_number, transaction_index: transaction_index, index: index}]} ->
         new_paging_options = %{@paging_options | key: {block_number, transaction_index, index}}
-        fetch_all_internal_transactions(address_hash, from_period, to_period, new_paging_options, new_acc)
+        fetch_all_internal_transactions(address_hash, from_block, to_block, new_paging_options, new_acc)
 
       {_, []} ->
         new_acc
