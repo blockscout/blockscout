@@ -587,7 +587,7 @@ defmodule Explorer.Chain.InternalTransaction do
     where(
       query,
       [it],
-      it.block_number >= ^from_number
+      it.block_number > ^from_number
     )
   end
 
@@ -603,7 +603,7 @@ defmodule Explorer.Chain.InternalTransaction do
     where(
       query,
       [it],
-      it.block_number >= ^from_number and it.block_number <= ^to_number
+      it.block_number > ^from_number and it.block_number <= ^to_number
     )
   end
 
