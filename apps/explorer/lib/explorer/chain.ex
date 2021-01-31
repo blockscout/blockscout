@@ -601,7 +601,7 @@ defmodule Explorer.Chain do
 
   def where_block_number_in_period(base_query, from_block, to_block) when not is_nil(from_block) and is_nil(to_block) do
     from(q in base_query,
-      where: q.block_number >= ^from_block
+      where: q.block_number > ^from_block
     )
   end
 
@@ -613,7 +613,7 @@ defmodule Explorer.Chain do
 
   def where_block_number_in_period(base_query, from_block, to_block) do
     from(q in base_query,
-      where: q.block_number >= ^from_block and q.block_number <= ^to_block
+      where: q.block_number > ^from_block and q.block_number <= ^to_block
     )
   end
 
@@ -5840,15 +5840,19 @@ defmodule Explorer.Chain do
     Keyword.get(options, :to_block) || nil
   end
 
-  def convert_date_to_min_block(date) do
-    query =
-      from(block in Block,
-        where: fragment("DATE(timestamp) = TO_DATE(?, 'YYYY-MM-DD')", ^date),
-        select: min(block.number)
-      )
+  def convert_date_to_min_block(date_str) do
+    date_format = "{YYYY}-{0M}-{0D}"
 
-    query
-    |> Repo.one()
+    {:ok, date} =
+      date_str
+      |> Timex.parse(date_format)
+
+    {:ok, day_before} =
+      date
+      |> Timex.shift(days: -1)
+      |> Timex.format(date_format)
+
+    convert_date_to_max_block(day_before)
   end
 
   def convert_date_to_max_block(date) do
