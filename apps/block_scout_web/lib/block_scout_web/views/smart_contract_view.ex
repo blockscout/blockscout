@@ -68,6 +68,8 @@ defmodule BlockScoutWeb.SmartContractView do
     binary_to_utf_string(address)
   end
 
+  def values(value, "string"), do: value
+
   def values(value, _), do: binary_to_utf_string(value)
 
   defp tuple_array_to_array(value, type) do
