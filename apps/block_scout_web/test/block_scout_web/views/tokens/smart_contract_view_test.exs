@@ -240,21 +240,21 @@ defmodule BlockScoutWeb.SmartContractViewTest do
     end
   end
 
-  describe "values/2" do
+  describe "values_only/2" do
     test "joins the values when it is a list of a given type" do
       values = [8, 6, 9, 2, 2, 37]
 
-      assert SmartContractView.values(values, "type") == "8,6,9,2,2,37"
+      assert SmartContractView.values_only(values, "type") == "[8, 6, 9, 2, 2, 37]"
     end
 
     test "convert the value to string receiving a value and the 'address' type" do
       value = <<95, 38, 9, 115, 52, 182, 163, 43, 121, 81, 223, 97, 253, 12, 88, 3, 236, 93, 131, 84>>
-      assert SmartContractView.values(value, "address") == "0x5f26097334b6a32b7951df61fd0c5803ec5d8354"
+      assert SmartContractView.values_only(value, "address") == "0x5f26097334b6a32b7951df61fd0c5803ec5d8354"
     end
 
     test "convert the value to string receiving a value and the 'address payable' type" do
       value = <<95, 38, 9, 115, 52, 182, 163, 43, 121, 81, 223, 97, 253, 12, 88, 3, 236, 93, 131, 84>>
-      assert SmartContractView.values(value, "address payable") == "0x5f26097334b6a32b7951df61fd0c5803ec5d8354"
+      assert SmartContractView.values_only(value, "address payable") == "0x5f26097334b6a32b7951df61fd0c5803ec5d8354"
     end
 
     test "convert each value to string and join them when receiving 'address[]' as the type" do
@@ -263,14 +263,14 @@ defmodule BlockScoutWeb.SmartContractViewTest do
         <<207, 38, 14, 163, 23, 85, 86, 55, 197, 95, 112, 229, 93, 186, 141, 90, 216, 65, 76, 176>>
       ]
 
-      assert SmartContractView.values(value, "address[]") ==
-               "0x5f26097334b6a32b7951df61fd0c5803ec5d8354,0xcf260ea317555637c55f70e55dba8d5ad8414cb0"
+      assert SmartContractView.values_only(value, "address[]") ==
+               "[0x5f26097334b6a32b7951df61fd0c5803ec5d8354, 0xcf260ea317555637c55f70e55dba8d5ad8414cb0]"
     end
 
     test "returns the value when the type is neither 'address' nor 'address payable'" do
       value = "POA"
 
-      assert SmartContractView.values(value, "string") == "POA"
+      assert SmartContractView.values_only(value, "string") == "POA"
     end
   end
 end

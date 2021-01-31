@@ -121,7 +121,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
                     </span>
                   </div>
                 <% else %>
-                  <%= values(output["value"], output["type"]) %>
+                  <%= raw(values_only(output["value"], output["type"])) %>
                 <% end %>
             <% end %>
           <% end %>
