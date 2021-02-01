@@ -167,11 +167,11 @@ defmodule BlockScoutWeb.SmartContractView do
   defp tuple_array_to_array(value, type) do
     value
     |> Enum.map(fn item ->
-      tuple_to_array(item, type, with_type?)
+      tuple_to_array(item, type)
     end)
   end
 
-  defp tuple_to_array(value, type, with_type? \\ true) do
+  defp tuple_to_array(value, type) do
     types_string =
       type
       |> String.slice(6..-2)
@@ -281,21 +281,5 @@ defmodule BlockScoutWeb.SmartContractView do
     else
       type
     end
-  end
-
-  defp render_type_value(type, value) do
-    "<div style=\"padding-left: 20px\">(#{type}) : #{value}</div>"
-  end
-
-  defp render_array_type_value(type, values) do
-    value_to_display = "[" <> values <> "]"
-
-    render_type_value(type, value_to_display)
-  end
-
-  defp render_array_value(values) do
-    value_to_display = "[" <> values <> "]"
-
-    value_to_display
   end
 end

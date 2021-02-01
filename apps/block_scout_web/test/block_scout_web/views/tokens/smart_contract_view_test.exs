@@ -254,7 +254,9 @@ defmodule BlockScoutWeb.SmartContractViewTest do
 
     test "convert the value to string receiving a value and the 'address payable' type" do
       value = <<95, 38, 9, 115, 52, 182, 163, 43, 121, 81, 223, 97, 253, 12, 88, 3, 236, 93, 131, 84>>
-      assert SmartContractView.values_only(value, "address payable", nil) == "0x5f26097334b6a32b7951df61fd0c5803ec5d8354"
+
+      assert SmartContractView.values_only(value, "address payable", nil) ==
+               "0x5f26097334b6a32b7951df61fd0c5803ec5d8354"
     end
 
     test "convert each value to string and join them when receiving 'address[]' as the type" do
@@ -286,10 +288,12 @@ defmodule BlockScoutWeb.SmartContractViewTest do
     end
 
     test "returns the value when the type is bytes32" do
-      value = <<156, 209, 70, 119, 249, 170, 85, 105, 179, 187, 179, 81, 252, 214, 125, 17,
-      21, 170, 86, 58, 225, 98, 66, 118, 211, 212, 230, 127, 179, 214, 249, 38>>
+      value =
+        <<156, 209, 70, 119, 249, 170, 85, 105, 179, 187, 179, 81, 252, 214, 125, 17, 21, 170, 86, 58, 225, 98, 66, 118,
+          211, 212, 230, 127, 179, 214, 249, 38>>
 
-      assert SmartContractView.values_only(value, "bytes32", nil) == "0x9cd14677f9aa5569b3bbb351fcd67d1115aa563ae1624276d3d4e67fb3d6f926"
+      assert SmartContractView.values_only(value, "bytes32", nil) ==
+               "0x9cd14677f9aa5569b3bbb351fcd67d1115aa563ae1624276d3d4e67fb3d6f926"
     end
   end
 end
