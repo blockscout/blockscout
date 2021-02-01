@@ -7,6 +7,7 @@ defmodule Explorer.Staking.ContractState do
 
   use GenServer
 
+  require Decimal
   require Logger
 
   alias Explorer.Chain
@@ -36,7 +37,8 @@ defmodule Explorer.Staking.ContractState do
     :token,
     :validator_min_reward_percent,
     :validator_set_apply_block,
-    :validator_set_contract
+    :validator_set_contract,
+    :validators_length
   ]
 
   # token renewal frequency in blocks
@@ -207,10 +209,20 @@ defmodule Explorer.Staking.ContractState do
       ContractReader.perform_requests(ContractReader.global_requests(block_number), state.contracts, state.abi)
 
     token_reward_to_distribute =
-      ContractReader.call_current_token_reward_to_distribute(state.contracts.block_reward, state.contracts.staking, global_responses.epoch_number, block_number)
+      ContractReader.call_current_token_reward_to_distribute(
+        state.contracts.block_reward,
+        state.contracts.staking,
+        global_responses.epoch_number,
+        block_number
+      )
 
     current_pool_rewards =
-      ContractReader.call_current_pool_rewards(state.contracts.block_reward, token_reward_to_distribute, global_responses.epoch_number, block_number)
+      ContractReader.call_current_pool_rewards(
+        state.contracts.block_reward,
+        token_reward_to_distribute,
+        global_responses.epoch_number,
+        block_number
+      )
 
     epoch_very_beginning = global_responses.epoch_start_block == block_number + 1
 
@@ -269,6 +281,53 @@ defmodule Explorer.Staking.ContractState do
       %{state | snapshotting_finished: false}
     else
       state
+    end
+  end
+
+  def calc_apy(reward_ratio, pool_reward, stake_amount, average_block_time, staking_epoch_duration) do
+    if calc_apy_enabled?() and reward_ratio > 0 and pool_reward != nil and stake_amount > 0 and average_block_time > 0 and
+         staking_epoch_duration > 0 do
+      epochs_per_year = floor(31_536_000 / average_block_time / staking_epoch_duration)
+      predicted_reward = decimal_to_float(reward_ratio) * pool_reward
+      apy = predicted_reward / decimal_to_integer(stake_amount) * epochs_per_year
+      %{apy: "#{floor(apy * 100) / 100}%", predicted_reward: floor(predicted_reward)}
+    end
+  end
+
+  def calc_apy_enabled? do
+    validator_set_apply_block = get(:validator_set_apply_block)
+    apy_start_block_number = validator_set_apply_block + get(:validators_length) * 10
+    get(:epoch_number) > 0 and validator_set_apply_block > 0 and get(:seen_block) >= apy_start_block_number
+  end
+
+  def staking_epoch_duration do
+    epoch_start_block = get(:epoch_start_block)
+    epoch_end_block = get(:epoch_end_block)
+
+    if epoch_start_block == nil or epoch_end_block == nil do
+      nil
+    else
+      if epoch_start_block == 0 do
+        epoch_end_block
+      else
+        epoch_end_block - epoch_start_block + 1
+      end
+    end
+  end
+
+  defp decimal_to_float(number) do
+    if Decimal.is_decimal(number) do
+      Decimal.to_float(number)
+    else
+      number
+    end
+  end
+
+  defp decimal_to_integer(number) do
+    if Decimal.is_decimal(number) do
+      Decimal.to_integer(number)
+    else
+      number
     end
   end
 
@@ -431,10 +490,12 @@ defmodule Explorer.Staking.ContractState do
   end
 
   defp set_settings(global_responses, state, block_number, last_change_block, current_pool_rewards) do
-    pool_rewards = 
+    pool_rewards =
       global_responses.validators
       |> Enum.with_index()
-      |> Map.new(fn {mining_address, index} -> {address_bytes_to_string(mining_address), Enum.at(current_pool_rewards, index)} end)
+      |> Map.new(fn {mining_address, index} ->
+        {address_bytes_to_string(mining_address), Enum.at(current_pool_rewards, index)}
+      end)
 
     settings =
       global_responses
@@ -443,6 +504,7 @@ defmodule Explorer.Staking.ContractState do
       |> Enum.concat(last_change_block: last_change_block)
       |> Enum.concat(pool_rewards: pool_rewards)
       |> Enum.concat(seen_block: block_number)
+      |> Enum.concat(validators_length: Enum.count(global_responses.validators))
 
     :ets.insert(@table_name, settings)
   end
