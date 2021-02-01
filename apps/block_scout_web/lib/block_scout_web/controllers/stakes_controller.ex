@@ -3,12 +3,11 @@ defmodule BlockScoutWeb.StakesController do
 
   alias BlockScoutWeb.StakesView
   alias Explorer.Chain
-  alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Chain.Hash
-  alias Explorer.Chain.Token
+  alias Explorer.Chain.{Cache.BlockNumber, Hash, Token}
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Staking.ContractState
   alias Phoenix.View
+  alias Timex.Duration
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
@@ -104,33 +103,47 @@ defmodule BlockScoutWeb.StakesController do
           end
 
         average_block_time = AverageBlockTime.average_block_time()
+
+        average_block_time_seconds =
+          try do
+            Duration.to_seconds(average_block_time)
+          rescue
+            _ -> nil
+          end
+
+        staking_epoch_duration = ContractState.staking_epoch_duration()
         token = ContractState.get(:token, %Token{})
         epoch_number = ContractState.get(:epoch_number, 0)
         staking_allowed = ContractState.get(:staking_allowed, false)
         pool_rewards = ContractState.get(:pool_rewards, %{})
+        calc_apy_enabled = ContractState.calc_apy_enabled?()
+        snapshotted_delegator_data = snapshotted_delegator_data(filter, calc_apy_enabled)
 
         items =
           pools
           |> Enum.with_index(last_index + 1)
           |> Enum.map(fn {%{pool: pool, delegator: delegator}, index} ->
-            mining_address_str = String.downcase(Hash.to_string(pool.mining_address_hash))
-            require Logger
-            Logger.warn("#{mining_address_str}: #{pool_rewards[mining_address_str]}")
+            apy =
+              if calc_apy_enabled and snapshotted_delegator_data != nil do
+                calc_apy(
+                  pool,
+                  pool_rewards,
+                  snapshotted_delegator_data,
+                  average_block_time_seconds,
+                  staking_epoch_duration
+                )
+              end
+
             View.render_to_string(
               StakesView,
               "_rows.html",
               token: token,
-              pool: pool,
+              pool: Map.put(pool, :apy, apy),
               delegator: delegator,
               index: index,
               average_block_time: average_block_time,
               pools_type: filter,
-              buttons: %{
-                stake: staking_allowed and stake_allowed?(pool, delegator),
-                move: staking_allowed and move_allowed?(delegator),
-                withdraw: staking_allowed and withdraw_allowed?(delegator),
-                claim: staking_allowed and claim_allowed?(delegator, epoch_number)
-              }
+              buttons: staking_buttons(pool, delegator, staking_allowed, epoch_number)
             )
           end)
 
@@ -163,6 +176,58 @@ defmodule BlockScoutWeb.StakesController do
       refresh_interval: Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_pool_list_refresh_interval]
     )
   end
+
+  defp staking_buttons(pool, delegator, staking_allowed, epoch_number) do
+    %{
+      stake: staking_allowed and stake_allowed?(pool, delegator),
+      move: staking_allowed and move_allowed?(delegator),
+      withdraw: staking_allowed and withdraw_allowed?(delegator),
+      claim: staking_allowed and claim_allowed?(delegator, epoch_number)
+    }
+  end
+
+  defp calc_apy(pool, pool_rewards, snapshotted_delegator_data, average_block_time, staking_epoch_duration) do
+    staking_address_str = String.downcase(Hash.to_string(pool.staking_address_hash))
+    mining_address_str = String.downcase(Hash.to_string(pool.mining_address_hash))
+
+    pool_reward =
+      case Map.fetch(pool_rewards, mining_address_str) do
+        {:ok, pool_reward} -> pool_reward
+        :error -> nil
+      end
+
+    case Map.fetch(snapshotted_delegator_data, staking_address_str) do
+      {:ok, data} ->
+        ContractState.calc_apy(
+          data.snapshotted_reward_ratio,
+          pool_reward,
+          data.snapshotted_stake_amount,
+          average_block_time,
+          staking_epoch_duration
+        )
+
+      :error ->
+        ContractState.calc_apy(
+          pool.snapshotted_validator_reward_ratio,
+          pool_reward,
+          pool.snapshotted_self_staked_amount,
+          average_block_time,
+          staking_epoch_duration
+        )
+    end
+  end
+
+  defp snapshotted_delegator_data(filter, calc_apy_enabled) do
+    if filter == :validator and calc_apy_enabled do
+      Chain.staking_pool_snapshotted_delegator_data_for_apy()
+      |> Enum.reduce(%{}, fn item, acc ->
+        staking_address_str = address_bytes_to_string(item.staking_address_hash)
+        Map.put(acc, staking_address_str, item)
+      end)
+    end
+  end
+
+  defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
   defp next_page_path(:validator, conn, params) do
     validators_path(conn, :index, params)

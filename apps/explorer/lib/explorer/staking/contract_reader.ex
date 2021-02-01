@@ -74,7 +74,12 @@ defmodule Explorer.Staking.ContractReader do
       |> String.pad_leading(64, ["0"])
 
     function_signature = "0x212329f3"
-    data = function_signature <> reward_to_distribute <> "00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000" <> staking_epoch <> "0000000000000000000000000000000000000000000000000000000000000000"
+
+    data =
+      function_signature <>
+        reward_to_distribute <>
+        "00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000" <>
+        staking_epoch <> "0000000000000000000000000000000000000000000000000000000000000000"
 
     request = %{
       id: 0,
@@ -111,9 +116,12 @@ defmodule Explorer.Staking.ContractReader do
           Enum.reduce(Range.new(0, length - 1), [], fn x, acc ->
             item =
               response
-              |> String.slice(offset * 2 + 64 + x*64, 64)
+              |> String.slice(offset * 2 + 64 + x * 64, 64)
               |> String.to_integer(16)
-            acc ++ [item]
+
+            # acc ++ [item]
+            acc_reversed = Enum.reverse(acc)
+            Enum.reverse([item | acc_reversed])
           end)
         else
           []
@@ -132,10 +140,16 @@ defmodule Explorer.Staking.ContractReader do
   #     uint256 _totalRewardShareDenom,
   #     address[] memory _validators
   # ) public view returns(uint256 rewardToDistribute, uint256 totalReward);
-  def call_current_token_reward_to_distribute(block_reward_address, staking_contract_address, staking_epoch, block_number) do
+  def call_current_token_reward_to_distribute(
+        block_reward_address,
+        staking_contract_address,
+        staking_epoch,
+        block_number
+      ) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     staking_contract_address = address_pad_to_64(staking_contract_address)
+
     staking_epoch =
       staking_epoch
       |> Integer.to_string(16)
@@ -143,7 +157,10 @@ defmodule Explorer.Staking.ContractReader do
 
     function_signature = "0x46955281"
     mandatory_params = staking_contract_address <> staking_epoch
-    optional_params = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000"
+
+    optional_params =
+      "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000"
+
     data = function_signature <> mandatory_params <> optional_params
 
     request = %{
@@ -166,6 +183,7 @@ defmodule Explorer.Staking.ContractReader do
     case result do
       {:ok, response} ->
         response = String.replace_leading(response, "0x", "")
+
         if String.length(response) != 64 * 2 do
           0
         else

@@ -352,12 +352,14 @@ async function getAccounts () {
 }
 
 async function getNetId (web3) {
-  let netId = null
-  if (!window.ethereum.chainId) {
+  let netId = window.ethereum.chainId
+  if (!netId) {
+    netId = await window.ethereum.request({ method: 'eth_chainId' })
+  }
+  if (!netId) {
     console.error(`Cannot get chainId. ${constants.METAMASK_VERSION_WARNING}`)
   } else {
-    const { chainId } = window.ethereum
-    netId = web3.utils.isHex(chainId) ? web3.utils.hexToNumber(chainId) : chainId
+    netId = web3.utils.isHex(netId) ? web3.utils.hexToNumber(netId) : netId
   }
   return netId
 }
