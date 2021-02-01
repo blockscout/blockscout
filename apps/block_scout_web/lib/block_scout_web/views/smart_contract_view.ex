@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.SmartContractView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain
+  alias Explorer.Chain.Hash.Address
 
   def queryable?(inputs) when not is_nil(inputs), do: Enum.any?(inputs)
 
@@ -41,12 +42,19 @@ defmodule BlockScoutWeb.SmartContractView do
   def named_argument?(%{"name" => _}), do: true
   def named_argument?(_), do: false
 
-  def values_with_type(value, type) when is_list(value) do
+  def values_with_type(value, type, components \\ nil)
+
+  def values_with_type(value, type, components) when is_list(value) do
     cond do
       String.starts_with?(type, "tuple") ->
+        tuple_types =
+          type
+          |> String.slice(0..-3)
+          |> supplement_type_with_components(components)
+
         values =
           value
-          |> tuple_array_to_array(type)
+          |> tuple_array_to_array(tuple_types)
           |> Enum.join(", ")
 
         render_array_type_value(type, values)
@@ -54,7 +62,7 @@ defmodule BlockScoutWeb.SmartContractView do
       String.starts_with?(type, "address") ->
         values =
           value
-          |> Enum.map(&to_string(&1))
+          |> Enum.map(&binary_to_utf_string(&1))
           |> Enum.join(", ")
 
         render_array_type_value(type, values)
@@ -76,7 +84,7 @@ defmodule BlockScoutWeb.SmartContractView do
     end
   end
 
-  def values_with_type(value, type) when is_tuple(value) do
+  def values_with_type(value, type, _components) when is_tuple(value) do
     values =
       value
       |> tuple_to_array(type)
@@ -85,23 +93,28 @@ defmodule BlockScoutWeb.SmartContractView do
     render_type_value(type, values)
   end
 
-  def values_with_type(value, type) when type in ["address", "address payable"] do
-    {:ok, address} = Explorer.Chain.Hash.Address.cast(value)
+  def values_with_type(value, type, _components) when type in ["address", "address payable"] do
+    {:ok, address} = Address.cast(value)
     render_type_value("address", to_string(address))
   end
 
-  def values_with_type(value, "string"), do: render_type_value("string", value)
+  def values_with_type(value, "string", _components), do: render_type_value("string", value)
 
-  def values_with_type(value, type), do: render_type_value(type, binary_to_utf_string(value))
+  def values_with_type(value, "bool", _components), do: render_type_value("bool", to_string(value))
 
-  def values_only(value, type) when is_list(value) do
-    with_type? = false
+  def values_with_type(value, type, _components), do: render_type_value(type, binary_to_utf_string(value))
 
+  def values_only(value, type, components) when is_list(value) do
     cond do
       String.starts_with?(type, "tuple") ->
+        tuple_types =
+          type
+          |> String.slice(0..-3)
+          |> supplement_type_with_components(components)
+
         values =
           value
-          |> tuple_array_to_array(type, with_type?)
+          |> tuple_array_to_array(tuple_types)
           |> Enum.join(", ")
 
         render_array_value(values)
@@ -131,36 +144,48 @@ defmodule BlockScoutWeb.SmartContractView do
     end
   end
 
-  def values_only(value, "address") do
-    {:ok, address} = Explorer.Chain.Hash.Address.cast(value)
+  def values_only(value, type, _components) when is_tuple(value) do
+    values =
+      value
+      |> tuple_to_array(type)
+      |> Enum.join(", ")
+
+    values
+  end
+
+  def values_only(value, type, _components) when type in ["address", "address payable"] do
+    {:ok, address} = Address.cast(value)
     to_string(address)
   end
 
-  def values_only(value, "string") do
-    value
-  end
+  def values_only(value, "string", _components), do: value
 
-  def values_only(value, _type) do
-    binary_to_utf_string(value)
-  end
+  def values_only(value, "bool", _components), do: to_string(value)
 
-  defp tuple_array_to_array(value, type, with_type? \\ true) do
-    type = type |> String.slice(0..-3)
+  def values_only(value, _type, _components), do: binary_to_utf_string(value)
 
+  defp tuple_array_to_array(value, type) do
     value
     |> Enum.map(fn item ->
-      tuple_to_array(item, type, with_type?)
+      tuple_to_array(item, type)
     end)
   end
 
-  defp tuple_to_array(value, type, with_type? \\ true) do
+  defp tuple_to_array(value, type) do
     types_string =
       type
       |> String.slice(6..-2)
-      |> String.split(",")
+
+    types =
+      if String.trim(types_string) == "" do
+        []
+      else
+        types_string
+        |> String.split(",")
+      end
 
     {tuple_types, _} =
-      types_string
+      types
       |> Enum.reduce({[], nil}, fn val, acc ->
         {arr, to_merge} = acc
 
@@ -191,11 +216,7 @@ defmodule BlockScoutWeb.SmartContractView do
 
     values_types_list
     |> Enum.map(fn {type, value} ->
-      if with_type? do
-        values_with_type(value, type)
-      else
-        values_only(value, type)
-      end
+      values_with_type(value, type)
     end)
   end
 
@@ -220,7 +241,15 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp binary_to_utf_string(item) do
-    if is_binary(item), do: "0x" <> Base.encode16(item, case: :lower), else: item
+    if is_binary(item) do
+      if String.starts_with?(item, "0x") do
+        item
+      else
+        "0x" <> Base.encode16(item, case: :lower)
+      end
+    else
+      item
+    end
   end
 
   defp render_type_value(type, value) do
@@ -237,5 +266,20 @@ defmodule BlockScoutWeb.SmartContractView do
     value_to_display = "[" <> values <> "]"
 
     value_to_display
+  end
+
+  defp supplement_type_with_components(type, components) do
+    if type == "tuple" && components do
+      types =
+        components
+        |> Enum.map(fn component ->
+          Map.get(component, "type")
+        end)
+        |> Enum.join(",")
+
+      "tuple[" <> types <> "]"
+    else
+      type
+    end
   end
 end
