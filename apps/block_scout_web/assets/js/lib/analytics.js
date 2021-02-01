@@ -80,7 +80,7 @@ function getPageName (path) {
     case path.includes('/tx') && path.includes('/token_transfers'):
       return 'transactionTokenTransfers'
     default:
-      return 'unknown'
+      return path
   }
 }
 
@@ -91,7 +91,7 @@ function getReferrerPath () {
 }
 
 // returns relevant entity ID: Address, Transaction, Block, or Search Parameter
-function getEntityId (path) {
+function getEntityId () {
   const pathSegments = window.location.pathname.split('/')
   for (var i = 0; i < pathSegments.length; i++) {
     if (pathSegments[i].includes('search')) {
