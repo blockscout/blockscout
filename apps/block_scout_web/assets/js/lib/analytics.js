@@ -171,7 +171,7 @@ function trackEvents () {
       analytics.track('search', {
         targetName: 'search',
         page: getPageName(path),
-        query: e.target.value,
+        query: getEntityId(path),
         ...getCommonData()
       })
     })
