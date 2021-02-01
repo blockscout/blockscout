@@ -29,6 +29,7 @@ function reducer (state = initialState, action) {
   }
 }
 
+// return string representation of web page path
 function getPageName (path) {
   switch (true) {
     case path.includes('/search'):
@@ -83,11 +84,13 @@ function getPageName (path) {
   }
 }
 
+// returns referrer path, strips domain name from referrer
 function getReferrerPath () {
   const referrer = document.referrer
   return referrer.replace('https://explorer.celo.org', '').replace('http://localhost:4000', '')
 }
 
+// returns relevant entity ID: Address, Transaction, Block, or Search Parameter
 function getEntityId (path) {
   const pathSegments = window.location.pathname.split('/')
   for (var i = 0; i < pathSegments.length; i++) {
@@ -101,6 +104,7 @@ function getEntityId (path) {
   }
 }
 
+// returns blockscout network: Mainnet, Alfajores or Baklava
 function getNetwork () {
   switch (window.location.host) {
     case 'explorer.celo.org':
@@ -114,6 +118,24 @@ function getNetwork () {
   }
 }
 
+// returns timezone offset
+function getTimezoneOffset () {
+  var d = new Date()
+  return d.getTimezoneOffset()
+}
+
+// returns data related to all analytics events
+function getCommonData () {
+  return {
+    uniqueUserId: store.getState().userID,
+    timestamp: Date.now(),
+    timezoneOffset: getTimezoneOffset(),
+    userAgent: navigator.userAgent,
+    network: getNetwork()
+  }
+}
+
+// track page navigation
 function trackPage () {
   const path = window.location.pathname
 
@@ -122,10 +144,7 @@ function trackPage () {
     sourcePage: getPageName(getReferrerPath()),
     sourceModule: '',
     entityId: getEntityId(path),
-    uniqueUserId: store.getState().userID,
-    timestamp: Date.now(),
-    userAgent: navigator.userAgent,
-    network: getNetwork()
+    ...getCommonData()
   })
 }
 
@@ -142,11 +161,7 @@ function trackEvents () {
       analytics.track('click', {
         targetName: 'searchBox',
         page: getPageName(path),
-        uniqueUserId: store.getState().userID,
-        timestamp: Date.now(),
-        // TODO: ok to use navigator.userAgent? Or would we prefer 'mobile' or 'desktop'?
-        userAgent: navigator.userAgent,
-        network: getNetwork()
+        ...getCommonData()
       })
     })
 
@@ -157,10 +172,7 @@ function trackEvents () {
         targetName: 'search',
         page: getPageName(path),
         query: e.target.value,
-        uniqueUserId: store.getState().userID,
-        timestamp: Date.now(),
-        userAgent: navigator.userAgent,
-        network: getNetwork()
+        ...getCommonData()
       })
     })
 
@@ -171,10 +183,7 @@ function trackEvents () {
         targetName: 'balanceDetail',
         page: getPageName(path),
         entityId: getEntityId(path),
-        uniqueUserId: store.getState().userID,
-        timestamp: Date.now(),
-        userAgent: navigator.userAgent,
-        network: getNetwork()
+        ...getCommonData()
       })
     })
 
@@ -185,10 +194,7 @@ function trackEvents () {
         targetName: 'copyAddress',
         page: getPageName(path),
         entityId: getEntityId(path),
-        uniqueUserId: store.getState().userID,
-        timestamp: Date.now(),
-        userAgent: navigator.userAgent,
-        network: getNetwork()
+        ...getCommonData()
       })
     })
 
@@ -199,34 +205,26 @@ function trackEvents () {
         targetName: 'displayQR',
         page: getPageName(path),
         entityId: getEntityId(path),
-        uniqueUserId: store.getState().userID,
-        timestamp: Date.now(),
-        userAgent: navigator.userAgent,
-        network: getNetwork()
+        ...getCommonData()
       })
     })
 
     // "view more transfers" click
     $('[data-selector="token-transfer-open"]').on('click', function () {
       const path = window.location.pathname
-      // const entityId = $('[data-selector="token-transfer-open"]')
-      //   .parents('[data-selector="token-transfer"]')
-      //   .find('[data-selector="transfer-address"]')
-      //   .text()
+      const entityId = $(this).parent().siblings()[0].innerText
       analytics.track('click', {
         targetName: 'viewMore',
         page: getPageName(path),
         module: 'tokenTransferOverview',
-        // entityId,
-        uniqueUserId: store.getState().userID,
-        timestamp: Date.now(),
-        userAgent: navigator.userAgent,
-        network: getNetwork()
+        entityId,
+        ...getCommonData()
       })
     })
   })
 }
 
+// initiate analytics and store
 function initAnalytics (segmentKey) {
   // instantiate analytics
   analytics = Analytics({
@@ -252,6 +250,7 @@ function initAnalytics (segmentKey) {
   trackEvents()
 }
 
+// get analytics key env var
 (function () {
   const analyticsKey = window.ANALYTICS_KEY || 'invalid key' // defined globally
   initAnalytics(analyticsKey)
