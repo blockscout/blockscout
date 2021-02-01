@@ -41,47 +41,119 @@ defmodule BlockScoutWeb.SmartContractView do
   def named_argument?(%{"name" => _}), do: true
   def named_argument?(_), do: false
 
-  def values(value, type) when is_list(value) do
-    if String.starts_with?(type, "tuple") do
-      array_from_tuple = tuple_array_to_array(value, type)
+  def values_with_type(value, type) when is_list(value) do
+    cond do
+      String.starts_with?(type, "tuple") ->
+        values =
+          value
+          |> tuple_array_to_array(type)
+          |> Enum.join(", ")
 
-      array_from_tuple
-      |> Enum.join(",")
-    else
-      item_type =
-        type
-        |> String.split("[")
-        |> Enum.at(0)
+        render_array_type_value(type, values)
 
-      value
-      |> Enum.map(&values(&1, item_type))
-      |> Enum.join(",")
+      String.starts_with?(type, "address") ->
+        values =
+          value
+          |> Enum.map(&to_string(&1))
+          |> Enum.join(", ")
+
+        render_array_type_value(type, values)
+
+      String.starts_with?(type, "bytes") ->
+        values =
+          value
+          |> Enum.map(&binary_to_utf_string(&1))
+          |> Enum.join(", ")
+
+        render_array_type_value(type, values)
+
+      true ->
+        values =
+          value
+          |> Enum.join(", ")
+
+        render_array_type_value(type, values)
     end
   end
 
-  def values(value, type) when is_tuple(value) do
-    tuple_to_array(value, type)
+  def values_with_type(value, type) when is_tuple(value) do
+    values =
+      value
+      |> tuple_to_array(type)
+      |> Enum.join(", ")
+
+    render_type_value(type, values)
   end
 
-  def values(value, type) when type in ["address", "address payable"] do
+  def values_with_type(value, type) when type in ["address", "address payable"] do
+    {:ok, address} = Explorer.Chain.Hash.Address.cast(value)
+    render_type_value("address", to_string(address))
+  end
+
+  def values_with_type(value, "string"), do: render_type_value("string", value)
+
+  def values_with_type(value, type), do: render_type_value(type, binary_to_utf_string(value))
+
+  def values_only(value, type) when is_list(value) do
+    with_type? = false
+
+    cond do
+      String.starts_with?(type, "tuple") ->
+        values =
+          value
+          |> tuple_array_to_array(type, with_type?)
+          |> Enum.join(", ")
+
+        render_array_value(values)
+
+      String.starts_with?(type, "address") ->
+        values =
+          value
+          |> Enum.map(&binary_to_utf_string(&1))
+          |> Enum.join(", ")
+
+        render_array_value(values)
+
+      String.starts_with?(type, "bytes") ->
+        values =
+          value
+          |> Enum.map(&binary_to_utf_string(&1))
+          |> Enum.join(", ")
+
+        render_array_value(values)
+
+      true ->
+        values =
+          value
+          |> Enum.join(", ")
+
+        render_array_value(values)
+    end
+  end
+
+  def values_only(value, "address") do
     {:ok, address} = Explorer.Chain.Hash.Address.cast(value)
     binary_to_utf_string(address)
   end
 
-  def values(value, "string"), do: value
+  def values_only(value, "string") do
+    value
+  end
 
-  def values(value, _), do: binary_to_utf_string(value)
+  def values_only(value, _type) do
+    binary_to_utf_string(value)
+  end
 
-  defp tuple_array_to_array(value, type) do
+  defp tuple_array_to_array(value, type, with_type? \\ true) do
     type = type |> String.slice(0..-3)
 
     value
     |> Enum.map(fn item ->
-      tuple_to_array(item, type)
+      tuple_to_array(item, type, with_type?)
     end)
   end
 
-  defp tuple_to_array(value, type) do
+  defp tuple_to_array(value, type, with_type? \\ true) do
     types_string =
       type
       |> String.slice(6..-2)
@@ -119,9 +191,12 @@ defmodule BlockScoutWeb.SmartContractView do
 
     values_types_list
     |> Enum.map(fn {type, value} ->
-      values(value, type)
+      if with_type? do
+        values_with_type(value, type)
+      else
+        values_only(value, type)
+      end
     end)
-    |> Enum.join(",")
   end
 
   defp update_last_list_item(arr, new_val) do
@@ -146,5 +221,21 @@ defmodule BlockScoutWeb.SmartContractView do
 
   defp binary_to_utf_string(item) do
     if is_binary(item), do: "0x" <> Base.encode16(item, case: :lower), else: item
+  end
+
+  defp render_type_value(type, value) do
+    "<div style=\"padding-left: 20px\">(#{type}) : #{value}</div>"
+  end
+
+  defp render_array_type_value(type, values) do
+    value_to_display = "[" <> values <> "]"
+
+    render_type_value(type, value_to_display)
+  end
+
+  defp render_array_value(values) do
+    value_to_display = "[" <> values <> "]"
+
+    value_to_display
   end
 end
