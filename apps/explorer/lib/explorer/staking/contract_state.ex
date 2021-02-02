@@ -285,7 +285,8 @@ defmodule Explorer.Staking.ContractState do
   end
 
   def calc_apy(reward_ratio, pool_reward, stake_amount, average_block_time, staking_epoch_duration) do
-    if calc_apy_enabled?() and is_positive(reward_ratio) and pool_reward != nil and is_positive(stake_amount) and is_positive(average_block_time) and
+    if calc_apy_enabled?() and is_positive(reward_ratio) and pool_reward != nil and is_positive(stake_amount) and
+         is_positive(average_block_time) and
          is_positive(staking_epoch_duration) do
       epochs_per_year = floor(31_536_000 / average_block_time / staking_epoch_duration)
       predicted_reward = decimal_to_float(reward_ratio) * pool_reward
