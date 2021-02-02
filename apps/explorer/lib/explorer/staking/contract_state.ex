@@ -285,8 +285,8 @@ defmodule Explorer.Staking.ContractState do
   end
 
   def calc_apy(reward_ratio, pool_reward, stake_amount, average_block_time, staking_epoch_duration) do
-    if calc_apy_enabled?() and reward_ratio > 0 and pool_reward != nil and stake_amount > 0 and average_block_time > 0 and
-         staking_epoch_duration > 0 do
+    if calc_apy_enabled?() and is_positive(reward_ratio) and pool_reward != nil and is_positive(stake_amount) and is_positive(average_block_time) and
+         is_positive(staking_epoch_duration) do
       epochs_per_year = floor(31_536_000 / average_block_time / staking_epoch_duration)
       predicted_reward = decimal_to_float(reward_ratio) * pool_reward
       apy = predicted_reward / decimal_to_integer(stake_amount) * epochs_per_year
@@ -295,9 +295,9 @@ defmodule Explorer.Staking.ContractState do
   end
 
   def calc_apy_enabled? do
-    validator_set_apply_block = get(:validator_set_apply_block)
-    apy_start_block_number = validator_set_apply_block + get(:validators_length) * 10
-    get(:epoch_number) > 0 and validator_set_apply_block > 0 and get(:seen_block) >= apy_start_block_number
+    validator_set_apply_block = get(:validator_set_apply_block, 0)
+    apy_start_block_number = validator_set_apply_block + get(:validators_length, 0) * 10
+    get(:epoch_number, 0) > 0 and validator_set_apply_block > 0 and get(:seen_block, 0) >= apy_start_block_number
   end
 
   def staking_epoch_duration do
@@ -312,6 +312,14 @@ defmodule Explorer.Staking.ContractState do
       else
         epoch_end_block - epoch_start_block + 1
       end
+    end
+  end
+
+  defp is_positive(number) do
+    if Decimal.is_decimal(number) do
+      Decimal.positive?(number)
+    else
+      number > 0 and number != nil
     end
   end
 
