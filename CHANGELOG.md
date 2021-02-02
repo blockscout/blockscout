@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3603](https://github.com/poanetwork/blockscout/pull/3603) -  Display method output parameter name at contract read page
 - [#3584](https://github.com/poanetwork/blockscout/pull/3584) - Token holders API endpoint
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
