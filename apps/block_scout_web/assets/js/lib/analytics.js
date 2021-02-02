@@ -1,4 +1,4 @@
-import { createStore } from './redux_helpers.js'
+import { connectElements, createStore } from './redux_helpers.js'
 
 import $ from 'jquery'
 import Analytics from 'analytics'
@@ -10,7 +10,9 @@ let analytics
 let store
 
 const initialState = {
-  userID: localStorage.getItem('userID')
+  userID: localStorage.getItem('userID'),
+  cookiesAccepted: localStorage.getItem('cookiesAccepted'),
+  cookiesDeclined: sessionStorage.getItem('cookiesDeclined')
 }
 
 function reducer (state = initialState, action) {
@@ -24,8 +26,29 @@ function reducer (state = initialState, action) {
       localStorage.setItem('userID', id)
       return Object.assign({}, state, { userID: id })
     }
+    case 'ACCEPT_COOKIES': {
+      localStorage.setItem('cookiesAccepted', true)
+      initAnalytics()
+      return Object.assign({}, state, { cookiesAccepted: true })
+    }
+    case 'DECLINE_COOKIES': {
+      sessionStorage.setItem('cookiesDeclined', true)
+      return Object.assign({}, state, { cookiesDeclined: true })
+    }
     default:
       return state
+  }
+}
+
+const elements = {
+  '[data-selector="cookie-banner"]': {
+    render ($el, state) {
+      if (!state.cookiesAccepted && !state.cookiesDeclined) {
+        $el.removeAttr('hidden')
+      } else {
+        $el.attr('hidden', true)
+      }
+    }
   }
 }
 
@@ -225,22 +248,18 @@ function trackEvents () {
 }
 
 // initiate analytics and store
-function initAnalytics (segmentKey) {
+function initAnalytics () {
+  const analyticsKey = window.ANALYTICS_KEY || 'invalid key' // defined globally
+
   // instantiate analytics
   analytics = Analytics({
     app: 'Blockscout',
     plugins: [
       segmentPlugin({
-        writeKey: segmentKey
+        writeKey: analyticsKey
       })
     ]
   })
-
-  // instantiate store
-  store = createStore(reducer)
-  if (!store.getState().userID) {
-    store.dispatch({ type: 'SET_USER_ID' })
-  }
 
   // initial analytics
   analytics.identify(store.getState().userID)
@@ -252,6 +271,17 @@ function initAnalytics (segmentKey) {
 
 // get analytics key env var
 (function () {
-  const analyticsKey = window.ANALYTICS_KEY || 'invalid key' // defined globally
-  initAnalytics(analyticsKey)
+  // instantiate store
+  store = createStore(reducer)
+  if (!store.getState().userID) {
+    store.dispatch({ type: 'SET_USER_ID' })
+  }
+  connectElements({ store, elements })
+
+  $('[data-selector="decline-cookies"]').on('click', function () {
+    store.dispatch({ type: 'DECLINE_COOKIES'})
+  })
+  $('[data-selector="accept-cookies"]').on('click', function () {
+    store.dispatch({ type: 'ACCEPT_COOKIES' })
+  })
 })()
