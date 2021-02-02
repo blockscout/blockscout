@@ -53,6 +53,149 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  # makes a raw `eth_call` for the `currentPoolRewards` function of the BlockReward contract:
+  # function currentPoolRewards(
+  #     uint256 _rewardToDistribute,
+  #     uint256[] memory _blocksCreatedShareNum,
+  #     uint256 _blocksCreatedShareDenom,
+  #     uint256 _stakingEpoch
+  # ) public view returns(uint256[] memory poolRewards);
+  def call_current_pool_rewards(block_reward_address, reward_to_distribute, staking_epoch, block_number) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    reward_to_distribute =
+      reward_to_distribute
+      |> Integer.to_string(16)
+      |> String.pad_leading(64, ["0"])
+
+    staking_epoch =
+      staking_epoch
+      |> Integer.to_string(16)
+      |> String.pad_leading(64, ["0"])
+
+    function_signature = "0x212329f3"
+
+    data =
+      function_signature <>
+        reward_to_distribute <>
+        "00000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000" <>
+        staking_epoch <> "0000000000000000000000000000000000000000000000000000000000000000"
+
+    request = %{
+      id: 0,
+      method: "eth_call",
+      params: [
+        %{
+          to: block_reward_address,
+          data: data
+        },
+        "0x" <> Integer.to_string(block_number, 16)
+      ]
+    }
+
+    result =
+      request
+      |> EthereumJSONRPC.request()
+      |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+
+    case result do
+      {:ok, response} ->
+        response = String.replace_leading(response, "0x", "")
+
+        offset =
+          response
+          |> String.slice(0..63)
+          |> String.to_integer(16)
+
+        length =
+          response
+          |> String.slice(offset * 2, 64)
+          |> String.to_integer(16)
+
+        if length > 0 do
+          Enum.reduce(Range.new(0, length - 1), [], fn x, acc ->
+            item =
+              response
+              |> String.slice(offset * 2 + 64 + x * 64, 64)
+              |> String.to_integer(16)
+
+            # acc ++ [item]
+            acc_reversed = Enum.reverse(acc)
+            Enum.reverse([item | acc_reversed])
+          end)
+        else
+          []
+        end
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  # makes a raw `eth_call` for the `currentTokenRewardToDistribute` function of the BlockReward contract:
+  # function currentTokenRewardToDistribute(
+  #     address _stakingContract,
+  #     uint256 _stakingEpoch,
+  #     uint256 _totalRewardShareNum,
+  #     uint256 _totalRewardShareDenom,
+  #     address[] memory _validators
+  # ) public view returns(uint256 rewardToDistribute, uint256 totalReward);
+  def call_current_token_reward_to_distribute(
+        block_reward_address,
+        staking_contract_address,
+        staking_epoch,
+        block_number
+      ) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    staking_contract_address = address_pad_to_64(staking_contract_address)
+
+    staking_epoch =
+      staking_epoch
+      |> Integer.to_string(16)
+      |> String.pad_leading(64, ["0"])
+
+    function_signature = "0x46955281"
+    mandatory_params = staking_contract_address <> staking_epoch
+
+    optional_params =
+      "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000000"
+
+    data = function_signature <> mandatory_params <> optional_params
+
+    request = %{
+      id: 0,
+      method: "eth_call",
+      params: [
+        %{
+          to: block_reward_address,
+          data: data
+        },
+        "0x" <> Integer.to_string(block_number, 16)
+      ]
+    }
+
+    result =
+      request
+      |> EthereumJSONRPC.request()
+      |> EthereumJSONRPC.json_rpc(json_rpc_named_arguments)
+
+    case result do
+      {:ok, response} ->
+        response = String.replace_leading(response, "0x", "")
+
+        if String.length(response) != 64 * 2 do
+          0
+        else
+          {reward_to_distribute, _} = String.split_at(response, 64)
+          String.to_integer(reward_to_distribute, 16)
+        end
+
+      {:error, _} ->
+        0
+    end
+  end
+
   # makes a raw `eth_call` for the `getRewardAmount` function of the Staking contract:
   # function getRewardAmount(
   #   uint256[] memory _stakingEpochs,

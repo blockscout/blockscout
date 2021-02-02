@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.StakesChannel do
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.Staking.{ContractReader, ContractState}
   alias Phoenix.View
+  alias Timex.Duration
 
   import BlockScoutWeb.Gettext
 
@@ -102,10 +103,27 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("render_delegators_list", %{"address" => pool_staking_address}, socket) do
+    pool_staking_address_downcased = String.downcase(pool_staking_address)
     pool = Chain.staking_pool(pool_staking_address)
+    pool_rewards = ContractState.get(:pool_rewards, %{})
+    calc_apy_enabled = ContractState.calc_apy_enabled?()
     token = ContractState.get(:token)
     validator_min_reward_percent = ContractState.get(:validator_min_reward_percent)
     show_snapshotted_data = ContractState.show_snapshotted_data(pool.is_validator)
+    staking_epoch_duration = ContractState.staking_epoch_duration()
+
+    average_block_time =
+      try do
+        Duration.to_seconds(AverageBlockTime.average_block_time())
+      rescue
+        _ -> nil
+      end
+
+    pool_reward =
+      case Map.fetch(pool_rewards, String.downcase(to_string(pool.mining_address_hash))) do
+        {:ok, pool_reward} -> pool_reward
+        :error -> nil
+      end
 
     stakers =
       pool_staking_address
@@ -118,6 +136,21 @@ defmodule BlockScoutWeb.StakesChannel do
           staker_address == socket.assigns[:account] -> 1
           true -> 2
         end
+      end)
+      |> Enum.map(fn staker ->
+        apy =
+          if calc_apy_enabled do
+            calc_apy(
+              pool,
+              staker,
+              pool_staking_address_downcased,
+              pool_reward,
+              average_block_time,
+              staking_epoch_duration
+            )
+          end
+
+        Map.put(staker, :apy, apy)
       end)
 
     html =
@@ -655,6 +688,28 @@ defmodule BlockScoutWeb.StakesChannel do
       })
     after
       :ets.delete(ContractState, claim_reward_long_op_key(staker))
+    end
+  end
+
+  defp calc_apy(pool, staker, pool_staking_address_downcased, pool_reward, average_block_time, staking_epoch_duration) do
+    staker_address = String.downcase(to_string(staker.address_hash))
+
+    if staker_address == pool_staking_address_downcased do
+      ContractState.calc_apy(
+        pool.snapshotted_validator_reward_ratio,
+        pool_reward,
+        pool.snapshotted_self_staked_amount,
+        average_block_time,
+        staking_epoch_duration
+      )
+    else
+      ContractState.calc_apy(
+        staker.snapshotted_reward_ratio,
+        pool_reward,
+        staker.snapshotted_stake_amount,
+        average_block_time,
+        staking_epoch_duration
+      )
     end
   end
 

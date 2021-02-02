@@ -145,6 +145,26 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
+    # ContractReader.call_current_token_reward_to_distribute
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn _request, _opts ->
+        {:ok,
+         "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"}
+      end
+    )
+
+    # ContractReader.call_current_pool_rewards
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn _request, _opts ->
+        {:ok,
+         "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000"}
+      end
+    )
+
     # get_validator_min_reward_percent
     expect(
       EthereumJSONRPC.Mox,

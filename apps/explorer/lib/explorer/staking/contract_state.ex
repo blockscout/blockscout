@@ -7,6 +7,7 @@ defmodule Explorer.Staking.ContractState do
 
   use GenServer
 
+  require Decimal
   require Logger
 
   alias Explorer.Chain
@@ -27,6 +28,7 @@ defmodule Explorer.Staking.ContractState do
     :max_candidates,
     :min_candidate_stake,
     :min_delegator_stake,
+    :pool_rewards,
     :seen_block,
     :snapshotted_epoch_number,
     :staking_allowed,
@@ -35,7 +37,8 @@ defmodule Explorer.Staking.ContractState do
     :token,
     :validator_min_reward_percent,
     :validator_set_apply_block,
-    :validator_set_contract
+    :validator_set_contract,
+    :validators_length
   ]
 
   # token renewal frequency in blocks
@@ -130,6 +133,7 @@ defmodule Explorer.Staking.ContractState do
       block_reward_contract: %{abi: block_reward_abi, address: block_reward_contract_address},
       is_snapshotting: false,
       last_change_block: 0,
+      pool_rewards: %{},
       seen_block: 0,
       snapshotted_epoch_number: -1,
       staking_contract: %{abi: staking_abi, address: staking_contract_address},
@@ -204,6 +208,22 @@ defmodule Explorer.Staking.ContractState do
     global_responses =
       ContractReader.perform_requests(ContractReader.global_requests(block_number), state.contracts, state.abi)
 
+    token_reward_to_distribute =
+      ContractReader.call_current_token_reward_to_distribute(
+        state.contracts.block_reward,
+        state.contracts.staking,
+        global_responses.epoch_number,
+        block_number
+      )
+
+    current_pool_rewards =
+      ContractReader.call_current_pool_rewards(
+        state.contracts.block_reward,
+        token_reward_to_distribute,
+        global_responses.epoch_number,
+        block_number
+      )
+
     epoch_very_beginning = global_responses.epoch_start_block == block_number + 1
 
     start_snapshotting = start_snapshotting?(global_responses)
@@ -221,7 +241,7 @@ defmodule Explorer.Staking.ContractState do
       start_snapshotting or state.snapshotting_finished or first_fetch or last_change_block > get(:last_change_block)
 
     # save the general info to ETS (excluding pool list and validator list)
-    set_settings(global_responses, state, block_number, last_change_block)
+    set_settings(global_responses, state, block_number, last_change_block, current_pool_rewards)
 
     if epoch_very_beginning or start_snapshotting do
       # if the block_number is the latest block of the finished staking epoch
@@ -261,6 +281,62 @@ defmodule Explorer.Staking.ContractState do
       %{state | snapshotting_finished: false}
     else
       state
+    end
+  end
+
+  def calc_apy(reward_ratio, pool_reward, stake_amount, average_block_time, staking_epoch_duration) do
+    if calc_apy_enabled?() and is_positive(reward_ratio) and pool_reward != nil and is_positive(stake_amount) and
+         is_positive(average_block_time) and
+         is_positive(staking_epoch_duration) do
+      epochs_per_year = floor(31_536_000 / average_block_time / staking_epoch_duration)
+      predicted_reward = decimal_to_float(reward_ratio) * pool_reward
+      apy = predicted_reward / decimal_to_integer(stake_amount) * epochs_per_year
+      %{apy: "#{floor(apy * 100) / 100}%", predicted_reward: floor(predicted_reward)}
+    end
+  end
+
+  def calc_apy_enabled? do
+    validator_set_apply_block = get(:validator_set_apply_block, 0)
+    apy_start_block_number = validator_set_apply_block + get(:validators_length, 0) * 10
+    get(:epoch_number, 0) > 0 and validator_set_apply_block > 0 and get(:seen_block, 0) >= apy_start_block_number
+  end
+
+  def staking_epoch_duration do
+    epoch_start_block = get(:epoch_start_block)
+    epoch_end_block = get(:epoch_end_block)
+
+    if epoch_start_block == nil or epoch_end_block == nil do
+      nil
+    else
+      if epoch_start_block == 0 do
+        epoch_end_block
+      else
+        epoch_end_block - epoch_start_block + 1
+      end
+    end
+  end
+
+  defp is_positive(number) do
+    if Decimal.is_decimal(number) do
+      Decimal.positive?(number)
+    else
+      number > 0 and number != nil
+    end
+  end
+
+  defp decimal_to_float(number) do
+    if Decimal.is_decimal(number) do
+      Decimal.to_float(number)
+    else
+      number
+    end
+  end
+
+  defp decimal_to_integer(number) do
+    if Decimal.is_decimal(number) do
+      Decimal.to_integer(number)
+    else
+      number
     end
   end
 
@@ -422,13 +498,22 @@ defmodule Explorer.Staking.ContractState do
     end
   end
 
-  defp set_settings(global_responses, state, block_number, last_change_block) do
+  defp set_settings(global_responses, state, block_number, last_change_block, current_pool_rewards) do
+    pool_rewards =
+      global_responses.validators
+      |> Enum.with_index()
+      |> Map.new(fn {mining_address, index} ->
+        {address_bytes_to_string(mining_address), Enum.at(current_pool_rewards, index)}
+      end)
+
     settings =
       global_responses
       |> get_settings(state, block_number)
       |> Enum.concat(active_pools_length: Enum.count(global_responses.active_pools))
       |> Enum.concat(last_change_block: last_change_block)
+      |> Enum.concat(pool_rewards: pool_rewards)
       |> Enum.concat(seen_block: block_number)
+      |> Enum.concat(validators_length: Enum.count(global_responses.validators))
 
     :ets.insert(@table_name, settings)
   end
