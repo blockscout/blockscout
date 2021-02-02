@@ -8,10 +8,12 @@
 - [#3600](https://github.com/poanetwork/blockscout/pull/3600) - Prevent update validator metadata with empty name from contract
 - [#3592](https://github.com/poanetwork/blockscout/pull/3592), [#3601](https://github.com/poanetwork/blockscout/pull/3601) - Contract interaction: fix nested tuples in the output view, add formatting
 - [#3583](https://github.com/poanetwork/blockscout/pull/3583) - Reduce RPC requests and DB changes by Staking DApp
+- [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
 - [#3585](https://github.com/poanetwork/blockscout/pull/3585) - Add autoswitching from eth_subscribe to eth_blockNumber in Staking DApp
 - [#3574](https://github.com/poanetwork/blockscout/pull/3574) - Correct UNI token price
+- [#3569](https://github.com/poanetwork/blockscout/pull/3569) - Allow re-define cache period vars at runtime
 - [#3567](https://github.com/poanetwork/blockscout/pull/3567) - Force to show filter at the page where filtered items list is empty
 - [#3565](https://github.com/poanetwork/blockscout/pull/3565) - Staking dapp: unhealthy state alert message
 
