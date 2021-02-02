@@ -28,7 +28,6 @@ function reducer (state = initialState, action) {
     }
     case 'ACCEPT_COOKIES': {
       localStorage.setItem('cookiesAccepted', true)
-      initAnalytics()
       return Object.assign({}, state, { cookiesAccepted: true })
     }
     case 'DECLINE_COOKIES': {
@@ -129,15 +128,16 @@ function getEntityId () {
 
 // returns blockscout network: Mainnet, Alfajores or Baklava
 function getNetwork () {
-  switch (window.location.host) {
-    case 'explorer.celo.org':
+  const host = window.location.host
+  switch (true) {
+    case host === 'explorer.celo.org':
       return 'mainnet'
-    case 'alfajores-blockscout.celo-testnet.org':
+    case host.includes('alfajores'):
       return 'alfajores'
-    case 'baklava-blockscout.celo-testnet.org':
+    case host.includes('baklava'):
       return 'baklava'
     default:
-      return 'mainnet'
+      return host
   }
 }
 
@@ -282,6 +282,7 @@ function initAnalytics () {
     store.dispatch({ type: 'DECLINE_COOKIES' })
   })
   $('[data-selector="accept-cookies"]').on('click', function () {
+    initAnalytics()
     store.dispatch({ type: 'ACCEPT_COOKIES' })
   })
 })()
