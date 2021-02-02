@@ -5,7 +5,8 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
-- [#3592](https://github.com/poanetwork/blockscout/pull/3592) - Contract interaction: fix nested tuples in the output view, add formatting
+- [#3600](https://github.com/poanetwork/blockscout/pull/3600) - Prevent update validator metadata with empty name from contract
+- [#3592](https://github.com/poanetwork/blockscout/pull/3592), [#3601](https://github.com/poanetwork/blockscout/pull/3601) - Contract interaction: fix nested tuples in the output view, add formatting
 - [#3583](https://github.com/poanetwork/blockscout/pull/3583) - Reduce RPC requests and DB changes by Staking DApp
 
 ### Chore
