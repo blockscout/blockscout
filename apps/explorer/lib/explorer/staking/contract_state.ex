@@ -290,7 +290,7 @@ defmodule Explorer.Staking.ContractState do
          is_positive(staking_epoch_duration) do
       epochs_per_year = floor(31_536_000 / average_block_time / staking_epoch_duration)
       predicted_reward = decimal_to_float(reward_ratio) * pool_reward / 100
-      apy = predicted_reward / decimal_to_integer(stake_amount) * epochs_per_year
+      apy = predicted_reward / decimal_to_integer(stake_amount) * epochs_per_year * 100
       %{apy: "#{floor(apy * 100) / 100}%", predicted_reward: floor(predicted_reward)}
     end
   end
