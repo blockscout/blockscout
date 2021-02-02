@@ -101,7 +101,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
             <%= if (queryable?(function["inputs"])), do: raw "&#8627;" %>
 
             <%= for output <- function["outputs"] do %>
-              <%= output["type"] %>
+              <%= if output["name"] && output["name"] !== "", do: "#{output["name"]}(#{output["type"]})", else: output["type"] %>
             <% end %>
           </div>
         <% end %>
@@ -128,7 +128,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
                     </span>
                   </div>
                 <% else %>
-                  <%= values(output["value"], output["type"]) %>
+                  <%= raw(values_only(output["value"], output["type"], output["components"])) %>
                 <% end %>
             <% end %>
           <% end %>
