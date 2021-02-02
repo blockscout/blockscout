@@ -694,23 +694,20 @@ defmodule BlockScoutWeb.StakesChannel do
   defp calc_apy(pool, staker, pool_staking_address_downcased, pool_reward, average_block_time, staking_epoch_duration) do
     staker_address = String.downcase(to_string(staker.address_hash))
 
-    if staker_address == pool_staking_address_downcased do
-      ContractState.calc_apy(
-        pool.snapshotted_validator_reward_ratio,
-        pool_reward,
-        pool.snapshotted_self_staked_amount,
-        average_block_time,
-        staking_epoch_duration
-      )
-    else
-      ContractState.calc_apy(
-        staker.snapshotted_reward_ratio,
-        pool_reward,
-        staker.snapshotted_stake_amount,
-        average_block_time,
-        staking_epoch_duration
-      )
-    end
+    {reward_ratio, stake_amount} =
+      if staker_address == pool_staking_address_downcased do
+        {pool.snapshotted_validator_reward_ratio, pool.snapshotted_self_staked_amount}
+      else
+        {staker.snapshotted_reward_ratio, staker.snapshotted_stake_amount}
+      end
+
+    ContractState.calc_apy(
+      reward_ratio,
+      pool_reward,
+      stake_amount,
+      average_block_time,
+      staking_epoch_duration
+    )
   end
 
   defp claim_reward_long_op_active(socket) do
