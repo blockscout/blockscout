@@ -23,8 +23,8 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporterTest do
           transaction_index: transaction.index
         )
 
-      from_period = Timex.shift(Timex.now(), minutes: -1)
-      to_period = Timex.now()
+      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d %H:%M", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d %H:%M", :strftime)
 
       [result] =
         address
@@ -133,8 +133,8 @@ defmodule Explorer.Chain.AddressInternalTransactionCsvExporterTest do
       end)
       |> Enum.count()
 
-      from_period = Timex.shift(Timex.now(), minutes: -1)
-      to_period = Timex.now()
+      from_period = Timex.format!(Timex.shift(Timex.now(), minutes: -1), "%Y-%m-%d %H:%M", :strftime)
+      to_period = Timex.format!(Timex.now(), "%Y-%m-%d %H:%M", :strftime)
 
       result =
         address

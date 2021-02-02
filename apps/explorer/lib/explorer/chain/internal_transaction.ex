@@ -575,23 +575,23 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
-  def where_inserted_at_in_period(query, from, to) when is_nil(from) and not is_nil(to) do
+  def where_block_number_in_period(query, from_number, to_number) when is_nil(from_number) and not is_nil(to_number) do
     where(
       query,
       [it],
-      it.inserted_at < ^to
+      it.block_number <= ^to_number
     )
   end
 
-  def where_inserted_at_in_period(query, from, to) when not is_nil(from) and is_nil(to) do
+  def where_block_number_in_period(query, from_number, to_number) when not is_nil(from_number) and is_nil(to_number) do
     where(
       query,
       [it],
-      it.inserted_at >= ^from
+      it.block_number > ^from_number
     )
   end
 
-  def where_inserted_at_in_period(query, from, to) when is_nil(from) and is_nil(to) do
+  def where_block_number_in_period(query, from_number, to_number) when is_nil(from_number) and is_nil(to_number) do
     where(
       query,
       [it],
@@ -599,11 +599,11 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
-  def where_inserted_at_in_period(query, from, to) do
+  def where_block_number_in_period(query, from_number, to_number) do
     where(
       query,
       [it],
-      it.inserted_at >= ^from and it.inserted_at < ^to
+      it.block_number > ^from_number and it.block_number <= ^to_number
     )
   end
 
