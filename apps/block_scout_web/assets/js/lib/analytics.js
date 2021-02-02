@@ -279,7 +279,7 @@ function initAnalytics () {
   connectElements({ store, elements })
 
   $('[data-selector="decline-cookies"]').on('click', function () {
-    store.dispatch({ type: 'DECLINE_COOKIES'})
+    store.dispatch({ type: 'DECLINE_COOKIES' })
   })
   $('[data-selector="accept-cookies"]').on('click', function () {
     store.dispatch({ type: 'ACCEPT_COOKIES' })
