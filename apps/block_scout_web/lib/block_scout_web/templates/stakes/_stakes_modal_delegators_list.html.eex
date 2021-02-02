@@ -2,7 +2,7 @@
   <div class="modal-dialog modal-dialog-centered modal-delegators-info" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><%= gettext("Delegators") %></h5>
+        <h5 class="modal-title"><%= gettext("Delegators of ") %><%= @pool.staking_address_hash %></h5>
       </div>
       <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-body">
@@ -49,15 +49,15 @@
               <%=
                 title =
                   if @show_snapshotted_data do
-                    gettext("Potential Reward Percent") <> "<br />(" <> gettext("Current Reward Percent")  <> ")"
+                    gettext("Potential Reward Share") <> "<br />(" <> gettext("Current Reward Share")  <> ")"
                   else
-                    gettext("Potential Reward Percent")
+                    gettext("Potential Reward Share")
                   end
 
                 tooltip =
-                  gettext("Reward distribution is based on stake amount. Validator receives a minimum of %{min}%.", min: @validator_min_reward_percent) <>
+                  gettext("Reward distribution is based on stake amount. Validator receives at least %{min}% of the pool reward.", min: @validator_min_reward_percent) <>
                     if @show_snapshotted_data do
-                      " " <> gettext("Current Reward Percent is calculated based on the Working Stake Amount.")
+                      " " <> gettext("Current Reward Share is calculated based on the Working Stake Amount.")
                     else
                       ""
                     end

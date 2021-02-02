@@ -7,6 +7,11 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
     RPCView.render("show.json", data: prepare_token(token))
   end
 
+  def render("gettokenholders.json", %{token_holders: token_holders}) do
+    data = Enum.map(token_holders, &prepare_token_holder/1)
+    RPCView.render("show.json", data: data)
+  end
+
   def render("error.json", assigns) do
     RPCView.render("error.json", assigns)
   end
@@ -20,6 +25,13 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
       "decimals" => to_string(token.decimals),
       "contractAddress" => to_string(token.contract_address_hash),
       "cataloged" => token.cataloged
+    }
+  end
+
+  defp prepare_token_holder(token_holder) do
+    %{
+      "address" => to_string(token_holder.address_hash),
+      "value" => token_holder.value
     }
   end
 end

@@ -2,7 +2,7 @@
   <%= raw(@top) %>
 </div>
 <%= render BlockScoutWeb.StakesView, "_learn-more.html", conn: @conn %>
-<%= render BlockScoutWeb.StakesView, "_warning.html", conn: @conn %>
+<%= # render BlockScoutWeb.StakesView, "_warning.html", conn: @conn %>
 <section data-page="stakes" class="container" data-refresh-interval="<%= @refresh_interval %>">
   <div class="card" data-async-load data-async-listing="<%= @current_path %>" data-no-first-loading>
     <%= render BlockScoutWeb.StakesView, "_stakes_tabs.html", conn: @conn %>
