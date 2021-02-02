@@ -93,7 +93,7 @@ defmodule BlockScoutWeb.SmartContractView do
     render_type_value(type, values)
   end
 
-  def values_with_type(value, type, _components) when type in ["address", "address payable"] do
+  def values_with_type(value, type, _components) when type in [:address, "address", "address payable"] do
     {:ok, address} = Address.cast(value)
     render_type_value("address", to_string(address))
   end
@@ -102,7 +102,13 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def values_with_type(value, "bool", _components), do: render_type_value("bool", to_string(value))
 
-  def values_with_type(value, type, _components), do: render_type_value(type, binary_to_utf_string(value))
+  def values_with_type(value, type, _components) do
+    if String.starts_with?(type, "uint") do
+      render_type_value(type, to_string(value))
+    else
+      render_type_value(type, binary_to_utf_string(value))
+    end
+  end
 
   def values_only(value, type, components) when is_list(value) do
     cond do
@@ -153,7 +159,7 @@ defmodule BlockScoutWeb.SmartContractView do
     values
   end
 
-  def values_only(value, type, _components) when type in ["address", "address payable"] do
+  def values_only(value, type, _components) when type in [:address, "address", "address payable"] do
     {:ok, address} = Address.cast(value)
     to_string(address)
   end
@@ -162,7 +168,13 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def values_only(value, "bool", _components), do: to_string(value)
 
-  def values_only(value, _type, _components), do: binary_to_utf_string(value)
+  def values_only(value, type, _components) do
+    if String.starts_with?(type, "uint") do
+      to_string(value)
+    else
+      binary_to_utf_string(value)
+    end
+  end
 
   defp tuple_array_to_array(value, type) do
     value
