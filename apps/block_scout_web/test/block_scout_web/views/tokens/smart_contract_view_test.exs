@@ -252,6 +252,11 @@ defmodule BlockScoutWeb.SmartContractViewTest do
       assert SmartContractView.values_only(value, "address", nil) == "0x5f26097334b6a32b7951df61fd0c5803ec5d8354"
     end
 
+    test "convert the value to string receiving a value and the :address type" do
+      value = <<95, 38, 9, 115, 52, 182, 163, 43, 121, 81, 223, 97, 253, 12, 88, 3, 236, 93, 131, 84>>
+      assert SmartContractView.values_only(value, :address, nil) == "0x5f26097334b6a32b7951df61fd0c5803ec5d8354"
+    end
+
     test "convert the value to string receiving a value and the 'address payable' type" do
       value = <<95, 38, 9, 115, 52, 182, 163, 43, 121, 81, 223, 97, 253, 12, 88, 3, 236, 93, 131, 84>>
 
@@ -294,6 +299,12 @@ defmodule BlockScoutWeb.SmartContractViewTest do
 
       assert SmartContractView.values_only(value, "bytes32", nil) ==
                "0x9cd14677f9aa5569b3bbb351fcd67d1115aa563ae1624276d3d4e67fb3d6f926"
+    end
+
+    test "returns the value when the type is uint(n) and value is 0" do
+      value = "0"
+
+      assert SmartContractView.values_only(value, "uint64", nil) == "0"
     end
   end
 end
