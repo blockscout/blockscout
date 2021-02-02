@@ -1144,6 +1144,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:65
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:178
 #: lib/block_scout_web/views/transaction_view.ex:261
 #: lib/block_scout_web/views/transaction_view.ex:295
 msgid "Pending"
@@ -2687,6 +2688,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_rows.html.eex:34
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:177
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:180
 msgid "N/A"
 msgstr ""
