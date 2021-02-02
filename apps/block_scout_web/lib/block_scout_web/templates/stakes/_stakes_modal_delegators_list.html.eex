@@ -171,9 +171,12 @@
                   <% end %>
                 </div>
                 <div class="col-3 stakes-td stakes-cell">
-                  <%= if staker.apy do %>
+                  <%= cond do %>
+                  <% staker.apy -> %>
                     <%= staker.apy.apy %> (<%= format_token_amount(staker.apy.predicted_reward, @token, symbol: false, digits: 2) %>)
-                  <% else %>
+                  <% @show_snapshotted_data and staker.snapshotted_stake_amount == nil -> %>
+                    <%= gettext("Pending") %>
+                  <% true -> %>
                     <%= gettext("N/A") %>
                   <% end %>
                 </div>
