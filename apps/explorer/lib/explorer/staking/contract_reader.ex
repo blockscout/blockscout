@@ -100,32 +100,13 @@ defmodule Explorer.Staking.ContractReader do
 
     case result do
       {:ok, response} ->
-        response = String.replace_leading(response, "0x", "")
-
-        offset =
+        response =
           response
-          |> String.slice(0..63)
-          |> String.to_integer(16)
+          |> String.replace_leading("0x", "")
+          |> Base.decode16!(case: :lower)
 
-        length =
-          response
-          |> String.slice(offset * 2, 64)
-          |> String.to_integer(16)
-
-        if length > 0 do
-          Enum.reduce(Range.new(0, length - 1), [], fn x, acc ->
-            item =
-              response
-              |> String.slice(offset * 2 + 64 + x * 64, 64)
-              |> String.to_integer(16)
-
-            # acc ++ [item]
-            acc_reversed = Enum.reverse(acc)
-            Enum.reverse([item | acc_reversed])
-          end)
-        else
-          []
-        end
+        decoded = ABI.decode("res(uint256[])", response)
+        Enum.at(decoded, 0)
 
       {:error, _} ->
         []
@@ -182,14 +163,13 @@ defmodule Explorer.Staking.ContractReader do
 
     case result do
       {:ok, response} ->
-        response = String.replace_leading(response, "0x", "")
+        response =
+          response
+          |> String.replace_leading("0x", "")
+          |> Base.decode16!(case: :lower)
 
-        if String.length(response) != 64 * 2 do
-          0
-        else
-          {reward_to_distribute, _} = String.split_at(response, 64)
-          String.to_integer(reward_to_distribute, 16)
-        end
+        decoded = ABI.decode("res(uint256,uint256)", response)
+        Enum.at(decoded, 0)
 
       {:error, _} ->
         0
