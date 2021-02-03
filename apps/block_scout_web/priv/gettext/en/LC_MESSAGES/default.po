@@ -1144,7 +1144,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:65
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:178
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:181
 #: lib/block_scout_web/views/transaction_view.ex:261
 #: lib/block_scout_web/views/transaction_view.ex:295
 msgid "Pending"
@@ -2178,7 +2178,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:120
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:122
 msgid "It's me!"
 msgstr ""
 
@@ -2194,7 +2194,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:122
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:124
 msgid "ME"
 msgstr ""
 
@@ -2404,7 +2404,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:100
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:102
 msgid "The rest addresses are delegators of its pool."
 msgstr ""
 
@@ -2426,7 +2426,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:97
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:99
 msgid "This is a %{pool_type}."
 msgstr ""
 
@@ -2656,19 +2656,19 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:75
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:76
 msgid "APY & Predicted Reward"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_rows.html.eex:34
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:180
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:183
 msgid "N/A"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:76
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:77
 msgid "Approximate Current Annual Percentage Yield. If you see N/A, please reopen the popup in a few blocks (APY cannot be calculated at the very beginning of a staking epoch). Predicted Reward is the amount of %{symbol} a participant will receive for staking and can claim once the current epoch ends."
 msgstr ""
 
