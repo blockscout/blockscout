@@ -67,6 +67,7 @@ defmodule BlockScout.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
+      {:eth, git: "https://github.com/blockscout/eth.git", branch: "master"},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.3", override: true},
       {:tesla, "~> 1.3.3"},
       # Documentation
