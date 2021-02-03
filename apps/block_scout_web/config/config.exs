@@ -50,6 +50,14 @@ config :block_scout_web,
   circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
   test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN")
 
+config :block_scout_web, :faucet,
+  enabled: if(System.get_env("ENABLE_FAUCET", "false") == "true", do: true, else: false),
+  value: System.get_env("FAUCET_VALUE", "0"),
+  address: System.get_env("FAUCET_ADDRESS"),
+  gas_limit: System.get_env("FAUCET_GAS_LIMIT"),
+  gas_price: System.get_env("FAUCET_GAS_PRICE"),
+  address_pk: System.get_env("FAUCET_ADDRESS_PK")
+
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 # Configures the endpoint
@@ -138,6 +146,8 @@ config :block_scout_web, BlockScoutWeb.ApiRouter,
   wobserver_enabled: System.get_env("WOBSERVER_ENABLED") == "true"
 
 config :block_scout_web, BlockScoutWeb.WebRouter, enabled: System.get_env("DISABLE_WEBAPP") != "true"
+
+config :ethereumex, url: System.get_env("ETHEREUM_JSONRPC_WS_URL")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
