@@ -1239,13 +1239,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:254
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:260
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:204
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1941,7 +1941,7 @@ msgid "Copy Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:208
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:214
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 
@@ -2629,7 +2629,7 @@ msgid "Staking"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:247
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:253
 msgid "Press / and focus will be moved to the search field"
 msgstr ""
 
@@ -2661,4 +2661,9 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:58
 msgid "Reward distribution is based on stake amount. Validator receives at least %{min}% of the pool reward."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:161
+msgid "Faucet"
 msgstr ""

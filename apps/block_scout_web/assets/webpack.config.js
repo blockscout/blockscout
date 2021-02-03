@@ -95,7 +95,8 @@ const appJs =
       'try-api': './js/lib/try_api.js',
       'try-eth-api': './js/lib/try_eth_api.js',
       'async-listing-load': './js/lib/async_listing_load',
-      'non-critical': './css/non-critical.scss'
+      'non-critical': './css/non-critical.scss',
+      'faucet': './js/pages/faucet.js'
     },
     output: {
       filename: '[name].js',
@@ -171,7 +172,9 @@ const appJs =
       ),
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
       new webpack.DefinePlugin({
-        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT)
+        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
+        'process.env.COIN': JSON.stringify(process.env.COIN),
+        'process.env.FAUCET_VALUE': JSON.stringify(process.env.FAUCET_VALUE)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
