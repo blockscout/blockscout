@@ -2023,11 +2023,6 @@ msgid "<p>To become a candidate, your staking address must be funded with %{toke
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:11
-msgid "Active Pools"
-msgstr ""
-
-#, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:24
 msgid "All pool participant addresses. The top address belongs to the %{pool_type}."
@@ -2179,11 +2174,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:12
 msgid "Inactive Pool Addresses. Current validator pools are specified by a checkmark."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:18
-msgid "Inactive Pools"
 msgstr ""
 
 #, elixir-format
@@ -2490,11 +2480,6 @@ msgid "Validator pools can be banned for misbehavior (such as not revealing secr
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:4
-msgid "Validators"
-msgstr ""
-
-#, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_claim_reward_content.html.eex:2
 msgid "We found the following pools you can claim reward from:"
@@ -2676,18 +2661,18 @@ msgid "APY & Predicted Reward"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/stakes/_rows.html.eex:34
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:180
+msgid "N/A"
+msgstr ""
+
+#, elixir-format, fuzzy
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:76
-msgid "Approximate Annual Percentage Yield calculated for the current moment. If you see N/A, please, reopen this popup in a few blocks (as APY cannot be calculated at the very start of staking epoch). Predicted Reward is amount which is going to be accrued at the end of staking epoch."
+msgid "Approximate Current Annual Percentage Yield. If you see N/A, please reopen the popup in a few blocks (APY cannot be calculated at the very beginning of a staking epoch). Predicted Reward is the amount of %{symbol} a participant will receive for staking and can claim once the current epoch ends."
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:39
-msgid "Approximate Annual Percentage Yield calculated for the current moment. If you see N/A, please, wait for a few blocks (as APY cannot be calculated at the very start of staking epoch)."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_rows.html.eex:34
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:180
-msgid "N/A"
+msgid "Approximate Current Annual Percentage Yield. If you see N/A, please wait for a few blocks (APY cannot be calculated at the very beginning of a staking epoch)."
 msgstr ""
