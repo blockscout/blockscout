@@ -73,7 +73,7 @@
                 render BlockScoutWeb.StakesView,
                   "_stakes_th.html",
                   title: gettext("APY & Predicted Reward"),
-                  tooltip: gettext("Approximate Annual Percentage Yield calculated for the current moment. If you see N/A, please, reopen this popup in a few blocks (as APY cannot be calculated at the very start of staking epoch). Predicted Reward is amount which is going to be accrued at the end of staking epoch.")
+                  tooltip: gettext("Approximate Current Annual Percentage Yield. If you see N/A, please reopen the popup in a few blocks (APY cannot be calculated at the very beginning of a staking epoch). Predicted Reward is the amount of %{symbol} a participant will receive for staking and can claim once the current epoch ends.", symbol: @token.symbol)
               %>
             </div>
           </div>
