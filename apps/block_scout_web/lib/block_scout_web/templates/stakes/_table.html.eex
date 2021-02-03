@@ -34,10 +34,15 @@
         <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Stakes Ratio"), tooltip: gettext("The percentage of stake in a single pool relative to the total amount staked in all active pools. A higher ratio results in a greater likelihood of validator pool selection.") %>
       <% end %>
     </div>
+    <%= if @pools_type == :validator do %>
+      <div class="col-1">
+        <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("APY"), tooltip: gettext("Approximate Current Annual Percentage Yield. If you see N/A, please wait for a few blocks (APY cannot be calculated at the very beginning of a staking epoch).") %>
+      </div>
+    <% end %>
     <div class="col-2">
       <%= render BlockScoutWeb.StakesView, "_stakes_th.html", title: gettext("Delegators"), tooltip: gettext("The number of delegators providing stake to the pool. Click on the number to see more details.") %>
     </div>
-    <div class="col-3"></div>
+    <div class="<%= if @pools_type == :validator do %>col-2<% else %>col-3<% end %>"></div>
   </div>
   <div class="stakes-table-body">
     <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
