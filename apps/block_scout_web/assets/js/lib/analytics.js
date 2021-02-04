@@ -273,10 +273,13 @@ function initAnalytics () {
 (function () {
   // instantiate store
   store = createStore(reducer)
+  connectElements({ store, elements })
   if (!store.getState().userID) {
     store.dispatch({ type: 'SET_USER_ID' })
   }
-  connectElements({ store, elements })
+  if (store.getState().cookiesAccepted) {
+    initAnalytics()
+  }
 
   $('[data-selector="decline-cookies"]').on('click', function () {
     store.dispatch({ type: 'DECLINE_COOKIES' })
