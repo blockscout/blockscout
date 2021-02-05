@@ -1,0 +1,16 @@
+<section class="container">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title">Faucet</h2>
+            <p class="card-subtitle">Coins are distributed in increments of <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("COIN") %>. You can request once per day per address.</p>
+            <form action="/faucet" method="POST" id="faucetForm">
+                <div class="mb-4">
+                    <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
+                    <input type="text" id="receiver" class="form-control form-control-sm address-input-sm" name="receiver" placeholder="receiver address" style="width: 400px;" />
+                </div>
+                <button type="submit" class="button button-primary" id="requestCoins" class="request-coins-button">Request <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("COIN") %></button>
+            </form>
+        </div>
+    </div>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/faucet.js") %>"></script>
+</section>

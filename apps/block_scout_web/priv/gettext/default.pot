@@ -2694,3 +2694,8 @@ msgstr ""
 #: lib/block_scout_web/templates/stakes/_table.html.eex:39
 msgid "Approximate Current Annual Percentage Yield. If you see N/A, please wait for a few blocks (APY cannot be calculated at the very beginning of a staking epoch)."
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:161
+msgid "Faucet"
+msgstr ""
