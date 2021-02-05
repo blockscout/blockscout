@@ -14,4 +14,4 @@ config :logger, :error,
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
 # System.get_env("ETHEREUM_JSONRPC_HTTP_URL")
-config :ethereumex, url: "https://sokol.poa.network"
+config :ethereumex, url: System.get_env("FAUCET_JSONRPC_HTTP_URL")

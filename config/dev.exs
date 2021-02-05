@@ -10,4 +10,4 @@ config :logger, :ecto,
 config :logger, :error, path: Path.absname("logs/dev/error.log")
 
 # System.get_env("ETHEREUM_JSONRPC_HTTP_URL")
-config :ethereumex, url: "https://sokol.poa.network"
+config :ethereumex, url: System.get_env("FAUCET_JSONRPC_HTTP_URL")
