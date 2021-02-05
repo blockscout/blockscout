@@ -5092,6 +5092,22 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  def staking_pool_snapshotted_delegator_data_for_apy do
+    query =
+      from(
+        d in StakingPoolsDelegator,
+        select: %{
+          :staking_address_hash => fragment("DISTINCT ON (?) ?", d.staking_address_hash, d.staking_address_hash),
+          :snapshotted_reward_ratio => d.snapshotted_reward_ratio,
+          :snapshotted_stake_amount => d.snapshotted_stake_amount
+        },
+        where: d.staking_address_hash != d.address_hash and d.snapshotted_stake_amount > 0
+      )
+
+    query
+    |> Repo.all()
+  end
+
   def staking_pool_snapshotted_inactive_delegators_count(staking_address_hash) do
     query =
       from(
