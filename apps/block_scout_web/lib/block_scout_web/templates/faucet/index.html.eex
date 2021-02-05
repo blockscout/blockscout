@@ -8,9 +8,11 @@
                     <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
                     <input type="text" id="receiver" class="form-control form-control-sm address-input-sm" name="receiver" placeholder="receiver address" style="width: 400px;" />
                 </div>
+                <div class="h-captcha mb-4" data-sitekey="<%= System.get_env("FAUCET_H_CAPTCHA_CLIENT_KEY") %>"></div>
                 <button type="submit" class="button button-primary" id="requestCoins" class="request-coins-button">Request <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("COIN") %></button>
             </form>
         </div>
     </div>
     <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/faucet.js") %>"></script>
+    <script src="https://hcaptcha.com/1/api.js" async defer></script>
 </section>
