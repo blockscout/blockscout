@@ -100,7 +100,11 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def values_with_type(value, "string", _components), do: render_type_value("string", value)
 
+  def values_with_type(value, :string, _components), do: render_type_value("string", value)
+
   def values_with_type(value, "bool", _components), do: render_type_value("bool", to_string(value))
+
+  def values_with_type(value, :bool, _components), do: render_type_value("bool", to_string(value))
 
   def values_with_type(value, type, _components) do
     if String.starts_with?(type, "uint") do
@@ -166,7 +170,11 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def values_only(value, "string", _components), do: value
 
+  def values_only(value, :string, _components), do: value
+
   def values_only(value, "bool", _components), do: to_string(value)
+
+  def values_only(value, :bool, _components), do: to_string(value)
 
   def values_only(value, type, _components) do
     if String.starts_with?(type, "uint") do

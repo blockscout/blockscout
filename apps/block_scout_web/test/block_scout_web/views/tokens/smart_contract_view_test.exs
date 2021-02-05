@@ -280,10 +280,22 @@ defmodule BlockScoutWeb.SmartContractViewTest do
       assert SmartContractView.values_only(value, "string", nil) == "POA"
     end
 
+    test "returns the value when the type is :string" do
+      value = "POA"
+
+      assert SmartContractView.values_only(value, :string, nil) == "POA"
+    end
+
     test "returns the value when the type is boolean" do
       value = "true"
 
       assert SmartContractView.values_only(value, "bool", nil) == "true"
+    end
+
+    test "returns the value when the type is :bool" do
+      value = "true"
+
+      assert SmartContractView.values_only(value, :bool, nil) == "true"
     end
 
     test "returns the value when the type is bytes4" do
