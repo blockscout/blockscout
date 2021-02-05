@@ -130,6 +130,8 @@ function getEntityId () {
 function getNetwork () {
   const host = window.location.host
   switch (true) {
+    case host.includes('localhost'):
+      return 'mainnet-dev'
     case host === 'explorer.celo.org':
       return 'mainnet'
     case host.includes('alfajores'):
@@ -189,12 +191,12 @@ function trackEvents () {
     })
 
     // Search submit
-    $('[data-selector="search-form"]').on('submit', function (e) {
+    $('[data-selector="search-form"]').on('submit', function () {
       const path = window.location.pathname
       analytics.track('search', {
         targetName: 'search',
         page: getPageName(path),
-        query: getEntityId(path),
+        query: $('[data-test="search_input"]')[0].value,
         ...getCommonData()
       })
     })
