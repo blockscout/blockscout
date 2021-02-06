@@ -4,7 +4,7 @@ defmodule Explorer.Faucet do
   """
   alias ETH
   alias Explorer.Faucet.FaucetRequest
-  alias Explorer.Repo
+  alias Explorer.{Chain, Repo}
 
   import Ecto.Query, only: [from: 2]
   import EthereumJSONRPC, only: [json_rpc: 2, request: 1]
@@ -21,8 +21,10 @@ defmodule Explorer.Faucet do
   end
 
   def insert_faucet_request_record(address_hash) do
-    changeset = FaucetRequest.changeset(%FaucetRequest{}, %{receiver_hash: address_hash})
-    Repo.insert(changeset)
+    with {:ok, _} <- Chain.find_or_insert_address_from_hash(address_hash, [], false) do
+      changeset = FaucetRequest.changeset(%FaucetRequest{}, %{receiver_hash: address_hash})
+      Repo.insert(changeset)
+    end
   end
 
   def send_coins_from_faucet(address_hash_str) do
@@ -35,7 +37,8 @@ defmodule Explorer.Faucet do
     end
   end
 
-  defp eth_get_transaction_count_request(id, address_hash_str) do
+  defp eth_get_transaction_count_request(id) do
+    address_hash_str = Application.get_env(:block_scout_web, :faucet)[:address]
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     req =
@@ -50,7 +53,7 @@ defmodule Explorer.Faucet do
   end
 
   defp eth_sign_transaction_request(id, address_hash_str) do
-    res = eth_get_transaction_count_request(id, address_hash_str)
+    res = eth_get_transaction_count_request(id)
 
     with {:ok, nonce_hex} <- res do
       value_to_send_str = Application.get_env(:block_scout_web, :faucet)[:value]
