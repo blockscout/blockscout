@@ -32,5 +32,6 @@ defmodule Explorer.Faucet.FaucetRequest do
     faucet_request
     |> cast(params, @required_attrs)
     |> validate_required(@required_attrs)
+    |> foreign_key_constraint(:receiver_hash)
   end
 end

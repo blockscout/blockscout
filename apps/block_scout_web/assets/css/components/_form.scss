@@ -112,3 +112,9 @@ $form-control-border-color-active: $primary !default;
     }
   }
 }
+
+.faucet-receiver-input {
+  @include media-breakpoint-up(md) {
+    width: 400px;
+  }
+}
