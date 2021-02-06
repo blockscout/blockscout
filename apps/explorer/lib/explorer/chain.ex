@@ -4601,7 +4601,7 @@ defmodule Explorer.Chain do
   end
 
   @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
-  def fetch_token_holders_from_token_hash(contract_address_hash, options) do
+  def fetch_token_holders_from_token_hash(contract_address_hash, options \\ []) do
     contract_address_hash
     |> CurrentTokenBalance.token_holders_ordered_by_value(options)
     |> Repo.all()
@@ -4978,6 +4978,22 @@ defmodule Explorer.Chain do
           d.staking_address_hash == ^staking_address_hash and
             (d.is_active == true or (^show_snapshotted_data and d.snapshotted_stake_amount > 0 and d.is_active != true)),
         order_by: [desc: d.stake_amount]
+      )
+
+    query
+    |> Repo.all()
+  end
+
+  def staking_pool_snapshotted_delegator_data_for_apy do
+    query =
+      from(
+        d in StakingPoolsDelegator,
+        select: %{
+          :staking_address_hash => fragment("DISTINCT ON (?) ?", d.staking_address_hash, d.staking_address_hash),
+          :snapshotted_reward_ratio => d.snapshotted_reward_ratio,
+          :snapshotted_stake_amount => d.snapshotted_stake_amount
+        },
+        where: d.staking_address_hash != d.address_hash and d.snapshotted_stake_amount > 0
       )
 
     query
