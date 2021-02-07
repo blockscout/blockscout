@@ -203,7 +203,8 @@ const appJs =
       new webpack.DefinePlugin({
         'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
         'process.env.COIN': JSON.stringify(process.env.COIN),
-        'process.env.FAUCET_VALUE': JSON.stringify(process.env.FAUCET_VALUE)
+        'process.env.FAUCET_VALUE': JSON.stringify(process.env.FAUCET_VALUE),
+        'process.env.FAUCET_COIN': JSON.stringify(process.env.FAUCET_COIN)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',
