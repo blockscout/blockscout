@@ -34,7 +34,18 @@ defmodule BlockScoutWeb.FaucetController do
           json(conn, %{success: false, message: "Internal server error"})
       end
     else
-      json(conn, %{success: false, message: "Too fast. Already requested in the last 24hrs"})
+      dur_sec = DateTime.diff(last_requested, yesterday, :second)
+      dur_min_full = trunc(dur_sec / 60)
+      dur_hrs = trunc(dur_min_full / 60)
+      dur_min = dur_min_full - dur_hrs * 60
+
+      json(conn, %{
+        success: false,
+        message:
+          "You requested #{System.get_env("FAUCET_VALUE")} #{System.get_env("FAUCET_COIN")} within the last 24 hours. Next claim is in #{
+            dur_hrs
+          }:#{dur_min}"
+      })
     end
   end
 
