@@ -48,7 +48,7 @@ $(function () {
                 $('#receiver').val('')
                 Swal.fire({
                   title: 'Success',
-                  html: `${process.env.FAUCET_VALUE} ${process.env.COIN} have been successfully transferred to <a href="./tx/${data.transactionHash}" target="blank">${receiver}</a>`,
+                  html: `${process.env.FAUCET_VALUE} ${process.env.FAUCET_COIN} have been successfully transferred to <a href="./tx/${data.transactionHash}" target="blank">${receiver}</a>`,
                   icon: 'success'
                 })
               }
