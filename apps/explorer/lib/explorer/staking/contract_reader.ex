@@ -342,17 +342,17 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
-  def get_staker_pools_request(staker, offset, length) do
+  def get_delegator_pools_request(delegator, offset, length) do
     [
-      # 9dc77988 = keccak256(getStakerPools(address,uint256,uint256))
-      pools: {:staking, "9dc77988", [staker, offset, length]}
+      # 2ebfaf4e = keccak256(getDelegatorPools(address,uint256,uint256))
+      pools: {:staking, "2ebfaf4e", [delegator, offset, length]}
     ]
   end
 
-  def get_staker_pools_length_request(staker) do
+  def get_delegator_pools_length_request(delegator) do
     [
-      # a6a3a256 = keccak256(getStakerPoolsLength(address))
-      length: {:staking, "a6a3a256", [staker]}
+      # 8ba31a1c = keccak256(getDelegatorPoolsLength(address))
+      length: {:staking, "8ba31a1c", [delegator]}
     ]
   end
 
