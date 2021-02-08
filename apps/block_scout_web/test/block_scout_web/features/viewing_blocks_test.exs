@@ -94,6 +94,7 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
 
       session
       |> BlockPage.visit_page(block)
+      |> BlockPage.accept_cookies_click()
       |> assert_has(BlockPage.token_transfers(transaction, count: 1))
       |> click(BlockPage.token_transfers_expansion(transaction))
       |> assert_has(BlockPage.token_transfers(transaction, count: 3))

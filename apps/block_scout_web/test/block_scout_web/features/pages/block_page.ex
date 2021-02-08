@@ -47,4 +47,8 @@ defmodule BlockScoutWeb.BlockPage do
   def visit_page(session, %Block{hash: hash}) do
     visit(session, "/blocks/#{hash}")
   end
+
+  def accept_cookies_click(session) do
+    click(session, css("[data-selector='accept-cookies']"))
+  end
 end

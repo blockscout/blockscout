@@ -22,4 +22,8 @@ defmodule BlockScoutWeb.TransactionPage do
   def visit_page(session, %Transaction{hash: transaction_hash}) do
     visit(session, "/tx/#{transaction_hash}")
   end
+
+  def accept_cookies_click(session) do
+    click(session, css("[data-selector='accept-cookies']"))
+  end
 end
