@@ -123,6 +123,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
     test "can navigate to transaction show from list page", %{session: session, transaction: transaction} do
       session
       |> TransactionListPage.visit_page()
+      |> TransactionPage.accept_cookies_click()
       |> TransactionListPage.click_transaction(transaction)
       |> assert_has(TransactionPage.detail_hash(transaction))
     end
@@ -136,6 +137,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
     test "can view a transaction's logs", %{session: session, transaction: transaction} do
       session
       |> TransactionPage.visit_page(transaction)
+      |> TransactionPage.accept_cookies_click()
       |> TransactionPage.click_logs()
       |> assert_has(TransactionLogsPage.logs(count: 1))
     end
@@ -147,6 +149,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
     } do
       session
       |> TransactionLogsPage.visit_page(transaction)
+      |> TransactionPage.accept_cookies_click()
       |> TransactionLogsPage.click_address(lincoln)
       |> assert_has(AddressPage.detail_hash(lincoln))
     end

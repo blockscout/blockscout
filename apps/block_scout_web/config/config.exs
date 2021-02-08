@@ -10,6 +10,7 @@ config :block_scout_web,
   namespace: BlockScoutWeb,
   ecto_repos: [Explorer.Repo],
   version: System.get_env("BLOCKSCOUT_VERSION"),
+  segment_key: System.get_env("SEGMENT_KEY"),
   release_link: System.get_env("RELEASE_LINK"),
   decompiled_smart_contract_token: System.get_env("DECOMPILED_SMART_CONTRACT_TOKEN"),
   show_percentage: if(System.get_env("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true") == "false", do: false, else: true)

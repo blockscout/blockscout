@@ -2,7 +2,6 @@
 // The ExtractTextPlugin is used to separate it out into
 // its own CSS file.
 import '../css/app.scss'
-
 // webpack automatically concatenates all files in your
 // watched paths. Those paths can be configured as
 // endpoints in "webpack.config.js".
@@ -19,7 +18,6 @@ import 'bootstrap'
 // paths "./socket" or full ones "web/static/js/socket".
 
 import './locale'
-
 import './pages/address'
 import './pages/address/coin_balances'
 import './pages/address/transactions'
@@ -37,9 +35,7 @@ import './pages/layout'
 import './pages/verification_form'
 import './pages/token_counters'
 import './pages/dark-mode-switcher'
-
 import './pages/admin/tasks.js'
-
 import './lib/clipboard_buttons'
 import './lib/currency'
 import './lib/from_now'
@@ -61,3 +57,4 @@ import './lib/modals'
 import './lib/try_api'
 import './lib/try_eth_api'
 import './lib/card_tabs'
+import './lib/analytics'

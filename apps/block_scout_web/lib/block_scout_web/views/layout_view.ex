@@ -100,6 +100,8 @@ defmodule BlockScoutWeb.LayoutView do
     BlockScoutWeb.version()
   end
 
+  def segment_key, do: BlockScoutWeb.segment_key()
+
   def release_link(version) do
     release_link_env_var = Application.get_env(:block_scout_web, :release_link)
 

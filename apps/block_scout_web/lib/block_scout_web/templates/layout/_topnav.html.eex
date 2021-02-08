@@ -126,9 +126,9 @@
       </button>
       <!-- Search navbar -->
       <%= if Application.get_env(:block_scout_web, BlockScoutWeb.WebRouter)[:enabled] do %>
-        <div class="search-form d-lg-flex d-inline-block">
+        <div data-selector="search-form" class="search-form d-lg-flex d-inline-block">
           <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
-          <div class="input-group" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
+          <div class="input-group" data-selector="search-bar" title='<%= gettext("Search by address, token symbol name, transaction hash, or block number") %>'>
                 <%= awesomplete(f, :q,
                     [
                     class: "form-control me auto",

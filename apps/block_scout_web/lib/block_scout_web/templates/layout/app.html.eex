@@ -31,11 +31,13 @@
         'Price': '<%= gettext("Price") %>',
         'Ether': '<%= gettext("Ether") %>'
       }
+      // make analytics key variable accessible from js files
+      window.ANALYTICS_KEY = '<%= segment_key() %>'
     </script>
   </head>
 
   <body>
-    <script>
+    <script type="module">
       function applyDarkMode() {
         if (localStorage.getItem("current-color-mode") === "dark") {
           document.body.className += " " + "dark-theme-applied";
@@ -65,6 +67,20 @@
           gettext("this quick feedback survey."),
           to: "https://forms.gle/7ob72NzoC1dbvKuB7"
         ) %>
+      </div>
+
+      <div class="cookie-banner" hidden data-selector="cookie-banner">
+        <div class="cookie-banner-text text-center p-4" data-selector="cookies-banner">
+          <%= gettext("We use cookies on our site to allow tracking of pages and links to help us improve your experience. By selecting Agree, you consent to our use of cookies in accordance with our ") %>
+          <%= link(
+            gettext("Privacy Policy."),
+            to: "https://celo.org/privacy"
+          ) %>
+          <div class="mt-3">
+            <button class="btn btn-disagree d-inline mr-4" data-selector="decline-cookies">Disagree</button>
+            <button class="btn btn-agree d-inline" data-selector="accept-cookies">Agree</button>
+          </div>
+        </div>
       </div>
       <%= render BlockScoutWeb.LayoutView, "_topnav.html", assigns %>
 

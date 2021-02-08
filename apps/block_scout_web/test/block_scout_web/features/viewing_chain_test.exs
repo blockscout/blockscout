@@ -144,6 +144,7 @@ defmodule BlockScoutWeb.ViewingChainTest do
 
       session
       |> ChainPage.visit_page()
+      |> ChainPage.accept_cookies_click()
       |> assert_has(ChainPage.token_transfers(transaction, count: 1))
       |> click(ChainPage.token_transfers_expansion(transaction))
       |> assert_has(ChainPage.token_transfers(transaction, count: 3))
