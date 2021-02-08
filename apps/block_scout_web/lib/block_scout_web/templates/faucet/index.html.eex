@@ -9,6 +9,8 @@
                     <input type="text" id="receiver" class="form-control form-control-sm address-input-sm faucet-receiver-input" name="receiver" placeholder="receiver address" />
                 </div>
                 <div class="h-captcha mb-4" data-sitekey="<%= System.get_env("FAUCET_H_CAPTCHA_CLIENT_KEY") %>"></div>
+                <input type="hidden" id="faucetValue" value="<%= System.get_env("FAUCET_VALUE") %>"/>
+                <input type="hidden" id="faucetCoin" value="<%= System.get_env("FAUCET_COIN") %>"</>
                 <button type="submit" class="button button-primary" id="requestCoins" class="request-coins-button">Request <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("FAUCET_COIN") %></button>
             </form>
         </div>
