@@ -206,7 +206,8 @@ defmodule Indexer.Block.Fetcher do
            attestations_requested: attestations_requested,
            exchange_rates: exchange_rates,
            account_names: account_names,
-           voter_rewards: celo_voter_rewards
+           voter_rewards: celo_voter_rewards,
+           wallets: celo_wallets
          } = CeloAccounts.parse(logs, oracle_address),
          market_history =
            exchange_rates
@@ -242,6 +243,7 @@ defmodule Indexer.Block.Fetcher do
              mint_transfers: mint_transfers,
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
+             wallets: celo_wallets,
              # The address of the Gold token has to be added to the addresses table
              gold_token:
                if gold_token_enabled do
@@ -291,7 +293,8 @@ defmodule Indexer.Block.Fetcher do
                token_transfers: %{params: token_transfers},
                tokens: %{params: tokens},
                transactions: %{params: transactions_with_receipts},
-               exchange_rate: %{params: exchange_rates}
+               exchange_rate: %{params: exchange_rates},
+               wallets: %{params: celo_wallets}
              }
            ) do
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}

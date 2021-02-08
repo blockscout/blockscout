@@ -324,6 +324,9 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:input, :string)
     field(:timestamp, :datetime)
     field(:comment, :string)
+
+    field(:to_account_hash, :address_hash)
+    field(:from_account_hash, :address_hash)
   end
 
   @desc """

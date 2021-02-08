@@ -166,6 +166,9 @@ defmodule Explorer.Chain.CeloAccount do
   def account_name_event,
     do: @account_name_set
 
+  def account_wallet_address_set_event,
+    do: @account_wallet_address_set
+
   schema "celo_account" do
     field(:account_type, :string)
     field(:name, :string)
