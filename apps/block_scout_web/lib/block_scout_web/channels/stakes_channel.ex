@@ -510,11 +510,12 @@ defmodule BlockScoutWeb.StakesChannel do
         end
 
       # if `staker` is a pool, prepend its address to the `pools` array
-      pools = if socket.assigns[:mining_address] != nil do
-        [staker | pools]
-      else
-        pools
-      end
+      pools =
+        if socket.assigns[:mining_address] != nil do
+          [staker | pools]
+        else
+          pools
+        end
 
       pools_amounts =
         Enum.map(pools, fn pool_staking_address ->
