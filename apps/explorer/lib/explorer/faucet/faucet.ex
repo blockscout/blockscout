@@ -121,6 +121,13 @@ defmodule Explorer.Faucet do
   defp eth_send_raw_transaction_request(id, data) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
+    data =
+      if String.starts_with?(data, "0x") do
+        data
+      else
+        "0x" <> data
+      end
+
     req =
       request(%{
         id: id,
