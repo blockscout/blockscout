@@ -136,6 +136,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
     test "can view a transaction's logs", %{session: session, transaction: transaction} do
       session
       |> TransactionPage.visit_page(transaction)
+      |> TransactionPage.accept_cookies_click()
       |> TransactionPage.click_logs()
       |> assert_has(TransactionLogsPage.logs(count: 1))
     end
