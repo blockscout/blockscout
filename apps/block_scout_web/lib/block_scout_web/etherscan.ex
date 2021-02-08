@@ -289,6 +289,12 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
+  @stats_totaltransactions_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => "2387845"
+  }
+
   @block_getblockreward_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -1909,6 +1915,32 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @stats_totaltransactions_action %{
+    name: "totaltransactions",
+    description: "Get estimated total number of transactions.",
+    required_params: [],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@stats_totaltransactions_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "integer",
+              description: "The estimated total number of transactions",
+              example: ~s("2387845")
+            }
+          }
+        }
+      }
+    ]
+  }
+
   @block_eth_block_number_action %{
     name: "eth_block_number",
     description: "Mimics Ethereum JSON RPC's eth_blockNumber. Returns the lastest block number",
@@ -2405,7 +2437,8 @@ defmodule BlockScoutWeb.Etherscan do
       @stats_ethsupplyexchange_action,
       @stats_ethsupply_action,
       @stats_coinsupply_action,
-      @stats_ethprice_action
+      @stats_ethprice_action,
+      @stats_totaltransactions_action
     ]
   }
 

@@ -58,6 +58,11 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
     render(conn, "ethprice.json", rates: rates)
   end
 
+  def totaltransactions(conn, _params) do
+    transaction_estimated_count = Chain.transaction_estimated_count()
+    render(conn, "totaltransactions.json", count: transaction_estimated_count)
+  end
+
   defp fetch_contractaddress(params) do
     {:contractaddress_param, Map.fetch(params, "contractaddress")}
   end
