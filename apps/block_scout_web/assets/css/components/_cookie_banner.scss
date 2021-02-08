@@ -4,7 +4,7 @@
   z-index: 2;
   width: 100%;
   background: $celo-blue;
-  color: #000;
+  color: #fff;
   font-size: medium;
 
   .cookie-banner-text {
@@ -18,12 +18,12 @@
   }
 
   .btn-disagree {
-    border: 1px solid rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     color: inherit;
   }
 
   .btn-agree {
-    border: 1px solid #000;
+    border: 1px solid #fff;
     color: inherit;
   }
 }
