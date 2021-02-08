@@ -9,9 +9,8 @@ steps:
            "--build-arg", "DISABLE_WEBAPP=true",
            "-t", "gcr.io/$PROJECT_ID/blockscout:api-$COMMIT_SHA", "."]
     waitFor: ["-"]
-timeout: 1200s
 images:
   - "gcr.io/$PROJECT_ID/blockscout:$COMMIT_SHA"
   - "gcr.io/$PROJECT_ID/blockscout:api-$COMMIT_SHA"
 
-timeout: 1800s
+timeout: 3600s
