@@ -32,7 +32,8 @@ defmodule Indexer.Transform.CeloAccounts do
         get_addresses(logs, [CeloAccount.attestation_completed_event()], fn a -> a.fourth_topic end),
       attestations_requested:
         get_addresses(logs, [CeloAccount.attestation_issuer_selected_event()], fn a -> a.fourth_topic end),
-      exchange_rates: get_rates(logs, oracle_address)
+      exchange_rates: get_rates(logs, oracle_address),
+      wallets: get_wallets(logs)
     }
   end
 
@@ -75,6 +76,12 @@ defmodule Indexer.Transform.CeloAccounts do
     |> Enum.reduce([], fn log, accounts -> do_parse_rewards(log, accounts) end)
   end
 
+  def get_wallets(logs) do
+    logs
+    |> Enum.filter(fn log -> log.first_topic == CeloAccount.account_wallet_address_set_event() end)
+    |> Enum.reduce([], fn log, wallets -> do_parse_wallets(log, wallets) end)
+  end
+
   def get_voters(logs, topics) do
     logs
     |> Enum.filter(fn log -> Enum.member?(topics, log.first_topic) end)
@@ -110,6 +117,14 @@ defmodule Indexer.Transform.CeloAccounts do
   rescue
     _ in [FunctionClauseError, MatchError] ->
       Logger.error(fn -> "Unknown group voter reward event format: #{inspect(log)}" end)
+  end
+
+  defp do_parse_wallets(log, wallets) do
+    wallet = parse_wallet_params(log)
+    [wallet | wallets]
+  rescue
+    _ in [FunctionClauseError, MatchError] ->
+      Logger.error(fn -> "Unknown account wallet address set event format: #{inspect(log)}" end)
   end
 
   defp do_parse_voters(log, accounts) do
@@ -174,6 +189,17 @@ defmodule Indexer.Transform.CeloAccounts do
       reward: value,
       log_index: log.index,
       block_hash: log.block_hash,
+      block_number: log.block_number
+    }
+  end
+
+  defp parse_wallet_params(log) do
+    account = truncate_address_hash(log.second_topic)
+    wallet = truncate_address_hash(log.data)
+
+    %{
+      account_address_hash: account,
+      wallet_address_hash: wallet,
       block_number: log.block_number
     }
   end

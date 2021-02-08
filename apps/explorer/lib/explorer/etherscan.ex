@@ -8,7 +8,7 @@ defmodule Explorer.Etherscan do
   alias Explorer.Etherscan.Logs
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.TokenBalance
-  alias Explorer.Chain.{Block, CeloParams, Hash, InternalTransaction, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Block, CeloParams, Hash, InternalTransaction, Log, TokenTransfer, Transaction}
 
   @default_options %{
     order_by_direction: :desc,
@@ -228,6 +228,57 @@ defmodule Explorer.Etherscan do
       _ ->
         []
     end
+  end
+
+  @doc """
+  Gets a list of token transfers within a given block range.
+
+  """
+  @spec list_token_transfers(map()) :: [map()]
+  def list_token_transfers(params) do
+    query =
+      from(
+        b in Block,
+        left_join: t in Transaction,
+        on: t.block_number == b.number,
+        left_join: tt in TokenTransfer,
+        on: tt.transaction_hash == t.hash,
+        left_join: l in Log,
+        on: l.transaction_hash == t.hash and l.address_hash == ^params.address_hash,
+        where:
+          b.number >= ^params.from_block and b.number <= ^params.to_block and
+            tt.token_contract_address_hash == ^params.address_hash,
+        order_by: [
+          {:asc, tt.block_number},
+          {:asc, t.index}
+        ],
+        select: %{
+          token_contract_address_hash: tt.token_contract_address_hash,
+          transaction_hash: tt.transaction_hash,
+          from_address_hash: tt.from_address_hash,
+          to_address_hash: tt.to_address_hash,
+          amount: tt.amount,
+          block_timestamp: b.timestamp,
+          transaction_index: t.index,
+          log_index: l.index,
+          data: l.data,
+          first_topic: l.first_topic,
+          second_topic: l.second_topic,
+          third_topic: l.third_topic,
+          fourth_topic: l.fourth_topic
+        },
+        select_merge:
+          map(t, [
+            :block_number,
+            :gas_price,
+            :gas_currency_hash,
+            :gas_fee_recipient_hash,
+            :gas_used,
+            :gateway_fee
+          ])
+      )
+
+    Repo.all(query)
   end
 
   @doc """
