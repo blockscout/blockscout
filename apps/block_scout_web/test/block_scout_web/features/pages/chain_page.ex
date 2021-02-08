@@ -45,4 +45,14 @@ defmodule BlockScoutWeb.ChainPage do
   def visit_page(session) do
     visit(session, "/")
   end
+
+  def accept_cookies(session) do
+    session
+    |> set_cookie("cookiesAccepted", "true")
+  end
+
+  def accept_cookies_click(session) do
+    session
+    |> click(css("[data-selector='accept-cookies']"))
+  end
 end
