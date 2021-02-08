@@ -46,9 +46,11 @@ $(function () {
                 })
               } else {
                 $('#receiver').val('')
+                const faucetValue = $('#faucetValue').val()
+                const faucetCoin = $('#faucetCoin').val()
                 Swal.fire({
                   title: 'Success',
-                  html: `${process.env.FAUCET_VALUE} ${process.env.FAUCET_COIN} have been successfully transferred to <a href="./tx/${data.transactionHash}" target="blank">${receiver}</a>`,
+                  html: `${faucetValue} ${faucetCoin} have been successfully transferred to <a href="./tx/${data.transactionHash}" target="blank">${receiver}</a>`,
                   icon: 'success'
                 })
               }
