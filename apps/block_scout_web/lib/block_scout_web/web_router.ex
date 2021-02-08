@@ -288,6 +288,12 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/token-counters", Tokens.TokenController, :token_counters)
 
+    get("/faucet", FaucetController, :index)
+
+    post("/faucet", FaucetController, :request)
+
+    post("/hcaptcha", Faucet.CaptchaController, :index)
+
     get("/*path", PageNotFoundController, :index)
   end
 end

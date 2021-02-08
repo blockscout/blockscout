@@ -1236,13 +1236,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:254
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:260
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:204
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1957,7 +1957,7 @@ msgid "Copy Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:208
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:214
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 
@@ -2666,7 +2666,7 @@ msgid "Staking"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:247
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:253
 msgid "Press / and focus will be moved to the search field"
 msgstr ""
 
@@ -2743,4 +2743,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:39
 msgid "Approximate Current Annual Percentage Yield. If you see N/A, please wait for a few blocks (APY cannot be calculated at the very beginning of a staking epoch)."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:161
+msgid "Faucet"
 msgstr ""

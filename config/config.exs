@@ -55,6 +55,8 @@ config :logger, :error,
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
        block_number step count error_count shrunk import_id transaction_id)a
 
+config :ethereumex, url: System.get_env("FAUCET_JSONRPC_HTTP_URL")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

@@ -125,7 +125,8 @@ const appJs =
       'async-listing-load': './js/lib/async_listing_load',
       'non-critical': './css/non-critical.scss',
       'export-csv': './css/export-csv.scss',
-      'datepicker': './js/lib/datepicker.js'
+      'datepicker': './js/lib/datepicker.js',
+      'faucet': './js/pages/faucet.js'
     },
     output: {
       filename: '[name].js',
@@ -201,7 +202,10 @@ const appJs =
       ),
       new ContextReplacementPlugin(/moment[\/\\]locale$/, /en/),
       new webpack.DefinePlugin({
-        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT)
+        'process.env.SOCKET_ROOT': JSON.stringify(process.env.SOCKET_ROOT),
+        'process.env.COIN': JSON.stringify(process.env.COIN),
+        'process.env.FAUCET_VALUE': JSON.stringify(process.env.FAUCET_VALUE),
+        'process.env.FAUCET_COIN': JSON.stringify(process.env.FAUCET_COIN)
       }),
       new webpack.ProvidePlugin({
         process: 'process/browser',

@@ -78,6 +78,8 @@ defmodule Explorer.Mixfile do
       {:ecto, "~> 3.3", override: true},
       # Storing blockchain data and derived data in PostgreSQL.
       {:ecto_sql, "~> 3.3"},
+      # {:eth, "~> 0.6.1"},
+      {:eth, git: "https://github.com/blockscout/eth.git", branch: "master"},
       # JSONRPC access to query smart contracts
       {:ethereum_jsonrpc, in_umbrella: true},
       # Data factory for testing
@@ -93,7 +95,7 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},
-      {:poison, "~> 3.1"},
+      {:poison, "~> 4.0.1"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
