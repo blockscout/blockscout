@@ -1133,7 +1133,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:65
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:178
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:181
 #: lib/block_scout_web/views/transaction_view.ex:261
 #: lib/block_scout_web/views/transaction_view.ex:295
 msgid "Pending"
@@ -2043,11 +2043,6 @@ msgid "<p>To become a candidate, your staking address must be funded with %{toke
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:11
-msgid "Active Pools"
-msgstr ""
-
-#, elixir-format
 #:
 #: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:24
 msgid "All pool participant addresses. The top address belongs to the %{pool_type}."
@@ -2202,13 +2197,8 @@ msgid "Inactive Pool Addresses. Current validator pools are specified by a check
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:18
-msgid "Inactive Pools"
-msgstr ""
-
-#, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:120
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:122
 msgid "It's me!"
 msgstr ""
 
@@ -2224,7 +2214,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:122
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:124
 msgid "ME"
 msgstr ""
 
@@ -2434,7 +2424,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:100
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:102
 msgid "The rest addresses are delegators of its pool."
 msgstr ""
 
@@ -2456,7 +2446,7 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:97
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:99
 msgid "This is a %{pool_type}."
 msgstr ""
 
@@ -2507,11 +2497,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:32
 msgid "Validator pools can be banned for misbehavior (such as not revealing secret numbers). Validator and delegator stake contained in a banned pool cannot be withdrawn until the ban is over."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_tabs.html.eex:4
-msgid "Validators"
 msgstr ""
 
 #, elixir-format
@@ -2739,23 +2724,23 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:75
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:76
 msgid "APY & Predicted Reward"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/stakes/_rows.html.eex:34
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:183
+msgid "N/A"
+msgstr ""
+
+#, elixir-format
 #:
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:76
-msgid "Approximate Annual Percentage Yield calculated for the current moment. If you see N/A, please, reopen this popup in a few blocks (as APY cannot be calculated at the very start of staking epoch). Predicted Reward is amount which is going to be accrued at the end of staking epoch."
+#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:77
+msgid "Approximate Current Annual Percentage Yield. If you see N/A, please reopen the popup in a few blocks (APY cannot be calculated at the very beginning of a staking epoch). Predicted Reward is the amount of %{symbol} a participant will receive for staking and can claim once the current epoch ends."
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/stakes/_table.html.eex:39
-msgid "Approximate Annual Percentage Yield calculated for the current moment. If you see N/A, please, wait for a few blocks (as APY cannot be calculated at the very start of staking epoch)."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_rows.html.eex:34
-#: lib/block_scout_web/templates/stakes/_stakes_modal_delegators_list.html.eex:180
-msgid "N/A"
+msgid "Approximate Current Annual Percentage Yield. If you see N/A, please wait for a few blocks (APY cannot be calculated at the very beginning of a staking epoch)."
 msgstr ""
