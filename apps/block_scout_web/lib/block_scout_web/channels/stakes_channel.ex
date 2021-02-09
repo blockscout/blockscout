@@ -483,21 +483,21 @@ defmodule BlockScoutWeb.StakesChannel do
 
       responses =
         staker
-        |> ContractReader.get_staker_pools_length_request()
+        |> ContractReader.get_delegator_pools_length_request()
         |> ContractReader.perform_requests(%{staking: staking_contract.address}, staking_contract.abi)
 
-      staker_pools_length = responses[:length]
+      delegator_pools_length = responses[:length]
 
       chunk_size = 100
 
       pools =
-        if staker_pools_length > 0 do
-          chunks = 0..trunc(ceil(staker_pools_length / chunk_size) - 1)
+        if delegator_pools_length > 0 do
+          chunks = 0..trunc(ceil(delegator_pools_length / chunk_size) - 1)
 
           Enum.reduce(chunks, [], fn i, acc ->
             responses =
               staker
-              |> ContractReader.get_staker_pools_request(i * chunk_size, chunk_size)
+              |> ContractReader.get_delegator_pools_request(i * chunk_size, chunk_size)
               |> ContractReader.perform_requests(%{staking: staking_contract.address}, staking_contract.abi)
 
             acc ++
@@ -507,6 +507,14 @@ defmodule BlockScoutWeb.StakesChannel do
           end)
         else
           []
+        end
+
+      # if `staker` is a pool, prepend its address to the `pools` array
+      pools =
+        if socket.assigns[:mining_address] != nil do
+          [staker | pools]
+        else
+          pools
         end
 
       pools_amounts =
