@@ -13,7 +13,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
   alias Explorer.Staking.ContractReader
 
   def do_snapshotting(
-        %{contracts: contracts, abi: abi, ets_table_name: ets_table_name},
+        %{contracts: contracts, abi: abi, ets_table_name: ets_table_name, net_version: net_version},
         epoch_number,
         cached_pool_staking_responses,
         pools_mining_addresses,
@@ -41,7 +41,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
             Map.merge(
               resp,
               ContractReader.perform_requests(
-                snapshotted_pool_amounts_requests(staking_address_hash, block_number),
+                snapshotted_pool_amounts_requests(staking_address_hash, block_number, net_version),
                 contracts,
                 abi
               )
@@ -50,7 +50,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
           :error ->
             ContractReader.perform_requests(
               ContractReader.active_delegators_request(staking_address_hash, block_number) ++
-                snapshotted_pool_amounts_requests(staking_address_hash, block_number),
+                snapshotted_pool_amounts_requests(staking_address_hash, block_number, net_version),
               contracts,
               abi
             )
@@ -72,7 +72,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
       stakers
       |> Enum.map(fn {pool_staking_address, staker_address} ->
         ContractReader.perform_requests(
-          snapshotted_staker_amount_request(pool_staking_address, staker_address, block_number),
+          snapshotted_staker_amount_request(pool_staking_address, staker_address, block_number, net_version),
           contracts,
           abi
         )
@@ -201,21 +201,24 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
   defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
-  defp snapshotted_pool_amounts_requests(pool_staking_address, block_number) do
+  defp snapshotted_pool_amounts_requests(pool_staking_address, block_number, net_version) do
     [
       # 5267e1d6 = keccak256(stakeAmountTotal(address))
       snapshotted_total_staked_amount: {:staking, "5267e1d6", [pool_staking_address], block_number},
       snapshotted_self_staked_amount:
-        snapshotted_staker_amount_request(pool_staking_address, pool_staking_address, block_number)[
+        snapshotted_staker_amount_request(pool_staking_address, pool_staking_address, block_number, net_version)[
           :snapshotted_stake_amount
         ]
     ]
   end
 
-  defp snapshotted_staker_amount_request(pool_staking_address, staker_address, block_number) do
+  defp snapshotted_staker_amount_request(pool_staking_address, staker_address, block_number, net_version) do
+    delegator_or_zero =
+      ContractReader.refine_staker_address(pool_staking_address, staker_address, block_number, net_version)
+
     [
       # a697ecff = keccak256(stakeAmount(address,address))
-      snapshotted_stake_amount: {:staking, "a697ecff", [pool_staking_address, staker_address], block_number}
+      snapshotted_stake_amount: {:staking, "a697ecff", [pool_staking_address, delegator_or_zero], block_number}
     ]
   end
 
