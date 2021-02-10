@@ -370,7 +370,9 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
-  def pool_staking_requests(staking_address, block_number) do
+  def pool_staking_requests(staking_address, block_number, net_version) do
+    staking_address_or_zero = refine_staker_address(staking_address, staking_address, block_number, net_version)
+
     [
       active_delegators: active_delegators_request(staking_address, block_number)[:active_delegators],
       # 73c21803 = keccak256(poolDelegatorsInactive(address))
@@ -379,8 +381,7 @@ defmodule Explorer.Staking.ContractReader do
       is_active: {:staking, "a711e6a1", [staking_address], block_number},
       mining_address_hash: mining_by_staking_request(staking_address, block_number)[:mining_address],
       # a697ecff = keccak256(stakeAmount(address,address))
-      self_staked_amount:
-        {:staking, "a697ecff", [staking_address, "0x0000000000000000000000000000000000000000"], block_number},
+      self_staked_amount: {:staking, "a697ecff", [staking_address, staking_address_or_zero], block_number},
       # 5267e1d6 = keccak256(stakeAmountTotal(address))
       total_staked_amount: {:staking, "5267e1d6", [staking_address], block_number},
       # 527d8bc4 = keccak256(validatorRewardPercent(address))

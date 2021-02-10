@@ -543,7 +543,7 @@ defmodule Explorer.Staking.ContractState do
     # read pool info from the contracts by its staking address
     pool_staking_responses =
       pools
-      |> Enum.map(&ContractReader.pool_staking_requests(&1, block_number))
+      |> Enum.map(&ContractReader.pool_staking_requests(&1, block_number, net_version))
       |> ContractReader.perform_grouped_requests(pools, contracts, abi)
 
     # read pool info from the contracts by its mining address
