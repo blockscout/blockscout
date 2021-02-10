@@ -173,7 +173,7 @@ defmodule BlockScoutWeb.SmartContractView do
   def values_only(value, "string", _components), do: value
 
   def values_only(value, :string, _components), do: value
-  
+
   def values_only(value, :bytes, _components), do: value
 
   def values_only(value, "bool", _components), do: to_string(value)
