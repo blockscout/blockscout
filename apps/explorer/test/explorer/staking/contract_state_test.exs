@@ -73,6 +73,15 @@ defmodule Explorer.Staking.ContractStateTest do
       end
     )
 
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn _request, _opts ->
+        # net_version
+        {:ok, "101"}
+      end
+    )
+
     # get_token, fetch_token, MetadataRetriever.get_functions_of
     expect(
       EthereumJSONRPC.Mox,
