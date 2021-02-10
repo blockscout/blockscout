@@ -263,7 +263,7 @@ msgid "Call Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:305
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:415
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:54
 msgid "Cancel"
@@ -969,6 +969,11 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:229
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:251
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:273
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:295
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:317
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:339
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:361
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:383
 msgid "Library Address"
 msgstr ""
 
@@ -978,6 +983,11 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:219
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:241
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:263
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:285
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:307
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:329
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:351
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:373
 msgid "Library Name"
 msgstr ""
 
@@ -1006,7 +1016,7 @@ msgid "Loading..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:299
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:409
 msgid "Loading...."
 msgstr ""
 
@@ -1210,7 +1220,7 @@ msgid "Request URL"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:302
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:412
 msgid "Reset"
 msgstr ""
 
@@ -1571,7 +1581,7 @@ msgid "Verify & Publish"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:301
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:411
 msgid "Verify & publish"
 msgstr ""
 
