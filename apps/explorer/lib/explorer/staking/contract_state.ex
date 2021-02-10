@@ -198,6 +198,11 @@ defmodule Explorer.Staking.ContractState do
     {:noreply, %{state | timer: timer}}
   end
 
+  # don't handle other messages (e.g. :ssl_closed like in https://github.com/benoitc/hackney/issues/464)
+  def handle_info(_, state) do
+    {:noreply, state}
+  end
+
   # handles new block and decides to fetch fresh chain info
   defp fetch_state(state, block_number) do
     if block_number <= get(:seen_block) do
