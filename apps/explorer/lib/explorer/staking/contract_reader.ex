@@ -411,7 +411,7 @@ defmodule Explorer.Staking.ContractReader do
   def refine_staker_address(pool_staking_address, staker_address, block_number, net_version) do
     # this is a block number from which POSDAO on xDai chain started to use a zero address
     # instead of staking address for the cases when the staker is a pool staking address
-    zero_allowed = (net_version == 100 and block_number >= 14_389_081) or net_version != 100
+    zero_allowed = (net_version == 100 and block_number >= 14_474_689) or net_version != 100
 
     if staker_address == pool_staking_address and zero_allowed do
       "0x0000000000000000000000000000000000000000"
