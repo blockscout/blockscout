@@ -198,6 +198,11 @@ defmodule Explorer.Staking.ContractState do
     {:noreply, %{state | timer: timer}}
   end
 
+  # don't handle other messages (e.g. :ssl_closed like in https://github.com/benoitc/hackney/issues/464)
+  def handle_info(_, state) do
+    {:noreply, state}
+  end
+
   # handles new block and decides to fetch fresh chain info
   defp fetch_state(state, block_number) do
     if block_number <= get(:seen_block) do
@@ -732,7 +737,7 @@ defmodule Explorer.Staking.ContractState do
       if validator_set_apply_block !== nil do
         validator_set_apply_block
       else
-        get(:validator_set_apply_block)
+        get(:validator_set_apply_block, 0)
       end
 
     snapshotted_epoch_number =
