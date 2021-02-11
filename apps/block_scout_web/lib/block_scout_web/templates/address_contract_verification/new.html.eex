@@ -176,7 +176,7 @@
                 <div class="center-column">
                   <%= text_input :external_libraries, :library1_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
                 </div>
-                <div class="smart-contract-form-group-tooltip">A library name called in the .sol file. Multiple libraries (up to 5) may be added for each contract. Click the Add Library button to add an additional one.</div>
+                <div class="smart-contract-form-group-tooltip">A library name called in the .sol file. Multiple libraries (up to 10) may be added for each contract. Click the Add Library button to add an additional one.</div>
               </div>
             </div>
 
@@ -270,9 +270,119 @@
 
             <div class="smart-contract-form-group">
               <div class="smart-contract-form-group-inner-wrapper">
-                <%= label f, :library5, gettext("Library Address") %>
+                <%= label :external_libraries, :library5, gettext("Library Address") %>
                 <div class="center-column">
-                  <%= text_input f, :library5_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                  <%= text_input :external_libraries, :library5_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="contract-library-form-group js-contract-library-form-group">
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library6, gettext("Library Name") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library6_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library6, gettext("Library Address") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library6_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="contract-library-form-group js-contract-library-form-group">
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library7, gettext("Library Name") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library7_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library7, gettext("Library Address") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library7_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="contract-library-form-group js-contract-library-form-group">
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library8, gettext("Library Name") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library8_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library8, gettext("Library Address") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library8_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="contract-library-form-group js-contract-library-form-group">
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library9, gettext("Library Name") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library9_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library9, gettext("Library Address") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library9_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="contract-library-form-group js-contract-library-form-group">
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label :external_libraries, :library10, gettext("Library Name") %>
+                <div class="center-column">
+                  <%= text_input :external_libraries, :library10_name, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
+                </div>
+                <div class="smart-contract-form-group-tooltip"></div>
+              </div>
+            </div>
+
+            <div class="smart-contract-form-group">
+              <div class="smart-contract-form-group-inner-wrapper">
+                <%= label f, :library10, gettext("Library Address") %>
+                <div class="center-column">
+                  <%= text_input f, :library10_address, class: "form-control border-rounded", "aria-describedby": "contract-name-help-block" %>
                 </div>
                 <div class="smart-contract-form-group-tooltip"></div>
               </div>

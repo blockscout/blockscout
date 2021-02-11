@@ -102,6 +102,8 @@ defmodule BlockScoutWeb.SmartContractView do
 
   def values_with_type(value, :string, _components), do: render_type_value("string", value)
 
+  def values_with_type(value, :bytes, _components), do: render_type_value("bytes", value)
+
   def values_with_type(value, "bool", _components), do: render_type_value("bool", to_string(value))
 
   def values_with_type(value, :bool, _components), do: render_type_value("bool", to_string(value))
@@ -171,6 +173,8 @@ defmodule BlockScoutWeb.SmartContractView do
   def values_only(value, "string", _components), do: value
 
   def values_only(value, :string, _components), do: value
+
+  def values_only(value, :bytes, _components), do: value
 
   def values_only(value, "bool", _components), do: to_string(value)
 

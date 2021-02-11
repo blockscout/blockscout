@@ -342,17 +342,17 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
-  def get_staker_pools_request(staker, offset, length) do
+  def get_delegator_pools_request(delegator, offset, length) do
     [
-      # 9dc77988 = keccak256(getStakerPools(address,uint256,uint256))
-      pools: {:staking, "9dc77988", [staker, offset, length]}
+      # 2ebfaf4e = keccak256(getDelegatorPools(address,uint256,uint256))
+      pools: {:staking, "2ebfaf4e", [delegator, offset, length]}
     ]
   end
 
-  def get_staker_pools_length_request(staker) do
+  def get_delegator_pools_length_request(delegator) do
     [
-      # a6a3a256 = keccak256(getStakerPoolsLength(address))
-      length: {:staking, "a6a3a256", [staker]}
+      # 8ba31a1c = keccak256(getDelegatorPoolsLength(address))
+      length: {:staking, "8ba31a1c", [delegator]}
     ]
   end
 
@@ -370,7 +370,9 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
-  def pool_staking_requests(staking_address, block_number) do
+  def pool_staking_requests(staking_address, block_number, net_version) do
+    staking_address_or_zero = refine_staker_address(staking_address, staking_address, block_number, net_version)
+
     [
       active_delegators: active_delegators_request(staking_address, block_number)[:active_delegators],
       # 73c21803 = keccak256(poolDelegatorsInactive(address))
@@ -379,7 +381,7 @@ defmodule Explorer.Staking.ContractReader do
       is_active: {:staking, "a711e6a1", [staking_address], block_number},
       mining_address_hash: mining_by_staking_request(staking_address, block_number)[:mining_address],
       # a697ecff = keccak256(stakeAmount(address,address))
-      self_staked_amount: {:staking, "a697ecff", [staking_address, staking_address], block_number},
+      self_staked_amount: {:staking, "a697ecff", [staking_address, staking_address_or_zero], block_number},
       # 5267e1d6 = keccak256(stakeAmountTotal(address))
       total_staked_amount: {:staking, "5267e1d6", [staking_address], block_number},
       # 527d8bc4 = keccak256(validatorRewardPercent(address))
@@ -406,18 +408,32 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
-  def staker_requests(pool_staking_address, staker_address, block_number) do
+  def refine_staker_address(pool_staking_address, staker_address, block_number, net_version) do
+    # this is a block number from which POSDAO on xDai chain started to use a zero address
+    # instead of staking address for the cases when the staker is a pool staking address
+    zero_allowed = (net_version == 100 and block_number >= 14_474_689) or net_version != 100
+
+    if staker_address == pool_staking_address and zero_allowed do
+      "0x0000000000000000000000000000000000000000"
+    else
+      staker_address
+    end
+  end
+
+  def staker_requests(pool_staking_address, staker_address, block_number, net_version) do
+    delegator_or_zero = refine_staker_address(pool_staking_address, staker_address, block_number, net_version)
+
     [
       # 950a6513 = keccak256(maxWithdrawOrderAllowed(address,address))
       max_ordered_withdraw_allowed: {:staking, "950a6513", [pool_staking_address, staker_address], block_number},
       # 6bda1577 = keccak256(maxWithdrawAllowed(address,address))
       max_withdraw_allowed: {:staking, "6bda1577", [pool_staking_address, staker_address], block_number},
       # e9ab0300 = keccak256(orderedWithdrawAmount(address,address))
-      ordered_withdraw: {:staking, "e9ab0300", [pool_staking_address, staker_address], block_number},
+      ordered_withdraw: {:staking, "e9ab0300", [pool_staking_address, delegator_or_zero], block_number},
       # a4205967 = keccak256(orderWithdrawEpoch(address,address))
-      ordered_withdraw_epoch: {:staking, "a4205967", [pool_staking_address, staker_address], block_number},
+      ordered_withdraw_epoch: {:staking, "a4205967", [pool_staking_address, delegator_or_zero], block_number},
       # a697ecff = keccak256(stakeAmount(address,address))
-      stake_amount: {:staking, "a697ecff", [pool_staking_address, staker_address], block_number}
+      stake_amount: {:staking, "a697ecff", [pool_staking_address, delegator_or_zero], block_number}
     ]
   end
 

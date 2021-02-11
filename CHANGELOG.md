@@ -7,12 +7,18 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3621](https://github.com/poanetwork/blockscout/pull/3621) - Contract reader: :binary input/output fix
+- [#3620](https://github.com/poanetwork/blockscout/pull/3620) - Ignore unfamiliar messages by Explorer.Staking.ContractState module
+- [#3611](https://github.com/poanetwork/blockscout/pull/3611) - Fix logo size
 - [#3600](https://github.com/poanetwork/blockscout/pull/3600) - Prevent update validator metadata with empty name from contract
 - [#3592](https://github.com/poanetwork/blockscout/pull/3592), [#3601](https://github.com/poanetwork/blockscout/pull/3601), [#3607](https://github.com/poanetwork/blockscout/pull/3607) - Contract interaction: fix nested tuples in the output view, add formatting
 - [#3583](https://github.com/poanetwork/blockscout/pull/3583) - Reduce RPC requests and DB changes by Staking DApp
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3618](https://github.com/poanetwork/blockscout/pull/3618) - Contracts verification up to 10 libraries
+- [#3616](https://github.com/poanetwork/blockscout/pull/3616) - POSDAO refactoring: use zero address instead of staker address for certain cases
+- [#3612](https://github.com/poanetwork/blockscout/pull/3612) - POSDAO refactoring: use 'getDelegatorPools' getter instead of 'getStakerPools' in Staking DApp
 - [#3585](https://github.com/poanetwork/blockscout/pull/3585) - Add autoswitching from eth_subscribe to eth_blockNumber in Staking DApp
 - [#3574](https://github.com/poanetwork/blockscout/pull/3574) - Correct UNI token price
 - [#3569](https://github.com/poanetwork/blockscout/pull/3569) - Allow re-define cache period vars at runtime
