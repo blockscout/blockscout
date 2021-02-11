@@ -727,57 +727,31 @@ defmodule Explorer.Staking.ContractState do
     end
   end
 
-  # credo:disable-for-next-line
   def show_snapshotted_data(
         is_validator,
         validator_set_apply_block \\ nil,
         snapshotted_epoch_number \\ nil,
         epoch_number \\ nil
       ) do
-    show_logs = validator_set_apply_block === nil and snapshotted_epoch_number === nil and epoch_number === nil
-
-    if show_logs do
-      Logger.warn("show_snapshotted_data")
-      Logger.warn("is_validator = #{inspect(is_validator, charlists: :as_lists)}")
-    end
-
     validator_set_apply_block =
       if validator_set_apply_block !== nil do
         validator_set_apply_block
       else
-        result = get(:validator_set_apply_block)
-
-        if show_logs do
-          Logger.warn("validator_set_apply_block from ETS = #{inspect(result, charlists: :as_lists)}")
-        end
-
-        result
+        get(:validator_set_apply_block, 0)
       end
 
     snapshotted_epoch_number =
       if snapshotted_epoch_number !== nil do
         snapshotted_epoch_number
       else
-        result = get(:snapshotted_epoch_number)
-
-        if show_logs do
-          Logger.warn("snapshotted_epoch_number from ETS = #{inspect(result, charlists: :as_lists)}")
-        end
-
-        result
+        get(:snapshotted_epoch_number)
       end
 
     epoch_number =
       if epoch_number !== nil do
         epoch_number
       else
-        result = get(:epoch_number)
-
-        if show_logs do
-          Logger.warn("epoch_number from ETS = #{inspect(result, charlists: :as_lists)}")
-        end
-
-        result
+        get(:epoch_number)
       end
 
     is_validator && validator_set_apply_block > 0 && snapshotted_epoch_number === epoch_number
