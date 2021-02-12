@@ -60,6 +60,7 @@ defmodule Explorer.SmartContract.Verifier do
   defp compare_bytecodes({:error, :name}, _, _, _), do: {:error, :name}
   defp compare_bytecodes({:error, _}, _, _, _), do: {:error, :compilation}
 
+  # credo:disable-for-next-line /Complexity/
   defp compare_bytecodes(
          {:ok, %{"abi" => abi, "bytecode" => bytecode}},
          address_hash,
@@ -73,6 +74,7 @@ defmodule Explorer.SmartContract.Verifier do
       |> Chain.smart_contract_bytecode()
 
     blockchain_bytecode_without_whisper = extract_bytecode(blockchain_bytecode)
+    empty_constructor_arguments = arguments_data == "" or arguments_data == nil
 
     cond do
       generated_bytecode != blockchain_bytecode_without_whisper &&
@@ -87,6 +89,9 @@ defmodule Explorer.SmartContract.Verifier do
         else
           {:error, :constructor_arguments}
         end
+
+      has_constructor_with_params?(abi) && empty_constructor_arguments ->
+        {:error, :constructor_arguments}
 
       has_constructor_with_params?(abi) &&
           !ConstructorArguments.verify(address_hash, blockchain_bytecode_without_whisper, arguments_data) ->
@@ -147,6 +152,22 @@ defmodule Explorer.SmartContract.Verifier do
       # Metadata: Update the swarm hash to the current specification, changes bzzr0 to bzzr1 and urls to use bzz-raw://
       "a265627a7a72315820" <>
           <<_::binary-size(64)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0032" <> _constructor_arguments ->
+        extracted
+        |> Enum.reverse()
+        |> :binary.list_to_bin()
+
+      # Solidity >= 0.6.0 https://github.com/ethereum/solidity/blob/develop/Changelog.md#060-2019-12-17
+      # https://github.com/ethereum/solidity/blob/26b700771e9cc9c956f0503a05de69a1be427963/docs/metadata.rst#encoding-of-the-metadata-hash-in-the-bytecode
+      # IPFS is used instead of Swarm
+      # The current version of the Solidity compiler usually adds the following to the end of the deployed bytecode:
+      # 0xa2
+      # 0x64 'i' 'p' 'f' 's' 0x58 0x22 <34 bytes IPFS hash>
+      # 0x64 's' 'o' 'l' 'c' 0x43 <3 byte version encoding>
+      # 0x00 0x32
+      # Note: there is a bug in the docs. Instead of 0x32, 0x33 should be used.
+      # Fixing PR has been created https://github.com/ethereum/solidity/pull/8174
+      "a264697066735822" <>
+          <<_::binary-size(68)>> <> "64736f6c6343" <> <<_::binary-size(6)>> <> "0033" <> _constructor_arguments ->
         extracted
         |> Enum.reverse()
         |> :binary.list_to_bin()

@@ -154,7 +154,7 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
 
     total = repo.one!(total_query)
 
-    if total > Decimal.new(0) do
+    if total.value > Decimal.new(0) do
       update_query =
         from(
           p in StakingPool,
@@ -162,8 +162,8 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
           update: [
             set: [
-              staked_ratio: p.staked_amount / ^total * 100,
-              likelihood: p.staked_amount / ^total * 100
+              staked_ratio: p.staked_amount / ^total.value * 100,
+              likelihood: p.staked_amount / ^total.value * 100
             ]
           ]
         )
