@@ -103,8 +103,6 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("render_delegators_list", %{"address" => pool_staking_address}, socket) do
-    require Logger
-    Logger.warn("render_delegators_list")
 
     pool_staking_address_downcased = String.downcase(pool_staking_address)
     pool = Chain.staking_pool(pool_staking_address)

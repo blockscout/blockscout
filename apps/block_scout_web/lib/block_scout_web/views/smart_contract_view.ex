@@ -109,11 +109,7 @@ defmodule BlockScoutWeb.SmartContractView do
   def values_with_type(value, :bool, _components), do: render_type_value("bool", to_string(value))
 
   def values_with_type(value, type, _components) do
-    if String.starts_with?(type, "uint") do
-      render_type_value(type, to_string(value))
-    else
-      render_type_value(type, binary_to_utf_string(value))
-    end
+    render_type_value(type, binary_to_utf_string(value))
   end
 
   def values_only(value, type, components) when is_list(value) do
@@ -173,19 +169,15 @@ defmodule BlockScoutWeb.SmartContractView do
   def values_only(value, "string", _components), do: value
 
   def values_only(value, :string, _components), do: value
-  
+
   def values_only(value, :bytes, _components), do: value
 
   def values_only(value, "bool", _components), do: to_string(value)
 
   def values_only(value, :bool, _components), do: to_string(value)
 
-  def values_only(value, type, _components) do
-    if String.starts_with?(type, "uint") do
-      to_string(value)
-    else
-      binary_to_utf_string(value)
-    end
+  def values_only(value, _type, _components) do
+    binary_to_utf_string(value)
   end
 
   defp tuple_array_to_array(value, type) do
@@ -265,14 +257,20 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   defp binary_to_utf_string(item) do
-    if is_binary(item) do
-      if String.starts_with?(item, "0x") do
-        item
-      else
-        "0x" <> Base.encode16(item, case: :lower)
-      end
-    else
-      item
+    case Integer.parse(to_string(item)) do
+      {item_integer, ""} ->
+        to_string(item_integer)
+
+      _ ->
+        if is_binary(item) do
+          if String.starts_with?(item, "0x") do
+            item
+          else
+            "0x" <> Base.encode16(item, case: :lower)
+          end
+        else
+          to_string(item)
+        end
     end
   end
 

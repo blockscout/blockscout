@@ -7,7 +7,9 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3622](https://github.com/poanetwork/blockscout/pull/3622) - Contract reader: fix int type output
 - [#3621](https://github.com/poanetwork/blockscout/pull/3621) - Contract reader: :binary input/output fix
+- [#3620](https://github.com/poanetwork/blockscout/pull/3620) - Ignore unfamiliar messages by Explorer.Staking.ContractState module
 - [#3611](https://github.com/poanetwork/blockscout/pull/3611) - Fix logo size
 - [#3600](https://github.com/poanetwork/blockscout/pull/3600) - Prevent update validator metadata with empty name from contract
 - [#3592](https://github.com/poanetwork/blockscout/pull/3592), [#3601](https://github.com/poanetwork/blockscout/pull/3601), [#3607](https://github.com/poanetwork/blockscout/pull/3607) - Contract interaction: fix nested tuples in the output view, add formatting
