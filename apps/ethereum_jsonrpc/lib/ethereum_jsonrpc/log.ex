@@ -41,7 +41,6 @@ defmodule EthereumJSONRPC.Log do
         address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
         block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
         block_number: 37,
-        block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
         data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
         first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
         fourth_topic: nil,
