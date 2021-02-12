@@ -326,5 +326,11 @@ defmodule BlockScoutWeb.SmartContractViewTest do
 
       assert SmartContractView.values_only(value, "uint64", nil) == "0"
     end
+
+    test "returns the value when the type is int(n) and value is 0" do
+      value = "0"
+
+      assert SmartContractView.values_only(value, "int64", nil) == "0"
+    end
   end
 end
