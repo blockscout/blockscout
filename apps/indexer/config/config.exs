@@ -36,16 +36,6 @@ block_transformer =
       transformer
   end
 
-max_skipping_distance =
-  case Integer.parse(System.get_env("MAX_SKIPPING_DISTANCE", "")) do
-    {num, ""} -> num
-    _ -> 5
-  end
-
-config :indexer, :stacktrace_depth, 20
-
-:erlang.system_flag(:backtrace_depth, 20)
-
 config :indexer,
   block_transformer: block_transformer,
   ecto_repos: [Explorer.Repo],
@@ -55,8 +45,7 @@ config :indexer,
   memory_limit: 1 <<< 32,
   health_check_port: port || 4040,
   first_block: System.get_env("FIRST_BLOCK") || "0",
-  last_block: System.get_env("LAST_BLOCK") || "",
-  max_skipping_distance: max_skipping_distance
+  last_block: System.get_env("LAST_BLOCK") || ""
 
 # config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
 # config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
