@@ -5,6 +5,7 @@ config :bcrypt_elixir, log_rounds: 4
 
 # Configure your database
 config :explorer, Explorer.Repo,
+  url: System.get_env("DATABASE_URL") || "postgresql://postgres:1234@localhost:5432/explorer_test",
   database: "explorer_test",
   hostname: "localhost",
   password: "1234",
@@ -31,15 +32,6 @@ config :explorer, Explorer.Tracer, disabled?: false
 config :logger, :explorer,
   level: :warn,
   path: Path.absname("logs/test/explorer.log")
-
-secret_file =
-  __ENV__.file
-  |> Path.dirname()
-  |> Path.join("test.secret.exs")
-
-if File.exists?(secret_file) do
-  import_config secret_file
-end
 
 config :explorer, Explorer.ExchangeRates.Source.TransactionAndLog,
   secondary_source: Explorer.ExchangeRates.Source.OneCoinSource

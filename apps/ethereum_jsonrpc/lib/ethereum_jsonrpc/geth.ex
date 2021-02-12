@@ -38,6 +38,12 @@ defmodule EthereumJSONRPC.Geth do
   end
 
   @doc """
+  Fetches the first trace from the Parity trace URL.
+  """
+  @impl EthereumJSONRPC.Variant
+  def fetch_first_trace(_transactions_params, _json_rpc_named_arguments), do: :ignore
+
+  @doc """
   Internal transaction fetching for entire blocks is not currently supported for Geth.
 
   To signal to the caller that fetching is not supported, `:ignore` is returned.

@@ -167,26 +167,26 @@ defmodule BlockScoutWeb.AddressView do
     format_wei_value(balance, :ether)
   end
 
-  def balance_percentage_enabled? do
-    Application.get_env(:block_scout_web, :show_percentage)
+  def balance_percentage_enabled?(total_supply) do
+    Application.get_env(:block_scout_web, :show_percentage) && total_supply > 0
   end
 
   def balance_percentage(_, nil), do: ""
 
   def balance_percentage(%Address{fetched_coin_balance: balance}, total_supply) do
-    percentage =
-      if total_supply == 0 do
-        "NaN"
-      else
-        balance
-        |> Wei.to(:ether)
-        |> Decimal.div(Decimal.new(total_supply))
-        |> Decimal.mult(100)
-        |> Decimal.round(4)
-        |> Decimal.to_string(:normal)
-      end
-
-    percentage <> "% #{gettext("Market Cap")}"
+    if total_supply > 0 do
+      balance
+      |> Wei.to(:ether)
+      |> Decimal.div(Decimal.new(total_supply))
+      |> Decimal.mult(100)
+      |> Decimal.round(4)
+      |> Decimal.to_string(:normal)
+      |> Kernel.<>("% #{gettext("Market Cap")}")
+    else
+      balance
+      |> Wei.to(:ether)
+      |> Decimal.to_string(:normal)
+    end
   end
 
   def empty_exchange_rate?(exchange_rate) do
@@ -271,7 +271,7 @@ defmodule BlockScoutWeb.AddressView do
   def smart_contract_verified?(%Address{smart_contract: nil}), do: false
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
-    Enum.any?(address.smart_contract.abi, & &1["constant"])
+    Enum.any?(address.smart_contract.abi, &(&1["constant"] || &1["stateMutability"] == "view"))
   end
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false

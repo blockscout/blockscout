@@ -59,12 +59,13 @@ defmodule Explorer.SmartContract.Verifier do
       address_hash,
       constructor_arguments,
       autodetect_contructor_arguments,
-      contract_source_code
+      contract_source_code,
+      name
     )
   end
 
-  defp compare_bytecodes({:error, :name}, _, _, _, _), do: {:error, :name}
-  defp compare_bytecodes({:error, _}, _, _, _, _), do: {:error, :compilation}
+  defp compare_bytecodes({:error, :name}, _, _, _, _, _), do: {:error, :name}
+  defp compare_bytecodes({:error, _}, _, _, _, _, _), do: {:error, :compilation}
 
   # credo:disable-for-next-line /Complexity/
   defp compare_bytecodes(
@@ -72,7 +73,8 @@ defmodule Explorer.SmartContract.Verifier do
          address_hash,
          arguments_data,
          autodetect_contructor_arguments,
-         contract_source_code
+         contract_source_code,
+         contract_name
        ) do
     generated_bytecode = extract_bytecode(bytecode)
 
@@ -89,7 +91,7 @@ defmodule Explorer.SmartContract.Verifier do
         {:error, :generated_bytecode}
 
       has_constructor_with_params?(abi) && autodetect_contructor_arguments ->
-        result = ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code)
+        result = ConstructorArguments.find_constructor_arguments(address_hash, abi, contract_source_code, contract_name)
 
         if result do
           {:ok, %{abi: abi, contructor_arguments: result}}
@@ -105,7 +107,8 @@ defmodule Explorer.SmartContract.Verifier do
             address_hash,
             blockchain_bytecode_without_whisper,
             arguments_data,
-            contract_source_code
+            contract_source_code,
+            contract_name
           ) ->
         {:error, :constructor_arguments}
 

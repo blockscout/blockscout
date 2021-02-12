@@ -11,7 +11,7 @@
     <div class="card">
       <%= render OverviewView, "_tabs.html", assigns %>
       <!-- loaded via AJAX -->
-      <div class="card-body" data-smart-contract-functions data-hash="<%= to_string(@token.contract_address.hash) %>" data-url="<%= smart_contract_path(@conn, :index) %>">
+      <div class="card-body" data-smart-contract-functions data-hash="<%= Address.checksum(@token.contract_address.hash) %>" data-url="<%= smart_contract_path(@conn, :index) %>">
         <div class="tile tile-muted text-center">
           <span class="loading-spinner-small mr-2">
             <span class="loading-spinner-block-1"></span>
@@ -22,4 +22,5 @@
       </div>
     </div>
   </section>
+  <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/read-token-contract.js") %>"></script>
 </section>

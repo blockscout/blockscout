@@ -7,6 +7,9 @@ import socket, { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
+import '../lib/token_balance_dropdown_search'
+import '../lib/async_listing_load'
+import '../app'
 
 export const initialState = {
   channelDisconnected: false,

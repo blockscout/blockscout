@@ -2,11 +2,25 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
   import BlockScoutWeb.WebRouter.Helpers, only: [address_transaction_path: 3, address_transaction_path: 4]
+  import Mox
 
   alias Explorer.Chain.{Address, Transaction}
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/2" do
+    setup :set_mox_global
+
+    setup do
+      configuration = Application.get_env(:explorer, :checksum_function)
+      Application.put_env(:explorer, :checksum_function, :eth)
+
+      :ok
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :checksum_function, configuration)
+      end)
+    end
+
     test "with invalid address hash", %{conn: conn} do
       conn = get(conn, address_transaction_path(conn, :index, "invalid_address"))
 

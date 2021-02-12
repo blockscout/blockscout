@@ -4,6 +4,7 @@ import URI from 'urijs'
 import humps from 'humps'
 import { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import '../app'
 
 export const initialState = {
   channelDisconnected: false,

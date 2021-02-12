@@ -322,7 +322,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
         |> Blocks.run([block_changes, block_changes], options)
         |> Repo.transaction()
 
-      assert {:ok, %{blocks: [%{hash: block_hash, consensus: true}]}} = result
+      assert {:ok, %{blocks: [%{hash: _block_hash, consensus: true}]}} = result
     end
   end
 

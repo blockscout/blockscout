@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import '../../app'
 
 const runTask = (event) => {
   const element = event.currentTarget

@@ -11,7 +11,7 @@
             <% end %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
-              <span class="overview-title-item" data-clipboard-text="<%= @token.contract_address_hash %>">
+              <span class="overview-title-item" data-clipboard-text="<%= Address.checksum(@token.contract_address_hash) %>">
                 <span
                   aria-label='<%= gettext("Copy Address") %>'
                   class="btn-copy-icon"
@@ -44,12 +44,12 @@
             </span>
           </h1>
 
-          <h3><%= to_string(@token.contract_address_hash) %></h3>
+          <h3><%= Address.checksum(@token.contract_address_hash) %></h3>
 
           <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
             <span class="mr-4 mb-3 mb-md-0">
               <%= link to:
-                  address_path(@conn, :show, @token.contract_address_hash),
+                  address_path(@conn, :show, Address.checksum(@token.contract_address_hash)),
                   "data-test": "token_contract_address"
               do %>
                 <%=  gettext "View Contract" %>
@@ -108,7 +108,7 @@
         </button>
       </div>
       <div class="modal-body">
-        <img src="data:image/png;base64, <%= BlockScoutWeb.AddressView.qr_code(@token.contract_address_hash) %> " class="qr-code" alt="qr_code" title="<%= @token.contract_address %>" />
+        <img src="data:image/png;base64, <%= BlockScoutWeb.AddressView.qr_code(Address.checksum(@token.contract_address_hash)) %> " class="qr-code" alt="qr_code" title="<%= @token.contract_address %>" />
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" data-dismiss="modal"><%= gettext "Close" %></button>

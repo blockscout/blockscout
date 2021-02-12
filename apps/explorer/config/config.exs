@@ -24,9 +24,7 @@ config :explorer,
     if(System.get_env("DISABLE_WEBAPP") != "true",
       do: Explorer.Chain.Events.SimpleSender,
       else: Explorer.Chain.Events.DBSender
-    ),
-  index_internal_transactions_for_token_transfers:
-    if(System.get_env("INTERNAL_TRANSACTIONOS_FOR_TOKEN_TRANSFERS") == "true", do: true, else: false)
+    )
 
 average_block_period =
   case Integer.parse(System.get_env("AVERAGE_BLOCK_CACHE_PERIOD", "")) do
@@ -61,7 +59,7 @@ config :explorer, Explorer.ChainSpec.GenesisData,
       }?alt=media"
     ),
   emission_format: System.get_env("EMISSION_FORMAT", "DEFAULT"),
-  rewards_contract_address: System.get_env("REWARDS_CONTRACT_ADDRESS", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5")
+  rewards_contract_address: System.get_env("REWARDS_CONTRACT", "0xeca443e8e1ab29971a45a9c57a6a9875701698a5")
 
 config :explorer, Explorer.Chain.Cache.BlockNumber,
   enabled: true,

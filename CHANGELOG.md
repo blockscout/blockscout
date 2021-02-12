@@ -1,11 +1,48 @@
 ## Current
 
 ### Features
-- [#2875](https://github.com/poanetwork/blockscout/pull/2875) - Save contract code from Parity genesis file
-- [#2834](https://github.com/poanetwork/blockscout/pull/2834) - always redirect to checksummed hash
 
 ### Fixes
-- [#3009](https://github.com/poanetwork/blockscout/pull/3009) - Fix broken export to CSV
+
+- [#3064](https://github.com/poanetwork/blockscout/pull/3064) - Automatically define Block reward contract address in TokenBridge supply module
+- [#3061](https://github.com/poanetwork/blockscout/pull/3061) - Fix verification of contracts with error messages in require in parent contract
+
+### Chore
+
+
+## 3.1.1-beta
+
+### Features
+- [#3058](https://github.com/poanetwork/blockscout/pull/3058) - Searching by verified contract name
+
+### Fixes
+- [#3053](https://github.com/poanetwork/blockscout/pull/3053) - Fix ABI decoding in contracts methods, logs (migrate to ex_abi 0.3.0)
+- [#3044](https://github.com/poanetwork/blockscout/pull/3044) - Prevent division by zero on /accounts page
+- [#3043](https://github.com/poanetwork/blockscout/pull/3043) - Extract host name for split couple of indexer and web app
+- [#3042](https://github.com/poanetwork/blockscout/pull/3042) - Speedup pending txs list query
+- [#2944](https://github.com/poanetwork/blockscout/pull/2944), [#3046](https://github.com/poanetwork/blockscout/pull/3046) - Split js logic into multiple files
+
+
+## 3.1.0-beta
+
+### Features
+- [#3013](https://github.com/poanetwork/blockscout/pull/3013), [#3026](https://github.com/poanetwork/blockscout/pull/3026), [#3031](https://github.com/poanetwork/blockscout/pull/3031) - Raw trace of transaction on-demand
+- [#3000](https://github.com/poanetwork/blockscout/pull/3000) - Get rid of storing of first trace for all types of transactions for Parity variant
+- [#2875](https://github.com/poanetwork/blockscout/pull/2875) - Save contract code from Parity genesis file
+- [#2834](https://github.com/poanetwork/blockscout/pull/2834), [#3009](https://github.com/poanetwork/blockscout/pull/3009), [#3014](https://github.com/poanetwork/blockscout/pull/3014), [#3033](https://github.com/poanetwork/blockscout/pull/3033) - always redirect to checksummed hash
+
+### Fixes
+- [#3037](https://github.com/poanetwork/blockscout/pull/3037) - Make buttons color at verification page consistent
+- [#3034](https://github.com/poanetwork/blockscout/pull/3034) - Support stateMutability=view to define reading functions in smart-contracts
+- [#3029](https://github.com/poanetwork/blockscout/pull/3029) - Fix transactions and blocks appearance on the main page
+- [#3028](https://github.com/poanetwork/blockscout/pull/3028) - Decrease polling period value for realtime fetcher
+- [#3027](https://github.com/poanetwork/blockscout/pull/3027) - Rescue for SUPPORTED_CHAINS env var parsing
+- [#3025](https://github.com/poanetwork/blockscout/pull/3025) - Fix splitting of indexer/web components setup
+- [#3024](https://github.com/poanetwork/blockscout/pull/3024) - Fix pool size default value in config
+- [#3021](https://github.com/poanetwork/blockscout/pull/3021), [#3022](https://github.com/poanetwork/blockscout/pull/3022) - Refine dev/test config
+- [#3016](https://github.com/poanetwork/blockscout/pull/3016), [#3017](https://github.com/poanetwork/blockscout/pull/3017) - Fix token instance QR code data
+- [#3012](https://github.com/poanetwork/blockscout/pull/3012) - Speedup token transfers list query
+- [#3011](https://github.com/poanetwork/blockscout/pull/3011) - Revert realtime fetcher small skips feature
 - [#3007](https://github.com/poanetwork/blockscout/pull/3007) - Fix copy UTF8 tx input action
 - [#2996](https://github.com/poanetwork/blockscout/pull/2996) - Fix awesomplete lib loading in Firefox
 - [#2993](https://github.com/poanetwork/blockscout/pull/2993) - Fix path definition for contract verification endpoint
@@ -18,6 +55,8 @@
 - [#2883](https://github.com/poanetwork/blockscout/pull/2883) - Fix long contracts names
 
 ### Chore
+- [#3032](https://github.com/poanetwork/blockscout/pull/3032) - Remove indexing status alert for Ganache variant
+- [#3030](https://github.com/poanetwork/blockscout/pull/3030) - Remove default websockets URL from config
 - [#2995](https://github.com/poanetwork/blockscout/pull/2995) - Support API_PATH env var in Docker file
 
 
