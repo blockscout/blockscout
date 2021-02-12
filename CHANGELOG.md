@@ -7,7 +7,8 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
-- [#3622](https://github.com/poanetwork/blockscout/pull/3622) - Contract reader: fix int type output
+- [#3623](https://github.com/poanetwork/blockscout/pull/3623) - Ignore unrecognized messages in bridge counter processes
+- [#3622](https://github.com/poanetwork/blockscout/pull/3622) - Contract reader: fix int type output Ignore unrecognized messages in bridge counter processes
 - [#3621](https://github.com/poanetwork/blockscout/pull/3621) - Contract reader: :binary input/output fix
 - [#3620](https://github.com/poanetwork/blockscout/pull/3620) - Ignore unfamiliar messages by Explorer.Staking.ContractState module
 - [#3611](https://github.com/poanetwork/blockscout/pull/3611) - Fix logo size
