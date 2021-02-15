@@ -51,7 +51,8 @@ defmodule BlockScoutWeb.BridgedTokensController do
     render(conn, "index.html",
       current_path: current_path(conn),
       total_supply: total_supply,
-      chain: "Ethereum"
+      chain: "Ethereum",
+      chain_id: 1
     )
   end
 
