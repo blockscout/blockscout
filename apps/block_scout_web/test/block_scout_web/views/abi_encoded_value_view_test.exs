@@ -95,6 +95,10 @@ defmodule BlockScoutWeb.ABIEncodedValueViewTest do
     test "it renders :dynamic values as bytes" do
       assert value_html("uint", {:dynamic, <<1>>}) == "0x01"
     end
+
+    test "it renders :tuple values as string" do
+      assert value_html("(uint256)", {123}) == "(123)"
+    end
   end
 
   describe "copy_text/2" do
