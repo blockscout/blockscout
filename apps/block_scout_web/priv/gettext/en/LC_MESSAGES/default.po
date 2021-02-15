@@ -1398,6 +1398,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_coin_balance/index.html.eex:27
 #: lib/block_scout_web/templates/chain/show.html.eex:9
+#: lib/block_scout_web/templates/gas_tracker/_chart.html.eex:6
 msgid "There was a problem loading the chart."
 msgstr ""
 
@@ -2754,4 +2755,30 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:161
 msgid "Faucet"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/gas_tracker/_header.html.eex:4
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:170
+msgid "Gas Tracker"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/gas_tracker/_tabs.html.eex:8
+msgid "Gas consumers 24hrs"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/gas_tracker/_tabs.html.eex:3
+msgid "Gas consumers 3hrs"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/gas_tracker/_tabs.html.eex:18
+msgid "Gas spenders 24hrs"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/gas_tracker/_tabs.html.eex:13
+msgid "Gas spenders 3hrs"
 msgstr ""

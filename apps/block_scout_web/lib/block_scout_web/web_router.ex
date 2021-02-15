@@ -34,6 +34,11 @@ defmodule BlockScoutWeb.WebRouter do
       singleton: true
     )
 
+    resources("/gas-usage-history-chart", Chain.GasUsageHistoryChartController,
+      only: [:show],
+      singleton: true
+    )
+
     resources "/blocks", BlockController, only: [:index, :show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
     end
@@ -262,6 +267,26 @@ defmodule BlockScoutWeb.WebRouter do
       SmartContractController,
       only: [:index, :show],
       as: :smart_contract
+    )
+
+    resources("/gas-tracker-consumers-3hrs", GasTrackerConsumersThreeHrsController,
+      only: [:index],
+      as: :gas_tracker_consumers_3hrs
+    )
+
+    resources("/gas-tracker-consumers-24hrs", GasTrackerConsumersDayController,
+      only: [:index],
+      as: :gas_tracker_consumers_day
+    )
+
+    resources("/gas-tracker-spenders-3hrs", GasTrackerSpendersThreeHrsController,
+      only: [:index],
+      as: :gas_tracker_spenders_3hrs
+    )
+
+    resources("/gas-tracker-spenders-24hrs", GasTrackerSpendersDayController,
+      only: [:index],
+      as: :gas_tracker_spenders_day
     )
 
     get("/address-counters", AddressController, :address_counters)

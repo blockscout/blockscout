@@ -1,0 +1,1 @@
+import 'easy-pie-chart'

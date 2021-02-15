@@ -46,6 +46,7 @@ config :block_scout_web,
   dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST"),
   dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5"),
   circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
+  enable_gas_tracker: System.get_env("ENABLE_GAS_TRACKER", "false") == "true",
   re_captcha_secret_key: System.get_env("RE_CAPTCHA_SECRET_KEY", nil),
   re_captcha_client_key: System.get_env("RE_CAPTCHA_CLIENT_KEY", nil)
 
@@ -101,12 +102,26 @@ tx_chart_config =
     %{}
   end
 
+gas_usage_chart_config =
+  if System.get_env("ENABLE_GAS_TRACKER", "false") == "true" do
+    %{gas_usage: [:gas_usage_per_day]}
+  else
+    %{}
+  end
+
 config :block_scout_web,
   chart_config: Map.merge(price_chart_config, tx_chart_config)
+
+config :block_scout_web,
+  gas_usage_chart_config: gas_usage_chart_config
 
 config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
   # days
   history_size: 30
+
+config :block_scout_web, BlockScoutWeb.Chain.GasUsageHistoryChartController,
+  # days
+  history_size: 60
 
 config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
   # days
