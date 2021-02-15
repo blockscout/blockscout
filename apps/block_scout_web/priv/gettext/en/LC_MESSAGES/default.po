@@ -108,7 +108,7 @@ msgid "API for the %{subnetwork} - BlockScout"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:119
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:124
 msgid "APIs"
 msgstr ""
 
@@ -630,7 +630,7 @@ msgid "Error: Could not determine contract creator."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:133
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:138
 msgid "Eth RPC"
 msgstr ""
 
@@ -719,7 +719,7 @@ msgid "Github"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:123
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:128
 msgid "GraphQL"
 msgstr ""
 
@@ -1177,7 +1177,7 @@ msgid "Query"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:128
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:133
 msgid "RPC"
 msgstr ""
 
@@ -1242,13 +1242,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_logs/index.html.eex:14
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:216
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:260
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:215
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:259
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:210
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:209
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
@@ -1873,7 +1873,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token/index.html.eex:8
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:11
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:87
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:108
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:113
 #: lib/block_scout_web/templates/tokens/index.html.eex:4
 #: lib/block_scout_web/views/address_view.ex:343
 msgid "Tokens"
@@ -1954,7 +1954,7 @@ msgid "Write Proxy"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:147
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:152
 msgid "Apps"
 msgstr ""
 
@@ -1964,7 +1964,7 @@ msgid "Copy Raw Trace"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:214
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:213
 msgid "Search by address, token symbol, name, transaction hash, or block number"
 msgstr ""
 
@@ -1991,16 +1991,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/smart_contract/_functions.html.eex:17
 msgid "page"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:96
-msgid "Bridged"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/bridged_tokens/index.html.eex:4
-msgid "Bridged Tokens"
 msgstr ""
 
 #, elixir-format
@@ -2626,7 +2616,7 @@ msgid "validator"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:149
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:154
 msgid "Stakes"
 msgstr ""
 
@@ -2668,12 +2658,13 @@ msgstr ""
 msgid "This contract has been verified via Sourcify."
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:155
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:160
 msgid "Staking"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:253
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:252
 msgid "Press / and focus will be moved to the search field"
 msgstr ""
 
@@ -2781,4 +2772,19 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/gas_tracker/_tabs.html.eex:13
 msgid "Gas spenders 3hrs"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/bridged_tokens/index.html.eex:5
+msgid "Bridged Tokens from "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:96
+msgid "Bridged from Ethereum"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:101
+msgid "Bridged from BSC"
 msgstr ""
