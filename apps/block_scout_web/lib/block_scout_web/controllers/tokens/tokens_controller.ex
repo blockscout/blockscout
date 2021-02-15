@@ -8,10 +8,18 @@ defmodule BlockScoutWeb.TokensController do
   alias Phoenix.View
 
   def index(conn, %{"type" => "JSON"} = params) do
-    tokens =
+    filter =
+      if Map.has_key?(params, "filter") do
+        Map.get(params, "filter")
+      else
+        nil
+      end
+
+    paging_params =
       params
       |> paging_options()
-      |> Chain.list_top_tokens()
+
+    tokens = Chain.list_top_tokens(filter, paging_params)
 
     {tokens_page, next_page} = split_list_by_page(tokens)
 

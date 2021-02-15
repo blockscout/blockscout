@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3631](https://github.com/poanetwork/blockscout/pull/3631) - Tokens search
 - [#3631](https://github.com/poanetwork/blockscout/pull/3631) - BSC OMNI bridge support
 - [#3603](https://github.com/poanetwork/blockscout/pull/3603) - Display method output parameter name at contract read page
 - [#3597](https://github.com/poanetwork/blockscout/pull/3597) - Show APY for delegators in Staking DApp

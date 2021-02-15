@@ -8,11 +8,11 @@ defmodule BlockScoutWeb.BridgedTokensController do
   alias Phoenix.View
 
   def show(conn, %{"type" => "JSON", "id" => "eth"} = params) do
-    show(conn, params, :eth)
+    get_items(conn, params, :eth)
   end
 
   def show(conn, %{"type" => "JSON", "id" => "bsc"} = params) do
-    show(conn, params, :bsc)
+    get_items(conn, params, :bsc)
   end
 
   def show(conn, %{"id" => "eth"}) do
@@ -41,12 +41,33 @@ defmodule BlockScoutWeb.BridgedTokensController do
     not_found(conn)
   end
 
-  defp show(conn, params, destination) do
-    full_params =
+  def index(conn, %{"type" => "JSON"} = params) do
+    get_items(conn, params, :eth)
+  end
+
+  def index(conn, _params) do
+    total_supply = Chain.total_supply()
+
+    render(conn, "index.html",
+      current_path: current_path(conn),
+      total_supply: total_supply,
+      chain: "Ethereum"
+    )
+  end
+
+  defp get_items(conn, params, destination) do
+    filter =
+      if Map.has_key?(params, "filter") do
+        Map.get(params, "filter")
+      else
+        nil
+      end
+
+    paging_params =
       params
       |> paging_options()
 
-    tokens = Chain.list_top_bridged_tokens(destination, full_params)
+    tokens = Chain.list_top_bridged_tokens(destination, filter, paging_params)
 
     {tokens_page, next_page} = split_list_by_page(tokens)
 
@@ -93,20 +114,6 @@ defmodule BlockScoutWeb.BridgedTokensController do
         items: items,
         next_page_path: next_page_path
       }
-    )
-  end
-
-  def index(conn, %{"type" => "JSON"} = params) do
-    show(conn, params, :eth)
-  end
-
-  def index(conn, _params) do
-    total_supply = Chain.total_supply()
-
-    render(conn, "index.html",
-      current_path: current_path(conn),
-      total_supply: total_supply,
-      chain: "Ethereum"
     )
   end
 end

@@ -2678,7 +2678,7 @@ msgid "Approximate Current Annual Percentage Yield. If you see N/A, please wait 
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/bridged_tokens/index.html.eex:4
+#: lib/block_scout_web/templates/bridged_tokens/index.html.eex:5
 msgid "Bridged Tokens from "
 msgstr ""
 
@@ -2687,7 +2687,7 @@ msgstr ""
 msgid "Bridged from Ethereum"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:101
 msgid "Bridged from BSC"
 msgstr ""

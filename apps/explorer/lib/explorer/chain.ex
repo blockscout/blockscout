@@ -1822,23 +1822,23 @@ defmodule Explorer.Chain do
   Lists the top `t:Explorer.Chain.Token.t/0`'s'.
 
   """
-  @spec list_top_tokens :: [{Token.t(), non_neg_integer()}]
-  def list_top_tokens(options \\ []) do
+  @spec list_top_tokens(String.t()) :: [{Token.t(), non_neg_integer()}]
+  def list_top_tokens(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    fetch_top_tokens(paging_options)
+    fetch_top_tokens(filter, paging_options)
   end
 
-  @spec list_top_bridged_tokens(String.t(), [paging_options | necessity_by_association_option]) :: [
+  @spec list_top_bridged_tokens(atom(), String.t(), [paging_options | necessity_by_association_option]) :: [
           {Token.t(), non_neg_integer()}
         ]
-  def list_top_bridged_tokens(destination, options \\ []) do
+  def list_top_bridged_tokens(destination, filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    fetch_top_bridged_tokens(destination, paging_options)
+    fetch_top_bridged_tokens(destination, paging_options, filter)
   end
 
-  defp fetch_top_tokens(paging_options) do
+  defp fetch_top_tokens(filter, paging_options) do
     base_query =
       from(t in Token,
         where: t.total_supply > ^0,
@@ -1846,13 +1846,24 @@ defmodule Explorer.Chain do
         preload: [:contract_address]
       )
 
-    base_query
-    |> page_tokens(paging_options)
-    |> limit(^paging_options.page_size)
+    base_query_with_paging =
+      base_query
+      |> page_tokens(paging_options)
+      |> limit(^paging_options.page_size)
+
+    query =
+      if filter && filter !== "" do
+        base_query_with_paging
+        |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
+      else
+        base_query_with_paging
+      end
+
+    query
     |> Repo.all()
   end
 
-  defp fetch_top_bridged_tokens(destination, paging_options) do
+  defp fetch_top_bridged_tokens(destination, paging_options, filter) do
     chain_id = translate_destination_to_chain_id(destination)
 
     bridged_tokens_query =
@@ -1872,9 +1883,20 @@ defmodule Explorer.Chain do
         preload: [:contract_address]
       )
 
-    base_query
-    |> page_tokens(paging_options)
-    |> limit(^paging_options.page_size)
+    base_query_with_paging =
+      base_query
+      |> page_tokens(paging_options)
+      |> limit(^paging_options.page_size)
+
+    query =
+      if filter && filter !== "" do
+        base_query_with_paging
+        |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
+      else
+        base_query_with_paging
+      end
+
+    query
     |> Repo.all()
   end
 
