@@ -20,7 +20,7 @@
       use_custom_tooltip: false
     %>
   </td>
-  <%= if bridged_tokens_enabled?() do %>
+  <%= if Chain.bridged_tokens_enabled?() do %>
     <td class="stakes-td">
       <%= case @token.bridged do %>
       <% nil -> %>
