@@ -5,6 +5,7 @@ defmodule Indexer.Supervisor do
 
   use Supervisor
 
+  alias Explorer.Chain
   alias Indexer.{Block, PendingOpsCleaner, SetAmbBridgedMetadataForTokens, SetOmniBridgedMetadataForTokens}
   alias Indexer.Block.{Catchup, Realtime}
 
@@ -129,10 +130,8 @@ defmodule Indexer.Supervisor do
       {PendingOpsCleaner, [[], []]}
     ]
 
-    omni_bridge_mediator = Application.get_env(:block_scout_web, :omni_bridge_mediator)
-
     extended_fetchers =
-      if omni_bridge_mediator && omni_bridge_mediator !== "" do
+      if Chain.bridged_tokens_enabled?() do
         [{SetOmniBridgedMetadataForTokens, [[], []]} | basic_fetchers]
       else
         basic_fetchers
