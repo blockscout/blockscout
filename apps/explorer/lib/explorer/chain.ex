@@ -3523,7 +3523,7 @@ defmodule Explorer.Chain do
             | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
           }
         else
-          address_verified_twin_contract = Chain.address_verified_twin_contract(address_hash)
+          address_verified_twin_contract = Chain.get_address_verified_twin_contract(address_hash)
 
           if address_verified_twin_contract do
             formatted_code = format_source_code_output(address_verified_twin_contract)
