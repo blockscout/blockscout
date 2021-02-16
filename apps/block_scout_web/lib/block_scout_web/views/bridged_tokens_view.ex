@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.BridgedTokensView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain
   alias Explorer.Chain.Token
 
   @owl_token_amb "0x0905Ab807F8FD040255F0cF8fa14756c1D824931"
@@ -27,21 +28,5 @@ defmodule BlockScoutWeb.BridgedTokensView do
 
   def owl_token_omni_info do
     "<div class='custom-tooltip-header'>OWL token bridged through OmniBridge without support of <i>burnOWL</i> method. It is not recommended to use.</div>"
-  end
-
-  def chain_id_display_name(chain_id) do
-    chain_id_int =
-      if is_integer(chain_id) do
-        chain_id
-      else
-        chain_id
-        |> Decimal.to_integer()
-      end
-
-    case chain_id_int do
-      1 -> "eth"
-      56 -> "bsc"
-      _ -> ""
-    end
   end
 end

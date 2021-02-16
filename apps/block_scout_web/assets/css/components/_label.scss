@@ -27,6 +27,14 @@
         background: #e7b941;
         color: #fff;
     }
+    &.bridged {
+        background: #70aee3;
+        color: #fff;
+    }
+    &.validator {
+        background: $primary;
+        color: #fff;
+    }
     &.secondary {
         background: $secondary;
         color: #fff;
