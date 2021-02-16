@@ -92,9 +92,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
           )
 
         clean_result = remove_init_data_and_whisper_data(result["bytecode"])
-        expected_result = remove_init_data_and_whisper_data(compiler_test["expected_bytecode"])
+        expected_result = remove_init_data_and_whisper_data(compiler_test["tx_input"])
 
-        assert clean_result == expected_result
+        assert expected_result == clean_result
       end)
     end
 

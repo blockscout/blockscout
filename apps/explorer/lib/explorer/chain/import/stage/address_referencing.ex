@@ -27,7 +27,8 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
       Runner.CeloWallets,
       Runner.ExchangeRate,
       Runner.StakingPools,
-      Runner.StakingPoolsDelegators
+      Runner.StakingPoolsDelegators,
+      Runner.Address.CoinBalancesDaily
     ]
 
   @impl Stage

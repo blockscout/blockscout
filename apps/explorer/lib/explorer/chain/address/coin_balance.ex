@@ -83,12 +83,9 @@ defmodule Explorer.Chain.Address.CoinBalance do
       cb in CoinBalance,
       where: cb.address_hash == ^address_hash,
       where: not is_nil(cb.value),
-      inner_join: b in Block,
-      on: cb.block_number == b.number,
       order_by: [desc: :block_number],
       limit: ^page_size,
-      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
-      select_merge: %{block_timestamp: b.timestamp}
+      select_merge: %{delta: fragment("value - coalesce(lead(value, 1) over (order by block_number desc), 0)")}
     )
   end
 
@@ -115,11 +112,18 @@ defmodule Explorer.Chain.Address.CoinBalance do
   end
 
   def last_coin_balance_timestamp(address_hash) do
-    CoinBalance
-    |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
-    |> where([cb], cb.address_hash == ^address_hash)
-    |> last(:block_number)
-    |> select([cb, b], %{timestamp: b.timestamp, value: cb.value})
+    coin_balance_query =
+      CoinBalance
+      |> where([cb], cb.address_hash == ^address_hash)
+      |> last(:block_number)
+      |> select([cb, b], %{block_number: cb.block_number, value: cb.value})
+
+    from(
+      cb in subquery(coin_balance_query),
+      inner_join: b in Block,
+      on: cb.block_number == b.number,
+      select: %{timestamp: b.timestamp, value: cb.value}
+    )
   end
 
   def changeset(%__MODULE__{} = balance, params) do
