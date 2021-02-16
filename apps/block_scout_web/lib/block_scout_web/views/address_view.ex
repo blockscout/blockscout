@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressView do
 
   require Logger
 
-  alias BlockScoutWeb.{AccessHelpers, LayoutView}
+  alias BlockScoutWeb.{AccessHelpers, CustomContractsHelpers, LayoutView}
   alias Explorer.Chain
 
   alias Explorer.Chain.{
@@ -189,7 +189,7 @@ defmodule BlockScoutWeb.AddressView do
       do: ""
 
   def balance_percentage(%Address{fetched_coin_balance: balance}, total_supply) do
-    if total_supply > 0 do
+    if Decimal.cmp(total_supply, 0) == :gt do
       balance
       |> Wei.to(:ether)
       |> Decimal.div(Decimal.new(total_supply))

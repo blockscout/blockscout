@@ -1,3 +1,10 @@
+<script>
+  function ShowLayoutContainer() {
+
+    document.getElementsByClassName("layout-container")[0].style.visibility = "visible";
+  }
+  window.onload = ShowLayoutContainer()
+</script>
 <section class="container" data-page="transaction-list">
   <div class="card">
     <div class="card-body" data-async-listing="<%= @current_path %>">
