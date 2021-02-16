@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      results_plus_one = Chain.address_to_transactions_with_rewards(address_hash, options)
+      results_plus_one = Chain.address_to_mined_transactions_with_rewards(address_hash, options)
       {results, next_page} = split_list_by_page(results_plus_one)
 
       next_page_url =
@@ -60,7 +60,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
               View.render_to_string(
                 TransactionView,
                 "_emission_reward_tile.html",
-                conn: conn,
                 current_address: address,
                 emission_funds: emission_reward,
                 validator: validator_reward

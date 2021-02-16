@@ -190,11 +190,15 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_rewards(rewards) do
     preloaded_rewards = Repo.preload(rewards, [:address, :block])
+    emission_reward = Enum.find(preloaded_rewards, fn reward -> reward.address_type == :emission_funds end)
 
-    Enum.each(preloaded_rewards, fn reward ->
+    preloaded_rewards_except_emission =
+      Enum.reject(preloaded_rewards, fn reward -> reward.address_type == :emission_funds end)
+
+    Enum.each(preloaded_rewards_except_emission, fn reward ->
       Endpoint.broadcast("rewards:#{to_string(reward.address_hash)}", "new_reward", %{
-        emission_funds: Enum.at(preloaded_rewards, 1),
-        validator: Enum.at(preloaded_rewards, 0)
+        emission_funds: emission_reward,
+        validator: reward
       })
     end)
   end

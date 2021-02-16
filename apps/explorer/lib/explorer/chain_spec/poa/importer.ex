@@ -65,8 +65,7 @@ defmodule Explorer.ChainSpec.POA.Importer do
         from(
           e in EmissionReward,
           join: s in subquery(inner_delete_query),
-          # we join on reward because it's faster and we have to delete them all anyway
-          on: e.reward == s.reward
+          on: e.block_range == s.block_range
         )
 
       # Enforce EmissionReward ShareLocks order (see docs: sharelocks.md)

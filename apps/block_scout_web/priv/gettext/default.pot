@@ -594,7 +594,7 @@ msgid "Emission Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:60
+#: lib/block_scout_web/views/block_view.ex:70
 msgid "Emission Reward"
 msgstr ""
 
@@ -1042,12 +1042,10 @@ msgstr ""
 #: lib/block_scout_web/templates/chain/show.html.eex:52
 #: lib/block_scout_web/templates/layout/app.html.eex:30
 #: lib/block_scout_web/views/address_view.ex:127
-#: lib/block_scout_web/views/address_view.ex:127
 msgid "Market Cap"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:221
 #: lib/block_scout_web/views/transaction_view.ex:221
 msgid "Max of"
 msgstr ""
@@ -1058,7 +1056,8 @@ msgid "Method Id"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:56
+#: lib/block_scout_web/views/block_view.ex:60
+#: lib/block_scout_web/views/block_view.ex:65
 msgid "Miner Reward"
 msgstr ""
 
@@ -1524,7 +1523,7 @@ msgid "UTF-8"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:64
+#: lib/block_scout_web/views/block_view.ex:74
 msgid "Uncle Reward"
 msgstr ""
 
@@ -1903,4 +1902,9 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction_token_transfer/_token_transfer.html.eex:8
 #: lib/block_scout_web/views/transaction_view.ex:316
 msgid "Token Minting"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/block_view.ex:62
+msgid "Chore Reward"
 msgstr ""
