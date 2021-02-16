@@ -134,6 +134,9 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
       1 ->
         @etherscan_token_link
 
+      56 ->
+        "https://bscscan.com/token/"
+
       _ ->
         @etherscan_token_link
     end

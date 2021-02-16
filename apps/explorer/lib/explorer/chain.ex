@@ -6036,4 +6036,22 @@ defmodule Explorer.Chain do
 
     bsc_omni_bridge_mediator && bsc_omni_bridge_mediator !== ""
   end
+
+  def chain_id_display_name(nil), do: ""
+
+  def chain_id_display_name(chain_id) do
+    chain_id_int =
+      if is_integer(chain_id) do
+        chain_id
+      else
+        chain_id
+        |> Decimal.to_integer()
+      end
+
+    case chain_id_int do
+      1 -> "eth"
+      56 -> "bsc"
+      _ -> ""
+    end
+  end
 end

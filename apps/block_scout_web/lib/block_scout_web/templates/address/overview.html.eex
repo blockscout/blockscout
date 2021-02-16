@@ -26,7 +26,7 @@
               <%= nil %>
           <% end %>
           <h1 class="card-title lg-card-title">
-            <%= address_title(@address) %> <%= gettext "Details" %>
+            <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
               <span class="overview-title-item" data-clipboard-text="<%= @address %>">
