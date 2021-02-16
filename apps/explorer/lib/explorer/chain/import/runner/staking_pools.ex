@@ -24,6 +24,9 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
   def option_key, do: :staking_pools
 
   @impl Import.Runner
+  def runner_specific_options, do: [:clear_snapshotted_values]
+
+  @impl Import.Runner
   def imported_table_row do
     %{
       value_type: "[#{ecto_schema_module()}.t()]",
@@ -36,23 +39,32 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
     insert_options =
       options
       |> Map.get(option_key(), %{})
-      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.take(~w(on_conflict timeout clear_snapshotted_values)a)
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    # Enforce ShareLocks tables order (see docs: sharelocks.md)
+    clear_snapshotted_values =
+      case Map.fetch(insert_options, :clear_snapshotted_values) do
+        {:ok, v} -> v
+        :error -> false
+      end
+
+    multi =
+      if clear_snapshotted_values do
+        multi
+      else
+        # Enforce ShareLocks tables order (see docs: sharelocks.md)
+        Multi.run(multi, :acquire_all_staking_pools, fn repo, _ ->
+          acquire_all_staking_pools(repo)
+        end)
+      end
+
     multi
-    |> Multi.run(:acquire_all_staking_pools, fn repo, _ ->
-      acquire_all_staking_pools(repo)
-    end)
     |> Multi.run(:mark_as_deleted, fn repo, _ ->
-      mark_as_deleted(repo, changes_list, insert_options)
+      mark_as_deleted(repo, changes_list, insert_options, clear_snapshotted_values)
     end)
     |> Multi.run(:insert_staking_pools, fn repo, _ ->
       insert(repo, changes_list, insert_options)
-    end)
-    |> Multi.run(:calculate_stakes_ratio, fn repo, _ ->
-      calculate_stakes_ratio(repo, insert_options)
     end)
   end
 
@@ -73,16 +85,29 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
     {:ok, pools}
   end
 
-  defp mark_as_deleted(repo, changes_list, %{timeout: timeout}) when is_list(changes_list) do
-    addresses = Enum.map(changes_list, & &1.staking_address_hash)
-
+  defp mark_as_deleted(repo, changes_list, %{timeout: timeout}, clear_snapshotted_values) when is_list(changes_list) do
     query =
-      from(
-        pool in StakingPool,
-        where: pool.staking_address_hash not in ^addresses,
-        # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
-        update: [set: [is_deleted: true, is_active: false]]
-      )
+      if clear_snapshotted_values do
+        from(
+          pool in StakingPool,
+          update: [
+            set: [
+              snapshotted_self_staked_amount: nil,
+              snapshotted_total_staked_amount: nil,
+              snapshotted_validator_reward_ratio: nil
+            ]
+          ]
+        )
+      else
+        addresses = Enum.map(changes_list, & &1.staking_address_hash)
+
+        from(
+          pool in StakingPool,
+          where: pool.staking_address_hash not in ^addresses,
+          # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
+          update: [set: [is_deleted: true, is_active: false]]
+        )
+      end
 
     try do
       {_, result} = repo.update_all(query, [], timeout: timeout)
@@ -130,52 +155,24 @@ defmodule Explorer.Chain.Import.Runner.StakingPools do
           is_active: fragment("EXCLUDED.is_active"),
           is_banned: fragment("EXCLUDED.is_banned"),
           is_validator: fragment("EXCLUDED.is_validator"),
+          is_unremovable: fragment("EXCLUDED.is_unremovable"),
+          are_delegators_banned: fragment("EXCLUDED.are_delegators_banned"),
           likelihood: fragment("EXCLUDED.likelihood"),
-          staked_ratio: fragment("EXCLUDED.staked_ratio"),
+          validator_reward_percent: fragment("EXCLUDED.validator_reward_percent"),
+          stakes_ratio: fragment("EXCLUDED.stakes_ratio"),
+          validator_reward_ratio: fragment("EXCLUDED.validator_reward_ratio"),
           self_staked_amount: fragment("EXCLUDED.self_staked_amount"),
-          staked_amount: fragment("EXCLUDED.staked_amount"),
+          total_staked_amount: fragment("EXCLUDED.total_staked_amount"),
+          ban_reason: fragment("EXCLUDED.ban_reason"),
           was_banned_count: fragment("EXCLUDED.was_banned_count"),
           was_validator_count: fragment("EXCLUDED.was_validator_count"),
           is_deleted: fragment("EXCLUDED.is_deleted"),
+          banned_until: fragment("EXCLUDED.banned_until"),
+          banned_delegators_until: fragment("EXCLUDED.banned_delegators_until"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", pool.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", pool.updated_at)
         ]
       ]
     )
-  end
-
-  defp calculate_stakes_ratio(repo, %{timeout: timeout}) do
-    total_query =
-      from(
-        pool in StakingPool,
-        where: pool.is_active == true,
-        select: sum(pool.staked_amount)
-      )
-
-    total = repo.one!(total_query)
-
-    if total.value > Decimal.new(0) do
-      update_query =
-        from(
-          p in StakingPool,
-          where: p.is_active == true,
-          # ShareLocks order already enforced by `acquire_all_staking_pools` (see docs: sharelocks.md)
-          update: [
-            set: [
-              staked_ratio: p.staked_amount / ^total.value * 100,
-              likelihood: p.staked_amount / ^total.value * 100
-            ]
-          ]
-        )
-
-      {count, _} = repo.update_all(update_query, [], timeout: timeout)
-
-      {:ok, count}
-    else
-      {:ok, 1}
-    end
-  rescue
-    postgrex_error in Postgrex.Error ->
-      {:error, %{exception: postgrex_error}}
   end
 end

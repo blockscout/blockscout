@@ -32,7 +32,6 @@ defmodule Indexer.Block.Fetcher do
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
-    #    StakingPools,
     Token,
     TokenBalance,
     TokenInstance,
