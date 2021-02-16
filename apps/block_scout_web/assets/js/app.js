@@ -17,21 +17,7 @@ import 'bootstrap'
 // paths "./socket" or full ones "web/static/js/socket".
 
 import './locale'
-/*
-import './pages/address'
-import './pages/address/coin_balances'
-import './pages/address/transactions'
-import './pages/address/logs'
-import './pages/address/validations'
-import './pages/address/signed'
-import './pages/address/internal_transactions'
-import './pages/blocks'
-import './pages/chain'
-import './pages/pending_transactions'
-import './pages/survey_banner'
-import './pages/transaction'
-import './pages/transactions'
-*/
+// import './pages/address/signed'
 import './pages/layout'
 import './pages/dark-mode-switcher'
 import './lib/clipboard_buttons'

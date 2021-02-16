@@ -8,6 +8,9 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   def index(conn, %{"transaction_id" => hash_string, "type" => "JSON"} = params) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
          :ok <- Chain.check_transaction_exists(hash) do
@@ -43,6 +46,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
             TransactionTokenTransferView,
             "_token_transfer.html",
             token_transfer: transfer,
+            burn_address_hash: @burn_address_hash,
             conn: conn
           )
         end)

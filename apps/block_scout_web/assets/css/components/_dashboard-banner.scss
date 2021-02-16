@@ -6,6 +6,7 @@ $dashboard-banner-gradient-end: lighten(
 $dashboard-banner-network-plain-container-background-color: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-price: lighten($dashboard-banner-gradient-end, 5%) !default;
 $dashboard-line-color-market: $secondary !default;
+$dashboard-line-color-transactions: $warning !default;
 $dashboard-stats-item-label-color: #fff !default;
 $dashboard-stats-item-value-color: rgba(#fff, 0.8) !default;
 $dashboard-banner-chart-legend-label-color: #fff !default;
@@ -20,7 +21,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   overflow: hidden;
   padding: 0;
   position: relative;
-  height: 249px;
+  height: 264px;
   @include media-breakpoint-down(sm) {
       height: auto;
   }
@@ -34,6 +35,10 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   justify-content: space-between;
   position: relative;
   z-index: 9;
+
+  @include media-breakpoint-between(lg, xl) {
+    height: 249px;
+  }
 
   @include media-breakpoint-down(sm) {
     flex-direction: column;
@@ -75,8 +80,9 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
 
 .dashboard-banner-chart-legend {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(var(--numChartData), 0.9fr);
   padding-bottom: 12px;
+  padding-left:20px;
 
   .dashboard-banner-chart-legend-item {
     padding-bottom: 3px;
@@ -112,6 +118,10 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
 
     &:nth-child(2)::before {
       background-color: $dashboard-line-color-market;
+    }
+
+    &:nth-child(3)::before {
+        background-color: $dashboard-line-color-transactions;
     }
   }
 
@@ -150,7 +160,7 @@ $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !defa
   display: flex;
   height: $dashboard-banner-network-plain-container-height;
   justify-content: center;
-  margin: 45px 0 0 30px;
+  margin: 45px 0 -15px 30px;
   max-width: 100%;
   padding: 30px 0 30px 60px;
   width: 750px;
