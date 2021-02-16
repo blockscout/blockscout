@@ -36,7 +36,14 @@ defmodule BlockScoutWeb.Notifier do
           result
 
         {:error, changeset} ->
-          {:ok, compiler_versions} = CompilerVersion.fetch_versions()
+          compiler_versions =
+            case CompilerVersion.fetch_versions() do
+              {:ok, compiler_versions} ->
+                compiler_versions
+
+              {:error, _} ->
+                []
+            end
 
           result =
             View.render_to_string(AddressContractVerificationView, "new.html",
@@ -119,7 +126,8 @@ defmodule BlockScoutWeb.Notifier do
           &(TokenTransfer
             |> Repo.get_by(
               transaction_hash: &1.transaction_hash,
-              token_contract_address_hash: &1.token_contract_address_hash
+              token_contract_address_hash: &1.token_contract_address_hash,
+              log_index: &1.log_index
             )
             |> Repo.preload([:from_address, :to_address, :token, transaction: :block]))
         )

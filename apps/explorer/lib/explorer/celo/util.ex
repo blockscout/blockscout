@@ -14,7 +14,7 @@ defmodule Explorer.Celo.Util do
     |> Enum.map(&format_request/1)
     |> Enum.filter(fn req -> req.contract_address != :error end)
     |> Enum.map(fn %{contract_address: {:ok, address}} = req -> Map.put(req, :contract_address, address) end)
-    |> Reader.query_contracts(contract_abi)
+    |> Reader.query_contracts_by_name(contract_abi)
     |> Enum.zip(methods)
     |> Enum.into(%{}, fn
       {response, {_, function_name, _}} -> {function_name, response}
@@ -68,7 +68,7 @@ defmodule Explorer.Celo.Util do
 
     res =
       methods
-      |> Reader.query_contracts(contract_abi)
+      |> Reader.query_contracts_by_name(contract_abi)
       |> Enum.zip(methods)
       |> Enum.into(%{}, fn {response, %{function_name: function_name}} ->
         {function_name, response}

@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressTokenTransferController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.TransactionView
+  alias BlockScoutWeb.{AccessHelpers, TransactionView}
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
@@ -38,7 +38,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token_hash} <- Chain.string_to_address_hash(token_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
-         {:ok, _} <- Chain.token_from_address_hash(token_hash) do
+         {:ok, _} <- Chain.token_from_address_hash(token_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       transactions =
         Chain.address_to_transactions_with_token_transfers(
           address_hash,
@@ -77,6 +78,9 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
 
       json(conn, %{items: transfers_json, next_page_path: next_page_path})
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         unprocessable_entity(conn)
 
@@ -87,12 +91,13 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
 
   def index(
         conn,
-        %{"address_id" => address_hash_string, "address_token_id" => token_hash_string}
+        %{"address_id" => address_hash_string, "address_token_id" => token_hash_string} = params
       ) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token_hash} <- Chain.string_to_address_hash(token_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash),
-         {:ok, token} <- Chain.token_from_address_hash(token_hash) do
+         {:ok, token} <- Chain.token_from_address_hash(token_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",
@@ -104,6 +109,9 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         unprocessable_entity(conn)
 
@@ -120,7 +128,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         } = params
       ) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       options =
         @transaction_necessity_by_association
         |> Keyword.merge(paging_options(params))
@@ -162,6 +171,9 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
 
       json(conn, %{items: transfers_json, next_page_path: next_page_path})
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         unprocessable_entity(conn)
 
@@ -175,7 +187,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         %{"address_id" => address_hash_string} = params
       ) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",
@@ -187,6 +200,9 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         counters_path: address_path(conn, :address_counters, %{"id" => Address.checksum(address_hash)})
       )
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         unprocessable_entity(conn)
 

@@ -63,6 +63,13 @@
 
           <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
             <div class="d-flex flex-row justify-content-start text-muted">
+              <%= if external_url(@token_instance.instance) do %>
+                <span class="mr-4">
+                  <a data-test="external_url" href=<%=external_url(@token_instance.instance) %> target="_blank">
+                  View In App <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
+                  </a>
+                </span>
+              <% end %>
               <span class="mr-4"> <%= @token.type %> </span>
               <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
               <%= if decimals?(@token) do %>

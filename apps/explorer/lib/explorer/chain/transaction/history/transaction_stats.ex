@@ -9,6 +9,11 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
 
   alias Explorer.Repo
 
+  @derive {Jason.Encoder,
+           except: [
+             :__meta__
+           ]}
+
   schema "transaction_stats" do
     field(:date, :date)
     field(:number_of_transactions, :integer)

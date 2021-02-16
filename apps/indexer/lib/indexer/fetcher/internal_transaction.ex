@@ -113,7 +113,12 @@ defmodule Indexer.Fetcher.InternalTransaction do
         EthereumJSONRPC.fetch_block_internal_transactions(unique_numbers, json_rpc_named_arguments)
 
       _ ->
-        fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments)
+        try do
+          fetch_block_internal_transactions_by_transactions(unique_numbers, json_rpc_named_arguments)
+        rescue
+          error ->
+            {:error, error}
+        end
     end
     |> case do
       {:ok, internal_transactions_params} ->
@@ -175,7 +180,12 @@ defmodule Indexer.Fetcher.InternalTransaction do
             {nil, {:ok, []}}
 
           [%{block_hash: block_hash} | _] = transactions ->
-            {block_hash, EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)}
+            try do
+              {block_hash, EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)}
+            catch
+              :exit, error ->
+                {:error, error}
+            end
         end
         |> case do
           {block_hash, {:ok, internal_transactions}} ->

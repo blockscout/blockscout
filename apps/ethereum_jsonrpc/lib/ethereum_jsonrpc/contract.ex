@@ -16,7 +16,7 @@ defmodule EthereumJSONRPC.Contract do
   """
   @type call :: %{
           required(:contract_address) => String.t(),
-          required(:function_name) => String.t(),
+          required(:method_id) => String.t(),
           required(:args) => [term()],
           optional(:block_number) => EthereumJSONRPC.block_number()
         }
@@ -31,6 +31,57 @@ defmodule EthereumJSONRPC.Contract do
     parsed_abi =
       abi
       |> ABI.parse_specification()
+
+    functions = Enum.into(parsed_abi, %{}, &{&1.method_id, &1})
+
+    requests_with_index = Enum.with_index(requests)
+
+    indexed_responses =
+      requests_with_index
+      |> Enum.map(fn {%{contract_address: contract_address, method_id: target_method_id, args: args} = request, index} ->
+        function =
+          functions
+          |> define_function(target_method_id)
+          |> Map.drop([:method_id])
+
+        formatted_args = format_args(function, args)
+
+        function
+        |> Encoder.encode_function_call(formatted_args)
+        |> eth_call_request(contract_address, index, Map.get(request, :block_number), Map.get(request, :from))
+      end)
+      |> json_rpc(json_rpc_named_arguments)
+      |> case do
+        {:ok, responses} -> responses
+        {:error, {:bad_gateway, _request_url}} -> raise "Bad gateway"
+        {:error, reason} when is_atom(reason) -> raise Atom.to_string(reason)
+        {:error, error} -> raise error
+      end
+      |> Enum.into(%{}, &{&1.id, &1})
+
+    Enum.map(requests_with_index, fn {%{method_id: method_id}, index} ->
+      indexed_responses[index]
+      |> case do
+        nil ->
+          {:error, "No result"}
+
+        response ->
+          selectors = define_selectors(parsed_abi, method_id)
+
+          {^index, result} = Encoder.decode_result(response, selectors)
+          result
+      end
+    end)
+  rescue
+    error ->
+      Enum.map(requests, fn _ -> format_error(error) end)
+  end
+
+  @spec execute_contract_functions_by_name([call()], [map()], EthereumJSONRPC.json_rpc_named_arguments()) :: [call_result()]
+  def execute_contract_functions_by_name(requests, abi, json_rpc_named_arguments) do
+    parsed_abi =
+    abi
+    |> ABI.parse_specification()
 
     functions = Enum.into(parsed_abi, %{}, &{&1.function, &1})
 
@@ -65,12 +116,79 @@ defmodule EthereumJSONRPC.Contract do
           result
       end
     end)
-  rescue
-    error ->
+    rescue
+      error ->
       Enum.map(requests, fn _ -> format_error(error) end)
   end
 
-  defp eth_call_request(data, contract_address, id, block_number, from) do
+  defp format_args(function, args) do
+    args
+    |> Enum.with_index()
+    |> Enum.map(fn {arg, index} ->
+      types = function.types
+      type = Enum.at(types, index)
+
+      convert_string_to_array(type, arg)
+    end)
+  end
+
+  defp convert_string_to_array(type, arg) do
+    case type do
+      {:array, {:int, _size}} ->
+        convert_int_string_to_array(arg)
+
+      {:array, {:uint, _size}} ->
+        convert_int_string_to_array(arg)
+
+      {:array, _} ->
+        if arg && arg !== "" do
+          String.split(arg, ",")
+        else
+          []
+        end
+
+      _ ->
+        arg
+    end
+  end
+
+  defp convert_int_string_to_array(arg) do
+    if arg && arg !== "" do
+      arg
+      |> String.split(",")
+      |> Enum.map(fn el ->
+        {int, _} = Integer.parse(el)
+        int
+      end)
+    else
+      []
+    end
+  end
+
+  defp define_function(functions, target_method_id) do
+    {_, function} =
+      Enum.find(functions, fn {method_id, _func} ->
+        if method_id do
+          Base.encode16(method_id, case: :lower) == target_method_id || method_id == target_method_id
+        else
+          method_id == target_method_id
+        end
+      end)
+
+    function
+  end
+
+  defp define_selectors(parsed_abi, method_id) do
+    Enum.filter(parsed_abi, fn p_abi ->
+      if p_abi.method_id do
+        Base.encode16(p_abi.method_id, case: :lower) == method_id || p_abi.method_id == method_id
+      else
+        p_abi.method_id == method_id
+      end
+    end)
+  end
+
+  def eth_call_request(data, contract_address, id, block_number, from) do
     block =
       case block_number do
         nil -> "latest"

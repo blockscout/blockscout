@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
 
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.InternalTransactionView
+  alias BlockScoutWeb.{AccessHelpers, InternalTransactionView}
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
   alias Indexer.Fetcher.CoinBalanceOnDemand
@@ -15,7 +15,8 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash, [], false) do
+         {:ok, address} <- Chain.hash_to_address(address_hash, [], false),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       full_options =
         [
           necessity_by_association: %{
@@ -51,6 +52,9 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
 
       json(conn, %{items: internal_transactions_json, next_page_path: next_page_path})
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         not_found(conn)
 
@@ -61,7 +65,8 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.hash_to_address(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",
@@ -73,6 +78,9 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
       )
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         not_found(conn)
 

@@ -176,8 +176,8 @@ class MarketHistoryChart {
       fill: false,
       pointRadius: 0,
       backgroundColor: priceLineColor,
-      borderColor: priceLineColor,
-      lineTension: 0
+      borderColor: priceLineColor
+      // lineTension: 0
     }
     if (dataConfig.market === undefined || dataConfig.market.indexOf('price') === -1) {
       this.price.hidden = true
@@ -192,8 +192,8 @@ class MarketHistoryChart {
       fill: false,
       pointRadius: 0,
       backgroundColor: mcapLineColor,
-      borderColor: mcapLineColor,
-      lineTension: 0
+      borderColor: mcapLineColor
+      // lineTension: 0
     }
     if (dataConfig.market === undefined || dataConfig.market.indexOf('market_cap') === -1) {
       this.marketCap.hidden = true
@@ -208,8 +208,8 @@ class MarketHistoryChart {
       fill: false,
       pointRadius: 0,
       backgroundColor: sassVariables.dashboardLineColorTransactions,
-      borderColor: sassVariables.dashboardLineColorTransactions,
-      lineTension: 0
+      borderColor: sassVariables.dashboardLineColorTransactions
+      // lineTension: 0
     }
 
     if (dataConfig.transactions === undefined || dataConfig.transactions.indexOf('transactions_per_day') === -1) {

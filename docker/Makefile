@@ -3,7 +3,7 @@ HOST = host.docker.internal
 DOCKER_IMAGE = blockscout_prod
 BS_CONTAINER_NAME = blockscout
 PG_CONTAINER_NAME = postgres
-PG_CONTAINER_IMAGE = postgres:10.10
+PG_CONTAINER_IMAGE = postgres:12.4
 THIS_FILE = $(lastword $(MAKEFILE_LIST))
 
 ifeq ($(SYSTEM), Linux)
@@ -225,6 +225,9 @@ ifdef APPS_MENU
 endif
 ifdef EXTERNAL_APPS
 	BLOCKSCOUT_CONTAINER_PARAMS += -e 'EXTERNAL_APPS=$(EXTERNAL_APPS)'
+endif
+ifdef GAS_PRICE
+	BLOCKSCOUT_CONTAINER_PARAMS += -e 'GAS_PRICE=$(GAS_PRICE)'
 endif
 
 HAS_BLOCKSCOUT_IMAGE := $(shell docker images | grep ${DOCKER_IMAGE})

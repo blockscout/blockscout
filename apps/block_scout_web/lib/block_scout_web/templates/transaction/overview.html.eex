@@ -248,12 +248,12 @@
                 <h3 class="address-balance-text">
                   <%= case token_transfer_amount(transfer) do %>
                     <% {:ok, :erc721_instance} -> %>
-                      <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id))) %><%= "]" %>
+                      <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id)), "data-test": "token_link") %><%= "]" %>
                     <% {:ok, value} -> %>
                       <%= value %>
                   <% end %>
                     <%= " "%>
-                    <%= link(Gettext.gettext(BlockScoutWeb.Gettext, token_symbol(transfer.token)), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
+                    <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash), "data-test": "token_link") %>
                 </h3>
               <% end %>
               </div>
@@ -266,12 +266,12 @@
                 <h3 class="address-balance-text">
                   <%= case token_transfer_amount(transfer) do %>
                     <% {:ok, :erc721_instance} -> %>
-                      <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id))) %><%= "]" %>
+                      <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id)), "data-test": "token_link") %><%= "]" %>
                     <% {:ok, value} -> %>
                       <%= value %>
                   <% end %>
                     <%= " "%>
-                    <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
+                    <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash), "data-test": "token_link") %>
                 </h3>
               <% end %>
               </div>
@@ -284,12 +284,12 @@
                 <h3 class="address-balance-text">
                   <%= case token_transfer_amount(transfer) do %>
                     <% {:ok, :erc721_instance} -> %>
-                      <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id))) %><%= "]" %>
+                      <%= "TokenID ["%><%= link(transfer.token_id, to: token_instance_path(@conn, :show, transfer.token.contract_address_hash, to_string(transfer.token_id)), "data-test": "token_link") %><%= "]" %>
                     <% {:ok, value} -> %>
                       <%= value %>
                   <% end %>
                     <%= " "%>
-                    <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash)) %>
+                    <%= link(token_symbol(transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, transfer.token.contract_address_hash), "data-test": "token_link") %>
                 </h3>
               <% end %>
               </div>
