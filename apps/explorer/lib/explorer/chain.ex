@@ -3516,20 +3516,34 @@ defmodule Explorer.Chain do
         address_with_smart_contract = Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
 
         if address_with_smart_contract.smart_contract do
-          formatted_code =
-            SmartContract.add_submitted_comment(
-              address_with_smart_contract.smart_contract.contract_source_code,
-              address_with_smart_contract.smart_contract.inserted_at
-            )
+          formatted_code = format_source_code_output(address_with_smart_contract.smart_contract)
 
           %{
             address_with_smart_contract
             | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
           }
         else
-          address_with_smart_contract
+          address_verified_twin_contract = Chain.address_verified_twin_contract(address_hash)
+
+          if address_verified_twin_contract do
+            formatted_code = format_source_code_output(address_verified_twin_contract)
+
+            %{
+              address_with_smart_contract
+              | smart_contract: %{address_verified_twin_contract | contract_source_code: formatted_code}
+            }
+          else
+            address_with_smart_contract
+          end
         end
     end
+  end
+
+  defp format_source_code_output(smart_contract) do
+    SmartContract.add_submitted_comment(
+      smart_contract.contract_source_code,
+      smart_contract.inserted_at
+    )
   end
 
   @doc """
