@@ -30,6 +30,7 @@ defmodule Explorer.Chain do
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi, Query}
 
+  alias EthereumJSONRPC.Contract
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
 
   alias Explorer.Counters.LastFetchedCounter
@@ -93,6 +94,13 @@ defmodule Explorer.Chain do
   @default_paging_options %PagingOptions{page_size: 50}
 
   @max_incoming_transactions_count 10_000
+
+  @revert_msg_prefix_1 "Revert: "
+  @revert_msg_prefix_2 "revert: "
+  @revert_msg_prefix_3 "reverted "
+  @revert_msg_prefix_4 "Reverted "
+  # keccak256("Error(string)")
+  @revert_error_method_id "08c379a0"
 
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
@@ -2264,40 +2272,6 @@ defmodule Explorer.Chain do
     end
   end
 
-  @doc """
-  The height of the chain.
-
-      iex> insert(:block, number: 0)
-      iex> Explorer.Chain.block_height()
-      0
-      iex> insert(:block, number: 1)
-      iex> Explorer.Chain.block_height()
-      1
-
-  If there are no blocks, then the `t:block_height/0` is `0`, unlike `max_consensus_block_chain/0` where it is not found.
-
-      iex> Explorer.Chain.block_height()
-      0
-      iex> Explorer.Chain.max_consensus_block_number()
-      {:error, :not_found}
-
-  It is not possible to differentiate only the genesis block (`number` `0`) and no blocks.  Use
-  `max_consensus_block_chain/0` if you need to differentiate those two scenarios.
-
-      iex> Explorer.Chain.block_height()
-      0
-      iex> insert(:block, number: 0)
-      iex> Explorer.Chain.block_height()
-      0
-
-  Non-consensus blocks are ignored.
-
-      iex> insert(:block, number: 2, consensus: false)
-      iex> insert(:block, number: 1, consensus: true)
-      iex> Explorer.Chain.block_height()
-      1
-
-  """
   @spec block_height() :: block_height()
   def block_height do
     query = from(block in Block, select: coalesce(max(block.number), 0), where: block.consensus == true)
@@ -2615,7 +2589,7 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  defp pending_transactions_query(query) do
+  def pending_transactions_query(query) do
     from(transaction in query,
       where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
     )
@@ -2907,6 +2881,19 @@ defmodule Explorer.Chain do
       ) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
+    gas_hex =
+      if gas do
+        gas_hex_without_prefix =
+          gas
+          |> Decimal.to_integer()
+          |> Integer.to_string(16)
+          |> String.downcase()
+
+        "0x" <> gas_hex_without_prefix
+      else
+        "0x0"
+      end
+
     req =
       EthereumJSONRPCTransaction.eth_call_request(
         0,
@@ -2914,7 +2901,7 @@ defmodule Explorer.Chain do
         data,
         to_address_hash,
         from_address_hash,
-        Decimal.to_integer(gas),
+        gas_hex,
         Wei.hex_format(gas_price),
         Wei.hex_format(value)
       )
@@ -2928,14 +2915,7 @@ defmodule Explorer.Chain do
           ""
       end
 
-    revert_reason_parts = String.split(data, "revert: ")
-
-    formatted_revert_reason =
-      if Enum.count(revert_reason_parts) > 1 do
-        Enum.at(revert_reason_parts, 1)
-      else
-        data
-      end
+    formatted_revert_reason = format_revert_reason_message(data)
 
     if byte_size(formatted_revert_reason) > 0 do
       transaction
@@ -2944,6 +2924,50 @@ defmodule Explorer.Chain do
     end
 
     formatted_revert_reason
+  end
+
+  defp format_revert_reason_message(revert_reason) do
+    case revert_reason do
+      @revert_msg_prefix_1 <> rest ->
+        rest
+
+      @revert_msg_prefix_2 <> rest ->
+        rest
+
+      @revert_msg_prefix_3 <> rest ->
+        extract_revert_reason_message_wrapper(rest)
+
+      @revert_msg_prefix_4 <> rest ->
+        extract_revert_reason_message_wrapper(rest)
+
+      revert_reason_full ->
+        revert_reason_full
+    end
+  end
+
+  defp extract_revert_reason_message_wrapper(revert_reason_message) do
+    case revert_reason_message do
+      "0x" <> hex ->
+        extract_revert_reason_message(hex)
+
+      _ ->
+        revert_reason_message
+    end
+  end
+
+  defp extract_revert_reason_message(hex) do
+    case hex do
+      @revert_error_method_id <> msg_with_offset ->
+        [msg] =
+          msg_with_offset
+          |> Base.decode16!(case: :mixed)
+          |> TypeDecoder.decode_raw([:string])
+
+        msg
+
+      _ ->
+        hex
+    end
   end
 
   @doc """
@@ -4934,53 +4958,126 @@ defmodule Explorer.Chain do
     end
   end
 
-  def combine_proxy_implementation_abi(address_hash, abi) when not is_nil(abi) do
+  def combine_proxy_implementation_abi(proxy_address_hash, abi) when not is_nil(abi) do
+    implementation_abi = get_implementation_abi_from_proxy(proxy_address_hash, abi)
+
+    if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
+  end
+
+  def combine_proxy_implementation_abi(_, abi) when is_nil(abi) do
+    []
+  end
+
+  def is_proxy_contract?(abi) when not is_nil(abi) do
     implementation_method_abi =
       abi
       |> Enum.find(fn method ->
         Map.get(method, "name") == "implementation"
       end)
 
-    implementation_abi =
-      if implementation_method_abi do
-        implementation_address =
-          case Reader.query_contract(address_hash, abi, %{
-                 "implementation" => []
-               }) do
-            %{"implementation" => {:ok, [result]}} -> result
-            _ -> nil
-          end
+    if implementation_method_abi, do: true, else: false
+  end
 
-        if implementation_address do
-          implementation_address_hash_string = "0x" <> Base.encode16(implementation_address, case: :lower)
+  def is_proxy_contract?(abi) when is_nil(abi) do
+    false
+  end
 
-          case Chain.string_to_address_hash(implementation_address_hash_string) do
-            {:ok, implementation_address_hash} ->
-              implementation_smart_contract =
-                implementation_address_hash
-                |> Chain.address_hash_to_smart_contract()
+  def get_implementation_address_hash(proxy_address_hash, abi)
+      when not is_nil(proxy_address_hash) and not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation"
+      end)
 
-              if implementation_smart_contract do
-                implementation_smart_contract
-                |> Map.get(:abi)
-              else
-                []
-              end
+    implementation_method_abi_state_mutability = Map.get(implementation_method_abi, "stateMutability")
+    is_eip1967 = if implementation_method_abi_state_mutability == "nonpayable", do: true, else: false
 
-            _ ->
-              []
-          end
+    if is_eip1967 do
+      json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+      # https://eips.ethereum.org/EIPS/eip-1967
+      eip_1967_implementation_storage_pointer = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+
+      {:ok, implementation_address} =
+        Contract.eth_get_storage_at_request(
+          proxy_address_hash,
+          eip_1967_implementation_storage_pointer,
+          nil,
+          json_rpc_named_arguments
+        )
+
+      if String.length(implementation_address) > 42 do
+        "0x" <> String.slice(implementation_address, -40, 40)
+      else
+        implementation_address
+      end
+    else
+      implementation_address =
+        case Reader.query_contract(proxy_address_hash, abi, %{
+               "implementation" => []
+             }) do
+          %{"implementation" => {:ok, [result]}} -> result
+          _ -> nil
+        end
+
+      if implementation_address do
+        "0x" <> Base.encode16(implementation_address, case: :lower)
+      else
+        nil
+      end
+    end
+  end
+
+  def get_implementation_address_hash(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
+    nil
+  end
+
+  def get_implementation_abi(implementation_address_hash_string) when not is_nil(implementation_address_hash_string) do
+    case Chain.string_to_address_hash(implementation_address_hash_string) do
+      {:ok, implementation_address_hash} ->
+        implementation_smart_contract =
+          implementation_address_hash
+          |> Chain.address_hash_to_smart_contract()
+
+        if implementation_smart_contract do
+          implementation_smart_contract
+          |> Map.get(:abi)
         else
           []
         end
+
+      _ ->
+        []
+    end
+  end
+
+  def get_implementation_abi(implementation_address_hash_string) when is_nil(implementation_address_hash_string) do
+    []
+  end
+
+  def get_implementation_abi_from_proxy(proxy_address_hash, abi)
+      when not is_nil(proxy_address_hash) and not is_nil(abi) do
+    implementation_method_abi =
+      abi
+      |> Enum.find(fn method ->
+        Map.get(method, "name") == "implementation"
+      end)
+
+    if implementation_method_abi do
+      implementation_address_hash_string = get_implementation_address_hash(proxy_address_hash, abi)
+
+      if implementation_address_hash_string do
+        get_implementation_abi(implementation_address_hash_string)
       else
         []
       end
-
-    if Enum.empty?(implementation_abi), do: abi, else: implementation_abi ++ abi
+    else
+      []
+    end
   end
 
-  def combine_proxy_implementation_abi(_, abi) when is_nil(abi) do
+  def get_implementation_abi_from_proxy(proxy_address_hash, abi) when is_nil(proxy_address_hash) or is_nil(abi) do
     []
   end
 

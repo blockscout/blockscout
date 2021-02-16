@@ -72,7 +72,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Static Type Checking
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Code coverage
-      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
+      {:excoveralls, "~> 0.13.1"},
       # JSONRPC HTTP Post calls
       {:httpoison, "~> 1.6"},
       # Decode/Encode JSON for JSONRPC
@@ -95,11 +95,10 @@ defmodule EthereumJsonrpc.MixProject do
       {:websocket_client, "~> 1.3"},
       {:decimal, "~> 1.0"},
       {:decorator, "~> 1.2"},
-      {:hackney, "~> 1.15.2"},
+      {:hackney, "~> 1.16"},
       {:poolboy, "~> 1.5.2"},
       # Log json format
       {:logger_json, "~> 3.2"}
-      # {:jason, "~> 1.1"}
     ]
   end
 end

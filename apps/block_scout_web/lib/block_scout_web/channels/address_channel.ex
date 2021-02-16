@@ -4,14 +4,28 @@ defmodule BlockScoutWeb.AddressChannel do
   """
   use BlockScoutWeb, :channel
 
-  alias BlockScoutWeb.{AddressCoinBalanceView, AddressView, InternalTransactionView, TransactionView}
-  alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Hash
+  alias BlockScoutWeb.{
+    AddressCoinBalanceView,
+    AddressView,
+    InternalTransactionView,
+    TransactionView
+  }
+
+  alias Explorer.{Chain, Market, Repo}
+  alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.Hash.Address, as: AddressHash
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
-  intercept(["balance_update", "coin_balance", "count", "internal_transaction", "transaction", "verification_result"])
+  intercept([
+    "balance_update",
+    "coin_balance",
+    "count",
+    "internal_transaction",
+    "transaction",
+    "verification_result",
+    "token_transfer"
+  ])
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
@@ -103,6 +117,8 @@ defmodule BlockScoutWeb.AddressChannel do
 
   def handle_out("transaction", data, socket), do: handle_transaction(data, socket, "transaction")
 
+  def handle_out("token_transfer", data, socket), do: handle_token_transfer(data, socket, "token_transfer")
+
   def handle_out("coin_balance", %{block_number: block_number}, socket) do
     coin_balance = Chain.get_coin_balance(socket.assigns.address_hash, block_number)
 
@@ -141,6 +157,34 @@ defmodule BlockScoutWeb.AddressChannel do
       from_address_hash: to_string(transaction.from_address_hash),
       transaction_hash: Hash.to_string(transaction.hash),
       transaction_html: rendered
+    })
+
+    {:noreply, socket}
+  end
+
+  def handle_token_transfer(%{address: address, token_transfer: token_transfer}, socket, event) do
+    Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
+
+    transaction =
+      Transaction
+      |> Repo.get_by(hash: token_transfer.transaction_hash)
+      |> Repo.preload([:from_address, :to_address, :block, token_transfers: [:from_address, :to_address, :token]])
+
+    rendered =
+      View.render_to_string(
+        TransactionView,
+        "_tile.html",
+        current_address: address,
+        transaction: transaction,
+        burn_address_hash: @burn_address_hash,
+        conn: socket
+      )
+
+    push(socket, event, %{
+      to_address_hash: to_string(token_transfer.to_address_hash),
+      from_address_hash: to_string(token_transfer.from_address_hash),
+      token_transfer_hash: Hash.to_string(token_transfer.transaction_hash),
+      token_transfer_html: rendered
     })
 
     {:noreply, socket}

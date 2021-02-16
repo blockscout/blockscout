@@ -1,4 +1,4 @@
-<section class="address-overview">
+<section class="address-overview" data-page="token-details" data-page-address-hash="<%= @token.contract_address_hash %>">
   <div class="row">
     <div class="card-section col-md-12 col-lg-8 pr-0-md">
       <div class="card">

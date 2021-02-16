@@ -15,13 +15,13 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["message"] =~ "contractaddress is required"
+      assert response["message"] =~ "contract address is required"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
     end
 
-    test "with an invalid contractaddress hash", %{conn: conn} do
+    test "with an invalid contract address hash", %{conn: conn} do
       params = %{
         "module" => "token",
         "action" => "getToken",
@@ -33,13 +33,13 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["message"] =~ "Invalid contractaddress hash"
+      assert response["message"] =~ "Invalid contract address hash"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]
     end
 
-    test "with a contractaddress that doesn't exist", %{conn: conn} do
+    test "with a contract address that doesn't exist", %{conn: conn} do
       params = %{
         "module" => "token",
         "action" => "getToken",
@@ -51,7 +51,7 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["message"] =~ "contractaddress not found"
+      assert response["message"] =~ "contract address not found"
       assert response["status"] == "0"
       assert Map.has_key?(response, "result")
       refute response["result"]

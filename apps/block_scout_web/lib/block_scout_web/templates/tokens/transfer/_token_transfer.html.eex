@@ -1,4 +1,4 @@
-<div class="tile tile-type-token-transfer fade-in">
+<div class="tile tile-type-token-transfer fade-in" data-test="token-transfer" data-identifier-hash="<%= @token_transfer.transaction_hash %>">
   <div class="row tile-body">
     <!-- Color Block -->
     <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">

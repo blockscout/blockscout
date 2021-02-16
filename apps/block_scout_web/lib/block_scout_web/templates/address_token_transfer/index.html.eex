@@ -1,7 +1,7 @@
 <section class="container">
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
 
-  <section>
+  <section data-page="address-token-transfers">
     <div class="card">
       <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       <div data-async-load data-async-listing="<%= @current_path %>" class="card-body">
@@ -74,6 +74,6 @@
 
       </div>
     </div>
-    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address.js") %>"></script>
+    <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/address-token-transfers.js") %>"></script>
   </section>
 </section>
