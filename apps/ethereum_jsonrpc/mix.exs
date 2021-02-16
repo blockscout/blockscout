@@ -74,7 +74,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Code coverage
       {:excoveralls, "~> 0.13.1"},
       # JSONRPC HTTP Post calls
-      {:httpoison, "~> 1.6"},
+      {:httpoison, "~> 1.8"},
       # Decode/Encode JSON for JSONRPC
       {:jason, "~> 1.0"},
       # Log errors and application output to separate files
