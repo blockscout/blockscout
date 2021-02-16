@@ -237,6 +237,10 @@ defmodule BlockScoutWeb.TransactionView do
     Chain.transaction_to_status(transaction)
   end
 
+  def transaction_revert_reason(transaction) do
+    Chain.transaction_to_revert_reason(transaction)
+  end
+
   def empty_exchange_rate?(exchange_rate) do
     Token.null?(exchange_rate)
   end
