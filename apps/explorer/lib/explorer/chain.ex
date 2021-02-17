@@ -43,6 +43,7 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
+    BridgedToken,
     CeloAccount,
     CeloClaims,
     CeloParams,
@@ -51,7 +52,6 @@ defmodule Explorer.Chain do
     CeloValidatorGroup,
     CeloValidatorHistory,
     CeloVoters,
-    BridgedToken,
     CurrencyHelpers,
     Data,
     DecompiledSmartContract,
@@ -967,6 +967,37 @@ defmodule Explorer.Chain do
     Wei.to(gas_price, unit)
   end
 
+  defp augment_celo_address(orig_address) do
+    case orig_address do
+      nil ->
+        {:error, :not_found}
+
+      address ->
+        address2 =
+          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
+            Map.put(address, :celo_account, address.celo_delegator.celo_account)
+          else
+            address
+          end
+
+        address3 =
+          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
+            Map.put(address2, :celo_validator, address.celo_delegator.celo_validator)
+          else
+            address2
+          end
+
+        address4 =
+          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
+            Map.put(address3, :celo_attestation_stats, address.celo_delegator.celo_attestation_stats)
+          else
+            address3
+          end
+
+        {:ok, address4}
+    end
+  end
+
   @doc """
   Converts `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
 
@@ -1071,35 +1102,7 @@ defmodule Explorer.Chain do
           address_result
       end
 
-    address_updated_result
-    |> case do
-      nil ->
-        {:error, :not_found}
-
-      address ->
-        address2 =
-          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
-            Map.put(address, :celo_account, address.celo_delegator.celo_account)
-          else
-            address
-          end
-
-        address3 =
-          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
-            Map.put(address2, :celo_validator, address.celo_delegator.celo_validator)
-          else
-            address2
-          end
-
-        address4 =
-          if Ecto.assoc_loaded?(address.celo_delegator) and address.celo_delegator != nil do
-            Map.put(address3, :celo_attestation_stats, address.celo_delegator.celo_attestation_stats)
-          else
-            address3
-          end
-
-        {:ok, address4}
-    end
+    augment_celo_address(address_updated_result)
   end
 
   def decompiled_code(address_hash, version) do
