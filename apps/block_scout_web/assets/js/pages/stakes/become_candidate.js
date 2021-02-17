@@ -3,6 +3,7 @@ import { BigNumber } from 'bignumber.js'
 import { openModal, openErrorModal, openWarningModal, lockModal } from '../../lib/modals'
 import { setupValidation, displayInputError } from '../../lib/validation'
 import { makeContractCall, isSupportedNetwork, isStakingAllowed } from './utils'
+import constants from './constants'
 
 let status = 'modalClosed'
 
@@ -10,7 +11,7 @@ export async function openBecomeCandidateModal (event, store) {
   const state = store.getState()
 
   if (!state.account) {
-    openWarningModal('Unauthorized', 'You haven\'t approved the reading of account list from your MetaMask or MetaMask is not installed.')
+    openWarningModal('Unauthorized', constants.METAMASK_ACCOUNTS_EMPTY)
     return
   }
 
@@ -74,6 +75,7 @@ export function becomeCandidateConnectionLost () {
 async function becomeCandidate ($modal, store, msg) {
   const state = store.getState()
   const stakingContract = state.stakingContract
+  const tokenContract = state.tokenContract
   const decimals = state.tokenDecimals
   const stake = new BigNumber($modal.find('[candidate-stake]').val().replace(',', '.').trim()).shiftedBy(decimals).integerValue()
   const $miningAddressInput = $modal.find('[mining-address]')
@@ -93,7 +95,8 @@ async function becomeCandidate ($modal, store, msg) {
     }
 
     lockModal($modal)
-    makeContractCall(stakingContract.methods.addPool(stake.toString(), miningAddress), store)
+
+    makeContractCall(tokenContract.methods.transferAndCall(stakingContract.options.address, stake.toFixed(), `${miningAddress}01`), store)
   } catch (err) {
     openErrorModal('Error', err.message)
   }

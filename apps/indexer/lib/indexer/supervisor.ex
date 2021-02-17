@@ -24,6 +24,7 @@ defmodule Indexer.Supervisor do
     ReplacedTransaction,
     Token,
     TokenBalance,
+    TokenBalanceOnDemand,
     TokenInstance,
     TokenTotalSupplyOnDemand,
     TokenUpdater,
@@ -135,6 +136,7 @@ defmodule Indexer.Supervisor do
       # Out-of-band fetchers
       {CoinBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenTotalSupplyOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {TokenBalanceOnDemand.Supervisor, [json_rpc_named_arguments]},
 
       # Temporary workers
       {UncatalogedTokenTransfers.Supervisor, [[]]},

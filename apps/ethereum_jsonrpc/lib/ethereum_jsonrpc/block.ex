@@ -495,7 +495,7 @@ defmodule EthereumJSONRPC.Block do
   # hash format
   defp entry_to_elixir({key, _} = entry)
        when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash randomness receiptsRoot sealFields sha3Uncles epochSnarkData
-                     signature stateRoot step transactionsRoot uncles bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningHeader bitcoinMergedMiningMerkleProof hashForMergedMining),
+                     signature stateRoot step transactionsRoot uncles bitcoinMergedMiningCoinbaseTransaction bitcoinMergedMiningHeader bitcoinMergedMiningMerkleProof hashForMergedMining committedSeals committee pastCommittedSeals proposerSeal round),
        do: entry
 
   defp entry_to_elixir({"timestamp" = key, timestamp}) do
