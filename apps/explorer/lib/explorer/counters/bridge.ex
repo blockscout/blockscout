@@ -96,6 +96,11 @@ defmodule Explorer.Counters.Bridge do
     {:noreply, state}
   end
 
+  # don't handle other messages (e.g. :ssl_closed)
+  def handle_info(_, state) do
+    {:noreply, state}
+  end
+
   def fetch_token_bridge_total_supply do
     if bridges_table_exists?() do
       do_fetch_token_bridge_total_supply(:ets.lookup(@bridges_table, @current_total_supply_from_token_bridge_cache_key))

@@ -219,9 +219,11 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     bridged_mainnet_tokens_with_supply =
       bridged_mainnet_tokens_list
       |> Enum.map(fn {bridged_token_hash, bridged_token_symbol} ->
+        bridged_token_price_from_cache = TokenExchangeRateCache.fetch(bridged_token_symbol)
+
         bridged_token_price =
-          if TokenExchangeRateCache.fetch(bridged_token_symbol) > 0 do
-            TokenExchangeRateCache.fetch(bridged_token_symbol)
+          if bridged_token_price_from_cache && Decimal.cmp(bridged_token_price_from_cache, 0) == :gt do
+            bridged_token_price_from_cache
           else
             TokenExchangeRateCache.fetch_token_exchange_rate(bridged_token_symbol)
           end

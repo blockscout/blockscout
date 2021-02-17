@@ -35,13 +35,15 @@ config :block_scout_web,
   api_url: System.get_env("API_URL"),
   apps_menu: if(System.get_env("APPS_MENU", "false") == "true", do: true, else: false),
   external_apps: System.get_env("EXTERNAL_APPS"),
-  omni_bridge_mediator: System.get_env("OMNI_BRIDGE_MEDIATOR"),
+  eth_omni_bridge_mediator: System.get_env("ETH_OMNI_BRIDGE_MEDIATOR"),
+  bsc_omni_bridge_mediator: System.get_env("BSC_OMNI_BRIDGE_MEDIATOR"),
   amb_bridge_mediators: System.get_env("AMB_BRIDGE_MEDIATORS"),
   foreign_json_rpc: System.get_env("FOREIGN_JSON_RPC", ""),
   gas_price: System.get_env("GAS_PRICE", nil),
   restricted_list: System.get_env("RESTRICTED_LIST", nil),
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),
   dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST"),
+  dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5"),
   circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true

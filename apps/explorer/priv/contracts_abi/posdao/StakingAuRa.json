@@ -40,7 +40,7 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_staker",
+        "name": "_delegator",
         "type": "address"
       },
       {
@@ -52,7 +52,7 @@
         "type": "uint256"
       }
     ],
-    "name": "getStakerPools",
+    "name": "getDelegatorPools",
     "outputs": [
       {
         "name": "result",
@@ -67,11 +67,11 @@
     "constant": true,
     "inputs": [
       {
-        "name": "_staker",
+        "name": "_delegator",
         "type": "address"
       }
     ],
-    "name": "getStakerPoolsLength",
+    "name": "getDelegatorPoolsLength",
     "outputs": [
       {
         "name": "",
@@ -1065,6 +1065,20 @@
     "constant": true,
     "inputs": [],
     "name": "stakingEpochEndBlock",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "lastChangeBlock",
     "outputs": [
       {
         "name": "",
