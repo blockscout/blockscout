@@ -5815,4 +5815,22 @@ defmodule Explorer.Chain do
       _ -> ""
     end
   end
+
+  @spec is_active_validator?(Address.t()) :: boolean()
+  def is_active_validator?(address_hash) do
+    now = Timex.now()
+
+    one_hour_before =
+      now
+      |> Timex.shift(hours: -1)
+
+    query =
+      from(
+        b in Block,
+        where: b.miner_hash == ^address_hash,
+        where: b.inserted_at >= ^one_hour_before
+      )
+
+    Repo.exists?(query)
+  end
 end
