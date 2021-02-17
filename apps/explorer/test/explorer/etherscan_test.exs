@@ -553,7 +553,8 @@ defmodule Explorer.EtherscanTest do
 
       inserted_at_order = Enum.map(found_transactions, & &1.inserted_at)
 
-      assert inserted_at_order == Enum.sort(inserted_at_order, &(&1 >= &2))
+      assert inserted_at_order ==
+               Enum.sort(inserted_at_order, &(DateTime.compare(&1, &2) == :gt || DateTime.compare(&1, &2) == :eq))
     end
 
     test "with page_size and page_number options" do

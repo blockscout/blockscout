@@ -82,9 +82,10 @@ defmodule BlockScoutWeb.AddressContractView do
     |> TypeDecoder.decode_raw(types)
   end
 
-  def format_external_libraries(libraries) do
+  def format_external_libraries(libraries, conn) do
     Enum.reduce(libraries, "", fn %{name: name, address_hash: address_hash}, acc ->
-      "#{acc}<span class=\"hljs-title\">#{name}</span> : #{address_hash}  \n"
+      address = get_address(address_hash)
+      "#{acc}<span class=\"hljs-title\">#{name}</span> : #{get_formatted_address_data(address, address_hash, conn)}  \n"
     end)
   end
 
