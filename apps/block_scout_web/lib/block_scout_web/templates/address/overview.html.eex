@@ -1,5 +1,6 @@
 <section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>" data-async-counters="<%= @counters_path %>">
-  <% dark_forest_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
+  <% dark_forest_addresses_list_0_4 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses) %>
+  <% dark_forest_addresses_list_0_5 = CustomContractsHelpers.get_custom_addresses_list(:dark_forest_addresses_v_0_5) %>
   <% circles_addresses_list = CustomContractsHelpers.get_custom_addresses_list(:circles_addresses) %>
   <% current_address = "0x" <> Base.encode16(@address.hash.bytes, case: :lower) %>
   <% created_from_address_hash = if from_address_hash(@address), do: "0x" <> Base.encode16(from_address_hash(@address).bytes, case: :lower), else: nil %>
@@ -9,26 +10,10 @@
       <div class="card">
         <div class="card-body">
           <%= cond do %>
-            <% Enum.member?(dark_forest_addresses_list, current_address) -> %>
-              <div class="custom-dapp-header-container">
-                <img class="custom-address-icon"/>
-                <div class="custom-dapp-header-description-container">
-                  <span class="address-detail-item custom-address-details">
-                    <%= gettext "zkSnark space warfare (v0.4)" %>
-                  </span>
-                  <a href="https://zkga.me/" target="_blank" class="application-icon-link">
-                    <span
-                      aria-label='<%= gettext("Play") %>'
-                      class="application-icon"
-                      data-placement="top"
-                      data-toggle="tooltip"
-                      title='<%= gettext("Play") %>'
-                    >
-                      <img class="application-icon"/>
-                    </span>
-                  </a>
-                </div>
-              </div>
+            <% Enum.member?(dark_forest_addresses_list_0_4, current_address) -> %>
+              <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.4)" %>
+            <% Enum.member?(dark_forest_addresses_list_0_5, current_address) -> %>
+              <%= render BlockScoutWeb.AddressView, "_custom_view_df_title.html", title: "zkSnark space warfare (v0.5)" %>
             <% Enum.member?(circles_addresses_list, current_address) -> %>
               <div class="custom-dapp-header-container">
                 <img class="custom-address-icon"/>

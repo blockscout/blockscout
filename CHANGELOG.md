@@ -7,6 +7,21 @@
 ### Chore
 
 
+## 3.5.1-beta
+
+### Features
+- [#3558](https://github.com/poanetwork/blockscout/pull/3558) - Focus to search field with a forward slash key
+- [#3541](https://github.com/poanetwork/blockscout/pull/3541) - Staking dapp stats: total number of delegators, total staked amount 
+- [#3540](https://github.com/poanetwork/blockscout/pull/3540) - Apply DarkForest custom theme to NFT instances
+
+### Fixes
+- [#3551](https://github.com/poanetwork/blockscout/pull/3551) - Fix contract's method's output of tuple type
+
+### Chore
+- [#3557](https://github.com/poanetwork/blockscout/pull/3557) - Single Staking menu
+- [#3540](https://github.com/poanetwork/blockscout/pull/3540), [#3545](https://github.com/poanetwork/blockscout/pull/3545) - Support different versions of DarkForest (0.4 - 0.5)
+
+
 ## 3.5.0-beta
 
 ### Features
