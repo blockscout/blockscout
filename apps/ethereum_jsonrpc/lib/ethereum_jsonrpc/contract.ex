@@ -22,6 +22,20 @@ defmodule EthereumJSONRPC.Contract do
         }
 
   @typedoc """
+  Call to a smart contract function.
+
+  * `:block_number` - the block in which to execute the function. Defaults to the `nil` to indicate
+  the latest block as determined by the remote node, which may differ from the latest block number
+  in `Explorer.Chain`.
+  """
+  @type call_by_name :: %{
+          required(:contract_address) => String.t(),
+          required(:function_name) => String.t(),
+          required(:args) => [term()],
+          optional(:block_number) => EthereumJSONRPC.block_number()
+        }
+
+  @typedoc """
   Result of calling a smart contract function.
   """
   @type call_result :: {:ok, term()} | {:error, String.t()}
@@ -77,11 +91,13 @@ defmodule EthereumJSONRPC.Contract do
       Enum.map(requests, fn _ -> format_error(error) end)
   end
 
-  @spec execute_contract_functions_by_name([call()], [map()], EthereumJSONRPC.json_rpc_named_arguments()) :: [call_result()]
+  @spec execute_contract_functions_by_name([call_by_name()], [map()], EthereumJSONRPC.json_rpc_named_arguments()) :: [
+          call_result()
+        ]
   def execute_contract_functions_by_name(requests, abi, json_rpc_named_arguments) do
     parsed_abi =
-    abi
-    |> ABI.parse_specification()
+      abi
+      |> ABI.parse_specification()
 
     functions = Enum.into(parsed_abi, %{}, &{&1.function, &1})
 
@@ -116,8 +132,8 @@ defmodule EthereumJSONRPC.Contract do
           result
       end
     end)
-    rescue
-      error ->
+  rescue
+    error ->
       Enum.map(requests, fn _ -> format_error(error) end)
   end
 

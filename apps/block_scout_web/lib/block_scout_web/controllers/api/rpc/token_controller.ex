@@ -110,9 +110,9 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
 
       _ ->
         to_integer(params, param_key)
-      end
     end
-  
+  end
+
   defp to_integer(params, param_key) do
     case Integer.parse(params[param_key]) do
       {integer, ""} ->
@@ -120,13 +120,13 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
 
       _ ->
         {:error, param_key}
-      end
     end
+  end
 
-    def gettokenholders(conn, params) do
+  def gettokenholders(conn, params) do
     with pagination_options <- Helpers.put_pagination_options(%{}, params),
          {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
-         {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param) do
+         {:format, {:ok, address_hash}} <- {:format, to_address_hash(contractaddress_param)} do
       options_with_defaults =
         pagination_options
         |> Map.put_new(:page_number, 0)
@@ -146,7 +146,7 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
       {:contractaddress_param, :error} ->
         render(conn, :error, error: "Query parameter contract address is required")
 
-      {:format, :error} ->
+      {:format, {:error, "address"}} ->
         render(conn, :error, error: "Invalid contract address hash")
     end
   end

@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.AddressContractController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash, address_options, true),
          {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
-            Logger.debug("Address Found #{address_hash}")
+      Logger.debug("Address Found #{address_hash}")
       Logger.debug("Smart Contract #{address}")
 
       with {:ok, implementation_address} <- Chain.get_proxied_address(address_hash),

@@ -273,7 +273,6 @@ defmodule Explorer.Chain.Wei do
       |> BitString.encode(options)
     end
   end
-
 end
 
 defimpl Inspect, for: Explorer.Chain.Wei do

@@ -329,6 +329,7 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
     |> DateTime.to_unix()
     |> integer_to_hex()
   end
+
   # defp gettoken_schema do
   #   ExJsonSchema.Schema.resolve(%{
   #     "type" => "object",

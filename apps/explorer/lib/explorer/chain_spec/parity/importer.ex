@@ -133,7 +133,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
         balance = parse_number(value)
         nonce = parse_number(params["nonce"] || "0")
         code = params["constructor"]
-  
+
         %{address_hash: address_hash, value: balance, nonce: nonce, contract_code: code}
 
       {address, %{"balance" => value} = params} ->
@@ -141,7 +141,7 @@ defmodule Explorer.ChainSpec.Parity.Importer do
         balance = parse_number(value)
         nonce = parse_number(params["nonce"] || "0")
         code = params["constructor"]
-  
+
         %{address_hash: address_hash, value: balance, nonce: nonce, contract_code: code}
     end)
     |> Enum.to_list()

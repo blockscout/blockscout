@@ -157,7 +157,7 @@ defmodule Explorer.SmartContract.Reader do
     EthereumJSONRPC.execute_contract_functions(requests, abi, json_rpc_named_arguments)
   end
 
-  @spec query_contracts_by_name([Contract.call()], term(), contract_call_options()) :: [Contract.call_result()]
+  @spec query_contracts_by_name([Contract.call_by_name()], term(), contract_call_options()) :: [Contract.call_result()]
   def query_contracts_by_name(requests, abi, opts \\ []) do
     json_rpc_named_arguments =
       Keyword.get(opts, :json_rpc_named_arguments) || Application.get_env(:explorer, :json_rpc_named_arguments)
@@ -232,7 +232,7 @@ defmodule Explorer.SmartContract.Reader do
     abi_with_method_id = get_abi_with_method_id(abi)
 
     abi_with_method_id
-    |> Enum.filter(& &1["constant"] || &1["stateMutability"] == "view")
+    |> Enum.filter(&(&1["constant"] || &1["stateMutability"] == "view"))
     |> Enum.map(&fetch_current_value_from_blockchain(&1, abi, contract_address_hash))
   end
 

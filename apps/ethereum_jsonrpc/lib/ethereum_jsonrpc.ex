@@ -171,7 +171,9 @@ defmodule EthereumJSONRPC do
     Contract.execute_contract_functions(functions, abi, json_rpc_named_arguments)
   end
 
-  @spec execute_contract_functions_by_name([Contract.call()], [map()], json_rpc_named_arguments) :: [Contract.call_result()]
+  @spec execute_contract_functions_by_name([Contract.call_by_name()], [map()], json_rpc_named_arguments) :: [
+          Contract.call_result()
+        ]
   def execute_contract_functions_by_name(functions, abi, json_rpc_named_arguments) do
     Contract.execute_contract_functions_by_name(functions, abi, json_rpc_named_arguments)
   end
