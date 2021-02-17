@@ -30,8 +30,12 @@
           <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="owl_info"></i>
         </span>
       <% end %>
-      <%= if @bridged_token.type do %>
+      <%= if @bridged_token && @bridged_token.type do %>
         <div class="bs-label right <%= @bridged_token.type %>"><%= String.upcase(@bridged_token.type) %></div>
+      <% end %>
+      <%= if @bridged_token && @bridged_token.foreign_chain_id do %>
+        <% tag = Chain.chain_id_display_name(@bridged_token.foreign_chain_id) %>
+        <div class="bs-label right ml-2 destination-<%= tag %>"><%= String.upcase(tag) %></div>
       <% end %>
     </div>
   </td>

@@ -1,6 +1,7 @@
 defmodule BlockScoutWeb.BridgedTokensView do
   use BlockScoutWeb, :view
 
+  alias Explorer.Chain
   alias Explorer.Chain.Token
 
   @owl_token_amb "0x0905Ab807F8FD040255F0cF8fa14756c1D824931"

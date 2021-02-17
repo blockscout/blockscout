@@ -251,23 +251,19 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   defp parse_optimization_runs(other), do: other
 
   defp fetch_external_libraries(params) do
-    Enum.reduce(
-      1..5,
-      %{},
-      fn number, acc ->
-        case Map.fetch(params, "library#{number}Name") do
-          {:ok, library_name} ->
-            library_address = Map.get(params, "library#{number}Address")
+    Enum.reduce(1..10, %{}, fn number, acc ->
+      case Map.fetch(params, "library#{number}Name") do
+        {:ok, library_name} ->
+          library_address = Map.get(params, "library#{number}Address")
 
-            acc
-            |> Map.put("library#{number}_name", library_name)
-            |> Map.put("library#{number}_address", library_address)
+          acc
+          |> Map.put("library#{number}_name", library_name)
+          |> Map.put("library#{number}_address", library_address)
 
-          :error ->
-            acc
-        end
+        :error ->
+          acc
       end
-    )
+    end)
   end
 
   defp required_param({:error, _} = error, _, _, _), do: error

@@ -1029,7 +1029,8 @@ $dark-stakes-banned-background: #3e314c;
 		color: #fff;
 	}
 
-	.bs-label.omni {
+	.bs-label.omni,
+	.bs-label.destination-eth {
 		background-color: $labels-dark;
 	}
 
@@ -1100,6 +1101,11 @@ $dark-stakes-banned-background: #3e314c;
 	}
 	.custom-power-input {
 		border-color: $dark-primary;
+	}
+	.stakes-btn-close-alert {
+		path {
+			fill: #fff;
+		  }
 	}
 }
 

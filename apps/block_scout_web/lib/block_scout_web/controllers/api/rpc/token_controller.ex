@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.TokenController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.{Chain, Etherscan}
+  alias BlockScoutWeb.API.RPC.Helpers
+  alias Explorer.{Chain, Etherscan, PagingOptions}
 
   def gettoken(conn, params) do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
@@ -109,9 +110,9 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
 
       _ ->
         to_integer(params, param_key)
+      end
     end
-  end
-
+  
   defp to_integer(params, param_key) do
     case Integer.parse(params[param_key]) do
       {integer, ""} ->
@@ -119,6 +120,34 @@ defmodule BlockScoutWeb.API.RPC.TokenController do
 
       _ ->
         {:error, param_key}
+      end
+    end
+
+    def gettokenholders(conn, params) do
+    with pagination_options <- Helpers.put_pagination_options(%{}, params),
+         {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
+         {:format, {:ok, address_hash}} <- to_address_hash(contractaddress_param) do
+      options_with_defaults =
+        pagination_options
+        |> Map.put_new(:page_number, 0)
+        |> Map.put_new(:page_size, 10)
+
+      options = [
+        paging_options: %PagingOptions{
+          key: nil,
+          page_number: options_with_defaults.page_number,
+          page_size: options_with_defaults.page_size
+        }
+      ]
+
+      token_holders = Chain.fetch_token_holders_from_token_hash(address_hash, options)
+      render(conn, "gettokenholders.json", %{token_holders: token_holders})
+    else
+      {:contractaddress_param, :error} ->
+        render(conn, :error, error: "Query parameter contract address is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid contract address hash")
     end
   end
 

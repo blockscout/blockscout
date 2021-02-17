@@ -78,7 +78,7 @@
               <%= gettext("Accounts") %>
             <% end %>
           </li>
-          <%= if Application.get_env(:block_scout_web, :omni_bridge_mediator) && Application.get_env(:block_scout_web, :omni_bridge_mediator) != "" do %>
+          <%= if Chain.bridged_tokens_enabled?() do %>
             <li class="nav-item dropdown">
               <a href="#" role="button" id="navbarTokensDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span class="nav-link-icon">
@@ -93,9 +93,14 @@
                       to: tokens_path(@conn, :index)
                     ) %>
                 <%= link(
-                      gettext("Bridged"),
-                      class: "dropdown-item #{tab_status("bridged-tokens", @conn.request_path)}",
-                      to: bridged_tokens_path(@conn, :index)
+                      gettext("Bridged from Ethereum"),
+                      class: "dropdown-item #{tab_status("bridged-tokens/eth", @conn.request_path)}",
+                      to: bridged_tokens_path(@conn, :show, :eth)
+                    ) %>
+                <%= link(
+                      gettext("Bridged from BSC"),
+                      class: "dropdown-item #{tab_status("bridged-tokens/bsc", @conn.request_path)}",
+                      to: bridged_tokens_path(@conn, :show, :bsc)
                     ) %>
               </div>
             </li>
