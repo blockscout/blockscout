@@ -45,7 +45,7 @@ defmodule Explorer.Faucet do
       request(%{
         id: id,
         method: "eth_getTransactionCount",
-        params: [address_hash_str, "latest"]
+        params: [address_hash_str, "pending"]
       })
 
     req
