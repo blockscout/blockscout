@@ -34,7 +34,7 @@
             <%= if token_name?(@token) do %>
                 <div class="title-with-label"><%= @token.name %></div>
                 <%= if tag !== "" do %>
-                  <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridged", additional_classes: ["bridged", "ml-1"] %>
+                  <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridged", additional_classes: ["bridge", "ml-1"] %>
                   <%= render BlockScoutWeb.FormView, "_tag.html", text: String.upcase(tag), additional_classes: ["destination-#{tag}", "ml-1"] %>
                 <% end %>
             <% else %>
