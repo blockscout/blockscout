@@ -182,6 +182,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   defp bridged_token_symbol_to_id_mapping_to_get_price(symbol) do
     case symbol do
       "UNI" -> "uniswap"
+      "SURF" -> "surf-finance"
       _symbol -> nil
     end
   end

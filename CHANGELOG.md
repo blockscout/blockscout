@@ -2,6 +2,8 @@
 
 ### Features
 - [#3637](https://github.com/poanetwork/blockscout/pull/3637) - getsourcecode API endpoint: show data for unverified contract from verified contract with the same bytecode
+- [#3631](https://github.com/poanetwork/blockscout/pull/3631) - Tokens search
+- [#3631](https://github.com/poanetwork/blockscout/pull/3631) - BSC OMNI bridge support
 - [#3603](https://github.com/poanetwork/blockscout/pull/3603) - Display method output parameter name at contract read page
 - [#3597](https://github.com/poanetwork/blockscout/pull/3597) - Show APY for delegators in Staking DApp
 - [#3584](https://github.com/poanetwork/blockscout/pull/3584) - Token holders API endpoint
@@ -20,6 +22,8 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3645](https://github.com/poanetwork/blockscout/pull/3645) - Change Twitter handle
+- [#3644](https://github.com/poanetwork/blockscout/pull/3644) - Correct exchange rate for SURF.finance token
 - [#3618](https://github.com/poanetwork/blockscout/pull/3618) - Contracts verification up to 10 libraries
 - [#3616](https://github.com/poanetwork/blockscout/pull/3616) - POSDAO refactoring: use zero address instead of staker address for certain cases
 - [#3612](https://github.com/poanetwork/blockscout/pull/3612) - POSDAO refactoring: use 'getDelegatorPools' getter instead of 'getStakerPools' in Staking DApp
