@@ -155,7 +155,7 @@ defmodule Indexer.Transform.CeloAccounts do
   end
 
   defp do_parse_name(log, names) do
-    [{name}] = decode_data(log.data, [{:tuple, [:string]}])
+    [name] = decode_data(log.data, [:string])
     entry = %{name: String.slice(name, 0..30), address_hash: truncate_address_hash(log.second_topic), primary: true}
     [entry | names]
   rescue

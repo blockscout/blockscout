@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.AddressCeloController do
          %CeloAccount{address: _} <- address.celo_account do
       Logger.debug("Parsing Celo Address #{address_hash_string}")
 
-      {transaction_count, validation_count} = transaction_and_validation_count(address)
+      {transaction_count, _gas_usage, validation_count} = transaction_and_validation_count(address)
 
       render(
         conn,
