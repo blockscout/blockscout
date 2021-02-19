@@ -81,6 +81,7 @@ defmodule Explorer.Chain do
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.SmartContract.Reader
+  alias Explorer.Tags.{AddressTag, AddressToTag}
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
@@ -1124,6 +1125,34 @@ defmodule Explorer.Chain do
     Repo.all(query)
   end
 
+  @spec search_label(String.t()) :: [AddressToTag.t()]
+  def search_label(word) do
+    term =
+      word
+      |> String.replace(~r/[^a-zA-Z0-9]/, " ")
+      |> String.replace(~r/ +/, " & ")
+
+    term_final = term <> ":*"
+
+    inner_query =
+      from(tag in AddressTag,
+        where: fragment("to_tsvector('english', label ) @@ to_tsquery(?)", ^term_final),
+        select: tag
+      )
+
+    query =
+      from(att in AddressToTag,
+        left_join: at in subquery(inner_query),
+        on: att.tag_id == at.id,
+        select: %{
+          contract_address_hash: att.address_hash,
+          name: fragment("'<i class=\"fa fa-tag\"></i> label: <b>' || ? || '</b>'", at.label)
+        }
+      )
+
+    Repo.all(query)
+  end
+
   @doc """
   Converts `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
 
@@ -1854,7 +1883,7 @@ defmodule Explorer.Chain do
     query =
       if filter && filter !== "" do
         base_query_with_paging
-        |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
+        |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ plainto_tsquery(?)", ^filter))
       else
         base_query_with_paging
       end

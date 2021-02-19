@@ -36,6 +36,9 @@
               <%= if @address.token do %>
                 <%= render BlockScoutWeb.FormView, "_tag.html", text: "token", additional_classes: ["token", "ml-1"] %>
               <% end %>
+              <%= if is_random_aura?(@address.hash) do %>
+                <%= render BlockScoutWeb.FormView, "_tag.html", text: "random AuRa", additional_classes: ["random", "ml-1"] %>
+              <% end %>
             <% else %>
               <%= render BlockScoutWeb.FormView, "_tag.html", text: "EOA", additional_classes: ["eoa", "ml-1"] %>
             <% end %>
@@ -52,6 +55,15 @@
             <%= if is_amb_bridge?(@address.hash) do %>
               <%= render BlockScoutWeb.FormView, "_tag.html", text: "AMB", additional_classes: ["amb", "ml-1"] %>
               <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridge", additional_classes: ["bridge", "ml-1"] %>
+            <% end %>
+            <%= if is_perp_fi?(@address.hash) do %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "perp.fi", additional_classes: ["perp-fi", "ml-1"] %>
+            <% end %>
+            <%= if is_df_0_5?(@address.hash) do %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "dark forest v0.5", additional_classes: ["df", "ml-1"] %>
+            <% end %>
+            <%= if is_hopr?(@address.hash) do %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "HOPR Multisig", additional_classes: ["hopr", "ml-1"] %>
             <% end %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
