@@ -22,6 +22,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3644](https://github.com/poanetwork/blockscout/pull/3644) - Correct exchange rate for SURF.finance token
 - [#3618](https://github.com/poanetwork/blockscout/pull/3618) - Contracts verification up to 10 libraries
 - [#3616](https://github.com/poanetwork/blockscout/pull/3616) - POSDAO refactoring: use zero address instead of staker address for certain cases
 - [#3612](https://github.com/poanetwork/blockscout/pull/3612) - POSDAO refactoring: use 'getDelegatorPools' getter instead of 'getStakerPools' in Staking DApp
