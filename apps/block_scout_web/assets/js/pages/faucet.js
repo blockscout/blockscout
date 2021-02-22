@@ -59,6 +59,7 @@ $(function () {
               // eslint-disable-next-line
               hcaptcha.reset()
               console.error(err)
+              Sentry.captureException(err)
               Swal.fire({
                 title: 'Error',
                 text: 'Sending coins failed. Please try again later.',
