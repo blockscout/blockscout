@@ -58,9 +58,10 @@ $(function () {
             }).fail(function (err) {
               // eslint-disable-next-line
               hcaptcha.reset()
+              console.error(err)
               Swal.fire({
                 title: 'Error',
-                text: err,
+                text: 'Sending coins failed. Please try again later.',
                 icon: 'error'
               })
               $requestCoinsBtn.attr('disabled', false)
@@ -70,7 +71,7 @@ $(function () {
             hcaptcha.reset()
             Swal.fire({
               title: 'Error',
-              text: 'Incorrect response from hCaptcha. Try again later.',
+              text: 'Incorrect response from hCaptcha. Please try again later.',
               icon: 'error'
             })
             $requestCoinsBtn.attr('disabled', false)
@@ -79,7 +80,7 @@ $(function () {
         .fail(function (_jqXHR, _textStatus) {
           Swal.fire({
             title: 'Error',
-            text: 'There is no hCaptcha response. Try again later.',
+            text: 'There is no hCaptcha response. Please try again later.',
             icon: 'error'
           })
           $requestCoinsBtn.attr('disabled', false)
