@@ -206,7 +206,11 @@ function prepareMethodArgs ($functionInputs, inputs) {
     let preparedVal
     if (isNonSpaceInputType(inputType)) { preparedVal = val.replace(/\s/g, '') } else { preparedVal = val }
     if (isAddressInputType(inputType)) {
-      preparedVal = preparedVal.replaceAll('"', '')
+      if (typeof preparedVal.replaceAll === 'function') {
+        preparedVal = preparedVal.replaceAll('"', '')
+      } else {
+        preparedVal = preparedVal.replace(/"/g, '')
+      }
     }
     if (isArrayInputType(inputType)) {
       if (preparedVal === '') {
