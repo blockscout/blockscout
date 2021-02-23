@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Address do
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
              :names,
-             :smart_contract_additional_sources
+             :smart_contract_additional_sources,
              :tags
            ]}
 
@@ -84,7 +84,7 @@ defmodule Explorer.Chain.Address do
              :contracts_creation_internal_transaction,
              :contracts_creation_transaction,
              :names,
-             :smart_contract_additional_sources
+             :smart_contract_additional_sources,
              :tags
            ]}
 
