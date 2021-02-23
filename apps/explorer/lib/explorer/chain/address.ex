@@ -24,6 +24,7 @@ defmodule Explorer.Chain.Address do
   }
 
   alias Explorer.Chain.Cache.NetVersion
+  alias Explorer.Tags.AddressTag
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce decompiled verified)a
   @required_attrs ~w(hash)a
@@ -71,6 +72,7 @@ defmodule Explorer.Chain.Address do
              :contracts_creation_transaction,
              :names,
              :smart_contract_additional_sources
+             :tags
            ]}
 
   @derive {Jason.Encoder,
@@ -83,6 +85,7 @@ defmodule Explorer.Chain.Address do
              :contracts_creation_transaction,
              :names,
              :smart_contract_additional_sources
+             :tags
            ]}
 
   @primary_key {:hash, Hash.Address, autogenerate: false}
@@ -114,6 +117,7 @@ defmodule Explorer.Chain.Address do
     has_many(:names, Address.Name, foreign_key: :address_hash)
     has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash)
     has_many(:smart_contract_additional_sources, SmartContractAdditionalSource, foreign_key: :address_hash)
+    has_many(:tags, AddressTag, foreign_key: :id)
 
     timestamps()
   end

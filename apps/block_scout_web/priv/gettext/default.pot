@@ -407,8 +407,8 @@ msgid "Copy ABI"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:34
-#: lib/block_scout_web/templates/address/overview.html.eex:38
+#: lib/block_scout_web/templates/address/overview.html.eex:72
+#: lib/block_scout_web/templates/address/overview.html.eex:76
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:38
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:42
 msgid "Copy Address"
@@ -461,7 +461,7 @@ msgid "Create2"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:121
+#: lib/block_scout_web/templates/address/overview.html.eex:159
 msgid "Created by"
 msgstr ""
 
@@ -538,7 +538,6 @@ msgid "Description"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:29
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:166
 #: lib/block_scout_web/templates/api_docs/_eth_rpc_item.html.eex:127
 msgid "Details"
@@ -619,7 +618,7 @@ msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:134
+#: lib/block_scout_web/templates/address/overview.html.eex:172
 msgid "Error: Could not determine contract creator."
 msgstr ""
 
@@ -942,7 +941,7 @@ msgid "It could still be in the TX Pool of a different node, waiting to be broad
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:106
+#: lib/block_scout_web/templates/address/overview.html.eex:144
 msgid "Last Balance Update: Block #"
 msgstr ""
 
@@ -1156,8 +1155,8 @@ msgid "Price"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:54
-#: lib/block_scout_web/templates/address/overview.html.eex:158
+#: lib/block_scout_web/templates/address/overview.html.eex:92
+#: lib/block_scout_web/templates/address/overview.html.eex:196
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:51
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:107
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:58
@@ -1271,14 +1270,14 @@ msgid "Show"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:55
+#: lib/block_scout_web/templates/address/overview.html.eex:93
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:52
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:59
 msgid "Show QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:69
+#: lib/block_scout_web/templates/address/overview.html.eex:107
 msgid "Show Validator Info"
 msgstr ""
 
@@ -1545,7 +1544,7 @@ msgid "Validator Data"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:73
+#: lib/block_scout_web/templates/address/overview.html.eex:111
 msgid "Validator Info"
 msgstr ""
 
@@ -1665,7 +1664,7 @@ msgid "Yes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:126
+#: lib/block_scout_web/templates/address/overview.html.eex:164
 msgid "at"
 msgstr ""
 
@@ -1723,8 +1722,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
-#: lib/block_scout_web/templates/address/overview.html.eex:159
-#: lib/block_scout_web/templates/address/overview.html.eex:167
+#: lib/block_scout_web/templates/address/overview.html.eex:197
+#: lib/block_scout_web/templates/address/overview.html.eex:205
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:108
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:116
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:141
@@ -2777,4 +2776,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:101
 msgid "Bridged from BSC"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/overview.html.eex:29
+msgid "Address Details"
 msgstr ""
