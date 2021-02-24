@@ -5,6 +5,8 @@ defmodule Explorer.Chain.Supply.TokenBridge do
 
   use Explorer.Chain.Supply
 
+  require Logger
+
   import Ecto.Query,
     only: [
       from: 2
@@ -252,22 +254,43 @@ defmodule Explorer.Chain.Supply.TokenBridge do
             bridged_token_balance
           end
 
-        {bridged_token_hash, bridged_token_price, bridged_token_balance_formatted}
+        {bridged_token_hash, bridged_token_symbol, bridged_token_price, bridged_token_balance_formatted}
       end)
 
     bridged_mainnet_tokens_with_supply
   end
 
   defp calc_omni_bridge_market_cap(bridged_mainnet_tokens_with_supply) do
+    Logger.warn("Show: calc_omni_bridge_market_cap")
+
     omni_bridge_market_cap =
       bridged_mainnet_tokens_with_supply
-      |> Enum.reduce(Decimal.new(0), fn {_bridged_token_hash, bridged_token_price, bridged_token_balance}, acc ->
+      |> Enum.filter(fn {_, bridged_token_symbol, _, _} -> bridged_token_symbol !== "HOPR" end)
+      |> Enum.reduce(Decimal.new(0), fn {bridged_token_hash, _bridged_token_symbol, bridged_token_price,
+                                         bridged_token_balance},
+                                        acc ->
         if bridged_token_price do
-          Decimal.add(acc, Decimal.mult(bridged_token_price, bridged_token_balance))
+          Logger.warn("Show: bridged_token_hash")
+          Logger.warn("0x" <> Base.encode16(bridged_token_hash.bytes))
+          Logger.warn("Show: bridged_token_price")
+          Logger.warn(bridged_token_price |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
+          Logger.warn("Show: bridged_token_balance")
+          Logger.warn(bridged_token_balance |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
+
+          bridged_token_cap = Decimal.mult(bridged_token_price, bridged_token_balance)
+          Logger.warn("Show: bridged_token_cap")
+          Logger.warn(bridged_token_cap |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
+
+          Logger.warn("Show: current accumulator (before adding)")
+          Logger.warn(acc |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
+          Decimal.add(acc, bridged_token_cap)
         else
           acc
         end
       end)
+
+    Logger.warn("Show: omni_bridge_market_cap")
+    Logger.warn(omni_bridge_market_cap |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
 
     omni_bridge_market_cap
   end

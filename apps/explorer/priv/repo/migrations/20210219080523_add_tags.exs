@@ -12,8 +12,6 @@ defmodule Explorer.Repo.Migrations.AddTags do
     create(unique_index(:address_tags, [:id]))
     create(unique_index(:address_tags, [:label]))
 
-    create(index(:addresses, [:tag]))
-
     create table(:address_to_tags) do
       add(:address_hash, references(:addresses, column: :hash, type: :bytea), null: false)
       add(:tag_id, references(:address_tags, column: :id, type: :serial), null: false)

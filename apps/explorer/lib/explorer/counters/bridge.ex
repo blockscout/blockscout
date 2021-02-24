@@ -105,7 +105,7 @@ defmodule Explorer.Counters.Bridge do
     if bridges_table_exists?() do
       do_fetch_token_bridge_total_supply(:ets.lookup(@bridges_table, @current_total_supply_from_token_bridge_cache_key))
     else
-      0
+      Decimal.new(0)
     end
   end
 
@@ -119,7 +119,7 @@ defmodule Explorer.Counters.Bridge do
     if bridges_table_exists?() do
       do_fetch_omni_bridge_market_cap(:ets.lookup(@bridges_table, @current_market_cap_from_omni_bridge_cache_key))
     else
-      0
+      Decimal.new(0)
     end
   end
 
@@ -140,7 +140,7 @@ defmodule Explorer.Counters.Bridge do
 
       current_total_supply_from_token_bridge
     else
-      0
+      Decimal.new(0)
     end
   end
 
@@ -155,7 +155,7 @@ defmodule Explorer.Counters.Bridge do
 
       current_total_supply_from_omni_bridge
     else
-      0
+      Decimal.new(0)
     end
   end
 

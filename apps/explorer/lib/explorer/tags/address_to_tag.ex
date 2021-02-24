@@ -92,15 +92,15 @@ defmodule Explorer.Tags.AddressToTag do
     changeset_to_add_list =
       addresses_to_add
       |> Enum.map(fn address_hash_string ->
-        case Chain.string_to_address_hash(address_hash_string) do
-          {:ok, address_hash} ->
-            %{
-              tag_id: tag_id,
-              address_hash: address_hash,
-              inserted_at: DateTime.utc_now(),
-              updated_at: DateTime.utc_now()
-            }
-
+        with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+             :ok <- Chain.check_address_exists(address_hash) do
+          %{
+            tag_id: tag_id,
+            address_hash: address_hash,
+            inserted_at: DateTime.utc_now(),
+            updated_at: DateTime.utc_now()
+          }
+        else
           _ ->
             nil
         end
