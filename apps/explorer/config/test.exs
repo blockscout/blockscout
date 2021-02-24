@@ -5,10 +5,10 @@ config :bcrypt_elixir, log_rounds: 4
 
 # Configure your database
 config :explorer, Explorer.Repo,
-  url: System.get_env("DATABASE_URL") || "postgresql://postgres:1234@localhost:5432/explorer_test",
+  url: System.get_env("DATABASE_URL") || "postgresql://postgres:postgres@localhost:5432/explorer_test",
   database: "explorer_test",
   hostname: "localhost",
-  password: "1234",
+  password: "postgres",
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
   ownership_timeout: :timer.minutes(1),

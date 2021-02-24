@@ -49,6 +49,10 @@ defmodule BlockScoutWeb.Tokens.Helpers do
     AddressView.short_hash_left_right(address_hash)
   end
 
+  def token_symbol(%Token{symbol: "cGLD"}) do
+    "CELO"
+  end
+
   def token_symbol(%Token{symbol: symbol}) do
     symbol
   end
