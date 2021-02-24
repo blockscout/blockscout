@@ -2691,3 +2691,13 @@ msgstr ""
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:101
 msgid "Bridged from BSC"
 msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:34
+msgid "Bridge to Ethereum"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:33
+msgid "Swap STAKE"
+msgstr ""

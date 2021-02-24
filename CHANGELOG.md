@@ -23,6 +23,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3659](https://github.com/poanetwork/blockscout/pull/3659) - Staking Dapp new buttons: swap, bridge
 - [#3645](https://github.com/poanetwork/blockscout/pull/3645) - Change Twitter handle
 - [#3644](https://github.com/poanetwork/blockscout/pull/3644) - Correct exchange rate for SURF.finance token
 - [#3618](https://github.com/poanetwork/blockscout/pull/3618) - Contracts verification up to 10 libraries

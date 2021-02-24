@@ -29,6 +29,10 @@
 
         <%= render BlockScoutWeb.StakesView, "_stakes_btn_claim_reward.html", text: gettext("Claim Reward"), extra_class: "full-width" %>
       </div>
+      <div class="stakes-top-buttons right">
+        <%= render BlockScoutWeb.CommonComponentsView, "_btn_external_link.html", text: gettext("Swap STAKE"), link: "https://app.honeyswap.org/#/swap", extra_class: "full-width btn-add-full" %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_btn_external_link.html", text: gettext("Bridge to Ethereum"), link: "https://bridge.xdaichain.com/", extra_class: "full-width" %>
+      </div>
     </div>
   </div>
 </div>
