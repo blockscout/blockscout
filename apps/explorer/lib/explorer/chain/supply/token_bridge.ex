@@ -208,7 +208,9 @@ defmodule Explorer.Chain.Supply.TokenBridge do
         left_join: t in Token,
         on: t.contract_address_hash == bt.home_token_contract_address_hash,
         where: bt.foreign_chain_id == ^1,
-        select: {bt.home_token_contract_address_hash, t.symbol}
+        where: t.bridged == true,
+        select: {bt.home_token_contract_address_hash, t.symbol},
+        order_by: [desc: t.holder_count]
       )
 
     query
