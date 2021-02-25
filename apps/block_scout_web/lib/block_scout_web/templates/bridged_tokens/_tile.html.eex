@@ -58,6 +58,7 @@
     <span class="mr-4">
       <span data-test="transaction_count">
         <%= @token.holder_count %>
+      </span>
     </span>
   </td>
 </tr>
