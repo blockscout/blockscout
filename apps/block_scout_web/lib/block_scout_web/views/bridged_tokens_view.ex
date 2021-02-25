@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.BridgedTokensView do
   use BlockScoutWeb, :view
 
+  import BlockScoutWeb.AddressView, only: [is_test?: 1]
+
   alias Explorer.Chain
   alias Explorer.Chain.Token
 

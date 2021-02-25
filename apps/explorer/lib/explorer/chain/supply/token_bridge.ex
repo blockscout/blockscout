@@ -254,7 +254,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
             bridged_token_balance
           end
 
-        {bridged_token_hash, bridged_token_symbol, bridged_token_price, bridged_token_balance_formatted}
+        {bridged_token_hash, bridged_token_price, bridged_token_balance_formatted}
       end)
 
     bridged_mainnet_tokens_with_supply
@@ -263,12 +263,15 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   defp calc_omni_bridge_market_cap(bridged_mainnet_tokens_with_supply) do
     Logger.warn("Show: calc_omni_bridge_market_cap")
 
+    hopr_test_token_hash = "0x08675CCCb9338e6197C9cB5453d9e7DA143e2C5C" |> String.downcase()
+
     omni_bridge_market_cap =
       bridged_mainnet_tokens_with_supply
-      |> Enum.filter(fn {_, bridged_token_symbol, _, _} -> bridged_token_symbol !== "HOPR" end)
-      |> Enum.reduce(Decimal.new(0), fn {bridged_token_hash, _bridged_token_symbol, bridged_token_price,
-                                         bridged_token_balance},
-                                        acc ->
+      |> Enum.filter(fn {bridged_token_hash, _, _} ->
+        bridged_token_hash_str = "0x" <> Base.encode16(bridged_token_hash.bytes, case: :lower)
+        bridged_token_hash_str !== hopr_test_token_hash
+      end)
+      |> Enum.reduce(Decimal.new(0), fn {bridged_token_hash, bridged_token_price, bridged_token_balance}, acc ->
         if bridged_token_price do
           Logger.warn("Show: bridged_token_hash")
           Logger.warn("0x" <> Base.encode16(bridged_token_hash.bytes))

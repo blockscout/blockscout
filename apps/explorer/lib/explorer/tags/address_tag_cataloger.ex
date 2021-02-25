@@ -39,14 +39,17 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set :random tag
     AddressTag.set_tag("random")
 
-    # set perp.fi tag
-    AddressTag.set_tag("perp.fi")
+    # set perpetual tag
+    AddressTag.set_tag("perpetual")
 
     # set dark-forest-0.5 tag
     AddressTag.set_tag("dark forest 0.5")
 
     # set hopr tag
     AddressTag.set_tag("hopr")
+
+    # set test tag
+    AddressTag.set_tag("test")
 
     send(self(), :bind_addresses)
 
@@ -69,14 +72,17 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     # set validator tag
     set_validator_tag()
 
-    # set perp.fi tag
-    set_perp_fi_tag()
+    # set perpetual tag
+    set_perpetual_tag()
 
     # set DarkForest 0.5 tag
     set_df_0_5_tag()
 
     # set Hopr tag
     set_hopr_tag()
+
+    # set test tag
+    set_test_tag()
 
     {:noreply, state}
   end
@@ -140,8 +146,8 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     AddressToTag.set_tag_to_addresses(tag_id, validators)
   end
 
-  defp set_perp_fi_tag do
-    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_PERP_FI", "perp.fi")
+  defp set_perpetual_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_PERP_FI", "perpetual")
   end
 
   defp set_df_0_5_tag do
@@ -150,5 +156,9 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
 
   defp set_hopr_tag do
     set_tag_for_single_env_var_address("CUSTOM_CONTRACT_ADDRESSES_HOPR", "hopr")
+  end
+
+  defp set_test_tag do
+    set_tag_for_env_var_multiple_addresses("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN", "test")
   end
 end

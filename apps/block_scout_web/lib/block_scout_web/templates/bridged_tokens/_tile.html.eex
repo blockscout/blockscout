@@ -37,6 +37,9 @@
         <% tag = Chain.chain_id_display_name(@bridged_token.foreign_chain_id) %>
         <div class="bs-label right ml-2 destination-<%= tag %>"><%= String.upcase(tag) %></div>
       <% end %>
+      <%= if is_test?(@token.contract_address.hash) do %>
+        <%= render BlockScoutWeb.FormView, "_tag.html", text: "test", additional_classes: ["test", "ml-2", "right"] %>
+      <% end %>
     </div>
   </td>
   <td class="stakes-td">
