@@ -139,7 +139,7 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
   def put_into_db(token_hash, exchange_rate) do
     token = get_token(token_hash)
 
-    if token do
+    if token && !is_nil(exchange_rate) do
       token
       |> Changeset.change(%{exchange_rate: exchange_rate})
       |> Repo.update()
