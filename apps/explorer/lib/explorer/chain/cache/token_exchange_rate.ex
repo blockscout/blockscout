@@ -4,7 +4,12 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
   """
   use GenServer
 
+  import Ecto.Query, only: [from: 2]
+
+  alias Ecto.Changeset
+  alias Explorer.Chain.BridgedToken
   alias Explorer.ExchangeRates.Source
+  alias Explorer.Repo
 
   @cache_name :token_exchange_rate
   @last_update_key "last_update"
@@ -50,14 +55,20 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     "token_symbol_exchange_rate_#{symbol}"
   end
 
-  def fetch(symbol) do
+  def fetch(token_hash, symbol) do
     if cache_expired?(symbol) || value_is_empty?(symbol) do
       Task.start_link(fn ->
-        update_cache(symbol)
+        update_cache(token_hash, symbol)
       end)
     end
 
-    fetch_from_cache(cache_key(symbol))
+    cached_value = fetch_from_cache(cache_key(symbol))
+
+    if is_nil(cached_value) || Decimal.cmp(cached_value, 0) == :eq do
+      fetch_from_db(token_hash)
+    else
+      cached_value
+    end
   end
 
   def cache_name, do: @cache_name
@@ -78,11 +89,12 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     is_nil(value) || value == 0
   end
 
-  defp update_cache(symbol) do
+  defp update_cache(token_hash, symbol) do
     put_into_cache("#{cache_key(symbol)}_#{@last_update_key}", current_time())
 
     exchange_rate = fetch_token_exchange_rate(symbol)
 
+    put_into_db(token_hash, exchange_rate)
     put_into_cache(cache_key(symbol), exchange_rate)
   end
 
@@ -106,10 +118,42 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     end
   end
 
+  defp fetch_from_db(nil), do: nil
+
+  defp fetch_from_db(token_hash) do
+    token = get_token(token_hash)
+
+    if token do
+      token.exchange_rate
+    else
+      nil
+    end
+  end
+
   def put_into_cache(key, value) do
     if cache_table_exists?() do
       :ets.insert(@cache_name, {key, value})
     end
+  end
+
+  def put_into_db(token_hash, exchange_rate) do
+    token = get_token(token_hash)
+
+    if token do
+      token
+      |> Changeset.change(%{exchange_rate: exchange_rate})
+      |> Repo.update()
+    end
+  end
+
+  defp get_token(token_hash) do
+    query =
+      from(bt in BridgedToken,
+        where: bt.home_token_contract_address_hash == ^token_hash
+      )
+
+    query
+    |> Repo.one()
   end
 
   defp current_time do
