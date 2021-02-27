@@ -1,7 +1,6 @@
 defmodule BlockScoutWeb.FaucetController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.Faucet.CaptchaController
   alias Explorer.{Chain, Faucet}
 
   @internal_server_err_msg "Internal server error. Please try again later."
@@ -24,7 +23,7 @@ defmodule BlockScoutWeb.FaucetController do
       }) do
     case Chain.string_to_address_hash(receiver) do
       {:ok, address_hash} ->
-        res = CaptchaController.validate_captcha_response(captcha_response)
+        res = validate_captcha_response(captcha_response)
 
         case res do
           {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
@@ -57,7 +56,8 @@ defmodule BlockScoutWeb.FaucetController do
       yesterday = Timex.shift(today, days: -1)
 
       if !last_requested || last_requested < yesterday do
-        send_coins(receiver, address_hash, conn)
+        try_num = 0
+        send_coins(receiver, address_hash, conn, try_num)
       else
         dur_to_next_available_request = calc_dur_to_next_available_request(last_requested, yesterday)
 
@@ -86,19 +86,30 @@ defmodule BlockScoutWeb.FaucetController do
     "#{dur_hrs}:#{dur_min}"
   end
 
-  defp send_coins(receiver, address_hash, conn) do
-    case Faucet.send_coins_from_faucet(receiver) do
-      {:ok, transaction_hash} ->
-        case Faucet.insert_faucet_request_record(address_hash) do
-          {:ok, _} -> json(conn, %{success: true, transactionHash: transaction_hash, message: "Success"})
-          {:error, _} -> json(conn, %{success: false, message: @internal_server_err_msg})
-        end
+  defp send_coins(receiver, address_hash, conn, try_num) do
+    if try_num < 5 do
+      case Faucet.send_coins_from_faucet(receiver) do
+        {:ok, transaction_hash} ->
+          case Faucet.insert_faucet_request_record(address_hash) do
+            {:ok, _} -> json(conn, %{success: true, transactionHash: transaction_hash, message: "Success"})
+            {:error, _} -> json(conn, %{success: false, message: @internal_server_err_msg})
+          end
 
-      {:error} ->
-        json(conn, %{success: false, message: @send_coins_failed_msg})
-
-      _err ->
-        json(conn, %{success: false, message: @send_coins_failed_msg})
+        _err ->
+          try_num = try_num + 1
+          send_coins(receiver, address_hash, conn, try_num)
+      end
+    else
+      json(conn, %{success: false, message: @send_coins_failed_msg})
     end
+  end
+
+  defp validate_captcha_response(captcha_response) do
+    body =
+      "secret=#{Application.get_env(:block_scout_web, :faucet)[:h_captcha_secret_key]}&response=#{captcha_response}"
+
+    headers = [{"Content-type", "application/x-www-form-urlencoded"}]
+
+    HTTPoison.post("https://hcaptcha.com/siteverify", body, headers, [])
   end
 end
