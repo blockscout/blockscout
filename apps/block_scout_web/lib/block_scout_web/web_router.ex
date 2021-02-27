@@ -317,8 +317,6 @@ defmodule BlockScoutWeb.WebRouter do
 
     post("/faucet", FaucetController, :request)
 
-    post("/hcaptcha", Faucet.CaptchaController, :index)
-
     get("/*path", PageNotFoundController, :index)
   end
 end
