@@ -8,28 +8,35 @@
   <td class="stakes-td">
     <% token = token_display_name(@token) %>
     <div class="centered-container">
-      <%= link(token,
-        to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
-        "data-test": "token_link",
-        class: "text-truncate pre-wrap") %>
-      <%= if owl_token_amb?(@token.contract_address.hash) do %>
-        <span
-          data-toggle="tooltip"
-          data-placement="top"
-          data-html="true"
-          title="<%= owl_token_amb_info() %>">
-          <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="owl_info"></i>
-        </span>
-      <% end %>
-      <%= if owl_token_omni?(@token.contract_address.hash) do %>
-        <span
-          data-toggle="tooltip"
-          data-placement="top"
-          data-html="true"
-          title="<%= owl_token_omni_info() %>">
-          <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="owl_info"></i>
-        </span>
-      <% end %>
+      <div>
+        <div style="display: table;">
+          <%= link(token,
+            to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
+            "data-test": "token_link",
+            class: "text-truncate pre-wrap") %>
+          <%= if owl_token_amb?(@token.contract_address.hash) do %>
+            <span
+              data-toggle="tooltip"
+              data-placement="top"
+              data-html="true"
+              title="<%= owl_token_amb_info() %>">
+              <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="owl_info"></i>
+            </span>
+          <% end %>
+          <%= if owl_token_omni?(@token.contract_address.hash) do %>
+            <span
+              data-toggle="tooltip"
+              data-placement="top"
+              data-html="true"
+              title="<%= owl_token_omni_info() %>">
+              <i style="color: #f7b32b;" class="fa fa-info-circle ml-1" data-test="owl_info"></i>
+            </span>
+          <% end %>
+          <%= if @bridged_token.custom_metadata do %>
+            <div class="card-subtitle list-title-description" style="display: table-row; text-align: left"><%= @bridged_token.custom_metadata %></div>
+          <% end %>
+        </div>
+      </div>
       <%= if @bridged_token && @bridged_token.type do %>
         <div class="bs-label right <%= @bridged_token.type %>"><%= String.upcase(@bridged_token.type) %></div>
       <% end %>

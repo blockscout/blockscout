@@ -4286,6 +4286,21 @@ defmodule Explorer.Chain do
     eth_call_foreign_json_rpc_named_arguments =
       compose_foreign_json_rpc_named_arguments(json_rpc_named_arguments, foreign_json_rpc)
 
+    balancer_custom_metadata(foreign_token_address_hash, eth_call_foreign_json_rpc_named_arguments) ||
+      sushiswap_custom_metadata(foreign_token_address_hash, eth_call_foreign_json_rpc_named_arguments)
+  end
+
+  defp get_bridged_token_custom_metadata(_foreign_token_address_hash, _json_rpc_named_arguments, foreign_json_rpc)
+       when is_nil(foreign_json_rpc) do
+    nil
+  end
+
+  defp get_bridged_token_custom_metadata(_foreign_token_address_hash, _json_rpc_named_arguments, foreign_json_rpc)
+       when foreign_json_rpc == "" do
+    nil
+  end
+
+  defp balancer_custom_metadata(foreign_token_address_hash, eth_call_foreign_json_rpc_named_arguments) do
     # keccak 256 from getCurrentTokens()
     get_current_tokens_signature = "0xcc77828d"
 
@@ -4330,14 +4345,76 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp get_bridged_token_custom_metadata(_foreign_token_address_hash, _json_rpc_named_arguments, foreign_json_rpc)
-       when is_nil(foreign_json_rpc) do
-    nil
+  defp sushiswap_custom_metadata(foreign_token_address_hash, eth_call_foreign_json_rpc_named_arguments) do
+    # keccak 256 from token0()
+    token0_signature = "0x0dfe1681"
+
+    # keccak 256 from token1()
+    token1_signature = "0xd21220a7"
+
+    # keccak 256 from name()
+    name_signature = "0x06fdde03"
+
+    # keccak 256 from symbol()
+    symbol_signature = "0x95d89b41"
+
+    with {:ok, "0x" <> token0_encoded} <-
+           token0_signature
+           |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> token1_encoded} <-
+           token1_signature
+           |> Contract.eth_call_request(foreign_token_address_hash, 2, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
+      token0_hash = parse_contract_response(token0_encoded, :address)
+      token1_hash = parse_contract_response(token1_encoded, :address)
+
+      token0_hash_str = "0x" <> Base.encode16(token0_hash, case: :lower)
+      token1_hash_str = "0x" <> Base.encode16(token1_hash, case: :lower)
+
+      with {:ok, "0x" <> token0_name_encoded} <-
+             name_signature
+             |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+             |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+           {:ok, "0x" <> token1_name_encoded} <-
+             name_signature
+             |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
+             |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+           {:ok, "0x" <> token0_symbol_encoded} <-
+             symbol_signature
+             |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+             |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+           {:ok, "0x" <> token1_symbol_encoded} <-
+             symbol_signature
+             |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
+             |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
+        token0_name = parse_contract_response(token0_name_encoded, :string)
+        token1_name = parse_contract_response(token1_name_encoded, :string)
+        token0_symbol = parse_contract_response(token0_symbol_encoded, :string)
+        token1_symbol = parse_contract_response(token1_symbol_encoded, :string)
+
+        "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
+      else
+        _ ->
+          nil
+      end
+    else
+      _ ->
+        nil
+    end
   end
 
-  defp get_bridged_token_custom_metadata(_foreign_token_address_hash, _json_rpc_named_arguments, foreign_json_rpc)
-       when foreign_json_rpc == "" do
-    nil
+  defp parse_contract_response(abi_encoded_value, type) do
+    [value] =
+      try do
+        abi_encoded_value
+        |> Base.decode16!(case: :mixed)
+        |> TypeDecoder.decode_raw([type])
+      rescue
+        _ -> [nil]
+      end
+
+    value
   end
 
   defp compose_foreign_json_rpc_named_arguments(json_rpc_named_arguments, foreign_json_rpc)

@@ -1,6 +1,7 @@
 ## Current
 
 ### Features
+- [#3674](https://github.com/poanetwork/blockscout/pull/3674) - Display Sushiswap pools data
 - [#3637](https://github.com/poanetwork/blockscout/pull/3637) - getsourcecode API endpoint: show data for unverified contract from verified contract with the same bytecode
 - [#3631](https://github.com/poanetwork/blockscout/pull/3631) - Tokens search
 - [#3631](https://github.com/poanetwork/blockscout/pull/3631) - BSC OMNI bridge support
@@ -23,6 +24,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3667](https://github.com/poanetwork/blockscout/pull/3667) - Store bridged token price in the DB
 - [#3662](https://github.com/poanetwork/blockscout/pull/3662) - Order bridged tokens in descending order by tokens holder for Omni bridge cap calculation
 - [#3659](https://github.com/poanetwork/blockscout/pull/3659) - Staking Dapp new buttons: swap, bridge
 - [#3645](https://github.com/poanetwork/blockscout/pull/3645) - Change Twitter handle
