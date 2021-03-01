@@ -5,6 +5,7 @@ defmodule Explorer.Faucet do
   alias ETH
   alias Explorer.Faucet.FaucetRequest
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Transaction
 
   import Ecto.Query, only: [from: 2]
   import EthereumJSONRPC, only: [json_rpc: 2, request: 1]
@@ -25,6 +26,17 @@ defmodule Explorer.Faucet do
       changeset = FaucetRequest.changeset(%FaucetRequest{}, %{receiver_hash: address_hash})
       Repo.insert(changeset)
     end
+  end
+
+  def address_contains_outgoing_transactions_after_time(receiver, last_requested) do
+    Repo.exists?(
+      from(
+        t in Transaction,
+        where: t.from_address_hash == ^receiver,
+        where: t.to_address_hash != ^receiver,
+        where: t.inserted_at >= ^last_requested
+      )
+    )
   end
 
   def send_coins_from_faucet(address_hash_str) do
