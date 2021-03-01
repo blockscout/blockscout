@@ -57,7 +57,19 @@ defmodule BlockScoutWeb.FaucetController do
 
       if !last_requested || last_requested < yesterday do
         try_num = 0
-        send_coins(receiver, address_hash, conn, try_num)
+
+        if last_requested do
+          if Faucet.address_contains_outgoing_transactions_after_time(receiver, last_requested) do
+            send_coins(receiver, address_hash, conn, try_num)
+          else
+            json(conn, %{
+              success: false,
+              message: "This account already requested coins before but didn't spend them"
+            })
+          end
+        else
+          send_coins(receiver, address_hash, conn, try_num)
+        end
       else
         dur_to_next_available_request = calc_dur_to_next_available_request(last_requested, yesterday)
 
