@@ -39,10 +39,17 @@
 			Holders Count
 			</div>
 	      </th>
+		  <%= if @destination == :eth do %>
+			<th class="stakes-table-th">
+				<div class="stakes-table-th-content">
+				USD Value
+				</div>
+			</th>
+		  <% end %>
 	    </tr>
 	  </thead>
 	  <tbody data-items data-selector="top-bridged-tokens-list">
-	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", total_supply: @total_supply %>
+	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", is_bridged_tokens_table: true %>
 	  </tbody>
 	</table>
       </div>

@@ -68,11 +68,6 @@ defmodule BlockScoutWeb.TokensController do
   end
 
   def index(conn, _params) do
-    total_supply = Chain.total_supply()
-
-    render(conn, "index.html",
-      current_path: current_path(conn),
-      total_supply: total_supply
-    )
+    render(conn, "index.html", current_path: current_path(conn))
   end
 end
