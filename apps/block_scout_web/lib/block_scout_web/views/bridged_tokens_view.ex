@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.BridgedTokensView do
 
   import BlockScoutWeb.AddressView, only: [is_test?: 1]
 
+  alias BlockScoutWeb.ChainView
   alias Explorer.Chain
   alias Explorer.Chain.Token
 

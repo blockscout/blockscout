@@ -71,4 +71,18 @@
       </span>
     </span>
   </td>
+  <%= if @destination == :eth do %>
+    <td class="stakes-td">
+      <span class="mr-4">
+        <span data-test="tvl">
+          <%= if @bridged_token.exchange_rate && @token.total_supply do %>
+            <% usd_val = Decimal.mult(@bridged_token.exchange_rate, divide_decimals(@token.total_supply, @token.decimals)) %>
+            <%= if Decimal.cmp(usd_val, 2) == :gt do %>
+              <%= ChainView.format_usd_value(Decimal.mult(@bridged_token.exchange_rate, divide_decimals(@token.total_supply, @token.decimals))) %>
+            <% end %>
+          <% end %>
+        </span>
+      </span>
+    </td>
+  <% end %>
 </tr>
