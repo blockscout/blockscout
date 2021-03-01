@@ -16,24 +16,20 @@ defmodule BlockScoutWeb.BridgedTokensController do
   end
 
   def show(conn, %{"id" => "eth"}) do
-    total_supply = Chain.total_supply()
-
     render(conn, "index.html",
       current_path: current_path(conn),
-      total_supply: total_supply,
       chain: "Ethereum",
-      chain_id: 1
+      chain_id: 1,
+      destination: :eth
     )
   end
 
   def show(conn, %{"id" => "bsc"}) do
-    total_supply = Chain.total_supply()
-
     render(conn, "index.html",
       current_path: current_path(conn),
-      total_supply: total_supply,
       chain: "Binance Smart Chain",
-      chain_id: 56
+      chain_id: 56,
+      destination: :bsc
     )
   end
 
@@ -46,11 +42,8 @@ defmodule BlockScoutWeb.BridgedTokensController do
   end
 
   def index(conn, _params) do
-    total_supply = Chain.total_supply()
-
     render(conn, "index.html",
       current_path: current_path(conn),
-      total_supply: total_supply,
       chain: "Ethereum",
       chain_id: 1
     )
@@ -105,6 +98,7 @@ defmodule BlockScoutWeb.BridgedTokensController do
           "_tile.html",
           token: token,
           bridged_token: bridged_token,
+          destination: destination,
           index: items_count + index
         )
       end)

@@ -42,7 +42,7 @@
 	    </tr>
 	  </thead>
 	  <tbody data-items data-selector="top-tokens-list">
-	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", total_supply: @total_supply %>
+	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html" %>
 	  </tbody>
 	</table>
       </div>
