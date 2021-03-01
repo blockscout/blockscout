@@ -39,7 +39,9 @@ defmodule Explorer.Faucet do
     )
   end
 
-  def send_coins_from_faucet(address_hash_str) do
+  def send_coins_from_faucet(address_hash) do
+    address_hash_str = address_hash |> to_string()
+
     case eth_sign_transaction_request(1, address_hash_str) do
       {:ok, signed_tx} ->
         eth_send_raw_transaction_request(1, signed_tx)
