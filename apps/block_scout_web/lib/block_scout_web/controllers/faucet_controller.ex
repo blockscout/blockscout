@@ -97,6 +97,7 @@ defmodule BlockScoutWeb.FaucetController do
 
         _err ->
           try_num = try_num + 1
+          Process.sleep(500)
           send_coins(receiver, address_hash, conn, try_num)
       end
     else
