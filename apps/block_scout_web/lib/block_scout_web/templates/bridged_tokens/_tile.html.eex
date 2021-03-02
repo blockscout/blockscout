@@ -49,32 +49,35 @@
       <% end %>
     </div>
   </td>
-  <td class="stakes-td">
+  <td class="stakes-td" width="500px">
     <%= render BlockScoutWeb.AddressView,
       "_link.html",
       address: @token.contract_address,
       contract: true,
       use_custom_tooltip: false
     %>
-    <div class="btn-add-to-mm ml-1"
-      aria-label='<%= gettext "Add Token to MetaMask" %>'
-      data-token-address="<%= @token.contract_address %>"
-      data-token-decimals="<%= @token.decimals %>"
-      data-token-symbol="<%= @token.symbol %>"
-    >
+    <div style="float: right;">
+      <%= render BlockScoutWeb.CommonComponentsView,
+        "_btn_add_to_mm.html",
+        contract_address: @token.contract_address,
+        decimals: @token.decimals,
+        symbol: @token.symbol
+      %>
+      <span
+        aria-label='<%= gettext "Copy Value" %>'
+        class="btn-copy-ico"
+        data-clipboard-text="<%= @token.contract_address %>"
+        data-token-hash="true"
+        data-token-name="<%= token %>"
+        data-placement="top"
+        data-toggle="tooltip"
+        style="height: 15px;"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="25" height="25">
+        <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
+        </svg>
+      </span>
     </div>
-    <span
-                        aria-label='<%= gettext "Copy Value" %>'
-                        class="btn-copy-ico"
-                        data-clipboard-text="<%= @token.contract_address %>"
-                        data-placement="top"
-                        data-toggle="tooltip"
-                        style="height: 15px;"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32.5 32.5" width="25" height="25">
-                        <path fill-rule="evenodd" d="M23.5 20.5a1 1 0 0 1-1-1v-9h-9a1 1 0 0 1 0-2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1zm-3-7v10a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1zm-2 1h-8v8h8v-8z"/>
-                        </svg>
-                    </span>
   </td>
   <td class="stakes-td">
     <%= if decimals?(@token) do %>
