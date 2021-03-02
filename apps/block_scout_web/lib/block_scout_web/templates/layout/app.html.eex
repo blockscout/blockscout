@@ -236,6 +236,9 @@
     ) do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>
+    <%= if @view_module == Elixir.BlockScoutWeb.BridgedTokensView do %>
+      <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/add-to-mm.js") %>"></script>
+    <% end %>
     <%=
       for status <- ["error", "warning", "success", "question"] do
         render BlockScoutWeb.CommonComponentsView, "_modal_status.html", status: status

@@ -451,6 +451,13 @@ msgid "ETH"
 msgstr "xDAI"
 
 #, elixir-format
+#: lib/block_scout_web/templates/bridged_tokens/_tile.html.eex:64
+#: lib/block_scout_web/templates/log/_data_decoded_view.html.eex:20
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:38
+msgid "Copy Value"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/views/internal_transaction_view.ex:25
 msgid "Create"
 msgstr ""
@@ -2790,4 +2797,9 @@ msgstr ""
 
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:33
 msgid "Swap STAKE"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/bridged_tokens/_tile.html.eex:57
+msgid "Add Token to MetaMask"
 msgstr ""
