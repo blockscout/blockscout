@@ -75,7 +75,7 @@
           <%= if @bridged_token.exchange_rate && @token.total_supply do %>
             <% usd_val = Decimal.mult(@bridged_token.exchange_rate, divide_decimals(@token.total_supply, @token.decimals)) %>
             <%= unless @token.name =~ "SushiSwap LP Token on xDai" do %>
-              <%= ChainView.format_usd_value(Decimal.mult(@bridged_token.exchange_rate, divide_decimals(@token.total_supply, @token.decimals))) %>
+              <%= ChainView.format_usd_value(usd_val) %>
             <% end %>
           <% end %>
         </span>
