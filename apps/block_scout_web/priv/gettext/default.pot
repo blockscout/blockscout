@@ -1454,7 +1454,7 @@ msgid "Topics"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:110
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:117
 msgid "Total Supply"
 msgstr ""
 
@@ -1611,7 +1611,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:16
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:20
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:90
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:97
 msgid "View Contract"
 msgstr ""
 
@@ -1744,7 +1744,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:76
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:98
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:105
 msgid "Decimals"
 msgstr ""
 
@@ -2709,6 +2709,6 @@ msgid "Trade STAKE on BitMax"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/bridged_tokens/_tile.html.eex:57
+#: lib/block_scout_web/templates/common_components/_btn_add_to_mm.html.eex:2
 msgid "Add Token to MetaMask"
 msgstr ""

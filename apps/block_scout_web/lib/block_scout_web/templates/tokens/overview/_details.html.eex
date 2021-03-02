@@ -79,7 +79,14 @@
             <% end %>
           </h1>
 
-          <h3 class="token-address-mobile"><%= Address.checksum(@token.contract_address_hash) %></h3>
+          <h3 class="token-address-mobile"><%= Address.checksum(@token.contract_address_hash) %>
+            <%= render BlockScoutWeb.CommonComponentsView,
+              "_btn_add_to_mm.html",
+              contract_address: @token.contract_address,
+              decimals: @token.decimals,
+              symbol: @token.symbol
+            %>
+          </h3>
 
           <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
             <span class="mr-4 mb-3 mb-md-0">
