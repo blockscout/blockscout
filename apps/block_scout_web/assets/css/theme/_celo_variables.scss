@@ -61,7 +61,7 @@ $dashboard-banner-gradient-end: #289371; // gradient end
 $dashboard-banner-network-plain-container-background-color: #2ea780; // stats bg
 
 .layout-container .dashboard-banner-container {
-    background: $celo-dark !important;
+    background: $celo-dark;
 }
 .dashboard-banner-network-plain-container,
 .dashboard-banner-network-plain-container::after {
@@ -115,16 +115,6 @@ a.tile-title { color: $primary !important; }
 // card
 $card-background-1: $primary;
 $card-tab-active: $primary;
-
-.layout-container {
-    .dashboard-banner-container {
-      background-image: linear-gradient(
-        to bottom,
-        $dashboard-banner-gradient-start,
-        $dashboard-banner-gradient-end
-      );
-    }
-}
 
 // Badges
 $badge-neutral-color: $primary;
