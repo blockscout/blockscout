@@ -58,19 +58,7 @@
         </div>
       <% end %>
 
-      <div class="cookie-banner" hidden data-selector="cookie-banner">
-        <div class="cookie-banner-text text-center p-4" data-selector="cookies-banner">
-          <%= gettext("We use cookies on our site to allow tracking of pages and links to help us improve your experience. By selecting Agree, you consent to our use of cookies in accordance with our ") %>
-          <%= link(
-            gettext("Privacy Policy."),
-            to: "https://celo.org/privacy"
-          ) %>
-          <div class="mt-3">
-            <button class="btn btn-disagree d-inline mr-4" data-selector="decline-cookies">Disagree</button>
-            <button class="btn btn-agree d-inline" data-selector="accept-cookies">Agree</button>
-          </div>
-        </div>
-      </div>
+      <%= render BlockScoutWeb.LayoutView, "_cookie_banner.html", assigns %>
       <%= render BlockScoutWeb.LayoutView, "_topnav.html", assigns %>
 
       <main class="pt-5">

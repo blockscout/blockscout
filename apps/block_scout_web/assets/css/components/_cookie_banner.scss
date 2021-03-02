@@ -5,11 +5,16 @@
   width: 100%;
   background: $celo-blue;
   color: #fff;
-  font-size: medium;
+  font-weight: 500;
+  font-size: 14px;
 
-  .cookie-banner-text {
+  .cookie-banner-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     max-width: 800px;
     margin: auto;
+    text-align: left;
   }
 
   a {
@@ -17,13 +22,38 @@
     text-decoration: underline;
   }
 
-  .btn-disagree {
-    border: 1px solid rgba(255, 255, 255, 0.4);
+  .cookie-banner-btns {
+    display: flex;
+  }
+
+  button {
+    height: 34px;
+    width: 148px;
     color: inherit;
+    padding: 0;
+  }
+
+  .btn-disagree {
+    border: none;
+    color: inherit;
+    font-size: 14px;
   }
 
   .btn-agree {
-    border: 1px solid #fff;
+    border: 2px solid #fff;
+    border-radius: 6px;
     color: inherit;
+    font-size: 14px;
+  }
+
+  @media (max-width: 599px) {
+    .cookie-banner-content {
+      flex-direction: column;
+    }
+    .cookie-banner-btns {
+      margin-top: 15px;
+      flex-direction: column-reverse;
+    }
   }
 }
+

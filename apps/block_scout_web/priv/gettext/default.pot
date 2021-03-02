@@ -216,7 +216,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:27
-#: lib/block_scout_web/templates/layout/app.html.eex:86
+#: lib/block_scout_web/templates/layout/app.html.eex:74
 msgid "Block Proposed, awaiting import..."
 msgstr ""
 
@@ -255,7 +255,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:26
-#: lib/block_scout_web/templates/layout/app.html.eex:85
+#: lib/block_scout_web/templates/layout/app.html.eex:73
 msgid "Blocks Indexed"
 msgstr ""
 
@@ -852,7 +852,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:28
-#: lib/block_scout_web/templates/layout/app.html.eex:87
+#: lib/block_scout_web/templates/layout/app.html.eex:75
 msgid "Indexing Tokens"
 msgstr ""
 
@@ -905,7 +905,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:29
-#: lib/block_scout_web/templates/layout/app.html.eex:88
+#: lib/block_scout_web/templates/layout/app.html.eex:76
 msgid "Less than"
 msgstr ""
 
@@ -994,7 +994,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:23
 #: lib/block_scout_web/templates/layout/app.html.eex:30
-#: lib/block_scout_web/templates/layout/app.html.eex:89
+#: lib/block_scout_web/templates/layout/app.html.eex:77
 #: lib/block_scout_web/views/address_view.ex:189
 #: lib/block_scout_web/views/address_view.ex:189
 msgid "Market Cap"
@@ -1153,7 +1153,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:31
-#: lib/block_scout_web/templates/layout/app.html.eex:90
+#: lib/block_scout_web/templates/layout/app.html.eex:78
 msgid "Price"
 msgstr ""
 
@@ -1817,7 +1817,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:15
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20
-#: lib/block_scout_web/templates/layout/app.html.eex:91
+#: lib/block_scout_web/templates/layout/app.html.eex:79
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:29
 #: lib/block_scout_web/templates/transaction/overview.html.eex:221
@@ -1979,11 +1979,21 @@ msgid "Celo Gold"
 msgstr "CELO"
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:65
+#: lib/block_scout_web/templates/layout/_cookie_banner.html.eex:11
 msgid "Privacy Policy."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:63
-msgid "We use cookies on our site to allow tracking of pages and links to help us improve your experience. By selecting Agree, you consent to our use of cookies in accordance with our "
+#: lib/block_scout_web/templates/layout/_cookie_banner.html.eex:9
+msgid " to help improve this website. Understand more in our "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_cookie_banner.html.eex:4
+msgid "Allow tracking of my activity on "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_cookie_banner.html.eex:6
+msgid "explorer.celo.org"
 msgstr ""
