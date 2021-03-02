@@ -8,7 +8,7 @@ clipboard.on('success', ({ trigger }) => {
   copyButton.tooltip('dispose')
 
   copyButton.tooltip({
-    title: 'Copied!',
+    title: copyButton.data('token-hash') ? `${copyButton.data('token-name')} hash copied!` : 'Copied!',
     trigger: 'click',
     placement: 'top'
   }).tooltip('show')

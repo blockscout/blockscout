@@ -13,7 +13,6 @@ $(document.body)
 async function addTokenToMM ({ tokenAddress, tokenSymbol, tokenDecimals, tokenImage }) {
   try {
     const chainId = await window.ethereum.request({ method: 'eth_chainId' })
-    console.log(chainId)
     if (chainId === '0x64') {
       await window.ethereum.request({
         method: 'wallet_watchAsset',
