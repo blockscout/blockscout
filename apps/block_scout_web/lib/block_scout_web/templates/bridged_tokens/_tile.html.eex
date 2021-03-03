@@ -68,7 +68,7 @@
         class="btn-copy-ico"
         data-clipboard-text="<%= @token.contract_address %>"
         data-token-hash="true"
-        data-token-name="<%= token %>"
+        data-token-address="<%= @token.contract_address %>"
         data-placement="top"
         data-toggle="tooltip"
         style="height: 15px;"
