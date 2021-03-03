@@ -128,8 +128,7 @@ const appJs =
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
       'faucet': './js/pages/faucet.js',
-      'tokens': './js/pages/token/search.js',
-      'add-to-mm': './js/pages/token/add_to_mm.js'
+      'tokens': './js/pages/token/search.js'
     },
     output: {
       filename: '[name].js',

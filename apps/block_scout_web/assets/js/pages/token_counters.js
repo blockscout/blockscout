@@ -8,6 +8,8 @@ import {
   openQrModal
 } from '../lib/modals'
 
+import './token/add_to_mm'
+
 export const initialState = {
   channelDisconnected: false,
   transferCount: null,

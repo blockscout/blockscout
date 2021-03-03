@@ -3,6 +3,7 @@ import omit from 'lodash/omit'
 import humps from 'humps'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
 import '../address'
+import './add_to_mm'
 
 const $searchInput = $('.tokens-list-search-input')
 

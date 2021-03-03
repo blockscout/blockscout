@@ -30,11 +30,11 @@ async function addTokenToMM ({ tokenAddress, tokenSymbol, tokenDecimals, tokenIm
     } else {
       btn.tooltip('dispose')
       btn.tooltip({
-        title: `You're not connected to xDai chain`,
+        title: 'You\'re not connected to xDai chain',
         trigger: 'click',
         placement: 'top'
       }).tooltip('show')
-    
+
       setTimeout(() => {
         btn.tooltip('dispose')
       }, 3000)
