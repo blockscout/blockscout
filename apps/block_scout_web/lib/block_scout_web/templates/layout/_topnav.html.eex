@@ -115,41 +115,53 @@
             </li>
           <% end %>
         <% end %>
-        <%= if Application.get_env(:block_scout_web, :apps_menu) == true || Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
+        <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
           <li class="nav-item dropdown">
             <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
               </span>
-              <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
-                <%= gettext("Apps") %>
-              <% else %>
-                <%= gettext("Stakes") %>
-              <% end %>
+              <%= gettext("Apps") %>
             </a>
-            <div class="dropdown-menu" aria-labeledby="navbarAppsDropdown">
-              <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
-                <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
-                  <%= gettext("Staking") %>
-                </a>
-              <% end %>
-              <%= if Application.get_env(:block_scout_web, :faucet)[:enabled] do %>
-                <a class="dropdown-item <%= #{tab_status("faucet", @conn.request_path)} %>" href="<%= faucet_path(@conn, :index) %>">
-                  <%= gettext("Faucet") %>
-                </a>
-              <% end %>
-              <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
-                <%= for %{url: url, title: title} <- external_apps_list() do %> 
-                    <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %>
+            <div class="dropdown-menu large" aria-labeledby="navbarAppsDropdown">
+              <div class="row" style="padding: 10px;">
+                <div class="col-xs-12 col-md-4 col-lg-4">
+                  <h3 class="pl-2"><b><%= gettext("Apps") %></b></h3>
+                  <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
+                    <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
+                      <%= gettext("Staking on xDai") %>
                     </a>
-                <% end %>
-              <% end %>
-              <%= if Application.get_env(:block_scout_web, :enable_gas_tracker) == true do %>
-                <a class="dropdown-item" href="/gas-tracker-consumers-3hrs">
-                  <%= gettext("Gas Tracker") %>
-                  <span class="bs-label secondary right from-dropdown">New</span>
-                </a>
-              <% end %>
+                  <% end %>
+                  <a class="dropdown-item" href="https://easy-staking.xdaichain.com/">
+                      <%= gettext("Staking on Ethereum") %>
+                  </a>
+                  <%= if Application.get_env(:block_scout_web, :faucet)[:enabled] do %>
+                    <a class="dropdown-item <%= #{tab_status("faucet", @conn.request_path)} %>" href="<%= faucet_path(@conn, :index) %>">
+                      <%= gettext("Faucet") %>
+                    </a>
+                  <% end %>
+                  <%= if Application.get_env(:block_scout_web, :enable_gas_tracker) == true do %>
+                    <a class="dropdown-item" href="/gas-tracker-consumers-3hrs">
+                      <%= gettext("Gas Tracker") %>
+                      <span class="bs-label secondary right from-dropdown">New</span>
+                    </a>
+                  <% end %>
+                </div>
+                <div class="col-xs-12 col-md-4 col-lg-4">
+                  <h3 class="pl-2"><b><%= gettext("Bridges") %></b></h3>
+                  <%= for %{url: url, title: title} <- bridges_list() do %> 
+                      <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                  <% end %>
+                </div>
+                <div class="col-xs-12 col-md-4 col-lg-4">
+                  <h3 class="pl-2"><b><%= gettext("Ecosystem") %></b></h3>
+                  <%= for %{url: url, title: title} <- defi_list() do %> 
+                        <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                  <% end %>
+                  <hr class="menu-hr" />
+                  <a href="https://airtable.com/shr7veBkE77k5p86b" class="dropdown-item" target="_blank"><%= gettext("Add Your App") %></a>
+                </div>
+              </div>
             </div>
           </li>
         <% end %>

@@ -18,6 +18,13 @@ $dropdown-menu-item-hover-background: rgba($secondary, 0.1) !default;
     right: 0;
   }
 
+  &.large {
+    width: 550px;
+    @include media-breakpoint-down(sm) {
+      width: 100%;
+    }
+  }
+
   .nav-item & {
     border-top-left-radius: 0 !important;
     border-top-right-radius: 0 !important;

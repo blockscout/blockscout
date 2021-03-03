@@ -4,6 +4,10 @@ hr {
   border-right: none;
   border-top: 1px solid #f5f6fa;
   margin: 30px 0;
+  &.menu-hr {
+    border-top: 1px solid #dee2e6;
+    margin: 10px 0;
+  }
 }
 
 svg {

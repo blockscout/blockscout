@@ -218,6 +218,36 @@ defmodule BlockScoutWeb.LayoutView do
     end
   end
 
+  def bridges_alm_list do
+    if Application.get_env(:block_scout_web, :bridges_alm) do
+      try do
+        :block_scout_web
+        |> Application.get_env(:bridges_alm)
+        |> Parser.parse!(%{keys: :atoms!})
+      rescue
+        _ ->
+          []
+      end
+    else
+      []
+    end
+  end
+
+  def defi_list do
+    if Application.get_env(:block_scout_web, :defi) do
+      try do
+        :block_scout_web
+        |> Application.get_env(:defi)
+        |> Parser.parse!(%{keys: :atoms!})
+      rescue
+        _ ->
+          []
+      end
+    else
+      []
+    end
+  end
+
   defp decode_json(data) do
     Jason.decode!(~s(#{data}))
   rescue
