@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import 'bootstrap'
 
 $(document.body)
   .on('click', '.btn-add-to-mm', event => {
@@ -7,10 +8,10 @@ $(document.body)
     const tokenSymbol = $btn.data('token-symbol')
     const tokenDecimals = $btn.data('token-decimals')
 
-    addTokenToMM({ tokenAddress, tokenSymbol, tokenDecimals, tokenImage: null })
+    addTokenToMM({ tokenAddress, tokenSymbol, tokenDecimals, tokenImage: null, btn: $btn })
   })
 
-async function addTokenToMM ({ tokenAddress, tokenSymbol, tokenDecimals, tokenImage }) {
+async function addTokenToMM ({ tokenAddress, tokenSymbol, tokenDecimals, tokenImage, btn }) {
   try {
     const chainId = await window.ethereum.request({ method: 'eth_chainId' })
     if (chainId === '0x64') {
@@ -26,6 +27,17 @@ async function addTokenToMM ({ tokenAddress, tokenSymbol, tokenDecimals, tokenIm
           }
         }
       })
+    } else {
+      btn.tooltip('dispose')
+      btn.tooltip({
+        title: `You're not connected to xDai chain`,
+        trigger: 'click',
+        placement: 'top'
+      }).tooltip('show')
+    
+      setTimeout(() => {
+        btn.tooltip('dispose')
+      }, 3000)
     }
   } catch (error) {
     console.error(error)
