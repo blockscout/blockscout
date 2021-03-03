@@ -115,33 +115,6 @@
             </li>
           <% end %>
         <% end %>
-        <%= if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:reading_enabled] || Application.get_env(:block_scout_web, :api_url) do %>
-          <li class="nav-item dropdown">
-            <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, "_api_icon.html" %>
-              </span>
-              <%= gettext("APIs") %>
-            </a>
-            <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown"> 
-              <%= link(
-                    gettext("GraphQL"),
-                    class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
-                    to: api_url() <> "/graphiql"
-                  ) %>
-              <%= link(
-                    gettext("RPC"),
-                    class: "dropdown-item #{tab_status("api-docs", @conn.request_path)}",
-                    to: api_url() <> api_docs_path(@conn, :index)
-                  ) %>
-              <%= link(
-                    gettext("Eth RPC"),
-                    class: "dropdown-item #{tab_status("eth-rpc-api-docs", @conn.request_path)}",
-                    to: api_url() <> api_docs_path(@conn, :eth_rpc)
-                  ) %>
-            </div>
-          </li>
-        <% end %>
         <%= if Application.get_env(:block_scout_web, :apps_menu) == true || Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
           <li class="nav-item dropdown">
             <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

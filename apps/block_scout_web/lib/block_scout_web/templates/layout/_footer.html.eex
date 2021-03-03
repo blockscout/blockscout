@@ -13,10 +13,11 @@
     </div>
 
     <% other_explorers = other_explorers() %>
-    <% col_size = if Enum.empty?(other_explorers), do: 3, else: 2 %>
+    <% bridges = bridges_list() %>
+    <% col_size = if Enum.empty?(other_explorers), do: 2, else: 1 %>
 
     <div class="row">
-      <div class="col-xs-12 col-lg-3">
+      <div class="col-xs-12 col-lg-2">
         <p class="footer-info-text"><%= gettext("Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks.") %></p>
         <div class="footer-social-icons">
           <a href="https://github.com/poanetwork/blockscout" rel="noreferrer" target="_blank" class="footer-social-icon" title='<%= gettext("Github") %>'>
@@ -34,7 +35,7 @@
         </div>
       </div>
 
-      <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
+      <div class="col-xs-12 col-md-3 col-lg-<%= col_size %> footer-list">
         <h3>BlockScout</h3>
         <ul>
           <li><a href="<%= issue_link(@conn) %>" rel="noreferrer" class="footer-link" target="_blank"><%= gettext("Submit an Issue") %></a></li>
@@ -47,7 +48,7 @@
       <% main_nets = main_nets(other_networks()) %>
 
       <%= unless Enum.empty?(main_nets) do %>
-        <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
+        <div class="col-xs-12 col-md-3 col-lg-<%= col_size %> footer-list">
           <h3><%= gettext("Main Networks") %></h3>
           <ul>
             <%= for %{title: title, url: url} <- main_nets do %>
@@ -60,7 +61,7 @@
       <% test_nets = test_nets(other_networks()) %>
 
       <%= unless Enum.empty?(test_nets) do %>
-        <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
+        <div class="col-xs-12 col-md-3 col-lg-<%= col_size %> footer-list">
           <h3><%= gettext("Test Networks") %></h3>
           <ul>
             <%= for %{title: title, url: url} <- test_nets do %>
@@ -71,10 +72,36 @@
       <% end %>
 
       <%= unless Enum.empty?(other_explorers) do %>
-        <div class="col-xs-12 col-md-4 col-lg-<%= col_size %> footer-list">
+        <div class="col-xs-12 col-md-3 col-lg-<%= col_size %> footer-list">
           <h3><%= gettext("Other Explorers") %></h3>
           <ul>
             <%= for {name, url} <- other_explorers do %>
+              <li><a href="<%= url%>" rel="noreferrer" class="footer-link"> <%= name %> </a></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+      <%= if Application.get_env(:block_scout_web, BlockScoutWeb.ApiRouter)[:reading_enabled] || Application.get_env(:block_scout_web, :api_url) do %>
+        <div class="col-xs-12 col-md-3 col-lg-<%= col_size %> footer-list">
+          <h3><%= gettext("APIs") %></h3>
+          <ul>
+            <li>
+                <a href="<%= api_url() <> "/graphiql" %>" rel="noreferrer" class="footer-link"> <%= gettext("GraphQL") %> </a>
+            </li>
+            <li>
+                <a href="<%= api_url() <> api_docs_path(@conn, :index) %>" rel="noreferrer" class="footer-link"> <%= gettext("RPC") %> </a>
+            </li>
+            <li>
+                <a href="<%= api_url() <> api_docs_path(@conn, :eth_rpc) %>" rel="noreferrer" class="footer-link"> <%= gettext("Eth RPC") %> </a>
+            </li>
+          </ul>
+        </div>
+      <% end %>
+      <%= unless Enum.empty?(bridges) do %>
+        <div class="col-xs-12 col-md-3 col-lg-<%= col_size %> footer-list">
+          <h3><%= gettext("Bridges") %></h3>
+          <ul>
+            <%= for %{title: name, url: url} <- bridges do %>
               <li><a href="<%= url%>" rel="noreferrer" class="footer-link"> <%= name %> </a></li>
             <% end %>
           </ul>
