@@ -244,7 +244,7 @@ defmodule Explorer.Etherscan do
         left_join: tt in TokenTransfer,
         on: tt.transaction_hash == t.hash,
         left_join: l in Log,
-        on: l.transaction_hash == t.hash and l.address_hash == ^params.address_hash,
+        on: l.transaction_hash == t.hash and l.address_hash == ^params.address_hash and l.index == tt.log_index,
         where:
           b.number >= ^params.from_block and b.number <= ^params.to_block and
             tt.token_contract_address_hash == ^params.address_hash,
