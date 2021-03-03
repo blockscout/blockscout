@@ -8,12 +8,12 @@ clipboard.on('success', ({ trigger }) => {
   copyButton.tooltip('dispose')
 
   copyButton.tooltip({
-    title: copyButton.data('token-hash') ? `${copyButton.data('token-name')} hash copied!` : 'Copied!',
+    title: copyButton.data('token-hash') ? `${copyButton.data('token-address')} copied!` : 'Copied!',
     trigger: 'click',
     placement: 'top'
   }).tooltip('show')
 
   setTimeout(() => {
     copyButton.tooltip('dispose')
-  }, 1000)
+  }, 3000)
 })

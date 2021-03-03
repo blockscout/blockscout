@@ -3,5 +3,7 @@
     data-token-address="<%= @contract_address %>"
     data-token-decimals="<%= @decimals %>"
     data-token-symbol="<%= @symbol %>"
+    data-placement="top"
+    data-toggle="tooltip"
 >
 </div>
