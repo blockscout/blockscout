@@ -248,6 +248,21 @@ defmodule BlockScoutWeb.LayoutView do
     end
   end
 
+  def apps_list do
+    if Application.get_env(:block_scout_web, :external_apps) do
+      try do
+        :block_scout_web
+        |> Application.get_env(:external_apps)
+        |> Parser.parse!(%{keys: :atoms!})
+      rescue
+        _ ->
+          []
+      end
+    else
+      []
+    end
+  end
+
   defp decode_json(data) do
     Jason.decode!(~s(#{data}))
   rescue

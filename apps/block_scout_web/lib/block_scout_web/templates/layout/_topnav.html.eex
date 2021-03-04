@@ -141,10 +141,14 @@
                       <span class="bs-label secondary right from-dropdown">New</span>
                     </a>
                   <% end %>
+                  <hr class="menu-hr" />
+                  <%= for %{url: url, title: title} <- apps_list() do %> 
+                        <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                  <% end %>
                 </div>
 
                 <div class="col-xs-12 col-md-4 col-lg-4">
-                  <%= bridges = bridges_list() %>
+                  <% bridges = bridges_list() %>
                   <%= unless Enum.empty?(bridges) do %>
                     <h3 class="pl-2"><b><%= gettext("Bridges") %></b></h3>
                     <%= for %{url: url, title: title} <- bridges do %> 
