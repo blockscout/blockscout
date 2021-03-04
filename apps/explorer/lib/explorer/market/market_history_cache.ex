@@ -12,7 +12,6 @@ defmodule Explorer.Market.MarketHistoryCache do
   @last_update_key :last_update
   @history_key :history
   # 6 hours
-  @cache_period Application.compile_env(:explorer, __MODULE__)[:period]
   @recent_days 30
 
   def fetch do
@@ -32,11 +31,12 @@ defmodule Explorer.Market.MarketHistoryCache do
   def recent_days_count, do: @recent_days
 
   defp cache_expired? do
+    cache_period = market_history_cache_period()
     updated_at = fetch_from_cache(@last_update_key)
 
     cond do
       is_nil(updated_at) -> true
-      current_time() - updated_at > @cache_period -> true
+      current_time() - updated_at > cache_period -> true
       true -> false
     end
   end
@@ -75,5 +75,12 @@ defmodule Explorer.Market.MarketHistoryCache do
     utc_now = DateTime.utc_now()
 
     DateTime.to_unix(utc_now, :millisecond)
+  end
+
+  defp market_history_cache_period do
+    case Integer.parse(System.get_env("MARKET_HISTORY_CACHE_PERIOD", "")) do
+      {secs, ""} -> :timer.seconds(secs)
+      _ -> :timer.hours(6)
+    end
   end
 end

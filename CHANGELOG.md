@@ -1,6 +1,48 @@
 ## Current
 
 ### Features
+- [#3676](https://github.com/poanetwork/blockscout/pull/3676) - Bridged tokens TLV in USD
+- [#3674](https://github.com/poanetwork/blockscout/pull/3674) - Display Sushiswap pools data
+- [#3637](https://github.com/poanetwork/blockscout/pull/3637) - getsourcecode API endpoint: show data for unverified contract from verified contract with the same bytecode
+- [#3631](https://github.com/poanetwork/blockscout/pull/3631) - Tokens search
+- [#3631](https://github.com/poanetwork/blockscout/pull/3631) - BSC OMNI bridge support
+- [#3603](https://github.com/poanetwork/blockscout/pull/3603) - Display method output parameter name at contract read page
+- [#3597](https://github.com/poanetwork/blockscout/pull/3597) - Show APY for delegators in Staking DApp
+- [#3584](https://github.com/poanetwork/blockscout/pull/3584) - Token holders API endpoint
+- [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
+
+### Fixes
+- [#3655](https://github.com/poanetwork/blockscout/pull/3655) - Handle absence of readAll function in some old/legacy browsers
+- [#3634](https://github.com/poanetwork/blockscout/pull/3634) - Fix transaction decoding view: support tuple types
+- [#3623](https://github.com/poanetwork/blockscout/pull/3623) - Ignore unrecognized messages in bridge counter processes
+- [#3622](https://github.com/poanetwork/blockscout/pull/3622) - Contract reader: fix int type output Ignore unrecognized messages in bridge counter processes
+- [#3621](https://github.com/poanetwork/blockscout/pull/3621) - Contract reader: :binary input/output fix
+- [#3620](https://github.com/poanetwork/blockscout/pull/3620) - Ignore unfamiliar messages by Explorer.Staking.ContractState module
+- [#3611](https://github.com/poanetwork/blockscout/pull/3611) - Fix logo size
+- [#3600](https://github.com/poanetwork/blockscout/pull/3600) - Prevent update validator metadata with empty name from contract
+- [#3592](https://github.com/poanetwork/blockscout/pull/3592), [#3601](https://github.com/poanetwork/blockscout/pull/3601), [#3607](https://github.com/poanetwork/blockscout/pull/3607) - Contract interaction: fix nested tuples in the output view, add formatting
+- [#3583](https://github.com/poanetwork/blockscout/pull/3583) - Reduce RPC requests and DB changes by Staking DApp
+- [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
+
+### Chore
+- [#3667](https://github.com/poanetwork/blockscout/pull/3667) - Store bridged token price in the DB
+- [#3662](https://github.com/poanetwork/blockscout/pull/3662) - Order bridged tokens in descending order by tokens holder for Omni bridge cap calculation
+- [#3659](https://github.com/poanetwork/blockscout/pull/3659) - Staking Dapp new buttons: swap, bridge
+- [#3645](https://github.com/poanetwork/blockscout/pull/3645) - Change Twitter handle
+- [#3644](https://github.com/poanetwork/blockscout/pull/3644) - Correct exchange rate for SURF.finance token
+- [#3618](https://github.com/poanetwork/blockscout/pull/3618) - Contracts verification up to 10 libraries
+- [#3616](https://github.com/poanetwork/blockscout/pull/3616) - POSDAO refactoring: use zero address instead of staker address for certain cases
+- [#3612](https://github.com/poanetwork/blockscout/pull/3612) - POSDAO refactoring: use 'getDelegatorPools' getter instead of 'getStakerPools' in Staking DApp
+- [#3585](https://github.com/poanetwork/blockscout/pull/3585) - Add autoswitching from eth_subscribe to eth_blockNumber in Staking DApp
+- [#3574](https://github.com/poanetwork/blockscout/pull/3574) - Correct UNI token price
+- [#3569](https://github.com/poanetwork/blockscout/pull/3569) - Allow re-define cache period vars at runtime
+- [#3567](https://github.com/poanetwork/blockscout/pull/3567) - Force to show filter at the page where filtered items list is empty
+- [#3565](https://github.com/poanetwork/blockscout/pull/3565) - Staking dapp: unhealthy state alert message
+
+
+## 3.5.1-beta
+
+### Features
 - [#3558](https://github.com/poanetwork/blockscout/pull/3558) - Focus to search field with a forward slash key
 - [#3541](https://github.com/poanetwork/blockscout/pull/3541) - Staking dapp stats: total number of delegators, total staked amount 
 - [#3540](https://github.com/poanetwork/blockscout/pull/3540) - Apply DarkForest custom theme to NFT instances

@@ -124,29 +124,35 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   end
 
   def coin_id(symbol) do
-    url = "#{base_url()}/coins/list"
+    id_mapping = bridged_token_symbol_to_id_mapping_to_get_price(symbol)
 
-    symbol_downcase = String.downcase(symbol)
+    if id_mapping do
+      {:ok, id_mapping}
+    else
+      url = "#{base_url()}/coins/list"
 
-    case Source.http_request(url) do
-      {:ok, data} = resp ->
-        if is_list(data) do
-          symbol_data =
-            Enum.find(data, fn item ->
-              item["symbol"] == symbol_downcase
-            end)
+      symbol_downcase = String.downcase(symbol)
 
-          if symbol_data do
-            {:ok, symbol_data["id"]}
+      case Source.http_request(url) do
+        {:ok, data} = resp ->
+          if is_list(data) do
+            symbol_data =
+              Enum.find(data, fn item ->
+                item["symbol"] == symbol_downcase
+              end)
+
+            if symbol_data do
+              {:ok, symbol_data["id"]}
+            else
+              {:error, :not_found}
+            end
           else
-            {:error, :not_found}
+            resp
           end
-        else
-          resp
-        end
 
-      resp ->
-        resp
+        resp ->
+          resp
+      end
     end
   end
 
@@ -171,5 +177,13 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @spec config(atom()) :: term
   defp config(key) do
     Application.get_env(:explorer, __MODULE__, [])[key]
+  end
+
+  defp bridged_token_symbol_to_id_mapping_to_get_price(symbol) do
+    case symbol do
+      "UNI" -> "uniswap"
+      "SURF" -> "surf-finance"
+      _symbol -> nil
+    end
   end
 end

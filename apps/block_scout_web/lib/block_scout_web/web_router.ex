@@ -84,7 +84,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     resources("/tokens", TokensController, only: [:index])
 
-    resources("/bridged-tokens", BridgedTokensController, only: [:index])
+    resources("/bridged-tokens", BridgedTokensController, only: [:index, :show])
 
     resources "/address", AddressController, only: [:show] do
       resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
@@ -281,11 +281,7 @@ defmodule BlockScoutWeb.WebRouter do
 
     get("/search-logs", AddressLogsController, :search_logs)
 
-    get("/transactions_csv", AddressTransactionController, :transactions_csv)
-
     get("/token-autocomplete", ChainController, :token_autocomplete)
-
-    get("/token-transfers-csv", AddressTransactionController, :token_transfers_csv)
 
     get("/chain-blocks", ChainController, :chain_blocks, as: :chain_blocks)
 

@@ -26,12 +26,21 @@
       <%= if @pool.is_active, do: "#{@pool.stakes_ratio}%", else: gettext("(inactive pool)") %>
     <% end %>
   </div>
+  <%= if @pools_type == :validator do %>
+    <div class="col-1 stakes-td stakes-cell">
+      <%= if @pool.apy do %>
+        <%= @pool.apy.apy %>
+      <% else %>
+        <%= gettext("N/A") %>
+      <% end %>
+    </div>
+  <% end %>
   <div class="col-2 stakes-td stakes-cell">
     <span class="stakes-td-link-style js-delegators-list" data-address="<%= @pool.staking_address_hash %>">
       <%= @pool.delegators_count %>
     </span>
   </div>
-  <div class="col-3 stakes-td stakes-cell justify-content-end">
+  <div class="<%= if @pools_type == :validator do %>col-2<% else %>col-3<% end %> stakes-td stakes-cell justify-content-end">
     <%= if @pool.is_banned do %>
       <span class="stakes-td-banned-info">
         <%= gettext("Banned until block #%{banned_until} (%{estimated_unban_day})", banned_until: @pool.banned_until, estimated_unban_day: estimated_unban_day(@pool.banned_until, @average_block_time)) %>
