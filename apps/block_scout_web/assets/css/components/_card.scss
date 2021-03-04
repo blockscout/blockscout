@@ -78,6 +78,10 @@ $card-tab-icon-color-active: #fff !default;
     margin-bottom: 0;
   }
 
+  &.alm {
+    margin-bottom: 1rem;
+  }
+
   .card-title-container & {
     line-height: 1.2;
     margin: 0;

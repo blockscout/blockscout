@@ -23,7 +23,7 @@
             <% true -> %>
               <%= nil %>
           <% end %>
-          <h1 class="card-title">
+          <h1 class="card-title <%= if show_alm_link?(@transaction.hash), do: "alm", else: "" %>">
             <%= gettext "Transaction Details" %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
@@ -42,6 +42,13 @@
               </span>
             </span>
           </h1>
+          <%= if show_alm_link?(@transaction.hash) do %>
+            <div class="mr-4 mb-2">
+              <a data-test="external_url" href=<%= "https://#{get_alm_app_link(@transaction.hash)}/100/#{@transaction.hash}" %> target="_blank">
+              View In ALM App <span class="external-token-icon"><%= render BlockScoutWeb.IconsView, "_external_link.html" %></span>
+              </a>
+            </div>
+          <% end %>
           <%= if status == :pending do %>
             <div class="tile tile-muted d-flex justify-content-center align-items-center mb-4">
               <div class="loading-spinner">

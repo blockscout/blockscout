@@ -3554,7 +3554,7 @@ defmodule Explorer.Chain do
         else
           address_verified_twin_contract = Chain.get_address_verified_twin_contract(address_hash)
 
-          if address_verified_twin_contract do
+          if address_verified_twin_contract.verified_contract do
             formatted_code = format_source_code_output(address_verified_twin_contract.verified_contract)
 
             %{
@@ -6194,5 +6194,37 @@ defmodule Explorer.Chain do
       )
 
     Repo.exists?(query)
+  end
+
+  @spec amb_eth_tx?(Address.t()) :: boolean()
+  def amb_eth_tx?(hash) do
+    # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
+
+    eth_omni_bridge_mediator = String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR", ""))
+
+    Repo.exists?(
+      from(
+        l in Log,
+        where: l.transaction_hash == ^hash,
+        where: fragment("first_topic like '0x59a9a802%'"),
+        where: l.address_hash == ^eth_omni_bridge_mediator
+      )
+    )
+  end
+
+  @spec amb_bsc_tx?(Address.t()) :: boolean()
+  def amb_bsc_tx?(hash) do
+    # "0x59a9a802" - TokensBridgingInitiated(address indexed token, address indexed sender, uint256 value, bytes32 indexed messageId)
+
+    bsc_omni_bridge_mediator = String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR", ""))
+
+    Repo.exists?(
+      from(
+        l in Log,
+        where: l.transaction_hash == ^hash,
+        where: fragment("first_topic like '0x59a9a802%'"),
+        where: l.address_hash == ^bsc_omni_bridge_mediator
+      )
+    )
   end
 end

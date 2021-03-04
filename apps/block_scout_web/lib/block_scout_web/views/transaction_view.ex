@@ -438,4 +438,20 @@ defmodule BlockScoutWeb.TransactionView do
       _ -> type
     end
   end
+
+  defp amb_tx?(hash) do
+    Chain.amb_eth_tx?(hash) || Chain.amb_bsc_tx?(hash)
+  end
+
+  defp show_alm_link?(hash) do
+    amb_tx?(hash)
+  end
+
+  defp get_alm_app_link(hash) do
+    cond do
+      Chain.amb_eth_tx?(hash) == true -> "alm-xdai.herokuapp.com"
+      Chain.amb_bsc_tx?(hash) == true -> "alm-bsc-xdai.herokuapp.com"
+      true -> nil
+    end
+  end
 end
