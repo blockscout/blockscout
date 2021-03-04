@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     result =
       cond do
         instance.metadata && instance.metadata["image_url"] ->
-          instance.metadata["image_url"]
+          retrieve_image(instance.metadata["image_url"])
 
         instance.metadata && instance.metadata["image"] ->
           retrieve_image(instance.metadata["image"])
@@ -112,8 +112,13 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewView do
     image["description"]
   end
 
-  defp retrieve_image(image) do
-    image
+  defp retrieve_image(image_url) do
+    if image_url =~ "ipfs://ipfs" do
+      "ipfs://ipfs" <> ipfs_uid = image_url
+      "https://ipfs.io/ipfs/" <> ipfs_uid
+    else
+      image_url
+    end
   end
 
   defp tab_name(["token-transfers"]), do: gettext("Token Transfers")
