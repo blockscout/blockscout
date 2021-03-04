@@ -47,6 +47,16 @@ config :block_scout_web,
   circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
   enable_gas_tracker: System.get_env("ENABLE_GAS_TRACKER", "false") == "true"
 
+config :block_scout_web, :faucet,
+  enabled: if(System.get_env("ENABLE_FAUCET", "false") == "true", do: true, else: false),
+  value: System.get_env("FAUCET_VALUE", "0"),
+  address: System.get_env("FAUCET_ADDRESS"),
+  gas_limit: System.get_env("FAUCET_GAS_LIMIT", "21000"),
+  gas_price: System.get_env("FAUCET_GAS_PRICE", "1"),
+  address_pk: System.get_env("FAUCET_ADDRESS_PK"),
+  h_captcha_secret_key: System.get_env("FAUCET_H_CAPTCHA_SECRET_KEY"),
+  h_captcha_client_key: System.get_env("FAUCET_H_CAPTCHA_CLIENT_KEY")
+
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 # Configures the endpoint

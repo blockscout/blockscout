@@ -156,3 +156,8 @@ $form-control-border-color-active: $primary !default;
   padding: 10px 10px 10px 35px;
   outline: none;
 }
+.faucet-receiver-input {
+  @include media-breakpoint-up(md) {
+    width: 400px;
+  }
+}
