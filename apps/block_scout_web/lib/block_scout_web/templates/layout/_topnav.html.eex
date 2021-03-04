@@ -135,11 +135,6 @@
                   <a class="dropdown-item" href="https://easy-staking.xdaichain.com/">
                       <%= gettext("Staking on Ethereum") %>
                   </a>
-                  <%= if Application.get_env(:block_scout_web, :faucet)[:enabled] do %>
-                    <a class="dropdown-item <%= #{tab_status("faucet", @conn.request_path)} %>" href="<%= faucet_path(@conn, :index) %>">
-                      <%= gettext("Faucet") %>
-                    </a>
-                  <% end %>
                   <%= if Application.get_env(:block_scout_web, :enable_gas_tracker) == true do %>
                     <a class="dropdown-item" href="/gas-tracker-consumers-3hrs">
                       <%= gettext("Gas Tracker") %>
@@ -147,10 +142,14 @@
                     </a>
                   <% end %>
                 </div>
+
                 <div class="col-xs-12 col-md-4 col-lg-4">
-                  <h3 class="pl-2"><b><%= gettext("Bridges") %></b></h3>
-                  <%= for %{url: url, title: title} <- bridges_list() do %> 
+                  <%= bridges = bridges_list() %>
+                  <%= unless Enum.empty?(bridges) do %>
+                    <h3 class="pl-2"><b><%= gettext("Bridges") %></b></h3>
+                    <%= for %{url: url, title: title} <- bridges do %> 
                       <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
+                    <% end %>
                   <% end %>
                 </div>
                 <div class="col-xs-12 col-md-4 col-lg-4">
