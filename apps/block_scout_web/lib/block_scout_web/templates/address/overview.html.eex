@@ -26,7 +26,33 @@
               <%= nil %>
           <% end %>
           <h1 class="card-title lg-card-title">
-            <div class="title-with-label"><%= address_title(@address) %> <%= gettext "Details" %></div>
+            <div class="title-with-label"><%= gettext "Address Details" %></div>
+            <% validator_metadata = primary_validator_metadata(@address) %>
+            <%= if contract?(@address) do %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "contract", additional_classes: ["contract", "ml-1"] %>
+              <%= if smart_contract_is_proxy?(@address) do %>
+                <%= render BlockScoutWeb.FormView, "_tag.html", text: "proxy", additional_classes: ["proxy", "ml-1"] %>
+              <% end %>
+              <%= if @address.token do %>
+                <%= render BlockScoutWeb.FormView, "_tag.html", text: "token", additional_classes: ["token", "ml-1"] %>
+              <% end %>
+            <% else %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "EOA", additional_classes: ["eoa", "ml-1"] %>
+            <% end %>
+            <%= if validator_metadata || Chain.is_active_validator?(@address.hash) do %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "validator", additional_classes: ["validator", "ml-1"] %>
+            <% end %>
+            <%= if is_faucet?(@address.hash) do %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "faucet", additional_classes: ["faucet", "ml-1"] %>
+            <% end %>
+            <%= if is_omni_bridge?(@address.hash) do %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "OMNI", additional_classes: ["omni", "ml-1"] %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridge", additional_classes: ["bridge", "ml-1"] %>
+            <% end %>
+            <%= if is_amb_bridge?(@address.hash) do %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "AMB", additional_classes: ["amb", "ml-1"] %>
+              <%= render BlockScoutWeb.FormView, "_tag.html", text: "bridge", additional_classes: ["bridge", "ml-1"] %>
+            <% end %>
             <!-- buttons -->
             <span class="overview-title-buttons float-right">
               <span class="overview-title-item" data-clipboard-text="<%= @address %>">
@@ -59,7 +85,7 @@
                   </svg>
                 </span>
               </span>
-              <%= if validator_metadata = primary_validator_metadata(@address) do %>
+              <%= if validator_metadata do %>
                 <span
                   class="overview-title-item"
                   data-target="#validatorModal"
