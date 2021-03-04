@@ -432,7 +432,7 @@ defmodule BlockScoutWeb.AddressView do
 
   def is_faucet?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    address_hash_str == String.downcase(System.get_env("FAUCET_ADDRESS"))
+    address_hash_str == String.downcase(System.get_env("FAUCET_ADDRESS", ""))
   end
 
   def is_omni_bridge?(nil), do: false
@@ -440,14 +440,14 @@ defmodule BlockScoutWeb.AddressView do
   def is_omni_bridge?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
 
-    address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR")) ||
-      address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR"))
+    address_hash_str == String.downcase(System.get_env("ETH_OMNI_BRIDGE_MEDIATOR", "")) ||
+      address_hash_str == String.downcase(System.get_env("BSC_OMNI_BRIDGE_MEDIATOR", ""))
   end
 
   def is_amb_bridge?(nil), do: false
 
   def is_amb_bridge?(address_hash) do
     address_hash_str = "0x" <> Base.encode16(address_hash.bytes, case: :lower)
-    String.downcase(System.get_env("AMB_BRIDGE_MEDIATORS")) =~ address_hash_str
+    String.downcase(System.get_env("AMB_BRIDGE_MEDIATORS", "")) =~ address_hash_str
   end
 end
