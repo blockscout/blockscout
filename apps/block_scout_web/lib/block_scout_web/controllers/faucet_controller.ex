@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.FaucetController do
   use BlockScoutWeb, :controller
 
+  require Logger
+
   alias Explorer.{Chain, Faucet}
 
   @internal_server_err_msg "Internal server error. Please try again later."
@@ -27,7 +29,7 @@ defmodule BlockScoutWeb.FaucetController do
 
         case res do
           {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
-            check_request_interval_and_send(conn, status_code, body, receiver, address_hash)
+            check_request_interval_and_send(conn, status_code, body, address_hash)
 
           _ ->
             json(conn, %{
@@ -46,8 +48,8 @@ defmodule BlockScoutWeb.FaucetController do
 
   def request(conn, _), do: not_found(conn)
 
-  defp check_request_interval_and_send(conn, status_code, body, receiver, address_hash) do
-    last_requested = Faucet.get_last_faucet_request_for_address(receiver)
+  defp check_request_interval_and_send(conn, status_code, body, address_hash) do
+    last_requested = Faucet.get_last_faucet_request_for_address(address_hash)
 
     body_json = Jason.decode!(body)
 
@@ -55,12 +57,12 @@ defmodule BlockScoutWeb.FaucetController do
       today = DateTime.utc_now()
       yesterday = Timex.shift(today, days: -1)
 
-      if !last_requested || last_requested < yesterday do
+      if !last_requested || DateTime.diff(last_requested, yesterday, :second) <= 0 do
         try_num = 0
 
         if last_requested do
-          if Faucet.address_contains_outgoing_transactions_after_time(receiver, last_requested) do
-            send_coins(receiver, address_hash, conn, try_num)
+          if Faucet.address_contains_outgoing_transactions_after_time(address_hash, last_requested) do
+            send_coins(address_hash, conn, try_num)
           else
             json(conn, %{
               success: false,
@@ -68,7 +70,7 @@ defmodule BlockScoutWeb.FaucetController do
             })
           end
         else
-          send_coins(receiver, address_hash, conn, try_num)
+          send_coins(address_hash, conn, try_num)
         end
       else
         dur_to_next_available_request = calc_dur_to_next_available_request(last_requested, yesterday)
@@ -98,19 +100,27 @@ defmodule BlockScoutWeb.FaucetController do
     "#{dur_hrs}:#{dur_min}"
   end
 
-  defp send_coins(receiver, address_hash, conn, try_num) do
+  defp send_coins(address_hash, conn, try_num) do
     if try_num < 5 do
-      case Faucet.send_coins_from_faucet(receiver) do
+      case Faucet.send_coins_from_faucet(address_hash) do
         {:ok, transaction_hash} ->
           case Faucet.insert_faucet_request_record(address_hash) do
-            {:ok, _} -> json(conn, %{success: true, transactionHash: transaction_hash, message: "Success"})
-            {:error, _} -> json(conn, %{success: false, message: @internal_server_err_msg})
+            {:ok, _} ->
+              json(conn, %{success: true, transactionHash: transaction_hash, message: "Success"})
+
+            {:error, err} ->
+              Logger.error(fn -> ["failed to insert faucet request history item: ", inspect(err)] end)
+              json(conn, %{success: false, message: @internal_server_err_msg})
           end
 
-        _err ->
+        err ->
+          Logger.error(fn ->
+            ["failed to send coins from faucet to address: ", inspect(address_hash |> to_string()), ": ", inspect(err)]
+          end)
+
           try_num = try_num + 1
           Process.sleep(500)
-          send_coins(receiver, address_hash, conn, try_num)
+          send_coins(address_hash, conn, try_num)
       end
     else
       json(conn, %{success: false, message: @send_coins_failed_msg})
@@ -126,3 +136,4 @@ defmodule BlockScoutWeb.FaucetController do
     HTTPoison.post("https://hcaptcha.com/siteverify", body, headers, [])
   end
 end
+
