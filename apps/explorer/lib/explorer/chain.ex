@@ -1868,21 +1868,23 @@ defmodule Explorer.Chain do
   Lists the top `t:Explorer.Chain.Token.t/0`'s'.
 
   """
-  @spec list_top_tokens :: [{Token.t(), non_neg_integer()}]
-  def list_top_tokens(options \\ []) do
+  @spec list_top_tokens(String.t()) :: [{Token.t(), non_neg_integer()}]
+  def list_top_tokens(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    fetch_top_tokens(paging_options)
+    fetch_top_tokens(filter, paging_options)
   end
 
-  @spec list_top_bridged_tokens :: [{Token.t(), non_neg_integer()}]
-  def list_top_bridged_tokens(options \\ []) do
+  @spec list_top_bridged_tokens(atom(), String.t(), [paging_options | necessity_by_association_option]) :: [
+          {Token.t(), non_neg_integer()}
+        ]
+  def list_top_bridged_tokens(destination, filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    fetch_top_bridged_tokens(paging_options)
+    fetch_top_bridged_tokens(destination, paging_options, filter)
   end
 
-  defp fetch_top_tokens(paging_options) do
+  defp fetch_top_tokens(filter, paging_options) do
     base_query =
       from(t in Token,
         where: t.total_supply > ^0,
@@ -1890,21 +1892,35 @@ defmodule Explorer.Chain do
         preload: [:contract_address]
       )
 
-    base_query
-    |> page_tokens(paging_options)
-    |> limit(^paging_options.page_size)
+    base_query_with_paging =
+      base_query
+      |> page_tokens(paging_options)
+      |> limit(^paging_options.page_size)
+
+    query =
+      if filter && filter !== "" do
+        base_query_with_paging
+        |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
+      else
+        base_query_with_paging
+      end
+
+    query
     |> Repo.all()
   end
 
-  defp fetch_top_bridged_tokens(paging_options) do
+  defp fetch_top_bridged_tokens(destination, paging_options, filter) do
+    chain_id = translate_destination_to_chain_id(destination)
+
     bridged_tokens_query =
       from(bt in BridgedToken,
-        select: bt
+        select: bt,
+        where: bt.foreign_chain_id == ^chain_id
       )
 
     base_query =
       from(t in Token,
-        left_join: bt in subquery(bridged_tokens_query),
+        right_join: bt in subquery(bridged_tokens_query),
         on: t.contract_address_hash == bt.home_token_contract_address_hash,
         where: t.total_supply > ^0,
         where: t.bridged,
@@ -1913,9 +1929,20 @@ defmodule Explorer.Chain do
         preload: [:contract_address]
       )
 
-    base_query
-    |> page_tokens(paging_options)
-    |> limit(^paging_options.page_size)
+    base_query_with_paging =
+      base_query
+      |> page_tokens(paging_options)
+      |> limit(^paging_options.page_size)
+
+    query =
+      if filter && filter !== "" do
+        base_query_with_paging
+        |> where(fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^filter))
+      else
+        base_query_with_paging
+      end
+
+    query
     |> Repo.all()
   end
 
@@ -1970,6 +1997,14 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
     |> page_gas_usage(paging_options)
     |> Repo.all()
+  end
+
+  defp translate_destination_to_chain_id(destination) do
+    case destination do
+      :eth -> 1
+      :bsc -> 56
+      _ -> 1
+    end
   end
 
   @doc """
@@ -3452,20 +3487,34 @@ defmodule Explorer.Chain do
         address_with_smart_contract = Repo.preload(address, [:smart_contract, :decompiled_smart_contracts])
 
         if address_with_smart_contract.smart_contract do
-          formatted_code =
-            SmartContract.add_submitted_comment(
-              address_with_smart_contract.smart_contract.contract_source_code,
-              address_with_smart_contract.smart_contract.inserted_at
-            )
+          formatted_code = format_source_code_output(address_with_smart_contract.smart_contract)
 
           %{
             address_with_smart_contract
             | smart_contract: %{address_with_smart_contract.smart_contract | contract_source_code: formatted_code}
           }
         else
-          address_with_smart_contract
+          address_verified_twin_contract = Chain.address_verified_twin_contract(address_hash)
+
+          if address_verified_twin_contract do
+            formatted_code = format_source_code_output(address_verified_twin_contract)
+
+            %{
+              address_with_smart_contract
+              | smart_contract: %{address_verified_twin_contract | contract_source_code: formatted_code}
+            }
+          else
+            address_with_smart_contract
+          end
         end
     end
+  end
+
+  defp format_source_code_output(smart_contract) do
+    SmartContract.add_submitted_comment(
+      smart_contract.contract_source_code,
+      smart_contract.inserted_at
+    )
   end
 
   @doc """
@@ -3937,7 +3986,17 @@ defmodule Explorer.Chain do
           set_token_bridged_status(token_address_hash, false)
 
         created_from_int_tx && created_from_int_tx_success ->
-          extract_omni_bridged_token_metadata_wrapper(token_address_hash, created_from_int_tx_success)
+          extract_omni_bridged_token_metadata_wrapper(
+            token_address_hash,
+            created_from_int_tx_success,
+            :eth_omni_bridge_mediator
+          )
+
+          extract_omni_bridged_token_metadata_wrapper(
+            token_address_hash,
+            created_from_int_tx_success,
+            :bsc_omni_bridge_mediator
+          )
 
         true ->
           :ok
@@ -3947,8 +4006,8 @@ defmodule Explorer.Chain do
     :ok
   end
 
-  defp extract_omni_bridged_token_metadata_wrapper(token_address_hash, created_from_int_tx_success) do
-    omni_bridge_mediator = Application.get_env(:block_scout_web, :omni_bridge_mediator)
+  defp extract_omni_bridged_token_metadata_wrapper(token_address_hash, created_from_int_tx_success, mediator) do
+    omni_bridge_mediator = Application.get_env(:block_scout_web, mediator)
     %{transaction_hash: transaction_hash} = created_from_int_tx_success
 
     if omni_bridge_mediator && omni_bridge_mediator !== "" do
@@ -4139,6 +4198,21 @@ defmodule Explorer.Chain do
     eth_call_foreign_json_rpc_named_arguments =
       compose_foreign_json_rpc_named_arguments(json_rpc_named_arguments, foreign_json_rpc)
 
+    balancer_custom_metadata(foreign_token_address_hash, eth_call_foreign_json_rpc_named_arguments) ||
+      sushiswap_custom_metadata(foreign_token_address_hash, eth_call_foreign_json_rpc_named_arguments)
+  end
+
+  defp get_bridged_token_custom_metadata(_foreign_token_address_hash, _json_rpc_named_arguments, foreign_json_rpc)
+       when is_nil(foreign_json_rpc) do
+    nil
+  end
+
+  defp get_bridged_token_custom_metadata(_foreign_token_address_hash, _json_rpc_named_arguments, foreign_json_rpc)
+       when foreign_json_rpc == "" do
+    nil
+  end
+
+  defp balancer_custom_metadata(foreign_token_address_hash, eth_call_foreign_json_rpc_named_arguments) do
     # keccak 256 from getCurrentTokens()
     get_current_tokens_signature = "0xcc77828d"
 
@@ -4183,14 +4257,76 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp get_bridged_token_custom_metadata(_foreign_token_address_hash, _json_rpc_named_arguments, foreign_json_rpc)
-       when is_nil(foreign_json_rpc) do
-    nil
+  defp sushiswap_custom_metadata(foreign_token_address_hash, eth_call_foreign_json_rpc_named_arguments) do
+    # keccak 256 from token0()
+    token0_signature = "0x0dfe1681"
+
+    # keccak 256 from token1()
+    token1_signature = "0xd21220a7"
+
+    # keccak 256 from name()
+    name_signature = "0x06fdde03"
+
+    # keccak 256 from symbol()
+    symbol_signature = "0x95d89b41"
+
+    with {:ok, "0x" <> token0_encoded} <-
+           token0_signature
+           |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> token1_encoded} <-
+           token1_signature
+           |> Contract.eth_call_request(foreign_token_address_hash, 2, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
+      token0_hash = parse_contract_response(token0_encoded, :address)
+      token1_hash = parse_contract_response(token1_encoded, :address)
+
+      token0_hash_str = "0x" <> Base.encode16(token0_hash, case: :lower)
+      token1_hash_str = "0x" <> Base.encode16(token1_hash, case: :lower)
+
+      with {:ok, "0x" <> token0_name_encoded} <-
+             name_signature
+             |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+             |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+           {:ok, "0x" <> token1_name_encoded} <-
+             name_signature
+             |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
+             |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+           {:ok, "0x" <> token0_symbol_encoded} <-
+             symbol_signature
+             |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+             |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+           {:ok, "0x" <> token1_symbol_encoded} <-
+             symbol_signature
+             |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
+             |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
+        token0_name = parse_contract_response(token0_name_encoded, :string)
+        token1_name = parse_contract_response(token1_name_encoded, :string)
+        token0_symbol = parse_contract_response(token0_symbol_encoded, :string)
+        token1_symbol = parse_contract_response(token1_symbol_encoded, :string)
+
+        "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
+      else
+        _ ->
+          nil
+      end
+    else
+      _ ->
+        nil
+    end
   end
 
-  defp get_bridged_token_custom_metadata(_foreign_token_address_hash, _json_rpc_named_arguments, foreign_json_rpc)
-       when foreign_json_rpc == "" do
-    nil
+  defp parse_contract_response(abi_encoded_value, type) do
+    [value] =
+      try do
+        abi_encoded_value
+        |> Base.decode16!(case: :mixed)
+        |> TypeDecoder.decode_raw([type])
+      rescue
+        _ -> [nil]
+      end
+
+    value
   end
 
   defp compose_foreign_json_rpc_named_arguments(json_rpc_named_arguments, foreign_json_rpc)
@@ -5880,5 +6016,43 @@ defmodule Explorer.Chain do
 
     query
     |> Repo.one()
+  end
+
+  def bridged_tokens_enabled? do
+    eth_omni_bridge_mediator = Application.get_env(:block_scout_web, :eth_omni_bridge_mediator)
+    bsc_omni_bridge_mediator = Application.get_env(:block_scout_web, :bsc_omni_bridge_mediator)
+
+    (eth_omni_bridge_mediator && eth_omni_bridge_mediator !== "") ||
+      (bsc_omni_bridge_mediator && bsc_omni_bridge_mediator !== "")
+  end
+
+  def bridged_tokens_eth_enabled? do
+    eth_omni_bridge_mediator = Application.get_env(:block_scout_web, :eth_omni_bridge_mediator)
+
+    eth_omni_bridge_mediator && eth_omni_bridge_mediator !== ""
+  end
+
+  def bridged_tokens_bsc_enabled? do
+    bsc_omni_bridge_mediator = Application.get_env(:block_scout_web, :bsc_omni_bridge_mediator)
+
+    bsc_omni_bridge_mediator && bsc_omni_bridge_mediator !== ""
+  end
+
+  def chain_id_display_name(nil), do: ""
+
+  def chain_id_display_name(chain_id) do
+    chain_id_int =
+      if is_integer(chain_id) do
+        chain_id
+      else
+        chain_id
+        |> Decimal.to_integer()
+      end
+
+    case chain_id_int do
+      1 -> "eth"
+      56 -> "bsc"
+      _ -> ""
+    end
   end
 end

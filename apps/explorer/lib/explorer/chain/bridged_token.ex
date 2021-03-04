@@ -24,7 +24,8 @@ defmodule Explorer.Chain.BridgedToken do
           home_token_contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
           home_token_contract_address_hash: Hash.Address.t(),
           custom_metadata: String.t(),
-          type: String.t()
+          type: String.t(),
+          exchange_rate: Decimal.t()
         }
 
   @derive {Poison.Encoder,
@@ -49,6 +50,7 @@ defmodule Explorer.Chain.BridgedToken do
     field(:foreign_token_contract_address_hash, Hash.Address)
     field(:custom_metadata, :string)
     field(:type, :string)
+    field(:exchange_rate, :decimal)
 
     belongs_to(
       :home_token_contract_address,
@@ -63,7 +65,7 @@ defmodule Explorer.Chain.BridgedToken do
   end
 
   @required_attrs ~w(home_token_contract_address_hash)a
-  @optional_attrs ~w(foreign_chain_id foreign_token_contract_address_hash custom_metadata type)a
+  @optional_attrs ~w(foreign_chain_id foreign_token_contract_address_hash custom_metadata type exchange_rate)a
 
   @doc false
   def changeset(%BridgedToken{} = bridged_token, params \\ %{}) do

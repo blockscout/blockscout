@@ -8,14 +8,24 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if balance_percentage_enabled?(@total_supply) do %>
-  <td class="stakes-td">
-    <span class="table-content-loader"></span>
-  </td>
+  <%= if assigns[:total_supply] do %>
+    <%= if balance_percentage_enabled?(@total_supply) do %>
+      <td class="stakes-td">
+        <span class="table-content-loader"></span>
+      </td>
+    <% end %>
   <% end %>
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
+  <%= if assigns[:is_bridged_tokens_table] do %>
+    <td class="stakes-td">
+      <span class="table-content-loader"></span>
+    </td>
+    <td class="stakes-td">
+      <span class="table-content-loader"></span>
+    </td>
+  <% end %>
 </tr>
 <tr class="table-content-pseudo">
   <td class="stakes-td">
@@ -27,14 +37,24 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if balance_percentage_enabled?(@total_supply) do %>
-  <td class="stakes-td">
-    <span class="table-content-loader"></span>
-  </td>
+  <%= if assigns[:total_supply] do %>
+    <%= if balance_percentage_enabled?(@total_supply) do %>
+      <td class="stakes-td">
+        <span class="table-content-loader"></span>
+      </td>
+    <% end %>
   <% end %>
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
+  <%= if assigns[:is_bridged_tokens_table] do %>
+    <td class="stakes-td">
+      <span class="table-content-loader"></span>
+    </td>
+    <td class="stakes-td">
+      <span class="table-content-loader"></span>
+    </td>
+  <% end %>
 </tr>
 <tr class="table-content-pseudo">
   <td class="stakes-td">
@@ -46,14 +66,24 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if balance_percentage_enabled?(@total_supply) do %>
-  <td class="stakes-td">
-    <span class="table-content-loader"></span>
-  </td>
+  <%= if assigns[:total_supply] do %>
+    <%= if balance_percentage_enabled?(@total_supply) do %>
+      <td class="stakes-td">
+        <span class="table-content-loader"></span>
+      </td>
+    <% end %>
   <% end %>
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
+  <%= if assigns[:is_bridged_tokens_table] do %>
+    <td class="stakes-td">
+      <span class="table-content-loader"></span>
+    </td>
+    <td class="stakes-td">
+      <span class="table-content-loader"></span>
+    </td>
+  <% end %>
 </tr>
 <tr class="table-content-pseudo">
   <td class="stakes-td">
@@ -65,14 +95,24 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if balance_percentage_enabled?(@total_supply) do %>
-  <td class="stakes-td">
-    <span class="table-content-loader"></span>
-  </td>
+  <%= if assigns[:total_supply] do %>
+    <%= if balance_percentage_enabled?(@total_supply) do %>
+      <td class="stakes-td">
+        <span class="table-content-loader"></span>
+      </td>
+    <% end %>
   <% end %>
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
+  <%= if assigns[:is_bridged_tokens_table] do %>
+    <td class="stakes-td">
+      <span class="table-content-loader"></span>
+    </td>
+    <td class="stakes-td">
+      <span class="table-content-loader"></span>
+    </td>
+  <% end %>
 </tr>
 <tr class="table-content-pseudo">
   <td class="stakes-td">
@@ -84,12 +124,22 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if balance_percentage_enabled?(@total_supply) do %>
-  <td class="stakes-td">
-    <span class="table-content-loader"></span>
-  </td>
+  <%= if assigns[:total_supply] do %>
+    <%= if balance_percentage_enabled?(@total_supply) do %>
+      <td class="stakes-td">
+        <span class="table-content-loader"></span>
+      </td>
+    <% end %>
   <% end %>
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
+  <%= if assigns[:is_bridged_tokens_table] do %>
+    <td class="stakes-td">
+      <span class="table-content-loader"></span>
+    </td>
+    <td class="stakes-td">
+      <span class="table-content-loader"></span>
+    </td>
+  <% end %>
 </tr>

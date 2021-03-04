@@ -63,7 +63,7 @@ defmodule Explorer.Market do
           fetch_token_usd_value(matches_known_address, symbol)
 
         mainnet_bridged_token?(token) ->
-          TokenBridge.get_current_price_for_bridged_token(symbol)
+          TokenBridge.get_current_price_for_bridged_token(token.contract_address_hash, symbol)
 
         true ->
           nil

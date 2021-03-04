@@ -99,7 +99,8 @@ const appJs =
       'non-critical': './css/non-critical.scss',
       'export-csv': './css/export-csv.scss',
       'datepicker': './js/lib/datepicker.js',
-      'faucet': './js/pages/faucet.js'
+      'faucet': './js/pages/faucet.js',
+      'tokens': './js/pages/token/search.js'
     },
     output: {
       filename: '[name].js',
