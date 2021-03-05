@@ -4074,17 +4074,7 @@ defmodule Explorer.Chain do
           set_token_bridged_status(token_address_hash, false)
 
         created_from_int_tx && created_from_int_tx_success ->
-          extract_omni_bridged_token_metadata_wrapper(
-            token_address_hash,
-            created_from_int_tx_success,
-            :eth_omni_bridge_mediator
-          )
-
-          extract_omni_bridged_token_metadata_wrapper(
-            token_address_hash,
-            created_from_int_tx_success,
-            :bsc_omni_bridge_mediator
-          )
+          proceed_with_set_omni_status(token_address_hash, created_from_int_tx_success)
 
         true ->
           :ok
@@ -4092,6 +4082,30 @@ defmodule Explorer.Chain do
     end)
 
     :ok
+  end
+
+  defp proceed_with_set_omni_status(token_address_hash, created_from_int_tx_success) do
+    {:ok, eth_omni_status} =
+      extract_omni_bridged_token_metadata_wrapper(
+        token_address_hash,
+        created_from_int_tx_success,
+        :eth_omni_bridge_mediator
+      )
+
+    {:ok, bsc_omni_status} =
+      if eth_omni_status do
+        {:ok, false}
+      else
+        extract_omni_bridged_token_metadata_wrapper(
+          token_address_hash,
+          created_from_int_tx_success,
+          :bsc_omni_bridge_mediator
+        )
+      end
+
+    if !eth_omni_status && !bsc_omni_status do
+      set_token_bridged_status(token_address_hash, false)
+    end
   end
 
   defp extract_omni_bridged_token_metadata_wrapper(token_address_hash, created_from_int_tx_success, mediator) do
@@ -4118,8 +4132,10 @@ defmodule Explorer.Chain do
           omni_bridge_mediator,
           omni_bridge_mediator_hash
         )
+
+        {:ok, true}
       else
-        set_token_bridged_status(token_address_hash, false)
+        {:ok, false}
       end
     end
   end
@@ -4369,34 +4385,38 @@ defmodule Explorer.Chain do
       token0_hash = parse_contract_response(token0_encoded, :address)
       token1_hash = parse_contract_response(token1_encoded, :address)
 
-      token0_hash_str = "0x" <> Base.encode16(token0_hash, case: :lower)
-      token1_hash_str = "0x" <> Base.encode16(token1_hash, case: :lower)
+      if token0_hash && token1_hash do
+        token0_hash_str = "0x" <> Base.encode16(token0_hash, case: :lower)
+        token1_hash_str = "0x" <> Base.encode16(token1_hash, case: :lower)
 
-      with {:ok, "0x" <> token0_name_encoded} <-
-             name_signature
-             |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
-             |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-           {:ok, "0x" <> token1_name_encoded} <-
-             name_signature
-             |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
-             |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-           {:ok, "0x" <> token0_symbol_encoded} <-
-             symbol_signature
-             |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
-             |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
-           {:ok, "0x" <> token1_symbol_encoded} <-
-             symbol_signature
-             |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
-             |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
-        token0_name = parse_contract_response(token0_name_encoded, :string)
-        token1_name = parse_contract_response(token1_name_encoded, :string)
-        token0_symbol = parse_contract_response(token0_symbol_encoded, :string)
-        token1_symbol = parse_contract_response(token1_symbol_encoded, :string)
+        with {:ok, "0x" <> token0_name_encoded} <-
+               name_signature
+               |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+             {:ok, "0x" <> token1_name_encoded} <-
+               name_signature
+               |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
+               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+             {:ok, "0x" <> token0_symbol_encoded} <-
+               symbol_signature
+               |> Contract.eth_call_request(token0_hash_str, 1, nil, nil)
+               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+             {:ok, "0x" <> token1_symbol_encoded} <-
+               symbol_signature
+               |> Contract.eth_call_request(token1_hash_str, 2, nil, nil)
+               |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
+          token0_name = parse_contract_response(token0_name_encoded, :string)
+          token1_name = parse_contract_response(token1_name_encoded, :string)
+          token0_symbol = parse_contract_response(token0_symbol_encoded, :string)
+          token1_symbol = parse_contract_response(token1_symbol_encoded, :string)
 
-        "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
+          "#{token0_name}/#{token1_name} (#{token0_symbol}/#{token1_symbol})"
+        else
+          _ ->
+            nil
+        end
       else
-        _ ->
-          nil
+        nil
       end
     else
       _ ->

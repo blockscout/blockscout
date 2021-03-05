@@ -12,6 +12,7 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3686](https://github.com/poanetwork/blockscout/pull/3686) - BSC bridged tokens detection fix
 - [#3683](https://github.com/poanetwork/blockscout/pull/3683) - Token instance image IPFS link display fix
 - [#3655](https://github.com/poanetwork/blockscout/pull/3655) - Handle absence of readAll function in some old/legacy browsers
 - [#3634](https://github.com/poanetwork/blockscout/pull/3634) - Fix transaction decoding view: support tuple types
@@ -26,6 +27,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3687](https://github.com/poanetwork/blockscout/pull/3687) - Miscellaneous minor fixes
 - [#3667](https://github.com/poanetwork/blockscout/pull/3667) - Store bridged token price in the DB
 - [#3662](https://github.com/poanetwork/blockscout/pull/3662) - Order bridged tokens in descending order by tokens holder for Omni bridge cap calculation
 - [#3659](https://github.com/poanetwork/blockscout/pull/3659) - Staking Dapp new buttons: swap, bridge
