@@ -1,4 +1,4 @@
-<div class="stakes-top">
+<div class="stakes-top" style="padding-top: 70px; padding-bottom: 70px;">
   <div class="container">
     <div class="stakes-top-stats" data-block-number="<%= @block_number %>">
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Epoch number"), value: @epoch_number %>
@@ -29,9 +29,28 @@
 
         <%= render BlockScoutWeb.StakesView, "_stakes_btn_claim_reward.html", text: gettext("Claim Reward"), extra_class: "full-width" %>
       </div>
-      <div class="stakes-top-buttons right">
-        <%= render BlockScoutWeb.CommonComponentsView, "_btn_external_link.html", text: gettext("Swap STAKE"), link: "https://app.honeyswap.org/#/swap?outputCurrency=0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d&inputCurrency=0xb7D311E2Eb55F2f68a9440da38e7989210b9A05e&exactField=input", extra_class: "full-width btn-add-full" %>
-        <%= render BlockScoutWeb.CommonComponentsView, "_btn_external_link.html", text: gettext("Bridge to Ethereum"), link: "https://omni.xdaichain.com/", extra_class: "full-width" %>
+      <div class="stakes-top-buttons right" style="margin-bottom: -56px;">
+        <a
+            class="btn-full-primary full-width btn-add-full"
+            href="https://app.honeyswap.org/#/swap?outputCurrency=0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d&inputCurrency=0xb7D311E2Eb55F2f68a9440da38e7989210b9A05e&exactField=input"
+            target="_blank"
+        >
+            <span class="btn-full-primary-text"><%= gettext("Swap STAKE on Honeyswap") %></span>
+        </a>
+        <a
+            class="btn-full-primary full-width btn-add-full"
+            href="https://omni.xdaichain.com/"
+            target="_blank"
+        >
+            <span class="btn-full-primary-text"><%= gettext("Bridge STAKE to Ethereum") %></span>
+        </a>
+        <a
+            class="btn-full-primary full-width btn-add-full"
+            href="https://bitmax.io/register?inviteCode=5EYVQSTQ"
+            target="_blank"
+        >
+            <span class="btn-full-primary-text"><%= gettext("Trade STAKE on BitMax") %></span>
+        </a>
       </div>
     </div>
   </div>
