@@ -1033,9 +1033,10 @@ $dark-stakes-banned-background: #3e314c;
 		background: #6ca1e2
 	}
 
-	.bs-label.destination-eth {
-		background-color: $labels-dark;
-	}
+    .bs-label.validator,
+    .bs-label.destination-eth {
+        background-color: $labels-dark;
+    }
 
 	.dropdown-item {
 		.external-link-icon {

@@ -31,7 +31,7 @@
       </div>
       <div class="stakes-top-buttons right">
         <%= render BlockScoutWeb.CommonComponentsView, "_btn_external_link.html", text: gettext("Swap STAKE"), link: "https://app.honeyswap.org/#/swap?outputCurrency=0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d&inputCurrency=0xb7D311E2Eb55F2f68a9440da38e7989210b9A05e&exactField=input", extra_class: "full-width btn-add-full" %>
-        <%= render BlockScoutWeb.CommonComponentsView, "_btn_external_link.html", text: gettext("Bridge to Ethereum"), link: "https://bridge.xdaichain.com/", extra_class: "full-width" %>
+        <%= render BlockScoutWeb.CommonComponentsView, "_btn_external_link.html", text: gettext("Bridge to Ethereum"), link: "https://omni.xdaichain.com/", extra_class: "full-width" %>
       </div>
     </div>
   </div>
