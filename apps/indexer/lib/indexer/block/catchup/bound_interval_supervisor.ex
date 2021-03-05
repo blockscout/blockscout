@@ -235,6 +235,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
     if rem(state.elapsed, 10) == 0 do
       Repo.query!("refresh materialized view celo_accumulated_rewards;")
       Repo.query!("refresh materialized view celo_attestation_stats;")
+      Repo.query!("refresh materialized view celo_wallet_accounts;")
 
       Logger.info(fn ->
         ["Refreshed material views."]
