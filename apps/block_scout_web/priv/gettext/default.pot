@@ -2790,13 +2790,18 @@ msgstr ""
 msgid "Address Details"
 msgstr ""
 
-#, elixir-format
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:34
-msgid "Bridge to Ethereum"
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:45
+msgid "Bridge STAKE to Ethereum"
 msgstr ""
 
-#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:33
-msgid "Swap STAKE"
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:38
+msgid "Swap STAKE on Honeyswap"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:52
+msgid "Trade STAKE on BitMax"
 msgstr ""
 
 #, elixir-format
