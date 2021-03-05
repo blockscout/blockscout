@@ -1,18 +1,44 @@
 <section class="container">
     <div class="card">
         <div class="card-body">
-            <h2 class="card-title">Faucet</h2>
+            <h2 class="card-title mb-2">Faucet
+            </h2>
             <p class="card-subtitle">Coins are distributed in increments of <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("FAUCET_COIN") %>. You can request once per day per address.</p>
-            <form action="/faucet" method="POST" id="faucetForm">
-                <div class="mb-4">
-                    <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
-                    <input type="text" id="receiver" class="form-control form-control-sm address-input-sm faucet-receiver-input" name="receiver" placeholder="receiver address" />
+            <div class="row">
+                <div class="col-sm-12 col-md-6 col-lg-6">
+                    <form action="/faucet" method="POST" id="faucetForm">
+                        <div class="mb-4">
+                            <input type="hidden" name="_csrf_token" value="<%= Plug.CSRFProtection.get_csrf_token() %>">
+                            <input type="text" id="receiver" class="form-control form-control-sm address-input-sm faucet-receiver-input" name="receiver" placeholder="receiver address" />
+                        </div>
+                        <div class="h-captcha mb-4" data-sitekey="<%= System.get_env("FAUCET_H_CAPTCHA_CLIENT_KEY") %>"></div>
+                        <input type="hidden" id="faucetValue" value="<%= System.get_env("FAUCET_VALUE") %>"/>
+                        <input type="hidden" id="faucetCoin" value="<%= System.get_env("FAUCET_COIN") %>"</>
+                        <input type="hidden" id="faucetAddress" value="<%= System.get_env("FAUCET_ADDRESS") %>"/>
+                        <input type="hidden" id="faucetDonateValue" value="<%= System.get_env("FAUCET_DONATE_VALUE") %>"/>
+                        <button type="submit" class="button button-primary" id="requestCoins" class="request-coins-button">Request <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("FAUCET_COIN") %></button>
+                    </form>
                 </div>
-                <div class="h-captcha mb-4" data-sitekey="<%= System.get_env("FAUCET_H_CAPTCHA_CLIENT_KEY") %>"></div>
-                <input type="hidden" id="faucetValue" value="<%= System.get_env("FAUCET_VALUE") %>"/>
-                <input type="hidden" id="faucetCoin" value="<%= System.get_env("FAUCET_COIN") %>"</>
-                <button type="submit" class="button button-primary" id="requestCoins" class="request-coins-button">Request <%= System.get_env("FAUCET_VALUE") %> <%= System.get_env("FAUCET_COIN") %></button>
-            </form>
+                <div class="col-sm-12 col-md-6 col-lg-6">
+                    <div>
+                    <h3>Current Faucet Balance </h3><h1 id="faucetBalance" style="margin-bottom: 35px;">N/A</h1>
+                    <div connect-to class="connect-container mb-2">
+                        <span style="margin-top: -2px;" class="mr-2">
+                        <%= render BlockScoutWeb.IconsView, "_inactive_icon.html" %>
+                        </span>
+                        <h3>Disconnected</h3>
+                        <button connect-metamask class="button btn-line ml-4">Connect to Metamask</button>
+                    </div>
+                    <div connected-to class="connect-container hidden mb-2">
+                        <span style="margin-top: -2px;" class="mr-2">
+                        <%= render BlockScoutWeb.IconsView, "_active_icon.html" %>
+                        </span>
+                        <h3>Connected to</h2><h3 connected-to-address class="ml-2"></h3>
+                    </div>
+                    <button class="button button-primary" id="donate" class="donate-button">Donate</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/faucet.js") %>"></script>

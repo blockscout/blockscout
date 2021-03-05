@@ -136,4 +136,3 @@ defmodule BlockScoutWeb.FaucetController do
     HTTPoison.post("https://hcaptcha.com/siteverify", body, headers, [])
   end
 end
-
