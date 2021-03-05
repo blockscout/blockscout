@@ -27,6 +27,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3688](https://github.com/poanetwork/blockscout/pull/3688) - Reorganize staking buttons
 - [#3687](https://github.com/poanetwork/blockscout/pull/3687) - Miscellaneous minor fixes
 - [#3667](https://github.com/poanetwork/blockscout/pull/3667) - Store bridged token price in the DB
 - [#3662](https://github.com/poanetwork/blockscout/pull/3662) - Order bridged tokens in descending order by tokens holder for Omni bridge cap calculation
