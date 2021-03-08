@@ -480,6 +480,7 @@ defmodule BlockScoutWeb.StakesChannel do
     try do
       json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
       staking_contract = ContractState.get(:staking_contract)
+      validator_set_contract = ContractState.get(:validator_set_contract)
 
       responses =
         staker
@@ -500,14 +501,22 @@ defmodule BlockScoutWeb.StakesChannel do
               |> ContractReader.get_delegator_pools_request(i * chunk_size, chunk_size)
               |> ContractReader.perform_requests(%{staking: staking_contract.address}, staking_contract.abi)
 
-            acc ++
-              Enum.map(responses[:pools], fn pool_staking_address ->
-                address_bytes_to_string(pool_staking_address)
-              end)
+            acc ++ responses[:pools]
           end)
         else
           []
         end
+
+      # convert pool ids to staking addresses
+      pools =
+        pools
+        |> Enum.map(&ContractReader.staking_by_id_request(&1))
+        |> ContractReader.perform_grouped_requests(
+          pools,
+          %{validator_set: validator_set_contract.address},
+          validator_set_contract.abi
+        )
+        |> Enum.map(fn {_, resp} -> resp.staking_address end)
 
       # if `staker` is a pool, prepend its address to the `pools` array
       pools =
@@ -729,8 +738,6 @@ defmodule BlockScoutWeb.StakesChannel do
       end
     end
   end
-
-  defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
   defp array_to_ranges(numbers, prev_ranges \\ []) do
     length = Enum.count(numbers)

@@ -13,66 +13,83 @@ defmodule Explorer.Staking.StakeSnapshotting do
   alias Explorer.Staking.ContractReader
 
   def do_snapshotting(
-        %{contracts: contracts, abi: abi, ets_table_name: ets_table_name, net_version: net_version},
+        %{contracts: contracts, abi: abi, ets_table_name: ets_table_name},
         epoch_number,
         cached_pool_staking_responses,
         pools_mining_addresses,
         mining_to_staking_address,
+        mining_address_to_id,
         block_number
       ) do
-    # get staking addresses for the pending validators
+    # get pool ids and staking addresses for the pending validators
+    pool_ids =
+      pools_mining_addresses
+      |> Enum.map(&mining_address_to_id[&1])
+
     pool_staking_addresses =
       pools_mining_addresses
       |> Enum.map(&mining_to_staking_address[&1])
 
-    staking_to_mining_address =
-      pool_staking_addresses
+    id_to_mining_address =
+      pool_ids
       |> Enum.zip(pools_mining_addresses)
       |> Map.new()
 
+    id_to_staking_address =
+      pool_ids
+      |> Enum.zip(pool_staking_addresses)
+      |> Map.new()
+
     # get snapshotted amounts and active delegator list for the pool for each
-    # pending validator by their staking address.
+    # pending validator by their pool id.
     # use `cached_pool_staking_responses` when possible
     pool_staking_responses =
-      pool_staking_addresses
-      |> Enum.map(fn staking_address_hash ->
-        case Map.fetch(cached_pool_staking_responses, staking_address_hash) do
+      pool_ids
+      |> Enum.map(fn pool_id ->
+        case Map.fetch(cached_pool_staking_responses, pool_id) do
           {:ok, resp} ->
             Map.merge(
               resp,
               ContractReader.perform_requests(
-                snapshotted_pool_amounts_requests(staking_address_hash, block_number, net_version),
+                snapshotted_pool_amounts_requests(pool_id, resp.staking_address_hash, block_number),
                 contracts,
                 abi
               )
             )
 
           :error ->
-            ContractReader.perform_requests(
-              ContractReader.active_delegators_request(staking_address_hash, block_number) ++
-                snapshotted_pool_amounts_requests(staking_address_hash, block_number, net_version),
-              contracts,
-              abi
+            pool_staking_address = id_to_staking_address[pool_id]
+
+            Map.merge(
+              %{
+                staking_address_hash: pool_staking_address
+              },
+              ContractReader.perform_requests(
+                ContractReader.active_delegators_request(pool_id, block_number) ++
+                  snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number),
+                contracts,
+                abi
+              )
             )
         end
       end)
-      |> Enum.zip(pool_staking_addresses)
+      |> Enum.zip(pool_ids)
       |> Map.new(fn {key, val} -> {val, key} end)
 
     # get a flat list of all stakers of each validator
-    # in the form of {pool_staking_address, staker_address}
+    # in the form of {pool_id, pool_staking_address, staker_address}
     stakers =
-      Enum.flat_map(pool_staking_responses, fn {pool_staking_address, resp} ->
-        [{pool_staking_address, pool_staking_address}] ++
-          Enum.map(resp.active_delegators, &{pool_staking_address, &1})
+      Enum.flat_map(pool_staking_responses, fn {pool_id, resp} ->
+        [{pool_id, resp.staking_address_hash, resp.staking_address_hash}] ++
+          Enum.map(resp.active_delegators, &{pool_id, resp.staking_address_hash, &1})
       end)
 
     # read info about each staker from the contracts
     staker_responses =
       stakers
-      |> Enum.map(fn {pool_staking_address, staker_address} ->
+      |> Enum.map(fn {pool_id, pool_staking_address, staker_address} ->
         ContractReader.perform_requests(
-          snapshotted_staker_amount_request(pool_staking_address, staker_address, block_number, net_version),
+          snapshotted_staker_amount_request(pool_id, pool_staking_address, staker_address, block_number),
           contracts,
           abi
         )
@@ -87,7 +104,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
     # to get validator's reward share of the pool (needed for the `Delegators` list in UI)
     validator_reward_responses =
       pool_staking_responses
-      |> Enum.map(fn {_pool_staking_address, resp} ->
+      |> Enum.map(fn {_pool_id, resp} ->
         ContractReader.validator_reward_request(
           [
             epoch_number,
@@ -103,7 +120,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
     # call `BlockReward.delegatorShare` function for each delegator
     # to get their reward share of the pool (needed for the `Delegators` list in UI)
     delegator_responses =
-      Enum.reduce(staker_responses, %{}, fn {{pool_staking_address, staker_address} = key, value}, acc ->
+      Enum.reduce(staker_responses, %{}, fn {{_pool_id, pool_staking_address, staker_address} = key, value}, acc ->
         if pool_staking_address != staker_address do
           Map.put(acc, key, value)
         else
@@ -115,8 +132,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
     delegator_reward_responses =
       delegator_responses
-      |> Enum.map(fn {{pool_staking_address, _staker_address}, resp} ->
-        staking_resp = pool_staking_responses[pool_staking_address]
+      |> Enum.map(fn {{pool_id, _pool_staking_address, _staker_address}, resp} ->
+        staking_resp = pool_staking_responses[pool_id]
 
         ContractReader.delegator_reward_request(
           [
@@ -133,9 +150,10 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
     # form entries for updating the `staking_pools` table in DB
     pool_entries =
-      Enum.map(pool_staking_addresses, fn pool_staking_address ->
-        staking_resp = pool_staking_responses[pool_staking_address]
-        validator_reward_resp = validator_reward_responses[pool_staking_address]
+      Enum.map(pool_ids, fn pool_id ->
+        staking_resp = pool_staking_responses[pool_id]
+        validator_reward_resp = validator_reward_responses[pool_id]
+        pool_staking_address = id_to_staking_address[pool_id]
 
         %{
           banned_until: 0,
@@ -145,7 +163,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
           is_validator: false,
           staking_address_hash: pool_staking_address,
           delegators_count: 0,
-          mining_address_hash: address_bytes_to_string(staking_to_mining_address[pool_staking_address]),
+          mining_address_hash: address_bytes_to_string(id_to_mining_address[pool_id]),
           self_staked_amount: 0,
           snapshotted_self_staked_amount: staking_resp.snapshotted_self_staked_amount,
           snapshotted_total_staked_amount: staking_resp.snapshotted_total_staked_amount,
@@ -158,7 +176,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
     # form entries for updating the `staking_pools_delegators` table in DB
     delegator_entries =
-      Enum.map(staker_responses, fn {{pool_staking_address, staker_address} = key, resp} ->
+      Enum.map(staker_responses, fn {{_pool_id, pool_staking_address, staker_address} = key, resp} ->
         delegator_share =
           if Map.has_key?(delegator_reward_responses, key) do
             delegator_reward_responses[key].delegator_share
@@ -201,24 +219,28 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
   defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
-  defp snapshotted_pool_amounts_requests(pool_staking_address, block_number, net_version) do
+  defp snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number) do
     [
-      # 5267e1d6 = keccak256(stakeAmountTotal(address))
-      snapshotted_total_staked_amount: {:staking, "5267e1d6", [pool_staking_address], block_number},
+      # 2a8f6ecd = keccak256(stakeAmountTotal(uint256))
+      snapshotted_total_staked_amount: {:staking, "2a8f6ecd", [pool_id], block_number},
       snapshotted_self_staked_amount:
-        snapshotted_staker_amount_request(pool_staking_address, pool_staking_address, block_number, net_version)[
+        snapshotted_staker_amount_request(pool_id, pool_staking_address, pool_staking_address, block_number)[
           :snapshotted_stake_amount
         ]
     ]
   end
 
-  defp snapshotted_staker_amount_request(pool_staking_address, staker_address, block_number, net_version) do
+  defp snapshotted_staker_amount_request(pool_id, pool_staking_address, staker_address, block_number) do
     delegator_or_zero =
-      ContractReader.refine_staker_address(pool_staking_address, staker_address, block_number, net_version)
+      if staker_address == pool_staking_address do
+        "0x0000000000000000000000000000000000000000"
+      else
+        staker_address
+      end
 
     [
-      # a697ecff = keccak256(stakeAmount(address,address))
-      snapshotted_stake_amount: {:staking, "a697ecff", [pool_staking_address, delegator_or_zero], block_number}
+      # 3fb1a1e4 = keccak256(stakeAmount(uint256,address))
+      snapshotted_stake_amount: {:staking, "3fb1a1e4", [pool_id, delegator_or_zero], block_number}
     ]
   end
 
