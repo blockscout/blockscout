@@ -210,7 +210,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
         on: t.contract_address_hash == bt.home_token_contract_address_hash,
         where: bt.foreign_chain_id == ^1,
         where: t.bridged == true,
-        select: {bt.home_token_contract_address_hash, t.symbol},
+        select: {bt.home_token_contract_address_hash, t.symbol, bt.custom_cap},
         order_by: [desc: t.holder_count]
       )
 
@@ -221,54 +221,67 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   defp get_bridged_mainnet_tokens_supply(bridged_mainnet_tokens_list) do
     bridged_mainnet_tokens_with_supply =
       bridged_mainnet_tokens_list
-      |> Enum.map(fn {bridged_token_hash, bridged_token_symbol} ->
-        bridged_token_price_from_cache = TokenExchangeRateCache.fetch(bridged_token_hash, bridged_token_symbol)
+      |> Enum.map(fn {bridged_token_hash, bridged_token_symbol, bridged_token_custom_cap} ->
+        if bridged_token_custom_cap do
+          {bridged_token_hash, 0, 0, bridged_token_custom_cap}
+        else
+          bridged_token_price_from_cache = TokenExchangeRateCache.fetch(bridged_token_hash, bridged_token_symbol)
 
-        bridged_token_price =
-          if bridged_token_price_from_cache && Decimal.cmp(bridged_token_price_from_cache, 0) == :gt do
-            bridged_token_price_from_cache
-          else
-            TokenExchangeRateCache.fetch_token_exchange_rate(bridged_token_symbol)
-          end
+          bridged_token_price =
+            if bridged_token_price_from_cache && Decimal.cmp(bridged_token_price_from_cache, 0) == :gt do
+              bridged_token_price_from_cache
+            else
+              TokenExchangeRateCache.fetch_token_exchange_rate(bridged_token_symbol)
+            end
 
-        query =
-          from(t in Token,
-            where: t.contract_address_hash == ^bridged_token_hash,
-            select: {t.total_supply, t.decimals}
-          )
+          query =
+            from(t in Token,
+              where: t.contract_address_hash == ^bridged_token_hash,
+              select: {t.total_supply, t.decimals}
+            )
 
-        bridged_token_balance =
-          query
-          |> Repo.one()
+          bridged_token_balance =
+            query
+            |> Repo.one()
 
-        bridged_token_balance_formatted =
-          if bridged_token_balance do
-            {bridged_token_balance_with_decimals, decimals} = bridged_token_balance
+          bridged_token_balance_formatted =
+            if bridged_token_balance do
+              {bridged_token_balance_with_decimals, decimals} = bridged_token_balance
 
-            decimals_multiplier =
-              10
-              |> :math.pow(Decimal.to_integer(decimals))
-              |> Decimal.from_float()
+              decimals_multiplier =
+                10
+                |> :math.pow(Decimal.to_integer(decimals))
+                |> Decimal.from_float()
 
-            Decimal.div(bridged_token_balance_with_decimals, decimals_multiplier)
-          else
-            bridged_token_balance
-          end
+              Decimal.div(bridged_token_balance_with_decimals, decimals_multiplier)
+            else
+              bridged_token_balance
+            end
 
-        {bridged_token_hash, bridged_token_price, bridged_token_balance_formatted}
+          {bridged_token_hash, bridged_token_price, bridged_token_balance_formatted, nil}
+        end
       end)
 
     bridged_mainnet_tokens_with_supply
   end
 
   defp calc_omni_bridge_market_cap(bridged_mainnet_tokens_with_supply) do
+    config = Application.get_env(:explorer, Explorer.Counters.Bridge)
+    disable_lp_tokens_in_market_cap = Keyword.get(config, :disable_lp_tokens_in_market_cap)
+
     omni_bridge_market_cap =
       bridged_mainnet_tokens_with_supply
-      |> Enum.reduce(Decimal.new(0), fn {_bridged_token_hash, bridged_token_price, bridged_token_balance}, acc ->
-        if bridged_token_price do
-          Decimal.add(acc, Decimal.mult(bridged_token_price, bridged_token_balance))
+      |> Enum.reduce(Decimal.new(0), fn {_bridged_token_hash, bridged_token_price, bridged_token_balance,
+                                         bridged_token_custom_cap},
+                                        acc ->
+        if !disable_lp_tokens_in_market_cap && bridged_token_custom_cap do
+          Decimal.add(acc, bridged_token_custom_cap)
         else
-          acc
+          if bridged_token_price do
+            Decimal.add(acc, Decimal.mult(bridged_token_price, bridged_token_balance))
+          else
+            acc
+          end
         end
       end)
 
