@@ -296,7 +296,8 @@ defmodule Explorer.Staking.ContractState do
       epochs_per_year = floor(31_536_000 / average_block_time / staking_epoch_duration)
       predicted_reward = decimal_to_float(reward_ratio) * pool_reward / 100
       apy = predicted_reward / decimal_to_integer(stake_amount) * epochs_per_year * 100
-      %{apy: "#{floor(apy * 100) / 100}%", predicted_reward: floor(predicted_reward)}
+      apy_raw = floor(apy * 100) / 100
+      %{apy: "#{apy_raw}%", predicted_reward: floor(predicted_reward), apy_raw: apy_raw}
     end
   end
 
@@ -349,7 +350,7 @@ defmodule Explorer.Staking.ContractState do
 
   defp start_snapshotting?(global_responses) do
     global_responses.epoch_number > get(:snapshotted_epoch_number) && global_responses.epoch_number > 0 &&
-      not get(:is_snapshotting) && (global_responses.epoch_number >= 49 || global_responses.epoch_number < 47)
+      not get(:is_snapshotting)
   end
 
   defp update_database(

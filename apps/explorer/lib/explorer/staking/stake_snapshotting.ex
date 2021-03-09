@@ -21,6 +21,12 @@ defmodule Explorer.Staking.StakeSnapshotting do
         mining_address_to_id,
         block_number
       ) do
+    # temporary code (should be removed after staking epoch #48 on xDai is finished).
+    # this is a block number from which POSDAO on xDai chain started to use other signatures
+    # in the StakingAuRa contract
+    {:ok, net_version} = EthereumJSONRPC.fetch_net_version(Application.get_env(:explorer, :json_rpc_named_arguments))
+    new_signatures = (net_version == 100 and block_number > 14_994_040) or net_version != 100
+
     # get pool ids and staking addresses for the pending validators
     pool_ids =
       pools_mining_addresses
@@ -51,7 +57,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
             Map.merge(
               resp,
               ContractReader.perform_requests(
-                snapshotted_pool_amounts_requests(pool_id, resp.staking_address_hash, block_number),
+                snapshotted_pool_amounts_requests(pool_id, resp.staking_address_hash, block_number, new_signatures),
                 contracts,
                 abi
               )
@@ -66,7 +72,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
               },
               ContractReader.perform_requests(
                 ContractReader.active_delegators_request(pool_id, block_number) ++
-                  snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number),
+                  snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number, new_signatures),
                 contracts,
                 abi
               )
@@ -89,7 +95,13 @@ defmodule Explorer.Staking.StakeSnapshotting do
       stakers
       |> Enum.map(fn {pool_id, pool_staking_address, staker_address} ->
         ContractReader.perform_requests(
-          snapshotted_staker_amount_request(pool_id, pool_staking_address, staker_address, block_number),
+          snapshotted_staker_amount_request(
+            pool_id,
+            pool_staking_address,
+            staker_address,
+            block_number,
+            new_signatures
+          ),
           contracts,
           abi
         )
@@ -219,18 +231,30 @@ defmodule Explorer.Staking.StakeSnapshotting do
 
   defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
 
-  defp snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number) do
+  defp snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number, new_signatures) do
+    stake_amount_total_signature =
+      if new_signatures do
+        # keccak256(stakeAmountTotal(uint256))
+        "2a8f6ecd"
+      else
+        # keccak256(stakeAmountTotal(address))
+        "5267e1d6"
+      end
+
     [
-      # 2a8f6ecd = keccak256(stakeAmountTotal(uint256))
-      snapshotted_total_staked_amount: {:staking, "2a8f6ecd", [pool_id], block_number},
+      snapshotted_total_staked_amount: {:staking, stake_amount_total_signature, [pool_id], block_number},
       snapshotted_self_staked_amount:
-        snapshotted_staker_amount_request(pool_id, pool_staking_address, pool_staking_address, block_number)[
-          :snapshotted_stake_amount
-        ]
+        snapshotted_staker_amount_request(
+          pool_id,
+          pool_staking_address,
+          pool_staking_address,
+          block_number,
+          new_signatures
+        )[:snapshotted_stake_amount]
     ]
   end
 
-  defp snapshotted_staker_amount_request(pool_id, pool_staking_address, staker_address, block_number) do
+  defp snapshotted_staker_amount_request(pool_id, pool_staking_address, staker_address, block_number, new_signatures) do
     delegator_or_zero =
       if staker_address == pool_staking_address do
         "0x0000000000000000000000000000000000000000"
@@ -238,9 +262,17 @@ defmodule Explorer.Staking.StakeSnapshotting do
         staker_address
       end
 
+    stake_amount_signature =
+      if new_signatures do
+        # keccak256(stakeAmount(uint256,address))
+        "3fb1a1e4"
+      else
+        # keccak256(stakeAmount(address,address))
+        "a697ecff"
+      end
+
     [
-      # 3fb1a1e4 = keccak256(stakeAmount(uint256,address))
-      snapshotted_stake_amount: {:staking, "3fb1a1e4", [pool_id, delegator_or_zero], block_number}
+      snapshotted_stake_amount: {:staking, stake_amount_signature, [pool_id, delegator_or_zero], block_number}
     ]
   end
 
