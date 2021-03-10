@@ -6,7 +6,15 @@ defmodule Indexer.Supervisor do
   use Supervisor
 
   alias Explorer.Chain
-  alias Indexer.{Block, PendingOpsCleaner, SetAmbBridgedMetadataForTokens, SetOmniBridgedMetadataForTokens}
+
+  alias Indexer.{
+    Block,
+    CalcLpTokensTotalLiqudity,
+    PendingOpsCleaner,
+    SetAmbBridgedMetadataForTokens,
+    SetOmniBridgedMetadataForTokens
+  }
+
   alias Indexer.Block.{Catchup, Realtime}
 
   alias Indexer.Fetcher.{
@@ -132,7 +140,8 @@ defmodule Indexer.Supervisor do
 
     extended_fetchers =
       if Chain.bridged_tokens_enabled?() do
-        [{SetOmniBridgedMetadataForTokens, [[], []]} | basic_fetchers]
+        fetchers_with_omni_status = [{SetOmniBridgedMetadataForTokens, [[], []]} | basic_fetchers]
+        [{CalcLpTokensTotalLiqudity, [[], []]} | fetchers_with_omni_status]
       else
         basic_fetchers
       end

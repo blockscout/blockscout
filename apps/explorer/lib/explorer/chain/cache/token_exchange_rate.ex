@@ -108,6 +108,16 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     end
   end
 
+  def fetch_token_exchange_rate_by_address(address_hash_str) do
+    case Source.fetch_exchange_rates_for_token_address(address_hash_str) do
+      {:ok, [rates]} ->
+        rates.usd_value
+
+      _ ->
+        nil
+    end
+  end
+
   defp fetch_from_cache(key) do
     case :ets.lookup(@cache_name, key) do
       [{_, value}] ->
