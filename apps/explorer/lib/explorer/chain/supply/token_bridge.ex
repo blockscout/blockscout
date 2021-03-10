@@ -223,7 +223,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
       bridged_mainnet_tokens_list
       |> Enum.map(fn {bridged_token_hash, bridged_token_symbol, bridged_token_custom_cap} ->
         if bridged_token_custom_cap do
-          {bridged_token_hash, 0, 0, bridged_token_custom_cap}
+          {bridged_token_hash, Decimal.new(0), Decimal.new(0), bridged_token_custom_cap}
         else
           bridged_token_price_from_cache = TokenExchangeRateCache.fetch(bridged_token_hash, bridged_token_symbol)
 
