@@ -10,6 +10,17 @@ $(document.body)
 
     addTokenToMM({ tokenAddress, tokenSymbol, tokenDecimals, tokenImage: null, btn: $btn })
   })
+$(document.body)
+  .on('mouseover', '.btn-add-to-mm', event => {
+    const $btn = $(event.target)
+
+    $btn.tooltip('dispose')
+    $btn.tooltip({
+      title: 'Add token to MetaMask',
+      trigger: 'hover',
+      placement: 'top'
+    }).tooltip('show')
+  })
 
 async function addTokenToMM ({ tokenAddress, tokenSymbol, tokenDecimals, tokenImage, btn }) {
   try {
@@ -30,11 +41,11 @@ async function addTokenToMM ({ tokenAddress, tokenSymbol, tokenDecimals, tokenIm
     } else {
       btn.tooltip('dispose')
       btn.tooltip({
-        title: `You're not connected to xDai chain`,
+        title: 'You\'re not connected to xDai chain',
         trigger: 'click',
         placement: 'top'
       }).tooltip('show')
-    
+
       setTimeout(() => {
         btn.tooltip('dispose')
       }, 3000)
