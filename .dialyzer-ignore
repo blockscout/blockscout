@@ -20,8 +20,8 @@ lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:21
 lib/block_scout_web/controllers/api/rpc/transaction_controller.ex:22
 lib/explorer/smart_contract/reader.ex:347
 lib/indexer/fetcher/token_total_supply_on_demand.ex:16
-lib/explorer/exchange_rates/source.ex:104
-lib/explorer/exchange_rates/source.ex:107
+lib/explorer/exchange_rates/source.ex:110
+lib/explorer/exchange_rates/source.ex:113
 lib/explorer/smart_contract/verifier.ex:89
 lib/block_scout_web/templates/address_contract/index.html.eex:144
 lib/explorer/staking/stake_snapshotting.ex:15: Function do_snapshotting/6 has no local return

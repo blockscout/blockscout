@@ -1173,7 +1173,7 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:51
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:107
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:58
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:147
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:142
 msgid "QR Code"
 msgstr ""
 
@@ -1743,8 +1743,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:205
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:108
 #: lib/block_scout_web/templates/tokens/instance/overview/_details.html.eex:116
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:148
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:156
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:143
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:151
 msgid "Close"
 msgstr ""
 
@@ -2805,7 +2805,7 @@ msgstr ""
 msgid "Bridge STAKE to Ethereum"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/stakes/_stakes_top.html.eex:38
 msgid "Swap STAKE on Honeyswap"
 msgstr ""

@@ -212,7 +212,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
         on: t.contract_address_hash == bt.home_token_contract_address_hash,
         where: bt.foreign_chain_id == ^1,
         where: t.bridged == true,
-        select: {bt.home_token_contract_address_hash, t.symbol},
+        select: {bt.home_token_contract_address_hash, t.symbol, bt.custom_cap},
         order_by: [desc: t.holder_count]
       )
 
@@ -223,41 +223,45 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   defp get_bridged_mainnet_tokens_supply(bridged_mainnet_tokens_list) do
     bridged_mainnet_tokens_with_supply =
       bridged_mainnet_tokens_list
-      |> Enum.map(fn {bridged_token_hash, bridged_token_symbol} ->
-        bridged_token_price_from_cache = TokenExchangeRateCache.fetch(bridged_token_hash, bridged_token_symbol)
+      |> Enum.map(fn {bridged_token_hash, bridged_token_symbol, bridged_token_custom_cap} ->
+        if bridged_token_custom_cap do
+          {bridged_token_hash, 0, 0, bridged_token_custom_cap}
+        else
+          bridged_token_price_from_cache = TokenExchangeRateCache.fetch(bridged_token_hash, bridged_token_symbol)
 
-        bridged_token_price =
-          if bridged_token_price_from_cache && Decimal.cmp(bridged_token_price_from_cache, 0) == :gt do
-            bridged_token_price_from_cache
-          else
-            TokenExchangeRateCache.fetch_token_exchange_rate(bridged_token_symbol)
-          end
+          bridged_token_price =
+            if bridged_token_price_from_cache && Decimal.cmp(bridged_token_price_from_cache, 0) == :gt do
+              bridged_token_price_from_cache
+            else
+              TokenExchangeRateCache.fetch_token_exchange_rate(bridged_token_symbol)
+            end
 
-        query =
-          from(t in Token,
-            where: t.contract_address_hash == ^bridged_token_hash,
-            select: {t.total_supply, t.decimals}
-          )
+          query =
+            from(t in Token,
+              where: t.contract_address_hash == ^bridged_token_hash,
+              select: {t.total_supply, t.decimals}
+            )
 
-        bridged_token_balance =
-          query
-          |> Repo.one()
+          bridged_token_balance =
+            query
+            |> Repo.one()
 
-        bridged_token_balance_formatted =
-          if bridged_token_balance do
-            {bridged_token_balance_with_decimals, decimals} = bridged_token_balance
+          bridged_token_balance_formatted =
+            if bridged_token_balance do
+              {bridged_token_balance_with_decimals, decimals} = bridged_token_balance
 
-            decimals_multiplier =
-              10
-              |> :math.pow(Decimal.to_integer(decimals))
-              |> Decimal.from_float()
+              decimals_multiplier =
+                10
+                |> :math.pow(Decimal.to_integer(decimals))
+                |> Decimal.from_float()
 
-            Decimal.div(bridged_token_balance_with_decimals, decimals_multiplier)
-          else
-            bridged_token_balance
-          end
+              Decimal.div(bridged_token_balance_with_decimals, decimals_multiplier)
+            else
+              bridged_token_balance
+            end
 
-        {bridged_token_hash, bridged_token_price, bridged_token_balance_formatted}
+          {bridged_token_hash, bridged_token_price, bridged_token_balance_formatted, nil}
+        end
       end)
 
     bridged_mainnet_tokens_with_supply
@@ -268,30 +272,39 @@ defmodule Explorer.Chain.Supply.TokenBridge do
 
     hopr_test_token_hash = "0x08675CCCb9338e6197C9cB5453d9e7DA143e2C5C" |> String.downcase()
 
+    config = Application.get_env(:explorer, Explorer.Counters.Bridge)
+    disable_lp_tokens_in_market_cap = Keyword.get(config, :disable_lp_tokens_in_market_cap)
+
     omni_bridge_market_cap =
       bridged_mainnet_tokens_with_supply
       |> Enum.filter(fn {bridged_token_hash, _, _} ->
         bridged_token_hash_str = "0x" <> Base.encode16(bridged_token_hash.bytes, case: :lower)
         bridged_token_hash_str !== hopr_test_token_hash
       end)
-      |> Enum.reduce(Decimal.new(0), fn {bridged_token_hash, bridged_token_price, bridged_token_balance}, acc ->
-        if bridged_token_price do
-          Logger.warn("Show: bridged_token_hash")
-          Logger.warn("0x" <> Base.encode16(bridged_token_hash.bytes))
-          Logger.warn("Show: bridged_token_price")
-          Logger.warn(bridged_token_price |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
-          Logger.warn("Show: bridged_token_balance")
-          Logger.warn(bridged_token_balance |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
-
-          bridged_token_cap = Decimal.mult(bridged_token_price, bridged_token_balance)
-          Logger.warn("Show: bridged_token_cap")
-          Logger.warn(bridged_token_cap |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
-
-          Logger.warn("Show: current accumulator (before adding)")
-          Logger.warn(acc |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
-          Decimal.add(acc, bridged_token_cap)
+      |> Enum.reduce(Decimal.new(0), fn {bridged_token_hash, bridged_token_price, bridged_token_balance,
+                                         bridged_token_custom_cap},
+                                        acc ->
+        if !disable_lp_tokens_in_market_cap && bridged_token_custom_cap do
+          Decimal.add(acc, bridged_token_custom_cap)
         else
-          acc
+          if bridged_token_price do
+            Logger.warn("Show: bridged_token_hash")
+            Logger.warn("0x" <> Base.encode16(bridged_token_hash.bytes))
+            Logger.warn("Show: bridged_token_price")
+            Logger.warn(bridged_token_price |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
+            Logger.warn("Show: bridged_token_balance")
+            Logger.warn(bridged_token_balance |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
+
+            bridged_token_cap = Decimal.mult(bridged_token_price, bridged_token_balance)
+            Logger.warn("Show: bridged_token_cap")
+            Logger.warn(bridged_token_cap |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
+
+            Logger.warn("Show: current accumulator (before adding)")
+            Logger.warn(acc |> Decimal.to_float() |> :erlang.float_to_binary(decimals: 2))
+            Decimal.add(acc, bridged_token_cap)
+          else
+            acc
+          end
         end
       end)
 

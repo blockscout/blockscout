@@ -97,11 +97,9 @@
     <td class="stakes-td">
       <span class="mr-4">
         <span data-test="tvl">
-          <%= if @bridged_token.exchange_rate && @token.total_supply do %>
-            <% usd_val = Decimal.mult(@bridged_token.exchange_rate, divide_decimals(@token.total_supply, @token.decimals)) %>
-            <%= unless @token.name =~ "SushiSwap LP Token on xDai" do %>
-              <%= ChainView.format_usd_value(usd_val) %>
-            <% end %>
+          <% usd_val = bridged_token_usd_cap(@bridged_token, @token) %>
+          <%= if Decimal.cmp(usd_val, 0) == :gt do %>
+            <%= ChainView.format_usd_value(usd_val) %>
           <% end %>
         </span>
       </span>

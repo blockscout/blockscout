@@ -115,7 +115,8 @@ bridge_market_cap_update_interval =
 config :explorer, Explorer.Counters.Bridge,
   enabled: if(System.get_env("SUPPLY_MODULE") === "TokenBridge", do: true, else: false),
   enable_consolidation: System.get_env("DISABLE_BRIDGE_MARKET_CAP_UPDATER") !== "true",
-  update_interval_in_seconds: bridge_market_cap_update_interval || 30 * 60
+  update_interval_in_seconds: bridge_market_cap_update_interval || 30 * 60,
+  disable_lp_tokens_in_market_cap: System.get_env("DISABLE_LP_TOKENS_IN_MARKET_CAP") == "true"
 
 config :explorer, Explorer.ExchangeRates, enabled: System.get_env("DISABLE_EXCHANGE_RATES") != "true", store: :ets
 

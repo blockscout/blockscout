@@ -71,6 +71,7 @@ defmodule Explorer.Chain do
     BlockNumber,
     Blocks,
     GasUsage,
+    TokenExchangeRate,
     TransactionCount,
     Transactions,
     Uncles
@@ -4011,6 +4012,8 @@ defmodule Explorer.Chain do
           foreign_chain_id: foreign_chain_id,
           foreign_token_address_hash: foreign_token_contract_hash,
           custom_metadata: nil,
+          custom_cap: nil,
+          lp_token: nil,
           type: "amb"
         })
 
@@ -4168,6 +4171,8 @@ defmodule Explorer.Chain do
         foreign_chain_id: foreign_chain_id,
         foreign_token_address_hash: foreign_token_address_hash,
         custom_metadata: custom_metadata,
+        custom_cap: nil,
+        lp_token: nil,
         type: "omni"
       })
 
@@ -4275,6 +4280,8 @@ defmodule Explorer.Chain do
          foreign_chain_id: foreign_chain_id,
          foreign_token_address_hash: foreign_token_address_hash,
          custom_metadata: custom_metadata,
+         custom_cap: custom_cap,
+         lp_token: lp_token,
          type: type
        }) do
     target_token = Repo.get(Token, token_address_hash)
@@ -4287,6 +4294,8 @@ defmodule Explorer.Chain do
             foreign_chain_id: foreign_chain_id,
             foreign_token_contract_address_hash: foreign_token_address_hash,
             custom_metadata: custom_metadata,
+            custom_cap: custom_cap,
+            lp_token: lp_token,
             type: type
           },
           on_conflict: :nothing
@@ -4422,6 +4431,170 @@ defmodule Explorer.Chain do
       _ ->
         nil
     end
+  end
+
+  def calc_lp_tokens_total_liqudity do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    foreign_json_rpc = Application.get_env(:block_scout_web, :foreign_json_rpc)
+    bridged_mainnet_tokens_list = BridgedToken.get_unprocessed_mainnet_lp_tokens_list()
+
+    Enum.each(bridged_mainnet_tokens_list, fn bridged_token ->
+      case calc_sushiswap_lp_tokens_cap(
+             bridged_token.home_token_contract_address_hash,
+             bridged_token.foreign_token_contract_address_hash,
+             json_rpc_named_arguments,
+             foreign_json_rpc
+           ) do
+        {:ok, new_custom_cap} ->
+          bridged_token
+          |> Changeset.change(%{custom_cap: new_custom_cap, lp_token: true})
+          |> Repo.update()
+
+        {:error, :not_lp_token} ->
+          bridged_token
+          |> Changeset.change(%{lp_token: false})
+          |> Repo.update()
+      end
+    end)
+
+    Logger.debug(fn -> "Total liqudity fetched for LP tokens" end)
+  end
+
+  defp calc_sushiswap_lp_tokens_cap(
+         home_token_contract_address_hash,
+         foreign_token_address_hash,
+         json_rpc_named_arguments,
+         foreign_json_rpc
+       ) do
+    eth_call_foreign_json_rpc_named_arguments =
+      compose_foreign_json_rpc_named_arguments(json_rpc_named_arguments, foreign_json_rpc)
+
+    # keccak 256 from getReserves()
+    get_reserves_signature = "0x0902f1ac"
+
+    # keccak 256 from token0()
+    token0_signature = "0x0dfe1681"
+
+    # keccak 256 from token1()
+    token1_signature = "0x0dfe1681"
+
+    # keccak 256 from totalSupply()
+    total_supply_signature = "0x18160ddd"
+
+    with {:ok, "0x" <> get_reserves_encoded} <-
+           get_reserves_signature
+           |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+         {:ok, "0x" <> home_token_total_supply_encoded} <-
+           total_supply_signature
+           |> Contract.eth_call_request(home_token_contract_address_hash, 1, nil, nil)
+           |> json_rpc(json_rpc_named_arguments),
+         [reserve0, reserve1, _] <-
+           parse_contract_response(get_reserves_encoded, [{:uint, 112}, {:uint, 112}, {:uint, 32}]),
+         {:ok, token0_cap_usd} <-
+           get_lp_token_cap(
+             home_token_total_supply_encoded,
+             token0_signature,
+             reserve0,
+             foreign_token_address_hash,
+             eth_call_foreign_json_rpc_named_arguments
+           ),
+         {:ok, token1_cap_usd} <-
+           get_lp_token_cap(
+             home_token_total_supply_encoded,
+             token1_signature,
+             reserve1,
+             foreign_token_address_hash,
+             eth_call_foreign_json_rpc_named_arguments
+           ) do
+      total_lp_cap = Decimal.add(token0_cap_usd, token1_cap_usd)
+      {:ok, total_lp_cap}
+    else
+      _ ->
+        {:error, :not_lp_token}
+    end
+  end
+
+  defp get_lp_token_cap(
+         home_token_total_supply_encoded,
+         token_signature,
+         reserve,
+         foreign_token_address_hash,
+         eth_call_foreign_json_rpc_named_arguments
+       ) do
+    # keccak 256 from decimals()
+    decimals_signature = "0x313ce567"
+
+    # keccak 256 from totalSupply()
+    total_supply_signature = "0x18160ddd"
+
+    home_token_total_supply =
+      home_token_total_supply_encoded
+      |> parse_contract_response({:uint, 256})
+      |> Decimal.new()
+
+    with {:ok, "0x" <> token_encoded} <-
+           token_signature
+           |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
+           |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
+      token_hash = parse_contract_response(token_encoded, :address)
+
+      if token_hash do
+        token_hash_str = "0x" <> Base.encode16(token_hash, case: :lower)
+
+        with {:ok, "0x" <> token_decimals_encoded} <-
+               decimals_signature
+               |> Contract.eth_call_request(token_hash_str, 1, nil, nil)
+               |> json_rpc(eth_call_foreign_json_rpc_named_arguments),
+             {:ok, "0x" <> foreign_token_total_supply_encoded} <-
+               total_supply_signature
+               |> Contract.eth_call_request(foreign_token_address_hash, 1, nil, nil)
+               |> json_rpc(eth_call_foreign_json_rpc_named_arguments) do
+          token_decimals = parse_contract_response(token_decimals_encoded, {:uint, 256})
+
+          foreign_token_total_supply =
+            foreign_token_total_supply_encoded
+            |> parse_contract_response({:uint, 256})
+            |> Decimal.new()
+
+          token_decimals_divider =
+            10
+            |> :math.pow(token_decimals)
+            |> Decimal.from_float()
+
+          token_cap =
+            reserve
+            |> Decimal.div(foreign_token_total_supply)
+            |> Decimal.mult(home_token_total_supply)
+            |> Decimal.div(token_decimals_divider)
+
+          token_price = TokenExchangeRate.fetch_token_exchange_rate_by_address(token_hash_str)
+
+          token_cap_usd =
+            if token_price do
+              token_price
+              |> Decimal.mult(token_cap)
+            else
+              0
+            end
+
+          {:ok, token_cap_usd}
+        end
+      end
+    end
+  end
+
+  defp parse_contract_response(abi_encoded_value, types) when is_list(types) do
+    values =
+      try do
+        abi_encoded_value
+        |> Base.decode16!(case: :mixed)
+        |> TypeDecoder.decode_raw(types)
+      rescue
+        _ -> [nil]
+      end
+
+    values
   end
 
   defp parse_contract_response(abi_encoded_value, type) do
@@ -4603,12 +4776,14 @@ defmodule Explorer.Chain do
         foreign_token_contract_address_hash = Map.get(bridged_token, :foreign_token_contract_address_hash)
         foreign_chain_id = Map.get(bridged_token, :foreign_chain_id)
         custom_metadata = Map.get(bridged_token, :custom_metadata)
+        custom_cap = Map.get(bridged_token, :custom_cap)
 
         extended_token =
           token
           |> Map.put(:foreign_token_contract_address_hash, foreign_token_contract_address_hash)
           |> Map.put(:foreign_chain_id, foreign_chain_id)
           |> Map.put(:custom_metadata, custom_metadata)
+          |> Map.put(:custom_cap, custom_cap)
 
         {:ok, extended_token}
 

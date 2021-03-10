@@ -59,9 +59,13 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   Get the total value of the token supply in USD.
   """
   def total_supply_usd(token) do
-    tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
-    price = token.usd_value
-    Decimal.mult(tokens, price)
+    if token.custom_cap do
+      token.custom_cap
+    else
+      tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
+      price = token.usd_value
+      Decimal.mult(tokens, price)
+    end
   end
 
   def custom_token?(contract_address) do
