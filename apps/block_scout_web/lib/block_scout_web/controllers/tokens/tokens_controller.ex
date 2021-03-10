@@ -49,11 +49,12 @@ defmodule BlockScoutWeb.TokensController do
     items =
       tokens_page
       |> Enum.with_index(1)
-      |> Enum.map(fn {token, index} ->
+      |> Enum.map(fn {[token, bridged_token], index} ->
         View.render_to_string(
           TokensView,
           "_tile.html",
           token: token,
+          bridged_token: bridged_token,
           index: items_count + index
         )
       end)

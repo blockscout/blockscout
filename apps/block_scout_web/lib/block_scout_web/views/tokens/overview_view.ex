@@ -20,6 +20,14 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   def token_name?(%Token{name: nil}), do: false
   def token_name?(%Token{name: _}), do: true
 
+  def token_display_name(token) do
+    if token.bridged do
+      Chain.token_display_name_based_on_bridge_destination(token.name, token.foreign_chain_id)
+    else
+      token.name
+    end
+  end
+
   def total_supply?(%Token{total_supply: nil}), do: false
   def total_supply?(%Token{total_supply: _}), do: true
 

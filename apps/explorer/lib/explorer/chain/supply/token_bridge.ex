@@ -277,7 +277,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
 
     omni_bridge_market_cap =
       bridged_mainnet_tokens_with_supply
-      |> Enum.filter(fn {bridged_token_hash, _, _} ->
+      |> Enum.filter(fn {bridged_token_hash, _, _, _} ->
         bridged_token_hash_str = "0x" <> Base.encode16(bridged_token_hash.bytes, case: :lower)
         bridged_token_hash_str !== hopr_test_token_hash
       end)

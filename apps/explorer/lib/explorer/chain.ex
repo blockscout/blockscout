@@ -1921,10 +1921,18 @@ defmodule Explorer.Chain do
   end
 
   defp fetch_top_tokens(filter, paging_options) do
+    bridged_tokens_query =
+      from(bt in BridgedToken,
+        select: bt
+      )
+
     base_query =
       from(t in Token,
+        left_join: bt in subquery(bridged_tokens_query),
+        on: t.contract_address_hash == bt.home_token_contract_address_hash,
         where: t.total_supply > ^0,
         order_by: [desc: t.holder_count, asc: t.name],
+        select: [t, bt],
         preload: [:contract_address]
       )
 
@@ -6421,5 +6429,38 @@ defmodule Explorer.Chain do
         where: l.address_hash == ^bsc_omni_bridge_mediator
       )
     )
+  end
+
+  def token_display_name_based_on_bridge_destination(name, foreign_chain_id) do
+    cond do
+      Decimal.cmp(foreign_chain_id, 1) == :eq ->
+        name
+        |> String.replace("on xDai", "from Ethereum")
+
+      Decimal.cmp(foreign_chain_id, 56) == :eq ->
+        name
+        |> String.replace("on xDai", "from BSC")
+
+      true ->
+        name
+    end
+  end
+
+  def token_display_name_based_on_bridge_destination(name, symbol, foreign_chain_id) do
+    token_name =
+      cond do
+        Decimal.cmp(foreign_chain_id, 1) == :eq ->
+          name
+          |> String.replace("on xDai", "from Ethereum")
+
+        Decimal.cmp(foreign_chain_id, 56) == :eq ->
+          name
+          |> String.replace("on xDai", "from BSC")
+
+        true ->
+          name
+      end
+
+    "#{token_name} (#{symbol})"
   end
 end

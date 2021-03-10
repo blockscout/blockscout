@@ -18,7 +18,7 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if assigns[:is_eth_bridged_tokens_table] do %>
+  <%= if assigns[:is_eth_bridged_tokens_table] || assigns[:is_tokens_table] do %>
     <td class="stakes-td">
       <span class="table-content-loader"></span>
     </td>
@@ -52,7 +52,7 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if assigns[:is_eth_bridged_tokens_table] do %>
+  <%= if assigns[:is_eth_bridged_tokens_table] || assigns[:is_tokens_table] do %>
     <td class="stakes-td">
       <span class="table-content-loader"></span>
     </td>
@@ -86,7 +86,7 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if assigns[:is_eth_bridged_tokens_table] do %>
+  <%= if assigns[:is_eth_bridged_tokens_table] || assigns[:is_tokens_table] do %>
     <td class="stakes-td">
       <span class="table-content-loader"></span>
     </td>
@@ -120,7 +120,7 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if assigns[:is_eth_bridged_tokens_table] do %>
+  <%= if assigns[:is_eth_bridged_tokens_table] || assigns[:is_tokens_table] do %>
     <td class="stakes-td">
       <span class="table-content-loader"></span>
     </td>
@@ -154,7 +154,7 @@
   <td class="stakes-td">
     <span class="table-content-loader"></span>
   </td>
-  <%= if assigns[:is_eth_bridged_tokens_table] do %>
+  <%= if assigns[:is_eth_bridged_tokens_table] || assigns[:is_tokens_table] do %>
     <td class="stakes-td">
       <span class="table-content-loader"></span>
     </td>

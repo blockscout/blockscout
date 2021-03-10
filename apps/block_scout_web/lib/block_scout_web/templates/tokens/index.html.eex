@@ -42,7 +42,7 @@
 	    </tr>
 	  </thead>
 	  <tbody data-items data-selector="top-tokens-list">
-	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html" %>
+	    <%= render BlockScoutWeb.CommonComponentsView, "_table-loader.html", is_tokens_table: true %>
 	  </tbody>
 	</table>
       </div>

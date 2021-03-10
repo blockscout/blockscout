@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.BridgedTokensView do
 
   alias BlockScoutWeb.ChainView
   alias Explorer.Chain
-  alias Explorer.Chain.Token
+  alias Explorer.Chain.{BridgedToken, Token}
 
   @owl_token_amb "0x0905Ab807F8FD040255F0cF8fa14756c1D824931"
   @owl_token_omni "0x750eCf8c11867Ce5Dbc556592c5bb1E0C6d16538"
@@ -16,6 +16,14 @@ defmodule BlockScoutWeb.BridgedTokensView do
   def token_display_name(%Token{name: nil}), do: ""
 
   def token_display_name(%Token{name: name}), do: name
+
+  def token_display_name(%Token{name: name, bridged: bridged}, %BridgedToken{foreign_chain_id: foreign_chain_id}) do
+    if bridged do
+      Chain.token_display_name_based_on_bridge_destination(name, foreign_chain_id)
+    else
+      name
+    end
+  end
 
   def owl_token_amb?(address_hash) do
     to_string(address_hash) == String.downcase(@owl_token_amb)
