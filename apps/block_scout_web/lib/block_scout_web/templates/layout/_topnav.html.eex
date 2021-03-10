@@ -126,7 +126,7 @@
             <div class="dropdown-menu large" aria-labeledby="navbarAppsDropdown">
               <div class="row" style="padding: 10px;">
                 <div class="col-xs-12 col-md-4 col-lg-4">
-                  <h3 class="pl-2"><b><%= gettext("Apps") %></b></h3>
+                  <h3 class="apps-menu-header pl-2"><b><%= gettext("Apps") %></b></h3>
                   <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
                     <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
                       <%= gettext("Staking on xDai") %>
@@ -150,14 +150,14 @@
                 <div class="col-xs-12 col-md-4 col-lg-4">
                   <% bridges = bridges_list() %>
                   <%= unless Enum.empty?(bridges) do %>
-                    <h3 class="pl-2"><b><%= gettext("Bridges") %></b></h3>
+                    <h3 class="apps-menu-header pl-2"><b><%= gettext("Bridges") %></b></h3>
                     <%= for %{url: url, title: title} <- bridges do %> 
                       <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                     <% end %>
                   <% end %>
                 </div>
                 <div class="col-xs-12 col-md-4 col-lg-4">
-                  <h3 class="pl-2"><b><%= gettext("Ecosystem") %></b></h3>
+                  <h3 class="apps-menu-header pl-2"><b><%= gettext("Ecosystem") %></b></h3>
                   <%= for %{url: url, title: title} <- defi_list() do %> 
                         <a href="<%= url%>" class="dropdown-item" target="_blank"><%= title %></a>
                   <% end %>
