@@ -11,14 +11,6 @@
       to: token_path(BlockScoutWeb.Endpoint, :show, @token.contract_address_hash),
       "data-test": "token_link",
       class: "text-truncate") %>
-    <%= if @token.bridged do %>
-      <span
-        data-toggle="tooltip"
-        data-placement="top"
-        title="<%= "Original token name: #{@token.name}" %>">
-        <i style="color: #f7b32b;" class="fa fa-info-circle ml-1"></i>
-      </span>
-    <% end %>
   </td>
   <td class="stakes-td">
     <%= render BlockScoutWeb.AddressView,

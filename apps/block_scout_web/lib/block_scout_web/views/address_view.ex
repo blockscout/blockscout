@@ -4,8 +4,20 @@ defmodule BlockScoutWeb.AddressView do
   require Logger
 
   alias BlockScoutWeb.{AccessHelpers, CustomContractsHelpers, LayoutView}
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.{Chain, Repo}
+
+  alias Explorer.Chain.{
+    Address,
+    BridgedToken,
+    Hash,
+    InternalTransaction,
+    SmartContract,
+    Token,
+    TokenTransfer,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Chain.Block.Reward
   alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
   alias Explorer.SmartContract.Writer
@@ -258,7 +270,15 @@ defmodule BlockScoutWeb.AddressView do
     short_hash_left_right(contract_address_hash)
   end
 
-  def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
+  def token_title(%Token{name: name, symbol: symbol, bridged: bridged, contract_address_hash: contract_address_hash}) do
+    bridged_token = Repo.get(BridgedToken, contract_address_hash)
+
+    if bridged do
+      Chain.token_display_name_based_on_bridge_destination(name, symbol, bridged_token.foreign_chain_id)
+    else
+      "#{name} (#{symbol})"
+    end
+  end
 
   def trimmed_hash(%Hash{} = hash) do
     string_hash = to_string(hash)
