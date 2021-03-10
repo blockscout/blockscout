@@ -10,6 +10,17 @@ $(document.body)
 
     addTokenToMM({ tokenAddress, tokenSymbol, tokenDecimals, tokenImage: null, btn: $btn })
   })
+$(document.body)
+  .on('mouseover', '.btn-add-to-mm', event => {
+    const $btn = $(event.target)
+
+    $btn.tooltip('dispose')
+    $btn.tooltip({
+      title: 'Add token to MetaMask',
+      trigger: 'hover',
+      placement: 'top'
+    }).tooltip('show')
+  })
 
 async function addTokenToMM ({ tokenAddress, tokenSymbol, tokenDecimals, tokenImage, btn }) {
   try {
