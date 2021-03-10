@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.TokensView do
 
   def token_display_name(%Token{name: "", symbol: symbol}, _), do: symbol
 
-  def token_display_name(%Token{name: name, symbol: symbol, bridged: bridged}, nil) do
+  def token_display_name(%Token{name: name, symbol: symbol}, nil) do
     "#{name} (#{symbol})"
   end
 
