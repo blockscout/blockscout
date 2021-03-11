@@ -88,7 +88,7 @@ async function becomeCandidate ($modal, store, msg) {
     const validatorSetContract = state.validatorSetContract
     const hasEverBeenMiningAddress = await validatorSetContract.methods.hasEverBeenMiningAddress(miningAddress).call()
 
-    if (hasEverBeenMiningAddress) {
+    if (hasEverBeenMiningAddress !== '0') {
       displayInputError($miningAddressInput, 'This mining address has already been used for another pool. Please use another mining address.')
       $modal.find('form button').blur()
       return false
