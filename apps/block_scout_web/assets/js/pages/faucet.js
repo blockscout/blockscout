@@ -72,7 +72,7 @@ $('#faucetForm').submit(function (e) {
     }).done(function (data) {
       // eslint-disable-next-line
       hcaptcha.reset()
-      console.error(err)
+      console.error(data)
       if (!data.success) {
         Swal.fire({
           title: 'Error',
@@ -139,7 +139,7 @@ function hideConnectButton ($connect, $connectTo, $connectedTo) {
 async function donateCoins () {
   await walletEnabled()
   const currentAccount = await getCurrentAccount()
-  const faucetDonateValue = $('#faucetDonateValue').val() || "100"
+  const faucetDonateValue = $('#faucetDonateValue').val() || '100'
   const txParams = {
     from: currentAccount,
     to: faucetAddress,

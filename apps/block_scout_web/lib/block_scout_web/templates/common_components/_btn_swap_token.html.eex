@@ -1,0 +1,11 @@
+<a class="ml-1"
+    href="https://app.honeyswap.org/#/swap?outputCurrency=0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d&inputCurrency=<%= @contract_address %>&exactField=input"
+    target="_blank"
+>
+<div class="btn-swap"
+    aria-label='<%= gettext "Swap Token to WXDai" %>'
+    data-token-symbol="<%= @symbol %>"
+    data-placement="top"
+    data-toggle="tooltip"
+></div>
+</a>
