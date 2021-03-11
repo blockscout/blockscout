@@ -20,6 +20,7 @@ import { checkForTokenDefinition, isSupportedNetwork } from './stakes/utils'
 import { currentModal, openWarningModal, openErrorModal } from '../lib/modals'
 import constants from './stakes/constants'
 import * as Sentry from '@sentry/browser'
+import './stakes/add_chain_to_mm'
 
 const stakesPageSelector = '[data-page="stakes"]'
 

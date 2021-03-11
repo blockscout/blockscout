@@ -13,10 +13,11 @@ $(document.body)
 $(document.body)
   .on('mouseover', '.btn-add-to-mm', event => {
     const $btn = $(event.target)
+    const tokenSymbol = $btn.data('token-symbol')
 
     $btn.tooltip('dispose')
     $btn.tooltip({
-      title: 'Add token to MetaMask',
+      title: `Add ${tokenSymbol} to MetaMask`,
       trigger: 'hover',
       placement: 'top'
     }).tooltip('show')
