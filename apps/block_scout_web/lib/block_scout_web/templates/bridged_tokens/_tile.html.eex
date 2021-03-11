@@ -46,7 +46,7 @@
       <% end %>
     </div>
   </td>
-  <td class="stakes-td" style="min-width: 400px;">
+  <td class="stakes-td" style="min-width: 430px;">
     <%= render BlockScoutWeb.AddressView,
       "_link.html",
       address: @token.contract_address,

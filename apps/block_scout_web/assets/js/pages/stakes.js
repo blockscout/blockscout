@@ -19,6 +19,7 @@ import { openClaimWithdrawalModal } from './stakes/claim_withdrawal'
 import { checkForTokenDefinition, isSupportedNetwork } from './stakes/utils'
 import { currentModal, openWarningModal, openErrorModal } from '../lib/modals'
 import constants from './stakes/constants'
+import './stakes/add_chain_to_mm'
 
 const stakesPageSelector = '[data-page="stakes"]'
 

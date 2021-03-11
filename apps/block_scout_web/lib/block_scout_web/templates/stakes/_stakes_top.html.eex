@@ -1,4 +1,4 @@
-<div class="stakes-top" style="padding-top: 70px; padding-bottom: 70px;">
+<div class="stakes-top">
   <div class="container">
     <div class="stakes-top-stats" data-block-number="<%= @block_number %>">
       <%= render BlockScoutWeb.StakesView, "_stakes_stats_item.html", title: gettext("Epoch number"), value: @epoch_number %>
@@ -28,8 +28,9 @@
         <% end %>
 
         <%= render BlockScoutWeb.StakesView, "_stakes_btn_claim_reward.html", text: gettext("Claim Reward"), extra_class: "full-width" %>
+        <button class="btn-full-primary btn-full-primary-text full-width mt-2 btn-add-chain-to-mm"><%= gettext("Add xDai Chain") %></button>
       </div>
-      <div class="stakes-top-buttons right" style="margin-bottom: -56px;">
+      <div class="stakes-top-buttons right">
         <a
             class="btn-full-primary full-width btn-add-full"
             href="https://app.honeyswap.org/#/swap?outputCurrency=0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d&inputCurrency=0xb7D311E2Eb55F2f68a9440da38e7989210b9A05e&exactField=input"
@@ -45,7 +46,7 @@
             <span class="btn-full-primary-text"><%= gettext("Bridge STAKE to Ethereum") %></span>
         </a>
         <a
-            class="btn-full-primary full-width btn-add-full"
+            class="btn-full-primary full-width"
             href="https://bitmax.io/register?inviteCode=5EYVQSTQ"
             target="_blank"
         >
