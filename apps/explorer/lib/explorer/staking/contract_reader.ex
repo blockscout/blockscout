@@ -457,6 +457,13 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
+  def id_by_staking_request(staking_address) do
+    [
+      # a26301f9 = keccak256(idByStakingAddress(address))
+      pool_id: {:validator_set, "a26301f9", [staking_address]}
+    ]
+  end
+
   def staking_by_mining_request(mining_address, block_number) do
     [
       # 1ee4d0bc = keccak256(stakingByMiningAddress(address))

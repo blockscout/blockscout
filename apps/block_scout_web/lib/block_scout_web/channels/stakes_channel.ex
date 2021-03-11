@@ -36,32 +36,32 @@ defmodule BlockScoutWeb.StakesChannel do
   end
 
   def handle_in("set_account", account, socket) do
-    # fetch mining address by staking address to show `Make stake` modal
+    # fetch pool id by staking address to show `Make stake` modal
     # instead of `Become a candidate` for the staking address which
     # has ever been a pool
-    pool_mining_address =
+    pool_id =
       try do
         validator_set_contract = ContractState.get(:validator_set_contract)
 
         ContractReader.perform_requests(
-          ContractReader.mining_by_staking_request(account),
+          ContractReader.id_by_staking_request(account),
           %{validator_set: validator_set_contract.address},
           validator_set_contract.abi
-        ).mining_address
+        ).pool_id
       rescue
         _ -> nil
       end
 
-    # convert zero address to nil
-    mining_address =
-      if pool_mining_address != "0x0000000000000000000000000000000000000000" do
-        pool_mining_address
+    # convert 0 to nil
+    pool_id =
+      if pool_id != 0 do
+        pool_id
       end
 
     socket =
       socket
       |> assign(:account, account)
-      |> assign(:mining_address, mining_address)
+      |> assign(:pool_id, pool_id)
       |> push_contracts()
 
     data =
@@ -520,7 +520,7 @@ defmodule BlockScoutWeb.StakesChannel do
 
       # if `staker` is a pool, prepend its address to the `pools` array
       pools =
-        if socket.assigns[:mining_address] != nil do
+        if socket.assigns[:pool_id] !== nil do
           [staker | pools]
         else
           pools
