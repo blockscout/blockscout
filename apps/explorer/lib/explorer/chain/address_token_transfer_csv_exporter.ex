@@ -20,7 +20,7 @@ defmodule Explorer.Chain.AddressTokenTransferCsvExporter do
     }
   ]
 
-  @page_size 150
+  @page_size 1000
   @paging_options %PagingOptions{page_size: @page_size + 1}
 
   @spec export(Address.t(), String.t(), String.t()) :: Enumerable.t()
