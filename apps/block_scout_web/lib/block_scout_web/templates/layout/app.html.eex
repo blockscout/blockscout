@@ -222,10 +222,10 @@
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/app.js") %>"></script>
     <% end %>
     <%= if @view_module == Elixir.BlockScoutWeb.BridgedTokensView ||
-        @view_module != Elixir.BlockScoutWeb.Tokens.TransferView ||
-        @view_module != Elixir.BlockScoutWeb.Tokens.ReadContractView ||
-        @view_module != Elixir.BlockScoutWeb.Tokens.HolderView ||
-        @view_module != Elixir.BlockScoutWeb.Tokens.InventoryView do %>
+        @view_module == Elixir.BlockScoutWeb.Tokens.TransferView ||
+        @view_module == Elixir.BlockScoutWeb.Tokens.ReadContractView ||
+        @view_module == Elixir.BlockScoutWeb.Tokens.HolderView ||
+        @view_module == Elixir.BlockScoutWeb.Tokens.InventoryView do %>
       <script defer data-cfasync="false" src="<%= static_path(@conn, "/js/add-to-mm.js") %>"></script>
     <% end %>
     <%=
