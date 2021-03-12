@@ -28,6 +28,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3700](https://github.com/poanetwork/blockscout/pull/3700) - Update tool versions
 - [#3697](https://github.com/poanetwork/blockscout/pull/3697) - Update hackney dependency
 - [#3696](https://github.com/poanetwork/blockscout/pull/3696) - Table loader fix
 - [#3688](https://github.com/poanetwork/blockscout/pull/3688) - Reorganize staking buttons
