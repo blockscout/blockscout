@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.CustomContractsHelpers do
+defmodule Explorer.CustomContractsHelpers do
   @moduledoc """
   Helpers to enable custom contracts themes
   """

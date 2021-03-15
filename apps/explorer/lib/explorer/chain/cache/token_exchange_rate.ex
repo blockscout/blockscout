@@ -51,14 +51,32 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     {:noreply, state}
   end
 
-  def cache_key(symbol) do
-    "token_symbol_exchange_rate_#{symbol}"
+  def cache_key(symbol_or_address_hash_str) do
+    "token_symbol_exchange_rate_#{symbol_or_address_hash_str}"
   end
 
-  def fetch(token_hash, symbol) do
+  def fetch(token_hash, address_hash_str) do
+    if cache_expired?(address_hash_str) || value_is_empty?(address_hash_str) do
+      Task.start_link(fn ->
+        update_cache_by_address_hash_str(token_hash, address_hash_str)
+      end)
+    end
+
+    cached_value = fetch_from_cache(cache_key(address_hash_str))
+
+    if is_nil(cached_value) || Decimal.cmp(cached_value, 0) == :eq do
+      fetch_from_db(token_hash)
+    else
+      cached_value
+    end
+  end
+
+  # fetching by symbol is not recommended to use because of possible collisions
+  # fetch() should be used instead
+  def fetch_by_symbol(token_hash, symbol) do
     if cache_expired?(symbol) || value_is_empty?(symbol) do
       Task.start_link(fn ->
-        update_cache(token_hash, symbol)
+        update_cache_by_symbol(token_hash, symbol)
       end)
     end
 
@@ -73,9 +91,9 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
 
   def cache_name, do: @cache_name
 
-  defp cache_expired?(symbol) do
+  defp cache_expired?(symbol_or_address_hash_str) do
     cache_period = token_exchange_rate_cache_period()
-    updated_at = fetch_from_cache("#{cache_key(symbol)}_#{@last_update_key}")
+    updated_at = fetch_from_cache("#{cache_key(symbol_or_address_hash_str)}_#{@last_update_key}")
 
     cond do
       is_nil(updated_at) -> true
@@ -84,18 +102,27 @@ defmodule Explorer.Chain.Cache.TokenExchangeRate do
     end
   end
 
-  defp value_is_empty?(symbol) do
-    value = fetch_from_cache(cache_key(symbol))
+  defp value_is_empty?(symbol_or_address_hash_str) do
+    value = fetch_from_cache(cache_key(symbol_or_address_hash_str))
     is_nil(value) || value == 0
   end
 
-  defp update_cache(token_hash, symbol) do
+  defp update_cache_by_symbol(token_hash, symbol) do
     put_into_cache("#{cache_key(symbol)}_#{@last_update_key}", current_time())
 
     exchange_rate = fetch_token_exchange_rate(symbol)
 
     put_into_db(token_hash, exchange_rate)
     put_into_cache(cache_key(symbol), exchange_rate)
+  end
+
+  defp update_cache_by_address_hash_str(token_hash, address_hash_str) do
+    put_into_cache("#{cache_key(address_hash_str)}_#{@last_update_key}", current_time())
+
+    exchange_rate = fetch_token_exchange_rate_by_address(address_hash_str)
+
+    put_into_db(token_hash, exchange_rate)
+    put_into_cache(cache_key(address_hash_str), exchange_rate)
   end
 
   def fetch_token_exchange_rate(symbol) do

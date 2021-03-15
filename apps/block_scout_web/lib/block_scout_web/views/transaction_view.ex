@@ -1,9 +1,9 @@
 defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.{AccessHelpers, AddressView, BlockView, CustomContractsHelpers, TabHelpers}
+  alias BlockScoutWeb.{AccessHelpers, AddressView, BlockView, TabHelpers}
   alias BlockScoutWeb.Cldr.Number
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, CustomContractsHelpers, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
   alias Explorer.Counters.AverageBlockTime
