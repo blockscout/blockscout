@@ -13,6 +13,7 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3707](https://github.com/poanetwork/blockscout/pull/3707) - Fetch bridged token price by address of foreign token, not by symbol
 - [#3686](https://github.com/poanetwork/blockscout/pull/3686) - BSC bridged tokens detection fix
 - [#3683](https://github.com/poanetwork/blockscout/pull/3683) - Token instance image IPFS link display fix
 - [#3655](https://github.com/poanetwork/blockscout/pull/3655) - Handle absence of readAll function in some old/legacy browsers

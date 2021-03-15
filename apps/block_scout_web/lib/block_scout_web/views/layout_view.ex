@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.LayoutView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, CustomContractsHelpers}
   alias Plug.Conn
   alias Poison.Parser
 
@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.LayoutView do
     }
   ]
 
-  alias BlockScoutWeb.{CustomContractsHelpers, SocialMedia}
+  alias BlockScoutWeb.SocialMedia
 
   def logo do
     Keyword.get(application_config(), :logo) || "/images/blockscout_logo.svg"

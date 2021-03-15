@@ -3,8 +3,8 @@ defmodule BlockScoutWeb.AddressView do
 
   require Logger
 
-  alias BlockScoutWeb.{AccessHelpers, CustomContractsHelpers, LayoutView}
-  alias Explorer.{Chain, Repo}
+  alias BlockScoutWeb.{AccessHelpers, LayoutView}
+  alias Explorer.{Chain, CustomContractsHelpers, Repo}
 
   alias Explorer.Chain.{
     Address,

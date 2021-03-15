@@ -1,10 +1,10 @@
 defmodule BlockScoutWeb.Tokens.OverviewView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, CustomContractsHelpers}
   alias Explorer.Chain.{Address, SmartContract, Token}
 
-  alias BlockScoutWeb.{AccessHelpers, CurrencyHelpers, CustomContractsHelpers, LayoutView}
+  alias BlockScoutWeb.{AccessHelpers, CurrencyHelpers, LayoutView}
 
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1, is_test?: 1]
 
