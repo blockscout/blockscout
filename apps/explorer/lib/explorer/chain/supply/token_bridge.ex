@@ -194,13 +194,18 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     omni_bridge_market_cap
   end
 
-  def get_current_price_for_bridged_token(_token_hash, symbol) when is_nil(symbol), do: nil
-  def get_current_price_for_bridged_token(token_hash, _symbol) when is_nil(token_hash), do: nil
+  def get_current_price_for_bridged_token(_token_hash, foreign_token_contract_address_hash)
+      when is_nil(foreign_token_contract_address_hash),
+      do: nil
 
-  def get_current_price_for_bridged_token(token_hash, symbol) do
-    bridged_token_symbol_for_price_fetching = bridged_token_symbol_mapping_to_get_price(symbol)
+  def get_current_price_for_bridged_token(token_hash, _foreign_token_contract_address_hash) when is_nil(token_hash),
+    do: nil
 
-    TokenExchangeRateCache.fetch(token_hash, bridged_token_symbol_for_price_fetching)
+  def get_current_price_for_bridged_token(token_hash, foreign_token_contract_address_hash) do
+    foreign_token_contract_address_hash_str =
+      "0x" <> Base.encode16(foreign_token_contract_address_hash.bytes, case: :lower)
+
+    TokenExchangeRateCache.fetch(token_hash, foreign_token_contract_address_hash_str)
   end
 
   def get_bridged_mainnet_tokens_list do
@@ -295,13 +300,5 @@ defmodule Explorer.Chain.Supply.TokenBridge do
       end)
 
     omni_bridge_market_cap
-  end
-
-  defp bridged_token_symbol_mapping_to_get_price(symbol) do
-    case symbol do
-      "POA20" -> "POA"
-      "yDAI+yUSDC+yUSDT+yTUSD" -> "yCurve"
-      symbol -> symbol
-    end
   end
 end
