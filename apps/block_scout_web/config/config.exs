@@ -44,7 +44,8 @@ config :block_scout_web,
   restricted_list_key: System.get_env("RESTRICTED_LIST_KEY", nil),
   dark_forest_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST"),
   dark_forest_addresses_v_0_5: System.get_env("CUSTOM_CONTRACT_ADDRESSES_DARK_FOREST_V_0_5"),
-  circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES")
+  circles_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_CIRCLES"),
+  test_tokens_addresses: System.get_env("CUSTOM_CONTRACT_ADDRESSES_TEST_TOKEN")
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
