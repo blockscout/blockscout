@@ -4280,7 +4280,7 @@ defmodule Explorer.Chain do
     token0_signature = "0x0dfe1681"
 
     # keccak 256 from token1()
-    token1_signature = "0x0dfe1681"
+    token1_signature = "0xd21220a7"
 
     # keccak 256 from totalSupply()
     total_supply_signature = "0x18160ddd"
