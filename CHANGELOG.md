@@ -13,6 +13,7 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3710](https://github.com/poanetwork/blockscout/pull/3710) - Missing @destination in bridged-tokens template
 - [#3707](https://github.com/poanetwork/blockscout/pull/3707) - Fetch bridged token price by address of foreign token, not by symbol
 - [#3686](https://github.com/poanetwork/blockscout/pull/3686) - BSC bridged tokens detection fix
 - [#3683](https://github.com/poanetwork/blockscout/pull/3683) - Token instance image IPFS link display fix
@@ -29,6 +30,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3709](https://github.com/poanetwork/blockscout/pull/3709) - Fix 413 Request Entity Too Large returned from single request batch
 - [#3708](https://github.com/poanetwork/blockscout/pull/3708) - NPM 6 -> 7
 - [#3701](https://github.com/poanetwork/blockscout/pull/3701) - Increase LP tokens calc process re-check interval
 - [#3700](https://github.com/poanetwork/blockscout/pull/3700) - Update tool versions
