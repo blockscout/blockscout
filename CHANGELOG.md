@@ -30,6 +30,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3712](https://github.com/poanetwork/blockscout/pull/3712) - POSDAO refactoring: use pool ID instead of staking address
 - [#3709](https://github.com/poanetwork/blockscout/pull/3709) - Fix 413 Request Entity Too Large returned from single request batch
 - [#3701](https://github.com/poanetwork/blockscout/pull/3701) - Increase LP tokens calc process re-check interval
 - [#3700](https://github.com/poanetwork/blockscout/pull/3700) - Update tool versions
