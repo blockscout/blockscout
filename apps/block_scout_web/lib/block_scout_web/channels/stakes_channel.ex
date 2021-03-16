@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.StakesChannel do
     # fetch pool id by staking address to show `Make stake` modal
     # instead of `Become a candidate` for the staking address which
     # has ever been a pool
-    pool_id =
+    pool_id_raw =
       try do
         validator_set_contract = ContractState.get(:validator_set_contract)
 
@@ -54,8 +54,8 @@ defmodule BlockScoutWeb.StakesChannel do
 
     # convert 0 to nil
     pool_id =
-      if pool_id != 0 do
-        pool_id
+      if pool_id_raw != 0 do
+        pool_id_raw
       end
 
     socket =
