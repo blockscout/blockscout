@@ -2,6 +2,8 @@
 <link rel="stylesheet" href="<%= static_path(@conn, "/css/awesomplete.css") %>">
 <script src="<%= static_path(@conn, "/js/awesomplete.min.js") %>"></script>
 <script src="<%= static_path(@conn, "/js/awesomplete-util.min.js") %>"></script>
+<% staking_enabled_in_menu = Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled_in_menu] %>
+<% apps_menu = Application.get_env(:block_scout_web, :apps_menu) %>
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar" id="top-navbar">
   <script>
     if (localStorage.getItem("current-color-mode") === "dark") {
@@ -115,7 +117,7 @@
             </li>
           <% end %>
         <% end %>
-        <%= if Application.get_env(:block_scout_web, :apps_menu) == true do %>
+        <%= if apps_menu == true do %>
           <li class="nav-item dropdown">
             <a href="#" role="button" id="navbarAppsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <span class="nav-link-icon">
@@ -127,7 +129,7 @@
               <div class="row" style="padding: 10px;">
                 <div class="col-xs-12 col-md-4 col-lg-4">
                   <h3 class="apps-menu-header pl-2"><b><%= gettext("Apps") %></b></h3>
-                  <%= if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:staking_enabled] do %>
+                  <%= if staking_enabled_in_menu do %>
                     <a class="dropdown-item <%= #{tab_status("validators", @conn.request_path)} %>" href="<%= validators_path(@conn, :index) %>">
                       <%= gettext("Staking on xDai") %>
                     </a>
