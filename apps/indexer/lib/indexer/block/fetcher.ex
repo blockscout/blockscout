@@ -230,7 +230,8 @@ defmodule Indexer.Block.Fetcher do
          tokens =
            normal_tokens ++
              (if gold_token_enabled do
-                [%{contract_address_hash: gold_token, type: "ERC-20"}]
+                []
+                # [%{contract_address_hash: gold_token, type: "ERC-20"}]
               else
                 []
               end),
@@ -291,7 +292,7 @@ defmodule Indexer.Block.Fetcher do
                account_names: %{params: account_names},
                celo_signers: %{params: signers},
                token_transfers: %{params: token_transfers},
-               tokens: %{params: tokens},
+               tokens: %{params: tokens, on_conflict: :nothing},
                transactions: %{params: transactions_with_receipts},
                exchange_rate: %{params: exchange_rates},
                wallets: %{params: celo_wallets}
