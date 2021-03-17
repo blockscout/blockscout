@@ -8,7 +8,11 @@
     </button>
     <span style="font-size: 1.3em;">
         <i style="color: #f7b32b;" class="fa fa-info-circle ml-1"></i>
-        Due to high load volumes, current staking data display may lag behind actual transactions. Transactions are being processed correctly on-chain. We are currently working to address this UI display issue.
+        <%= if @message do %>
+          <%= "#{@message}" %>
+        <% else %>
+          Due to high load volumes, current staking data display may lag behind actual transactions. Transactions are being processed correctly on-chain. We are currently working to address this UI display issue.
+        <% end %>
     </span>
   </div>
 </div>
