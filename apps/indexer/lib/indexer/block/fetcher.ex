@@ -230,8 +230,7 @@ defmodule Indexer.Block.Fetcher do
          tokens =
            normal_tokens ++
              (if gold_token_enabled do
-                []
-                # [%{contract_address_hash: gold_token, type: "ERC-20"}]
+                [%{contract_address_hash: gold_token, type: "ERC-20"}]
               else
                 []
               end),
