@@ -1699,6 +1699,10 @@ defmodule Explorer.Chain do
     Repo.one!(query, timeout: :infinity) || 0
   end
 
+  def fetch_block_by_hash(block_hash) do
+    Repo.get(Block, block_hash)
+  end
+
   @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
   def fetch_sum_coin_total_supply_minus_burnt do
     {:ok, burn_address_hash} = string_to_address_hash("0x0000000000000000000000000000000000000000")
@@ -2888,6 +2892,16 @@ defmodule Explorer.Chain do
     from(transaction in query,
       where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
     )
+  end
+
+  def pending_transactions_list do
+    query =
+      from(transaction in Transaction,
+        where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
+      )
+
+    query
+    |> Repo.all()
   end
 
   @doc """
