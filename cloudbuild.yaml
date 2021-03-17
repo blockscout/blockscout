@@ -13,4 +13,4 @@ images:
   - "gcr.io/$PROJECT_ID/blockscout:$COMMIT_SHA"
   - "gcr.io/$PROJECT_ID/blockscout:api-$COMMIT_SHA"
 
-timeout: 3600s
+timeout: 7200s
