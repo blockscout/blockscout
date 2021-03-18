@@ -32,6 +32,7 @@
 ### Chore
 - [#3714](https://github.com/poanetwork/blockscout/pull/3714) - Application announcements management: whole explorer, staking dapp
 - [#3709](https://github.com/poanetwork/blockscout/pull/3709) - Fix 413 Request Entity Too Large returned from single request batch
+- [#3708](https://github.com/poanetwork/blockscout/pull/3708) - NPM 6 -> 7
 - [#3701](https://github.com/poanetwork/blockscout/pull/3701) - Increase LP tokens calc process re-check interval
 - [#3700](https://github.com/poanetwork/blockscout/pull/3700) - Update tool versions
 - [#3697](https://github.com/poanetwork/blockscout/pull/3697) - Update hackney dependency
