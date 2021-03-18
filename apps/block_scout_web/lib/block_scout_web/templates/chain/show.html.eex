@@ -60,7 +60,7 @@
             <%= if Enum.member?(@chart_config.market, :market_cap) do %>
             <div class="dashboard-banner-chart-legend-item">
                 <span class="dashboard-banner-chart-legend-label">
-                <%= gettext "Market Cap" %>
+                <%= gettext "Total Value Locked" %>
                 </span>
                 <div>
                   <% total_market_cap = market_cap(@market_cap_calculation, @exchange_rate) %>
