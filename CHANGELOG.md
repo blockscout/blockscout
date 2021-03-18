@@ -30,6 +30,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3717](https://github.com/poanetwork/blockscout/pull/3717) - Update alpine-elixir-phoenix 1.11.3
 - [#3714](https://github.com/poanetwork/blockscout/pull/3714) - Application announcements management: whole explorer, staking dapp
 - [#3709](https://github.com/poanetwork/blockscout/pull/3709) - Fix 413 Request Entity Too Large returned from single request batch
 - [#3708](https://github.com/poanetwork/blockscout/pull/3708) - NPM 6 -> 7
