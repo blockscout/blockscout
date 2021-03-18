@@ -15,11 +15,11 @@ $dashboard-banner-network-plain-container-height: 205px;
 $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !default;
 
 .dashboard-banner-container {
+  margin-top: -3rem;
   margin-bottom: 3rem;
   overflow: hidden;
   padding: 0;
   position: relative;
-  height: 249px;
   @include media-breakpoint-down(sm) {
       height: auto;
   }

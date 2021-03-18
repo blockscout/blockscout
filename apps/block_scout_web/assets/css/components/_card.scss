@@ -190,15 +190,17 @@ $card-tab-icon-color-active: #fff !default;
 }
 
 .card-tab {
+  display: flex;
   align-items: center;
+  justify-content: center;
   background-color: $card-background-color;
   color: #333;
   cursor: pointer;
-  display: flex;
+  flex-grow: 1;
   font-size: 14px;
   font-weight: normal;
   height: 70px;
-  padding: 0 25px;
+  padding: 0 10px;
   text-align: center;
   transition: $transition-cont;
 
