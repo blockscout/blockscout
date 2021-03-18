@@ -13,5 +13,5 @@ images:
   - "gcr.io/$PROJECT_ID/blockscout:$COMMIT_SHA"
   - "gcr.io/$PROJECT_ID/blockscout:api-$COMMIT_SHA"
 options:
-    machineType: 'N1_HIGHCPU_8'
+    machineType: 'E2_HIGHCPU_32'
 timeout: 7200s
