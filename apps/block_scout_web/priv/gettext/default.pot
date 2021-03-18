@@ -2199,7 +2199,7 @@ msgid "It's me!"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:765
+#: lib/block_scout_web/channels/stakes_channel.ex:769
 msgid "JSON RPC error"
 msgstr ""
 
@@ -2274,7 +2274,7 @@ msgid "Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:821
+#: lib/block_scout_web/channels/stakes_channel.ex:825
 msgid "Pools searching is already in progress for this address"
 msgstr ""
 
@@ -2300,7 +2300,7 @@ msgid "Remove My Pool"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:862
+#: lib/block_scout_web/channels/stakes_channel.ex:866
 msgid "Reward calculating is already in progress for this address"
 msgstr ""
 
@@ -2374,7 +2374,7 @@ msgid "Stakes Ratio"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:865
+#: lib/block_scout_web/channels/stakes_channel.ex:869
 msgid "Staking epochs are not specified or not in the allowed range"
 msgstr ""
 
@@ -2469,19 +2469,19 @@ msgid "Unable to find any pools you could claim a reward from."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:828
-#: lib/block_scout_web/channels/stakes_channel.ex:875
+#: lib/block_scout_web/channels/stakes_channel.ex:832
+#: lib/block_scout_web/channels/stakes_channel.ex:879
 msgid "Unknown address of Staking contract. Please, contact support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:868
+#: lib/block_scout_web/channels/stakes_channel.ex:872
 msgid "Unknown pool staking address. Please, contact support"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/channels/stakes_channel.ex:824
-#: lib/block_scout_web/channels/stakes_channel.ex:871
+#: lib/block_scout_web/channels/stakes_channel.ex:828
+#: lib/block_scout_web/channels/stakes_channel.ex:875
 msgid "Unknown staker address. Please, choose your account in MetaMask"
 msgstr ""
 

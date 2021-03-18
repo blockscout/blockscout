@@ -90,10 +90,10 @@ async function becomeCandidate ($modal, store, msg) {
     if (!isStakingAllowed(state)) return false
 
     const validatorSetContract = state.validatorSetContract
-    const stakingAddress = await validatorSetContract.methods.stakingByMiningAddress(miningAddress).call()
+    const hasEverBeenMiningAddress = await validatorSetContract.methods.hasEverBeenMiningAddress(miningAddress).call()
 
-    if (stakingAddress !== '0x0000000000000000000000000000000000000000') {
-      displayInputError($miningAddressInput, `This mining address is already bound to another staking address (<span title="${stakingAddress}">${shortenAddress(stakingAddress)}</span>). Please use another mining address.`)
+    if (hasEverBeenMiningAddress !== '0') {
+      displayInputError($miningAddressInput, 'This mining address has already been used for another pool. Please use another mining address.')
       $modal.find('form button').blur()
       return false
     }
@@ -105,10 +105,6 @@ async function becomeCandidate ($modal, store, msg) {
     openErrorModal('Error', err.message)
     Sentry.captureException(err)
   }
-}
-
-function shortenAddress (address) {
-  return address.substring(0, 6) + '–' + address.substring(address.length - 6)
 }
 
 function isCandidateStakeValid (value, store, msg) {
