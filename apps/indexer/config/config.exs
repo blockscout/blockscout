@@ -14,7 +14,7 @@ block_transformers = %{
 configured_transformer = System.get_env("BLOCK_TRANSFORMER") || "celo"
 
 port =
-  case System.get_env("HEALTH_CHECK_PORT") && Integer.parse(System.get_env("HEALTH_CHECK_PORT")) do
+  case System.get_env("PORT") && Integer.parse(System.get_env("PORT")) do
     {port, _} -> port
     :error -> nil
     nil -> nil
