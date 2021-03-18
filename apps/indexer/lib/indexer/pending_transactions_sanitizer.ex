@@ -10,6 +10,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
 
   import EthereumJSONRPC, only: [json_rpc: 2, request: 1]
 
+  alias Ecto.Changeset
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Import.Runner.Blocks
 
@@ -70,18 +71,32 @@ defmodule Indexer.PendingTransactionsSanitizer do
       pending_tx_hash_str = "0x" <> Base.encode16(pending_tx.hash.bytes, case: :lower)
 
       with {:ok, result} <-
-             %{id: ind, method: "eth_getTransactionReceipt", params: [pending_tx_hash_str]}
+             %{id: ind, method: "eth_getTransactionByHash", params: [pending_tx_hash_str]}
              |> request()
              |> json_rpc(json_rpc_named_arguments) do
         if result do
           block_hash = Map.get(result, "blockHash")
 
+          if block_hash do
+            Logger.debug(
+              "Transaction with hash #{pending_tx_hash_str} already included into the block #{block_hash}. We should invalidate consensus for it in order to re-fetch transactions",
+              fetcher: :pending_transactions_to_refetch
+            )
+
+            fetch_block_and_invalidate(block_hash)
+          else
+            Logger.debug(
+              "Transaction with hash #{pending_tx_hash_str} is still pending. Do nothing.",
+              fetcher: :pending_transactions_to_refetch
+            )
+          end
+        else
           Logger.debug(
-            "Transaction #{pending_tx_hash_str} already included into the block #{block_hash}. We should invalidate consensus for it in order to re-fetch transactions",
+            "Transaction with hash #{pending_tx_hash_str} doesn't exist in the node anymore. We should remove it from Blockscout DB.",
             fetcher: :pending_transactions_to_refetch
           )
 
-          fetch_block_and_invalidate(block_hash)
+          fetch_pending_transaction_and_delete(pending_tx)
         end
       end
     end)
@@ -89,6 +104,29 @@ defmodule Indexer.PendingTransactionsSanitizer do
     Logger.debug("Pending transactions are sanitized",
       fetcher: :pending_transactions_to_refetch
     )
+  end
+
+  defp fetch_pending_transaction_and_delete(transaction) do
+    pending_tx_hash_str = "0x" <> Base.encode16(transaction.hash.bytes, case: :lower)
+
+    case transaction
+         |> Changeset.change()
+         |> Repo.delete() do
+      {:ok, _transaction} ->
+        Logger.debug(
+          "Transaction with hash #{pending_tx_hash_str} successfully deleted from Blockscout DB because it doesn't exist in the archive node anymore",
+          fetcher: :pending_transactions_to_refetch
+        )
+
+      {:error, changeset} ->
+        Logger.debug(
+          [
+            "Deletion of pending transaction with hash #{pending_tx_hash_str} from Blockscout DB failed",
+            inspect(changeset)
+          ],
+          fetcher: :pending_transactions_to_refetch
+        )
+    end
   end
 
   defp fetch_block_and_invalidate(block_hash) do
