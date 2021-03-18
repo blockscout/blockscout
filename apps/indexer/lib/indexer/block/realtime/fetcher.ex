@@ -82,8 +82,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           max_number_seen: max_number_seen,
           timer: timer
         } = state
-      )
-    do
+      ) do
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
     {new_previous_number, new_max_number} =
@@ -113,7 +112,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   def handle_info(
         {subscription, {:ok, %{"number" => quantity}}},
         %__MODULE__{
-          subscription: %Subscription{} = subscription,
+          subscription: %Subscription{} = subscription
         } = state
       )
       when is_binary(quantity) do
