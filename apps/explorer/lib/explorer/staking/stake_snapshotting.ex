@@ -71,7 +71,7 @@ defmodule Explorer.Staking.StakeSnapshotting do
                 staking_address_hash: pool_staking_address
               },
               ContractReader.perform_requests(
-                ContractReader.active_delegators_request(pool_id, block_number) ++
+                ContractReader.active_delegators_request(pool_id, block_number, new_signatures) ++
                   snapshotted_pool_amounts_requests(pool_id, pool_staking_address, block_number, new_signatures),
                 contracts,
                 abi

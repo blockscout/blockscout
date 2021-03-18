@@ -46,10 +46,18 @@ defmodule Explorer.Staking.ContractReader do
     ]
   end
 
-  def active_delegators_request(pool_id, block_number) do
+  def active_delegators_request(pool_id, block_number, new_signatures) do
+    pool_delegators_signature =
+      if new_signatures do
+        # 561c4c81 = keccak256(poolDelegators(uint256))
+        "561c4c81"
+      else
+        # 9ea8082b = keccak256(poolDelegators(address))
+        "9ea8082b"
+      end
+
     [
-      # 561c4c81 = keccak256(poolDelegators(uint256))
-      active_delegators: {:staking, "561c4c81", [pool_id], block_number}
+      active_delegators: {:staking, pool_delegators_signature, [pool_id], block_number}
     ]
   end
 
@@ -379,7 +387,7 @@ defmodule Explorer.Staking.ContractReader do
 
   def pool_staking_requests(pool_id, block_number) do
     [
-      active_delegators: active_delegators_request(pool_id, block_number)[:active_delegators],
+      active_delegators: active_delegators_request(pool_id, block_number, true)[:active_delegators],
       # a1fc2753 = keccak256(poolDelegatorsInactive(uint256))
       inactive_delegators: {:staking, "a1fc2753", [pool_id], block_number},
       # bbbaf8c8 = keccak256(isPoolActive(uint256))
