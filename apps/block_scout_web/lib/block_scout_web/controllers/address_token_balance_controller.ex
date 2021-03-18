@@ -2,8 +2,8 @@ defmodule BlockScoutWeb.AddressTokenBalanceController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1]
-  alias BlockScoutWeb.{AccessHelpers, CustomContractsHelpers}
-  alias Explorer.{Chain, Market}
+  alias BlockScoutWeb.AccessHelpers
+  alias Explorer.{Chain, CustomContractsHelpers, Market}
   alias Indexer.Fetcher.TokenBalanceOnDemand
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
