@@ -29,7 +29,7 @@ config :explorer,
 
 config :explorer, Explorer.Counters.AverageBlockTime,
   enabled: true,
-  period: timer.minutes(5)
+  period: :timer.minutes(5)
 
 config :explorer, Explorer.Celo.AbiHandler, enabled: true
 
