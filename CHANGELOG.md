@@ -33,6 +33,7 @@
 ### Chore
 - [#3717](https://github.com/poanetwork/blockscout/pull/3717) - Update alpine-elixir-phoenix 1.11.3
 - [#3714](https://github.com/poanetwork/blockscout/pull/3714) - Application announcements management: whole explorer, staking dapp
+- [#3712](https://github.com/poanetwork/blockscout/pull/3712) - POSDAO refactoring: use pool ID instead of staking address
 - [#3709](https://github.com/poanetwork/blockscout/pull/3709) - Fix 413 Request Entity Too Large returned from single request batch
 - [#3708](https://github.com/poanetwork/blockscout/pull/3708) - NPM 6 -> 7
 - [#3701](https://github.com/poanetwork/blockscout/pull/3701) - Increase LP tokens calc process re-check interval
