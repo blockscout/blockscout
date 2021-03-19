@@ -43,7 +43,7 @@ config :indexer,
     String.to_integer(System.get_env("TOKEN_METADATA_UPDATE_INTERVAL") || "#{10 * 60 * 60}"),
   # bytes
   memory_limit: 1 <<< 32,
-  health_check_port: port || 4040,
+  health_check_port: port || 4001,
   first_block: System.get_env("FIRST_BLOCK") || "0",
   last_block: System.get_env("LAST_BLOCK") || ""
 

@@ -164,7 +164,7 @@
 
       window.onload = applyDarkMode()
     </script>
-    <div class="layout-container" data-page="app-container">
+    <div class="layout-container">
       <%= if not Explorer.Chain.finished_indexing?() do %>
         <div class="alert alert-warning text-center mb-0 p-3" data-selector="indexed-status">
           <span class="loading-spinner-small mr-2">
@@ -176,33 +176,10 @@
         </div>
       <% end %>
 
-      <div class="survey-banner alert text-center mb-0 p-3" hidden data-selector="survey-banner">
-        <button class="survey-banner-dismiss btn btn-no-border d-inline mr-2" type="button">
-          <i class="fas fa-times"></i>
-        </button>
-        <%= gettext("Help improve the Celo Block Explorer! Please take a quick moment to answer ") %>
-        <%= link(
-          gettext("this quick feedback survey."),
-          to: "https://forms.gle/7ob72NzoC1dbvKuB7"
-        ) %>
-      </div>
-
-      <div class="cookie-banner" hidden data-selector="cookie-banner">
-        <div class="cookie-banner-text text-center p-4" data-selector="cookies-banner">
-          <%= gettext("We use cookies on our site to allow tracking of pages and links to help us improve your experience. By selecting Agree, you consent to our use of cookies in accordance with our ") %>
-          <%= link(
-            gettext("Privacy Policy."),
-            to: "https://celo.org/privacy"
-          ) %>
-          <div class="mt-3">
-            <button class="btn btn-disagree d-inline mr-4" data-selector="decline-cookies">Disagree</button>
-            <button class="btn btn-agree d-inline" data-selector="accept-cookies">Agree</button>
-          </div>
-        </div>
-      </div>
+      <%= render BlockScoutWeb.LayoutView, "_cookie_banner.html", assigns %>
       <%= render BlockScoutWeb.LayoutView, "_topnav.html", assigns %>
 
-      <main class="pt-5">
+      <main>
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
         <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
         <%= @inner_content %>

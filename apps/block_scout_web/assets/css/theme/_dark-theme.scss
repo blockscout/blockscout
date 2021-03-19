@@ -77,6 +77,14 @@ $dark-stakes-banned-background: #3e314c;
 		filter: invert(1);
 	}
 
+	// cookie banner
+	.cookie-banner {
+		background: $dark-primary;
+		a {
+			color: #fff !important;
+		}
+	}
+
 	// footer
 	.footer {
 		background: $dark-light-bg;
@@ -97,8 +105,7 @@ $dark-stakes-banned-background: #3e314c;
 	// hero stats
 
 	.layout-container .dashboard-banner-container {
-		background-image: none;
-		background-color: $dark-bg;
+		background-color: $dark-light-bg;
 	}
 	.dashboard-banner-network-plain-container,
 	.dashboard-banner-network-plain-container::after {

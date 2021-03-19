@@ -23,7 +23,6 @@ defmodule Explorer.ExchangeRates.Source do
   defp fetch_exchange_rates_request(_source, source_url) when is_nil(source_url), do: {:error, "Source URL is nil"}
 
   defp fetch_exchange_rates_request(source, source_url) do
-    IO.inspect(source_url)
     case http_request(source_url) do
       {:ok, result} = resp ->
         if is_map(result) do

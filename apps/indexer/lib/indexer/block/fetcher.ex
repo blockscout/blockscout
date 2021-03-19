@@ -302,7 +302,7 @@ defmodule Indexer.Block.Fetcher do
                account_names: %{params: account_names},
                celo_signers: %{params: signers},
                token_transfers: %{params: token_transfers},
-               tokens: %{params: tokens},
+               tokens: %{params: tokens, on_conflict: :nothing},
                transactions: %{params: transactions_with_receipts},
                exchange_rate: %{params: exchange_rates},
                wallets: %{params: celo_wallets}

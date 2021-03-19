@@ -69,7 +69,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
     block_interval = Map.get(named_arguments, :block_interval, @block_interval)
     minimum_interval = div(block_interval, 2)
-    bound_interval = BoundInterval.within(minimum_interval..(minimum_interval * 10))
+    bound_interval = BoundInterval.within(minimum_interval..(minimum_interval * 2))
 
     %__MODULE__{
       fetcher: %Catchup.Fetcher{block_fetcher: block_fetcher, memory_monitor: Map.get(named_arguments, :memory_monitor)},
@@ -235,6 +235,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
     if rem(state.elapsed, 10) == 0 do
       Repo.query!("refresh materialized view celo_accumulated_rewards;")
       Repo.query!("refresh materialized view celo_attestation_stats;")
+      Repo.query!("refresh materialized view celo_wallet_accounts;")
 
       Logger.info(fn ->
         ["Refreshed material views."]

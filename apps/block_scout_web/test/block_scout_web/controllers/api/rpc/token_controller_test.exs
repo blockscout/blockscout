@@ -196,7 +196,10 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
         |> insert(to_address: contract_address)
         |> with_block()
 
+      log = insert(:log, address: contract_address, transaction: transaction)
+
       insert(:token_transfer,
+        log_index: log.index,
         transaction: transaction,
         from_address: contract_address,
         to_address: address,
@@ -204,8 +207,6 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
         block: transaction.block,
         token_id: 10
       )
-
-      log = insert(:log, address: contract_address, transaction: transaction)
 
       params = %{
         "module" => "token",
@@ -235,6 +236,69 @@ defmodule BlockScoutWeb.API.RPC.TokenControllerTest do
           "toAddressHash" => "#{address.hash}"
         }
       ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "successful case with multiple transfers and logs", %{conn: conn} do
+      contract_address = insert(:contract_address)
+      insert(:token, contract_address: contract_address)
+      address = insert(:address)
+
+      transaction =
+        %Transaction{block: block} =
+        :transaction
+        |> insert(to_address: contract_address)
+        |> with_block()
+
+      expected_result =
+        for i <- 0..3, i > 0 do
+          log = insert(:log, address: contract_address, transaction: transaction)
+
+          insert(:token_transfer,
+            log_index: log.index,
+            transaction: transaction,
+            from_address: contract_address,
+            to_address: address,
+            token_contract_address: contract_address,
+            block: transaction.block,
+            token_id: 10
+          )
+
+          %{
+            "address" => "#{contract_address.hash}",
+            "topics" => get_topics(log),
+            "data" => "#{log.data}",
+            "blockNumber" => integer_to_hex(transaction.block_number),
+            "timeStamp" => datetime_to_hex(block.timestamp),
+            "gasPrice" => decimal_to_hex(transaction.gas_price.value),
+            "gasUsed" => decimal_to_hex(transaction.gas_used),
+            "gatewayFeeRecipient" => "",
+            "gatewayFee" => "",
+            "feeCurrency" => "",
+            "logIndex" => integer_to_hex(log.index),
+            "transactionHash" => "#{transaction.hash}",
+            "transactionIndex" => integer_to_hex(transaction.index),
+            "amount" => "1",
+            "fromAddressHash" => "#{contract_address.hash}",
+            "toAddressHash" => "#{address.hash}"
+          }
+        end
+
+      params = %{
+        "module" => "token",
+        "action" => "tokentx",
+        "fromBlock" => "0",
+        "toBlock" => "latest",
+        "contractaddress" => "#{contract_address.hash}"
+      }
 
       assert response =
                conn

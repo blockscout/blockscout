@@ -206,7 +206,17 @@ msgid "Block Height: %{height}"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/transaction/overview.html.eex:83
+=======
+#: lib/block_scout_web/templates/layout/app.html.eex:27
+#: lib/block_scout_web/templates/layout/app.html.eex:74
+msgid "Block Proposed, awaiting import..."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/overview.html.eex:59
+>>>>>>> 7992365f6242b9c4be3ad043dcfe379f2ab836f6
 msgid "Block Number"
 msgstr ""
 
@@ -234,7 +244,12 @@ msgid "Blocks"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/layout/app.html.eex:27
+=======
+#: lib/block_scout_web/templates/layout/app.html.eex:26
+#: lib/block_scout_web/templates/layout/app.html.eex:73
+>>>>>>> 7992365f6242b9c4be3ad043dcfe379f2ab836f6
 msgid "Blocks Indexed"
 msgstr ""
 
@@ -757,8 +772,14 @@ msgid "TX Fee"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:27
 msgid "There are no holders for this Token."
+=======
+#: lib/block_scout_web/templates/layout/app.html.eex:28
+#: lib/block_scout_web/templates/layout/app.html.eex:75
+msgid "Indexing Tokens"
+>>>>>>> 7992365f6242b9c4be3ad043dcfe379f2ab836f6
 msgstr ""
 
 #, elixir-format
@@ -803,9 +824,15 @@ msgid "There are no transactions for this block."
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/tokens/instance/transfer/index.html.eex:28
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:26
 msgid "There are no transfers for this Token."
+=======
+#: lib/block_scout_web/templates/layout/app.html.eex:29
+#: lib/block_scout_web/templates/layout/app.html.eex:76
+msgid "Less than"
+>>>>>>> 7992365f6242b9c4be3ad043dcfe379f2ab836f6
 msgstr ""
 
 #, elixir-format
@@ -896,8 +923,17 @@ msgid "Indexed?"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:3
 msgid "Input"
+=======
+#: lib/block_scout_web/templates/chain/show.html.eex:23
+#: lib/block_scout_web/templates/layout/app.html.eex:30
+#: lib/block_scout_web/templates/layout/app.html.eex:77
+#: lib/block_scout_web/views/address_view.ex:189
+#: lib/block_scout_web/views/address_view.ex:189
+msgid "Market Cap"
+>>>>>>> 7992365f6242b9c4be3ad043dcfe379f2ab836f6
 msgstr ""
 
 #, elixir-format
@@ -1134,8 +1170,13 @@ msgid "Potential matches from our contract method database:"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/chain/show.html.eex:42
 #: lib/block_scout_web/templates/layout/app.html.eex:32
+=======
+#: lib/block_scout_web/templates/layout/app.html.eex:31
+#: lib/block_scout_web/templates/layout/app.html.eex:78
+>>>>>>> 7992365f6242b9c4be3ad043dcfe379f2ab836f6
 msgid "Price"
 msgstr ""
 
@@ -1618,6 +1659,23 @@ msgid "at"
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
+=======
+#: lib/block_scout_web/templates/address/_balance_card.html.eex:15
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:20
+#: lib/block_scout_web/templates/layout/app.html.eex:79
+#: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:20
+#: lib/block_scout_web/templates/transaction/_tile.html.eex:29
+#: lib/block_scout_web/templates/transaction/overview.html.eex:221
+#: lib/block_scout_web/templates/transaction/overview.html.eex:256
+#: lib/block_scout_web/views/transaction_view.ex:303
+#: lib/block_scout_web/views/transaction_view.ex:303
+#: lib/block_scout_web/views/wei_helpers.ex:78
+msgid "CELO"
+msgstr ""
+
+#, elixir-format
+>>>>>>> 7992365f6242b9c4be3ad043dcfe379f2ab836f6
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:12
 msgid "custom RPC"
 msgstr ""
@@ -2757,6 +2815,7 @@ msgid "There is no decompiled contracts for this address."
 msgstr ""
 
 #, elixir-format
+<<<<<<< HEAD
 #: lib/block_scout_web/templates/api_docs/eth_rpc.html.eex:7
 msgid "This API is provided to support some rpc methods in the exact format specified for Celo nodes, which can be found "
 msgstr ""
@@ -2777,6 +2836,25 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:192
 msgid "We use cookies on our site to allow tracking of pages and links to help us improve your experience. By selecting Agree, you consent to our use of cookies in accordance with our "
+=======
+#: lib/block_scout_web/templates/layout/_cookie_banner.html.eex:11
+msgid "Privacy Policy."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_cookie_banner.html.eex:9
+msgid " to help improve this website. Understand more in our "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_cookie_banner.html.eex:4
+msgid "Allow tracking of my activity on "
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_cookie_banner.html.eex:6
+msgid "explorer.celo.org"
+>>>>>>> 7992365f6242b9c4be3ad043dcfe379f2ab836f6
 msgstr ""
 
 #, elixir-format

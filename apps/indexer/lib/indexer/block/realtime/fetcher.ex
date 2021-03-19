@@ -76,17 +76,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @impl GenServer
   def handle_info(
-        {subscription, {:ok, %{"number" => quantity}}},
+        {:got_block, number},
         %__MODULE__{
           block_fetcher: %Block.Fetcher{} = block_fetcher,
-          subscription: %Subscription{} = subscription,
           previous_number: previous_number,
           max_number_seen: max_number_seen,
           timer: timer
         } = state
-      )
-      when is_binary(quantity) do
-    number = quantity_to_integer(quantity)
+      ) do
 
     if number > 0 do
       Publisher.broadcast([{:last_block_number, number}], :realtime)
@@ -108,6 +105,20 @@ defmodule Indexer.Block.Realtime.Fetcher do
          max_number_seen: new_max_number,
          timer: new_timer
      }}
+  end
+
+  @impl GenServer
+  def handle_info(
+        {subscription, {:ok, %{"number" => quantity}}},
+        %__MODULE__{
+          subscription: %Subscription{} = subscription
+        } = state
+      )
+      when is_binary(quantity) do
+    number = quantity_to_integer(quantity)
+    Process.send_after(self(), {:got_block, number}, 500)
+
+    {:noreply, state}
   end
 
   @impl GenServer

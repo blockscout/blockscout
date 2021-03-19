@@ -16,7 +16,6 @@ $dashboard-banner-network-plain-container-height: 205px;
 $dashboard-banner-chart-axis-font-color: $dashboard-stats-item-value-color !default;
 
 .dashboard-banner-container {
-  @include gradient-container();
   margin-bottom: 3rem;
   overflow: hidden;
   padding: 0;

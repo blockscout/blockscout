@@ -1,0 +1,6 @@
+# Lines starting with '#' are comments.
+# Each line is a file pattern followed by one or more owners.
+# For details on acceptable file patterns, please refer to the [Github Documentation](https://help.github.com/articles/about-codeowners/)
+
+# default owners
+* @celo-org/core-services
