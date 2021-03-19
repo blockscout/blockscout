@@ -94,8 +94,13 @@ defmodule BlockScoutWeb.SmartContractView do
   end
 
   def values_with_type(value, type, _components) when type in [:address, "address", "address payable"] do
-    {:ok, address} = Address.cast(value)
-    render_type_value("address", to_string(address))
+    case Address.cast(value) do
+      {:ok, address} ->
+        render_type_value("address", to_string(address))
+
+      _ ->
+        ""
+    end
   end
 
   def values_with_type(value, "string", _components), do: render_type_value("string", value)
