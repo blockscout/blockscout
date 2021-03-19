@@ -187,8 +187,8 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
       expected_result = %{
         "coin_btc" => to_string(eth.btc_value),
         "coin_btc_timestamp" => expected_timestamp,
-        "coin_btc" => to_string(eth.usd_value),
-        "coin_btc_timestamp" => expected_timestamp
+        "coin_usd" => to_string(eth.usd_value),
+        "coin_usd_timestamp" => expected_timestamp
       }
 
       assert response =
