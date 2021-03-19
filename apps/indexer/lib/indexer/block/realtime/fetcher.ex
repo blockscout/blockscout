@@ -140,6 +140,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
      }}
   end
 
+  # don't handle other messages (e.g. :ssl_closed)
+  def handle_info(_, state) do
+    {:noreply, state}
+  end
+
   defp subscribe_to_new_heads(%__MODULE__{subscription: nil} = state, subscribe_named_arguments)
        when is_list(subscribe_named_arguments) do
     case EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments) do
