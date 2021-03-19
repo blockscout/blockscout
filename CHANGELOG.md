@@ -31,6 +31,7 @@
 - [#3577](https://github.com/poanetwork/blockscout/pull/3577) - Eliminate GraphiQL page XSS attack
 
 ### Chore
+- [#3719](https://github.com/poanetwork/blockscout/pull/3719) - Rename ethprice API endpoint
 - [#3717](https://github.com/poanetwork/blockscout/pull/3717) - Update alpine-elixir-phoenix 1.11.3
 - [#3714](https://github.com/poanetwork/blockscout/pull/3714) - Application announcements management: whole explorer, staking dapp
 - [#3712](https://github.com/poanetwork/blockscout/pull/3712) - POSDAO refactoring: use pool ID instead of staking address
