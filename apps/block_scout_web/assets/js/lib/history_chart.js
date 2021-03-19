@@ -269,7 +269,7 @@ class MarketHistoryChart {
     }
 
     this.marketCap = {
-      label: window.localized['Market Cap'],
+      label: window.localized['Total Value Locked'],
       yAxisID: 'marketCap',
       data: [],
       fill: false,

@@ -46,6 +46,8 @@ defmodule Explorer.Staking.StakeSnapshotting do
       |> Enum.zip(pool_staking_addresses)
       |> Map.new()
 
+    abi = abi_clarify_signatures(abi, new_signatures)
+
     # get snapshotted amounts and active delegator list for the pool for each
     # pending validator by their pool id.
     # use `cached_pool_staking_responses` when possible
@@ -227,6 +229,16 @@ defmodule Explorer.Staking.StakeSnapshotting do
     :ets.insert(ets_table_name, is_snapshotting: false)
 
     Publisher.broadcast(:stake_snapshotting_finished)
+  end
+
+  defp abi_clarify_signatures(abi, new_signatures) do
+    if new_signatures do
+      abi
+    else
+      Jason.decode!(
+        ~s([{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"stakeAmountTotal","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"stakeAmount","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"poolDelegators","outputs":[{"name":"","type":"address[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"uint256"},{"name":"","type":"uint256"},{"name":"","type":"uint256"},{"name":"","type":"uint256"}],"name":"validatorShare","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"uint256"},{"name":"","type":"uint256"},{"name":"","type":"uint256"},{"name":"","type":"uint256"},{"name":"","type":"uint256"}],"name":"delegatorShare","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}])
+      )
+    end
   end
 
   defp address_bytes_to_string(hash), do: "0x" <> Base.encode16(hash, case: :lower)
