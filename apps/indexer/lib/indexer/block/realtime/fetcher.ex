@@ -116,7 +116,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       )
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
-    Process.send_after(self(), {:got_block, number}, 500)
+    Process.send_after(self(), {:got_block, number}, 2000)
 
     {:noreply, state}
   end
