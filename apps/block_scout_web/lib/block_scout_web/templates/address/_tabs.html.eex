@@ -40,7 +40,7 @@
       gettext("Downtime"),
       class: "card-tab #{tab_status("signed", @conn.request_path)}",
       "data-test": "signed_tab_link",
-      to: address_signed_path(@conn, :index, @address.hash)
+      to: AccessHelpers.get_path(@conn, :address_signed_path, :index, @address.hash)
     ) %>
   <%= if Chain.check_if_logs_at_address(@address.hash) do %>
     <%= link(
@@ -62,7 +62,6 @@
       "Celo Info",
       class: "card-tab #{tab_status("celo", @conn.request_path)}",
       "data-test": "celo_tab_link",
-#      to: address_celo_path(@conn, :index, @address.hash)
       to: AccessHelpers.get_path(@conn, :address_celo_path, :index, @address.hash)
     ) %>
   <% end %>

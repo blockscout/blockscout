@@ -4,18 +4,17 @@ defmodule BlockScoutWeb.AddressSignedController do
   """
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.AddressController, only: [transaction_and_validation_count: 1]
-
   import BlockScoutWeb.Chain,
     only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias BlockScoutWeb.BlockView
+  alias BlockScoutWeb.{AccessHelpers, BlockView}
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
   alias Indexer.Fetcher.CoinBalanceOnDemand
   alias Phoenix.View
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
+    # IO.inspect("Trying to get downtime")
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, _} <- Chain.find_or_insert_address_from_hash(address_hash, [], false) do
       full_options =
@@ -58,7 +57,7 @@ defmodule BlockScoutWeb.AddressSignedController do
             block_type: BlockView.block_type(block)
           )
         end)
-
+        # IO.inspect({:got_items, Enum.size(items)})
       json(conn, %{items: items, next_page_path: next_page_path})
     else
       :error ->
@@ -66,23 +65,23 @@ defmodule BlockScoutWeb.AddressSignedController do
     end
   end
 
-  def index(conn, %{"address_id" => address_hash_string}) do
+  def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_or_insert_address_from_hash(address_hash) do
-      {transaction_count, validation_count} = transaction_and_validation_count(address)
-
+         {:ok, address} <- Chain.find_or_insert_address_from_hash(address_hash),
+         {:ok, false} <- AccessHelpers.restricted_access?(address_hash_string, params) do
       render(
         conn,
         "index.html",
         address: address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(address),
         current_path: current_path(conn),
-        transaction_count: transaction_count,
-        validation_count: validation_count,
-        exchange_rate: Market.get_exchange_rate("cGLD") || Token.null(),
-        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string})
+        counters_path: address_path(conn, :address_counters, %{"id" => address_hash_string}),
+        exchange_rate: Market.get_exchange_rate("cGLD") || Token.null()
       )
     else
+      {:restricted_access, _} ->
+        not_found(conn)
+
       :error ->
         unprocessable_entity(conn)
 
