@@ -13,6 +13,7 @@
 - [#3564](https://github.com/poanetwork/blockscout/pull/3564) - Staking welcome message
 
 ### Fixes
+- [#3723](https://github.com/poanetwork/blockscout/pull/3723) - Fix losing digits at value conversion back from WEI
 - [#3715](https://github.com/poanetwork/blockscout/pull/3715) - Pending transactions sanitizer process
 - [#3710](https://github.com/poanetwork/blockscout/pull/3710) - Missing @destination in bridged-tokens template
 - [#3707](https://github.com/poanetwork/blockscout/pull/3707) - Fetch bridged token price by address of foreign token, not by symbol

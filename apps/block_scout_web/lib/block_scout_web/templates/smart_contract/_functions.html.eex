@@ -113,7 +113,7 @@ to: address_contract_path(@conn, :index, metadata_for_verification.address_hash)
             <% else %>
                 <%= if output["type"] == "uint256" do %>
                   <div data-wei-ether-converter>
-                    <span data-conversion-unit><%= output["value"] %></span>
+                    <span data-conversion-unit data-original-value="<%= output["value"] %>"><%= output["value"] %></span>
                     <span class="py-2 px-2">
                       <input class="wei-ether" type="checkbox" autocomplete="off">
                       <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
